@@ -31,6 +31,9 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
     case resetZoom
     /// The per-song "collapse repeated sections" toggle (saved to the sidecar).
     case toggleCollapseRepeats
+    /// Cycles the current song's columns Auto -> 1 -> 2 -> 3 -> Auto (saved to the sidecar
+    /// as `LivePrefs.columns`).
+    case cycleColumns
     /// Asks for confirmation, then ends the show.
     case endShow
 
@@ -48,8 +51,9 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
         switch self {
         case .next, .playNextRequest, .previous, .skipCurrent:
             .show
-        case .resetZoom, .restartScroll, .scrollFaster, .scrollPageDown, .scrollPageUp,
-             .scrollSlower, .toggleAutoScroll, .toggleCollapseRepeats, .zoomIn, .zoomOut:
+        case .cycleColumns, .resetZoom, .restartScroll, .scrollFaster, .scrollPageDown,
+             .scrollPageUp, .scrollSlower, .toggleAutoScroll, .toggleCollapseRepeats, .zoomIn,
+             .zoomOut:
             .viewport
         case .endShow, .openSearch, .toggleRequests, .toggleSidebar:
             .chrome
@@ -87,6 +91,7 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
         case .zoomOut: "Zoom Out"
         case .resetZoom: "Actual Size"
         case .toggleCollapseRepeats: "Collapse Repeats"
+        case .cycleColumns: "Columns"
         case .endShow: "End Show"
         }
     }

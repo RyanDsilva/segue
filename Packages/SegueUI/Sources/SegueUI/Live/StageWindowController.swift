@@ -3,8 +3,8 @@
     import SwiftUI
 
     /// Presents the live view as the stage: a borderless window covering the entire screen,
-    /// edge to edge, with the menu bar and Dock hidden while it is up. Esc (or closing the
-    /// window) ends the performance.
+    /// edge to edge, with the menu bar and Dock hidden while it is up. Keys reach the
+    /// session through `LiveKeyInput`; the run ends with Cmd-. (confirmed), which closes it.
     ///
     /// This is deliberately not native full screen (`toggleFullScreen`): on displays with a
     /// camera housing, macOS places full-screen windows below the housing and paints the
@@ -20,6 +20,7 @@
         private weak var app: AppModel?
         private var savedPresentationOptions: NSApplication.PresentationOptions?
         private var observers: [any NSObjectProtocol] = []
+        private let keyInput = LiveKeyInput()
 
         override private init() {}
 
@@ -65,7 +66,10 @@
             hideSystemChrome()
             window.setFrame(screen.frame, display: true)
             window.makeKeyAndOrderFront(nil)
+            NSApp.activate()
             observe(window)
+            live.begin()
+            keyInput.install(window: window) { [weak app] in app?.live }
         }
 
         /// Ends the performance and closes the stage.
@@ -76,11 +80,13 @@
         public func windowWillClose(_ notification: Notification) {
             guard let closing = notification.object as? NSWindow, closing === window else { return }
             removeObservers()
+            keyInput.remove()
             if let savedPresentationOptions {
                 NSApp.presentationOptions = savedPresentationOptions
                 self.savedPresentationOptions = nil
             }
             window = nil
+            app?.live?.stop()
             app?.live = nil
         }
 
@@ -91,14 +97,12 @@
             observers = []
         }
 
-        private func stage(_ live: LiveViewModel, screen: NSScreen) -> some View {
-            LiveView(model: live, topInset: screen.safeAreaInsets.top) { [weak self] in
-                self?.close()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.color.ground)
-            .ignoresSafeArea()
-            .environment(\.colorScheme, .dark)
+        private func stage(_ live: LiveSession, screen: NSScreen) -> some View {
+            LiveView(session: live, topInset: screen.safeAreaInsets.top)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Theme.color.ground)
+                .ignoresSafeArea()
+                .environment(\.colorScheme, .dark)
         }
 
         /// Hides the menu bar and Dock so nothing overlaps the stage. Presentation options

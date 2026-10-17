@@ -34,6 +34,7 @@ struct SegueApp: App {
             libraryOverride: options.libraryPath,
             rememberLibraryOverride: options.rememberLibrary,
             shapeLibraryURL: Self.shapeLibraryURL(options),
+            live: Self.liveDependencies(options, defaults: defaults),
         )
         _app = State(initialValue: AppModel(dependencies: dependencies))
     }
@@ -56,6 +57,30 @@ struct SegueApp: App {
         }
         guard let bundleID = Bundle.main.bundleIdentifier else { return nil }
         return AppDependencies.defaultShapeLibraryURL(bundleID: bundleID)
+    }
+
+    /// Live mode: the real Shortcut runner, system clock and Application Support bindings,
+    /// or the test doubles a test run asks for.
+    @MainActor
+    private static func liveDependencies(_ options: LaunchOptions, defaults: UserDefaults)
+        -> LiveDependencies
+    {
+        let settings = LiveSettingsStore(defaults: defaults)
+        let shortcuts: any ShortcutRunner = options.shortcutLog.map(RecordingShortcutRunner.init)
+            ?? WorkspaceShortcutRunner()
+        let scrollClock: any Clock = options.liveTimeScale.map { ScaledClock(scale: $0) }
+            ?? SystemClock()
+        let bindings: URL? = if options.isTestRun {
+            options.bindingsPath
+        } else {
+            Bundle.main.bundleIdentifier.map(LiveDependencies.defaultBindingsURL)
+        }
+        return LiveDependencies(
+            settings: settings,
+            shortcuts: shortcuts,
+            scrollClock: scrollClock,
+            bindingsURL: bindings,
+        )
     }
 
     /// Plugin modules for this flavor. Only the Personal build sees the personal package.
@@ -83,5 +108,9 @@ struct SegueApp: App {
         .windowResizability(.contentMinSize)
         .restorationBehavior(.disabled)
         .commandsRemoved()
+
+        Settings {
+            SegueSettingsView(app: app)
+        }
     }
 }
