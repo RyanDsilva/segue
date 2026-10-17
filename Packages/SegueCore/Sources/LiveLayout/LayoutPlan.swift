@@ -53,14 +53,19 @@ public enum ChordKind: Sendable, Hashable {
 }
 
 /// A run of text at a position. `x` is from the column's lyric origin (after the gutter);
-/// rows give `y`.
+/// rows give `y`. Gutter label lines are from the column's left edge instead, and cue lines
+/// from the callout's left edge.
 public struct PlacedText: Sendable, Hashable {
     public var text: String
     public var x: Double
+    /// Advance width as measured (`StageTextMetrics`); the run is drawn on one line, never
+    /// wrapped by the view.
     public var width: Double
     public var role: TextRole
     /// Set for chords: unknown chords are drawn flagged.
     public var chordKind: ChordKind?
+    /// Point size to draw at: `StageTypography.font(role, size: size)`.
+    public var size: Double
 
     public init(
         text: String,
@@ -68,12 +73,26 @@ public struct PlacedText: Sendable, Hashable {
         width: Double,
         role: TextRole,
         chordKind: ChordKind? = nil,
+        size: Double = 0,
     ) {
         self.text = text
         self.x = x
         self.width = width
         self.role = role
         self.chordKind = chordKind
+        self.size = size
+    }
+}
+
+/// A single line of text with its baseline: gutter label lines and cue callout lines.
+public struct PlacedLine: Sendable, Hashable {
+    public var text: PlacedText
+    /// Baseline, from the top of the containing block (labels) or callout (cues).
+    public var baseline: Double
+
+    public init(text: PlacedText, baseline: Double) {
+        self.text = text
+        self.baseline = baseline
     }
 }
 
@@ -123,17 +142,34 @@ public struct LayoutRow: Sendable, Hashable {
     }
 }
 
-/// A cue callout at a section's edge.
+/// A cue callout at a section's edge: a box at the top of the section's lyric area, above
+/// its first line, wrapped to the column.
 public struct PlacedCue: Sendable, Hashable {
     public var text: String
     /// From the block's top.
     public var y: Double
     public var height: Double
+    /// Left edge of the callout box, from the column's lyric origin.
+    public var x: Double
+    /// Width of the callout box (padding included).
+    public var width: Double
+    /// The wrapped text: `x` from the box's left edge, baselines from the box's top.
+    public var lines: [PlacedLine]
 
-    public init(text: String, y: Double, height: Double) {
+    public init(
+        text: String,
+        y: Double,
+        height: Double,
+        x: Double = 0,
+        width: Double = 0,
+        lines: [PlacedLine] = [],
+    ) {
         self.text = text
         self.y = y
         self.height = height
+        self.x = x
+        self.width = width
+        self.lines = lines
     }
 }
 
@@ -161,6 +197,15 @@ public struct LayoutBlock: Sendable, Hashable, Identifiable {
     public var height: Double
     public var content: Content
     public var cues: [PlacedCue]
+    /// `label` broken to fit the gutter (it may also be set smaller than
+    /// `LayoutStyle.labelSize`): `x` from the column's left edge, baselines from the block's
+    /// top. Draw these rather than `label`.
+    public var labelLines: [PlacedLine]
+    /// For `.collapsed` content: the baseline of the collapsed line, from the block's top.
+    public var collapsedBaseline: Double?
+    /// 0 for a section's first (or only) part; 1, 2, ... for the continuation of a section
+    /// that had to be split across columns (no label or cues; same `id`).
+    public var part: Int
 
     public init(
         id: Int,
@@ -171,6 +216,9 @@ public struct LayoutBlock: Sendable, Hashable, Identifiable {
         height: Double,
         content: Content,
         cues: [PlacedCue],
+        labelLines: [PlacedLine] = [],
+        collapsedBaseline: Double? = nil,
+        part: Int = 0,
     ) {
         self.id = id
         self.label = label
@@ -180,6 +228,9 @@ public struct LayoutBlock: Sendable, Hashable, Identifiable {
         self.height = height
         self.content = content
         self.cues = cues
+        self.labelLines = labelLines
+        self.collapsedBaseline = collapsedBaseline
+        self.part = part
     }
 }
 

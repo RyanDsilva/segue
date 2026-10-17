@@ -67,8 +67,58 @@ public enum ScrollSpeedModel {
     /// Multiplier applied per `[` / `]` nudge.
     public static let nudgeStep = 1.1
 
+    /// The shortest scroll time a duration may leave after the lead-in; shorter songs scroll
+    /// over their whole duration with no lead-in.
+    public static let minimumScrollTime: TimeInterval = 20
+    /// Bars one lyric line takes, for the tempo estimate.
+    public static let barsPerLine = 2.0
+
     public static func speed(_ input: ScrollSpeedInput) -> ScrollSpeed {
-        fatalError("unimplemented: unit B (ScrollSpeedModel.speed)")
+        let factor = input.factor.isFinite && input.factor > 0 ? input.factor : 1
+        let overflow = max(0, input.overflow)
+        if let duration = input.duration, duration.isFinite, duration > 0 {
+            return derived(overflow: overflow, duration: duration, factor: factor, .duration)
+        }
+        if let estimate = estimatedDuration(input) {
+            return derived(overflow: overflow, duration: estimate, factor: factor, .tempo)
+        }
+        return ScrollSpeed(
+            pointsPerSecond: defaultSpeed * factor,
+            leadIn: leadIn,
+            source: .fallback,
+        )
+    }
+
+    /// `lineCount` lines x `barsPerLine` bars x beats per bar at `tempo`. Compound metres
+    /// (6/8, 9/8, 12/8) count the dotted beat.
+    public static func estimatedDuration(_ input: ScrollSpeedInput) -> TimeInterval? {
+        guard let tempo = input.tempo, tempo.isFinite, tempo > 0, input.lineCount > 0 else {
+            return nil
+        }
+        return Double(input.lineCount) * barsPerLine * beatsPerBar(input.time) * 60 / tempo
+    }
+
+    static func beatsPerBar(_ time: String?) -> Double {
+        let parts = (time ?? "").split(separator: "/").map {
+            Int($0.trimmingCharacters(in: .whitespaces))
+        }
+        guard parts.count == 2, let top = parts[0], let bottom = parts[1], top > 0, bottom > 0
+        else { return 4 }
+        if bottom == 8, top.isMultiple(of: 3), top > 3 {
+            return Double(top / 3)
+        }
+        return Double(top)
+    }
+
+    private static func derived(
+        overflow: Double,
+        duration: TimeInterval,
+        factor: Double,
+        _ source: ScrollSpeedSource,
+    ) -> ScrollSpeed {
+        let lead = duration - leadIn >= minimumScrollTime ? leadIn : 0
+        let time = duration - lead
+        return ScrollSpeed(pointsPerSecond: overflow / time * factor, leadIn: lead, source: source)
     }
 }
 
@@ -86,45 +136,127 @@ public struct AutoScroller: Sendable, Hashable {
     public private(set) var phase: Phase
     public private(set) var speed: ScrollSpeed
     public private(set) var overflow: Double
+    /// Offset at `anchor` (or the held offset when not running).
+    private var base: Double
+    /// When `base` was taken (running only).
+    private var anchor: Date?
+    /// Lead-in still to wait before moving (a start from the top, possibly paused mid-way).
+    private var pendingLeadIn: TimeInterval
 
     /// Idle at the top.
     public init(speed: ScrollSpeed, overflow: Double) {
         phase = .idle
         self.speed = speed
-        self.overflow = overflow
+        self.overflow = max(0, overflow)
+        base = 0
+        anchor = nil
+        pendingLeadIn = speed.leadIn
     }
 
     /// Offset in points at `now` (0 ... overflow).
     public func offset(at now: Date) -> Double {
-        fatalError("unimplemented: unit B (AutoScroller.offset)")
+        guard phase == .running, let anchor else {
+            return min(base, overflow)
+        }
+        let moving = max(0, now.timeIntervalSince(anchor) - pendingLeadIn)
+        return min(overflow, max(0, base + moving * max(0, speed.pointsPerSecond)))
+    }
+
+    /// The phase at `now`: `.finished` once a running scroll has reached the end.
+    public func phase(at now: Date) -> Phase {
+        if phase == .running, offset(at: now) >= overflow {
+            return .finished
+        }
+        return phase
     }
 
     /// Starts (or resumes) at `now`. The lead-in applies only to a start from the top.
     public mutating func start(at now: Date) {
-        fatalError("unimplemented: unit B (AutoScroller.start)")
+        switch phase(at: now) {
+        case .finished, .running:
+            settle(at: now)
+        case .idle, .paused:
+            if base > 0 {
+                pendingLeadIn = 0
+            }
+            anchor = now
+            phase = overflow > 0 && base < overflow ? .running : .finished
+        }
     }
 
     public mutating func pause(at now: Date) {
-        fatalError("unimplemented: unit B (AutoScroller.pause)")
+        guard phase == .running, let anchor else { return }
+        let elapsed = now.timeIntervalSince(anchor)
+        base = offset(at: now)
+        pendingLeadIn = max(0, pendingLeadIn - elapsed)
+        self.anchor = nil
+        phase = base >= overflow ? .finished : .paused
     }
 
     /// Back to the top, idle.
-    public mutating func restart(at now: Date) {
-        fatalError("unimplemented: unit B (AutoScroller.restart)")
+    public mutating func restart(at _: Date) {
+        phase = .idle
+        base = 0
+        anchor = nil
+        pendingLeadIn = speed.leadIn
     }
 
     /// Manual scroll or page step: continues from `offset` (keeps running if running).
     public mutating func seek(to offset: Double, at now: Date) {
-        fatalError("unimplemented: unit B (AutoScroller.seek)")
+        base = min(max(0, offset), overflow)
+        pendingLeadIn = 0
+        switch phase(at: now) {
+        case .running:
+            anchor = now
+            if base >= overflow {
+                phase = .finished
+                anchor = nil
+            }
+        case .finished:
+            phase = base >= overflow ? .finished : .paused
+            anchor = nil
+        case .idle, .paused:
+            anchor = nil
+        }
     }
 
     /// A new speed from `now` on (nudge), keeping the current offset.
     public mutating func setSpeed(_ speed: ScrollSpeed, at now: Date) {
-        fatalError("unimplemented: unit B (AutoScroller.setSpeed)")
+        rebase(at: now)
+        self.speed = speed
+        if phase == .idle, base == 0 {
+            pendingLeadIn = speed.leadIn
+        }
     }
 
     /// A re-layout changed the overflow (zoom, resize): keeps the same fraction.
     public mutating func setOverflow(_ overflow: Double, at now: Date) {
-        fatalError("unimplemented: unit B (AutoScroller.setOverflow)")
+        rebase(at: now)
+        let fraction = self.overflow > 0 ? base / self.overflow : 0
+        self.overflow = max(0, overflow)
+        base = fraction * self.overflow
+        if phase == .finished, base < self.overflow {
+            phase = .paused
+        }
+    }
+
+    /// Records a running scroll that reached the end as `.finished` (call from the display
+    /// tick; `offset(at:)` already clamps, so this only updates `phase`).
+    public mutating func settle(at now: Date) {
+        if phase(at: now) == .finished, phase == .running {
+            base = overflow
+            anchor = nil
+            phase = .finished
+        }
+    }
+
+    /// Moves the anchor to `now`, keeping the offset and the remaining lead-in.
+    private mutating func rebase(at now: Date) {
+        settle(at: now)
+        guard phase == .running, let anchor else { return }
+        let elapsed = now.timeIntervalSince(anchor)
+        base = offset(at: now)
+        pendingLeadIn = max(0, pendingLeadIn - elapsed)
+        self.anchor = now
     }
 }

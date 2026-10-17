@@ -35,11 +35,68 @@ public enum TextRole: Sendable, Hashable {
     case note
 }
 
+/// Vertical extents of a face, as multiples of the point size.
+public struct FontExtents: Sendable, Hashable {
+    /// Baseline to the top of the tallest glyphs.
+    public var ascent: Double
+    /// Baseline to the bottom of the descenders (positive).
+    public var descent: Double
+    /// Baseline to the top of capitals and ascenders (the ink, below `ascent`). Chords sit
+    /// tight above the lyric by ink, not by the font box.
+    public var inkTop: Double
+
+    public init(ascent: Double, descent: Double, inkTop: Double) {
+        self.ascent = ascent
+        self.descent = descent
+        self.inkTop = inkTop
+    }
+}
+
 /// Text measurement, injected so the engine stays pure: tests use `FixedAdvanceMetrics`,
 /// the stage uses Core Text with the bundled Schibsted Grotesk faces (SegueUI, unit B).
+///
+/// Widths must scale linearly with `size` (true for the static, unhinted faces Core Text
+/// uses on macOS): the engine measures each string once at a reference size and scales.
 public protocol TextMeasuring: Sendable {
     /// Advance width in points of `text` set in `role` at point size `size`.
     func width(of text: String, role: TextRole, size: Double) -> Double
+
+    /// Advance widths of `text` set as one line, from its start to each UTF-16 offset in
+    /// `utf16Offsets` (ascending, each `0 ... text.utf16.count`). One call per line lets
+    /// Core Text shape the line once, kerning included.
+    func prefixWidths(
+        of text: String,
+        utf16Offsets: [Int],
+        role: TextRole,
+        size: Double,
+    ) -> [Double]
+
+    /// Ascent and descent of the face `role` uses, as multiples of the point size.
+    func extents(of role: TextRole) -> FontExtents
+}
+
+public extension TextMeasuring {
+    /// Measures each prefix separately.
+    func prefixWidths(
+        of text: String,
+        utf16Offsets: [Int],
+        role: TextRole,
+        size: Double,
+    ) -> [Double] {
+        let units = Array(text.utf16)
+        return utf16Offsets.map { offset in
+            let prefix = String(
+                decoding: units[0 ..< min(max(offset, 0), units.count)],
+                as: UTF16.self,
+            )
+            return width(of: prefix, role: role, size: size)
+        }
+    }
+
+    /// A generic sans face: ascent 0.8, descent 0.2, ink top 0.7.
+    func extents(of _: TextRole) -> FontExtents {
+        FontExtents(ascent: 0.8, descent: 0.2, inkTop: 0.7)
+    }
 }
 
 /// Every character advances `size * factor`: deterministic metrics for golden tests.
@@ -52,6 +109,24 @@ public struct FixedAdvanceMetrics: TextMeasuring {
 
     public func width(of text: String, role _: TextRole, size: Double) -> Double {
         Double(text.count) * size * factor
+    }
+
+    public func prefixWidths(
+        of text: String,
+        utf16Offsets: [Int],
+        role _: TextRole,
+        size: Double,
+    ) -> [Double] {
+        // Characters up to each offset, in one pass.
+        var counts = [0: 0]
+        var units = 0
+        var characters = 0
+        for character in text {
+            units += character.utf16.count
+            characters += 1
+            counts[units] = characters
+        }
+        return utf16Offsets.map { Double(counts[$0] ?? 0) * size * factor }
     }
 }
 
@@ -84,6 +159,22 @@ public struct LayoutStyle: Sendable, Hashable {
     public var verbatimScale: Double
     /// Font size steps auto-fit snaps to (binary search runs over these steps).
     public var sizeStep: Double
+    /// Chord band height as a multiple of the chord size (never less than the chord ink:
+    /// `inkTop + descent`). Chord descenders end at the band's bottom, just above the
+    /// lyric's ink.
+    public var chordLineHeight: Double
+    /// Vertical padding inside a section's tinted block, as a multiple of the lyric size.
+    public var blockInset: Double
+    /// A stanza break (blank line in a section), as a multiple of the lyric line height.
+    public var stanzaBreakScale: Double
+    /// Line height of labels, cues and notes, as a multiple of their size.
+    public var smallLineHeight: Double
+    /// Gutter labels shrink (down to this size) before a word is broken.
+    public var minLabelSize: Double
+    /// Padding inside a cue callout: horizontal, vertical (points).
+    public var cuePadding: LayoutSize
+    /// Space below each cue callout and between note paragraphs (points).
+    public var calloutSpacing: Double
 
     public init(
         gutterWidth: Double = 64,
@@ -95,13 +186,20 @@ public struct LayoutStyle: Sendable, Hashable {
         lineHeight: Double = 1.25,
         chordRatio: Double = 0.82,
         chordSpacing: Double = 0.5,
-        sectionSpacing: Double = 0.9,
+        sectionSpacing: Double = 0.6,
         labelSize: Double = 13,
         cueSize: Double = 15,
         noteSize: Double = 17,
         commentScale: Double = 0.8,
         verbatimScale: Double = 0.75,
         sizeStep: Double = 0.5,
+        chordLineHeight: Double = 1.0,
+        blockInset: Double = 0.25,
+        stanzaBreakScale: Double = 0.5,
+        smallLineHeight: Double = 1.3,
+        minLabelSize: Double = 10,
+        cuePadding: LayoutSize = LayoutSize(width: 8, height: 4),
+        calloutSpacing: Double = 6,
     ) {
         self.gutterWidth = gutterWidth
         self.gutterGap = gutterGap
@@ -119,6 +217,13 @@ public struct LayoutStyle: Sendable, Hashable {
         self.commentScale = commentScale
         self.verbatimScale = verbatimScale
         self.sizeStep = sizeStep
+        self.chordLineHeight = chordLineHeight
+        self.blockInset = blockInset
+        self.stanzaBreakScale = stanzaBreakScale
+        self.smallLineHeight = smallLineHeight
+        self.minLabelSize = minLabelSize
+        self.cuePadding = cuePadding
+        self.calloutSpacing = calloutSpacing
     }
 
     /// The stage defaults. Unit B tunes the values; keep them in one place.

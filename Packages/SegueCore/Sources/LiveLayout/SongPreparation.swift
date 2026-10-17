@@ -1,0 +1,146 @@
+// Owner: unit B. Turns a layout request into measured sections: repeats collapsed (or
+// expanded), cues pinned to their sections, unmatched cues moved to the notes.
+
+import ChordPro
+import Editing
+import Foundation
+import Library
+
+struct SongPreparation {
+    let request: LayoutRequest
+    let measurer: Measurer
+
+    func measure() -> MeasuredSong {
+        let sections = request.model.sections
+        let collapsed = RepeatCollapser.collapse(sections, enabled: request.collapseRepeats)
+        let (cues, unmatched) = pinCues(sections)
+        let measured = sections.indices.map { index in
+            section(index, sections: sections, collapsed: collapsed[index], cues: cues[index])
+        }
+        var notes = request.notes
+            .flatMap { $0.components(separatedBy: .newlines) }
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        notes += unmatched.map { "\($0.section): \($0.text)" }
+        return MeasuredSong(
+            notes: notes.map { measurer.paragraph($0, role: .note) },
+            sections: measured,
+            lineCount: lineCount(sections),
+        )
+    }
+
+    private func section(
+        _ index: Int,
+        sections: [RenderSection],
+        collapsed: CollapsedSection,
+        cues: [SongCue],
+    ) -> MeasuredSection {
+        let section = sections[index]
+        var label = RepeatCollapser.displayLabel(section)
+        let body: MeasuredSection.Body
+        if let root = collapsed.repeatOf {
+            let name = label ?? RepeatCollapser.displayLabel(sections[root]) ?? "Chorus"
+            label = "\(name) x\(collapsed.occurrence)"
+            body = .collapsed(
+                line: measurer.paragraph(Self.repeatText(sections[root]), role: .collapsedRepeat),
+                differing: collapsed.differingItems.map { items(section.items[$0]) },
+            )
+        } else if section.isRepeat {
+            if let target = RepeatCollapser.repeatTarget(of: index, in: sections) {
+                body = .full(sections[target].items.map(items))
+            } else {
+                body = .collapsed(
+                    line: measurer.paragraph(Self.repeatText(section), role: .collapsedRepeat),
+                    differing: [],
+                )
+            }
+        } else {
+            body = .full(section.items.map(items))
+        }
+        return MeasuredSection(
+            id: section.id,
+            label: label,
+            labelText: label.map { measurer.paragraph($0, role: .sectionLabel) },
+            isChorus: section.kind == .chorus,
+            tint: SectionTint(section.kind),
+            body: body,
+            cues: cues.map { cue in
+                MeasuredCue(text: cue.text, paragraph: measurer.paragraph(cue.text, role: .cue))
+            },
+        )
+    }
+
+    private func items(_ item: RenderItem) -> MeasuredItem {
+        switch item {
+        case let .lyrics(line):
+            return .lyric(measurer.line(line))
+        case let .comment(text, _, path):
+            return .comment(measurer.paragraph(text, role: .comment), path)
+        case let .verbatim(source, path):
+            let text = Measurer.expandedTabs(source)
+            let width = measurer.metrics.width(of: text, role: .verbatim, size: referenceSize)
+            return .verbatim(text: text, width: width, path: path)
+        case let .stanzaBreak(path):
+            return .stanzaBreak(path)
+        }
+    }
+
+    /// "Repeat chorus", or "Repeat <label>" for a differently named section.
+    static func repeatText(_ section: RenderSection) -> String {
+        let label = RepeatCollapser.displayLabel(section) ?? "Chorus"
+        if label.caseInsensitiveCompare("Chorus") == .orderedSame {
+            return "Repeat chorus"
+        }
+        return "Repeat \(label)"
+    }
+
+    /// Cues per section (by display label, case-insensitive, and 1-based occurrence of that
+    /// label), and the cues whose section no longer exists.
+    private func pinCues(_ sections: [RenderSection]) -> ([[SongCue]], [SongCue]) {
+        var pinned = Array(repeating: [SongCue](), count: sections.count)
+        var seen: [String: Int] = [:]
+        var occurrence: [Int] = []
+        let labels = sections.map { RepeatCollapser.displayLabel($0).map(Self.key) }
+        for label in labels {
+            let count = label.map { (seen[$0] ?? 0) + 1 } ?? 0
+            if let label {
+                seen[label] = count
+            }
+            occurrence.append(count)
+        }
+        var unmatched: [SongCue] = []
+        for cue in request.cues {
+            let key = Self.key(cue.section)
+            let targets = sections.indices.filter { index in
+                labels[index] == key && (cue.occurrence.map { $0 == occurrence[index] } ?? true)
+            }
+            if targets.isEmpty {
+                unmatched.append(cue)
+            }
+            for target in targets {
+                pinned[target].append(cue)
+            }
+        }
+        return (pinned, unmatched)
+    }
+
+    private static func key(_ label: String) -> String {
+        label.trimmingCharacters(in: .whitespaces).lowercased()
+    }
+
+    /// Lyric lines as performed: `{chorus}` repeats count their chorus's lines.
+    private func lineCount(_ sections: [RenderSection]) -> Int {
+        sections.indices.reduce(0) { total, index in
+            let source = sections[index].isRepeat
+                ? RepeatCollapser.repeatTarget(of: index, in: sections).map { sections[$0] }
+                : sections[index]
+            let lines = source?.items.count { item in
+                if case .lyrics = item {
+                    return true
+                }
+                return false
+            } ?? 0
+            return total + lines
+        }
+    }
+}

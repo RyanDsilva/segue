@@ -17,7 +17,9 @@ import Library
 ///    column count; if it no longer fits, it scrolls.
 public enum LayoutEngine {
     public static func plan(_ request: LayoutRequest, metrics: any TextMeasuring) -> LayoutPlan {
-        fatalError("unimplemented: unit B (LayoutEngine.plan)")
+        let measurer = Measurer(metrics: metrics)
+        let song = SongPreparation(request: request, measurer: measurer).measure()
+        return FitSearch(request: request, song: song, measurer: measurer).plan()
     }
 }
 
@@ -38,15 +40,5 @@ public struct CollapsedSection: Sendable, Hashable {
         self.repeatOf = repeatOf
         self.occurrence = occurrence
         self.differingItems = differingItems
-    }
-}
-
-/// Repeat detection: the first occurrence always renders in full; a later section whose
-/// content equals an earlier one (normalized lyrics and display chords) becomes a reference,
-/// plus any differing lines. `{chorus}` repeats (`RenderSection.isRepeat`) always collapse
-/// when enabled. With `enabled == false` every section is in full.
-public enum RepeatCollapser {
-    public static func collapse(_ sections: [RenderSection], enabled: Bool) -> [CollapsedSection] {
-        fatalError("unimplemented: unit B (RepeatCollapser.collapse)")
     }
 }
