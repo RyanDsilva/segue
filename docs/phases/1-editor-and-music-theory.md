@@ -122,7 +122,7 @@ Integration-first: tests drive real components (parser, syntax tree, editor mode
 ## Acceptance criteria
 
 1. Every golden fixture round-trips byte-for-byte; editing in either mode changes only the touched text.
-2. Transposing a song by any interval and back yields the original source spelling.
+2. Transposing a song by any interval and back yields the original source spelling for in-key chords and common borrowed chords (bII, bIII, #IV, bVI, bVII); rarer spellings return in the standard spelling (see decisions.md).
 3. Capo toggle shows guitar shapes vs concert chords correctly; piano diagrams always concert.
 4. Nashville view renders correctly for major and minor keys (minor keys numbered from the relative major), including borrowed chords and slash chords.
 5. Guitar diagrams render for standard, Drop D, DADGAD and Open G; custom `{define}` shapes override the built-ins.
