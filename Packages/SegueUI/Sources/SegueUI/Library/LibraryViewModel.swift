@@ -33,13 +33,27 @@ public final class LibraryViewModel {
     public private(set) var saveConflict: SaveConflict?
 
     /// The search field text. Changes are debounced before hitting the index.
-    public var query = "" {
+    public var query: String {
+        get { filterState.query }
+        set { filterState.query = newValue }
+    }
+
+    /// The search text plus the filter chips (tags, proficiency). Changes are debounced
+    /// before hitting the index.
+    public var filterState = SongFilterState() {
         didSet {
-            if query != oldValue {
+            if filterState != oldValue {
                 scheduleSearch()
             }
         }
     }
+
+    /// Every tag in the library with its song count, most used first (chips, sidebar).
+    public internal(set) var tags: [TagCount] = []
+    /// "Last played" / "times played" per song, from the play projection.
+    public internal(set) var playStats: [SongID: PlayStats] = [:]
+    /// Bumped on every reload, so views that search on their own know to search again.
+    public private(set) var catalogRevision = 0
 
     /// The song the detail pane is about, if any. Change it with `select(_:)`.
     public private(set) var selection: SongID? {
@@ -92,7 +106,7 @@ public final class LibraryViewModel {
         case cancel
     }
 
-    private let store: LibraryStore
+    let store: LibraryStore
     private let debounce: Duration
     private var searchTask: Task<Void, Never>?
     /// Bumped per scheduled search, so only the newest one clears `isSearching`.
@@ -111,7 +125,7 @@ public final class LibraryViewModel {
 
     /// Whether the query is non-blank.
     public var isFiltering: Bool {
-        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        filterState.isActive
     }
 
     /// Reloads the catalog and re-runs the current search.
@@ -121,7 +135,10 @@ public final class LibraryViewModel {
             catalog = songs
             catalogIndex = Dictionary(songs.map { ($0.id, $0) }) { first, _ in first }
             loadIssues = await store.loadIssues
-            try await runSearch(query)
+            tags = try await store.allTags()
+            playStats = try await store.playStats()
+            catalogRevision += 1
+            try await runSearch(filterState)
         } catch {
             errorMessage = UserMessage.describe(error)
         }
@@ -140,27 +157,6 @@ public final class LibraryViewModel {
     public var isEditingDeletedSong: Bool {
         guard case let .edit(id) = editor?.mode else { return false }
         return catalogIndex[id] == nil
-    }
-
-    /// Rescans the folder for external edits, then reloads.
-    public func refresh() async {
-        do {
-            try await store.refresh()
-        } catch {
-            errorMessage = UserMessage.describe(error)
-        }
-        await reload()
-    }
-
-    /// Deletes and rebuilds the index from the files on disk, then reloads.
-    public func rebuildIndex() async {
-        do {
-            try await store.rebuildIndex()
-        } catch {
-            errorMessage = "The index could not be rebuilt (\(UserMessage.describe(error))). "
-                + "The previous index is still in use."
-        }
-        await reload()
     }
 
     // MARK: Navigation
@@ -345,14 +341,6 @@ public final class LibraryViewModel {
         return record
     }
 
-    /// Writes song `id`'s display toggles (transpose, capo mode, Nashville, diagrams) to its
-    /// sidecar; the `.cho` is untouched.
-    public func updateDisplayPrefs(id: SongID, _ prefs: DisplayPrefs) async throws -> SongRecord {
-        let record = try await store.updateDisplayPrefs(id: id, prefs)
-        await reload()
-        return record
-    }
-
     /// Saves new ChordPro `source` for song `id`, checked against `revision` (default: the
     /// one the store last loaded). A conflict with the files on disk is thrown and also
     /// shown as `saveConflict`.
@@ -379,17 +367,25 @@ public final class LibraryViewModel {
         return trimmed.isEmpty ? catalog : try await store.search(query: trimmed)
     }
 
+    /// Songs matching `state`: the free text through the index, then the typed tokens and
+    /// chips (tags, proficiency, key) through `SongFilter`.
+    public func search(_ state: SongFilterState) async throws -> [SongRecord] {
+        let filter = state.filter(knownTags: tags.map(\.tag))
+        let found = try await search(filter.text)
+        return filter.hasConstraints ? found.filter(filter.matches) : found
+    }
+
     private func scheduleSearch() {
         searchTask?.cancel()
         searchGeneration += 1
         let generation = searchGeneration
         isSearching = true
-        let query = query
+        let state = filterState
         let debounce = debounce
         searchTask = Task { [weak self] in
             do {
                 try await Task.sleep(for: debounce)
-                try await self?.runSearch(query)
+                try await self?.runSearch(state)
             } catch is CancellationError {
                 return
             } catch {
@@ -402,11 +398,11 @@ public final class LibraryViewModel {
         }
     }
 
-    private func runSearch(_ query: String) async throws {
-        let found = try await search(query)
+    private func runSearch(_ state: SongFilterState) async throws {
+        let found = try await search(state)
         try Task.checkCancellation()
         // A newer keystroke may have changed the query while the index was busy.
-        guard query == self.query else { return }
+        guard state == filterState else { return }
         results = found
         isSearching = false
     }

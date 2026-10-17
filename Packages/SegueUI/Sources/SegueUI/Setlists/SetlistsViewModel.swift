@@ -75,6 +75,63 @@ public final class SetlistsViewModel {
         }
     }
 
+    /// Renames setlist `id` (blank names are refused).
+    public func rename(_ id: SetlistID, to name: String) async {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        await mutate { store in
+            try await store.rename(id, to: trimmed)
+        }
+    }
+
+    /// Saves a copy of setlist `id` ("<name> copy") and selects it.
+    @discardableResult
+    public func duplicate(_ id: SetlistID) async -> Setlist? {
+        await mutate { store in
+            try await store.duplicate(id)
+        } then: { copy in
+            self.selection = copy.id
+        }
+    }
+
+    /// Deletes setlist `id`'s file (shows that ran it keep their snapshot).
+    public func delete(_ id: SetlistID) async {
+        do {
+            try await store.delete(id)
+        } catch {
+            errorMessage = UserMessage.describe(error)
+        }
+        await reload()
+    }
+
+    /// Inserts `songIDs` into setlist `id` at `offset` (nil appends): drag from the
+    /// library column, or its `+` button.
+    public func insert(_ songIDs: [SongID], into id: SetlistID, at offset: Int?) async {
+        guard !songIDs.isEmpty else { return }
+        await mutate { store in
+            try await store.insertSongs(songIDs, into: id, at: offset)
+        }
+    }
+
+    /// Saves one entry's overrides and note.
+    public func updateEntry(_ entry: SetlistEntry, in id: SetlistID) async {
+        await mutate { store in
+            try await store.updateEntry(entry, in: id)
+        }
+    }
+
+    /// Saves venue, date and target length.
+    public func updateDetails(_ details: SetlistDetails, of id: SetlistID) async {
+        await mutate { store in
+            try await store.updateDetails(details, of: id)
+        }
+    }
+
+    /// The setlist with `id`, if loaded.
+    public func setlist(_ id: SetlistID) -> Setlist? {
+        setlists.first { $0.id == id }
+    }
+
     @discardableResult
     private func mutate(
         _ operation: (SetlistStore) async throws -> Setlist,

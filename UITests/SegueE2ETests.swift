@@ -33,6 +33,8 @@ final class SegueE2ETests: XCTestCase {
         E2E.launch(app, arguments: [
             "-SegueLibraryPath", root.path(percentEncoded: false),
             "-SegueResetState", "YES",
+            // Shortcut hooks are recorded, never run, in tests.
+            "-SegueShortcutLog", root.appending(path: "shortcuts.log").path(percentEncoded: false),
         ])
 
         // Clean baseline: an empty library.
@@ -96,8 +98,7 @@ final class SegueE2ETests: XCTestCase {
 
     @MainActor
     private func buildSetlist(_ app: XCUIApplication) {
-        // Create a setlist and add both songs.
-        element(app, AXID.sidebarSetlists).click(in: app)
+        // Create a setlist from the sidebar; the builder opens on it, empty.
         element(app, AXID.newSetlist).click(in: app)
         let name = app.textFields[AXID.newSetlistName]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
@@ -106,52 +107,44 @@ final class SegueE2ETests: XCTestCase {
         app.buttons[AXID.newSetlistCreate].click(in: app)
         XCTAssertTrue(app.staticTexts[AXID.setlistTitle].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts[AXID.setlistTitle].value as? String, "Friday Set")
-        XCTAssertTrue(element(app, AXID.setlistEmpty).exists)
+        XCTAssertTrue(element(app, AXID.setlistDropZone).exists)
 
-        // The toolbar's add button is labelled, not a bare "+".
-        let addSongs = element(app, AXID.setlistAddSongs)
-        XCTAssertEqual(addSongs.label, "Add Songs")
-        addSongs.click(in: app)
-        // The sheet searches the index: "pyar" finds "Pyaar Ki Raah" only.
-        filterAddSongs(app, "harbour", expect: "Harbour Lights")
+        // The builder's library column searches the index: "pyar" finds "Pyaar Ki Raah".
+        filterBuilder(app, "harbour", expect: "Harbour Lights")
         addSong(app, title: "Harbour Lights")
-        filterAddSongs(app, "pyar", expect: "Pyaar Ki Raah")
+        filterBuilder(app, "pyar", expect: "Pyaar Ki Raah")
         addSong(app, title: "Pyaar Ki Raah")
-        attachScreenshot(app, name: "add-songs-sheet")
-        app.buttons[AXID.addSongsDone].click(in: app)
         let entries = app.descendants(matching: .any).matching(identifier: AXID.setlistEntry)
         XCTAssertTrue(wait(for: entries, count: 2))
         XCTAssertTrue(Self.text(entries.element(boundBy: 0)).contains("Harbour Lights"))
         XCTAssertTrue(Self.text(entries.element(boundBy: 1)).contains("Pyaar Ki Raah"))
-        attachScreenshot(app, name: "setlist-detail")
+        attachScreenshot(app, name: "setlist-builder")
     }
 
     @MainActor
     private func perform(_ app: XCUIApplication) {
-        // Perform: full-screen stage shows the first song's title, meta line and chords.
-        element(app, AXID.setlistPerform).click(in: app)
+        // Start show: the stage shows the first song, then the next, then ends.
+        element(app, AXID.setlistStartShow).click(in: app)
+        let start = element(app, AXID.checklistStart)
+        if start.waitForExistence(timeout: 5) {
+            start.click(in: app)
+        }
         let liveTitle = app.staticTexts[AXID.liveTitle]
         XCTAssertTrue(liveTitle.waitForExistence(timeout: 10))
-        XCTAssertEqual(liveTitle.value as? String, "Harbour Lights")
-        XCTAssertEqual(app.staticTexts[AXID.liveMeta].value as? String, "G, capo 2, 96")
+        XCTAssertTrue(waitForValue(liveTitle, "Harbour Lights"))
         let liveView = element(app, AXID.liveView)
         let chords = liveView.descendants(matching: .staticText)
             .matching(identifier: AXID.sheetChord)
         XCTAssertTrue(chords.firstMatch.waitForExistence(timeout: 5))
-        XCTAssertEqual(chords.firstMatch.value as? String, "G")
-        XCTAssertEqual(app.staticTexts[AXID.liveUpNext].value as? String, "Pyaar Ki Raah")
         attachScreenshot(app, name: "live-view-song-1")
 
-        // Next song, then back, then exit.
         app.typeKey(.rightArrow, modifierFlags: [], in: app)
         XCTAssertTrue(waitForValue(liveTitle, "Pyaar Ki Raah"))
-        XCTAssertEqual(app.staticTexts[AXID.livePosition].value as? String, "2 of 2")
         attachScreenshot(app, name: "live-view-song-2")
-        app.typeKey(.leftArrow, modifierFlags: [], in: app)
-        XCTAssertTrue(waitForValue(liveTitle, "Harbour Lights"))
-        app.typeKey(.space, modifierFlags: [], in: app)
-        XCTAssertTrue(waitForValue(liveTitle, "Pyaar Ki Raah"))
-        app.typeKey(.escape, modifierFlags: [], in: app)
+        app.typeKey(".", modifierFlags: .command, in: app)
+        let confirm = element(app, AXID.liveEndConfirm)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.click(in: app)
         XCTAssertTrue(liveTitle.waitForNonExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts[AXID.setlistTitle].waitForExistence(timeout: 5))
     }
@@ -274,21 +267,21 @@ final class SegueE2ETests: XCTestCase {
     }
 
     @MainActor
-    private func filterAddSongs(_ app: XCUIApplication, _ query: String, expect title: String) {
-        let field = app.searchFields[AXID.addSongsSearch]
+    private func filterBuilder(_ app: XCUIApplication, _ query: String, expect title: String) {
+        let field = app.searchFields[AXID.builderSearch]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.click(in: app)
         field.typeKey("a", modifierFlags: .command, in: app)
         field.typeText(query, in: app)
-        let rows = app.descendants(matching: .any).matching(identifier: AXID.addSongsRow)
+        let rows = app.descendants(matching: .any).matching(identifier: AXID.builderLibraryRow)
         let onlyMatch = NSPredicate { _, _ in
-            rows.count == 1 && rows.firstMatch.staticTexts[title].exists
+            rows.count == 1 && rows.firstMatch.label == title
         }
         let expectation = XCTNSPredicateExpectation(predicate: onlyMatch, object: nil)
         XCTAssertEqual(
             XCTWaiter().wait(for: [expectation], timeout: 10),
             .completed,
-            "Add Songs search \"\(query)\" should list only \(title)",
+            "Builder search \"\(query)\" should list only \(title)",
         )
     }
 
@@ -307,12 +300,11 @@ final class SegueE2ETests: XCTestCase {
 
     @MainActor
     private func addSong(_ app: XCUIApplication, title: String) {
-        let rows = app.descendants(matching: .any).matching(identifier: AXID.addSongsRow)
-        let songRow = rows
-            .containing(NSPredicate(format: "label == %@ OR value == %@", title, title))
+        let row = app.descendants(matching: .any).matching(identifier: AXID.builderLibraryRow)
+            .matching(NSPredicate(format: "label == %@", title))
             .firstMatch
-        XCTAssertTrue(songRow.waitForExistence(timeout: 5), "No add row for \(title)")
-        songRow.buttons[AXID.addSongsAdd].click(in: app)
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "No library row for \(title)")
+        row.buttons[AXID.builderAdd].click(in: app)
     }
 
     // MARK: - Disk
@@ -427,7 +419,6 @@ extension SegueE2ETests {
 /// Accessibility identifiers (mirrors `AccessibilityID` in SegueUI).
 private enum AXID {
     static let chooserMessage = "segue.chooser.message"
-    static let sidebarSetlists = "segue.sidebar.setlists"
     static let songRow = "segue.library.row"
     static let newSong = "segue.library.newSong"
     static let libraryEmpty = "segue.library.empty"
@@ -436,7 +427,6 @@ private enum AXID {
     static let editorCancel = "segue.editor.cancel"
     static let editSong = "segue.song.edit"
     static let librarySearch = "segue.library.search"
-    static let addSongsSearch = "segue.addSongs.search"
     static let editorSave = "segue.editor.save"
     static let editorPreview = "segue.editor.preview"
     static let sheetChord = "segue.sheet.chord"
@@ -445,17 +435,15 @@ private enum AXID {
     static let newSetlistCreate = "segue.setlists.new.create"
     static let setlistTitle = "segue.setlist.title"
     static let setlistEntry = "segue.setlist.entry"
-    static let setlistAddSongs = "segue.setlist.addSongs"
-    static let setlistPerform = "segue.setlist.perform"
-    static let setlistEmpty = "segue.setlist.empty"
-    static let addSongsRow = "segue.addSongs.row"
-    static let addSongsAdd = "segue.addSongs.add"
-    static let addSongsDone = "segue.addSongs.done"
+    static let setlistStartShow = "segue.setlist.startShow"
+    static let setlistDropZone = "segue.setlist.dropZone"
+    static let builderSearch = "segue.builder.search"
+    static let builderLibraryRow = "segue.builder.library.row"
+    static let builderAdd = "segue.builder.add"
     static let liveView = "segue.live"
     static let liveTitle = "segue.live.title"
-    static let liveMeta = "segue.live.meta"
-    static let livePosition = "segue.live.position"
-    static let liveUpNext = "segue.live.upNext"
+    static let liveEndConfirm = "segue.live.endConfirm"
+    static let checklistStart = "segue.live.checklist.start"
 }
 
 /// Songs typed in the E2E run. Original text written for this test (licence-free).

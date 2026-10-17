@@ -113,37 +113,24 @@
         }
     }
 
-    /// The main window once a library is open: sidebar (Library, Setlists), list, detail.
+    /// The main window once a library is open: the sidebar (Library, Gig log, setlists,
+    /// tags) beside the chosen destination (layout a: the library's song list and preview,
+    /// a setlist's builder, or the gig log).
     struct MainView: View {
         let app: AppModel
         @Bindable var session: LibrarySession
 
         var body: some View {
             NavigationSplitView {
-                List(selection: $session.sidebarSelection) {
-                    Label("Library", systemImage: "music.note.list")
-                        .tag(LibrarySession.Section.library)
-                        .accessibilityIdentifier(AccessibilityID.sidebarLibrary)
-                    Label("Setlists", systemImage: "list.number")
-                        .tag(LibrarySession.Section.setlists)
-                        .accessibilityIdentifier(AccessibilityID.sidebarSetlists)
-                }
-                .navigationSplitViewColumnWidth(min: 160, ideal: 190, max: 260)
-            } content: {
-                Group {
-                    switch session.section {
-                    case .library, nil:
-                        SongListView(model: session.library, setlists: session.setlists)
-                    case .setlists:
-                        SetlistListView(model: session.setlists)
-                    }
-                }
-                .navigationSplitViewColumnWidth(min: 240, ideal: 300, max: 420)
+                MainSidebar(session: session)
+                    .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
             } detail: {
                 detail
             }
             .safeAreaInset(edge: .bottom, spacing: 0) { errorBanner }
             .liveModePresentations(app)
+            .onChange(of: session.setlists.selection) { session.followSetlistSelection() }
+            .onChange(of: session.setlists.setlists) { session.followSetlistSelection() }
             .alert(
                 unsavedTitle,
                 isPresented: isPromptingUnsaved,
@@ -164,25 +151,6 @@
                 conflictButtons(conflict.kind)
             } message: { conflict in
                 Text(conflictMessage(conflict.kind))
-            }
-            .alert(
-                performanceTitle,
-                isPresented: isShowingPerformanceCheck,
-                presenting: app.pendingPerformance,
-            ) { check in
-                if check.songs.isEmpty {
-                    Button("OK", role: .cancel) { app.cancelPendingPerformance() }
-                } else {
-                    Button("Perform Without Them") {
-                        if app.confirmPendingPerformance() {
-                            StageWindowController.shared.present(app)
-                        }
-                    }
-                    .keyboardShortcut(.defaultAction)
-                    Button("Cancel", role: .cancel) { app.cancelPendingPerformance() }
-                }
-            } message: { check in
-                Text(performanceMessage(check))
             }
         }
 
@@ -245,43 +213,6 @@
             Task { await session.library.resolveSaveConflict(choice) }
         }
 
-        // MARK: Missing songs before Perform
-
-        private var performanceTitle: String {
-            guard let check = app.pendingPerformance else { return "" }
-            if check.songs.isEmpty {
-                return "None of the songs in “\(check.setlistName)” can be found"
-            }
-            let count = check.missingPositions.count
-            return count == 1
-                ? "1 song in “\(check.setlistName)” is missing"
-                : "\(count) songs in “\(check.setlistName)” are missing"
-        }
-
-        private func performanceMessage(_ check: AppModel.PerformanceCheck) -> String {
-            let positions = check.missingPositions.map { "#\($0)" }
-                .formatted(.list(type: .and))
-            let entries = check.missingPositions.count == 1 ? "Entry" : "Entries"
-            let gone = "\(entries) \(positions) "
-                + (check.missingPositions.count == 1 ? "is" : "are")
-                + " no longer in the library folder."
-            if check.songs.isEmpty {
-                return gone
-            }
-            return gone + " Perform the other \(songCount(check.songs.count)) without them?"
-        }
-
-        private var isShowingPerformanceCheck: Binding<Bool> {
-            Binding(
-                get: { app.pendingPerformance != nil },
-                set: { isPresented in
-                    if !isPresented {
-                        app.cancelPendingPerformance()
-                    }
-                },
-            )
-        }
-
         private var unsavedTitle: String {
             let title = session.library.pendingNavigation?.songTitle ?? "Untitled"
             return "Save changes to “\(title)”?"
@@ -306,32 +237,33 @@
         @ViewBuilder private var detail: some View {
             switch session.section {
             case .library, nil:
-                LibraryDetailView(model: session.library)
-            case .setlists:
-                if let setlist = session.setlists.selected {
-                    SetlistDetailView(
+                LibraryPane(model: session.library, setlists: session.setlists)
+            case .gigLog:
+                GigLogPane(model: session.gigLog)
+            case let .setlist(id):
+                if let setlist = session.setlists.setlist(id) {
+                    SetlistBuilderView(
                         setlist: setlist,
                         model: session.setlists,
                         library: session.library,
-                    ) { setlist in
-                        Task {
-                            if await app.perform(setlist) {
-                                StageWindowController.shared.present(app)
-                            }
-                        }
+                    ) { setlist, kind in
+                        Task { await app.startShow(setlist, kind: kind) }
                     }
+                    .id(id)
                 } else {
                     ContentUnavailableView(
-                        "No Setlist Selected",
+                        "Setlist Not Found",
                         systemImage: "list.number",
-                        description: Text("Choose a setlist, or create a new one."),
+                        description: Text("It may have been deleted. Choose another setlist."),
                     )
                 }
             }
         }
 
         @ViewBuilder private var errorBanner: some View {
-            if let message = session.library.errorMessage ?? session.setlists.errorMessage {
+            if let message = session.library.errorMessage ?? session.setlists.errorMessage
+                ?? session.gigLog.errorMessage
+            {
                 HStack(spacing: 10) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .symbolRenderingMode(.multicolor)
@@ -341,6 +273,7 @@
                     Button("Dismiss") {
                         session.library.errorMessage = nil
                         session.setlists.errorMessage = nil
+                        session.gigLog.errorMessage = nil
                     }
                     .buttonStyle(.segueSecondary)
                     .controlSize(.small)

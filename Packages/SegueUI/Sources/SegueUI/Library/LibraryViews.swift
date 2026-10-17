@@ -3,57 +3,83 @@
     import Setlists
     import SwiftUI
 
-    /// The Library column: searchable song list with a "New Song" action.
-    struct SongListView: View {
+    /// The Library destination (layout a, "three pane"): the song list column beside the
+    /// selected song's preview (or its editor). The sidebar is the window's first pane.
+    struct LibraryPane: View {
         @Bindable var model: LibraryViewModel
         let setlists: SetlistsViewModel
-        @State private var isShowingLoadIssues = false
 
         var body: some View {
-            List(selection: $model.listSelection) {
-                ForEach(model.results) { record in
-                    SongRow(record: record)
-                        .tag(record.id)
-                        .contextMenu { addToSetlistMenu(record) }
+            GeometryReader { proxy in
+                HStack(spacing: 0) {
+                    SongListView(model: model, setlists: setlists)
+                        // Layout a gives the list 420 of 1440pt; small windows keep the
+                        // preview (or editor) the wider pane.
+                        .frame(width: min(max(proxy.size.width * 0.32, 290), 420))
+                    Rule(axis: .vertical)
+                    LibraryDetailView(model: model, setlists: setlists)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .accessibilityIdentifier(AccessibilityID.songList)
-            .overlay { emptyState }
-            .safeAreaInset(edge: .bottom, spacing: 0) { loadIssuesFooter }
-            // Search belongs to this column (it filters this list), not the window toolbar.
-            .safeAreaBar(edge: .top) {
-                SearchField(
-                    text: $model.query,
-                    prompt: "Search songs",
-                    accessibilityIdentifier: AccessibilityID.librarySearch,
-                )
-                .padding(.horizontal, 12)
-                .padding(.top, 2)
-                .padding(.bottom, 8)
-            }
             .navigationTitle("Library")
-            .navigationSubtitle(subtitle)
+            // The editor sets its own title; a song count under it would read as its own.
+            .navigationSubtitle(model.editor == nil ? songCount(model.catalog.count) : "")
             .toolbar {
-                ToolbarItem(placement: .automatic) {
+                ToolbarItem(placement: .navigation) {
                     Button("Refresh", systemImage: "arrow.clockwise") {
                         Task { await model.refresh() }
                     }
                     .help("Pick up changes made in other apps (⌘R)")
                     .accessibilityIdentifier(AccessibilityID.refreshLibrary)
                 }
-                ToolbarItem(placement: .primaryAction) {
-                    Button("New Song", systemImage: "square.and.pencil") {
-                        model.beginNewSong()
-                    }
-                    .help("New Song (⌘N)")
-                    .accessibilityIdentifier(AccessibilityID.newSong)
-                }
             }
         }
+    }
 
-        private var subtitle: String {
-            let count = model.catalog.count
-            return count == 1 ? "1 song" : "\(count) songs"
+    /// The song list column: search with typed filter tokens, filter chips, "New song",
+    /// then one row per song (key chip, proficiency mark).
+    struct SongListView: View {
+        @Bindable var model: LibraryViewModel
+        let setlists: SetlistsViewModel
+        @State private var isShowingLoadIssues = false
+
+        var body: some View {
+            VStack(spacing: 0) {
+                header
+                Rule()
+                List(selection: $model.listSelection) {
+                    ForEach(model.results) { record in
+                        SongRow(record: record, stats: model.playStats[record.id])
+                            .tag(record.id)
+                            .contextMenu { addToSetlistMenu(record) }
+                    }
+                }
+                .listStyle(.plain)
+                .accessibilityIdentifier(AccessibilityID.songList)
+                .overlay { emptyState }
+                .safeAreaInset(edge: .bottom, spacing: 0) { loadIssuesFooter }
+            }
+            .background(Theme.color.ground)
+        }
+
+        private var header: some View {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    SearchField(
+                        text: $model.query,
+                        prompt: "Search or filter: ready, upbeat, key G",
+                        accessibilityIdentifier: AccessibilityID.librarySearch,
+                    )
+                    Button("New song") { model.beginNewSong() }
+                        .buttonStyle(.seguePrimary)
+                        .help("New Song (⌘N)")
+                        .accessibilityIdentifier(AccessibilityID.newSong)
+                }
+                FilterChipsBar(state: $model.filterState, tags: model.tags)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 12)
         }
 
         @ViewBuilder private var loadIssuesFooter: some View {
@@ -92,7 +118,11 @@
                     .accessibilityIdentifier(AccessibilityID.librarySearching)
             } else if model.results.isEmpty, !model.isSearching {
                 if model.isFiltering {
-                    ContentUnavailableView.search(text: model.query)
+                    ContentUnavailableView(
+                        "No Matches",
+                        systemImage: "magnifyingglass",
+                        description: Text("No song matches the search and filters."),
+                    )
                 } else if model.catalog.isEmpty {
                     ContentUnavailableView {
                         Label("No Songs Yet", systemImage: "music.note")
@@ -151,42 +181,72 @@
         }
     }
 
+    /// A song row (layout a): title and artist, the key chip and the proficiency mark.
     private struct SongRow: View {
         let record: SongRecord
+        let stats: PlayStats?
+        /// `.increased` while the row is selected (on the accent highlight).
+        @Environment(\.backgroundProminence) private var prominence
+
+        private var isHighlighted: Bool {
+            prominence == .increased
+        }
 
         var body: some View {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(SongSummary.title(record))
-                        .font(.body.weight(.semibold))
-                        .lineLimit(1)
-                    if record.isReadOnly {
-                        Image(systemName: "lock.fill")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .help("Read-only")
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(SongSummary.title(record))
+                            .font(SchibstedGrotesk.semiBold.font(size: 15))
+                            .foregroundStyle(isHighlighted ? Color.white : Theme.color.ink)
+                            .lineLimit(1)
+                        if record.isReadOnly {
+                            Image(systemName: "lock.fill")
+                                .font(.caption)
+                                .foregroundStyle(isHighlighted ? Color.white : Theme.color.muted)
+                                .help("Read-only")
+                        }
+                    }
+                    if !detail.isEmpty {
+                        Text(detail)
+                            .font(SchibstedGrotesk.medium.font(size: 13))
+                            .foregroundStyle(isHighlighted ? Color.white.opacity(0.8) : Theme.color
+                                .muted)
+                            .lineLimit(1)
                     }
                 }
-                let detail = [
-                    SongSummary.artist(record.document.metadata),
-                    SongSummary.performanceLine(record.document.metadata),
-                ].compactMap(\.self).joined(separator: "  ·  ")
-                if !detail.isEmpty {
-                    Text(detail)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                if let key = SongSummary.writtenKey(record) {
+                    KeyChip(key: key)
                 }
+                Group {
+                    if let level = record.sidecar.proficiency {
+                        ProficiencyMark(level)
+                    } else {
+                        Color.clear
+                    }
+                }
+                .frame(width: 82, height: 16, alignment: .leading)
             }
-            .padding(.vertical, 3)
+            .padding(.vertical, 6)
+            // On the selection highlight the token colours would not read; white does.
+            .environment(\.onHighlight, isHighlighted)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier(AccessibilityID.songRow)
+        }
+
+        private var detail: String {
+            [
+                SongSummary.artist(record.document.metadata),
+                stats.map { SongSummary.timesPlayed($0.timesPlayed) },
+            ].compactMap(\.self).joined(separator: "  ·  ")
         }
     }
 
     /// The Library detail pane: the selected song, its editor, or the new-song editor.
     struct LibraryDetailView: View {
         let model: LibraryViewModel
+        let setlists: SetlistsViewModel
 
         var body: some View {
             switch model.detail {
@@ -200,7 +260,7 @@
                 if let editor = model.editor, editor.mode == .edit(id) {
                     editorView(editor)
                 } else if let record = model.song(id: id) {
-                    SongDetailPane(model: model, record: record)
+                    SongDetailPane(model: model, setlists: setlists, record: record)
                         .id(id)
                 } else {
                     noSelection
@@ -241,62 +301,6 @@
                 systemImage: "music.note.list",
                 description: Text("Choose a song from the list, or create a new one."),
             )
-        }
-    }
-
-    private struct SongDetailPane: View {
-        let model: LibraryViewModel
-        let record: SongRecord
-
-        var body: some View {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    if let reason = record.readOnly {
-                        notice(UserMessage.readOnlyText(reason), systemImage: "lock.fill")
-                    }
-                    if record.hasDerivedID {
-                        notice(
-                            "Segue could not read this song's ID from its metadata file, so "
-                                + "setlists lose track of it if the file is renamed.",
-                            systemImage: "link.badge.plus",
-                        )
-                    }
-                    // The song as its display toggles render it (transpose, capo, Nashville,
-                    // diagrams), the same model the editor and the stage use.
-                    SongPageView(
-                        model: SongSummary.renderModel(record, userShapes: model.userShapes),
-                        fallbackTitle: SongSummary.title(record),
-                    )
-                }
-                .padding(.horizontal, 32)
-                .padding(.vertical, 28)
-                .frame(maxWidth: 820, alignment: .leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .background(Theme.color.ground)
-            .navigationTitle(SongSummary.title(record))
-            .toolbar { editButton }
-        }
-
-        private func notice(_ text: String, systemImage: String) -> some View {
-            Label(text, systemImage: systemImage)
-                .font(.callout)
-                .foregroundStyle(Theme.color.muted)
-                .padding(10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.color.surfaceAlt, in: RoundedRectangle(cornerRadius: 8))
-        }
-
-        @ToolbarContentBuilder private var editButton: some ToolbarContent {
-            ToolbarSpacer(.flexible)
-            ToolbarItem(placement: .automatic) {
-                Button("Edit", systemImage: "pencil") {
-                    model.beginEditing(record)
-                }
-                .help(record.isReadOnly ? "This song is read-only" : "Edit ChordPro")
-                .disabled(record.isReadOnly)
-                .accessibilityIdentifier(AccessibilityID.editSong)
-            }
         }
     }
 #endif

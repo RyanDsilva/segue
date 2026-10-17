@@ -14,7 +14,9 @@
         /// Sidebar destinations of the main window.
         public enum Section: Hashable {
             case library
-            case setlists
+            case gigLog
+            /// The builder of one setlist.
+            case setlist(SetlistID)
         }
 
         public let root: LibraryRoot
@@ -23,6 +25,9 @@
             didSet {
                 if sidebarSelection != section {
                     sidebarSelection = section
+                }
+                if case let .setlist(id) = section, setlists.selection != id {
+                    setlists.selection = id
                 }
             }
         }
@@ -45,6 +50,7 @@
 
         public let library: LibraryViewModel
         public let setlists: SetlistsViewModel
+        public let gigLog: GigLogViewModel
         /// The stores behind the view models, for the live session (phase 2, unit C) and the
         /// gig log (unit D).
         public let stores: LibraryStores
@@ -59,6 +65,21 @@
             self.library = library
             self.setlists = setlists
             self.stores = stores
+            gigLog = GigLogViewModel(shows: stores.shows) { [library] in
+                await library.reload()
+            }
+        }
+
+        /// Shows the builder of the setlist selected in `setlists` (after create or
+        /// duplicate), or leaves a builder whose setlist is gone.
+        public func followSetlistSelection() {
+            if let id = setlists.selection {
+                if section != .setlist(id) {
+                    library.navigate { [weak self] in self?.section = .setlist(id) }
+                }
+            } else if case let .setlist(id) = section, setlists.setlist(id) == nil {
+                section = .library
+            }
         }
 
         static func open(root: LibraryRoot, dependencies: AppDependencies) async throws
