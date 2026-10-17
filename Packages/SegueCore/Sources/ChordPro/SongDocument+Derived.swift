@@ -139,11 +139,14 @@ extension Metadata {
         case "tempo": tempo = tempo ?? Self.parseTempo(value)
         case "time": time = time ?? value
         case "title": title = title ?? value
-        default:
-            if Self.extraNames.contains(name) {
-                extra[name, default: []].append(value)
-            }
+        default: addExtra(name: name, value: value)
         }
+    }
+
+    /// Collects a known non-core metadata directive; unknown names are ignored.
+    private mutating func addExtra(name: String, value: String) {
+        guard Self.extraNames.contains(name) else { return }
+        extra[name, default: []].append(value)
     }
 
     /// `{meta: name value}`.

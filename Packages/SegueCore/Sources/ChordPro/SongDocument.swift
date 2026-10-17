@@ -237,7 +237,7 @@ public enum LineEnding: String, Sendable, Equatable, Hashable {
     case lf = "\n"
     case crlf = "\r\n"
     /// Last line of a file without a trailing newline.
-    case none = ""
+    case endOfFile = ""
 }
 
 /// The original source spelling of one line: its exact text (directive alias, separator,
@@ -257,7 +257,7 @@ public struct Trivia: Sendable, Hashable {
         self.lineEnding = lineEnding
     }
 
-    public static func == (_: Trivia, _: Trivia) -> Bool {
+    public static func == (_: Self, _: Self) -> Bool {
         true
     }
 

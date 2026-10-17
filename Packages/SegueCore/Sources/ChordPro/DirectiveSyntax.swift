@@ -70,47 +70,66 @@ enum DirectiveSyntax {
         return index
     }
 
+    /// First index in `start ..< end` that is not a space or tab, else `end`.
+    private static func skipSpace(
+        _ utf8: Substring.UTF8View,
+        from start: Substring.UTF8View.Index,
+        to end: Substring.UTF8View.Index,
+    ) -> Substring.UTF8View.Index {
+        var index = start
+        while index < end, isSpace(utf8[index]) {
+            index = utf8.index(after: index)
+        }
+        return index
+    }
+
+    /// End of `start ..< end` with trailing spaces and tabs removed (never before `start`).
+    private static func trimTrailingSpace(
+        _ utf8: Substring.UTF8View,
+        from start: Substring.UTF8View.Index,
+        to end: Substring.UTF8View.Index,
+    ) -> Substring.UTF8View.Index {
+        var index = end
+        while index > start, isSpace(utf8[utf8.index(before: index)]) {
+            index = utf8.index(before: index)
+        }
+        return index
+    }
+
+    /// Start of the value after a name: skips whitespace, at most one `:`, and whitespace.
+    private static func skipSeparator(
+        _ utf8: Substring.UTF8View,
+        from start: Substring.UTF8View.Index,
+        to end: Substring.UTF8View.Index,
+    ) -> Substring.UTF8View.Index {
+        let index = skipSpace(utf8, from: start, to: end)
+        guard index < end, utf8[index] == colon else { return index }
+        return skipSpace(utf8, from: utf8.index(after: index), to: end)
+    }
+
     /// Splits a line of the form `ws "{" ... "}" ws` into its pieces; `nil` if the line is
     /// not shaped like a directive. The name may be empty (the caller diagnoses that).
     static func lex(_ line: Substring) -> DirectiveSpelling? {
         let utf8 = line.utf8
         let open = skipLeadingSpace(utf8)
         guard open < utf8.endIndex, utf8[open] == openBrace else { return nil }
-        var afterClose = utf8.endIndex
-        while afterClose > open, isSpace(utf8[utf8.index(before: afterClose)]) {
-            afterClose = utf8.index(before: afterClose)
-        }
+        let afterClose = trimTrailingSpace(utf8, from: open, to: utf8.endIndex)
         guard afterClose > open else { return nil }
         let close = utf8.index(before: afterClose)
         guard close > open, utf8[close] == closeBrace else { return nil }
 
-        var cursor = utf8.index(after: open)
-        let innerStart = cursor
-        while cursor < close, isSpace(utf8[cursor]) {
-            cursor = utf8.index(after: cursor)
+        let innerStart = utf8.index(after: open)
+        let nameStart = skipSpace(utf8, from: innerStart, to: close)
+        var nameEnd = nameStart
+        while nameEnd < close, !isSpace(utf8[nameEnd]), utf8[nameEnd] != colon {
+            nameEnd = utf8.index(after: nameEnd)
         }
-        let nameStart = cursor
-        while cursor < close, !isSpace(utf8[cursor]), utf8[cursor] != colon {
-            cursor = utf8.index(after: cursor)
-        }
-        let nameEnd = cursor
-        var coreEnd = close
-        while coreEnd > nameEnd, isSpace(utf8[utf8.index(before: coreEnd)]) {
-            coreEnd = utf8.index(before: coreEnd)
-        }
+        let coreEnd = trimTrailingSpace(utf8, from: nameEnd, to: close)
 
         var valueStart = nameEnd
         var value: Substring?
         if nameEnd < coreEnd {
-            while valueStart < coreEnd, isSpace(utf8[valueStart]) {
-                valueStart = utf8.index(after: valueStart)
-            }
-            if valueStart < coreEnd, utf8[valueStart] == colon {
-                valueStart = utf8.index(after: valueStart)
-                while valueStart < coreEnd, isSpace(utf8[valueStart]) {
-                    valueStart = utf8.index(after: valueStart)
-                }
-            }
+            valueStart = skipSeparator(utf8, from: nameEnd, to: coreEnd)
             value = line[valueStart ..< coreEnd]
         }
         return DirectiveSpelling(

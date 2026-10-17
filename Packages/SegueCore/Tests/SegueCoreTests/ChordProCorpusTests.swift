@@ -17,16 +17,23 @@ struct ChordProCorpusTests {
     static let expectations: [String: Expectation] = [
         "basic-verse-chorus.cho": Expectation(
             metadata: Metadata(
-                title: "Lanterns on the Water", artists: ["The Quiet Harbour"], key: "G",
-                capo: 2, tempo: 92, time: "4/4", duration: 225,
+                title: "Lanterns on the Water",
+                artists: ["The Quiet Harbour"],
+                key: "G",
+                capo: 2,
+                tempo: 92,
+                time: "4/4",
+                duration: 225,
             ),
             sectionLabels: ["Verse 1", nil, "Verse 2", "Chorus", nil, "Final Chorus"],
             lyricLine: "Lanterns on the water, drifting out to the bay",
         ),
         "hindi-dil-kabhie.cho": Expectation(
             metadata: Metadata(
-                title: "Dil Kabhie Na Bhoole", subtitle: "ek purani yaad",
-                artists: ["Fixture Sangeet"], key: "D",
+                title: "Dil Kabhie Na Bhoole",
+                subtitle: "ek purani yaad",
+                artists: ["Fixture Sangeet"],
+                key: "D",
             ),
             sectionLabels: [nil, "Mukhda", nil, "Mukhda"],
             lyricLine: "Kabhie hansi, kabhie aansu, dil ne sab sambhaal ke rakhe",
@@ -105,7 +112,7 @@ struct ChordProCorpusTests {
     }
 
     @Test
-    func `300-line song parses in under 5 ms`() throws {
+    func `a 300-line song parses in under 5 ms`() throws {
         let verse = try Self.load("hindi-pyaar-ki-raah.cho")
         var source = ""
         var lineCount = 0

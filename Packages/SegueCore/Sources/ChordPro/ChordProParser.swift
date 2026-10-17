@@ -17,7 +17,7 @@ public enum ChordProParser {
             lineNumber += 1
             let newline = utf8[lineStart...].firstIndex(of: UInt8(ascii: "\n"))
             var contentEnd = newline ?? utf8.endIndex
-            var ending = LineEnding.none
+            var ending = LineEnding.endOfFile
             if let newline {
                 ending = .lf
                 if newline > lineStart, utf8[utf8.index(before: newline)] == UInt8(ascii: "\r") {
@@ -99,37 +99,9 @@ private struct DocumentBuilder {
         let value = spelling.value.map(String.init)
         switch DirectiveSyntax.meaning(of: spelling.name) {
         case let .sectionStart(kind):
-            if let open = openSection {
-                diagnose(
-                    line, column,
-                    "Section '\(Self.startName(open.kind))' is not closed before a new section starts",
-                )
-                closeOpenSection()
-            }
-            var section = Section(kind: kind, label: value)
-            section.startTrivia = trivia
-            openSection = section
-            openSectionLine = line
+            startSection(kind, label: value, trivia: trivia, line: line, column: column)
         case let .sectionEnd(kind):
-            guard let open = openSection else {
-                diagnose(line, column, "'\(spelling.name)' has no matching section start")
-                var stray = Directive(
-                    name: DirectiveSyntax.canonicalName(spelling.name),
-                    value: value,
-                )
-                stray.trivia = trivia
-                return append(.directive(stray))
-            }
-            if DirectiveSyntax.kindName(open.kind).lowercased()
-                != DirectiveSyntax.kindName(kind).lowercased()
-            {
-                diagnose(
-                    line, column,
-                    "'\(spelling.name)' does not match the open '\(Self.startName(open.kind))'",
-                )
-            }
-            openSection?.endTrivia = trivia
-            closeOpenSection()
+            endSection(kind, spelling: spelling, trivia: trivia, line: line, column: column)
         case .chorus:
             var ref = ChorusRef(label: value)
             ref.trivia = trivia
@@ -146,6 +118,57 @@ private struct DocumentBuilder {
             directive.trivia = trivia
             append(.directive(directive))
         }
+    }
+
+    private mutating func startSection(
+        _ kind: SectionKind,
+        label: String?,
+        trivia: Trivia,
+        line: Int,
+        column: Int,
+    ) {
+        if let open = openSection {
+            let openName = Self.startName(open.kind)
+            diagnose(
+                line,
+                column,
+                "Section '\(openName)' is not closed before a new section starts",
+            )
+            closeOpenSection()
+        }
+        var section = Section(kind: kind, label: label)
+        section.startTrivia = trivia
+        openSection = section
+        openSectionLine = line
+    }
+
+    private mutating func endSection(
+        _ kind: SectionKind,
+        spelling: DirectiveSpelling,
+        trivia: Trivia,
+        line: Int,
+        column: Int,
+    ) {
+        guard let open = openSection else {
+            diagnose(line, column, "'\(spelling.name)' has no matching section start")
+            var stray = Directive(
+                name: DirectiveSyntax.canonicalName(spelling.name),
+                value: spelling.value.map(String.init),
+            )
+            stray.trivia = trivia
+            return append(.directive(stray))
+        }
+        if DirectiveSyntax.kindName(open.kind).lowercased()
+            != DirectiveSyntax.kindName(kind).lowercased()
+        {
+            diagnose(
+                line,
+                column,
+                "'\(spelling.name)' does not match the open '\(Self.startName(open.kind))'",
+            )
+        }
+        openSection?.endTrivia = trivia
+        closeOpenSection()
     }
 
     private mutating func append(_ block: Block) {

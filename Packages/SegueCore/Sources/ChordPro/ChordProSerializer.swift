@@ -51,7 +51,8 @@ public enum ChordProSerializer {
     private static func write(_ section: Section, to writer: inout LineWriter) {
         let kind = DirectiveSyntax.kindName(section.kind)
         let start = directiveText(
-            name: DirectiveSyntax.startPrefix + kind, value: section.label,
+            name: DirectiveSyntax.startPrefix + kind,
+            value: section.label,
             trivia: section.startTrivia,
         ) { $0.map(String.init) == section.label }
         writer.emit(start, section.startTrivia)
@@ -102,30 +103,29 @@ public enum ChordProSerializer {
         return text + spelling.innerTrailing + "}" + spelling.trailing
     }
 
+    /// The first line ending recorded anywhere in `blocks`, ignoring end-of-file ones.
     private static func defaultEnding(of blocks: [Block]) -> LineEnding? {
-        for block in blocks {
-            let trivia: Trivia
-            switch block {
-            case let .blank(blank): trivia = blank.trivia
-            case let .chorusRef(ref): trivia = ref.trivia
-            case let .commentDirective(comment): trivia = comment.trivia
-            case let .directive(directive): trivia = directive.trivia
-            case let .fileComment(comment): trivia = comment.trivia
-            case let .line(line): trivia = line.trivia
-            case let .section(section):
-                if let ending = section.startTrivia.lineEnding, ending != .none {
-                    return ending
-                }
-                if let ending = defaultEnding(of: section.items) {
-                    return ending
-                }
-                trivia = section.endTrivia
-            }
-            if let ending = trivia.lineEnding, ending != .none {
-                return ending
-            }
+        blocks.lazy.compactMap(firstEnding(in:)).first
+    }
+
+    private static func firstEnding(in block: Block) -> LineEnding? {
+        switch block {
+        case let .blank(blank): explicitEnding(blank.trivia)
+        case let .chorusRef(ref): explicitEnding(ref.trivia)
+        case let .commentDirective(comment): explicitEnding(comment.trivia)
+        case let .directive(directive): explicitEnding(directive.trivia)
+        case let .fileComment(comment): explicitEnding(comment.trivia)
+        case let .line(line): explicitEnding(line.trivia)
+        case let .section(section):
+            explicitEnding(section.startTrivia)
+                ?? defaultEnding(of: section.items)
+                ?? explicitEnding(section.endTrivia)
         }
-        return nil
+    }
+
+    private static func explicitEnding(_ trivia: Trivia) -> LineEnding? {
+        guard let ending = trivia.lineEnding, ending != .endOfFile else { return nil }
+        return ending
     }
 }
 
@@ -147,7 +147,7 @@ private struct LineWriter {
         }
         text += line
         let ending = trivia.lineEnding ?? defaultEnding
-        if ending == .none {
+        if ending == .endOfFile {
             owesEnding = true
         } else {
             text += ending.rawValue
