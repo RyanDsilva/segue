@@ -70,8 +70,9 @@
                             .lineLimit(1)
                             .accessibilityIdentifier(AccessibilityID.liveTitle)
                     }
-                    if let line = model.current.flatMap({
-                        SongSummary.performanceLine($0.document.metadata)
+                    if let line = model.current.flatMap({ song in
+                        let rendered = SongSummary.renderModel(song, showDiagrams: false)
+                        return SongSummary.performanceLine(rendered)
                     }) {
                         Text(line)
                             .font(Theme.font.body)
@@ -118,7 +119,8 @@
 
         @ViewBuilder
         private func songBody(_ song: SongRecord) -> some View {
-            let sections = song.document.displaySections
+            // The song as its display toggles render it (transpose, capo, Nashville).
+            let sections = SongSummary.renderModel(song, showDiagrams: false).sections
             if sections.isEmpty {
                 Text("This song has no lyrics yet.")
                     .font(Theme.font.liveLyric(size: SongSheetStyle.stage.lyricSize))

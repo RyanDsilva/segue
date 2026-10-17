@@ -10,6 +10,8 @@ import SwiftUI
 /// declare scenes. Everything else lives in SegueUI / SegueCore.
 @main
 struct SegueApp: App {
+    /// Asks before quitting with unsaved edits.
+    @NSApplicationDelegateAdaptor(SegueAppDelegate.self) private var appDelegate
     @State private var app: AppModel
     private let plugins: PluginRegistry
 
@@ -30,6 +32,7 @@ struct SegueApp: App {
             ids: ULIDGenerator(clock: clock),
             location: LibraryLocation(defaults: defaults),
             libraryOverride: options.libraryPath,
+            rememberLibraryOverride: options.rememberLibrary,
         )
         _app = State(initialValue: AppModel(dependencies: dependencies))
     }

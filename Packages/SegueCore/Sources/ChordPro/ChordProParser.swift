@@ -7,6 +7,9 @@
 ///   produced no structural diagnostics, and serialization is idempotent for any input.
 /// - Parsing a 300-line song takes < 5 ms.
 public enum ChordProParser {
+    private static let lineFeed = UInt8(ascii: "\n")
+    private static let carriageReturn = UInt8(ascii: "\r")
+
     /// Parses ChordPro source into an AST plus diagnostics.
     public static func parse(_ source: String) -> (SongDocument, [Diagnostic]) {
         var builder = DocumentBuilder()
@@ -15,18 +18,24 @@ public enum ChordProParser {
         var lineNumber = 0
         while lineStart < utf8.endIndex {
             lineNumber += 1
-            let newline = utf8[lineStart...].firstIndex(of: UInt8(ascii: "\n"))
-            var contentEnd = newline ?? utf8.endIndex
+            // A line ends at "\n", "\r\n" or a lone "\r" (classic Mac OS files).
+            let lineBreak = utf8[lineStart...].firstIndex { $0 == lineFeed || $0 == carriageReturn }
             var ending = LineEnding.endOfFile
-            if let newline {
-                ending = .lf
-                if newline > lineStart, utf8[utf8.index(before: newline)] == UInt8(ascii: "\r") {
+            var nextLine = utf8.endIndex
+            if let lineBreak {
+                nextLine = utf8.index(after: lineBreak)
+                if utf8[lineBreak] == lineFeed {
+                    ending = .lf
+                } else if nextLine < utf8.endIndex, utf8[nextLine] == lineFeed {
                     ending = .crlf
-                    contentEnd = utf8.index(before: newline)
+                    nextLine = utf8.index(after: nextLine)
+                } else {
+                    ending = .cr
                 }
             }
+            let contentEnd = lineBreak ?? utf8.endIndex
             builder.consume(source[lineStart ..< contentEnd], ending: ending, line: lineNumber)
-            lineStart = newline.map { utf8.index(after: $0) } ?? utf8.endIndex
+            lineStart = nextLine
         }
         return builder.finish()
     }

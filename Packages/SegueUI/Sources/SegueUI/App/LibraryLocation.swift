@@ -21,10 +21,26 @@
         static let bookmarkKey = "libraryFolderBookmark"
 
         private let defaults: UserDefaults
+        private let makeBookmark: @MainActor (URL) throws -> Data
         private var accessedURL: URL?
 
-        public init(defaults: UserDefaults) {
+        public convenience init(defaults: UserDefaults) {
+            self.init(defaults: defaults, makeBookmark: Self.securityScopedBookmark)
+        }
+
+        /// - Parameter makeBookmark: creates the bookmark data for a folder (tests inject
+        ///   failures here).
+        init(defaults: UserDefaults, makeBookmark: @escaping @MainActor (URL) throws -> Data) {
             self.defaults = defaults
+            self.makeBookmark = makeBookmark
+        }
+
+        static func securityScopedBookmark(for url: URL) throws -> Data {
+            try url.bookmarkData(
+                options: [.withSecurityScope],
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil,
+            )
         }
 
         /// The suggested library location, `~/Music/Segue` (decisions.md). Uses the real home
@@ -79,11 +95,7 @@
         /// Persists `url` as the library folder. The caller must have access to it (it came
         /// from an open/save panel or a resolved bookmark).
         public func remember(_ url: URL) throws {
-            let data = try url.bookmarkData(
-                options: [.withSecurityScope],
-                includingResourceValuesForKeys: nil,
-                relativeTo: nil,
-            )
+            let data = try makeBookmark(url)
             defaults.set(data, forKey: Self.bookmarkKey)
         }
 

@@ -14,6 +14,9 @@
         public var location: LibraryLocation
         /// Test-only library folder (`-SegueLibraryPath`): bypasses the bookmark and the panels.
         public var libraryOverride: URL?
+        /// Test-only (`-SegueRememberLibrary`): also store `libraryOverride` as the library
+        /// bookmark, so a later launch without the override exercises the stored-bookmark path.
+        public var rememberLibraryOverride: Bool
 
         public init(
             fileSystem: any FileSystem,
@@ -21,12 +24,14 @@
             ids: any IDGenerator,
             location: LibraryLocation,
             libraryOverride: URL? = nil,
+            rememberLibraryOverride: Bool = false,
         ) {
             self.fileSystem = fileSystem
             self.clock = clock
             self.ids = ids
             self.location = location
             self.libraryOverride = libraryOverride
+            self.rememberLibraryOverride = rememberLibraryOverride
         }
     }
 
@@ -57,6 +62,18 @@
         public private(set) var state: State = .starting
         /// The open performance, shown in the live window while non-nil.
         public var live: LiveViewModel?
+        /// A performance waiting on the user's answer to "some songs are missing"; non-nil
+        /// while that prompt is shown.
+        public private(set) var pendingPerformance: PerformanceCheck?
+
+        /// A setlist about to be performed with entries whose songs are gone.
+        public struct PerformanceCheck: Equatable {
+            public let setlistName: String
+            /// 1-based positions of the entries whose song is no longer in the library.
+            public let missingPositions: [Int]
+            /// The songs that can be performed, in setlist order.
+            public let songs: [SongRecord]
+        }
 
         private let dependencies: AppDependencies
 
@@ -77,7 +94,7 @@
         public func start() async {
             guard case .starting = state else { return }
             if let override = dependencies.libraryOverride {
-                await open(override, remember: false)
+                await open(override, remember: dependencies.rememberLibraryOverride)
                 return
             }
             switch dependencies.location.resolveStored() {
@@ -139,9 +156,17 @@
                     dependencies: dependencies,
                 )
                 if remember {
-                    try dependencies.location.remember(url)
+                    do {
+                        try dependencies.location.remember(url)
+                    } catch {
+                        // The library is open and usable; only the next launch is affected.
+                        session.library.errorMessage = "Segue opened “\(url.lastPathComponent)” "
+                            + "but could not remember it (\(UserMessage.describe(error))). "
+                            + "You will be asked to choose it again next time."
+                    }
                 }
                 live = nil
+                pendingPerformance = nil
                 state = .ready(session)
                 return true
             } catch {
@@ -157,13 +182,53 @@
             }
         }
 
-        /// Starts performing `setlist` in the live window.
-        public func perform(_ setlist: Setlist) {
-            guard let session else { return }
-            live = LiveViewModel(
-                setlistName: setlist.name,
-                songs: setlist.entries.compactMap { session.library.song(id: $0.songId) },
-            )
+        /// Whether the stage is up (library commands are disabled meanwhile).
+        public var isPerforming: Bool {
+            live != nil
+        }
+
+        /// Prepares to perform `setlist`: rescans the library so the stage shows the songs
+        /// as they are on disk now, then starts the performance and returns true (the caller
+        /// presents the stage). When entries point at songs that are gone, nothing starts:
+        /// the check is held in `pendingPerformance` for the user to confirm, and it returns
+        /// false.
+        public func perform(_ setlist: Setlist) async -> Bool {
+            guard let session, live == nil else { return false }
+            await session.library.refresh()
+            var songs: [SongRecord] = []
+            var missing: [Int] = []
+            for (offset, entry) in setlist.entries.enumerated() {
+                if let song = session.library.song(id: entry.songId) {
+                    songs.append(song)
+                } else {
+                    missing.append(offset + 1)
+                }
+            }
+            guard missing.isEmpty else {
+                pendingPerformance = PerformanceCheck(
+                    setlistName: setlist.name,
+                    missingPositions: missing,
+                    songs: songs,
+                )
+                return false
+            }
+            live = LiveViewModel(setlistName: setlist.name, songs: songs)
+            return true
+        }
+
+        /// "Perform Without Them": starts the held performance with the songs that remain.
+        /// Returns true when the caller should present the stage.
+        public func confirmPendingPerformance() -> Bool {
+            guard let check = pendingPerformance else { return false }
+            pendingPerformance = nil
+            guard !check.songs.isEmpty, live == nil else { return false }
+            live = LiveViewModel(setlistName: check.setlistName, songs: check.songs)
+            return true
+        }
+
+        /// Drops the held performance.
+        public func cancelPendingPerformance() {
+            pendingPerformance = nil
         }
     }
 

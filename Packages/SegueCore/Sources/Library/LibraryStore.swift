@@ -10,6 +10,33 @@ public enum LibraryError: Error, Equatable {
     case songNotFound(SongID)
     /// The song is read-only and cannot be edited.
     case readOnly(SongID, ReadOnlyReason)
+    /// The song's files changed on disk since the revision the edit was based on; nothing
+    /// was written. The caller decides: reload, overwrite (`overwriteSong`) or save a copy.
+    case conflict(SongID, SongConflict)
+}
+
+/// How a song's files changed under an edit (see `LibraryError.conflict`).
+public enum SongConflict: Sendable, Equatable {
+    /// The `.cho` was edited outside Segue.
+    case sourceChanged
+    /// The `.cho` was deleted (or renamed) outside Segue.
+    case deleted
+    /// The sidecar changed into something that can't be merged (unreadable, newer schema
+    /// or another song's ID).
+    case metadataChanged
+}
+
+/// A file under `songs/` that could not be loaded (or given a sidecar). Reported, never
+/// deleted; the rest of the library still opens.
+public struct LibraryLoadIssue: Sendable, Equatable {
+    /// Path relative to the library root.
+    public var relativePath: String
+    public var message: String
+
+    public init(relativePath: String, message: String) {
+        self.relativePath = relativePath
+        self.message = message
+    }
 }
 
 /// Outcome of a `refresh()` scan, for UI feedback and tests.
@@ -44,6 +71,9 @@ public actor LibraryStore {
 
     private var library: OpenLibrary?
 
+    /// Files the last scan could not load, by path. Shown in the UI; never fatal.
+    public private(set) var loadIssues: [LibraryLoadIssue] = []
+
     public init(fileSystem: any FileSystem, clock: any Clock, ids: any IDGenerator) {
         self.fileSystem = fileSystem
         self.clock = clock
@@ -63,6 +93,7 @@ public actor LibraryStore {
             try library.index.close()
             self.library = nil
         }
+        loadIssues = []
         for directory in [root.songsDirectory, root.setlistsDirectory, root.appDirectory] {
             try fileSystem.createDirectory(at: directory)
         }
@@ -92,31 +123,53 @@ public actor LibraryStore {
         return song.record
     }
 
-    /// Replaces the `.cho` contents of song `id` and reindexes it. Throws
-    /// `LibraryError.readOnly` for read-only songs. The ID and file name stay stable.
-    /// The sidecar is written back at the current schema version with a new `updatedAt`.
-    public func updateSong(id: SongID, source: String) throws -> SongRecord {
+    /// Replaces the `.cho` contents of song `id` and reindexes it. The ID and file name stay
+    /// stable; the sidecar is written back at the current schema version with a new
+    /// `updatedAt`.
+    ///
+    /// The edit is checked against `revision` (default: the revision this store last
+    /// loaded): if the `.cho` on disk no longer hashes to it, nothing is written and
+    /// `LibraryError.conflict` is thrown. A sidecar changed on disk is merged (its metadata
+    /// is kept) when it is still an editable sidecar of this song, else it is a conflict.
+    /// Throws `LibraryError.readOnly` for read-only songs.
+    public func updateSong(
+        id: SongID,
+        source: String,
+        basedOn revision: SongRevision? = nil,
+    ) throws -> SongRecord {
         let library = try openLibrary()
-        guard let existing = library.songs[id] else {
-            throw LibraryError.songNotFound(id)
+        let existing = try editableSong(id, in: library)
+        let expected = revision ?? existing.record.revision
+        guard let onDisk = try library.files.currentSource(slug: existing.slug) else {
+            throw LibraryError.conflict(id, .deleted)
         }
-        if let reason = existing.record.readOnly {
-            throw LibraryError.readOnly(id, reason)
+        guard SongFiles.hash(onDisk) == expected.contentHash else {
+            throw LibraryError.conflict(id, .sourceChanged)
         }
-        var sidecar = existing.record.sidecar
-        sidecar.schemaVersion = Sidecar.currentSchemaVersion
-        sidecar.updatedAt = SegueJSON.stamp(clock.now())
-        let song = try library.files.write(source: source, sidecar: sidecar, slug: existing.slug)
-        try library.index.upsert(song.indexed)
-        self.library?.songs[id] = song
-        return song.record
+        let sidecar = try sidecarToWrite(for: existing, files: library.files)
+        return try write(source: source, sidecar: sidecar, over: existing, in: library)
+    }
+
+    /// Writes `source` for song `id` whatever the `.cho` on disk now holds: the user chose
+    /// "Overwrite" after a `.sourceChanged` conflict. Sidecar changes are still merged, or
+    /// refused as `.metadataChanged`.
+    public func overwriteSong(id: SongID, source: String) throws -> SongRecord {
+        let library = try openLibrary()
+        let existing = try editableSong(id, in: library)
+        let sidecar = try sidecarToWrite(for: existing, files: library.files)
+        return try write(source: source, sidecar: sidecar, over: existing, in: library)
     }
 
     /// Replaces the display preferences of song `id` in its sidecar (the `.cho` is not
     /// touched) and returns the updated record. Throws `LibraryError.readOnly` for
     /// read-only songs. Owner: unit C (phase 1).
     public func updateDisplayPrefs(id: SongID, _ prefs: DisplayPrefs) throws -> SongRecord {
-        fatalError("unimplemented: unit C")
+        let library = try openLibrary()
+        var existing = try editableSong(id, in: library)
+        existing.record.sidecar = try sidecarToWrite(for: existing, files: library.files)
+        let song = try library.files.writingDisplayPrefs(prefs, of: existing)
+        self.library?.songs[id] = song
+        return song.record
     }
 
     /// The song with `id`, or nil if absent.
@@ -169,7 +222,10 @@ public actor LibraryStore {
         }
     }
 
-    /// Rescans the library folder: upserts changed files (mtime/hash), deletes missing ones.
+    /// Rescans the library folder: upserts changed files, deletes missing ones. Files whose
+    /// modification time and size are unchanged are not read again; the index is updated in
+    /// one transaction. A file that can't be read is reported in `loadIssues` (keeping what
+    /// was loaded before, if anything) instead of failing the scan.
     @discardableResult
     public func refresh() throws -> RefreshSummary {
         let library = try openLibrary()
@@ -177,46 +233,63 @@ public actor LibraryStore {
             library.songs.values.map { ($0.record.relativePath, $0) },
             uniquingKeysWith: { first, _ in first },
         )
-        var scanned = try library.files.songSlugs().map { slug in
-            try library.files.load(
-                slug: slug,
-                previous: previousByPath[SongFiles.relativePath(slug: slug)],
-            )
-        }
-        scanned = try resolveDuplicateIDs(scanned, previous: library.songs, files: library.files)
+        var (scanned, issues) = try collectScan(of: library.files, previous: previousByPath)
+        scanned = library.files.resolveDuplicateIDs(
+            scanned,
+            previousPaths: library.songs.mapValues(\.record.relativePath),
+            issues: &issues,
+        )
 
         let rows = try library.index.rows()
         var summary = RefreshSummary()
+        var changes = IndexChanges()
         var songs: [SongID: LoadedSong] = [:]
         for song in scanned {
             songs[song.record.id] = song
             guard let row = rows[song.record.id.description] else {
-                try library.index.upsert(song.indexed)
+                changes.upserts.append(song.indexed)
                 summary.added += 1
                 continue
             }
             if row.path != song.record.relativePath || row.contentHash != song.contentHash {
-                try library.index.upsert(song.indexed)
+                changes.upserts.append(song.indexed)
                 summary.updated += 1
             } else if row.mtime != song.mtime {
-                try library.index.touch(id: row.id, mtime: song.mtime)
+                changes.touches[row.id] = song.mtime
             }
         }
         let live = Set(songs.keys.map(\.description))
-        let removed = rows.keys.filter { !live.contains($0) }
-        try library.index.delete(ids: removed)
-        summary.removed = removed.count
+        changes.deletes = rows.keys.filter { !live.contains($0) }.sorted()
+        summary.removed = changes.deletes.count
+        try library.index.apply(changes)
         self.library?.songs = songs
+        loadIssues = issues.sorted { $0.relativePath < $1.relativePath }
         return summary
     }
 
-    /// Deletes the index and re-creates it from the files on disk.
+    /// Deletes the index and re-creates it from the files on disk. If that fails, the
+    /// existing index is reopened (or re-created) so the library stays usable, and the error
+    /// is rethrown.
     public func rebuildIndex() throws {
         let library = try openLibrary()
+        let url = library.files.root.indexDatabase
         try library.index.close()
-        try SongIndex.deleteFiles(at: library.files.root.indexDatabase, fileSystem: fileSystem)
-        let index = try SongIndex.open(at: library.files.root.indexDatabase, fileSystem: fileSystem)
-        self.library = OpenLibrary(files: library.files, index: index, songs: [:])
+        do {
+            try SongIndex.deleteFiles(at: url, fileSystem: fileSystem)
+            let index = try SongIndex.open(at: url, fileSystem: fileSystem)
+            self.library = OpenLibrary(files: library.files, index: index, songs: [:])
+        } catch {
+            if let reopened = try? SongIndex.open(at: url, fileSystem: fileSystem) {
+                self.library?.index = reopened
+                // A partly deleted index reopens empty: fill it again from the files.
+                _ = try? refresh()
+            } else {
+                // No usable index at all: fail closed (`notOpen`) rather than keep a closed
+                // pool around.
+                self.library = nil
+            }
+            throw error
+        }
         try refresh()
     }
 
@@ -227,26 +300,78 @@ public actor LibraryStore {
         return library
     }
 
-    /// When several files carry the same ID (e.g. a Finder-duplicated song + sidecar), the
-    /// file that already held the ID keeps it (else the first by path); the others get new
-    /// IDs, persisted in their sidecar when it is writable.
-    private func resolveDuplicateIDs(
-        _ songs: [LoadedSong],
-        previous: [SongID: LoadedSong],
-        files: SongFiles,
-    ) throws -> [LoadedSong] {
-        let groups = Dictionary(grouping: songs.indices, by: { songs[$0].record.id })
-        var result = songs
-        // Sorted so new IDs are handed out in a deterministic order.
-        for (id, indices) in groups.sorted(by: { $0.key < $1.key }) where indices.count > 1 {
-            let previousPath = previous[id]?.record.relativePath
-            let keeper = indices.first { songs[$0].record.relativePath == previousPath }
-                ?? indices[0]
-            for index in indices where index != keeper {
-                result[index] = try files.reassignID(songs[index])
+    /// Scans `songs/` and adopts orphans; unreadable files become issues (keeping what was
+    /// loaded before for them, if anything).
+    private func collectScan(
+        of files: SongFiles,
+        previous previousByPath: [String: LoadedSong],
+    ) throws -> ([LoadedSong], [LibraryLoadIssue]) {
+        var issues: [LibraryLoadIssue] = []
+        var scanned: [LoadedSong] = []
+        for result in try files.scan(files.songSlugs(), previous: previousByPath) {
+            switch result {
+            case let .loaded(song):
+                scanned.append(song)
+            case let .orphan(song):
+                let previous = previousByPath[song.record.relativePath]
+                let (adopted, problem) = files.adoptOrphan(song, previous: previous)
+                scanned.append(adopted)
+                if let problem {
+                    issues.append(LibraryLoadIssue(
+                        relativePath: SongFiles.sidecarRelativePath(slug: song.slug),
+                        message: problem,
+                    ))
+                }
+            case let .failed(slug, message):
+                let path = SongFiles.relativePath(slug: slug)
+                issues.append(LibraryLoadIssue(relativePath: path, message: message))
+                if let previous = previousByPath[path] {
+                    scanned.append(previous)
+                }
             }
         }
-        return result
+        return (scanned, issues)
+    }
+
+    private func editableSong(_ id: SongID, in library: OpenLibrary) throws -> LoadedSong {
+        guard let existing = library.songs[id] else {
+            throw LibraryError.songNotFound(id)
+        }
+        if let reason = existing.record.readOnly {
+            throw LibraryError.readOnly(id, reason)
+        }
+        return existing
+    }
+
+    /// The sidecar to write with a new source: the one in memory while the file on disk is
+    /// unchanged; the file's own when it changed but is still an editable sidecar of this
+    /// song (so metadata edited elsewhere survives); ours again when it was deleted.
+    private func sidecarToWrite(for existing: LoadedSong, files: SongFiles) throws -> Sidecar {
+        guard let data = try files.currentSidecar(slug: existing.slug),
+              SongFiles.hash(data) != existing.record.revision.sidecarHash
+        else {
+            return existing.record.sidecar
+        }
+        let decoded = files.decodeSidecar(data, slug: existing.slug, previous: existing)
+        guard decoded.readOnly == nil, decoded.sidecar.id == existing.record.id else {
+            throw LibraryError.conflict(existing.record.id, .metadataChanged)
+        }
+        return decoded.sidecar
+    }
+
+    private func write(
+        source: String,
+        sidecar: Sidecar,
+        over existing: LoadedSong,
+        in library: OpenLibrary,
+    ) throws -> SongRecord {
+        var sidecar = sidecar
+        sidecar.schemaVersion = Sidecar.currentSchemaVersion
+        sidecar.updatedAt = SegueJSON.stamp(clock.now())
+        let song = try library.files.write(source: source, sidecar: sidecar, slug: existing.slug)
+        try library.index.upsert(song.indexed)
+        self.library?.songs[song.record.id] = song
+        return song.record
     }
 
     private static func fuzzyMatches(

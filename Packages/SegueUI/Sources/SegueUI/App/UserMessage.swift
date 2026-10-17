@@ -25,6 +25,21 @@ enum UserMessage {
             "That song is no longer in the library."
         case let .readOnly(_, reason):
             readOnlyText(reason)
+        case let .conflict(_, conflict):
+            conflictText(conflict)
+        }
+    }
+
+    /// Why a save was refused because the song's files changed on disk.
+    static func conflictText(_ conflict: SongConflict) -> String {
+        switch conflict {
+        case .sourceChanged:
+            "The song was changed in another app since you opened it. Nothing was saved."
+        case .deleted:
+            "The song's file was deleted or renamed in another app. Nothing was saved."
+        case .metadataChanged:
+            "The song's metadata file was changed in another app and can't be merged. "
+                + "Nothing was saved."
         }
     }
 
@@ -48,6 +63,9 @@ enum UserMessage {
             "Created by a newer Segue - update to edit."
         case let .unreadableSidecar(message):
             "Its metadata file could not be read (\(message)), so editing is blocked."
+        case let .notUTF8(encoding):
+            "This file is not UTF-8 text. It is shown as \(encoding), which may not be "
+                + "right, so editing is blocked. Convert it to UTF-8 to edit it."
         }
     }
 }

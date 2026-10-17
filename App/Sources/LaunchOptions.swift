@@ -5,16 +5,31 @@ import Foundation
 /// - `-SegueLibraryPath <path>`: use `<path>` as the library folder, bypassing the open panel
 ///   and the stored bookmark.
 /// - `-SegueResetState YES`: wipe UserDefaults (including the library bookmark) at launch.
+/// - `-SegueRememberLibrary YES`: also store `-SegueLibraryPath` as the library bookmark (in
+///   the test defaults suite), as if the user had chosen it in the open panel.
+/// - `-SegueTestDefaults YES`: use the test defaults suite without any other override, so a
+///   relaunch opens the library from the bookmark stored by an earlier test launch.
 struct LaunchOptions: Sendable, Equatable {
     static let libraryPathFlag = "-SegueLibraryPath"
     static let resetStateFlag = "-SegueResetState"
+    static let rememberLibraryFlag = "-SegueRememberLibrary"
+    static let testDefaultsFlag = "-SegueTestDefaults"
 
     var libraryPath: URL?
     var resetState = false
+    var rememberLibrary = false
+    var testDefaults = false
 
-    init(libraryPath: URL? = nil, resetState: Bool = false) {
+    init(
+        libraryPath: URL? = nil,
+        resetState: Bool = false,
+        rememberLibrary: Bool = false,
+        testDefaults: Bool = false,
+    ) {
         self.libraryPath = libraryPath
         self.resetState = resetState
+        self.rememberLibrary = rememberLibrary
+        self.testDefaults = testDefaults
     }
 
     /// Parses `arguments` (as in `ProcessInfo.arguments`; the first element is the
@@ -32,6 +47,14 @@ struct LaunchOptions: Sendable, Equatable {
                 if let value = iterator.next() {
                     resetState = Self.isTruthy(value)
                 }
+            case Self.rememberLibraryFlag:
+                if let value = iterator.next() {
+                    rememberLibrary = Self.isTruthy(value)
+                }
+            case Self.testDefaultsFlag:
+                if let value = iterator.next() {
+                    testDefaults = Self.isTruthy(value)
+                }
             default:
                 continue
             }
@@ -40,7 +63,7 @@ struct LaunchOptions: Sendable, Equatable {
 
     /// Whether any test-only argument was passed.
     var isTestRun: Bool {
-        libraryPath != nil || resetState
+        libraryPath != nil || resetState || rememberLibrary || testDefaults
     }
 
     private static func isTruthy(_ value: String) -> Bool {

@@ -4,10 +4,14 @@ import Foundation
 public struct FileAttributes: Sendable, Equatable {
     public var modificationDate: Date
     public var size: Int
+    /// When the file was created, if the volume records it (used to tell an original from a
+    /// Finder duplicate).
+    public var creationDate: Date?
 
-    public init(modificationDate: Date, size: Int) {
+    public init(modificationDate: Date, size: Int, creationDate: Date? = nil) {
         self.modificationDate = modificationDate
         self.size = size
+        self.creationDate = creationDate
     }
 }
 
@@ -26,6 +30,10 @@ public protocol FileSystem: Sendable {
     func contentsOfDirectory(at url: URL) throws -> [URL]
     /// Reads the whole file (coordinated read).
     func readData(at url: URL) throws -> Data
+    /// Reads several files inside `directory` under one coordinated read of the directory
+    /// (per-file coordination costs about a millisecond each, which dominates a library scan).
+    /// One result per URL, in order; a failure affects only its own file.
+    func readFiles(_ urls: [URL], in directory: URL) -> [Result<Data, any Error>]
     /// Writes atomically (temp file + rename) through `NSFileCoordinator`.
     func writeAtomically(_ data: Data, to url: URL) throws
     /// Removes the file or directory at `url` (coordinated).
@@ -34,6 +42,13 @@ public protocol FileSystem: Sendable {
     func moveItem(from source: URL, to destination: URL) throws
     /// Modification date and size of the file at `url`.
     func attributes(at url: URL) throws -> FileAttributes
+}
+
+public extension FileSystem {
+    /// Default: one `readData(at:)` per file.
+    func readFiles(_ urls: [URL], in _: URL) -> [Result<Data, any Error>] {
+        urls.map { url in Result { try readData(at: url) } }
+    }
 }
 
 /// Errors raised by `LiveFileSystem` beyond the underlying Foundation errors.
@@ -63,13 +78,17 @@ public struct LiveFileSystem: FileSystem {
     }
 
     public func contentsOfDirectory(at url: URL) throws -> [URL] {
+        // No prefetched properties: callers stat what they need (`attributes(at:)`), and
+        // prefetching for every file in a large library costs more than the listing itself.
         try FileManager.default
             .contentsOfDirectory(
                 at: url,
-                includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey],
+                includingPropertiesForKeys: [],
                 options: [.skipsHiddenFiles],
             )
-            .sorted { $0.path < $1.path }
+            .map { ($0.path(percentEncoded: false), $0) }
+            .sorted { $0.0 < $1.0 }
+            .map(\.1)
     }
 
     public func readData(at url: URL) throws -> Data {
@@ -80,6 +99,37 @@ public struct LiveFileSystem: FileSystem {
             }
             return try result.get()
         }
+    }
+
+    public func readFiles(_ urls: [URL], in directory: URL) -> [Result<Data, any Error>] {
+        let base = directory.standardizedFileURL.path(percentEncoded: false)
+        let prefix = base.hasSuffix("/") ? base : base + "/"
+        var results: [Result<Data, any Error>] = urls.map { url in
+            .failure(FileSystemError.coordinationFailed(url))
+        }
+        do {
+            try coordinate { coordinator, errorPointer in
+                coordinator.coordinate(
+                    readingItemAt: directory,
+                    options: [],
+                    error: errorPointer,
+                ) { actual in
+                    for (index, url) in urls.enumerated() {
+                        let path = url.standardizedFileURL.path(percentEncoded: false)
+                        // Files outside `directory` fall back to their own coordinated read.
+                        guard path.hasPrefix(prefix) else {
+                            results[index] = Result { try readData(at: url) }
+                            continue
+                        }
+                        let target = actual.appending(path: String(path.dropFirst(prefix.count)))
+                        results[index] = Result { try Data(contentsOf: target) }
+                    }
+                }
+            }
+        } catch {
+            return urls.map { _ in .failure(error) }
+        }
+        return results
     }
 
     public func writeAtomically(_ data: Data, to url: URL) throws {
@@ -132,10 +182,15 @@ public struct LiveFileSystem: FileSystem {
     }
 
     public func attributes(at url: URL) throws -> FileAttributes {
-        let values = try url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
+        // A fresh URL each time: `URL` caches resource values, which would hide changes.
+        let fresh = URL(fileURLWithPath: url.path(percentEncoded: false))
+        let values = try fresh.resourceValues(forKeys: [
+            .contentModificationDateKey, .fileSizeKey, .creationDateKey,
+        ])
         return FileAttributes(
             modificationDate: values.contentModificationDate ?? .distantPast,
             size: values.fileSize ?? 0,
+            creationDate: values.creationDate,
         )
     }
 

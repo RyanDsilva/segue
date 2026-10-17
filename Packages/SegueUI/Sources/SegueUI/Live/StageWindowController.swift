@@ -23,11 +23,26 @@
 
         override private init() {}
 
-        /// Shows `app.live` on the stage, on the screen of the current key window.
+        /// The stage window while it is up.
+        var stageWindow: NSWindow? {
+            window
+        }
+
+        /// Shows `app.live` on the stage, on the screen of the current key window. Called
+        /// again while a stage is up, it replaces that stage's window without ending the
+        /// performance.
         public func present(_ app: AppModel) {
             guard let live = app.live else { return }
-            window?.close()
-            guard let screen = NSApp.keyWindow?.screen ?? NSScreen.main else { return }
+            let screen = window?.screen ?? NSApp.keyWindow?.screen ?? NSScreen.main
+            guard let screen else { return }
+            if let previous = window {
+                // Detach first: closing it must not run `windowWillClose`, which would end
+                // the performance being presented.
+                previous.delegate = nil
+                removeObservers()
+                window = nil
+                previous.close()
+            }
             self.app = app
 
             let window = StageWindow(
@@ -58,17 +73,22 @@
             window?.close()
         }
 
-        public func windowWillClose(_: Notification) {
-            for observer in observers {
-                NotificationCenter.default.removeObserver(observer)
-            }
-            observers = []
+        public func windowWillClose(_ notification: Notification) {
+            guard let closing = notification.object as? NSWindow, closing === window else { return }
+            removeObservers()
             if let savedPresentationOptions {
                 NSApp.presentationOptions = savedPresentationOptions
                 self.savedPresentationOptions = nil
             }
             window = nil
             app?.live = nil
+        }
+
+        private func removeObservers() {
+            for observer in observers {
+                NotificationCenter.default.removeObserver(observer)
+            }
+            observers = []
         }
 
         private func stage(_ live: LiveViewModel, screen: NSScreen) -> some View {

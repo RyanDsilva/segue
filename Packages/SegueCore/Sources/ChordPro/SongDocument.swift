@@ -236,6 +236,8 @@ public struct BlankLine: Sendable, Equatable, Hashable {
 public enum LineEnding: String, Sendable, Equatable, Hashable {
     case lf = "\n"
     case crlf = "\r\n"
+    /// A lone carriage return (classic Mac OS line endings).
+    case cr = "\r"
     /// Last line of a file without a trailing newline.
     case endOfFile = ""
 }

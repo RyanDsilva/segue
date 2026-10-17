@@ -53,6 +53,34 @@ final class SegueE2ETests: XCTestCase {
         app.terminate()
     }
 
+    /// AC3: a second launch reopens the library from the stored security-scoped bookmark. The
+    /// first launch stores the temp library as the bookmark (`-SegueRememberLibrary`), as the
+    /// open panel would; the second has no library override, only the test defaults suite.
+    @MainActor
+    func testSecondLaunchReopensLibraryFromStoredBookmark() throws {
+        let root = try XCTUnwrap(libraryRoot)
+        try FileManager.default.createDirectory(
+            at: root.appending(path: "songs", directoryHint: .isDirectory),
+            withIntermediateDirectories: true,
+        )
+        try Data(Fixture.english.utf8).write(to: root.appending(path: "songs/harbour.cho"))
+
+        let first = XCUIApplication()
+        app = first
+        first.launchArguments = [
+            "-SegueLibraryPath", root.path(percentEncoded: false),
+            "-SegueResetState", "YES",
+            "-SegueRememberLibrary", "YES",
+        ]
+        first.launch()
+        waitForRows(first, titles: ["Harbour Lights"])
+        // The bookmark was stored without complaint (a failure shows in the error banner).
+        XCTAssertFalse(first.buttons["Dismiss"].exists)
+        first.terminate()
+
+        relaunchFromStoredBookmark(expecting: ["Harbour Lights"])
+    }
+
     // MARK: - Steps
 
     @MainActor
@@ -129,6 +157,23 @@ final class SegueE2ETests: XCTestCase {
         XCTAssertTrue(app.staticTexts[AXID.setlistTitle].waitForExistence(timeout: 5))
     }
 
+    /// Second launch without `-SegueLibraryPath`: the app resolves the security-scoped
+    /// bookmark the first launch stored and reopens the same library, songs included.
+    @MainActor
+    private func relaunchFromStoredBookmark(expecting titles: [String]) {
+        let relaunched = XCUIApplication()
+        app = relaunched
+        relaunched.launchArguments = ["-SegueTestDefaults", "YES"]
+        relaunched.launch()
+        XCTAssertFalse(
+            element(relaunched, AXID.chooserMessage).waitForExistence(timeout: 3),
+            "The library chooser appeared: the stored bookmark did not reopen the library",
+        )
+        waitForRows(relaunched, titles: titles)
+        attachScreenshot(relaunched, name: "relaunch-from-bookmark")
+        relaunched.terminate()
+    }
+
     /// On failure, attach what the app looked like (screenshot + accessibility tree).
     override func record(_ issue: XCTIssue) {
         // XCTest calls this on the main thread, where the test body runs.
@@ -202,6 +247,7 @@ final class SegueE2ETests: XCTestCase {
         row(app, "Harbour Lights").click()
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], "Harbour Lights"))
         element(app, AXID.editSong).click()
+        element(app, "segue.editor.mode.text").click() // Songs open on the visual canvas.
         let editor = app.textViews[AXID.editorText]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         editor.click()
@@ -289,12 +335,11 @@ final class SegueE2ETests: XCTestCase {
                 try String(contentsOf: songs.appending(path: name), encoding: .utf8) == expected
             }
             let cho = try XCTUnwrap(match, "No .cho with the typed source for \(fileName)")
-            let slug = String(cho.dropLast(".cho".count))
-            let sidecarURL = songs.appending(path: slug + ".segue.json")
+            let sidecarURL = songs.appending(path: cho.dropLast(".cho".count) + ".segue.json")
             let sidecar = try XCTUnwrap(
                 JSONSerialization.jsonObject(with: Data(contentsOf: sidecarURL)) as? [String: Any],
             )
-            XCTAssertEqual(sidecar["schemaVersion"] as? Int, 1)
+            XCTAssertEqual(sidecar["schemaVersion"] as? Int, 2) // Phase 1: display prefs.
             let id = try XCTUnwrap(sidecar["id"] as? String)
             XCTAssertEqual(id.count, 26, "ULID expected, got \(id)")
             idsByTitle[fileName] = id
@@ -383,6 +428,7 @@ extension SegueE2ETests {
 
 /// Accessibility identifiers (mirrors `AccessibilityID` in SegueUI).
 private enum AXID {
+    static let chooserMessage = "segue.chooser.message"
     static let sidebarSetlists = "segue.sidebar.setlists"
     static let songRow = "segue.library.row"
     static let newSong = "segue.library.newSong"

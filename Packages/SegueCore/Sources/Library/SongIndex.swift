@@ -24,6 +24,18 @@ struct IndexRow: Sendable, Equatable {
     var contentHash: String
 }
 
+/// Index writes collected during one scan, applied in one transaction.
+struct IndexChanges: Sendable {
+    var upserts: [IndexedSong] = []
+    /// New mtimes for unchanged files, keyed by song ID.
+    var touches: [String: Double] = [:]
+    var deletes: [String] = []
+
+    var isEmpty: Bool {
+        upserts.isEmpty && touches.isEmpty && deletes.isEmpty
+    }
+}
+
 /// Normalized title and first line of one song, for the edit-distance fallback.
 struct FuzzyCandidate: Sendable {
     var id: String
@@ -147,61 +159,70 @@ struct SongIndex: Sendable {
 
     /// Inserts or replaces `song` (any row holding the same ID or path is replaced).
     func upsert(_ song: IndexedSong) throws {
+        try apply(IndexChanges(upserts: [song]))
+    }
+
+    /// Applies every change of one scan in a single write transaction (one commit, one
+    /// fsync), deletions first so a re-pathed song never collides with its stale row.
+    func apply(_ changes: IndexChanges) throws {
+        guard !changes.isEmpty else { return }
         try pool.write { db in
-            let stale = try String.fetchAll(
-                db,
-                sql: "SELECT id FROM songs WHERE id = ? OR path = ?",
-                arguments: [song.id, song.path],
-            )
-            for id in stale {
-                try db.execute(sql: "DELETE FROM songs_fts WHERE song_id = ?", arguments: [id])
-                try db.execute(sql: "DELETE FROM songs WHERE id = ?", arguments: [id])
+            for id in changes.deletes {
+                try Self.delete(id: id, in: db)
             }
-            try db.execute(
-                sql: """
-                INSERT INTO songs (id, path, title, artist, key, tempo, mtime, content_hash,
-                                   first_line, norm_title, norm_artist, norm_first_line)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                arguments: [
-                    song.id, song.path, song.title, song.artist, song.key, song.tempo,
-                    song.mtime, song.contentHash, song.firstLine,
-                    RomanNormalizer.normalize(song.title),
-                    RomanNormalizer.normalize(song.artist),
-                    RomanNormalizer.normalize(song.firstLine),
-                ],
-            )
-            try db.execute(
-                sql: """
-                INSERT INTO songs_fts (song_id, title, artist, lyrics,
-                                       norm_title, norm_artist, norm_lyrics)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                arguments: [
-                    song.id, song.title, song.artist, song.lyrics,
-                    RomanNormalizer.normalize(song.title),
-                    RomanNormalizer.normalize(song.artist),
-                    RomanNormalizer.normalize(song.lyrics),
-                ],
-            )
+            for song in changes.upserts {
+                try Self.upsert(song, in: db)
+            }
+            for (id, mtime) in changes.touches {
+                try db.execute(
+                    sql: "UPDATE songs SET mtime = ? WHERE id = ?",
+                    arguments: [mtime, id],
+                )
+            }
         }
     }
 
-    /// Records a new mtime for an unchanged file (content hash equal).
-    func touch(id: String, mtime: Double) throws {
-        try pool.write { db in
-            try db.execute(sql: "UPDATE songs SET mtime = ? WHERE id = ?", arguments: [mtime, id])
+    private static func upsert(_ song: IndexedSong, in db: Database) throws {
+        let stale = try String.fetchAll(
+            db,
+            sql: "SELECT id FROM songs WHERE id = ? OR path = ?",
+            arguments: [song.id, song.path],
+        )
+        for id in stale {
+            try delete(id: id, in: db)
         }
+        try db.execute(
+            sql: """
+            INSERT INTO songs (id, path, title, artist, key, tempo, mtime, content_hash,
+                               first_line, norm_title, norm_artist, norm_first_line)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            arguments: [
+                song.id, song.path, song.title, song.artist, song.key, song.tempo,
+                song.mtime, song.contentHash, song.firstLine,
+                RomanNormalizer.normalize(song.title),
+                RomanNormalizer.normalize(song.artist),
+                RomanNormalizer.normalize(song.firstLine),
+            ],
+        )
+        try db.execute(
+            sql: """
+            INSERT INTO songs_fts (song_id, title, artist, lyrics,
+                                   norm_title, norm_artist, norm_lyrics)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            arguments: [
+                song.id, song.title, song.artist, song.lyrics,
+                RomanNormalizer.normalize(song.title),
+                RomanNormalizer.normalize(song.artist),
+                RomanNormalizer.normalize(song.lyrics),
+            ],
+        )
     }
 
-    /// Removes songs from the index.
-    func delete(ids: some Sequence<String>) throws {
-        try pool.write { db in
-            for id in ids {
-                try db.execute(sql: "DELETE FROM songs_fts WHERE song_id = ?", arguments: [id])
-                try db.execute(sql: "DELETE FROM songs WHERE id = ?", arguments: [id])
-            }
-        }
+    private static func delete(id: String, in db: Database) throws {
+        try db.execute(sql: "DELETE FROM songs_fts WHERE song_id = ?", arguments: [id])
+        try db.execute(sql: "DELETE FROM songs WHERE id = ?", arguments: [id])
     }
 
     /// Song IDs where every token prefix-matches one of the original columns, best first.
