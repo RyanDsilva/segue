@@ -127,3 +127,13 @@ See `docs/research/phase5-audio.md`. Conflicts with earlier research to re-verif
 
 - **Minimum OS stays macOS 26.** Our own AI provider port abstracts Foundation Models vs MLX; the macOS 27 `LanguageModel` protocol is not required. Raise the floor later if useful.
 - **Romanized Hindi AI cleanup:** try Apple Foundation Models first; on unsupported-language/guardrail/refusal errors fall back to the local MLX model automatically. The spike measures how often this happens.
+
+## Phase 1 build rulings (2026-10-17)
+
+- `{key}` with `{capo}` names the **shapes** key (concert = key + capo).
+- `{meta: tuning}` in the song wins over the sidecar tuning; the editor writes both.
+- "Apply transposition to source" **adds a `{key}`** (the detected/inferred key, transposed) when the song had none.
+- Nashville view supports **number entry** (1, 4, 6m, b7, 5/7) in addition to letter names; numbers resolve against the display key.
+- Diagram strip is **off by default**.
+- Inserting a chord where one already sits **replaces** it (no stacking).
+- Nashville digit suffixes take parentheses (`E7` in Am = `3(7)`, `1(6/9)`); bIII and bVII spelled flat in every key; minor leading tone always sharp; strict chord parsing (no `o` for diminished, so Hindi "Do" is never a chord).
