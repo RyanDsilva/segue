@@ -110,3 +110,15 @@ Closed answers to the open questions raised by the phase specs (2026-10-16/17). 
 
 - **R7.1 transport:** Network.framework (new Swift NetworkListener/NetworkBrowser/NetworkConnection), TCP + TLS, length-prefixed JSON, Bonjour `_segue._tcp`, peer-to-peer Wi-Fi enabled. Wi-Fi Aware adapter later for iOS-to-iOS / Android. See `docs/research/phase7-sync.md`.
 - **R7.2 library sync:** keep the user-picked iCloud Drive folder; change detection via NSFilePresenter plus rescan on launch/foreground/bookmark resolve (NSMetadataQuery is unreliable for user-picked folders); detect both NSFileVersion conflicts and "name 2.cho" duplicates.
+
+## Key screen layouts (2026-10-17)
+
+Chosen on the design canvas (https://claude.ai/artifact/XizqyqzA1chVfBSGThAzcQ):
+- **Library:** a - three pane (sidebar, song list, chart preview).
+- **Editor:** b - visual canvas (chord pills over syllables, transpose/capo/Nashville bar, chord palette); text mode remains via toggle.
+- **Setlist builder:** a - library to set (two columns, start times, running total vs target).
+- **Paste review:** a - side by side (original vs result, AI changes marked apart from rule-based conversion).
+
+## Phase 5 research notes (2026-10-17)
+
+See `docs/research/phase5-audio.md`. Conflicts with earlier research to re-verify in spike: BTC weights reported MIT (earlier: CC-BY-NC-SA); `schism-audio/htdemucs-coreml` does not exist (use MLX Swift Demucs ports). Do not feed the separated vocal stem to ASR by default (Jam-ALT: WER worsens). Apple SpeechTranscriber has no hi-IN on this machine.
