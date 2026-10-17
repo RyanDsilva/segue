@@ -153,4 +153,43 @@ struct EditingTranspositionTests {
         #expect(odd.applying(kept.change.edits) == "{key: ???}\n[A]One [D]two [E]three\n")
         #expect(kept.newKey == nil)
     }
+
+    @Test
+    func `apply transposition with an ambiguous key adds no key, saved and indexed`()
+        async throws
+    {
+        // A `Dm G` vamp is genuinely ambiguous (C major vs D minor / G major): the rewrite
+        // moves the chords but never writes the guess down as a `{key}` (decisions.md,
+        // "Ambiguous key on apply-transposition").
+        let original = """
+        {title: Vamp}
+
+        [Dm]Round and [G]round we go
+        [Dm]Round and [G]round
+
+        """
+        let snapshot = SourceSnapshot(text: original)
+        #expect(KeyContext(document: snapshot.document).status == .ambiguous)
+
+        let lib = try TestLibrary()
+        let store = try await lib.openStore()
+        let created = try await store.createSong(source: original)
+        let rewrite = TranspositionRewrite.plan(semitones: 2, in: snapshot)
+        #expect(rewrite.newKey == nil)
+        _ = try await store.updateSong(
+            id: created.id,
+            source: created.source.applying(rewrite.change.edits),
+        )
+
+        let record = try #require(try await lib.openStore().song(id: created.id))
+        #expect(try lib.read(record.relativePath) == """
+        {title: Vamp}
+
+        [Em]Round and [A]round we go
+        [Em]Round and [A]round
+
+        """)
+        #expect(record.document.metadata.key == nil)
+        #expect(try EditingSongPipelineTests.indexedKey(lib, id: created.id) == nil)
+    }
 }

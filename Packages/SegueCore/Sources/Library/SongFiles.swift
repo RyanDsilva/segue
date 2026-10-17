@@ -14,6 +14,15 @@ struct FileStamp: Sendable, Equatable {
         mtime = attributes.modificationDate.timeIntervalSince1970
         size = attributes.size
     }
+
+    private init(mtime: Double, size: Int) {
+        self.mtime = mtime
+        self.size = size
+    }
+
+    /// Matches no file on disk: a `previous` song carrying it is always read again (and
+    /// still reused when its bytes hash the same).
+    static let unknown = Self(mtime: -1, size: -1)
 }
 
 /// A song as loaded from disk, plus what change detection needs.
@@ -80,7 +89,8 @@ struct LoadedSong: Sendable, Equatable {
         sidecarReadOnly == nil
     }
 
-    /// The index projection of this song. Uses only `metadata` and `plainLyrics`.
+    /// The index projection of this song. Uses only `metadata`, `plainLyrics` and the
+    /// sidecar tags.
     var indexed: IndexedSong {
         let metadata = record.document.metadata
         let lyrics = record.document.plainLyrics
@@ -99,7 +109,14 @@ struct LoadedSong: Sendable, Equatable {
             contentHash: contentHash,
             firstLine: firstLine,
             lyrics: lyrics,
+            tags: indexedTags,
         )
+    }
+
+    /// The sidecar tags as the index stores them (normalized, one per line); cheap, so a
+    /// scan can compare it with the index row without building the whole projection.
+    var indexedTags: String {
+        SongMetadata.normalizedTags(record.sidecar.tags).joined(separator: "\n")
     }
 
     /// Sort key for `allSongs()`: title, else file slug.

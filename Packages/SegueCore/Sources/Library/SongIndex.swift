@@ -14,6 +14,8 @@ struct IndexedSong: Sendable, Equatable {
     var contentHash: String
     var firstLine: String
     var lyrics: String
+    /// The song's tags (normalized, see `SongMetadata.normalizedTags`), one per line.
+    var tags: String
 }
 
 /// What the indexer needs to decide whether a file changed.
@@ -22,6 +24,8 @@ struct IndexRow: Sendable, Equatable {
     var path: String
     var mtime: Double
     var contentHash: String
+    /// As `IndexedSong.tags`: sidecar tag edits change the row too.
+    var tags: String
 }
 
 /// Index writes collected during one scan, applied in one transaction.
@@ -49,7 +53,10 @@ struct FuzzyCandidate: Sendable {
 /// re-created empty; the caller then re-indexes from files. Only `LibraryStore` writes here.
 struct SongIndex: Sendable {
     /// Bump on any change to the tables below.
-    static let schemaVersion = 1
+    ///
+    /// History: 1 = phase 0 (songs + FTS); 2 = phase 2 (tags in `songs` and FTS, the
+    /// `plays` projection).
+    static let schemaVersion = 2
 
     /// Stored in `PRAGMA user_version`; covers both schema and normalization rules.
     static var version: Int {
@@ -57,12 +64,13 @@ struct SongIndex: Sendable {
     }
 
     /// FTS5 columns, in table order (`song_id` is unindexed).
-    private static let originalColumns = "{title artist lyrics}"
-    private static let normalizedColumns = "{norm_title norm_artist norm_lyrics}"
-    /// bm25 weights per FTS column: song_id, title, artist, lyrics, norm_* in the same order.
-    private static let rankExpression = "bm25(songs_fts, 0, 10, 5, 1, 10, 5, 1)"
+    private static let originalColumns = "{title artist lyrics tags}"
+    private static let normalizedColumns = "{norm_title norm_artist norm_lyrics norm_tags}"
+    /// bm25 weights per FTS column: song_id, title, artist, lyrics, tags, norm_* in the same
+    /// order.
+    private static let rankExpression = "bm25(songs_fts, 0, 10, 5, 1, 5, 10, 5, 1, 5)"
 
-    private let pool: DatabasePool
+    let pool: DatabasePool
 
     /// Opens the index at `url`, re-creating it empty when missing, stale or unreadable.
     static func open(at url: URL, fileSystem: any FileSystem) throws -> Self {
@@ -118,16 +126,26 @@ struct SongIndex: Sendable {
                 mtime REAL NOT NULL,
                 content_hash TEXT NOT NULL,
                 first_line TEXT NOT NULL,
+                tags TEXT NOT NULL,
                 norm_title TEXT NOT NULL,
                 norm_artist TEXT NOT NULL,
                 norm_first_line TEXT NOT NULL
             );
             CREATE VIRTUAL TABLE songs_fts USING fts5(
                 song_id UNINDEXED,
-                title, artist, lyrics,
-                norm_title, norm_artist, norm_lyrics,
+                title, artist, lyrics, tags,
+                norm_title, norm_artist, norm_lyrics, norm_tags,
                 tokenize = 'unicode61 remove_diacritics 2'
             );
+            CREATE TABLE plays (
+                show_id TEXT NOT NULL,
+                song_id TEXT NOT NULL,
+                started_at REAL NOT NULL,
+                ended_at REAL NOT NULL,
+                from_request INTEGER NOT NULL
+            );
+            CREATE INDEX plays_by_show ON plays (show_id);
+            CREATE INDEX plays_by_song ON plays (song_id, started_at);
             PRAGMA user_version = \(version);
             """)
         }
@@ -142,7 +160,10 @@ struct SongIndex: Sendable {
     /// Change-detection rows, keyed by song ID.
     func rows() throws -> [String: IndexRow] {
         try pool.read { db in
-            let rows = try Row.fetchAll(db, sql: "SELECT id, path, mtime, content_hash FROM songs")
+            let rows = try Row.fetchAll(
+                db,
+                sql: "SELECT id, path, mtime, content_hash, tags FROM songs",
+            )
             var result: [String: IndexRow] = [:]
             for row in rows {
                 let indexRow = IndexRow(
@@ -150,6 +171,7 @@ struct SongIndex: Sendable {
                     path: row["path"],
                     mtime: row["mtime"],
                     contentHash: row["content_hash"],
+                    tags: row["tags"],
                 )
                 result[indexRow.id] = indexRow
             }
@@ -194,12 +216,12 @@ struct SongIndex: Sendable {
         try db.execute(
             sql: """
             INSERT INTO songs (id, path, title, artist, key, tempo, mtime, content_hash,
-                               first_line, norm_title, norm_artist, norm_first_line)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               first_line, tags, norm_title, norm_artist, norm_first_line)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             arguments: [
                 song.id, song.path, song.title, song.artist, song.key, song.tempo,
-                song.mtime, song.contentHash, song.firstLine,
+                song.mtime, song.contentHash, song.firstLine, song.tags,
                 RomanNormalizer.normalize(song.title),
                 RomanNormalizer.normalize(song.artist),
                 RomanNormalizer.normalize(song.firstLine),
@@ -207,15 +229,16 @@ struct SongIndex: Sendable {
         )
         try db.execute(
             sql: """
-            INSERT INTO songs_fts (song_id, title, artist, lyrics,
-                                   norm_title, norm_artist, norm_lyrics)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO songs_fts (song_id, title, artist, lyrics, tags,
+                                   norm_title, norm_artist, norm_lyrics, norm_tags)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             arguments: [
-                song.id, song.title, song.artist, song.lyrics,
+                song.id, song.title, song.artist, song.lyrics, song.tags,
                 RomanNormalizer.normalize(song.title),
                 RomanNormalizer.normalize(song.artist),
                 RomanNormalizer.normalize(song.lyrics),
+                RomanNormalizer.normalize(song.tags),
             ],
         )
     }

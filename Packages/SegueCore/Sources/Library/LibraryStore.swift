@@ -63,16 +63,22 @@ public actor LibraryStore {
     private let clock: any Clock
     private let ids: any IDGenerator
 
-    private struct OpenLibrary {
+    struct OpenLibrary {
         var files: SongFiles
         var index: SongIndex
         var songs: [SongID: LoadedSong]
     }
 
-    private var library: OpenLibrary?
+    /// Internal (not private) for the phase 2 extensions in `LibraryStore+Phase2.swift`.
+    var library: OpenLibrary?
+
+    /// The play projection as last handed in (`replacePlays` / `replaceAllPlays`), keyed by
+    /// show. Re-applied whenever the index is re-created (`rebuildIndex()`, or `open` of the
+    /// same root after a version bump), so "last played" survives a rebuild.
+    var plays: [ULID: [PlayRecord]] = [:]
 
     /// Files the last scan could not load, by path. Shown in the UI; never fatal.
-    public private(set) var loadIssues: [LibraryLoadIssue] = []
+    public internal(set) var loadIssues: [LibraryLoadIssue] = []
 
     public init(fileSystem: any FileSystem, clock: any Clock, ids: any IDGenerator) {
         self.fileSystem = fileSystem
@@ -90,6 +96,9 @@ public actor LibraryStore {
     /// sidecar.
     public func open(root: LibraryRoot) throws {
         if let library {
+            if library.files.root != root {
+                plays = [:] // another library's history
+            }
             try library.index.close()
             self.library = nil
         }
@@ -103,6 +112,7 @@ public actor LibraryStore {
             index: index,
             songs: [:],
         )
+        try reapplyPlays()
         try refresh()
     }
 
@@ -190,14 +200,14 @@ public actor LibraryStore {
             .map(\.record)
     }
 
-    /// Full-text search over title, artist and lyrics (FTS5), including romanized-Hindi
+    /// Full-text search over title, artist, lyrics and tags (FTS5), including romanized-Hindi
     /// spelling variants via the normalized index columns. Best matches first.
     ///
     /// Tiers, each appended without duplicates: (1) FTS on the original text, every query
     /// word as a prefix; (2) FTS on the `RomanNormalizer` forms, whole words except a last
     /// word of 4+ letters (prefix, for as-you-type). Only when both find nothing, (3) an
     /// edit-distance fallback (<= 1 per query word of 4+ letters) over normalized titles and
-    /// first lines. Within a tier: bm25 (title > artist > lyrics), then title, then ID.
+    /// first lines. Within a tier: bm25 (title > artist = tags > lyrics), then title, then ID.
     /// An empty query returns `allSongs()`.
     public func search(query: String) throws -> [SongRecord] {
         let library = try openLibrary()
@@ -251,7 +261,9 @@ public actor LibraryStore {
                 summary.added += 1
                 continue
             }
-            if row.path != song.record.relativePath || row.contentHash != song.contentHash {
+            if row.path != song.record.relativePath || row.contentHash != song.contentHash
+                || row.tags != song.indexedTags
+            {
                 changes.upserts.append(song.indexed)
                 summary.updated += 1
             } else if row.mtime != song.mtime {
@@ -282,6 +294,7 @@ public actor LibraryStore {
             if let reopened = try? SongIndex.open(at: url, fileSystem: fileSystem) {
                 self.library?.index = reopened
                 // A partly deleted index reopens empty: fill it again from the files.
+                try? reapplyPlays()
                 _ = try? refresh()
             } else {
                 // No usable index at all: fail closed (`notOpen`) rather than keep a closed
@@ -290,12 +303,13 @@ public actor LibraryStore {
             }
             throw error
         }
+        try reapplyPlays()
         try refresh()
     }
 
     // MARK: - Private
 
-    private func openLibrary() throws -> OpenLibrary {
+    func openLibrary() throws -> OpenLibrary {
         guard let library else { throw LibraryError.notOpen }
         return library
     }
@@ -333,7 +347,7 @@ public actor LibraryStore {
         return (scanned, issues)
     }
 
-    private func editableSong(_ id: SongID, in library: OpenLibrary) throws -> LoadedSong {
+    func editableSong(_ id: SongID, in library: OpenLibrary) throws -> LoadedSong {
         guard let existing = library.songs[id] else {
             throw LibraryError.songNotFound(id)
         }
@@ -346,7 +360,7 @@ public actor LibraryStore {
     /// The sidecar to write with a new source: the one in memory while the file on disk is
     /// unchanged; the file's own when it changed but is still an editable sidecar of this
     /// song (so metadata edited elsewhere survives); ours again when it was deleted.
-    private func sidecarToWrite(for existing: LoadedSong, files: SongFiles) throws -> Sidecar {
+    func sidecarToWrite(for existing: LoadedSong, files: SongFiles) throws -> Sidecar {
         guard let data = try files.currentSidecar(slug: existing.slug),
               SongFiles.hash(data) != existing.record.revision.sidecarHash
         else {

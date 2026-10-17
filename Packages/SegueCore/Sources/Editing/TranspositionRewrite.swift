@@ -29,13 +29,15 @@ public struct DefineFlag: Sendable, Hashable {
 /// "Apply transposition to source" (phase 1 spec): rewrites every chord token and `{key}`,
 /// keeps `{capo}`, never edits or deletes `{define}`s but flags the ones that no longer
 /// match. Unknown chords and `N.C.` are left as written. When the song has no `{key}` at all,
-/// the detected key (inferred or ambiguous), transposed, is added as a `{key}` after the
-/// leading metadata directives (phase 1 build rulings); spelling uses that key.
+/// a confidently inferred key, transposed, is added as a `{key}` after the leading metadata
+/// directives (phase 1 build rulings); an ambiguous detection adds none, so the rewrite never
+/// states a guess as fact. Spelling uses the detected key either way.
 public struct TranspositionRewrite: Sendable, Hashable {
     /// One undo step ("Transpose").
     public var change: SourceChange
-    /// The new `{key}` value: the first declared key moved, or the added detected key;
-    /// `nil` when the song has neither (no parseable `{key}` and no chords to detect from).
+    /// The new `{key}` value: the first declared key moved, or the added inferred key;
+    /// `nil` when the song has neither (no parseable `{key}`, and no chords to detect from or
+    /// an ambiguous detection).
     public var newKey: SongKey?
     public var flaggedDefines: [DefineFlag]
 
@@ -86,11 +88,12 @@ public struct TranspositionRewrite: Sendable, Hashable {
         if keyContext.declared == nil {
             newKey = nil
             // No `{key}` line at all (an unparseable one is left alone): write down the
-            // detected key, moved with the chords, so the rewritten song states its key.
+            // inferred key, moved with the chords, so the rewritten song states its key. An
+            // ambiguous detection is not written (decisions.md, phase 1 build rulings).
             if !transposer.isIdentity, snapshot.directiveLines(named: "key").isEmpty,
-               let detected = keyContext.detection?.key
+               let detection = keyContext.detection, !detection.isAmbiguous
             {
-                let added = detected.transposed(by: semitones)
+                let added = detection.key.transposed(by: semitones)
                 let after = snapshot.leadingMetadataEnd
                 snapshot.insertLine(
                     DirectiveLine.canonical(name: "key", value: added.name),

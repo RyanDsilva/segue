@@ -138,13 +138,7 @@ public actor SetlistStore {
     /// Creates and saves an empty setlist named `name`.
     public func create(name: String) throws -> Setlist {
         guard let root else { throw SetlistError.notLoaded }
-        let used = Set(setlists.values.map(\.slug))
-        let slug = Slug.unique(Slug.make(from: name)) { candidate in
-            used.contains(candidate) || fileSystem.fileExists(at: Self.url(
-                root: root,
-                slug: candidate,
-            ))
-        }
+        let slug = newSlug(for: name, root: root)
         let now = SegueJSON.stamp(clock.now())
         let setlist = Setlist(
             id: SetlistID(ids.next()),
@@ -207,48 +201,106 @@ public actor SetlistStore {
     /// Renames setlist `id` (the file keeps its slug, like songs) and saves it.
     @discardableResult
     public func rename(_ id: SetlistID, to name: String) throws -> Setlist {
-        fatalError("unimplemented: unit A (SetlistStore.rename)")
+        try mutateSetlist(id) { setlist in
+            setlist.name = name
+        }
     }
 
     /// Saves a copy of setlist `id` as a new setlist named `name` (default "<name> copy"):
-    /// a new setlist ID and new item IDs, same songs, overrides, notes and details.
+    /// a new setlist ID and new item IDs, same songs, overrides, notes and details. A
+    /// read-only (newer-schema) setlist can be duplicated: the copy holds what this build
+    /// can read and is editable.
     public func duplicate(_ id: SetlistID, name: String? = nil) throws -> Setlist {
-        fatalError("unimplemented: unit A (SetlistStore.duplicate)")
+        guard let root else { throw SetlistError.notLoaded }
+        guard let original = setlists[id]?.setlist else { throw SetlistError.setlistNotFound(id) }
+        let name = name ?? "\(original.name) copy"
+        let now = SegueJSON.stamp(clock.now())
+        let copy = Setlist(
+            id: SetlistID(ids.next()),
+            name: name,
+            entries: original.entries.map { entry in
+                var entry = entry
+                entry.itemId = SetlistItemID(ids.next())
+                return entry
+            },
+            createdAt: now,
+            updatedAt: now,
+            venue: original.venue,
+            date: original.date,
+            targetDuration: original.targetDuration,
+        )
+        let stored = Stored(setlist: copy, slug: newSlug(for: name, root: root))
+        try save(stored, root: root)
+        setlists[copy.id] = stored
+        return copy
     }
 
-    /// Deletes the setlist's file. Shows that ran it keep their own snapshot.
+    /// Deletes the setlist's file. Shows that ran it keep their own snapshot. A file already
+    /// gone from disk is simply forgotten.
     public func delete(_ id: SetlistID) throws {
-        fatalError("unimplemented: unit A (SetlistStore.delete)")
+        guard let root else { throw SetlistError.notLoaded }
+        guard let stored = setlists[id] else { throw SetlistError.setlistNotFound(id) }
+        let url = Self.url(root: root, slug: stored.slug)
+        if fileSystem.fileExists(at: url) {
+            try fileSystem.removeItem(at: url)
+        }
+        setlists[id] = nil
     }
 
-    /// Inserts `songIDs` (new item IDs each) at `offset` (nil = append) and saves.
+    /// Inserts `songIDs` (new item IDs each) at `offset` (nil = append) and saves. Throws
+    /// `invalidOffsets` when `offset` is outside `0 ... entries.count`.
     @discardableResult
     public func insertSongs(
         _ songIDs: [SongID],
         into id: SetlistID,
         at offset: Int? = nil,
     ) throws -> Setlist {
-        fatalError("unimplemented: unit A (SetlistStore.insertSongs)")
+        try mutate(id) { entries in
+            let position = offset ?? entries.count
+            guard (0 ... entries.count).contains(position) else {
+                throw SetlistError.invalidOffsets(id)
+            }
+            let inserted = songIDs.map { song in
+                SetlistEntry(itemId: SetlistItemID(ids.next()), songId: song)
+            }
+            entries.insert(contentsOf: inserted, at: position)
+        }
     }
 
-    /// Replaces the entry with `entry.itemId` (overrides, note) and saves. Throws
-    /// `invalidOffsets` when no entry has that item ID.
+    /// Replaces the overrides and note of the entry with `entry.itemId` (its song stays) and
+    /// saves. Throws `invalidOffsets` when no entry has that item ID.
     @discardableResult
     public func updateEntry(_ entry: SetlistEntry, in id: SetlistID) throws -> Setlist {
-        fatalError("unimplemented: unit A (SetlistStore.updateEntry)")
+        try mutate(id) { entries in
+            guard let index = entries.firstIndex(where: { $0.itemId == entry.itemId }) else {
+                throw SetlistError.invalidOffsets(id)
+            }
+            entries[index].overrides = entry.overrides
+            entries[index].note = entry.note
+        }
     }
 
-    /// Replaces venue, date and target length and saves.
+    /// Replaces venue, date and target length and saves. A blank venue is saved as none.
     @discardableResult
     public func updateDetails(_ details: SetlistDetails, of id: SetlistID) throws -> Setlist {
-        fatalError("unimplemented: unit A (SetlistStore.updateDetails)")
+        try mutateSetlist(id) { setlist in
+            let blankVenue = details.venue?.allSatisfy(\.isWhitespace) ?? true
+            setlist.venue = blankVenue ? nil : details.venue
+            setlist.date = details.date
+            setlist.targetDuration = details.targetDuration
+        }
     }
 
     /// Replaces all entries at once ("Save to setlist" in the show-end reorder sheet) and
-    /// saves. Item IDs must be unique.
+    /// saves. Item IDs must be unique, else `invalidOffsets` is thrown and nothing changes.
     @discardableResult
     public func replaceEntries(_ entries: [SetlistEntry], in id: SetlistID) throws -> Setlist {
-        fatalError("unimplemented: unit A (SetlistStore.replaceEntries)")
+        try mutate(id) { current in
+            guard Set(entries.map(\.itemId)).count == entries.count else {
+                throw SetlistError.invalidOffsets(id)
+            }
+            current = entries
+        }
     }
 
     // MARK: - Private
@@ -257,17 +309,38 @@ public actor SetlistStore {
         _ id: SetlistID,
         _ change: (inout [SetlistEntry]) throws -> Void,
     ) throws -> Setlist {
+        try mutateSetlist(id) { setlist in
+            try change(&setlist.entries)
+        }
+    }
+
+    /// Applies `change` to an editable setlist, stamps it and saves it atomically; nothing
+    /// changes (in memory or on disk) when `change` or the write throws.
+    private func mutateSetlist(
+        _ id: SetlistID,
+        _ change: (inout Setlist) throws -> Void,
+    ) throws -> Setlist {
         guard let root else { throw SetlistError.notLoaded }
         guard var stored = setlists[id] else { throw SetlistError.setlistNotFound(id) }
         if let reason = stored.setlist.readOnly {
             throw SetlistError.readOnly(id, reason)
         }
-        try change(&stored.setlist.entries)
+        try change(&stored.setlist)
         stored.setlist.schemaVersion = Setlist.currentSchemaVersion
         stored.setlist.updatedAt = SegueJSON.stamp(clock.now())
         try save(stored, root: root)
         setlists[id] = stored
         return stored.setlist
+    }
+
+    /// A slug for a new setlist file: from `name`, de-duplicated against loaded setlists and
+    /// files on disk (`-2`, `-3`, ...).
+    private func newSlug(for name: String, root: LibraryRoot) -> String {
+        let used = Set(setlists.values.map(\.slug))
+        return Slug.unique(Slug.make(from: name)) { candidate in
+            used.contains(candidate)
+                || fileSystem.fileExists(at: Self.url(root: root, slug: candidate))
+        }
     }
 
     private func save(_ stored: Stored, root: LibraryRoot) throws {
