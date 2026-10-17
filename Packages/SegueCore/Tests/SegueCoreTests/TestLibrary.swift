@@ -52,7 +52,7 @@ final class TestLibrary: Sendable {
     }
 
     func read(_ relativePath: String) throws -> String {
-        try String(decoding: Data(contentsOf: url(relativePath)), as: UTF8.self)
+        try String(contentsOf: url(relativePath), encoding: .utf8)
     }
 
     func exists(_ relativePath: String) -> Bool {

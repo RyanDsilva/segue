@@ -44,6 +44,7 @@ enum RomanizedHindiFixtures {
         """
         {title: Morning Light}
         [E]I love the morning light, it [A]shines on me
+        Through the pine and fern
 
         """,
     ]
@@ -72,6 +73,11 @@ struct RomanizedHindiSearchTests {
         ("kyoon", "kyu"),
         ("zindagi", "jindagi"),
         ("jindagee", "jindagi"),
+        ("phir", "fir"),
+        ("fir", "fir"),
+        ("phool", "ful"),
+        ("fool", "ful"),
+        ("pool", "pul"),
         ("accha", "acha"),
         ("achha", "acha"),
         ("bhool", "bul"),
@@ -87,7 +93,7 @@ struct RomanizedHindiSearchTests {
     @Test
     func `normalizer keeps word boundaries and strips punctuation`() {
         #expect(RomanNormalizer.normalize("Tum Hi Ho, (Pyaar!) hain...") == "tum hi ho pyar hai")
-        #expect(RomanNormalizer.normalize("  ") == "")
+        #expect(RomanNormalizer.normalize("  ").isEmpty)
     }
 
     @Test(arguments: [
@@ -101,6 +107,9 @@ struct RomanizedHindiSearchTests {
         ("kabhi", ["Kabhie Phir Milenge", "Deewana Dil"]),
         ("kabhie", ["Kabhie Phir Milenge", "Deewana Dil"]),
         ("kabhee milenge", ["Kabhie Phir Milenge"]),
+        ("fir milenge", ["Kabhie Phir Milenge"]),
+        ("phir", ["Kabhie Phir Milenge"]),
+        ("fir", ["Kabhie Phir Milenge"]),
         ("nahi manta", ["Deewana Dil"]),
         ("raste", ["Pyaar Ka Safar"]),
         // Edit-distance fallback over normalized titles and first lines.
@@ -124,6 +133,7 @@ struct RomanizedHindiSearchTests {
         ("willow", ["River Song"]),
         ("fixtures", ["River Song"]),
         ("with", []),
+        ("pine", ["Morning Light"]),
     ])
     func `english queries are unaffected by normalization`(
         query: String,

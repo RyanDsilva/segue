@@ -53,7 +53,7 @@ struct SongIndex: Sendable {
     private let pool: DatabasePool
 
     /// Opens the index at `url`, re-creating it empty when missing, stale or unreadable.
-    static func open(at url: URL, fileSystem: any FileSystem) throws -> SongIndex {
+    static func open(at url: URL, fileSystem: any FileSystem) throws -> Self {
         do {
             if let index = try openExisting(at: url, fileSystem: fileSystem) {
                 return index
@@ -79,7 +79,7 @@ struct SongIndex: Sendable {
     private static func openExisting(
         at url: URL,
         fileSystem: any FileSystem,
-    ) throws -> SongIndex? {
+    ) throws -> Self? {
         guard fileSystem.fileExists(at: url) else { return nil }
         let pool = try DatabasePool(path: url.path(percentEncoded: false))
         let found = try pool.read { db in
@@ -89,10 +89,10 @@ struct SongIndex: Sendable {
             try pool.close()
             return nil
         }
-        return SongIndex(pool: pool)
+        return Self(pool: pool)
     }
 
-    private static func create(at url: URL) throws -> SongIndex {
+    private static func create(at url: URL) throws -> Self {
         let pool = try DatabasePool(path: url.path(percentEncoded: false))
         try pool.write { db in
             try db.execute(sql: """
@@ -119,7 +119,7 @@ struct SongIndex: Sendable {
             PRAGMA user_version = \(version);
             """)
         }
-        return SongIndex(pool: pool)
+        return Self(pool: pool)
     }
 
     /// Closes the pool (before deleting the files).

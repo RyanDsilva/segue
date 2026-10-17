@@ -76,8 +76,9 @@ enum SidecarCodec {
         if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             return (object["id"] as? String).flatMap(ULID.init(string:)).map(SongID.init)
         }
-        let text = String(decoding: data, as: UTF8.self)
-        guard let match = text.firstMatch(of: /"id"\s*:\s*"([0-9A-Za-z]{26})"/) else {
+        guard let text = String(bytes: data, encoding: .utf8),
+              let match = text.firstMatch(of: /"id"\s*:\s*"([0-9A-Za-z]{26})"/)
+        else {
             return nil
         }
         return ULID(string: String(match.output.1)).map(SongID.init)

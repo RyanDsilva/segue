@@ -12,7 +12,7 @@ import Foundation
 /// which changes the index version and triggers a drop-and-rebuild.
 public enum RomanNormalizer {
     /// Bump on any change to `rules` or `words(_:)`.
-    public static let version = 1
+    public static let version = 2
 
     /// One rewrite applied to a single lowercased word.
     public enum Rule: Sendable, Equatable {
@@ -46,10 +46,13 @@ public enum RomanNormalizer {
         .replace("w", with: "v"),
         .replace("z", with: "j"),
         .replace("q", with: "k"),
+        // `phir`/`fir`, `phool`/`fool`: ph is written for f, so it folds to f (not p, which
+        // would merge English p/f words).
+        .replace("ph", with: "f"),
         // Doubled letters (`pyaar`, `dill`, `accha`, `chh` -> `ch`).
         .collapseDoubledLetters,
-        // Aspiration marks: bh kh dh th ph gh jh -> b k d t p g j.
-        .dropH(after: ["b", "k", "d", "t", "p", "g", "j"]),
+        // Aspiration marks: bh kh dh th gh jh -> b k d t g j.
+        .dropH(after: ["b", "k", "d", "t", "g", "j"]),
         // `kabhie` -> `kabi` (same as `kabhi`).
         .replaceSuffix("ie", with: "i", minLength: 3),
         // `hain` -> `hai`, `mein` -> `mei`, `nahin` -> `nahi`, `kyun` -> `kyu`.
@@ -98,31 +101,47 @@ public enum RomanNormalizer {
     private static func apply(_ rule: Rule, to word: String) -> String {
         switch rule {
         case .collapseDoubledLetters:
-            var out = ""
-            for character in word where character != out.last || !character.isLetter {
-                out.append(character)
-            }
-            return out
+            return collapseDoubles(word)
         case let .dropFinalN(vowels, minLength):
-            guard word.count >= minLength, word.hasSuffix("n") else { return word }
-            let beforeN = word.dropLast()
-            guard let vowel = beforeN.last, vowels.contains(vowel) else { return word }
-            return String(beforeN)
+            return dropFinalN(word, after: vowels, minLength: minLength)
         case let .dropH(consonants):
-            var out = ""
-            for character in word {
-                if character == "h", let previous = out.last, consonants.contains(previous) {
-                    continue
-                }
-                out.append(character)
-            }
-            return out
+            return dropH(word, after: consonants)
         case let .replace(target, replacement):
             return word.replacingOccurrences(of: target, with: replacement)
         case let .replaceSuffix(suffix, replacement, minLength):
             guard word.count >= minLength, word.hasSuffix(suffix) else { return word }
             return String(word.dropLast(suffix.count)) + replacement
         }
+    }
+
+    private static func collapseDoubles(_ word: String) -> String {
+        var out = ""
+        for character in word where character != out.last || !character.isLetter {
+            out.append(character)
+        }
+        return out
+    }
+
+    private static func dropFinalN(
+        _ word: String,
+        after vowels: Set<Character>,
+        minLength: Int,
+    ) -> String {
+        guard word.count >= minLength, word.hasSuffix("n") else { return word }
+        let beforeN = word.dropLast()
+        guard let vowel = beforeN.last, vowels.contains(vowel) else { return word }
+        return String(beforeN)
+    }
+
+    private static func dropH(_ word: String, after consonants: Set<Character>) -> String {
+        var out = ""
+        for character in word {
+            if character == "h", let previous = out.last, consonants.contains(previous) {
+                continue
+            }
+            out.append(character)
+        }
+        return out
     }
 }
 

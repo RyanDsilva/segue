@@ -116,7 +116,11 @@ struct SongFiles: Sendable {
                 previous.record.source, previous.record.document, previous.record.diagnostics,
             )
         } else {
-            source = String(decoding: data, as: UTF8.self)
+            // Not valid UTF-8: read as Latin-1 so every byte maps to a character instead of
+            // being replaced (a later save writes UTF-8).
+            source = String(bytes: data, encoding: .utf8)
+                ?? String(bytes: data, encoding: .isoLatin1)
+                ?? ""
             (document, diagnostics) = ChordProParser.parse(source)
         }
 
