@@ -98,3 +98,10 @@ Closed answers to the open questions raised by the phase specs (2026-10-16/17). 
 - Always-on safeguards:
   1. **Lyric preservation:** AI cleanup may change only chords, section labels and metadata, never lyric words. Enforced in code: the lyric token sequence of the output must equal the input's, otherwise the AI result is rejected and the deterministic result is used.
   2. **Editor input:** autocorrect, spell-check and smart quote/dash substitution are off in lyric text.
+
+## Phase 0 build rulings (2026-10-17)
+
+- **ChordPro round trip:** separate `fileComment` and `commentDirective` block cases, and every directive/line keeps its original source spelling (trivia) so serialization is byte-identical; edits re-spell only what changed.
+- **Sections hold blocks:** `Section.items: [Block]` (lines, comments, directives, blanks; no nested sections).
+- **E2E library path:** Debug configurations only get a temporary-exception entitlement for a `/tmp` test path; Release and AppStore builds never carry it, and `make verify-appstore` checks that.
+- **Two app targets:** `Segue` (Personal, links SeguePersonalModules) and `SegueAppStore` share sources, bundle id and entitlements, because SwiftPM dependencies attach per target, not per configuration.

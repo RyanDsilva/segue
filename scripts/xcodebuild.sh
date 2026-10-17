@@ -8,7 +8,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-derived=".build/DerivedData"
+derived="${SEGUE_DERIVED_DATA:-.build/DerivedData}"
 results=".build/results"
 mkdir -p "$results"
 bundle="$results/$(date +%Y%m%d-%H%M%S)-$$.xcresult"
