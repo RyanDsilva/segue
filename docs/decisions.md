@@ -105,3 +105,8 @@ Closed answers to the open questions raised by the phase specs (2026-10-16/17). 
 - **Sections hold blocks:** `Section.items: [Block]` (lines, comments, directives, blanks; no nested sections).
 - **E2E library path:** Debug configurations only get a temporary-exception entitlement for a `/tmp` test path; Release and AppStore builds never carry it, and `make verify-appstore` checks that.
 - **Two app targets:** `Segue` (Personal, links SeguePersonalModules) and `SegueAppStore` share sources, bundle id and entitlements, because SwiftPM dependencies attach per target, not per configuration.
+
+## Phase 7 research outcomes (2026-10-17)
+
+- **R7.1 transport:** Network.framework (new Swift NetworkListener/NetworkBrowser/NetworkConnection), TCP + TLS, length-prefixed JSON, Bonjour `_segue._tcp`, peer-to-peer Wi-Fi enabled. Wi-Fi Aware adapter later for iOS-to-iOS / Android. See `docs/research/phase7-sync.md`.
+- **R7.2 library sync:** keep the user-picked iCloud Drive folder; change detection via NSFilePresenter plus rescan on launch/foreground/bookmark resolve (NSMetadataQuery is unreliable for user-picked folders); detect both NSFileVersion conflicts and "name 2.cho" duplicates.
