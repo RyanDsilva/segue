@@ -1,0 +1,68 @@
+// Owner: unit C (Editing). Frozen interface: docs/phases/1-interfaces.md.
+
+import ChordPro
+import Diagrams
+
+/// A tree-level edit, as visual mode (and editor commands) express it.
+///
+/// Chord text in operations is source text (what goes between the brackets). Visual mode
+/// converts what the user typed in the display key with `DisplayTransform.sourceChord`.
+public enum EditOperation: Sendable, Hashable {
+    /// Adds `[chord]` above the character at `at`. If chords already sit at that offset the
+    /// new one goes after them (`[A][B]text`), never replacing.
+    case insertChord(String, at: LyricPosition)
+    /// Changes the text of one chord.
+    case replaceChord(ChordRef, with: String)
+    /// Moves a chord to another offset, same or another lyric line (drag).
+    case moveChord(ChordRef, to: LyricPosition)
+    /// Copies a chord to another offset (Option-drag).
+    case duplicateChord(ChordRef, to: LyricPosition)
+    case deleteChord(ChordRef)
+    /// Replaces `range` (Character offsets into the line's lyric text) with `replacement`.
+    /// Chords stay on their characters; chords inside a removed range move to its start.
+    case editLyrics(BlockPath, range: Range<Int>, replacement: String)
+    /// Splits a lyric line in two at a position (Return in visual mode); chords at or after
+    /// the position go to the new line.
+    case splitLine(at: LyricPosition)
+    /// Joins a lyric line onto the previous lyric line (Backspace at line start).
+    case joinWithPrevious(BlockPath)
+    /// Sets or clears the label of the section whose header is at `path`
+    /// (`{start_of_verse: Verse 2}`), keeping the directive's spelling.
+    case setSectionLabel(BlockPath, label: String?)
+    /// Sets the first metadata directive `name` (`key`, `capo`, `tempo`, ...; `meta` is not
+    /// accepted here). `nil` removes it. When absent, it is inserted after the last leading
+    /// metadata directive (or at the top).
+    case setDirective(name: String, value: String?)
+    /// Sets `{meta: <name> <value>}` (e.g. `tuning`); `nil` removes it.
+    case setMeta(name: String, value: String?)
+    /// Replaces every `{define}` with the same name by one canonical define, or inserts it
+    /// after the leading metadata directives.
+    case setDefine(ChordDefinition)
+    case removeDefine(name: String)
+}
+
+public enum EditError: Error, Sendable, Hashable {
+    /// The path does not exist in this snapshot.
+    case invalidPath(BlockPath)
+    /// The path exists but is not what the operation needs (e.g. not a lyric line).
+    case wrongBlockKind(BlockPath)
+    case invalidChord(ChordRef)
+    case offsetOutOfRange(LyricPosition)
+    /// Tab/grid sections are pass-through: never edited visually.
+    case readOnlyBlock(BlockPath)
+    /// Empty or bracket-containing chord text.
+    case invalidChordText(String)
+}
+
+/// Plans tree operations as minimal text edits (phase 1 spec, "Sync between modes").
+///
+/// Invariant: `snapshot.text.applying(change.edits)` parses to the tree the operation
+/// describes, and every byte outside the touched lines is unchanged.
+public enum DocumentEditor {
+    public static func change(
+        for operation: EditOperation,
+        in snapshot: SourceSnapshot,
+    ) throws(EditError) -> SourceChange {
+        fatalError("unimplemented: unit C")
+    }
+}

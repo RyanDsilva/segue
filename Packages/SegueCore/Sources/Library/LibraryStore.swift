@@ -112,6 +112,13 @@ public actor LibraryStore {
         return song.record
     }
 
+    /// Replaces the display preferences of song `id` in its sidecar (the `.cho` is not
+    /// touched) and returns the updated record. Throws `LibraryError.readOnly` for
+    /// read-only songs. Owner: unit C (phase 1).
+    public func updateDisplayPrefs(id: SongID, _ prefs: DisplayPrefs) throws -> SongRecord {
+        fatalError("unimplemented: unit C")
+    }
+
     /// The song with `id`, or nil if absent.
     public func song(id: SongID) throws -> SongRecord? {
         try openLibrary().songs[id]?.record

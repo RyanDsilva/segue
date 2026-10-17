@@ -40,6 +40,14 @@ public enum AccessibilityID {
     public static let sheetLyric = "segue.sheet.lyric"
     public static let sheetSectionLabel = "segue.sheet.sectionLabel"
 
+    // MARK: Chord diagrams (phase 1, unit B)
+
+    public static let diagramStrip = "segue.diagrams.strip"
+    public static let guitarDiagram = "segue.diagrams.guitar"
+    public static let pianoDiagram = "segue.diagrams.piano"
+    public static let shapeEditor = "segue.diagrams.shapeEditor"
+    public static let shapeEditorSave = "segue.diagrams.shapeEditor.save"
+
     // MARK: Setlists
 
     public static let setlistList = "segue.setlists.list"

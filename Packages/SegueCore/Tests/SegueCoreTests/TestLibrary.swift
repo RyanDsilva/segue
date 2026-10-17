@@ -65,7 +65,22 @@ final class TestLibrary: Sendable {
         {
           "createdAt" : "\(created)",
           "displayPrefs" : {
-
+            "capoMode" : "shapes",
+            "instrument" : "guitar",
+            "nashville" : false,
+            "showDiagrams" : true,
+            "transpose" : 0,
+            "tuning" : {
+              "name" : "Standard",
+              "strings" : [
+                40,
+                45,
+                50,
+                55,
+                59,
+                64
+              ]
+            }
           },
           "id" : "\(id)",
           "schemaVersion" : 1,

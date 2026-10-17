@@ -20,7 +20,10 @@ let package = Package(
     products: [
         .library(
             name: "SegueCore",
-            targets: ["ChordPro", "Library", "Setlists", "Plugins", "Support"],
+            targets: [
+                "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
+                "Plugins", "Support",
+            ],
         ),
     ],
     dependencies: [
@@ -39,10 +42,38 @@ let package = Package(
             ],
             swiftSettings: strictSettings,
         ),
+        // Phase 1 unit A: chord symbols, transposition, capo, Nashville, key detection.
+        .target(
+            name: "MusicTheory",
+            dependencies: [
+                .product(name: "Tonic", package: "Tonic"),
+            ],
+            swiftSettings: strictSettings,
+        ),
+        // Phase 1 unit B: tunings, guitar shapes, piano voicings, {define}, shape lookup.
+        .target(
+            name: "Diagrams",
+            dependencies: ["MusicTheory", "Support"],
+            swiftSettings: strictSettings,
+        ),
+        // Phase 1 unit C: source snapshot, tree edit operations -> text edits, render model.
+        .target(
+            name: "Editing",
+            dependencies: [
+                "ChordPro",
+                "Diagrams",
+                "MusicTheory",
+                .product(name: "Tonic", package: "Tonic"),
+            ],
+            swiftSettings: strictSettings,
+        ),
         .target(
             name: "Library",
             dependencies: [
                 "ChordPro",
+                "Diagrams",
+                "Editing",
+                "MusicTheory",
                 "Support",
                 .product(name: "GRDB", package: "GRDB.swift"),
             ],
@@ -60,7 +91,11 @@ let package = Package(
         ),
         .testTarget(
             name: "SegueCoreTests",
-            dependencies: ["ChordPro", "Library", "Setlists", "Plugins", "Support"],
+            dependencies: [
+                "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
+                "Plugins", "Support",
+                .product(name: "Tonic", package: "Tonic"),
+            ],
             path: "Tests",
             resources: [.copy("Fixtures")],
             swiftSettings: strictSettings,
