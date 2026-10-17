@@ -61,6 +61,7 @@ Export each layer as SVG from a master file in `design/icon/` (git-tracked). Che
 | `ground` | #FFFFFF (`paper`) | #101113 (`stage`) | window and live view background |
 | `muted` | #55555C | #8E8E96 | secondary text, section labels, metadata |
 | `line` | #E4E4E7 | #222326 | hairlines, chip borders, dividers |
+| `played` | #55555C | #55555C | played-song progress dots |
 | `lineStrong` | #B9B9C0 | #2A2B2F | inactive progress dots, icon greys |
 | `surfaceAlt` | #F2F2F4 | #1A1B1E | light icon ground, hovered rows |
 
@@ -93,7 +94,7 @@ Editor and PDF use the same chord/lyric ratio so what you edit is what you see o
 - **Buttons:** primary has an ink fill with paper text; secondary is paper with a `line` border. 15 / 600, padding 10x18, radius 8. Coral is never a button fill; it is reserved for the cue.
 - **Section label gutter (live view):** a 64px left column holding the label at 13 / 700. Chorus labels use `text`, other sections `muted`. Collapsed repeats render "Repeat chorus" in muted at lyric size.
 - **Set progress dots:** a row of 6x6 radius-3 dots in the live header.
-  - Played songs: `#55555C`.
+  - Played songs: `played` (#55555C).
   - Current song: a 20px-wide `cue` pill.
   - Upcoming songs: `lineStrong`.
   - Elapsed set time sits beside the dots in muted.

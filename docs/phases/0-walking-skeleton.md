@@ -158,6 +158,37 @@ See `docs/decisions.md` for the audit trail.
 
 - **Shortcut from full screen (phase 2):** in the phase 0 sandbox build, open `shortcuts://run-shortcut?name=...` while the app is full screen and record whether Shortcuts comes forward or leaves a visible window. Record the result in this doc; if it steals focus, phase 2 runs the start Shortcut from the pre-show checklist screen (before entering full screen) and the end Shortcut after leaving it.
 
+### Result: Shortcut from full screen
+
+**Status: open - needs one manual run by Ryan.** The question can't be answered unattended. The `shortcuts` CLI can run shortcuts but can't create them, importing a `.shortcut` file needs a click in Shortcuts, and this Mac has no shortcuts (`shortcuts list` is empty).
+
+**Harness:** `scripts/verify-shortcut-focus.sh "<name>" [Segue.app]`. It:
+
+1. Launches the sandboxed Debug-Personal build.
+2. Puts Segue full screen through Accessibility (`AXFullScreen`).
+3. Opens `shortcuts://run-shortcut?name=<name>`.
+4. Samples the frontmost app (`lsappinfo`) and Shortcuts' on-screen windows (`CGWindowList`) every 0.25 s for 8 s.
+5. Prints `RESULT:` and exits 0 (Segue kept focus, no Shortcuts window) or 2 (focus stolen or a window shown).
+
+The URL is opened from the script, not from inside Segue, because phase 0 has no in-app trigger. Shortcuts' own activation behaviour is the variable under test, so this caveat doesn't change the answer. Phase 2 should still confirm with its in-app call (`NSWorkspace.open`).
+
+**What was observed so far (2026-10-17, partial - no full screen, no real shortcut):** opening `shortcuts://run-shortcut?name=<missing>` while another app was frontmost:
+
+- launched Shortcuts;
+- showed its "All Shortcuts" main window on screen within about 1 s;
+- did not become frontmost (per `lsappinfo`).
+
+So the URL handler at least puts a visible window on screen in the error path.
+
+**To finish (manual):**
+
+1. In Shortcuts, create a shortcut named `Segue Focus Probe` with a single "Wait 1 second" action.
+2. Grant Accessibility to your terminal (System Settings > Privacy & Security > Accessibility).
+3. Run `make build`.
+4. Run `scripts/verify-shortcut-focus.sh "Segue Focus Probe"`.
+5. Paste the `RESULT:` line and the sample log here.
+6. Watch the screen during the run too: it shows whether a Shortcuts window or progress banner appears over the full-screen Space or switches Spaces, which the frontmost-app sample alone can't tell.
+
 ## Open questions
 
 None open.
