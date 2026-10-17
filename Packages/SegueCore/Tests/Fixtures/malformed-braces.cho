@@ -1,0 +1,10 @@
+{title: Broken Braces
+{artist: Fine Artist}
+{}
+{ : no name}
+{c: closed} but trailing text
+{end_of_chorus}
+
+{start_of_verse}
+[G]A verse that never [C]ends
+[D]and runs off the end of the file

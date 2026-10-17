@@ -1,0 +1,3 @@
+# Parser fixtures are byte-exact (CRLF, trailing whitespace, no final newline): never
+# let git normalize them.
+*.cho -text

@@ -1,0 +1,8 @@
+{title: Broken Brackets}
+
+{start_of_verse}
+[G This chord is never closed
+Stray closing ]bracket here
+[C[D]Nested open before close
+Ends with an open [
+{end_of_verse}

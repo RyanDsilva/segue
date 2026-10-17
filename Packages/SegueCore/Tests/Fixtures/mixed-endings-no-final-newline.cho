@@ -1,0 +1,7 @@
+{title: Mixed Up}
+{key: C}
+
+[C]This line ends in LF
+[F]This one ends in CRLF
+{c: and the last line has no newline}
+[G]The [C]end

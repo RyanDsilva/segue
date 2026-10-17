@@ -26,3 +26,6 @@ xcuserdata/
 
 # Local signing overrides (not used yet; see Project.swift)
 Tuist/Signing.xcconfig
+
+# Per-agent SwiftPM scratch paths
+.build-*/

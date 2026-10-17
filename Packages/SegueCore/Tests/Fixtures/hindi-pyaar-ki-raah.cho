@@ -1,0 +1,21 @@
+{title: Pyaar Ki Raah}
+{artist: Fixture Sangeet}
+{key: Am}
+{tempo: 84}
+
+{start_of_verse: Verse 1}
+[Am]Chalte chalte [G]is raah pe, [F]tera saath mila [E]hai
+[Am]Kabhi dhoop kabhi [G]chhaon mein, [F]dil ne kuch kaha [E]hai
+{end_of_verse}
+
+{start_of_chorus}
+[F]Pyaar ki [G]raah mein, [Am]hum tum saath hain
+[F]Sapnon ki [G]baahon mein, [E]dil ke jazbaat hain
+{end_of_chorus}
+
+{start_of_verse: Verse 2}
+[Am]Baarish ki [G]boondon mein, [F]teri hansi [E]suni
+[Am]Raat ke [G]taaron ne [F]ek kahaani [E]buni
+{end_of_verse}
+
+{chorus}

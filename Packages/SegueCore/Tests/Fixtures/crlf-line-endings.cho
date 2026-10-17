@@ -1,0 +1,10 @@
+{title: Windows Line Endings}
+{artist: The CR LF Duo}
+
+{start_of_verse}
+[E]Carriage goes [A]back and the [B]line feeds on
+[E]Two little [A]bytes at the [B]end of the [E]song
+{end_of_verse}
+
+# a comment with CRLF
+{chorus}

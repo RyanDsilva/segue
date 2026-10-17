@@ -122,3 +122,8 @@ Chosen on the design canvas (https://claude.ai/artifact/XizqyqzA1chVfBSGThAzcQ):
 ## Phase 5 research notes (2026-10-17)
 
 See `docs/research/phase5-audio.md`. Conflicts with earlier research to re-verify in spike: BTC weights reported MIT (earlier: CC-BY-NC-SA); `schism-audio/htdemucs-coreml` does not exist (use MLX Swift Demucs ports). Do not feed the separated vocal stem to ASR by default (Jam-ALT: WER worsens). Apple SpeechTranscriber has no hi-IN on this machine.
+
+## Phase 3 research outcomes (2026-10-17)
+
+- **Minimum OS stays macOS 26.** Our own AI provider port abstracts Foundation Models vs MLX; the macOS 27 `LanguageModel` protocol is not required. Raise the floor later if useful.
+- **Romanized Hindi AI cleanup:** try Apple Foundation Models first; on unsupported-language/guardrail/refusal errors fall back to the local MLX model automatically. The spike measures how often this happens.

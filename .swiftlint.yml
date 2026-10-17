@@ -14,6 +14,7 @@ excluded:
   - Packages/SegueCore/.build
   - Packages/SegueUI/.build
   - Packages/SeguePersonalModules/.build
+  - "**/.build-*"
 
 disabled_rules:
   # Formatting rules SwiftFormat already enforces (avoid the two tools fighting).

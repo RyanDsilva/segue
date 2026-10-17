@@ -1,0 +1,20 @@
+{title: Paper Planes Over Pune}
+{composer: R. Fernandes}
+{lyricist: R. Fernandes}
+{year: 2024}
+{album: Monsoon Tapes}
+{copyright: 2024 Original fixture text}
+{meta: tuning DADGAD}
+{meta: mood bright}
+{x_segue_pedal: next}
+{textfont: Helvetica}
+{textsize: 14}
+{define: Gadd9 base-fret 1 frets 3 2 0 2 0 3}
+{new_page}
+{columns: 2}
+
+{start_of_verse}
+[D]Paper planes over [Gadd9]Pune, [A]flying through the haze
+[D]Every rooftop [Gadd9]holds a [A]story of our days
+{end_of_verse}
+{column_break}
