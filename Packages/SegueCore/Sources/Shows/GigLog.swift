@@ -63,20 +63,73 @@ public struct GigLogEntry: Sendable, Hashable, Identifiable {
 
     /// The entry for a finished record; nil if it is unfinished or a rehearsal.
     public init?(_ record: ShowRecord) {
-        fatalError("unimplemented: unit A (GigLogEntry.init)")
+        guard record.kind == .gig, let endedAt = record.endedAt else { return nil }
+        self.init(
+            id: record.id,
+            setlistId: record.setlistId,
+            setlistName: record.setlistName,
+            details: record.gig,
+            startedAt: record.startedAt,
+            endedAt: endedAt,
+            played: record.playedSongs,
+            skipped: record.items.filter { $0.state == .skipped },
+            closure: record.closure ?? .ended,
+        )
+    }
+
+    /// Played songs that came from the request queue.
+    public var requestCount: Int {
+        played.count { $0.fromRequest }
     }
 }
 
 public extension ShowRecord {
     /// Songs played so far, in play order, derived from `events` (start = the last time the
     /// item became current, end = when it was advanced past as played).
+    ///
+    /// Only items whose state is still `played` count (an item `previous` brought back is
+    /// counted from its later play). A song's order is when it was last marked played.
     var playedSongs: [PlayedSong] {
-        fatalError("unimplemented: unit A (ShowRecord.playedSongs)")
+        var becameCurrent: [ShowItemID: Date] = [:]
+        var plays: [ShowItemID: Play] = [:]
+        for (order, event) in events.enumerated() {
+            switch event.kind {
+            case .advanced, .autoClosed, .ended:
+                if let played = event.fromItemId {
+                    let start = becameCurrent[played] ?? startedAt
+                    plays[played] = Play(start: start, end: max(event.at, start), order: order)
+                }
+            default:
+                break
+            }
+            switch event.kind {
+            case .advanced, .jumped, .previous, .requestPlayed, .started:
+                if let current = event.itemId {
+                    becameCurrent[current] = event.at
+                }
+            default:
+                break
+            }
+        }
+        return items
+            .compactMap { item -> (PlayedSong, Int)? in
+                guard item.state == .played, let play = plays[item.itemId] else { return nil }
+                let song = PlayedSong(
+                    item: item,
+                    startedAt: play.start,
+                    endedAt: play.end,
+                    fromRequest: item.origin == .request,
+                )
+                return (song, play.order)
+            }
+            .sorted { $0.1 < $1.1 }
+            .map(\.0)
     }
 
-    /// The play projection rows for this (finished, gig) show.
+    /// The play projection rows for this (finished, gig) show; empty for a rehearsal.
     var playRecords: [PlayRecord] {
-        playedSongs.map { played in
+        guard kind == .gig else { return [] }
+        return playedSongs.map { played in
             PlayRecord(
                 songId: played.item.songId,
                 showId: id.ulid,
@@ -86,4 +139,12 @@ public extension ShowRecord {
             )
         }
     }
+}
+
+/// One play found in the event log (`playedSongs`).
+private struct Play {
+    var start: Date
+    var end: Date
+    /// Index of the event that marked it played.
+    var order: Int
 }

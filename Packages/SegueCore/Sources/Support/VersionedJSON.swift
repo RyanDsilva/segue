@@ -9,7 +9,7 @@ public enum SegueJSON {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         encoder.dateEncodingStrategy = .custom { date, encoder in
             var container = encoder.singleValueContainer()
-            try container.encode(date.formatted(fractionalDateStyle))
+            try container.encode(format(date))
         }
         var data = try encoder.encode(value)
         data.append(contentsOf: Array("\n".utf8))
@@ -23,10 +23,10 @@ public enum SegueJSON {
             let container = try decoder.singleValueContainer()
             let string = try container.decode(String.self)
             if let date = try? Date(string, strategy: fractionalDateStyle) {
-                return date
+                return stamp(date)
             }
             if let date = try? Date(string, strategy: Date.ISO8601FormatStyle()) {
-                return date
+                return stamp(date)
             }
             throw DecodingError.dataCorruptedError(
                 in: container,
@@ -39,7 +39,24 @@ public enum SegueJSON {
     /// `date` rounded to whole milliseconds, the precision the on-disk form keeps. Stamp
     /// timestamps through this so a value survives a save/reload round trip unchanged.
     public static func stamp(_ date: Date) -> Date {
-        Date(timeIntervalSince1970: (date.timeIntervalSince1970 * 1000).rounded() / 1000)
+        Date(timeIntervalSince1970: Double(milliseconds(date)) / 1000)
+    }
+
+    /// Whole milliseconds since 1970, rounded to nearest.
+    private static func milliseconds(_ date: Date) -> Int64 {
+        Int64((date.timeIntervalSince1970 * 1000).rounded())
+    }
+
+    /// ISO 8601 with exactly three fractional digits, rounded (the Foundation style
+    /// truncates, and its parse is off by a fraction of a millisecond, so neither alone
+    /// round-trips: decoding re-stamps, encoding writes the rounded milliseconds).
+    private static func format(_ date: Date) -> String {
+        let total = milliseconds(date)
+        let seconds = total >= 0 ? total / 1000 : (total - 999) / 1000
+        let fraction = Int(total - seconds * 1000)
+        let whole = Date(timeIntervalSince1970: Double(seconds))
+            .formatted(Date.ISO8601FormatStyle())
+        return String(whole.dropLast()) + String(format: ".%03dZ", fraction)
     }
 
     private static let fractionalDateStyle = Date.ISO8601FormatStyle(

@@ -41,8 +41,9 @@ public struct LaunchShowCheck: Sendable, Equatable {
     }
 }
 
-/// Shows stored as `shows/<ulid>.show.json`, written atomically (temp file + rename). Only
-/// gig shows are stored; rehearsals never reach this store.
+/// Shows stored as `shows/<ulid>.show.json`, written atomically (temp file + rename).
+/// Rehearsal runs are stored too, so they get the same crash resume (decisions.md, phase 2
+/// build rulings), but they never appear in the gig log or the play projection.
 public actor ShowStore {
     /// An unfinished show untouched this long is closed into the gig log on launch.
     public static let staleInterval: TimeInterval = 12 * 60 * 60
@@ -50,6 +51,14 @@ public actor ShowStore {
     private let fileSystem: any FileSystem
     private let clock: any Clock
     private let playHistory: (any PlayHistoryIndex)?
+
+    private var root: LibraryRoot?
+    private var shows: [ShowID: ShowRecord] = [:]
+
+    private static let migrator = SchemaMigrator(
+        currentVersion: ShowRecord.currentSchemaVersion,
+        steps: [:],
+    )
 
     public init(
         fileSystem: any FileSystem,
@@ -65,40 +74,163 @@ public actor ShowStore {
     /// from the finished ones (`replaceAllPlays`). Unreadable files are reported.
     @discardableResult
     public func load(root: LibraryRoot) async throws -> [ShowLoadIssue] {
-        fatalError("unimplemented: unit A (ShowStore.load)")
+        try fileSystem.createDirectory(at: root.showsDirectory)
+        let suffix = LibraryRoot.showSuffix
+        let urls = try fileSystem.contentsOfDirectory(at: root.showsDirectory)
+            .filter { $0.lastPathComponent.hasSuffix(suffix) }
+        var loaded: [ShowID: ShowRecord] = [:]
+        var issues: [ShowLoadIssue] = []
+        for url in urls {
+            let relativePath = "shows/\(url.lastPathComponent)"
+            do {
+                let record = try Self.decode(fileSystem.readData(at: url))
+                if loaded[record.id] != nil || url.lastPathComponent != Self.fileName(record.id) {
+                    issues.append(ShowLoadIssue(
+                        relativePath: relativePath,
+                        message: "file name does not match show id \(record.id)",
+                    ))
+                    continue
+                }
+                loaded[record.id] = record
+            } catch {
+                issues.append(ShowLoadIssue(
+                    relativePath: relativePath,
+                    message: Self.describe(error),
+                ))
+            }
+        }
+        self.root = root
+        shows = loaded
+        try await playHistory?.replaceAllPlays(
+            loaded.values.sorted { $0.id < $1.id }.filter(\.isFinished).flatMap(\.playRecords),
+        )
+        return issues
     }
 
     /// Writes `record` atomically. Writing a finished record also replaces its plays in the
     /// projection. Throws for read-only records.
     public func save(_ record: ShowRecord) async throws {
-        fatalError("unimplemented: unit A (ShowStore.save)")
+        guard let root else { throw ShowError.notLoaded }
+        if let reason = record.readOnly {
+            throw ShowError.readOnly(record.id, reason)
+        }
+        try fileSystem.writeAtomically(
+            SegueJSON.encode(record),
+            to: root.showsDirectory.appending(path: Self.fileName(record.id)),
+        )
+        shows[record.id] = record
+        if record.isFinished {
+            try await playHistory?.replacePlays(forShow: record.id.ulid, with: record.playRecords)
+        }
     }
 
     /// The show with `id`.
     public func show(id: ShowID) -> ShowRecord? {
-        fatalError("unimplemented: unit A (ShowStore.show)")
+        shows[id]
     }
 
-    /// The gig log: finished shows, newest first.
+    /// Every stored show, oldest first.
+    public func all() -> [ShowRecord] {
+        shows.values.sorted { ($0.startedAt, $0.id) < ($1.startedAt, $1.id) }
+    }
+
+    /// The gig log: finished gig shows, newest first (rehearsals are never listed).
     public func gigLog() -> [GigLogEntry] {
-        fatalError("unimplemented: unit A (ShowStore.gigLog)")
+        all().reversed().compactMap(GigLogEntry.init)
     }
 
     /// Edits a finished show's gig log fields and saves it. Ratings outside
-    /// `GigDetails.ratingRange` are refused.
+    /// `GigDetails.ratingRange` are refused. Blank venue and notes are stored as nil.
     @discardableResult
     public func updateGigDetails(_ details: GigDetails, of id: ShowID) async throws -> ShowRecord {
-        fatalError("unimplemented: unit A (ShowStore.updateGigDetails)")
+        guard var record = shows[id] else { throw ShowError.showNotFound(id) }
+        guard record.isFinished else { throw ShowError.notFinished(id) }
+        if let rating = details.rating, !GigDetails.ratingRange.contains(rating) {
+            throw ShowError.invalidRating(rating)
+        }
+        record.gig = GigDetails(
+            venue: ShowRecord.trimmed(details.venue),
+            date: details.date,
+            notes: ShowRecord.trimmed(details.notes),
+            rating: details.rating,
+        )
+        record.updatedAt = SegueJSON.stamp(clock.now())
+        try await save(record)
+        return record
     }
 
     /// Deletes a show's file and its plays from the projection.
     public func delete(_ id: ShowID) async throws {
-        fatalError("unimplemented: unit A (ShowStore.delete)")
+        guard let root else { throw ShowError.notLoaded }
+        guard let record = shows[id] else { throw ShowError.showNotFound(id) }
+        if let reason = record.readOnly {
+            throw ShowError.readOnly(id, reason)
+        }
+        let url = root.showsDirectory.appending(path: Self.fileName(id))
+        if fileSystem.fileExists(at: url) {
+            try fileSystem.removeItem(at: url)
+        }
+        shows[id] = nil
+        try await playHistory?.replacePlays(forShow: id.ulid, with: [])
     }
 
     /// Run once after `load` at launch: auto-closes stale unfinished shows (written back,
     /// projected) and returns the resumable one, if any.
+    ///
+    /// Only the most recently updated fresh run (gig or rehearsal) is resumable; any other
+    /// unfinished run (stale, or an older fresh one left behind) is closed with
+    /// `closure = .stale` and `endedAt` = its last update. A closed rehearsal's ending has no
+    /// diff and no gig log entry. Read-only shows are left untouched.
     public func launchCheck() async throws -> LaunchShowCheck {
-        fatalError("unimplemented: unit A (ShowStore.launchCheck)")
+        let now = clock.now()
+        let unfinished = all()
+            .filter { !$0.isFinished && $0.readOnly == nil }
+            .sorted { ($0.updatedAt, $0.id) < ($1.updatedAt, $1.id) }
+        let resumable = unfinished.last { now.timeIntervalSince($0.updatedAt) < Self.staleInterval }
+        var closed: [ShowEnding] = []
+        for var record in unfinished where record.id != resumable?.id {
+            _ = record.finish(at: record.updatedAt, closure: .stale)
+            try await save(record)
+            closed.append(ShowEnding(
+                record: record,
+                diff: record.kind == .gig ? ReorderDiff.compute(record) : nil,
+                gigLogEntry: GigLogEntry(record),
+            ))
+        }
+        return LaunchShowCheck(resumable: resumable, autoClosed: closed)
+    }
+
+    // MARK: - Files
+
+    static func fileName(_ id: ShowID) -> String {
+        id.description + LibraryRoot.showSuffix
+    }
+
+    private static func decode(_ data: Data) throws -> ShowRecord {
+        switch try migrator.migrate(data) {
+        case let .current(json), let .migrated(json, _):
+            return try SegueJSON.decode(ShowRecord.self, from: json)
+        case let .newer(found):
+            // Best effort: a newer file that still decodes is shown (gig log) but never
+            // rewritten or resumed.
+            var record = try SegueJSON.decode(ShowRecord.self, from: data)
+            record.schemaVersion = found
+            record.readOnly = .newerSchema(found: found, supported: ShowRecord.currentSchemaVersion)
+            return record
+        }
+    }
+
+    static func describe(_ error: any Error) -> String {
+        switch error {
+        case let error as SchemaMigrationError:
+            error.description
+        case let DecodingError.dataCorrupted(context),
+             let DecodingError.keyNotFound(_, context),
+             let DecodingError.typeMismatch(_, context),
+             let DecodingError.valueNotFound(_, context):
+            context.debugDescription
+        default:
+            "invalid JSON: \(error.localizedDescription)"
+        }
     }
 }

@@ -62,8 +62,8 @@ public typealias ShowItemID = SetlistItemID
 public enum ShowKind: String, Sendable, Hashable, Codable {
     /// A real gig: persisted on every action, becomes a gig log entry, feeds play stats.
     case gig
-    /// A rehearse-setlist run: never written as a show and never in the gig log; only song
-    /// timings are recorded (`DurationSampleSink`).
+    /// A rehearse-setlist run: written like a gig so it can be resumed after a crash, but
+    /// never in the gig log or play stats; its output is song timings (`DurationSampleSink`).
     case rehearsal
 }
 
@@ -174,10 +174,13 @@ public struct ShowEvent: Sendable, Hashable, Codable {
         /// Resumed after a relaunch; `itemId` = current.
         case resumed
         /// `next`: `fromItemId` marked played, `itemId` became current (nil at the end).
+        /// After `skipCurrent` (or `next` with nothing current) `fromItemId` is nil: the
+        /// show moved on to `itemId` without playing anything.
         case advanced
         /// `previous`: `fromItemId` back to pending, `itemId` (last played) current again.
         case previous
-        /// `itemId` skipped (`fromItemId` = the item left when the skipped one was current).
+        /// `itemId` skipped (`fromItemId` = the item left when the skipped one was current;
+        /// an `advanced` event without `fromItemId` then names the new current item).
         case skipped
         case unskipped
         /// Play now / jump: `itemId` became current, `fromItemId` was interrupted (back to
@@ -193,7 +196,9 @@ public struct ShowEvent: Sendable, Hashable, Codable {
         case requestDropped
         /// `endShow`; `fromItemId` = the current item, marked played if it was current.
         case ended
-        /// Closed on a later launch because it was untouched for 12 hours.
+        /// Closed on a later launch because it was untouched for 12 hours; stamped with the
+        /// show's last update. Like `ended`, `fromItemId` (the item then current) is marked
+        /// played.
         case autoClosed
     }
 
@@ -361,5 +366,13 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
     /// Requests still waiting, oldest first.
     public var queuedRequests: [ShowRequest] {
         requests.filter { $0.state == .queued }
+    }
+
+    /// Planned entries left out of the show at start because their song was missing
+    /// (decisions.md, phase 2 build rulings: removed, not skipped). Derived: items are never
+    /// removed during a show, so a planned entry without an item was left out.
+    public var omittedEntries: [SetlistEntry] {
+        let present = Set(items.map(\.itemId))
+        return planned.filter { !present.contains($0.itemId) }
     }
 }
