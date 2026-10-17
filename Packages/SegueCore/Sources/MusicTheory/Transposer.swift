@@ -1,5 +1,7 @@
 // Owner: unit A (MusicTheory). Frozen interface: docs/phases/1-interfaces.md.
 
+import Tonic
+
 /// Transposes chord tokens by a number of semitones, spelling results by the target key.
 ///
 /// Both the view transform (preview, live view) and "Apply transposition to source" use
@@ -36,11 +38,29 @@ public struct Transposer: Sendable, Hashable {
     /// transposition returns the token unchanged (keeping `original`). A transposed chord's
     /// `original` is its canonical `symbol.text` (root and bass re-spelled, suffix kept).
     public func transpose(_ token: ChordToken) -> ChordToken {
-        fatalError("unimplemented: unit A")
+        guard case let .chord(chord) = token, !isIdentity else { return token }
+        return .chord(transpose(chord))
     }
 
     /// `transpose(.chord(chord))` for a parsed chord.
     public func transpose(_ chord: ChartChord) -> ChartChord {
-        fatalError("unimplemented: unit A")
+        guard !isIdentity else { return chord }
+        let symbol = chord.symbol
+        let root = respell(symbol.root)
+        let moved = ChordSymbol(
+            root: root,
+            suffix: symbol.suffix,
+            formula: symbol.formula,
+            bass: symbol.bass.map(respell),
+        )
+        return ChartChord(
+            tonic: chord.tonic.map { Chord(root, type: $0.type) },
+            symbol: moved,
+            original: moved.text,
+        )
+    }
+
+    private func respell(_ note: NoteClass) -> NoteClass {
+        KeySpelling.spell(note.pitchClass.transposed(by: semitones), in: targetKey)
     }
 }

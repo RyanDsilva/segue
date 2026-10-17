@@ -25,7 +25,7 @@ public struct ChordFormula: Sendable, Hashable, Codable {
     /// `"-7"`, `"maj9"`, `"7(#9)"`, `"6/9"`, `"add9"`, `"13sus4"`, `"m7b5"`, `"5"`.
     /// `nil` when the suffix is not understood (the token is then an `UnknownChord`).
     public static func parse(suffix: String) -> Self? {
-        fatalError("unimplemented: unit A")
+        ChordFormulaParser.parse(suffix)
     }
 }
 

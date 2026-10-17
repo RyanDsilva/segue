@@ -37,6 +37,23 @@ public enum Capo {
     /// Capo positions whose shape key (concert key - fret) is in `openShapeKeys`, ordered
     /// by lowest fret. Same mode as `concertKey`.
     public static func suggestions(concertKey: SongKey) -> [CapoSuggestion] {
-        fatalError("unimplemented: unit A")
+        let open = Set(openShapeKeys.compactMap(SongKey.init(parsing:)).map(\.pitchIdentity))
+        return (0 ... 11).compactMap { fret in
+            let shapeKey = concertKey.transposed(by: -fret)
+            guard open.contains(shapeKey.pitchIdentity) else { return nil }
+            return CapoSuggestion(fret: fret, shapeKey: shapeKey)
+        }
+    }
+}
+
+extension SongKey {
+    /// Tonic pitch class and mode, ignoring spelling (`Db` == `C#`).
+    struct PitchIdentity: Hashable {
+        var tonic: PitchClass
+        var mode: KeyMode
+    }
+
+    var pitchIdentity: PitchIdentity {
+        PitchIdentity(tonic: tonic.pitchClass, mode: mode)
     }
 }

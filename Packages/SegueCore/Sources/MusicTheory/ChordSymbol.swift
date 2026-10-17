@@ -1,5 +1,6 @@
 // Owner: unit A (MusicTheory). Frozen interface: docs/phases/1-interfaces.md.
 
+import Foundation
 import Tonic
 
 /// A chord symbol as an author wrote it, parsed: `F#m7b5`, `Bbmaj9`, `G/B`, `C7(#9)`, `C-7`,
@@ -27,7 +28,26 @@ public struct ChordSymbol: Sendable, Hashable {
     /// Canonical text: root + suffix + (`/` + bass). Used only for chords that were
     /// transformed (transposed); untouched chords render their `original` text.
     public var text: String {
-        fatalError("unimplemented: unit A")
+        let bassText = bass.map { "/\($0.chartName)" } ?? ""
+        return root.chartName + suffix + bassText
+    }
+
+    /// Parses chord text such as `F#m7b5`, `G/B` or `C6/9` (no surrounding whitespace).
+    /// Strict: an upper-case root letter, at most one accidental, a suffix our interval table
+    /// understands, and an optional `/` + note bass. `nil` otherwise (including `N.C.`).
+    public init?(parsing text: String) {
+        let body = Substring(text)
+        guard let (root, rootLength) = NoteClass.prefix(of: body) else { return nil }
+        var suffix = body.dropFirst(rootLength)
+        var bass: NoteClass?
+        if let slash = suffix.lastIndex(of: "/"),
+           let note = NoteClass(chartName: suffix[suffix.index(after: slash)...])
+        {
+            bass = note
+            suffix = suffix[..<slash]
+        }
+        guard let formula = ChordFormula.parse(suffix: String(suffix)) else { return nil }
+        self.init(root: root, suffix: String(suffix), formula: formula, bass: bass)
     }
 
     /// Pitch content (root, bass, formula) for diagram generators and key scoring.
@@ -45,8 +65,8 @@ public struct ChordSymbol: Sendable, Hashable {
 /// A chord the parser understood.
 public struct ChartChord: Sendable, Hashable {
     /// Tonic's model of the chord (root + `ChordType`), used for transposition helpers and
-    /// key scoring; `nil` when Tonic has no matching `ChordType` (e.g. `7(#9)`, `6/9`,
-    /// `13sus4`). Such chords still transpose and get diagrams via `symbol.formula`.
+    /// key scoring; `nil` when Tonic has no `ChordType` with the same pitch content (e.g.
+    /// `5`, `7alt`). Such chords still transpose and get diagrams via `symbol.formula`.
     public var tonic: Chord?
     public var symbol: ChordSymbol
     /// The verbatim token (without brackets) for byte-identical round trips.
@@ -86,8 +106,19 @@ public enum ChordToken: Sendable, Hashable {
     /// becomes `.unknown`. Surrounding whitespace is kept in `original` but ignored when
     /// parsing.
     public init(parsing text: String) {
-        fatalError("unimplemented: unit A")
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if Self.noChordSpellings.contains(trimmed.uppercased()) {
+            self = .noChord(original: text)
+        } else if let symbol = ChordSymbol(parsing: trimmed) {
+            let tonic = TonicBridge.chord(root: symbol.root, formula: symbol.formula)
+            self = .chord(ChartChord(tonic: tonic, symbol: symbol, original: text))
+        } else {
+            self = .unknown(UnknownChord(original: text))
+        }
     }
+
+    /// Accepted no-chord spellings (compared upper-cased).
+    private static let noChordSpellings: Set = ["N.C.", "N.C", "NC", "N/C"]
 
     /// The verbatim token text.
     public var original: String {
