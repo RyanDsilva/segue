@@ -48,7 +48,7 @@ Tuist/Package.swift             external SPM deps (GRDB, Tonic) pinned via Tuist
   - `Segue-AppStore` - `Debug-AppStore` / `Release-AppStore`, does **not** reference the personal package at all. A script check (`make verify-appstore`) builds this scheme and fails if any `SeguePersonalModules` symbol or path appears in the build product or its link map.
   - Plugin wiring: app calls `PluginRegistry.registerAll()`; the personal package provides the implementation via a small `#if SEGUE_PERSONAL` import in the app target only. Core never knows the package exists.
 - **Entitlements (both flavors):** `com.apple.security.app-sandbox`, `com.apple.security.files.user-selected.read-write`, `com.apple.security.files.bookmarks.app-scope`. No network entitlement in phase 0.
-- **Signing:** bundle id `dev.ryandsilva.segue` (UI tests `dev.ryandsilva.segue.uitests`), automatic signing with the paid Apple Developer team on contact@ryandsilva.dev. The team ID is read from Xcode (Settings -> Accounts) once the user has added that account, and set as `DEVELOPMENT_TEAM` in `Project.swift` (or a gitignored `Tuist/Signing.xcconfig` if kept out of git - see open questions).
+- **Signing:** bundle id `dev.ryandsilva.segue` (UI tests `dev.ryandsilva.segue.uitests`), automatic signing with the free Personal Team `V6BM673U35` (contact@ryandsilva.dev), set as the single `DEVELOPMENT_TEAM` constant in `Project.swift`; ad-hoc signing remains a one-switch fallback. A paid team replaces it before App Store/iCloud work.
 
 ## ChordPro parser v0
 
@@ -150,7 +150,7 @@ See `docs/decisions.md` for the audit trail.
 5. **Lint/format: SwiftLint + SwiftFormat via mise.** Enforced in `make check`.
 6. **Metadata: sidecar JSON only.** `.cho` files stay clean, portable ChordPro.
 7. **Default library: `~/Music/Segue`** (any folder pickable; bookmark persists access).
-8. **Signing: paid team on contact@ryandsilva.dev, bundle id `dev.ryandsilva.segue`.** Team ID read from Xcode before the first signed build.
+8. **Signing: free Personal Team `V6BM673U35` (contact@ryandsilva.dev), bundle id `dev.ryandsilva.segue`.** Paid team later for App Store/iCloud.
 9. **Team ID committed** as `DEVELOPMENT_TEAM` in `Project.swift` - a team ID is not a secret.
 10. **Tuist local-only** - open-source `tuist generate`, pinned in mise, no Tuist cloud account or caching.
 

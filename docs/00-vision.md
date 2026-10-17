@@ -27,7 +27,7 @@ Rehearsal at home is a secondary use of the same views. iPhone/iPad is a later p
 |---|---|
 | Platform | macOS 26+ (Tahoe), SwiftUI-first, AppKit where needed (live view, text editor). iOS/iPadOS in phase 7, so core code is platform-neutral. |
 | Distribution | Personal use now; **built to App Store standards from day one** (App Sandbox, security-scoped bookmarks, no private APIs). |
-| Signing | Paid Apple Developer team (contact@ryandsilva.dev). Bundle ID `dev.ryandsilva.segue`. |
+| Signing | Free Personal Team `V6BM673U35` (contact@ryandsilva.dev) for development; paid team needed before App Store submission and iCloud (phase 7). Bundle ID `dev.ryandsilva.segue`. |
 | Tooling | Tuist (project generation), GRDB (SQLite index, FTS5), Tonic (music theory, MIT), SwiftLint + SwiftFormat (via mise). |
 | Testing | Integration-first: real parser + file store + index + XCUITest flows. Unit tests only for tricky pure logic (transpose, layout fitting, set packing). |
 | Build flavors | Two schemes. **Personal** links a separate local Swift package of restricted modules; **App Store** does not reference it at all - absent from the shipped source tree and binary. Modules plug in through a plugin/registry protocol in core. |

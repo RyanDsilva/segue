@@ -5,7 +5,7 @@ Closed answers to the open questions raised by the phase specs (2026-10-16/17). 
 ## Cross-cutting
 
 - **Testing:** integration-first. Real parser + real file store + real index + real UI flows (XCUITest). Unit tests only for tricky pure logic (transposition, layout fitting, set packing). No mock-heavy unit padding.
-- **Signing:** paid Apple Developer team on contact@ryandsilva.dev. Bundle ID `dev.ryandsilva.segue`.
+- **Signing:** free Personal Team `V6BM673U35` (contact@ryandsilva.dev) for development; switch to a paid team before App Store/iCloud work (phase 7). Bundle ID `dev.ryandsilva.segue`.
 
 ## Phase 0
 
