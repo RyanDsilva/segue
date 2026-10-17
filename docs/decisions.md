@@ -149,3 +149,4 @@ Defaults from docs/phases/2-interfaces.md stand except:
 - **Unknown song length:** row shows `--:--`; set total reads e.g. "~38:20 + 2 unknown"; no made-up default.
 - **Save reorder to setlist:** inserted songs / requests are **checked** by default.
 - **Rehearsal runs get the same safety as shows:** crash resume and the pre-show checklist (Shortcuts optional); still no gig-log entry.
+- **Auto-fit prefers no wrapping:** choose the largest layout with zero wrapped lyric lines; allow wrapping only if the best no-wrap layout is more than ~15% smaller or would go below the user minimum. Split-section continuations get a "(cont.)" label; gutter labels stay at least 12pt.
