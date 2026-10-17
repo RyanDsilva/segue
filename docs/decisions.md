@@ -140,3 +140,12 @@ See `docs/research/phase5-audio.md`. Conflicts with earlier research to re-verif
 - **Out-of-key chord spelling (review finding 2):** in-key chords follow the key signature; out-of-key chords keep the author's accidental family (Ab stays flat-family), and declared keys keep their spelling (C#, Gb), so transposing by n and back always restores the original.
 - **Round-trip edge cases accepted:** no double accidentals; chords like Gb vs F# through a white-key target, and non-standard keys (C#, Gb), come back in the standard spelling. Common borrowed chords (bII, bIII, #IV, bVI, bVII) restore exactly. Acceptance criterion 2 amended accordingly.
 - **Ambiguous key on apply-transposition:** when the song has no `{key}` and detection is ambiguous, no `{key}` is written.
+
+## Phase 2 build rulings (2026-10-17)
+
+Defaults from docs/phases/2-interfaces.md stand except:
+- **Next** always goes to the song after the current one in playing order; songs passed over by "Play now" are not revisited automatically (they stay pending and can be picked).
+- **Missing songs at show start are removed** from the show (listed in the pre-show warning), not marked skipped.
+- **Unknown song length:** row shows `--:--`; set total reads e.g. "~38:20 + 2 unknown"; no made-up default.
+- **Save reorder to setlist:** inserted songs / requests are **checked** by default.
+- **Rehearsal runs get the same safety as shows:** crash resume and the pre-show checklist (Shortcuts optional); still no gig-log entry.
