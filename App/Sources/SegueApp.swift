@@ -1,5 +1,6 @@
 import Plugins
 import SegueUI
+import Support
 import SwiftUI
 #if SEGUE_PERSONAL
     import SeguePersonalModules
@@ -9,16 +10,38 @@ import SwiftUI
 /// declare scenes. Everything else lives in SegueUI / SegueCore.
 @main
 struct SegueApp: App {
-    private let environment: AppEnvironment
+    @State private var app: AppModel
+    private let plugins: PluginRegistry
 
     init() {
-        let options = LaunchOptions(arguments: ProcessInfo.processInfo.arguments)
+        Theme.registerFonts()
+        let options = Self.launchOptions
+        let defaults = AppStateReset.defaults(for: options, bundleID: Bundle.main.bundleIdentifier)
         if options.resetState {
-            AppStateReset.wipe(defaults: .standard, bundleID: Bundle.main.bundleIdentifier)
+            AppStateReset.wipeTestState(defaults, bundleID: Bundle.main.bundleIdentifier)
         }
-        let plugins = PluginRegistry()
+        plugins = PluginRegistry()
         plugins.registerAll(Self.pluginModules)
-        environment = AppEnvironment(launchOptions: options, plugins: plugins)
+
+        let clock = SystemClock()
+        let dependencies = AppDependencies(
+            fileSystem: LiveFileSystem(),
+            clock: clock,
+            ids: ULIDGenerator(clock: clock),
+            location: LibraryLocation(defaults: defaults),
+            libraryOverride: options.libraryPath,
+        )
+        _app = State(initialValue: AppModel(dependencies: dependencies))
+    }
+
+    /// Test-only launch arguments are honoured in Debug builds only; Release builds never
+    /// let the command line redirect the library or wipe state.
+    private static var launchOptions: LaunchOptions {
+        #if DEBUG
+            LaunchOptions(arguments: ProcessInfo.processInfo.arguments)
+        #else
+            LaunchOptions()
+        #endif
     }
 
     /// Plugin modules for this flavor. Only the Personal build sees the personal package.
@@ -31,16 +54,20 @@ struct SegueApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
-            SegueRootView()
-                .frame(minWidth: 640, minHeight: 400)
+        WindowGroup(id: "segue.main") {
+            SegueRootView(app: app)
+                .frame(minWidth: 820, minHeight: 520)
         }
-    }
-}
+        .defaultSize(width: 1120, height: 720)
+        .commands { SegueCommands(app: app) }
 
-/// Process-wide dependencies built at launch. Later stages add the library and setlist
-/// stores here (opened on `launchOptions.libraryPath` or the resolved bookmark).
-struct AppEnvironment: Sendable {
-    let launchOptions: LaunchOptions
-    let plugins: PluginRegistry
+        Window("Acknowledgements", id: AcknowledgementsWindow.id) {
+            AcknowledgementsView()
+                .frame(minWidth: 480, idealWidth: 560, minHeight: 420, idealHeight: 640)
+        }
+        .defaultSize(width: 560, height: 640)
+        .windowResizability(.contentMinSize)
+        .restorationBehavior(.disabled)
+        .commandsRemoved()
+    }
 }

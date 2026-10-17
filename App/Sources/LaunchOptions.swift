@@ -38,15 +38,34 @@ struct LaunchOptions: Sendable, Equatable {
         }
     }
 
+    /// Whether any test-only argument was passed.
+    var isTestRun: Bool {
+        libraryPath != nil || resetState
+    }
+
     private static func isTruthy(_ value: String) -> Bool {
         ["yes", "true", "1"].contains(value.lowercased())
     }
 }
 
-/// Clears persisted app state for `-SegueResetState`.
+/// Where app state lives, and clearing it for `-SegueResetState`.
 enum AppStateReset {
-    static func wipe(defaults: UserDefaults, bundleID: String?) {
+    /// Suffix of the separate defaults suite used by test runs.
+    static let testSuiteSuffix = ".uitest"
+
+    /// The defaults store for this launch. Test runs (any test launch argument) use their own
+    /// suite, so running the E2E suite never touches the real library bookmark.
+    static func defaults(for options: LaunchOptions, bundleID: String?) -> UserDefaults {
+        guard options.isTestRun, let bundleID,
+              let suite = UserDefaults(suiteName: bundleID + testSuiteSuffix)
+        else { return .standard }
+        return suite
+    }
+
+    /// Wipes the test suite. `-SegueResetState` always makes this a test run, so it can never
+    /// clear the user's real defaults.
+    static func wipeTestState(_ defaults: UserDefaults, bundleID: String?) {
         guard let bundleID else { return }
-        defaults.removePersistentDomain(forName: bundleID)
+        defaults.removePersistentDomain(forName: bundleID + testSuiteSuffix)
     }
 }
