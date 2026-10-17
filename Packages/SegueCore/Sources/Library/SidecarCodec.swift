@@ -24,6 +24,14 @@ enum SidecarCodec {
                     object["updatedAt"] = object["createdAt"]
                 }
             },
+            // v1 -> v2: `displayPrefs` gains the phase 1 view toggles. A v1 object is kept
+            // (fields it already has survive; missing ones take their defaults when
+            // decoded leniently); anything that is not an object is replaced by defaults.
+            1: { object in
+                if !(object["displayPrefs"] is [String: Any]) {
+                    object["displayPrefs"] = [String: Any]()
+                }
+            },
         ],
     )
 
@@ -109,6 +117,7 @@ private struct PartialSidecar: Decodable {
     var tags: [String]?
     var proficiency: Proficiency?
     var notes: String?
+    var displayPrefs: DisplayPrefs?
     var createdAt: Date?
     var updatedAt: Date?
 
@@ -117,6 +126,7 @@ private struct PartialSidecar: Decodable {
         case tags
         case proficiency
         case notes
+        case displayPrefs
         case createdAt
         case updatedAt
     }
@@ -127,6 +137,7 @@ private struct PartialSidecar: Decodable {
         tags = try? container.decodeIfPresent([String].self, forKey: .tags)
         proficiency = try? container.decodeIfPresent(Proficiency.self, forKey: .proficiency)
         notes = try? container.decodeIfPresent(String.self, forKey: .notes)
+        displayPrefs = try? container.decodeIfPresent(DisplayPrefs.self, forKey: .displayPrefs)
         createdAt = try? container.decodeIfPresent(Date.self, forKey: .createdAt)
         updatedAt = try? container.decodeIfPresent(Date.self, forKey: .updatedAt)
     }
@@ -140,6 +151,7 @@ private struct PartialSidecar: Decodable {
             tags: tags ?? [],
             proficiency: proficiency,
             notes: notes,
+            displayPrefs: displayPrefs ?? DisplayPrefs(),
             createdAt: created,
             updatedAt: updatedAt ?? created,
         )

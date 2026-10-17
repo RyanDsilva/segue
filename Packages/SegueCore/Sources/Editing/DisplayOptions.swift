@@ -65,7 +65,8 @@ public struct KeyContext: Sendable, Hashable {
 
     /// Parses `{key}`, else runs `KeyDetector` over the song's chords.
     public init(document: SongDocument) {
-        fatalError("unimplemented: unit C")
+        declared = document.metadata.key.flatMap(SongKey.init(parsing:))
+        detection = declared == nil ? KeyDetector.detect(document.chartChords) : nil
     }
 
     /// `declared ?? detection?.key`.
@@ -116,18 +117,36 @@ public struct DisplayTransform: Sendable, Hashable {
     /// Text to show for a chord as written: transposed, or a Nashville number when
     /// `options.nashville` (relative to `displayKey`; verbatim if there is no key).
     public func display(_ token: ChordToken) -> String {
-        fatalError("unimplemented: unit C")
+        guard options.nashville else { return displayed(token).original }
+        guard let written = key.writtenKey else { return token.original }
+        // Nashville numbers are transposition-invariant, so numbering the chord as written
+        // in the written key equals numbering the displayed chord in `displayKey`, without
+        // depending on the transform's enharmonic choices.
+        return Nashville.number(for: token, in: written)
+    }
+
+    /// The chord as displayed in letter names (transposed and capo-shifted; also used for
+    /// diagram names in Nashville view).
+    public func displayed(_ token: ChordToken) -> ChordToken {
+        Transposer(semitones: semitones, sourceKey: key.writtenKey).transpose(token)
     }
 
     /// The chord as written, transposed to concert pitch (for piano diagrams).
     public func concert(_ token: ChordToken) -> ChordToken {
-        fatalError("unimplemented: unit C")
+        Transposer(semitones: concertSemitones, sourceKey: key.writtenKey).transpose(token)
     }
 
     /// Inverse transform for chord input: a chord typed in the display key (letter names
     /// even in Nashville view; number input is out of scope this phase) -> source text.
     /// Unparseable input is returned unchanged (it becomes an unknown chord).
     public func sourceChord(fromDisplayed text: String) -> String {
-        fatalError("unimplemented: unit C")
+        let token = ChordToken(parsing: text)
+        guard token.chord != nil, PitchClass(semitones).rawValue != 0 else { return text }
+        let transposer = if let displayKey, let written = key.writtenKey {
+            Transposer(from: displayKey, to: written)
+        } else {
+            Transposer(semitones: -semitones, sourceKey: nil)
+        }
+        return transposer.transpose(token).original
     }
 }

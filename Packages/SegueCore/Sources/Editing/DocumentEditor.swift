@@ -2,6 +2,7 @@
 
 import ChordPro
 import Diagrams
+import Foundation
 
 /// A tree-level edit, as visual mode (and editor commands) express it.
 ///
@@ -63,6 +64,74 @@ public enum DocumentEditor {
         for operation: EditOperation,
         in snapshot: SourceSnapshot,
     ) throws(EditError) -> SourceChange {
-        fatalError("unimplemented: unit C")
+        var planner = EditPlanner(snapshot: snapshot)
+        let name: String = if let lyric = try planLyricOperation(operation, with: &planner) {
+            lyric
+        } else {
+            try planDirectiveOperation(operation, with: &planner)
+        }
+        return planner.change(actionName: name)
+    }
+
+    /// Chord and lyric operations; `nil` for the directive ones.
+    private static func planLyricOperation(
+        _ operation: EditOperation,
+        with planner: inout EditPlanner,
+    ) throws(EditError) -> String? {
+        switch operation {
+        case let .insertChord(chord, position):
+            try planner.insertChord(chord, at: position)
+            return "Add Chord"
+        case let .replaceChord(ref, chord):
+            try planner.replaceChord(ref, with: chord)
+            return "Change Chord"
+        case let .moveChord(ref, position):
+            try planner.moveChord(ref, to: position, keepingOriginal: false)
+            return "Move Chord"
+        case let .duplicateChord(ref, position):
+            try planner.moveChord(ref, to: position, keepingOriginal: true)
+            return "Duplicate Chord"
+        case let .deleteChord(ref):
+            try planner.deleteChord(ref)
+            return "Delete Chord"
+        case let .editLyrics(path, range, replacement):
+            try planner.editLyrics(path, range: range, replacement: replacement)
+            return "Edit Lyrics"
+        case let .splitLine(position):
+            try planner.splitLine(at: position)
+            return "Split Line"
+        case let .joinWithPrevious(path):
+            try planner.joinWithPrevious(path)
+            return "Join Lines"
+        default:
+            return nil
+        }
+    }
+
+    /// Section label, directive, meta and define operations.
+    private static func planDirectiveOperation(
+        _ operation: EditOperation,
+        with planner: inout EditPlanner,
+    ) throws(EditError) -> String {
+        switch operation {
+        case let .setSectionLabel(path, label):
+            try planner.setSectionLabel(path, label: label)
+            return "Rename Section"
+        case let .setDirective(directive, value):
+            planner.setDirective(name: DirectiveLine.canonicalName(directive), value: value)
+            return "Set \(directive.capitalized)"
+        case let .setMeta(meta, value):
+            planner.setMeta(name: meta, value: value)
+            return "Set \(meta.capitalized)"
+        case let .setDefine(definition):
+            planner.setDefine(definition)
+            return "Set Chord Shape"
+        case let .removeDefine(define):
+            planner.removeDefine(name: define)
+            return "Remove Chord Shape"
+        case .deleteChord, .duplicateChord, .editLyrics, .insertChord, .joinWithPrevious,
+             .moveChord, .replaceChord, .splitLine:
+            return ""
+        }
     }
 }

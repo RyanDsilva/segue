@@ -12,7 +12,11 @@ import MusicTheory
 /// on-disk shape changes.
 public struct Sidecar: Sendable, Equatable, Codable {
     /// The schema version this build reads and writes.
-    public static let currentSchemaVersion = 1
+    ///
+    /// History: 0 = pre-versioned; 1 = phase 0 (`displayPrefs` an opaque object, `{}`);
+    /// 2 = phase 1 (`displayPrefs` holds the view toggles: transpose, capo mode, Nashville,
+    /// diagrams, instrument, tuning).
+    public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var id: SongID

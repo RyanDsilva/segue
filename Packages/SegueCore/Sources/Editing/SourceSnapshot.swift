@@ -15,9 +15,12 @@ public struct SourceSnapshot: Sendable {
     public let document: SongDocument
     public let parseDiagnostics: [Diagnostic]
 
+    let map: SourceMap
+
     public init(text: String) {
         self.text = text
         (document, parseDiagnostics) = ChordProParser.parse(text)
+        map = SourceMap(text: text, document: document)
     }
 
     // MARK: - Mapping (unit C)
@@ -25,54 +28,135 @@ public struct SourceSnapshot: Sendable {
     /// UTF-16 range of the source line holding `path` (without its line ending). For a
     /// section header path, the `{start_of_...}` line.
     public func sourceRange(of path: BlockPath) -> Range<Int>? {
-        fatalError("unimplemented: unit C")
+        map.lineOfPath[path].map { map.lines[$0].contentRange }
     }
 
     /// UTF-16 range of a chord token including its brackets (`[G]`).
     public func sourceRange(of chord: ChordRef) -> Range<Int>? {
-        fatalError("unimplemented: unit C")
+        guard let layout = layout(of: chord.line), layout.chords.indices.contains(chord.index)
+        else { return nil }
+        return layout.chords[chord.index].range
     }
 
     /// The block whose source line contains `offset` (UTF-16), or `nil` past the end.
     public func path(atSourceOffset offset: Int) -> BlockPath? {
-        fatalError("unimplemented: unit C")
+        guard let index = map.lineIndex(containing: offset), index < map.roles.count else {
+            return nil
+        }
+        return Self.path(of: map.roles[index])
     }
 
     /// Text -> visual cursor mapping: the lyric position at a UTF-16 source offset. Inside a
     /// chord bracket it snaps to that chord's lyric offset; on a non-lyric line it snaps to
-    /// the start of the nearest following lyric line (else the preceding one); `nil` when
-    /// the song has no lyric lines.
+    /// the start of the nearest following lyric line (else the end of the preceding one);
+    /// `nil` when the song has no lyric lines.
     public func lyricPosition(atSourceOffset offset: Int) -> LyricPosition? {
-        fatalError("unimplemented: unit C")
+        let clamped = min(max(offset, 0), map.length)
+        let lineIndex = map.lineIndex(containing: clamped) ?? map.lines.count
+        if lineIndex < map.lines.count, case let .block(path) = map.roles[lineIndex],
+           let layout = layout(of: path)
+        {
+            let inLine = min(clamped, layout.lineRange.upperBound)
+            return LyricPosition(line: path, offset: layout.lyricOffset(atSourceOffset: inLine))
+        }
+        for index in lineIndex ..< map.roles.count {
+            if case let .block(path) = map.roles[index], layout(of: path) != nil {
+                return LyricPosition(line: path, offset: 0)
+            }
+        }
+        for index in stride(from: min(lineIndex, map.roles.count) - 1, through: 0, by: -1) {
+            if case let .block(path) = map.roles[index], let layout = layout(of: path) {
+                return LyricPosition(line: path, offset: layout.lyricCount)
+            }
+        }
+        return nil
     }
 
     /// Visual -> text cursor mapping: the UTF-16 source offset of a lyric position (after
     /// any chords that sit at that position).
     public func sourceOffset(of position: LyricPosition) -> Int? {
-        fatalError("unimplemented: unit C")
+        layout(of: position.line)?.sourceOffset(ofLyricOffset: position.offset)
     }
 
     // MARK: - Derived content (unit C)
 
-    /// Every chord token in source order with its reference (sections included).
+    /// Every chord token in source order with its reference (sections included; tab and
+    /// grid bodies are verbatim text, not chords, and are skipped).
     public var chords: [ChordOccurrence] {
-        fatalError("unimplemented: unit C")
+        var result: [ChordOccurrence] = []
+        for role in map.roles {
+            guard case let .block(path) = role, let layout = layout(of: path) else { continue }
+            for (index, chord) in layout.chords.enumerated() {
+                result.append(ChordOccurrence(
+                    ref: ChordRef(line: path, index: index),
+                    token: ChordToken(parsing: chord.text),
+                ))
+            }
+        }
+        return result
     }
 
     /// The song's `{define}`s in source order (malformed ones skipped; they are diagnosed).
     public var chordDefinitions: [ChordDefinition] {
-        fatalError("unimplemented: unit C")
+        defineLines.compactMap(\.definition)
     }
 
     /// Syntax colouring runs intersecting `range` (UTF-16), ascending, non-overlapping.
     public func highlights(in range: Range<Int>) -> [SyntaxHighlight] {
-        fatalError("unimplemented: unit C")
+        var result: [SyntaxHighlight] = []
+        var index = map.firstLine(endingAfter: range.lowerBound)
+        while index < map.lines.count, index < map.roles.count,
+              map.lines[index].start < max(range.upperBound, range.lowerBound + 1)
+        {
+            result += lineHighlights(index)
+            index += 1
+        }
+        return result.filter {
+            $0.range.lowerBound < range.upperBound && $0.range.upperBound > range.lowerBound
+        }
     }
 
     /// Parser diagnostics plus editor checks (unknown chords, malformed `{define}`,
     /// `{define}` for a chord the song never uses), with UTF-16 ranges.
     public var diagnostics: [EditorDiagnostic] {
-        fatalError("unimplemented: unit C")
+        var result = parseDiagnostics.compactMap(editorDiagnostic(for:))
+        for occurrence in chords {
+            guard case let .unknown(unknown) = occurrence.token,
+                  let range = sourceRange(of: occurrence.ref),
+                  let line = map.lineOfPath[occurrence.ref.line]
+            else { continue }
+            result.append(EditorDiagnostic(
+                range: range,
+                severity: .warning,
+                kind: .unknownChord,
+                message: "Unknown chord '\(unknown.original)'",
+                line: line + 1,
+            ))
+        }
+        let used = Set(chords.map(\.token.original))
+        for define in defineLines {
+            let range = map.lines[define.line].contentRange
+            if define.definition == nil {
+                result.append(EditorDiagnostic(
+                    range: range,
+                    severity: .error,
+                    kind: .malformedDefine,
+                    message: "Malformed {define}: expected a chord name with frets or keys",
+                    line: define.line + 1,
+                ))
+            } else if let name = define.name, !used.contains(name) {
+                result.append(EditorDiagnostic(
+                    range: range,
+                    severity: .warning,
+                    kind: .unusedDefine,
+                    message: "{define} for '\(name)', which the song never uses",
+                    line: define.line + 1,
+                ))
+            }
+        }
+        return result.sorted {
+            ($0.range.lowerBound, $0.line) < ($1.range.lowerBound, $1.line)
+        }
     }
 }
 

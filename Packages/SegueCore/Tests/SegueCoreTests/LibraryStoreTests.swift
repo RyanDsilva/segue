@@ -259,7 +259,7 @@ struct LibraryStoreTests {
 
         _ = try await store.updateSong(id: id, source: "{title: Legacy}\nOld but gold, again\n")
         let saved = try lib.read("songs/legacy.segue.json")
-        #expect(saved.contains("\"schemaVersion\" : 1"))
+        #expect(saved.contains("\"schemaVersion\" : \(Sidecar.currentSchemaVersion)"))
         #expect(saved.contains("\"notes\" : \"capo feels better\""))
         #expect(saved.contains("\"createdAt\" : \"2025-06-01T10:00:00.000Z\""))
         #expect(saved.contains("\"updatedAt\" : \"2026-01-01T00:00:00.000Z\""))

@@ -1,0 +1,16 @@
+{title: Harbour Lights}
+{artist: The Quiet Harbour}
+{key: G}
+{capo: 2}
+{define: Gadd9 base-fret 1 frets 3 2 0 2 0 3}
+{define: C base-fret 1 frets x 3 2 0 1 0}
+
+{start_of_verse}
+[G]Harbour lights are [Em]calling, [C]soft against the [D]rain
+[Gadd9]Every ship that [C]leaves us [D]sails back home a[G]gain
+{end_of_verse}
+
+{start_of_chorus}
+[C]Shine on, [G/B]shine [Am7]on
+[N.C.]Hold the [D7sus4]line till [G]dawn
+{end_of_chorus}

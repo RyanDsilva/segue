@@ -40,7 +40,79 @@ public struct RenderModel: Sendable, Equatable {
         options: DisplayOptions,
         userShapes: UserShapeLibrary = .empty,
     ) {
-        fatalError("unimplemented: unit C")
+        let metadata = document.metadata
+        let capo = metadata.capo.flatMap { $0 > 0 ? $0 : nil }
+        let transform = DisplayTransform(
+            options: options,
+            key: KeyContext(document: document),
+            capo: capo,
+        )
+        let tuning = metadata.extra["tuning"]?.first.flatMap(Tuning.init(metaValue:))
+            ?? options.tuning
+        let headerKey = transform.displayKey.map { key in
+            options.nashville ? Nashville.header(for: key) : key.name
+        }
+        self.init(
+            header: RenderHeader(
+                title: metadata.title,
+                subtitle: metadata.subtitle,
+                artists: metadata.artists,
+                key: headerKey,
+                keyStatus: transform.key.status,
+                capo: capo,
+                tempo: metadata.tempo,
+                time: metadata.time,
+            ),
+            sections: RenderSectionBuilder(transform: transform).sections(of: document),
+            diagrams: options.showDiagrams
+                ? Self.diagrams(
+                    document: document,
+                    transform: transform,
+                    tuning: tuning,
+                    userShapes: userShapes,
+                )
+                : [],
+            transform: transform,
+            tuning: tuning,
+        )
+    }
+
+    private static func diagrams(
+        document: SongDocument,
+        transform: DisplayTransform,
+        tuning: Tuning,
+        userShapes: UserShapeLibrary,
+    ) -> [RenderDiagram] {
+        var seen = Set<String>()
+        var entries: [(displayed: ChartChord, concert: ChartChord)] = []
+        for token in document.chordTokens {
+            guard let displayed = transform.displayed(token).chord,
+                  let concert = transform.concert(token).chord,
+                  seen.insert(displayed.original).inserted
+            else { continue }
+            entries.append((displayed, concert))
+        }
+        let resolver = ShapeResolver(
+            defines: document.defineValues.compactMap(ChordDefinition.init(directiveValue:)),
+            userLibrary: userShapes,
+            tuning: tuning,
+        )
+        let options = transform.options
+        let piano = options.instrument == .piano
+            ? resolver.pianoVoicings(for: entries.map(\.concert))
+            : []
+        let capoFret = options.capoMode == .shapes ? transform.capo : nil
+        return entries.enumerated().map { index, entry in
+            RenderDiagram(
+                name: entry.displayed.original,
+                concertName: entry.concert.original,
+                guitar: options.instrument == .guitar
+                    ? resolver.guitarShape(for: entry.displayed)
+                    : nil,
+                piano: piano.indices.contains(index) ? piano[index] : nil,
+                capoFret: options.instrument == .guitar ? capoFret : nil,
+            )
+        }
     }
 }
 

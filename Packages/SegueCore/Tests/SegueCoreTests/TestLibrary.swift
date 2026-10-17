@@ -83,7 +83,7 @@ final class TestLibrary: Sendable {
             }
           },
           "id" : "\(id)",
-          "schemaVersion" : 1,
+          "schemaVersion" : \(Sidecar.currentSchemaVersion),
           "tags" : [
 
           ],
