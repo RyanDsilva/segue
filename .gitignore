@@ -29,3 +29,4 @@ Tuist/Signing.xcconfig
 
 # Per-agent SwiftPM scratch paths
 .build-*/
+.claude/settings.local.json
