@@ -183,50 +183,29 @@
         }
     }
 
-    /// Converts between `Character` offsets (the editing engine's lyric unit) and UTF-16
-    /// offsets (TextKit's unit) within one lyric string.
+    /// Lyric-line helpers in lyric offsets (`RenderLine.characterStarts`).
     enum LyricOffsets {
-        static func utf16(_ characterOffset: Int, in text: String) -> Int {
-            let clamped = min(max(characterOffset, 0), text.count)
-            let index = text.index(text.startIndex, offsetBy: clamped)
-            return text.utf16.distance(from: text.utf16.startIndex, to: index)
-        }
-
-        /// The `Character` offset at (or just before) a UTF-16 offset.
-        static func character(_ utf16Offset: Int, in text: String) -> Int {
-            var count = 0
-            var units = 0
-            for character in text {
-                let width = character.utf16.count
-                if units + width > utf16Offset {
-                    break
-                }
-                units += width
-                count += 1
-            }
-            return count
-        }
-
-        /// Character offsets of the words of `text` (start of each run of non-spaces).
-        static func wordStarts(in text: String) -> [(offset: Int, word: String)] {
-            var result: [(Int, String)] = []
+        /// The words of `line` (runs of non-whitespace) as lyric offset ranges.
+        static func words(in line: RenderLine) -> [(offsets: Range<Int>, word: String)] {
+            var result: [(Range<Int>, String)] = []
             var current = ""
             var start = 0
-            for (offset, character) in text.enumerated() {
-                if character.isWhitespace {
+            for offset in 0 ..< line.lyricCount {
+                let character = line.character(at: offset)
+                if character.allSatisfy(\.isWhitespace) {
                     if !current.isEmpty {
-                        result.append((start, current))
+                        result.append((start ..< offset, current))
                         current = ""
                     }
                 } else {
                     if current.isEmpty {
                         start = offset
                     }
-                    current.append(character)
+                    current += character
                 }
             }
             if !current.isEmpty {
-                result.append((start, current))
+                result.append((start ..< line.lyricCount, current))
             }
             return result
         }

@@ -125,7 +125,7 @@ struct RenderSectionBuilder {
     }
 
     private func renderLine(_ line: Line, path: BlockPath) -> RenderLine {
-        var lyrics = ""
+        var runs: [String] = []
         var offset = 0
         var chords: [RenderChord] = []
         for segment in line.segments {
@@ -144,10 +144,10 @@ struct RenderSectionBuilder {
                     kind: kind,
                 ))
             }
-            lyrics += segment.text
+            runs.append(segment.text)
             offset += segment.text.count
         }
-        return RenderLine(path: path, lyrics: lyrics, chords: chords)
+        return RenderLine(path: path, runs: runs, chords: chords)
     }
 
     private static func text(of line: Line) -> String {

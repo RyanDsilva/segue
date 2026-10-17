@@ -105,13 +105,13 @@
         private static func applyChordRoom(_ line: RenderLine, to text: NSMutableAttributedString) {
             let groups = groups(of: line.chords)
             guard groups.count > 1 else { return }
-            let lyrics = line.lyrics
+            let lyrics = line.lyrics as NSString
             let font = EditorStyle.canvasLyricFont
             for (current, next) in zip(groups, groups.dropFirst()) {
-                let from = LyricOffsets.utf16(current.offset, in: lyrics)
-                let to = LyricOffsets.utf16(next.offset, in: lyrics)
+                let from = line.utf16Offset(ofLyricOffset: current.offset)
+                let to = line.utf16Offset(ofLyricOffset: next.offset)
                 guard to > from else { continue }
-                let span = (lyrics as NSString).substring(with: NSRange(
+                let span = lyrics.substring(with: NSRange(
                     location: from,
                     length: to - from,
                 ))
@@ -119,7 +119,7 @@
                 let needed = groupWidth(current.chords) + pillTrailing
                 guard natural < needed else { continue }
                 // The kern goes on the last character before the next chord.
-                let lastCharacter = LyricOffsets.utf16(next.offset - 1, in: lyrics)
+                let lastCharacter = line.utf16Offset(ofLyricOffset: next.offset - 1)
                 let range = NSRange(location: lastCharacter, length: to - lastCharacter)
                 text.addAttribute(.kern, value: needed - natural, range: range)
             }

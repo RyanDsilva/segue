@@ -226,7 +226,7 @@
             guard let index = projection.lyricParagraphs[position.line],
                   let line = projection.paragraphs[index].lyricLine
             else { return }
-            let offset = LyricOffsets.utf16(position.offset, in: line.lyrics)
+            let offset = line.utf16Offset(ofLyricOffset: position.offset)
             let range = NSRange(location: projection.starts[index] + offset, length: 0)
             textView.setSelectedRange(range)
             textView.scrollRangeToVisible(range)
@@ -242,7 +242,7 @@
             let snapshot = model.snapshot
             switch paragraph.role {
             case let .lyrics(line):
-                let character = LyricOffsets.character(offset, in: line.lyrics)
+                let character = line.lyricOffset(atUTF16: offset)
                 return snapshot.sourceOffset(of: LyricPosition(line: line.path, offset: character))
             case let .label(path?, _, _), let .textModeLink(path?):
                 return snapshot.sourceRange(of: path)?.lowerBound
@@ -330,9 +330,8 @@
             let isNewline = replacement == "\n" || replacement == "\r"
             switch paragraph.role {
             case let .lyrics(line):
-                let lyrics = line.lyrics
-                let from = LyricOffsets.character(local.location, in: lyrics)
-                let to = LyricOffsets.character(NSMaxRange(local), in: lyrics)
+                let from = line.lyricOffset(atUTF16: local.location)
+                let to = line.lyricOffset(atUTF16: NSMaxRange(local))
                 if isNewline, local.length == 0 {
                     pendingParagraphCaret = (index + 1, 0)
                     model.perform(.splitLine(at: LyricPosition(line: line.path, offset: from)))

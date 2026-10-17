@@ -106,15 +106,33 @@ extension SongEditorViewModel {
             sourceCaretDidMove(to: range.location)
         }
 
-        func chordCompletionSources() -> (song: [String], diatonic: [String]) {
+        func chordCompletions(prefix: String) -> [ChordCompletion] {
+            let transform = inputTransform
+            let written = transform.key.writtenKey
+            if transform.options.nashville, let written,
+               prefix.isEmpty || Nashville.looksLikeNumber(prefix)
+            {
+                // Nashville view: numbers in, source letters out (phase 1 build rulings).
+                return displayChordSuggestions(prefix: prefix).map { number in
+                    ChordCompletion(
+                        title: number,
+                        insertion: Nashville.chord(parsing: number, in: written)?.original
+                            ?? number,
+                    )
+                }
+            }
+            // Text mode edits the source, so letters are the chords as written.
             var seen = Set<String>()
             let song = snapshot.chords.compactMap { occurrence -> String? in
                 guard occurrence.token.chord != nil else { return nil }
                 let text = occurrence.token.original
                 return seen.insert(text).inserted ? text : nil
             }
-            let key = KeyContext(document: snapshot.document).writtenKey
-            return (song, key?.diatonicChordSymbols ?? [])
+            return ChordSuggestions.chords(
+                prefix: prefix,
+                songChords: song,
+                diatonic: written?.diatonicChordSymbols ?? [],
+            ).map { ChordCompletion(title: $0, insertion: $0) }
         }
 
         func keystrokeTimed(_ seconds: TimeInterval, isShortcut: Bool) {

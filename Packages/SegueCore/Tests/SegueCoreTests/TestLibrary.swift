@@ -68,7 +68,7 @@ final class TestLibrary: Sendable {
             "capoMode" : "shapes",
             "instrument" : "guitar",
             "nashville" : false,
-            "showDiagrams" : true,
+            "showDiagrams" : false,
             "transpose" : 0,
             "tuning" : {
               "name" : "Standard",

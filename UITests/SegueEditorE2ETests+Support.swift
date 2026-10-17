@@ -6,43 +6,19 @@ import XCTest
 extension SegueEditorE2ETests {
     // MARK: - Helpers
 
+    /// A fresh app instance on this test's clean temp library, frontmost and showing the
+    /// empty library.
     @MainActor
     func launch(extraArguments: [String] = []) throws -> XCUIApplication {
         let root = try XCTUnwrap(libraryRoot)
         let app = XCUIApplication()
         self.app = app
-        app.launchArguments = [
+        E2E.launch(app, arguments: [
             "-SegueLibraryPath", root.path(percentEncoded: false),
             "-SegueResetState", "YES",
-        ] + extraArguments
-        app.launch()
+        ] + extraArguments)
         XCTAssertTrue(element(app, EditorAXID.libraryEmpty).waitForExistence(timeout: 15))
-        moveWindowIfAsked(app)
         return app
-    }
-
-    /// When `SEGUE_E2E_WINDOW_TOP` is set (screen points from the top), shrinks the main
-    /// window to its minimum height and drags it below that line, so a run keeps clear of a
-    /// system dialog parked on screen (the test must never click someone else's dialog).
-    @MainActor
-    func moveWindowIfAsked(_ app: XCUIApplication) {
-        guard let value = ProcessInfo.processInfo.environment["SEGUE_E2E_WINDOW_TOP"],
-              let top = Double(value)
-        else { return }
-        let window = app.windows.firstMatch
-        let frame = window.frame
-        let corner = window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1))
-            .withOffset(CGVector(dx: -2, dy: -2))
-        corner.press(
-            forDuration: 0.2,
-            thenDragTo: corner.withOffset(CGVector(dx: 0, dy: 520 - frame.height)),
-        )
-        let title = window.coordinate(withNormalizedOffset: .zero)
-            .withOffset(CGVector(dx: 300, dy: 12))
-        title.press(
-            forDuration: 0.2,
-            thenDragTo: title.withOffset(CGVector(dx: -frame.minX, dy: top - frame.minY)),
-        )
     }
 
     enum EditorMode {
@@ -54,10 +30,10 @@ extension SegueEditorE2ETests {
     func switchMode(_ app: XCUIApplication, to mode: EditorMode) {
         switch mode {
         case .text:
-            element(app, EditorAXID.editorModeText).click()
+            element(app, EditorAXID.editorModeText).click(in: app)
             XCTAssertTrue(app.textViews[EditorAXID.editorText].waitForExistence(timeout: 5))
         case .visual:
-            element(app, EditorAXID.editorModeVisual).click()
+            element(app, EditorAXID.editorModeVisual).click(in: app)
             XCTAssertTrue(app.textViews[EditorAXID.editorVisual].waitForExistence(timeout: 5))
         }
     }
@@ -204,6 +180,7 @@ enum EditorAXID {
     static let editorShapes = "segue.editor.display.shapes"
     static let editorConcert = "segue.editor.display.concert"
     static let editorNashville = "segue.editor.display.nashville"
+    static let editorDiagramsToggle = "segue.editor.diagrams"
     static let editorApplyTransposition = "segue.editor.applyTransposition"
     static let editorFlaggedDefines = "segue.editor.flaggedDefines"
     static let editorCursor = "segue.editor.status.cursor"
@@ -236,6 +213,9 @@ enum EditorFixture {
     {end_of_verse}
 
     """
+
+    /// `gestures` after typing `5` over "raah" in Nashville view (A minor counts from C).
+    static let gesturesNashville = gestures.replacingOccurrences(of: "raah", with: "[G]raah")
 
     static let gesturesAfter = """
     {key: Am}

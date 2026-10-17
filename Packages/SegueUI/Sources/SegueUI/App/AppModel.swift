@@ -1,4 +1,5 @@
 #if os(macOS)
+    import Diagrams
     import Foundation
     import Library
     import Observation
@@ -17,6 +18,9 @@
         /// Test-only (`-SegueRememberLibrary`): also store `libraryOverride` as the library
         /// bookmark, so a later launch without the override exercises the stored-bookmark path.
         public var rememberLibraryOverride: Bool
+        /// The user's chord shape library (lookup order step 2, after the song's
+        /// `{define}`s); `nil` for none. See `defaultShapeLibraryURL`.
+        public var shapeLibraryURL: URL?
 
         public init(
             fileSystem: any FileSystem,
@@ -25,6 +29,7 @@
             location: LibraryLocation,
             libraryOverride: URL? = nil,
             rememberLibraryOverride: Bool = false,
+            shapeLibraryURL: URL? = nil,
         ) {
             self.fileSystem = fileSystem
             self.clock = clock
@@ -32,6 +37,15 @@
             self.location = location
             self.libraryOverride = libraryOverride
             self.rememberLibraryOverride = rememberLibraryOverride
+            self.shapeLibraryURL = shapeLibraryURL
+        }
+
+        /// `Application Support/<bundle id>/shape-library.json` (inside the sandbox
+        /// container for the sandboxed app).
+        public static func defaultShapeLibraryURL(bundleID: String) -> URL {
+            URL.applicationSupportDirectory
+                .appending(path: bundleID, directoryHint: .isDirectory)
+                .appending(path: UserShapeLibrary.fileName, directoryHint: .notDirectory)
         }
     }
 
@@ -293,6 +307,18 @@
             )
             let issues = try await setlistStore.load(root: root)
             let library = LibraryViewModel(store: libraryStore)
+            if let url = dependencies.shapeLibraryURL {
+                do {
+                    library.userShapes = try UserShapeLibrary.load(
+                        from: url,
+                        fileSystem: dependencies.fileSystem,
+                    )
+                } catch {
+                    // Diagrams fall back to curated and generated shapes; say why.
+                    library.errorMessage = "Segue could not read your chord shape library "
+                        + "(\(UserMessage.describe(error))), so built-in shapes are shown."
+                }
+            }
             await library.reload()
             let setlists = SetlistsViewModel(store: setlistStore, loadIssues: issues)
             await setlists.reload()

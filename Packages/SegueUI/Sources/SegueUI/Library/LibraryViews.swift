@@ -264,7 +264,7 @@
                     // The song as its display toggles render it (transpose, capo, Nashville,
                     // diagrams), the same model the editor and the stage use.
                     SongPageView(
-                        model: SongSummary.renderModel(record),
+                        model: SongSummary.renderModel(record, userShapes: model.userShapes),
                         fallbackTitle: SongSummary.title(record),
                     )
                 }

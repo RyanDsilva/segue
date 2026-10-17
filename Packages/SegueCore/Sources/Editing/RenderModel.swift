@@ -201,14 +201,70 @@ public struct RenderLine: Sendable, Equatable {
     /// The `.line` block, for tree operations.
     public var path: BlockPath
     /// The lyric text, chords removed (exactly as written; never altered).
-    public var lyrics: String
+    public private(set) var lyrics: String
     /// Chords in source order; `offset`s are non-decreasing.
     public var chords: [RenderChord]
+    /// UTF-16 offset into `lyrics` of each lyric offset `0 ... lyricCount`.
+    ///
+    /// Lyric offsets count `Character`s per text run between chords (docs/phases/
+    /// 1-interfaces.md). Joining the runs can merge characters (a chord between `प` and
+    /// `्` in `प[G]्यार`), so the joined string's own `Character`s are not lyric offsets:
+    /// every conversion goes through this table, never through `lyrics.count`.
+    public private(set) var characterStarts: [Int]
 
+    /// A line whose text is one run (no chord splits a character).
     public init(path: BlockPath, lyrics: String, chords: [RenderChord]) {
+        self.init(path: path, runs: [lyrics], chords: chords)
+    }
+
+    /// A line from its text runs (the text between chords, in order).
+    public init(path: BlockPath, runs: [String], chords: [RenderChord]) {
         self.path = path
-        self.lyrics = lyrics
         self.chords = chords
+        var starts: [Int] = []
+        var units = 0
+        for run in runs {
+            for character in run {
+                starts.append(units)
+                units += character.utf16.count
+            }
+        }
+        starts.append(units)
+        lyrics = runs.joined()
+        characterStarts = starts
+    }
+
+    /// Number of lyric offsets a chord can sit on, minus one (the end).
+    public var lyricCount: Int {
+        characterStarts.count - 1
+    }
+
+    /// UTF-16 offset into `lyrics` of a lyric offset (clamped to `0 ... lyricCount`).
+    public func utf16Offset(ofLyricOffset offset: Int) -> Int {
+        characterStarts[min(max(offset, 0), lyricCount)]
+    }
+
+    /// The lyric offset at (or just before) a UTF-16 offset into `lyrics`.
+    public func lyricOffset(atUTF16 utf16: Int) -> Int {
+        var low = 0
+        var high = lyricCount
+        while low < high {
+            let mid = (low + high + 1) / 2
+            if characterStarts[mid] <= utf16 {
+                low = mid
+            } else {
+                high = mid - 1
+            }
+        }
+        return low
+    }
+
+    /// The text of lyric character `offset` (`0 ..< lyricCount`).
+    public func character(at offset: Int) -> Substring {
+        let units = lyrics.utf16
+        let start = units.index(units.startIndex, offsetBy: characterStarts[offset])
+        let end = units.index(units.startIndex, offsetBy: characterStarts[offset + 1])
+        return lyrics[start ..< end]
     }
 }
 
@@ -222,7 +278,8 @@ public struct RenderChord: Sendable, Equatable {
     }
 
     public var ref: ChordRef
-    /// Character offset into `RenderLine.lyrics` the chord sits above (0 ... count).
+    /// Lyric offset the chord sits above (`0 ... RenderLine.lyricCount`; see
+    /// `RenderLine.characterStarts`).
     public var offset: Int
     /// Text to draw (transposed / Nashville).
     public var text: String

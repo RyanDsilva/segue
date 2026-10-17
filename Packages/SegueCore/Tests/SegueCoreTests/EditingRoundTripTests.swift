@@ -22,16 +22,24 @@ struct EditingRoundTripTests {
                     for: .insertChord("Gsus4", at: position),
                     in: snapshot,
                 )
-                let at = try #require(snapshot.sourceOffset(of: position))
-                try expectMinimal(change, in: snapshot, equals: TextEdit(
-                    range: at ..< at,
-                    replacement: "[Gsus4]",
-                ))
                 try expectLocal(change, in: snapshot, lines: [path])
                 let after = snapshot.applying(change)
                 #expect(after.document.plainLyrics == snapshot.document.plainLyrics)
                 let caret = try #require(change.selectionAfter)
-                #expect(caret == at + 7 ..< at + 7)
+                if let occupied = occupiedRange(snapshot, at: position) {
+                    // Chords already there are replaced, never stacked.
+                    let expected = TextEdit(range: occupied, replacement: "[Gsus4]")
+                    #expect(snapshot.text.applying(change.edits)
+                        == snapshot.text.applying([expected]))
+                    #expect(caret == occupied.lowerBound + 7 ..< occupied.lowerBound + 7)
+                } else {
+                    let at = try #require(snapshot.sourceOffset(of: position))
+                    try expectMinimal(change, in: snapshot, equals: TextEdit(
+                        range: at ..< at,
+                        replacement: "[Gsus4]",
+                    ))
+                    #expect(caret == at + 7 ..< at + 7)
+                }
             }
         }
     }
@@ -170,14 +178,15 @@ struct EditingRoundTripTests {
     }
 
     @Test
-    func `stacked chords and lyric edits follow the documented rules`() throws {
+    func `chord inserts and lyric edits follow the documented rules`() throws {
         let snapshot = SourceSnapshot(text: "[A]Hel[B]lo world\n")
         let line = BlockPath(block: 0)
-        let stacked = try DocumentEditor.change(
+        // Inserting where a chord sits replaces it (no stacking).
+        let replaced = try DocumentEditor.change(
             for: .insertChord("C", at: LyricPosition(line: line, offset: 0)),
             in: snapshot,
         )
-        #expect(snapshot.text.applying(stacked.edits) == "[A][C]Hel[B]lo world\n")
+        #expect(snapshot.text.applying(replaced.edits) == "[C]Hel[B]lo world\n")
 
         // Removed range swallows [B]'s character: the chord moves to the range start.
         let removal = try DocumentEditor.change(
@@ -219,5 +228,44 @@ struct EditingRoundTripTests {
             TextEdit(range: 34 ..< 34, replacement: "[G]"),
         ])
         #expect(change.selectionAfter == 34 ..< 34)
+    }
+
+    // MARK: - Lyric edits stay lyric text (review finding 4)
+
+    @Test
+    func `lyric edits that would make a comment, directive or chord are rejected`() throws {
+        let snapshot =
+            SourceSnapshot(text: "{start_of_verse}\nDil ki baat\n[G]hai\n{end_of_verse}\n")
+        let line = BlockPath(block: 0, item: 0)
+        let chorded = BlockPath(block: 0, item: 1)
+        let rejected: [EditOperation] = [
+            .editLyrics(line, range: 0 ..< 0, replacement: "#"), // a file comment
+            .editLyrics(line, range: 0 ..< 11, replacement: "{title: x}"), // a directive
+            .editLyrics(line, range: 4 ..< 4, replacement: "[Am]"), // a chord typed as text
+            .editLyrics(chorded, range: 3 ..< 3, replacement: " [D]"),
+        ]
+        for operation in rejected {
+            guard case let .editLyrics(path, _, _) = operation else { continue }
+            #expect(throws: EditError.notLyricText(path), "\(operation)") {
+                try DocumentEditor.change(for: operation, in: snapshot)
+            }
+        }
+        // A lone bracket or brace is lyric text and is accepted.
+        for text in ["x]", "{ok", "a # b", "[ "] {
+            let change = try DocumentEditor.change(
+                for: .editLyrics(line, range: 4 ..< 4, replacement: text),
+                in: snapshot,
+            )
+            #expect(snapshot.applying(change).chords.count == 1)
+        }
+        // Splitting a line where the rest would read as a comment is rejected too.
+        let hash = SourceSnapshot(text: "Dil #ki\n")
+        let hashLine = BlockPath(block: 0)
+        #expect(throws: EditError.notLyricText(hashLine)) {
+            try DocumentEditor.change(
+                for: .splitLine(at: LyricPosition(line: hashLine, offset: 4)),
+                in: hash,
+            )
+        }
     }
 }

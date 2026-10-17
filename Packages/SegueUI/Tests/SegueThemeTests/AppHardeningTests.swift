@@ -292,9 +292,11 @@ struct AppHardeningTests {
 
         let save = Task { await library.saveEditor() }
         // Once `isSaving` is up the save has taken its text and is waiting on the store.
-        while !editor.isSaving {
+        let deadline = ContinuousClock.now + .seconds(10)
+        while !editor.isSaving, ContinuousClock.now < deadline {
             await Task.yield()
         }
+        #expect(editor.isSaving, "the save never started")
         editor.sourceTextDidChange("{title: Racing}\nFirst line\nTyped during the save\n")
         await save.value
 
@@ -324,16 +326,18 @@ struct AppHardeningTests {
         #expect(library.isSearching)
         library.query = "needle"
         #expect(library.isSearching)
-        while library.isSearching {
+        let deadline = ContinuousClock.now + .seconds(10)
+        while library.isSearching, ContinuousClock.now < deadline {
             try await Task.sleep(for: .milliseconds(10))
         }
+        #expect(!library.isSearching, "the search never landed")
         #expect(library.results.map(\.document.metadata.title) == ["Needle"])
     }
 }
 
 /// A temp library folder plus an isolated defaults suite, removed afterwards.
 @MainActor
-private final class TestEnvironment {
+final class TestEnvironment {
     let scratch: URL
     let libraryURL: URL
     let suiteName: String

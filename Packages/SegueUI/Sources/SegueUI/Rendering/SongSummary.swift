@@ -1,4 +1,5 @@
 import ChordPro
+import Diagrams
 import Editing
 import Foundation
 import Library
@@ -42,10 +43,14 @@ enum SongSummary {
 
     /// The song as its display toggles render it (sidecar prefs). The live view passes
     /// `showDiagrams: false` (its strip is phase 2).
-    static func renderModel(_ record: SongRecord, showDiagrams: Bool = true) -> RenderModel {
+    static func renderModel(
+        _ record: SongRecord,
+        showDiagrams: Bool = true,
+        userShapes: UserShapeLibrary = .empty,
+    ) -> RenderModel {
         var options = record.sidecar.displayPrefs.displayOptions
         options.showDiagrams = options.showDiagrams && showDiagrams
-        return RenderModel(document: record.document, options: options)
+        return RenderModel(document: record.document, options: options, userShapes: userShapes)
     }
 
     /// Artist and performance line for a rendered song: "Artist  ·  G, capo 2, 96". The key

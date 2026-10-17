@@ -33,6 +33,7 @@ struct SegueApp: App {
             location: LibraryLocation(defaults: defaults),
             libraryOverride: options.libraryPath,
             rememberLibraryOverride: options.rememberLibrary,
+            shapeLibraryURL: Self.shapeLibraryURL(options),
         )
         _app = State(initialValue: AppModel(dependencies: dependencies))
     }
@@ -45,6 +46,16 @@ struct SegueApp: App {
         #else
             LaunchOptions()
         #endif
+    }
+
+    /// The user's chord shape library: Application Support, or only the explicit test file
+    /// in a test run.
+    private static func shapeLibraryURL(_ options: LaunchOptions) -> URL? {
+        if options.isTestRun {
+            return options.shapeLibraryPath
+        }
+        guard let bundleID = Bundle.main.bundleIdentifier else { return nil }
+        return AppDependencies.defaultShapeLibraryURL(bundleID: bundleID)
     }
 
     /// Plugin modules for this flavor. Only the Personal build sees the personal package.

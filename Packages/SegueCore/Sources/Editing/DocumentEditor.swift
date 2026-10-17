@@ -9,8 +9,8 @@ import Foundation
 /// Chord text in operations is source text (what goes between the brackets). Visual mode
 /// converts what the user typed in the display key with `DisplayTransform.sourceChord`.
 public enum EditOperation: Sendable, Hashable {
-    /// Adds `[chord]` above the character at `at`. If chords already sit at that offset the
-    /// new one goes after them (`[A][B]text`), never replacing.
+    /// Adds `[chord]` above the character at `at`. A chord already at that offset is
+    /// replaced (no stacking); an authored stack there (`[A][B]text`) becomes the one chord.
     case insertChord(String, at: LyricPosition)
     /// Changes the text of one chord.
     case replaceChord(ChordRef, with: String)
@@ -21,6 +21,7 @@ public enum EditOperation: Sendable, Hashable {
     case deleteChord(ChordRef)
     /// Replaces `range` (Character offsets into the line's lyric text) with `replacement`.
     /// Chords stay on their characters; chords inside a removed range move to its start.
+    /// Throws `notLyricText` when the line would stop being the same lyric line.
     case editLyrics(BlockPath, range: Range<Int>, replacement: String)
     /// Splits a lyric line in two at a position (Return in visual mode); chords at or after
     /// the position go to the new line.
@@ -53,6 +54,9 @@ public enum EditError: Error, Sendable, Hashable {
     case readOnlyBlock(BlockPath)
     /// Empty or bracket-containing chord text.
     case invalidChordText(String)
+    /// A lyric edit or split that would turn the line into something else: a `#` comment,
+    /// a `{directive}`, or a new `[chord]` typed as text.
+    case notLyricText(BlockPath)
 }
 
 /// Plans tree operations as minimal text edits (phase 1 spec, "Sync between modes").

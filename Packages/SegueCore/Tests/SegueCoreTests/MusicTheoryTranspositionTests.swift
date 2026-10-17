@@ -20,12 +20,18 @@ struct MusicTheoryTranspositionTests {
         "5", "7(b9,#11)",
     ].filter { ChordFormula.parse(suffix: $0) != nil }
 
-    /// Chords spelled the way `key` spells them: every root, every suffix, with and without
-    /// a slash bass a major third up.
+    /// Chords spelled the way a chart in `key` spells them (`KeySpelling.preferred`: the
+    /// signature in key, the degree's usual family out of key): every root, every suffix,
+    /// with and without a slash bass a major third up (by the signature in key, else as the
+    /// root's third).
     static func vocabulary(in key: SongKey) -> [ChordToken] {
         (0 ..< 12).flatMap { pitchClass -> [ChordToken] in
-            let root = KeySpelling.spell(PitchClass(pitchClass), in: key).chartName
-            let bass = KeySpelling.spell(PitchClass(pitchClass + 4), in: key).chartName
+            let rootNote = KeySpelling.preferred(PitchClass(pitchClass), in: key)
+            let root = rootNote.chartName
+            let third = PitchClass(pitchClass + 4)
+            let bass = key.scaleContains(third)
+                ? KeySpelling.spell(third, in: key).chartName
+                : Self.third(above: rootNote).chartName
             return suffixes.flatMap { suffix in
                 [
                     ChordToken(parsing: root + suffix),
@@ -56,8 +62,8 @@ struct MusicTheoryTranspositionTests {
                         in: key,
                     ),
                 )
-                if let chord = moved.chord {
-                    Self.expectSignatureSpelling(chord, in: target)
+                if let chord = moved.chord, let original = token.chord {
+                    Self.expectRulingSpelling(chord, from: original, in: key, to: target)
                 }
             }
         }
@@ -78,8 +84,59 @@ struct MusicTheoryTranspositionTests {
         }
     }
 
+    /// The major third above `root`, two letters up (`E` -> `G#`), or its plain spelling
+    /// when that would take a double accidental or `Cb Fb E# B#`.
+    static func third(above root: NoteClass) -> NoteClass {
+        let pitch = root.pitchClass.transposed(by: 4)
+        let letter = Letter(rawValue: (root.letter.rawValue + 2) % 7) ?? .C
+        let candidates = [Accidental.natural, .sharp, .flat]
+            .map { NoteClass(letter, accidental: $0) }
+        let forbidden = ["Cb", "Fb", "E#", "B#"]
+        return candidates.first { $0.pitchClass == pitch && !forbidden.contains($0.chartName) }
+            ?? KeySpelling.spell(pitch, in: nil)
+    }
+
+    /// The spelling ruling (docs/decisions.md, review finding 2): notes in the source key's
+    /// scale or written as naturals follow the target key signature; out-of-key notes with
+    /// an accidental keep the author's family (a natural on a white key).
+    static func expectRulingSpelling(
+        _ chord: ChartChord,
+        from original: ChartChord,
+        in source: SongKey,
+        to target: SongKey,
+    ) {
+        let (before, after) = (original.symbol.root, chord.symbol.root)
+        let context = "\(before.chartName) in \(source.name) -> "
+            + "\(after.chartName) in \(target.name)"
+        if source.scaleContains(before.pitchClass) {
+            expectSignatureSpelling([after], in: target)
+        } else if before.accidental == .natural {
+            #expect(after == KeySpelling.preferred(after.pitchClass, in: target), "\(context)")
+        } else {
+            #expect(
+                after.accidental == .natural || after.accidental == before.accidental,
+                "\(context)",
+            )
+        }
+        // An out-of-key slash bass is spelled as its interval above the root when it can.
+        if let bass = original.symbol.bass, let moved = chord.symbol.bass,
+           third(above: before) == bass, !source.scaleContains(bass.pitchClass),
+           (bass.letter.rawValue - before.letter.rawValue + 7) % 7 == 2,
+           third(above: after).letter.rawValue == (after.letter.rawValue + 2) % 7
+        {
+            #expect(moved == third(above: after), "\(context): bass \(moved.chartName)")
+        }
+    }
+
     /// Independent restatement of the key-signature rules (not via `KeySpelling`).
     static func expectSignatureSpelling(_ chord: ChartChord, in key: SongKey) {
+        expectSignatureSpelling(
+            [chord.symbol.root] + (chord.symbol.bass.map { [$0] } ?? []),
+            in: key,
+        )
+    }
+
+    static func expectSignatureSpelling(_ notes: [NoteClass], in key: SongKey) {
         let flatKeys: Set = [
             "F",
             "Bb",
@@ -101,7 +158,6 @@ struct MusicTheoryTranspositionTests {
             "Em": ["Bb"],
         ]
         let leadingTone = KeySpelling.spell(key.tonic.pitchClass.transposed(by: 11), in: key)
-        let notes = [chord.symbol.root] + (chord.symbol.bass.map { [$0] } ?? [])
         for note in notes {
             let name = note.chartName
             #expect(!["Cb", "Fb", "E#", "B#"].contains(name), "\(name) in \(key.name)")

@@ -37,6 +37,9 @@ struct EditPlanner {
         try Self.validate(chord)
         var model = try lineModel(position.line)
         try check(position, in: model)
+        // A chord already on that character is replaced, never stacked (phase 1 build
+        // rulings); an authored stack (`[A][B]text`) collapses to the new chord.
+        model.chords.removeAll { $0.offset == position.offset }
         model.insert(chord, at: position.offset)
         let index = model.chords.lastIndex { $0.offset == position.offset && $0.text == chord }
         try rewrite(position.line, as: model, caretAfterChord: index)
@@ -111,6 +114,7 @@ struct EditPlanner {
         // `LyricLineModel` places chords before the character at their offset, so the ones
         // at `range.lowerBound` keep their relative order with the shifted ones.
         let edited = LyricLineModel(lyrics: lyrics, chords: chords)
+        try Self.ensureLyricLine(edited.render().text, chords: chords.count, path: path)
         try rewrite(path, as: edited, caretAtLyric: range.lowerBound + inserted.count)
     }
 
@@ -126,6 +130,16 @@ struct EditPlanner {
             chords: model.chords.filter { $0.offset >= position.offset }.map {
                 LyricLineModel.Chord(text: $0.text, offset: $0.offset - position.offset)
             },
+        )
+        try Self.ensureLyricLine(
+            first.render().text,
+            chords: first.chords.count,
+            path: position.line,
+        )
+        try Self.ensureLyricLine(
+            second.render().text,
+            chords: second.chords.count,
+            path: position.line,
         )
         let line = try sourceLine(position.line)
         let ending = line.hasEnding ? line.ending : snapshot.map.defaultEnding
@@ -203,37 +217,11 @@ struct EditPlanner {
             return
         }
         guard let value else { return }
-        insertLine(DirectiveLine.canonical(name: name, value: value), afterLine: leadingMetadataEnd)
-    }
-
-    /// Index of the last top-level directive in the leading run of directives and file
-    /// comments, or `nil` when the song does not start with one.
-    private var leadingMetadataEnd: Int? {
-        var last: Int?
-        for (index, role) in snapshot.map.roles.enumerated() {
-            guard case let .block(path) = role, path.item == nil else { break }
-            switch snapshot.block(at: path) {
-            case .directive: last = index
-            case .fileComment: continue
-            default: return last
-            }
-        }
-        return last
-    }
-
-    private mutating func insertLine(_ text: String, afterLine index: Int?) {
-        let lines = snapshot.map.lines
-        let ending = snapshot.map.defaultEnding
-        guard let index else {
-            builder.insert(text + ending, at: 0)
-            return
-        }
-        let line = lines[index]
-        if line.hasEnding {
-            builder.insert(text + line.ending, at: line.end)
-        } else {
-            builder.insert(ending + text, at: line.contentEnd)
-        }
+        snapshot.insertLine(
+            DirectiveLine.canonical(name: name, value: value),
+            afterLine: snapshot.leadingMetadataEnd,
+            into: &builder,
+        )
     }
 
     /// Removes a whole line. A last line without an ending takes the previous ending with it.
@@ -283,6 +271,21 @@ struct EditPlanner {
         }
     }
 
+    /// `text` must still parse as a lyric line (or a blank one) with exactly `chords`
+    /// chords: typed text never becomes a `#` comment, a directive or a chord.
+    static func ensureLyricLine(_ text: String, chords: Int, path: BlockPath) throws(EditError) {
+        let blocks = ChordProParser.parse(text).0.blocks
+        switch blocks.first {
+        case .blank, nil:
+            guard chords == 0 else { throw .notLyricText(path) }
+        case let .line(line):
+            guard blocks.count == 1, line.segments.count(where: { $0.chord != nil }) == chords
+            else { throw .notLyricText(path) }
+        default:
+            throw .notLyricText(path)
+        }
+    }
+
     static func validate(_ chord: String) throws(EditError) {
         let forbidden: Set<Character> = ["[", "]", "\n", "\r"]
         guard !chord.allSatisfy({ $0 == " " || $0 == "\t" }),
@@ -292,5 +295,38 @@ struct EditPlanner {
 
     static func firstWord(_ value: String?) -> String? {
         value?.split(whereSeparator: { $0 == " " || $0 == "\t" }).first.map(String.init)
+    }
+}
+
+extension SourceSnapshot {
+    /// Index of the last top-level directive in the leading run of directives and file
+    /// comments, or `nil` when the song does not start with one.
+    var leadingMetadataEnd: Int? {
+        var last: Int?
+        for (index, role) in map.roles.enumerated() {
+            guard case let .block(path) = role, path.item == nil else { break }
+            switch block(at: path) {
+            case .directive: last = index
+            case .fileComment: continue
+            default: return last
+            }
+        }
+        return last
+    }
+
+    /// Inserts `text` as a whole line after line `index` (at the top for `nil`), using the
+    /// file's line ending.
+    func insertLine(_ text: String, afterLine index: Int?, into builder: inout EditBuilder) {
+        let ending = map.defaultEnding
+        guard let index else {
+            builder.insert(text + ending, at: 0)
+            return
+        }
+        let line = map.lines[index]
+        if line.hasEnding {
+            builder.insert(text + line.ending, at: line.end)
+        } else {
+            builder.insert(ending + text, at: line.contentEnd)
+        }
     }
 }

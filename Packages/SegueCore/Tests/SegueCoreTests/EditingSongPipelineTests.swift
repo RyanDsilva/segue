@@ -87,6 +87,7 @@ struct EditingSongPipelineTests {
                     options: DisplayOptions(
                         capoMode: capoMode,
                         nashville: true,
+                        showDiagrams: true,
                         instrument: instrument,
                     ),
                 )
@@ -122,19 +123,25 @@ struct EditingSongPipelineTests {
     @Test
     func `piano diagrams are always concert pitch and song defines win`() throws {
         let document = try ChordProParser.parse(EditingFixtures.load(Self.defines)).0
-        let piano = RenderModel(document: document, options: DisplayOptions(instrument: .piano))
+        let piano = RenderModel(
+            document: document,
+            options: DisplayOptions(showDiagrams: true, instrument: .piano),
+        )
         #expect(piano.diagrams.first?.name == "G")
         #expect(piano.diagrams.first?.concertName == "A")
         #expect(piano.diagrams.first?.piano?.root == PitchClass(9))
 
-        let guitar = RenderModel(document: document, options: DisplayOptions())
+        let guitar = RenderModel(document: document, options: DisplayOptions(showDiagrams: true))
         let gadd9 = try #require(guitar.diagrams.first { $0.name == "Gadd9" })
         #expect(gadd9.guitar?.source == .songDefine)
         #expect(gadd9.guitar?.shape.frets == [3, 2, 0, 2, 0, 3])
         #expect(gadd9.capoFret == 2)
 
         // Transposed away from the defined name, the define no longer applies.
-        let moved = RenderModel(document: document, options: DisplayOptions(transpose: 2))
+        let moved = RenderModel(
+            document: document,
+            options: DisplayOptions(transpose: 2, showDiagrams: true),
+        )
         #expect(moved.diagrams.first { $0.name == "Aadd9" }?.guitar?.source != .songDefine)
     }
 

@@ -13,7 +13,7 @@ Make a song chart fast to write and correct, and make one chart serve keys, guit
 - Song editor with two toggleable modes: **Text** (ChordPro source) and **Visual** (lyrics with chords placed on syllables).
 - Chord autocomplete, live preview.
 - Chord diagram components: guitar (any tuning, capo-aware, custom shapes) and piano.
-- Per-song display toggles: transpose, capo shapes vs concert pitch, Nashville, diagrams on/off. Stored in the song sidecar.
+- Per-song display toggles: transpose, capo shapes vs concert pitch, Nashville, diagrams on/off (**off by default**). Stored in the song sidecar.
 
 ## Non-goals
 
@@ -40,10 +40,10 @@ ChartChord { tonic: Tonic.Chord?          // pitch content: root + type, used fo
 
 ### Transposition and enharmonic spelling
 
-- Transpose by semitones relative to the song key. Spelling follows the **target key signature**: sharp keys (G, D, A, E, B, F#) spell with sharps, flat keys (F, Bb, Eb, Ab, Db, Gb) with flats; C/Am uses sharps for raised degrees except bVII and bIII, which use flats (Bb, Eb).
+- Transpose by semitones relative to the song key. **In-key** chords follow the **target key signature**: sharp keys (G, D, A, E, B, F#) spell with sharps, flat keys (F, Bb, Eb, Ab, Db, Gb) with flats; C/Am uses sharps for raised degrees except bVII and bIII, which use flats (Bb, Eb). **Out-of-key** chords keep the author's accidental family (`Ab` in C becomes `Bb` in D, never `A#`; a natural when it lands on a white key; an out-of-key natural takes its degree's usual family: b2 b3 #4 b6 b7).
 - Slash bass notes are spelled in the same key context.
 - **Key detection** (deterministic, in Core): if the song has no `{key}`, score every major/minor Tonic `Key` against the chord set (diatonic fit, weighted by first/last chord and frequency), and show the winner as "inferred" until confirmed. When the top two scores are within a margin, mark the result **ambiguous**; phase 3's AI cleanup may resolve only ambiguous cases.
-- Transposition is a **view transform**, not an edit, unless the user picks **"Apply transposition to source"**: it rewrites every chord token and `{key}`, **keeps `{capo}` unchanged**, and any custom `{define}` shape whose chord name no longer appears (or no longer matches the rewritten chord) is **flagged for review** in the editor rather than silently deleted or auto-shifted. The rewrite is one undoable edit.
+- Transposition is a **view transform**, not an edit, unless the user picks **"Apply transposition to source"**: it rewrites every chord token and `{key}` (and **adds a `{key}`**, the detected key transposed, when the song had none), **keeps `{capo}` unchanged**, and any custom `{define}` shape whose chord name no longer appears (or no longer matches the rewritten chord) is **flagged for review** in the editor rather than silently deleted or auto-shifted. The rewrite is one undoable edit.
 
 ### Capo semantics
 
@@ -87,7 +87,8 @@ Parser produces a concrete syntax tree that keeps whitespace, comments, unknown 
 ### Visual mode
 
 - Lyrics rendered with chords above syllables (same renderer as the live preview).
-- Click a syllable to add a chord (popover with autocomplete); drag a chord left/right to snap to another character; delete with Backspace; Option-drag duplicates.
+- Click a syllable to add a chord (popover with autocomplete); adding where a chord already sits **replaces** it (no stacking); drag a chord left/right to snap to another character; delete with Backspace; Option-drag duplicates.
+- In Nashville view chords can be entered as **numbers** (`1`, `4`, `6m`, `b7`, `5/7`, `3(7)`) in the popover and in text-mode `[` completion, resolved against the display key and written to the source as letters; letter names are accepted too.
 - Section headers editable (Verse, Chorus, Bridge, custom labels); lyrics editable inline.
 - Tab/grid blocks shown read-only with "Edit in text mode".
 
@@ -139,7 +140,7 @@ See `docs/decisions.md` for the audit trail.
 2. **Visual editor: TextKit 2 in AppKit** via `NSViewRepresentable`; shares the text engine with text mode, iOS port path through UITextView.
 3. **Guitar shapes: algorithmic generator per tuning + our own curated overrides.** No third-party chord database, so no licence risk.
 4. **Nashville in minor keys: relative major** (Am in A minor = 6m). No user setting this phase.
-5. **Apply transposition to source: rewrite chords and `{key}`, keep `{capo}`, flag custom shapes** that no longer match.
+5. **Apply transposition to source: rewrite chords and `{key}` (adding the inferred key when there is none), keep `{capo}`, flag custom shapes** that no longer match.
 6. **Key detection: deterministic scorer** in Core; AI (phase 3) only resolves results marked ambiguous.
 7. **Piano diagram: compact one octave**, bass marked separately.
 8. **Chords Tonic cannot model** (e.g. `7(#9)`, `6/9`, `add9`, `13sus4`): our own small interval table in `MusicTheory` maps them to pitch content, so they transpose and get generated diagrams like any other chord. Verified against the fixture corpus in the first build session.

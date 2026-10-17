@@ -31,22 +31,21 @@ extension RenderLine {
     func replacingLyrics(with line: Line) -> RenderLine? {
         let originals = line.segments.compactMap(\.chord)
         guard originals == chords.map(\.original) else { return nil }
-        var lyrics = ""
+        var runs: [String] = []
         var offsets: [Int] = []
         var count = 0
         for segment in line.segments {
             if segment.chord != nil {
                 offsets.append(count)
             }
-            lyrics += segment.text
+            runs.append(segment.text)
             count += segment.text.count
         }
-        var updated = self
-        updated.lyrics = lyrics
-        for index in updated.chords.indices {
-            updated.chords[index].offset = offsets[index]
+        var moved = chords
+        for index in moved.indices {
+            moved[index].offset = offsets[index]
         }
-        return updated
+        return RenderLine(path: path, runs: runs, chords: moved)
     }
 }
 

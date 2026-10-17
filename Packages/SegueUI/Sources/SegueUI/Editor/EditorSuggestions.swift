@@ -4,6 +4,13 @@ import Foundation
 /// song first, then the diatonic chords of the key, then common extensions of the typed
 /// root. Typing filters. Only ever offered after `[` or in the visual chord popover, never
 /// on plain lyric words.
+/// One `[` completion: what the chip shows, and the chord text it inserts (they differ in
+/// Nashville view, where a number inserts the source letters).
+struct ChordCompletion: Equatable {
+    let title: String
+    let insertion: String
+}
+
 enum ChordSuggestions {
     /// Common chord suffixes offered for the typed root (unit D owns this list).
     static let extensionSuffixes = [
@@ -15,16 +22,23 @@ enum ChordSuggestions {
     /// - Parameters:
     ///   - songChords: chord texts already in the song, in order of first appearance.
     ///   - diatonic: the key's diatonic chord symbols (`SongKey.diatonicChordSymbols`).
+    ///   - numbers: Nashville view: a typed degree (`4`, `b7`) gets extensions too.
     static func chords(
         prefix rawPrefix: String,
         songChords: [String],
         diatonic: [String],
+        numbers: Bool = false,
         limit: Int = 10,
     ) -> [String] {
         let prefix = normalized(rawPrefix)
         var extensions: [String] = []
         if let root = root(of: prefix) {
             extensions = extensionSuffixes.map { root + $0 }
+        } else if numbers, let degree = degree(of: prefix) {
+            // Nashville numbers: a suffix starting with a digit is parenthesised (`5(7)`).
+            extensions = extensionSuffixes.map { suffix in
+                suffix.first?.isNumber == true ? "\(degree)(\(suffix))" : degree + suffix
+            }
         }
         var seen = Set<String>()
         var result: [String] = []
@@ -40,10 +54,26 @@ enum ChordSuggestions {
         return result
     }
 
-    /// Upper-cases a leading root letter, so `[e` matches `Em`.
+    /// Upper-cases a leading root letter, so `[e` matches `Em` (but not the flat of a
+    /// Nashville degree: `b7` stays `b7`).
     static func normalized(_ prefix: String) -> String {
-        guard let first = prefix.first, "abcdefg".contains(first) else { return prefix }
+        guard let first = prefix.first, "abcdefg".contains(first), degree(of: prefix) == nil
+        else { return prefix }
         return first.uppercased() + prefix.dropFirst()
+    }
+
+    /// The Nashville degree at the start of `prefix` (`4`, `b7`, `#4`), if it starts with
+    /// one.
+    static func degree(of prefix: String) -> String? {
+        var degree = ""
+        var rest = Substring(prefix)
+        if let first = rest.first, first == "b" || first == "#" {
+            degree.append(first)
+            rest = rest.dropFirst()
+        }
+        guard let digit = rest.first, ("1" ... "7").contains(digit) else { return nil }
+        degree.append(digit)
+        return degree
     }
 
     /// The root spelled at the start of `prefix` (`F#`, `Bb`, `E`), if it starts with one.

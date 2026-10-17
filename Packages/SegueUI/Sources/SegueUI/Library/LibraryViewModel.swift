@@ -1,3 +1,4 @@
+import Diagrams
 import Foundation
 import Library
 import Observation
@@ -61,6 +62,11 @@ public final class LibraryViewModel {
 
     /// What the detail pane shows.
     public private(set) var detail: Detail = .empty
+
+    /// The user's chord shape library (loaded from Application Support when the library
+    /// opens): every diagram the editor and song page draw consults it after the song's
+    /// own `{define}`s.
+    public internal(set) var userShapes: UserShapeLibrary = .empty
 
     /// The open editor: the new-song editor (`detail == .newSong`) or an edit of the
     /// selected song. Nil when the detail pane shows a rendered song or nothing.
@@ -272,6 +278,7 @@ public final class LibraryViewModel {
             source: record.source,
             prefs: record.sidecar.displayPrefs,
             fileName: record.relativePath,
+            userShapes: userShapes,
             persistPrefs: persistPrefs,
             save: save,
         )
@@ -307,6 +314,7 @@ public final class LibraryViewModel {
         editor = SongEditorViewModel(
             mode: .create,
             source: "",
+            userShapes: userShapes,
             persistPrefs: { [weak self] id, prefs in
                 guard let self else { throw CancellationError() }
                 return try await updateDisplayPrefs(id: id, prefs)

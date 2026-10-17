@@ -18,17 +18,20 @@ struct KeystrokeStats: Sendable {
         samples.append(seconds)
     }
 
-    /// "n=40 p95=3.10ms max=9.80ms mean=1.20ms busy=40.00ms".
+    /// "n=40 p95=3.10ms max=9.80ms@0 mean=1.20ms busy=40.00ms" (`@` = which keystroke, from
+    /// 0, took the longest).
     var summary: String {
         guard !samples.isEmpty else { return "" }
         let sorted = samples.sorted()
         let p95 = sorted[min(Int(Double(sorted.count) * 0.95), sorted.count - 1)]
         let mean = samples.reduce(0, +) / Double(samples.count)
+        let slowest = samples.indices.max { samples[$0] < samples[$1] } ?? 0
         return String(
-            format: "n=%d p95=%.2fms max=%.2fms mean=%.2fms busy=%.2fms",
+            format: "n=%d p95=%.2fms max=%.2fms@%d mean=%.2fms busy=%.2fms",
             samples.count,
             p95 * 1000,
             (sorted.last ?? 0) * 1000,
+            slowest,
             mean * 1000,
             busyMaximum * 1000,
         )

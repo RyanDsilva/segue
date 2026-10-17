@@ -9,8 +9,7 @@ final class LaunchSmokeTests: XCTestCase {
     @MainActor
     func testLaunchShowsMainWindow() {
         let app = XCUIApplication()
-        app.launchArguments = ["-SegueResetState", "YES"]
-        app.launch()
+        E2E.launch(app, arguments: ["-SegueResetState", "YES"])
 
         let title = app.staticTexts["segue.root.title"]
         XCTAssertTrue(title.waitForExistence(timeout: 10))
@@ -24,8 +23,8 @@ final class LaunchSmokeTests: XCTestCase {
         add(screenshot)
 
         // Segue > Acknowledgements credits the bundled font and dependencies.
-        app.menuBars.menuBarItems["Segue"].click()
-        app.menuItems["Acknowledgements"].click()
+        app.menuBars.menuBarItems["Segue"].click(in: app)
+        app.menuItems["Acknowledgements"].click(in: app)
         let acknowledgements = app.descendants(matching: .any)
             .matching(identifier: "segue.acknowledgements").firstMatch
         XCTAssertTrue(acknowledgements.waitForExistence(timeout: 5))

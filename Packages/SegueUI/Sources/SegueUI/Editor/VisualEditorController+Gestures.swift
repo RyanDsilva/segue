@@ -167,7 +167,7 @@
 
         private func nudge(_ chord: RenderChord, on line: RenderLine, by delta: Int) {
             let offset = chord.offset + delta
-            guard (0 ... line.lyrics.count).contains(offset) else {
+            guard (0 ... line.lyricCount).contains(offset) else {
                 NSSound.beep()
                 return
             }
@@ -185,7 +185,7 @@
 
         /// Inserts a chord typed in the display key at a slot.
         func insert(_ displayed: String, at target: LaneTarget) {
-            let source = model.letterTransform.sourceChord(fromDisplayed: displayed)
+            let source = model.inputTransform.sourceChord(fromDisplayed: displayed)
             let position = LyricPosition(line: target.path, offset: target.offset)
             model.perform(.insertChord(source, at: position))
         }
@@ -196,42 +196,53 @@
                 origin: target.anchor,
                 size: CGSize(width: 30, height: CanvasTypesetting.pillHeight),
             )
+            // A chord already on that character is replaced, never stacked.
+            let existing = projection.paragraphs[target.paragraph].lyricLine?.chords
+                .last { $0.offset == target.offset }
+            let shown = existing.map {
+                model.inputTransform.display(ChordToken(parsing: $0.original))
+            }
             presentPopover(
-                title: "Add chord",
-                initial: "",
+                title: existing == nil ? "Add chord" : "Replace chord",
+                initial: shown ?? "",
                 anchor: anchor,
                 onDelete: nil,
             ) { [weak self] text in
+                // Committing the chord that is already there changes nothing.
+                guard text != shown else { return }
                 self?.insert(text, at: target)
             }
         }
 
         func showEditPopover(_ pill: PillLayout) {
             let ref = pill.chord.ref
-            let letters = model.letterTransform.display(ChordToken(parsing: pill.chord.original))
             presentPopover(
                 title: "Edit chord",
-                initial: letters,
+                initial: shownText(of: pill.chord),
                 anchor: pill.rect,
                 onDelete: { [weak self] in
                     self?.selectedChord = nil
                     self?.model.perform(.deleteChord(ref))
                 },
                 onCommit: { [weak self] text in
-                    self?.replace(pill, with: text)
+                    self?.commitEdit(of: pill.chord, on: pill.line, typed: text)
                 },
             )
         }
 
-        private func replace(_ pill: PillLayout, with displayed: String) {
-            let source = model.letterTransform.sourceChord(fromDisplayed: displayed)
+        /// What the edit popover starts with: the chord as the view shows it.
+        func shownText(of chord: RenderChord) -> String {
+            model.inputTransform.display(ChordToken(parsing: chord.original))
+        }
+
+        /// The edit popover's commit. Unchanged text is a no-op: mapping it back from the
+        /// display key would respell the source chord (`G#` -> `Ab`).
+        func commitEdit(of chord: RenderChord, on line: RenderLine, typed displayed: String) {
+            guard displayed != shownText(of: chord) else { return }
+            let source = model.inputTransform.sourceChord(fromDisplayed: displayed)
             let previous = selectedChord
-            selectedChord = ChordSelection(
-                path: pill.line.path,
-                offset: pill.chord.offset,
-                original: source,
-            )
-            if !model.perform(.replaceChord(pill.chord.ref, with: source)) {
+            selectedChord = ChordSelection(path: line.path, offset: chord.offset, original: source)
+            if !model.perform(.replaceChord(chord.ref, with: source)) {
                 selectedChord = previous
             }
         }

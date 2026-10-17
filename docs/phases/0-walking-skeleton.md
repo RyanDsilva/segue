@@ -123,7 +123,7 @@ Formatter/linter: **SwiftLint + SwiftFormat** (nicklockwood), both pinned in `.m
 |---|---|
 | `make bootstrap` | `mise install`, `tuist install`, `tuist generate` |
 | `make build` / `make build-appstore` | build each scheme |
-| `make test` | Core integration suite (`swift test`) + parser corpus |
+| `make test` | Core integration suite (`swift test`) + parser corpus, then the SegueUI suite with Swift Build (`swift test --build-system swiftbuild`; its theme and diagram snapshot tests need the compiled asset catalog, so run them through `make test`, not plain `swift test`) |
 | `make e2e` | XCUITest suite (Personal scheme) |
 | `make lint` / `make format` | lint check / auto-format |
 | `make verify-appstore` | build AppStore scheme and assert no personal-module symbols |

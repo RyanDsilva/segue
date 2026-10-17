@@ -19,6 +19,7 @@ final class SegueE2ETests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        E2E.terminate(app)
         if let libraryRoot {
             try? FileManager.default.removeItem(at: libraryRoot)
         }
@@ -29,11 +30,10 @@ final class SegueE2ETests: XCTestCase {
         let root = try XCTUnwrap(libraryRoot)
         let app = XCUIApplication()
         self.app = app
-        app.launchArguments = [
+        E2E.launch(app, arguments: [
             "-SegueLibraryPath", root.path(percentEncoded: false),
             "-SegueResetState", "YES",
-        ]
-        app.launch()
+        ])
 
         // Clean baseline: an empty library.
         XCTAssertTrue(element(app, AXID.libraryEmpty).waitForExistence(timeout: 15))
@@ -67,12 +67,11 @@ final class SegueE2ETests: XCTestCase {
 
         let first = XCUIApplication()
         app = first
-        first.launchArguments = [
+        E2E.launch(first, arguments: [
             "-SegueLibraryPath", root.path(percentEncoded: false),
             "-SegueResetState", "YES",
             "-SegueRememberLibrary", "YES",
-        ]
-        first.launch()
+        ])
         waitForRows(first, titles: ["Harbour Lights"])
         // The bookmark was stored without complaint (a failure shows in the error banner).
         XCTAssertFalse(first.buttons["Dismiss"].exists)
@@ -98,13 +97,13 @@ final class SegueE2ETests: XCTestCase {
     @MainActor
     private func buildSetlist(_ app: XCUIApplication) {
         // Create a setlist and add both songs.
-        element(app, AXID.sidebarSetlists).click()
-        element(app, AXID.newSetlist).click()
+        element(app, AXID.sidebarSetlists).click(in: app)
+        element(app, AXID.newSetlist).click(in: app)
         let name = app.textFields[AXID.newSetlistName]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
-        name.click()
-        name.typeText("Friday Set")
-        app.buttons[AXID.newSetlistCreate].click()
+        name.click(in: app)
+        name.typeText("Friday Set", in: app)
+        app.buttons[AXID.newSetlistCreate].click(in: app)
         XCTAssertTrue(app.staticTexts[AXID.setlistTitle].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts[AXID.setlistTitle].value as? String, "Friday Set")
         XCTAssertTrue(element(app, AXID.setlistEmpty).exists)
@@ -112,14 +111,14 @@ final class SegueE2ETests: XCTestCase {
         // The toolbar's add button is labelled, not a bare "+".
         let addSongs = element(app, AXID.setlistAddSongs)
         XCTAssertEqual(addSongs.label, "Add Songs")
-        addSongs.click()
+        addSongs.click(in: app)
         // The sheet searches the index: "pyar" finds "Pyaar Ki Raah" only.
         filterAddSongs(app, "harbour", expect: "Harbour Lights")
         addSong(app, title: "Harbour Lights")
         filterAddSongs(app, "pyar", expect: "Pyaar Ki Raah")
         addSong(app, title: "Pyaar Ki Raah")
         attachScreenshot(app, name: "add-songs-sheet")
-        app.buttons[AXID.addSongsDone].click()
+        app.buttons[AXID.addSongsDone].click(in: app)
         let entries = app.descendants(matching: .any).matching(identifier: AXID.setlistEntry)
         XCTAssertTrue(wait(for: entries, count: 2))
         XCTAssertTrue(Self.text(entries.element(boundBy: 0)).contains("Harbour Lights"))
@@ -130,7 +129,7 @@ final class SegueE2ETests: XCTestCase {
     @MainActor
     private func perform(_ app: XCUIApplication) {
         // Perform: full-screen stage shows the first song's title, meta line and chords.
-        element(app, AXID.setlistPerform).click()
+        element(app, AXID.setlistPerform).click(in: app)
         let liveTitle = app.staticTexts[AXID.liveTitle]
         XCTAssertTrue(liveTitle.waitForExistence(timeout: 10))
         XCTAssertEqual(liveTitle.value as? String, "Harbour Lights")
@@ -144,15 +143,15 @@ final class SegueE2ETests: XCTestCase {
         attachScreenshot(app, name: "live-view-song-1")
 
         // Next song, then back, then exit.
-        app.typeKey(.rightArrow, modifierFlags: [])
+        app.typeKey(.rightArrow, modifierFlags: [], in: app)
         XCTAssertTrue(waitForValue(liveTitle, "Pyaar Ki Raah"))
         XCTAssertEqual(app.staticTexts[AXID.livePosition].value as? String, "2 of 2")
         attachScreenshot(app, name: "live-view-song-2")
-        app.typeKey(.leftArrow, modifierFlags: [])
+        app.typeKey(.leftArrow, modifierFlags: [], in: app)
         XCTAssertTrue(waitForValue(liveTitle, "Harbour Lights"))
-        app.typeKey(.space, modifierFlags: [])
+        app.typeKey(.space, modifierFlags: [], in: app)
         XCTAssertTrue(waitForValue(liveTitle, "Pyaar Ki Raah"))
-        app.typeKey(.escape, modifierFlags: [])
+        app.typeKey(.escape, modifierFlags: [], in: app)
         XCTAssertTrue(liveTitle.waitForNonExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts[AXID.setlistTitle].waitForExistence(timeout: 5))
     }
@@ -163,8 +162,7 @@ final class SegueE2ETests: XCTestCase {
     private func relaunchFromStoredBookmark(expecting titles: [String]) {
         let relaunched = XCUIApplication()
         app = relaunched
-        relaunched.launchArguments = ["-SegueTestDefaults", "YES"]
-        relaunched.launch()
+        E2E.launch(relaunched, arguments: ["-SegueTestDefaults", "YES"])
         XCTAssertFalse(
             element(relaunched, AXID.chooserMessage).waitForExistence(timeout: 3),
             "The library chooser appeared: the stored bookmark did not reopen the library",
@@ -194,11 +192,11 @@ final class SegueE2ETests: XCTestCase {
     private func typeNewSong(_ app: XCUIApplication, source: String, title: String)
         -> XCUIElement
     {
-        element(app, AXID.newSong).click()
+        element(app, AXID.newSong).click(in: app)
         let editor = app.textViews[AXID.editorText]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        editor.click()
-        editor.typeText(source)
+        editor.click(in: app)
+        editor.typeText(source, in: app)
         // The preview renders the typed title before saving.
         let preview = element(app, AXID.editorPreview)
         XCTAssertTrue(waitForValue(preview.staticTexts[AXID.songTitle], title))
@@ -214,7 +212,7 @@ final class SegueE2ETests: XCTestCase {
     private func createSong(_ app: XCUIApplication, source: String, title: String) {
         let editor = typeNewSong(app, source: source, title: title)
         attachScreenshot(app, name: "editor-new-song")
-        app.buttons[AXID.editorSave].click()
+        app.buttons[AXID.editorSave].click(in: app)
         // Saved: the detail pane shows the rendered song and the list has its row.
         XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], title))
@@ -230,11 +228,11 @@ final class SegueE2ETests: XCTestCase {
         title: String,
     ) {
         let editor = typeNewSong(app, source: source, title: title)
-        row(app, "Harbour Lights").click()
+        row(app, "Harbour Lights").click(in: app)
         let save = unsavedPromptButton(app, "Save")
         XCTAssertTrue(save.waitForExistence(timeout: 5), "No unsaved-changes prompt")
         attachScreenshot(app, name: "unsaved-changes-prompt")
-        save.click()
+        save.click(in: app)
         XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], "Harbour Lights"))
         XCTAssertTrue(row(app, title).waitForExistence(timeout: 10))
@@ -244,27 +242,27 @@ final class SegueE2ETests: XCTestCase {
     /// "Discard Changes" drops the edit (the file on disk is checked later).
     @MainActor
     private func discardEditFromPrompt(_ app: XCUIApplication) {
-        row(app, "Harbour Lights").click()
+        row(app, "Harbour Lights").click(in: app)
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], "Harbour Lights"))
-        element(app, AXID.editSong).click()
-        element(app, "segue.editor.mode.text").click() // Songs open on the visual canvas.
+        element(app, AXID.editSong).click(in: app)
+        element(app, "segue.editor.mode.text").click(in: app) // Songs open on the visual canvas.
         let editor = app.textViews[AXID.editorText]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        editor.click()
-        editor.typeText("Unsaved line\n")
+        editor.click(in: app)
+        editor.typeText("Unsaved line\n", in: app)
 
-        row(app, "Pyaar Ki Raah").click()
+        row(app, "Pyaar Ki Raah").click(in: app)
         let cancel = unsavedPromptButton(app, "Cancel")
         XCTAssertTrue(cancel.waitForExistence(timeout: 5), "No unsaved-changes prompt")
-        cancel.click()
+        cancel.click(in: app)
         XCTAssertTrue(cancel.waitForNonExistence(timeout: 5))
         XCTAssertTrue(editor.exists, "Cancel must keep the editor open")
         XCTAssertTrue((editor.value as? String ?? "").contains("Unsaved line"))
 
-        row(app, "Pyaar Ki Raah").click()
+        row(app, "Pyaar Ki Raah").click(in: app)
         let discard = unsavedPromptButton(app, "Discard Changes")
         XCTAssertTrue(discard.waitForExistence(timeout: 5), "No unsaved-changes prompt")
-        discard.click()
+        discard.click(in: app)
         XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], "Pyaar Ki Raah"))
     }
@@ -279,9 +277,9 @@ final class SegueE2ETests: XCTestCase {
     private func filterAddSongs(_ app: XCUIApplication, _ query: String, expect title: String) {
         let field = app.searchFields[AXID.addSongsSearch]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
-        field.click()
-        field.typeKey("a", modifierFlags: .command)
-        field.typeText(query)
+        field.click(in: app)
+        field.typeKey("a", modifierFlags: .command, in: app)
+        field.typeText(query, in: app)
         let rows = app.descendants(matching: .any).matching(identifier: AXID.addSongsRow)
         let onlyMatch = NSPredicate { _, _ in
             rows.count == 1 && rows.firstMatch.staticTexts[title].exists
@@ -298,12 +296,12 @@ final class SegueE2ETests: XCTestCase {
     private func search(_ app: XCUIApplication, _ query: String) {
         let field = app.searchFields[AXID.librarySearch]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
-        field.click()
-        field.typeKey("a", modifierFlags: .command)
+        field.click(in: app)
+        field.typeKey("a", modifierFlags: .command, in: app)
         if query.isEmpty {
-            field.typeKey(.delete, modifierFlags: [])
+            field.typeKey(.delete, modifierFlags: [], in: app)
         } else {
-            field.typeText(query)
+            field.typeText(query, in: app)
         }
     }
 
@@ -314,7 +312,7 @@ final class SegueE2ETests: XCTestCase {
             .containing(NSPredicate(format: "label == %@ OR value == %@", title, title))
             .firstMatch
         XCTAssertTrue(songRow.waitForExistence(timeout: 5), "No add row for \(title)")
-        songRow.buttons[AXID.addSongsAdd].click()
+        songRow.buttons[AXID.addSongsAdd].click(in: app)
     }
 
     // MARK: - Disk

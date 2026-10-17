@@ -111,6 +111,19 @@ func chordRanges(_ snapshot: SourceSnapshot, _ path: BlockPath) -> [Range<Int>] 
     return result
 }
 
+/// The source range of the chords sitting on `position` (adjacent when stacked), if any.
+func occupiedRange(_ snapshot: SourceSnapshot, at position: LyricPosition) -> Range<Int>? {
+    let model = RenderModel(document: snapshot.document, options: DisplayOptions())
+    let ranges = model.sections.flatMap(\.items).flatMap { item -> [Range<Int>] in
+        guard case let .lyrics(line) = item, line.path == position.line else { return [] }
+        return line.chords.filter { $0.offset == position.offset }
+            .compactMap { snapshot.sourceRange(of: $0.ref) }
+    }
+    guard let first = ranges.map(\.lowerBound).min(), let last = ranges.map(\.upperBound).max()
+    else { return nil }
+    return first ..< last
+}
+
 /// Edits ascending, non-overlapping, minimal (no no-op edit), result idempotent through
 /// the serializer.
 func expectWellFormed(_ change: SourceChange, in snapshot: SourceSnapshot) throws {

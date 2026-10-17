@@ -88,13 +88,69 @@ struct EditingTranspositionTests {
     }
 
     @Test
-    func `apply transposition without a key adds none and spells by the inferred key`() throws {
-        let snapshot = try SourceSnapshot(text: EditingFixtures.load("editing-no-key.cho"))
+    func `apply transposition without a key adds the inferred key, saved and indexed`()
+        async throws
+    {
+        let lib = try TestLibrary()
+        let store = try await lib.openStore()
+        let original = try EditingFixtures.load("editing-no-key.cho")
+        let created = try await store.createSong(source: original)
+        #expect(try EditingSongPipelineTests.indexedKey(lib, id: created.id) == nil)
+
+        let snapshot = SourceSnapshot(text: created.source)
         let rewrite = TranspositionRewrite.plan(semitones: 2, in: snapshot)
-        #expect(rewrite.newKey == nil)
-        let text = snapshot.text.applying(rewrite.change.edits)
-        #expect(!text.contains("{key"))
-        #expect(text.contains("[D]Walking down the [Bm]empty road"))
-        #expect(text.contains("[G]Singing [A]by and [D]by"))
+        #expect(rewrite.newKey?.name == "D")
+        _ = try await store.updateSong(
+            id: created.id,
+            source: created.source.applying(rewrite.change.edits),
+        )
+
+        let record = try #require(try await lib.openStore().song(id: created.id))
+        let expected = """
+        {title: Unsigned Song}
+        {key: D}
+
+        [D]Walking down the [Bm]empty road
+        [G]Nothing but the [A]sky
+        [D]Every step a [Bm]little lighter
+        [G]Singing [A]by and [D]by
+
+        """
+        #expect(try Array(lib.read(record.relativePath).utf8) == Array(expected.utf8))
+        #expect(record.document.metadata.key == "D")
+        #expect(KeyContext(document: record.document).status == .declared)
+        #expect(try EditingSongPipelineTests.indexedKey(lib, id: created.id) == "D")
+
+        // No transposition, no rewrite: the inferred key is not written by a no-op.
+        #expect(TranspositionRewrite.plan(semitones: 12, in: snapshot).change.isEmpty)
+        #expect(TranspositionRewrite.plan(semitones: 0, in: snapshot).newKey == nil)
+    }
+
+    @Test
+    func `an added key moves the flagged define lines below it`() {
+        let source = """
+        {title: Defines}
+        {define: Gadd9 base-fret 1 frets 3 2 0 2 0 3}
+
+        [G]One [C]two [D]three [G]four
+
+        """
+        let rewrite = TranspositionRewrite.plan(semitones: 2, in: SourceSnapshot(text: source))
+        let text = source.applying(rewrite.change.edits)
+        #expect(text.hasPrefix(
+            "{title: Defines}\n{define: Gadd9 base-fret 1 frets 3 2 0 2 0 3}\n{key: A}\n",
+        ))
+        #expect(rewrite.flaggedDefines == [DefineFlag(name: "Gadd9", line: 2, reason: .unused)])
+
+        let headed = "{define: Gadd9 base-fret 1 frets 3 2 0 2 0 3}\n" + source
+        let shifted = TranspositionRewrite.plan(semitones: 2, in: SourceSnapshot(text: headed))
+        #expect(headed.applying(shifted.change.edits).contains("{title: Defines}\n{define: Gadd9"))
+        #expect(shifted.flaggedDefines.map(\.line) == [1, 3])
+
+        // An unparseable `{key}` is left alone and no second one is added.
+        let odd = "{key: ???}\n[G]One [C]two [D]three\n"
+        let kept = TranspositionRewrite.plan(semitones: 2, in: SourceSnapshot(text: odd))
+        #expect(odd.applying(kept.change.edits) == "{key: ???}\n[A]One [D]two [E]three\n")
+        #expect(kept.newKey == nil)
     }
 }

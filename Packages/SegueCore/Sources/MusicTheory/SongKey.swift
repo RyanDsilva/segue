@@ -112,6 +112,17 @@ public struct SongKey: Sendable, Hashable, Codable {
         return symbols
     }
 
+    /// Whether `pitchClass` belongs to the key: the major scale, or the natural minor plus
+    /// its leading tone (harmonic minor's raised 7th, which charts use constantly).
+    public func scaleContains(_ pitchClass: PitchClass) -> Bool {
+        let degree = tonic.pitchClass.semitones(to: pitchClass)
+        let degrees: Set = switch mode {
+        case .major: [0, 2, 4, 5, 7, 9, 11]
+        case .minor: [0, 2, 3, 5, 7, 8, 10, 11]
+        }
+        return degrees.contains(degree)
+    }
+
     /// How the key's signature spells black keys.
     var flavour: KeyFlavour {
         switch (tonic.accidental, mode, tonic.letter) {

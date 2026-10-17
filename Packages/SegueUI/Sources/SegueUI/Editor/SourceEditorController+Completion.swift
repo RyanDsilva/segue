@@ -45,13 +45,8 @@
             guard opening || completion.isVisible else { return }
             switch context {
             case let .chord(prefix, start):
-                let sources = host?.chordCompletionSources() ?? (song: [], diatonic: [])
-                let items = ChordSuggestions.chords(
-                    prefix: prefix,
-                    songChords: sources.song,
-                    diatonic: sources.diatonic,
-                )
-                show(.chord, items: items, start: start, in: window)
+                chordCompletions = host?.chordCompletions(prefix: prefix) ?? []
+                show(.chord, items: chordCompletions.map(\.title), start: start, in: window)
             case let .directive(prefix, start):
                 let open = DirectiveSuggestions.openSection(
                     in: textView.string,
@@ -91,7 +86,8 @@
             case let (.chord, .chord(_, start)):
                 let closes = caret < text.length && text.character(at: caret) == 0x5D // ]
                 let end = closes ? caret + 1 : caret
-                let insertion = "[\(item)]"
+                let chord = chordCompletions.first { $0.title == item }?.insertion ?? item
+                let insertion = "[\(chord)]"
                 replace(NSRange(location: start, length: end - start), with: insertion)
                 textView.setSelectedRange(NSRange(
                     location: start + insertion.utf16.count,

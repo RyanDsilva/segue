@@ -10,8 +10,8 @@
         /// Every text change, typed or applied: rebuild the snapshot from `text`.
         func sourceTextDidChange(_ text: String)
         func sourceSelectionDidChange(_ range: NSRange)
-        /// Chord texts in the song (first appearance order) and the key's diatonic chords.
-        func chordCompletionSources() -> (song: [String], diatonic: [String])
+        /// `[` completions for `prefix` (what follows the `[`), most relevant first.
+        func chordCompletions(prefix: String) -> [ChordCompletion]
         func keystrokeTimed(_ seconds: TimeInterval, isShortcut: Bool)
     }
 
@@ -30,6 +30,8 @@
         var pendingFocus = false
 
         let completion = CompletionPopup()
+        /// The chord completions the popup shows (titles), with what each one inserts.
+        var chordCompletions: [ChordCompletion] = []
         /// The range touched since the last restyle (UTF-16, post-edit coordinates).
         var pendingEditedRange: NSRange?
         /// Set while a `SourceChange` is applied, so completion ignores it.

@@ -74,7 +74,7 @@ public struct DisplayPrefs: Sendable, Equatable, Codable {
         transpose: Int = 0,
         capoMode: CapoMode = .shapes,
         nashville: Bool = false,
-        showDiagrams: Bool = true,
+        showDiagrams: Bool = false,
         instrument: Instrument = .guitar,
         tuning: Tuning = .standard,
     ) {

@@ -28,12 +28,14 @@ public struct DefineFlag: Sendable, Hashable {
 
 /// "Apply transposition to source" (phase 1 spec): rewrites every chord token and `{key}`,
 /// keeps `{capo}`, never edits or deletes `{define}`s but flags the ones that no longer
-/// match. Unknown chords and `N.C.` are left as written. When the song has no `{key}`, none
-/// is added (an inferred key is not a confirmed one); spelling then uses the inferred key.
+/// match. Unknown chords and `N.C.` are left as written. When the song has no `{key}` at all,
+/// the detected key (inferred or ambiguous), transposed, is added as a `{key}` after the
+/// leading metadata directives (phase 1 build rulings); spelling uses that key.
 public struct TranspositionRewrite: Sendable, Hashable {
     /// One undo step ("Transpose").
     public var change: SourceChange
-    /// The new `{key}` value, `nil` when the song has no `{key}`.
+    /// The new `{key}` value: the first declared key moved, or the added detected key;
+    /// `nil` when the song has neither (no parseable `{key}` and no chords to detect from).
     public var newKey: SongKey?
     public var flaggedDefines: [DefineFlag]
 
@@ -79,29 +81,53 @@ public struct TranspositionRewrite: Sendable, Hashable {
             }
         }
 
+        // 0-based line of an added `{key}` in the rewritten source.
+        var addedLine: Int?
+        if keyContext.declared == nil {
+            newKey = nil
+            // No `{key}` line at all (an unparseable one is left alone): write down the
+            // detected key, moved with the chords, so the rewritten song states its key.
+            if !transposer.isIdentity, snapshot.directiveLines(named: "key").isEmpty,
+               let detected = keyContext.detection?.key
+            {
+                let added = detected.transposed(by: semitones)
+                let after = snapshot.leadingMetadataEnd
+                snapshot.insertLine(
+                    DirectiveLine.canonical(name: "key", value: added.name),
+                    afterLine: after,
+                    into: &builder,
+                )
+                addedLine = (after ?? -1) + 1
+                newKey = added
+            }
+        }
+
         let change = SourceChange(edits: builder.edits(), actionName: "Transpose")
         return Self(
             change: change,
-            newKey: keyContext.declared == nil ? nil : newKey,
-            flaggedDefines: flags(snapshot.defineLines, rewritten: rewritten),
+            newKey: newKey,
+            flaggedDefines: flags(snapshot.defineLines, rewritten: rewritten, addedLine: addedLine),
         )
     }
 
     /// Defines whose name no chord carries any more (`unused`), or whose name now sits on
     /// chords rewritten from a different chord (`mismatched`). `{define}` lines are never
-    /// edited, so their line numbers are the same in the rewritten source.
+    /// edited; only an added `{key}` line (`addedLine`, 0-based) moves the ones below it.
     private static func flags(
         _ defines: [DefineLine],
         rewritten: [(old: String, new: String)],
+        addedLine: Int?,
     ) -> [DefineFlag] {
         defines.compactMap { define in
             guard let name = define.name else { return nil }
+            let shift = addedLine.map { define.line >= $0 ? 1 : 0 } ?? 0
+            let line = define.line + shift + 1
             let carriers = rewritten.filter { $0.new == name }
             if carriers.isEmpty {
-                return DefineFlag(name: name, line: define.line + 1, reason: .unused)
+                return DefineFlag(name: name, line: line, reason: .unused)
             }
             if carriers.contains(where: { $0.old != name }) {
-                return DefineFlag(name: name, line: define.line + 1, reason: .mismatched)
+                return DefineFlag(name: name, line: line, reason: .mismatched)
             }
             return nil
         }

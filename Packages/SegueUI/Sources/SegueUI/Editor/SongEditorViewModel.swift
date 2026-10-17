@@ -74,7 +74,10 @@ public final class SongEditorViewModel {
     /// path. Cleared once the change lands.
     @ObservationIgnored var pendingLyricEdit: BlockPath?
 
-    @ObservationIgnored let originalSource: String
+    /// The text as last saved (or as opened): what "unsaved changes" compares against.
+    @ObservationIgnored var originalSource: String
+    /// The user's shape library, for diagram lookup after the song's `{define}`s.
+    @ObservationIgnored let userShapes: UserShapeLibrary
     @ObservationIgnored let save: (String) async throws -> SongRecord
     @ObservationIgnored let persistPrefs: ((SongID, DisplayPrefs) async throws
         -> SongRecord)?
@@ -101,10 +104,12 @@ public final class SongEditorViewModel {
         source: String,
         prefs: DisplayPrefs = DisplayPrefs(),
         fileName: String? = nil,
+        userShapes: UserShapeLibrary = .empty,
         persistPrefs: ((SongID, DisplayPrefs) async throws -> SongRecord)? = nil,
         save: @escaping (String) async throws -> SongRecord,
     ) {
         self.mode = mode
+        self.userShapes = userShapes
         self.source = source
         originalSource = source
         self.save = save
@@ -118,7 +123,11 @@ public final class SongEditorViewModel {
         // A new song starts as text; an existing one opens on the visual canvas (layout b).
         let blank = source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         editorMode = blank ? .text : .visual
-        let initial = RenderModel(document: snapshot.document, options: options)
+        let initial = RenderModel(
+            document: snapshot.document,
+            options: options,
+            userShapes: userShapes,
+        )
         renderModel = initial
         diagnostics = snapshot.diagnostics
         updateDerived(from: initial)
@@ -148,8 +157,8 @@ public final class SongEditorViewModel {
     public private(set) var diagrams: [RenderDiagram] = []
     /// The tuning diagrams use: the song's `{meta: tuning}`, else the sidecar's.
     public private(set) var tuning: Tuning = .standard
-    /// The chords shown in the palette and popover: unique, in order of first appearance,
-    /// as letter names in the display key (also in Nashville view).
+    /// The chords shown in the palette: unique, in order of first appearance, as displayed
+    /// (letter names in the display key, Nashville numbers in Nashville view).
     public private(set) var paletteChords: [String] = []
 
     func updateDerived(from model: RenderModel) {
@@ -174,47 +183,11 @@ public final class SongEditorViewModel {
         }
     }
 
-    func computePaletteChords() -> [String] {
-        let transform = letterTransform
-        var seen = Set<String>()
-        var result: [String] = []
-        for occurrence in snapshot.chords {
-            guard occurrence.token.chord != nil else { continue }
-            let name = transform.display(occurrence.token)
-            if seen.insert(name).inserted {
-                result.append(name)
-            }
-        }
-        return result
-    }
-
-    /// The display transform with Nashville off: chord input and suggestions use letter
-    /// names in the display key (open question 3).
-    var letterTransform: DisplayTransform {
-        var letters = options
-        letters.nashville = false
-        let transform = renderModel?.transform ?? canvasModel?.transform
-        return DisplayTransform(
-            options: letters,
-            key: transform?.key ?? KeyContext(document: snapshot.document),
-            capo: snapshot.document.metadata.capo,
-        )
-    }
-
-    /// Suggestions for the visual chord popover: song chords, then the display key's
-    /// diatonic chords, then extensions of the typed root, all in the display key.
-    func displayChordSuggestions(prefix: String) -> [String] {
-        let transform = letterTransform
-        return ChordSuggestions.chords(
-            prefix: prefix,
-            songChords: paletteChords,
-            diatonic: transform.displayKey?.diatonicChordSymbols ?? [],
-        )
-    }
-
     // MARK: Saving
 
-    /// Saves; returns the saved record, or nil (with `errorMessage` set) on failure.
+    /// Saves; returns the saved record, or nil (with `errorMessage` set) on failure. One save
+    /// runs at a time (`canSave` is false meanwhile); the text stays editable, and edits
+    /// made during the save stay unsaved.
     @discardableResult
     public func commit() async -> SongRecord? {
         guard canSave else { return nil }
@@ -225,6 +198,10 @@ public final class SongEditorViewModel {
         do {
             let record = try await save(source)
             errorMessage = nil
+            // The editor stays open when the text changed while saving (typing is never
+            // blocked by a save): from now on, unsaved means unlike what was just saved.
+            originalSource = record.source
+            updateDirty()
             if case .create = mode {
                 let prefs = DisplayPrefs(options)
                 if prefs != record.sidecar.displayPrefs, let persistPrefs {
@@ -305,6 +282,7 @@ public final class SongEditorViewModel {
         let snapshot = snapshot
         let options = options
         let revision = revision
+        let userShapes = userShapes
         renderTask = Task { [weak self] in
             if delay > .zero {
                 try? await Task.sleep(for: delay)
@@ -312,7 +290,11 @@ public final class SongEditorViewModel {
             guard !Task.isCancelled else { return }
             let rendered = await Task.detached(priority: .userInitiated) {
                 (
-                    RenderModel(document: snapshot.document, options: options),
+                    RenderModel(
+                        document: snapshot.document,
+                        options: options,
+                        userShapes: userShapes,
+                    ),
                     snapshot.diagnostics,
                 )
             }.value

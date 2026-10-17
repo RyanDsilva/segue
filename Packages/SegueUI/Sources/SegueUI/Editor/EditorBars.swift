@@ -131,17 +131,20 @@
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .accessibilityIdentifier(AccessibilityID.editorFileName)
-                Color.clear
-                    .frame(width: 1, height: 1)
-                    .accessibilityElement()
-                    // SwiftUI drops the value of an empty element; the label carries it.
-                    .accessibilityLabel("Typing latency \(model.keystrokeSummary)")
-                    .accessibilityIdentifier(AccessibilityID.editorKeystrokeStats)
-                Color.clear
-                    .frame(width: 1, height: 1)
-                    .accessibilityElement()
-                    .accessibilityLabel(model.inputSettingsReport)
-                    .accessibilityIdentifier(AccessibilityID.editorInputSettings)
+                if UITesting.isActive {
+                    // Instrumentation for the E2E suite only: never shown to VoiceOver users.
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .accessibilityElement()
+                        // SwiftUI drops the value of an empty element; the label carries it.
+                        .accessibilityLabel("Typing latency \(model.keystrokeSummary)")
+                        .accessibilityIdentifier(AccessibilityID.editorKeystrokeStats)
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .accessibilityElement()
+                        .accessibilityLabel(model.inputSettingsReport)
+                        .accessibilityIdentifier(AccessibilityID.editorInputSettings)
+                }
             }
             .font(SchibstedGrotesk.medium.font(size: 13))
             .foregroundStyle(Theme.color.muted)

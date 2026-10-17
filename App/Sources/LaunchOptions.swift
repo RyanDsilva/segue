@@ -9,61 +9,69 @@ import Foundation
 ///   the test defaults suite), as if the user had chosen it in the open panel.
 /// - `-SegueTestDefaults YES`: use the test defaults suite without any other override, so a
 ///   relaunch opens the library from the bookmark stored by an earlier test launch.
+/// - `-SegueShapeLibraryPath <file>`: read the user chord shape library from `<file>`. Test
+///   runs without it use no shape library, so they never see the user's real shapes.
 struct LaunchOptions: Sendable, Equatable {
     static let libraryPathFlag = "-SegueLibraryPath"
     static let resetStateFlag = "-SegueResetState"
     static let rememberLibraryFlag = "-SegueRememberLibrary"
     static let testDefaultsFlag = "-SegueTestDefaults"
+    static let shapeLibraryPathFlag = "-SegueShapeLibraryPath"
 
     var libraryPath: URL?
     var resetState = false
     var rememberLibrary = false
     var testDefaults = false
+    var shapeLibraryPath: URL?
 
     init(
         libraryPath: URL? = nil,
         resetState: Bool = false,
         rememberLibrary: Bool = false,
         testDefaults: Bool = false,
+        shapeLibraryPath: URL? = nil,
     ) {
         self.libraryPath = libraryPath
         self.resetState = resetState
         self.rememberLibrary = rememberLibrary
         self.testDefaults = testDefaults
+        self.shapeLibraryPath = shapeLibraryPath
     }
 
     /// Parses `arguments` (as in `ProcessInfo.arguments`; the first element is the
     /// executable). Unknown arguments are ignored; a flag without a value is ignored.
     init(arguments: [String]) {
+        // Every flag takes one value: collect the last value given for each.
+        var values: [String: String] = [:]
         var iterator = arguments.dropFirst().makeIterator()
         while let argument = iterator.next() {
-            switch argument {
-            case Self.libraryPathFlag:
-                if let value = iterator.next(), !value.isEmpty {
-                    libraryPath = URL(filePath: value, directoryHint: .isDirectory)
-                        .standardizedFileURL
-                }
-            case Self.resetStateFlag:
-                if let value = iterator.next() {
-                    resetState = Self.isTruthy(value)
-                }
-            case Self.rememberLibraryFlag:
-                if let value = iterator.next() {
-                    rememberLibrary = Self.isTruthy(value)
-                }
-            case Self.testDefaultsFlag:
-                if let value = iterator.next() {
-                    testDefaults = Self.isTruthy(value)
-                }
-            default:
-                continue
-            }
+            guard Self.flags.contains(argument), let value = iterator.next() else { continue }
+            values[argument] = value
         }
+        libraryPath = Self.path(values[Self.libraryPathFlag], directoryHint: .isDirectory)
+        shapeLibraryPath = Self.path(
+            values[Self.shapeLibraryPathFlag],
+            directoryHint: .notDirectory,
+        )
+        resetState = values[Self.resetStateFlag].map(Self.isTruthy) ?? false
+        rememberLibrary = values[Self.rememberLibraryFlag].map(Self.isTruthy) ?? false
+        testDefaults = values[Self.testDefaultsFlag].map(Self.isTruthy) ?? false
+    }
+
+    private static let flags: Set = [
+        libraryPathFlag, resetStateFlag, rememberLibraryFlag, testDefaultsFlag,
+        shapeLibraryPathFlag,
+    ]
+
+    private static func path(_ value: String?, directoryHint: URL.DirectoryHint) -> URL? {
+        guard let value, !value.isEmpty else { return nil }
+        return URL(filePath: value, directoryHint: directoryHint).standardizedFileURL
     }
 
     /// Whether any test-only argument was passed.
     var isTestRun: Bool {
         libraryPath != nil || resetState || rememberLibrary || testDefaults
+            || shapeLibraryPath != nil
     }
 
     private static func isTruthy(_ value: String) -> Bool {

@@ -141,7 +141,7 @@
             guard let line = projection.paragraphs[row.paragraph].lyricLine else { return [] }
             var result: [PillLayout] = []
             for group in CanvasTypesetting.groups(of: line.chords) {
-                let offset = LyricOffsets.utf16(group.offset, in: line.lyrics)
+                let offset = line.utf16Offset(ofLyricOffset: group.offset)
                 guard row.holds(offset) else { continue }
                 var x = anchorX(in: row, at: offset)
                 for chord in group.chords {
@@ -207,16 +207,15 @@
             x: CGFloat,
             nearest: Bool,
         ) -> LaneTarget {
-            let lyrics = line.lyrics
             let range = row.line.characterRange
-            let first = LyricOffsets.character(range.location, in: lyrics)
+            let first = line.lyricOffset(atUTF16: range.location)
             let last = row.isLastRow
-                ? lyrics.count
-                : LyricOffsets.character(NSMaxRange(range), in: lyrics)
+                ? line.lyricCount
+                : line.lyricOffset(atUTF16: NSMaxRange(range))
             var best = first
             var bestDistance = CGFloat.greatestFiniteMagnitude
             for offset in first ... max(first, last) {
-                let position = anchorX(in: row, at: LyricOffsets.utf16(offset, in: lyrics))
+                let position = anchorX(in: row, at: line.utf16Offset(ofLyricOffset: offset))
                 if nearest {
                     let distance = abs(position - x)
                     if distance < bestDistance {
@@ -229,7 +228,7 @@
                     break
                 }
             }
-            let anchorX = anchorX(in: row, at: LyricOffsets.utf16(best, in: lyrics))
+            let anchorX = anchorX(in: row, at: line.utf16Offset(ofLyricOffset: best))
             return LaneTarget(
                 paragraph: row.paragraph,
                 path: line.path,
@@ -296,10 +295,10 @@
             }
             forEachRow(in: textView.visibleRect) { row in
                 guard let line = projection.paragraphs[row.paragraph].lyricLine else { return true }
-                for word in LyricOffsets.wordStarts(in: line.lyrics) {
-                    let start = LyricOffsets.utf16(word.offset, in: line.lyrics)
+                for word in LyricOffsets.words(in: line) {
+                    let start = line.utf16Offset(ofLyricOffset: word.offsets.lowerBound)
                     guard row.holds(start) else { continue }
-                    let end = LyricOffsets.utf16(word.offset + word.word.count, in: line.lyrics)
+                    let end = line.utf16Offset(ofLyricOffset: word.offsets.upperBound)
                     let minX = anchorX(in: row, at: start)
                     let rect = CGRect(
                         x: minX,

@@ -59,6 +59,9 @@ struct ShapeEditorView: View {
         .padding(20)
         .frame(minWidth: 300)
         .background(Theme.color.ground)
+        // A container of its own: an identifier on a plain stack is inherited by every
+        // child, which would hide `shapeEditorSave` behind `shapeEditor`.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.shapeEditor)
     }
 

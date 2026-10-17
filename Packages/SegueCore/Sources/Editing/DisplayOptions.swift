@@ -24,7 +24,7 @@ public struct DisplayOptions: Sendable, Hashable, Codable {
         transpose: Int = 0,
         capoMode: CapoMode = .shapes,
         nashville: Bool = false,
-        showDiagrams: Bool = true,
+        showDiagrams: Bool = false,
         instrument: Instrument = .guitar,
         tuning: Tuning = .standard,
     ) {
@@ -136,10 +136,16 @@ public struct DisplayTransform: Sendable, Hashable {
         Transposer(semitones: concertSemitones, sourceKey: key.writtenKey).transpose(token)
     }
 
-    /// Inverse transform for chord input: a chord typed in the display key (letter names
-    /// even in Nashville view; number input is out of scope this phase) -> source text.
-    /// Unparseable input is returned unchanged (it becomes an unknown chord).
+    /// Inverse transform for chord input: a chord typed in the display key -> source text.
+    /// Letter names are accepted in every view; in Nashville view a number (`1`, `4`, `6m`,
+    /// `b7`, `5/7`, `3(7)`) is also accepted and resolves against `displayKey`. Since
+    /// numbers are transposition-invariant, that is the same chord as the number read in
+    /// the written key, so it is spelled there directly. Unparseable input is returned
+    /// unchanged (it becomes an unknown chord).
     public func sourceChord(fromDisplayed text: String) -> String {
+        if options.nashville, let written = key.writtenKey, Nashville.looksLikeNumber(text) {
+            return Nashville.chord(parsing: text, in: written)?.original ?? text
+        }
         let token = ChordToken(parsing: text)
         guard token.chord != nil, PitchClass(semitones).rawValue != 0 else { return text }
         let transposer = if let displayKey, let written = key.writtenKey {

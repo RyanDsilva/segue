@@ -137,3 +137,4 @@ See `docs/research/phase5-audio.md`. Conflicts with earlier research to re-verif
 - Diagram strip is **off by default**.
 - Inserting a chord where one already sits **replaces** it (no stacking).
 - Nashville digit suffixes take parentheses (`E7` in Am = `3(7)`, `1(6/9)`); bIII and bVII spelled flat in every key; minor leading tone always sharp; strict chord parsing (no `o` for diminished, so Hindi "Do" is never a chord).
+- **Out-of-key chord spelling (review finding 2):** in-key chords follow the key signature; out-of-key chords keep the author's accidental family (Ab stays flat-family), and declared keys keep their spelling (C#, Gb), so transposing by n and back always restores the original.

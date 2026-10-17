@@ -5,8 +5,20 @@ import Testing
 
 /// Renders the real token swatch view (asset catalog colours, bundled fonts) in light and
 /// dark and checks every swatch's pixels resolve to the `design/tokens.json` values.
+///
+/// These (and the diagram snapshots) need the compiled asset catalog, which only Swift Build
+/// produces: run them with `make test` (`swift test --build-system swiftbuild`), not plain
+/// `swift test`, whose native build system copies the catalog uncompiled.
 @MainActor
 struct ThemeTokenTests {
+    @Test
+    func `the asset catalog is compiled (run make test)`() {
+        #expect(
+            NSColor(named: ColorTokenValue.all[0].name, bundle: Theme.bundle) != nil,
+            "Theme colours are missing: run the SegueUI tests with `make test` (Swift Build)",
+        )
+    }
+
     @Test(arguments: [ColorScheme.light, .dark])
     func `swatches resolve to the token values`(scheme: ColorScheme) throws {
         #expect(Theme.registerFonts())
