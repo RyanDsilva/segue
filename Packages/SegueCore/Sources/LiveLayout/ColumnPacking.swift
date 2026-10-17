@@ -52,54 +52,62 @@ struct ColumnPacker {
     let inset: Double
     let gap: Double
 
-    /// Height of a block showing `units` of section `index` (`part` 0 carries the head
-    /// and the label).
+    /// Height of a block showing `units` of section `index` (`part` 0 carries the head;
+    /// every part carries a gutter label, `(cont.)` after the first).
     func height(_ index: Int, _ units: Range<Int>, part: Int) -> Double {
         let section = sections[index]
         let body = section.units[units].reduce(0) { $0 + $1.height }
         let head = part == 0 ? section.headHeight : 0
         var height = inset + head + body + inset
-        if part == 0, !section.labelLines.isEmpty {
-            height = max(height, firstBaseline(index, units) + section.labelDepth + inset)
+        let gutter = gutter(index, part: part)
+        if !gutter.lines.isEmpty {
+            height = max(height, labelTop(index, units, part: part) + gutter.height + inset)
         }
         return height
     }
 
-    /// The first content baseline of a part-0 block, from its top (labels align to it).
-    func firstBaseline(_ index: Int, _ units: Range<Int>) -> Double {
+    /// The gutter label of `part` of section `index`.
+    func gutter(_ index: Int, part: Int) -> LabelLayout {
+        part == 0 ? sections[index].gutter : sections[index].continuationGutter
+    }
+
+    /// Where the gutter label's ink starts, from the block's top: level with the block's
+    /// first ink (a cue box, the collapsed line, the first chord or lyric), so the label
+    /// reads as the section's heading (mockup C, labels top-aligned).
+    func labelTop(_ index: Int, _ units: Range<Int>, part: Int) -> Double {
         let section = sections[index]
-        if let collapsed = section.collapsedBaseline {
-            return inset + max(collapsed, section.labelInk)
+        if part == 0, let head = section.headInkTop {
+            return inset + head
         }
-        var top = 0.0
-        var fallback: Double?
-        var found: Double?
+        var top = part == 0 ? section.headHeight : 0
         for unit in section.units[units] {
-            for row in unit.rows {
-                fallback = fallback ?? top + row.y + row.textBaseline
-                if !row.text.isEmpty {
-                    found = top + row.y + row.textBaseline
-                    break
-                }
-            }
-            if found != nil {
-                break
+            if let ink = unit.inkTop {
+                return inset + top + ink
             }
             top += unit.height
         }
-        let baseline = found ?? fallback ?? 0
-        return inset + max(section.headHeight + baseline, section.labelInk)
+        return inset
     }
 
     /// Greedy fill with `capacity` per column. Sections move whole to the next column; with
     /// `split`, a section that does not fit is broken between units (preferring stanza
     /// breaks). Nil when it needs more than `columns` columns.
-    /// With `strict`, a section whose tab/grid line had to be broken fails the pack.
-    func pack(columns: Int, capacity: Double, split: Bool, strict: Bool = false) -> Packing? {
+    /// With `strict`, a section whose tab/grid line had to be broken fails the pack; without
+    /// `allowWrap`, so does a section with a wrapped lyric line.
+    func pack(
+        columns: Int,
+        capacity: Double,
+        split: Bool,
+        strict: Bool = false,
+        allowWrap: Bool = true,
+    ) -> Packing? {
         var result: [[Placement]] = [[]]
         var used = 0.0
         for index in sections.indices {
             if strict, sections[index].brokeVerbatim {
+                return nil
+            }
+            if !allowWrap, sections[index].wrapped {
                 return nil
             }
             var remaining = 0 ..< sections[index].units.count

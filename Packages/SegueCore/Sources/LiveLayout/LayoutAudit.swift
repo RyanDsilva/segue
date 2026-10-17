@@ -29,7 +29,7 @@ public enum LayoutAudit {
             if index > 0, column.x < plan.columns[index - 1].x + plan.columns[index - 1].width {
                 issues.append("\(name) overlaps the previous column")
             }
-            let lyricWidth = column.width - style.gutterWidth - style.gutterGap
+            let lyricWidth = column.width - plan.gutterWidth - style.gutterGap
             var bottom = -Double.infinity
             for block in column.blocks {
                 let label = "\(name) block \(block.id).\(block.part)"
@@ -37,8 +37,13 @@ public enum LayoutAudit {
                     issues.append("\(label) overlaps the block above")
                 }
                 bottom = block.y + block.height
-                issues += blockViolations(block, lyricWidth: lyricWidth, style: style, metrics)
-                    .map { "\(label): \($0)" }
+                issues += blockViolations(
+                    block,
+                    lyricWidth: lyricWidth,
+                    gutter: plan.gutterWidth,
+                    metrics,
+                )
+                .map { "\(label): \($0)" }
             }
             if bottom > plan.contentHeight + epsilon {
                 issues.append("\(name) taller than contentHeight")
@@ -52,7 +57,7 @@ public enum LayoutAudit {
     private static func blockViolations(
         _ block: LayoutBlock,
         lyricWidth: Double,
-        style: LayoutStyle,
+        gutter: Double,
         _ metrics: any TextMeasuring,
     ) -> [String] {
         var issues: [String] = []
@@ -80,7 +85,11 @@ public enum LayoutAudit {
             issues += rowViolations(row, lyricWidth: lyricWidth, metrics)
         }
         for line in block.labelLines {
-            issues += horizontal([line.text], width: style.gutterWidth, what: "label")
+            issues += horizontal([line.text], width: gutter, what: "label")
+            if line.text.size < LayoutStyle.stage.minLabelSize - epsilon {
+                issues
+                    .append("label \"\(line.text.text)\" below \(LayoutStyle.stage.minLabelSize)pt")
+            }
             issues += glyphViolations(
                 line.text, baseline: line.baseline, top: 0, bottom: block.height, metrics,
             )

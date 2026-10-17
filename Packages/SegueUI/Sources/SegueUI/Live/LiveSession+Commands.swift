@@ -109,13 +109,30 @@
 
         /// Applies `action` to `song` and closes the overlay (back at the same scroll
         /// position: the scroller is untouched unless the current song changes).
+        /// "Add to Requests" first asks for an optional note (`commitRequest()`).
         func searchAction(_ action: SearchAction, song: SongID) {
+            if action == .addRequest,
+               let record = search.results.first(where: { $0.id == song })
+            {
+                search.beginRequest(record)
+                return
+            }
             overlay = nil
             switch action {
             case .playNow: perform(.playNow(song))
             case .addRequest: perform(.addRequest(song, note: nil))
             case .insertNext: perform(.insertNext(song))
             }
+        }
+
+        /// Adds the song waiting for its note to the requests (Return; a blank note is
+        /// skipped) and closes the overlay.
+        func commitRequest() {
+            guard let song = search.requesting else { return }
+            let note = search.trimmedNote
+            overlay = nil
+            search.cancelRequest()
+            perform(.addRequest(song.id, note: note))
         }
     }
 #endif

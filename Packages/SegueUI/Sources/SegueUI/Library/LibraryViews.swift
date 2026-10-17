@@ -47,14 +47,10 @@
             VStack(spacing: 0) {
                 header
                 Rule()
-                List(selection: $model.listSelection) {
-                    ForEach(model.results) { record in
-                        SongRow(record: record, stats: model.playStats[record.id])
-                            .tag(record.id)
-                            .contextMenu { addToSetlistMenu(record) }
-                    }
+                SelectableList(items: model.results, selection: $model.listSelection) { record in
+                    SongRow(record: record, stats: model.playStats[record.id])
+                        .contextMenu { addToSetlistMenu(record) }
                 }
-                .listStyle(.plain)
                 .accessibilityIdentifier(AccessibilityID.songList)
                 .overlay { emptyState }
                 .safeAreaInset(edge: .bottom, spacing: 0) { loadIssuesFooter }
@@ -67,7 +63,7 @@
                 HStack(spacing: 8) {
                     SearchField(
                         text: $model.query,
-                        prompt: "Search or filter: ready, upbeat, key G",
+                        prompt: "Search or filter",
                         accessibilityIdentifier: AccessibilityID.librarySearch,
                     )
                     Button("New song") { model.beginNewSong() }
@@ -185,12 +181,6 @@
     private struct SongRow: View {
         let record: SongRecord
         let stats: PlayStats?
-        /// `.increased` while the row is selected (on the accent highlight).
-        @Environment(\.backgroundProminence) private var prominence
-
-        private var isHighlighted: Bool {
-            prominence == .increased
-        }
 
         var body: some View {
             HStack(spacing: 12) {
@@ -198,20 +188,19 @@
                     HStack(spacing: 6) {
                         Text(SongSummary.title(record))
                             .font(SchibstedGrotesk.semiBold.font(size: 15))
-                            .foregroundStyle(isHighlighted ? Color.white : Theme.color.ink)
+                            .foregroundStyle(Theme.color.ink)
                             .lineLimit(1)
                         if record.isReadOnly {
                             Image(systemName: "lock.fill")
                                 .font(.caption)
-                                .foregroundStyle(isHighlighted ? Color.white : Theme.color.muted)
+                                .foregroundStyle(Theme.color.muted)
                                 .help("Read-only")
                         }
                     }
                     if !detail.isEmpty {
                         Text(detail)
                             .font(SchibstedGrotesk.medium.font(size: 13))
-                            .foregroundStyle(isHighlighted ? Color.white.opacity(0.8) : Theme.color
-                                .muted)
+                            .foregroundStyle(Theme.color.muted)
                             .lineLimit(1)
                     }
                 }
@@ -229,8 +218,6 @@
                 .frame(width: 82, height: 16, alignment: .leading)
             }
             .padding(.vertical, 6)
-            // On the selection highlight the token colours would not read; white does.
-            .environment(\.onHighlight, isHighlighted)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier(AccessibilityID.songRow)
         }

@@ -36,11 +36,14 @@ struct SongPreparation {
         cues: [SongCue],
     ) -> MeasuredSection {
         let section = sections[index]
-        var label = RepeatCollapser.displayLabel(section)
+        var name = RepeatCollapser.displayLabel(section)
+        var detail: String?
         let body: MeasuredSection.Body
         if let root = collapsed.repeatOf {
-            let name = label ?? RepeatCollapser.displayLabel(sections[root]) ?? "Chorus"
-            label = "\(name) x\(collapsed.occurrence)"
+            name = name ?? RepeatCollapser.displayLabel(sections[root]) ?? "Chorus"
+            // The count is the gutter's small second line, so "Verse 2 x2" never wraps
+            // between its words.
+            detail = "x\(collapsed.occurrence)"
             body = .collapsed(
                 line: measurer.paragraph(Self.repeatText(sections[root]), role: .collapsedRepeat),
                 differing: collapsed.differingItems.map { items(section.items[$0]) },
@@ -57,10 +60,16 @@ struct SongPreparation {
         } else {
             body = .full(section.items.map(items))
         }
+        let label = name.map { name in detail.map { "\(name) \($0)" } ?? name }
         return MeasuredSection(
             id: section.id,
             label: label,
-            labelText: label.map { measurer.paragraph($0, role: .sectionLabel) },
+            name: name,
+            labelText: name.map { measurer.paragraph($0, role: .sectionLabel) },
+            labelDetail: detail.map { measurer.paragraph($0, role: .labelDetail) },
+            continuation: name.map { _ in
+                measurer.paragraph(Self.continuationText, role: .labelDetail)
+            },
             isChorus: section.kind == .chorus,
             tint: SectionTint(section.kind),
             body: body,
@@ -84,6 +93,9 @@ struct SongPreparation {
             return .stanzaBreak(path)
         }
     }
+
+    /// The gutter's second line on the parts of a section split between columns.
+    static let continuationText = "(cont.)"
 
     /// "Repeat chorus", or "Repeat <label>" for a differently named section.
     static func repeatText(_ section: RenderSection) -> String {

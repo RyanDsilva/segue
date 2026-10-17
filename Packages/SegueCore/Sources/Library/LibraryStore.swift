@@ -205,8 +205,10 @@ public actor LibraryStore {
     ///
     /// Tiers, each appended without duplicates: (1) FTS on the original text, every query
     /// word as a prefix; (2) FTS on the `RomanNormalizer` forms, whole words except a last
-    /// word of 4+ letters (prefix, for as-you-type). Only when both find nothing, (3) an
-    /// edit-distance fallback (<= 1 per query word of 4+ letters) over normalized titles and
+    /// word of 4+ letters (prefix, for as-you-type); (3) the same over the loose forms
+    /// (`RomanNormalizer.loose`: `dewana` = `deewana` = `diwana`), ranked after the exact
+    /// spellings. Only when all three find nothing, (4) an edit-distance fallback (<= 1 per query
+    /// word of 4+ letters) over normalized titles and
     /// first lines. Within a tier: bm25 (title > artist = tags > lyrics), then title, then ID.
     /// An empty query returns `allSongs()`.
     public func search(query: String) throws -> [SongRecord] {
@@ -224,6 +226,7 @@ public actor LibraryStore {
         }
         try append(library.index.matchOriginals(tokens: words))
         try append(library.index.matchNormalized(tokens: normalized))
+        try append(library.index.matchLoose(tokens: normalized.map(RomanNormalizer.looseWord)))
         if ordered.isEmpty {
             try append(Self.fuzzyMatches(normalized, in: library.index.fuzzyCandidates()))
         }

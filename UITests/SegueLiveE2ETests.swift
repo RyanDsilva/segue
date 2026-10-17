@@ -271,7 +271,13 @@ extension SegueLiveE2ETests {
         XCTAssertTrue(result.waitForExistence(timeout: 5))
         XCTAssertTrue(result.label.contains("Pyaar Ki Raah"), result.label)
         screenshot(app, "03-search-pyar")
+        // Cmd-Return asks for an optional note; Return adds the request with it.
         key(app, .return, [.command])
+        let note = app.textFields[LiveAXID.liveSearchNote]
+        XCTAssertTrue(note.waitForExistence(timeout: 5))
+        note.typeText("table 4", in: app)
+        screenshot(app, "03b-request-note")
+        key(app, .return)
         XCTAssertTrue(element(app, LiveAXID.liveSearch).waitForNonExistence(timeout: 5))
         XCTAssertTrue(waitForValue(app.staticTexts[LiveAXID.liveUpNext], "Pyaar Ki Raah"))
         XCTAssertEqual(app.staticTexts[LiveAXID.liveUpNextLabel].value as? String, "Request")
@@ -284,7 +290,17 @@ extension SegueLiveE2ETests {
     private func playRequestAndFinish(_ app: XCUIApplication) {
         let title = app.staticTexts[LiveAXID.liveTitle]
         key(app, "q")
-        XCTAssertTrue(element(app, LiveAXID.liveRequestRow).waitForExistence(timeout: 5))
+        let row = element(app, LiveAXID.liveRequestRow)
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        let note = NSPredicate(
+            format: "label CONTAINS %@ OR value CONTAINS %@",
+            "table 4",
+            "table 4",
+        )
+        XCTAssertTrue(
+            row.descendants(matching: .staticText).matching(note).firstMatch.exists,
+            "the request keeps its note",
+        )
         screenshot(app, "05-request-panel")
         key(app, "q")
         key(app, "r")

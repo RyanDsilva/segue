@@ -200,6 +200,9 @@
         /// Reorder reviews waiting for Save/Discard (show end, or shows auto-closed at
         /// launch), oldest first. The main window presents the first as `ReorderDiffSheet`.
         public internal(set) var pendingReorderReviews: [ReorderDiff] = []
+        /// Why a pending review cannot be saved, by setlist (deleted or read-only since the
+        /// show started): the sheet disables Save and shows this (open question 17).
+        public internal(set) var reviewSaveBlockers: [SetlistID: String] = [:]
 
         /// The pre-show checklist while it is shown (start of a show or rehearsal).
         public internal(set) var preShow: PreShowChecklist?

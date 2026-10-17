@@ -38,7 +38,7 @@
         let style: LayoutStyle
 
         private var lyricOrigin: Double {
-            style.gutterWidth + style.gutterGap
+            plan.gutterWidth + style.gutterGap
         }
 
         var body: some View {
@@ -47,15 +47,17 @@
                 tint
                 ForEach(block.labelLines.indices, id: \.self) { index in
                     let line = block.labelLines[index]
+                    let isName = line.text.role == .sectionLabel
                     placed(
                         text(
                             line.text,
-                            color: block.isChorusLabel ? Theme.color.ink : Theme.color.muted,
+                            color: block.isChorusLabel && isName
+                                ? Theme.color.ink : Theme.color.muted,
                         ),
                         x: line.text.x,
                         baseline: line.baseline,
                     )
-                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityAddTraits(isName ? .isHeader : [])
                 }
                 content
                 ForEach(block.cues.indices, id: \.self) { index in
@@ -69,11 +71,13 @@
             if let color = Self.tintColor(block.tint) {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(color)
+                    // 8pt of padding left of the lyrics, so the tint never meets a label
+                    // that fills the gutter.
                     .frame(
-                        width: max(0, column.width - lyricOrigin + 16),
+                        width: max(0, column.width - lyricOrigin + 12),
                         height: block.height + 12,
                     )
-                    .offset(x: lyricOrigin - 12, y: -6)
+                    .offset(x: lyricOrigin - 8, y: -6)
                     .accessibilityHidden(true)
             }
         }
@@ -167,6 +171,7 @@
             case .comment: plan.lyricSize * style.commentScale
             case .verbatim: plan.lyricSize * style.verbatimScale
             case .sectionLabel: style.labelSize
+            case .labelDetail: style.labelDetailSize
             case .cue: style.cueSize
             case .note: style.noteSize
             }
@@ -177,7 +182,7 @@
             case .chord:
                 run.chordKind == .chord || run.chordKind == nil
                     ? Theme.color.cueText : Theme.color.muted
-            case .collapsedRepeat, .comment, .note, .sectionLabel:
+            case .collapsedRepeat, .comment, .labelDetail, .note, .sectionLabel:
                 Theme.color.muted
             case .cue:
                 Theme.color.cueText

@@ -31,4 +31,12 @@ public extension LibraryViewModel {
         await reload()
         return record
     }
+
+    /// Writes song `id`'s stage memory (`LivePrefs`, e.g. its column choice) to its sidecar;
+    /// the `.cho` is untouched.
+    func updateLivePrefs(id: SongID, _ prefs: LivePrefs) async throws -> SongRecord {
+        let record = try await store.updateLivePrefs(id: id, prefs)
+        await reload()
+        return record
+    }
 }

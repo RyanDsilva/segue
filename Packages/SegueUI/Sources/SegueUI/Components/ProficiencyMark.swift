@@ -10,7 +10,6 @@ import SwiftUI
 public struct ProficiencyMark: View {
     let proficiency: Proficiency
     var showsLabel = true
-    @Environment(\.onHighlight) private var onHighlight
 
     public init(_ proficiency: Proficiency, showsLabel: Bool = true) {
         self.proficiency = proficiency
@@ -23,7 +22,7 @@ public struct ProficiencyMark: View {
             if showsLabel {
                 Text(Self.label(proficiency))
                     .font(SchibstedGrotesk.semiBold.font(size: 14))
-                    .foregroundStyle(onHighlight ? Color.white : Theme.color.ink)
+                    .foregroundStyle(Theme.color.ink)
             }
         }
         .accessibilityElement(children: .ignore)
@@ -49,7 +48,6 @@ public struct ProficiencyMark: View {
 public struct ProficiencyDot: View {
     let proficiency: Proficiency
     var inverted = false
-    @Environment(\.onHighlight) private var onHighlight
 
     public init(_ proficiency: Proficiency, inverted: Bool = false) {
         self.proficiency = proficiency
@@ -61,16 +59,13 @@ public struct ProficiencyDot: View {
             switch proficiency {
             case .learning:
                 Circle().strokeBorder(
-                    onHighlight ? Color.white : inverted ? Theme.color.ground : Theme.color.muted,
+                    inverted ? Theme.color.ground : Theme.color.muted,
                     lineWidth: 2,
                 )
             case .ready:
-                Circle().fill(onHighlight
-                    ? Color.white.opacity(0.7)
-                    : inverted ? Theme.color.ground.opacity(0.6) : Theme.color.muted)
+                Circle().fill(inverted ? Theme.color.ground.opacity(0.6) : Theme.color.muted)
             case .pro:
-                Circle().fill(onHighlight ? Color.white
-                    : inverted ? Theme.color.ground : Theme.color.ink)
+                Circle().fill(inverted ? Theme.color.ground : Theme.color.ink)
             }
         }
         .frame(width: 8, height: 8)

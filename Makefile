@@ -54,6 +54,12 @@ test: ## Core integration suite + parser corpus + theme tokens (Swift Testing)
 e2e: ## XCUITest suite against the Personal flavor
 	$(XCODEBUILD) -scheme Segue-Personal -configuration Debug-Personal test
 
+e2e-one: ## Run selected UI tests only: make e2e-one TEST=SegueLiveE2ETests[/testName]
+	@test -n "$(TEST)" || (echo "usage: make e2e-one TEST=Class[/test]" >&2; exit 2)
+	$(XCODEBUILD) -scheme Segue-Personal -configuration Debug-Personal test -only-testing:SegueUITests/$(TEST)
+
+quick: lint build test ## Fast inner loop: lint, build, unit/integration tests (no UI tests)
+
 lint: ## Lint + format check (no changes)
 	$(MISE) swiftlint lint --strict --quiet
 	$(MISE) swiftformat --lint .

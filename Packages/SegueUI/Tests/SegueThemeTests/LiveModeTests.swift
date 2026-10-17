@@ -147,6 +147,89 @@ extension StageWindowSuites {
             #expect(log.count == 1)
         }
 
+        /// Cmd-Return in quick search asks for an optional note; Return adds the request with
+        /// it, and a blank note is skipped.
+        @Test
+        func `a request from quick search carries its optional note`() async throws {
+            _ = NSApplication.shared
+            let env = try TestEnvironment()
+            let app = try await env.openApp()
+            let fixture = try await LiveFixture(app: app, titles: ["Alpha", "Bravo"])
+            let session = try #require(app.session)
+            let extra = try await session.library.createSong(
+                source: LiveFixture.source(title: "Zulu Request", lines: 4, duration: nil),
+            )
+            app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
+            #expect(await app.startShow(fixture.setlist, kind: .gig))
+            let live = try #require(app.live)
+            defer { StageWindowController.shared.close() }
+
+            for note in ["  table 4 ", "   "] {
+                live.dispatch(.openSearch)
+                live.search.query = "zulu"
+                _ = try await env.waitFor { live.search.results.first?.id == extra.id ? true : nil }
+                live.searchAction(.addRequest, song: extra.id)
+                // Not added yet: the overlay now asks for the note.
+                #expect(live.overlay == .search)
+                #expect(live.search.requesting?.id == extra.id)
+                live.search.note = note
+                live.commitRequest()
+                #expect(live.overlay == nil)
+                #expect(live.search.requesting == nil)
+            }
+            _ = try await env.waitFor { live.queuedRequests.count == 2 ? true : nil }
+            #expect(live.queuedRequests.map(\.note) == ["table 4", nil])
+
+            // Esc on the note goes back to the results without adding anything.
+            live.dispatch(.openSearch)
+            live.search.query = "zulu"
+            _ = try await env.waitFor { live.search.results.isEmpty ? nil : true }
+            live.searchAction(.addRequest, song: extra.id)
+            live.search.cancelRequest()
+            #expect(live.overlay == .search)
+            #expect(live.search.requesting == nil)
+            live.overlay = nil
+            #expect(live.queuedRequests.count == 2)
+        }
+
+        /// Open question 17: when the setlist is deleted during the show, the review offers
+        /// only Discard, says why, and a Save never recreates the file.
+        @Test
+        func `the reorder review cannot save to a setlist deleted during the show`(
+        ) async throws {
+            _ = NSApplication.shared
+            let env = try TestEnvironment()
+            let app = try await env.openApp()
+            let fixture = try await LiveFixture(app: app, titles: ["Alpha", "Bravo", "Charlie"])
+            app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
+            #expect(await app.startShow(fixture.setlist, kind: .gig))
+            let live = try #require(app.live)
+            defer { StageWindowController.shared.close() }
+            live.perform(.move(fromOffsets: [2], toOffset: 1))
+            _ = try await env.waitFor {
+                live.state.record.items.map(\.title) == ["Alpha", "Charlie", "Bravo"] ? true : nil
+            }
+            let directory = env.libraryURL.appending(path: "setlists", directoryHint: .isDirectory)
+            let files = try FileManager.default.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: nil,
+            )
+            #expect(files.count == 1)
+            for file in files {
+                try FileManager.default.removeItem(at: file)
+            }
+
+            live.dispatch(.endShow)
+            live.confirmEnd()
+            _ = try await env.waitFor { app.pendingReorderReviews.isEmpty ? nil : true }
+            let reason = try #require(app.reviewSaveBlockers[fixture.setlist.id])
+            #expect(reason.contains("was deleted during the show"))
+            await app.resolveReorderReview(save: true, including: [])
+            #expect(app.pendingReorderReviews.isEmpty)
+            #expect(app.reviewSaveBlockers.isEmpty)
+            #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path).isEmpty)
+        }
+
         @Test
         func `auto-scroll reaches the bottom of a 3 minute song and holds while paused`(
         ) async throws {

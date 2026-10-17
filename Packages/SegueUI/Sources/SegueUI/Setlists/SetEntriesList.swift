@@ -192,9 +192,7 @@
         }
 
         private var startText: String {
-            guard let timing else { return "" }
-            let text = SetlistTiming.format(timing.start)
-            return timing.startIsApproximate ? "~" + text : text
+            timing?.startText ?? ""
         }
 
         private var titleColumn: some View {

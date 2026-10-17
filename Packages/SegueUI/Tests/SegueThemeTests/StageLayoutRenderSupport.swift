@@ -109,7 +109,7 @@ struct PlanCanvas: View {
     private func draw(_ block: LayoutBlock, in column: LayoutColumn, context: GraphicsContext) {
         let top = origin.y + block.y
         let left = origin.x + column.x
-        let lyricX = left + style.gutterWidth + style.gutterGap
+        let lyricX = left + plan.gutterWidth + style.gutterGap
         context.fill(
             Path(
                 roundedRect: CGRect(x: left, y: top, width: column.width, height: block.height),
@@ -128,11 +128,12 @@ struct PlanCanvas: View {
         context: GraphicsContext,
     ) {
         for line in block.labelLines {
+            let isName = line.text.role == .sectionLabel
             text(
                 line.text,
                 x: left + line.text.x,
                 baseline: top + line.baseline,
-                color: block.isChorusLabel ? Theme.color.ink : Theme.color.muted,
+                color: block.isChorusLabel && isName ? Theme.color.ink : Theme.color.muted,
                 context,
             )
         }

@@ -21,8 +21,12 @@ public enum TextRole: Sendable, Hashable {
     case lyric
     /// Chord symbol: bold, `chordSize` (0.82 x lyric), `cueText`.
     case chord
-    /// Section label in the gutter: bold, `LayoutStyle.labelSize` (fixed).
+    /// Section label in the gutter: bold, `LayoutStyle.labelSize` (fixed, never below
+    /// `minLabelSize`).
     case sectionLabel
+    /// The small second gutter line under a label: the repeat count ("x2") or "(cont.)" on
+    /// a section split between columns. Medium, `LayoutStyle.labelDetailSize`, muted.
+    case labelDetail
     /// "Repeat chorus" line: regular, lyric size, muted.
     case collapsedRepeat
     /// `{comment}` lines: medium italic-free, lyric size x `LayoutStyle.commentScale`, muted.
@@ -132,8 +136,10 @@ public struct FixedAdvanceMetrics: TextMeasuring {
 
 /// Fixed geometry of the stage body (brand.md section 7). All values in points.
 public struct LayoutStyle: Sendable, Hashable {
-    /// Section label gutter.
+    /// Section label gutter: the narrowest it gets. A song whose labels are wider widens
+    /// its gutter (up to `maxGutterWidth`) rather than breaking a label mid-name.
     public var gutterWidth: Double
+    public var maxGutterWidth: Double
     /// Gap between the gutter and the lyrics.
     public var gutterGap: Double
     /// Gap between columns.
@@ -169,8 +175,18 @@ public struct LayoutStyle: Sendable, Hashable {
     public var stanzaBreakScale: Double
     /// Line height of labels, cues and notes, as a multiple of their size.
     public var smallLineHeight: Double
-    /// Gutter labels shrink (down to this size) before a word is broken.
+    /// Gutter labels shrink (down to this size, never smaller: 12pt) before they wrap.
     public var minLabelSize: Double
+    /// Size of the gutter's second line (`TextRole.labelDetail`).
+    public var labelDetailSize: Double
+    /// Auto-fit prefers layouts where no lyric line wraps: it takes a wrapping layout only
+    /// when the best one without wrapping is more than this fraction smaller (decisions.md,
+    /// "Auto-fit prefers no wrapping").
+    public var wrapTolerance: Double
+    /// The column count auto-fit leans toward (decisions.md, "Columns"): fewer columns only
+    /// when their size is more than `wrapTolerance` larger, more only when this count does
+    /// not fit at the minimum without wrapping.
+    public var preferredColumns: Int
     /// Padding inside a cue callout: horizontal, vertical (points).
     public var cuePadding: LayoutSize
     /// Space below each cue callout and between note paragraphs (points).
@@ -178,6 +194,7 @@ public struct LayoutStyle: Sendable, Hashable {
 
     public init(
         gutterWidth: Double = 64,
+        maxGutterWidth: Double = 104,
         gutterGap: Double = 12,
         columnGap: Double = 48,
         minColumnWidth: Double = 360,
@@ -197,11 +214,15 @@ public struct LayoutStyle: Sendable, Hashable {
         blockInset: Double = 0.25,
         stanzaBreakScale: Double = 0.5,
         smallLineHeight: Double = 1.3,
-        minLabelSize: Double = 10,
+        minLabelSize: Double = 12,
+        labelDetailSize: Double = 12,
+        wrapTolerance: Double = 0.15,
+        preferredColumns: Int = 2,
         cuePadding: LayoutSize = LayoutSize(width: 8, height: 4),
         calloutSpacing: Double = 6,
     ) {
         self.gutterWidth = gutterWidth
+        self.maxGutterWidth = maxGutterWidth
         self.gutterGap = gutterGap
         self.columnGap = columnGap
         self.minColumnWidth = minColumnWidth
@@ -222,6 +243,9 @@ public struct LayoutStyle: Sendable, Hashable {
         self.stanzaBreakScale = stanzaBreakScale
         self.smallLineHeight = smallLineHeight
         self.minLabelSize = minLabelSize
+        self.labelDetailSize = labelDetailSize
+        self.wrapTolerance = wrapTolerance
+        self.preferredColumns = preferredColumns
         self.cuePadding = cuePadding
         self.calloutSpacing = calloutSpacing
     }
@@ -242,7 +266,9 @@ public struct LayoutRequest: Sendable {
     public var zoom: Double
     /// `LivePrefs.collapseRepeats`.
     public var collapseRepeats: Bool
-    /// `LivePrefs.columns`: forces the column count; nil = auto.
+    /// Forces the column count; nil = auto-fit. The caller resolves the precedence
+    /// (`LiveSettings.columns(for:)`: the song's `LivePrefs.columns`, else the global
+    /// default, else auto).
     public var columns: Int?
     /// Sidecar cues, placed at their sections' edges.
     public var cues: [SongCue]

@@ -64,6 +64,9 @@
 
         private static func handleSearch(_ stroke: KeyStroke, session: LiveSession) -> Bool {
             let search = session.search
+            if search.requesting != nil {
+                return handleRequestNote(stroke, session: session)
+            }
             switch stroke.key {
             case KeyStroke.escape:
                 session.overlay = nil
@@ -81,6 +84,20 @@
                     .playNow
                 }
                 session.searchAction(action, song: song.id)
+            default:
+                return false
+            }
+            return true
+        }
+
+        /// The request note: Return adds (blank = no note), Esc goes back to the results;
+        /// everything else types into the note field.
+        private static func handleRequestNote(_ stroke: KeyStroke, session: LiveSession) -> Bool {
+            switch stroke.key {
+            case KeyStroke.returnKey:
+                session.commitRequest()
+            case KeyStroke.escape:
+                session.search.cancelRequest()
             default:
                 return false
             }

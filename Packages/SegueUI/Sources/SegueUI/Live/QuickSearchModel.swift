@@ -23,6 +23,11 @@
 
         public private(set) var results: [SongRecord] = []
         public var selection = 0
+        /// The song being added to the requests while its optional note is typed (Cmd-Return
+        /// or "Add to Requests"); nil while choosing a song.
+        public private(set) var requesting: SongRecord?
+        /// The request note ("table 4"); blank adds the request without one.
+        public var note = ""
         /// The last search error, shown in place of results.
         public private(set) var errorMessage: String?
 
@@ -39,6 +44,26 @@
             results = []
             selection = 0
             errorMessage = nil
+            requesting = nil
+            note = ""
+        }
+
+        /// Starts adding `song` to the requests: the overlay asks for an optional note.
+        func beginRequest(_ song: SongRecord) {
+            note = ""
+            requesting = song
+        }
+
+        /// Back from the note to the results (Esc).
+        func cancelRequest() {
+            requesting = nil
+            note = ""
+        }
+
+        /// The note as stored: trimmed, nil when blank (Return on an empty field skips it).
+        var trimmedNote: String? {
+            let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
         }
 
         var selected: SongRecord? {

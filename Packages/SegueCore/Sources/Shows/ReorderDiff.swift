@@ -63,7 +63,16 @@ public struct ReorderDiff: Sendable, Hashable {
             }
             return (row, planned)
         }
-        let unchangedRows = longestIncreasingRun(kept)
+        // Items the performer moved (drawer drags, "Next"): when several runs are equally
+        // long, the run that keeps the others wins, so the moved song is the one marked
+        // "moved from #n" rather than the neighbour it was dropped past.
+        let reordered = Set(record.events.compactMap { event in
+            event.kind == .reordered ? event.itemId : nil
+        })
+        let unchangedRows = longestIncreasingRun(kept.map { pair in
+            let moved = reordered.contains(record.items[pair.row].itemId)
+            return KeptRow(row: pair.row, planned: pair.planned, moved: moved)
+        })
         var changed = false
         let performed = record.items.enumerated().map { row, item -> Row in
             guard item.origin == .setlist, let planned = plannedIndex[item.itemId] else {
@@ -128,37 +137,52 @@ public struct ReorderDiff: Sendable, Hashable {
         Set(insertedItemIds)
     }
 
-    /// Rows of `pairs` (row, planned position) that form the longest run kept in planned
-    /// order (strictly increasing planned positions). Deterministic: patience sorting with
-    /// the earliest tails.
-    private static func longestIncreasingRun(_ pairs: [(row: Int, planned: Int)]) -> Set<Int> {
-        var tails: [Int] = [] // indices into `pairs`, by run length - 1
+    /// Rows of `pairs` (row, planned position, moved by the performer) that form the
+    /// longest run kept in planned order (strictly increasing planned positions). Among runs
+    /// of the same length, the one keeping the most rows the performer did not move wins;
+    /// remaining ties go to the earliest rows. Setlists are short, so this is the plain
+    /// quadratic search.
+    private static func longestIncreasingRun(_ pairs: [KeptRow]) -> Set<Int> {
+        guard !pairs.isEmpty else { return [] }
+        // Per index: (run length, unmoved rows kept) of the best run ending there.
+        var best = [(length: Int, unmoved: Int)](
+            repeating: (length: 0, unmoved: 0),
+            count: pairs.count,
+        )
         var previous = [Int?](repeating: nil, count: pairs.count)
-        for (index, pair) in pairs.enumerated() {
-            var low = 0
-            var high = tails.count
-            while low < high {
-                let middle = (low + high) / 2
-                if pairs[tails[middle]].planned < pair.planned {
-                    low = middle + 1
-                } else {
-                    high = middle
+        for index in pairs.indices {
+            let own = pairs[index].moved ? 0 : 1
+            best[index] = (1, own)
+            for earlier in 0 ..< index where pairs[earlier].planned < pairs[index].planned {
+                let candidate = (
+                    length: best[earlier].length + 1,
+                    unmoved: best[earlier].unmoved + own,
+                )
+                if candidate > best[index] {
+                    best[index] = candidate
+                    previous[index] = earlier
                 }
             }
-            previous[index] = low > 0 ? tails[low - 1] : nil
-            if low == tails.count {
-                tails.append(index)
-            } else {
-                tails[low] = index
-            }
+        }
+        var end = 0
+        for index in pairs.indices where best[index] > best[end] {
+            end = index
         }
         var rows: Set<Int> = []
-        var cursor = tails.last
+        var cursor: Int? = end
         while let index = cursor {
             rows.insert(pairs[index].row)
             cursor = previous[index]
         }
         return rows
+    }
+
+    /// A planned item in performed order: its row, its planned position, and whether the
+    /// performer moved it.
+    private struct KeptRow {
+        var row: Int
+        var planned: Int
+        var moved: Bool
     }
 
     /// Item IDs of rows that are inserted songs.

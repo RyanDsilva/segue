@@ -59,6 +59,29 @@ public extension SongEditorViewModel {
         perform(.setDirective(name: "capo", value: value == 0 ? nil : String(value)))
     }
 
+    /// The song's column count on stage: nil = the Settings > Live default (or auto-fit),
+    /// else 1...3 (decisions.md, "Columns": the song's choice wins). Saved to the sidecar's
+    /// live memory, the same value the stage's C key cycles.
+    func setStageColumns(_ columns: Int?) {
+        var prefs = livePrefs
+        prefs.columns = columns
+        guard prefs != livePrefs else { return }
+        livePrefs = prefs
+        guard case let .edit(id) = mode, let persistLivePrefs, prefs != savedLivePrefs else {
+            return
+        }
+        savedLivePrefs = prefs
+        let previous = prefsTask
+        prefsTask = Task { [weak self] in
+            await previous?.value
+            do {
+                _ = try await persistLivePrefs(id, prefs)
+            } catch {
+                self?.errorMessage = UserMessage.describe(error)
+            }
+        }
+    }
+
     internal func updateOptions(_ change: (inout DisplayOptions) -> Void) {
         var updated = options
         change(&updated)

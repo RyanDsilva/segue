@@ -58,8 +58,16 @@ struct MeasuredSection {
     }
 
     var id: Int
+    /// The block label ("Chorus x2"), for `LayoutBlock.label`.
     var label: String?
+    /// The section's name without the repeat count ("Chorus").
+    var name: String?
+    /// The gutter's first line: `name`, measured as a label.
     var labelText: MeasuredParagraph?
+    /// The gutter's second line for a collapsed repeat ("x2").
+    var labelDetail: MeasuredParagraph?
+    /// "(cont.)", measured as a label detail, for the parts after a split.
+    var continuation: MeasuredParagraph?
     var isChorus: Bool
     var tint: SectionTint
     var body: Body

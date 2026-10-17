@@ -19,6 +19,9 @@
         /// Non-nil when the setlist can no longer be saved (deleted or read-only during the
         /// show): Save is disabled and this says why; only Discard is offered.
         let saveDisabledReason: String?
+        /// The window the sheet is presented on: the sheet never outgrows it (the rows scroll
+        /// instead). Nil = no limit beyond the defaults.
+        let available: CGSize?
         @State private var included: Set<ShowItemID>
 
         public init(
@@ -26,12 +29,28 @@
             onSave: @escaping (Set<ShowItemID>) -> Void,
             onDiscard: @escaping () -> Void,
             saveDisabledReason: String? = nil,
+            available: CGSize? = nil,
         ) {
             self.diff = diff
             self.onSave = onSave
             self.onDiscard = onDiscard
             self.saveDisabledReason = saveDisabledReason
+            self.available = available
             _included = State(initialValue: Set(diff.insertedItemIds))
+        }
+
+        /// Room for the header and the buttons around the scrolling rows.
+        private static let chromeHeight: CGFloat = 210
+
+        private var width: CGFloat {
+            guard let available, available.width > 0 else { return 720 }
+            return max(420, min(720, available.width - 48))
+        }
+
+        /// The rows' height: all of them up to 460pt, less when the window is short.
+        private var rowsMaxHeight: CGFloat {
+            guard let available, available.height > 0 else { return 460 }
+            return max(120, min(460, available.height - 48 - Self.chromeHeight))
         }
 
         public var body: some View {
@@ -48,21 +67,39 @@
                 }
                 .padding(20)
                 Rule()
-                ScrollView {
-                    HStack(alignment: .top, spacing: 0) {
-                        column("Planned") { plannedRows }
-                        Rule(axis: .vertical)
-                        column("As played") { performedRows }
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        HStack(alignment: .top, spacing: 0) {
+                            column("Planned") { plannedRows }
+                            Rule(axis: .vertical)
+                            column("As played") { performedRows }
+                        }
+                    }
+                    .onAppear {
+                        // In a short window the changes may be below the fold: show the first.
+                        if let first = firstChange {
+                            proxy.scrollTo(Self.performedAnchor(first), anchor: .center)
+                        }
                     }
                 }
-                .frame(minHeight: 220, maxHeight: 460)
+                .frame(minHeight: min(220, rowsMaxHeight), maxHeight: rowsMaxHeight)
                 Rule()
                 buttons
             }
-            .frame(width: 720)
+            .frame(width: width)
             .background(Theme.color.ground)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.reorderSheet)
+        }
+
+        /// The scroll anchor of a performed row (planned rows share the item IDs).
+        private static func performedAnchor(_ id: ShowItemID) -> String {
+            "played-\(id)"
+        }
+
+        /// The first performed row that moved or was inserted.
+        private var firstChange: ShowItemID? {
+            diff.performed.first { $0.change != .unchanged }?.id
         }
 
         private var explanation: String {
@@ -110,6 +147,7 @@
                 ) {
                     marker(row)
                 }
+                .id(Self.performedAnchor(row.id))
                 .accessibilityIdentifier(AccessibilityID.reorderPerformedRow)
             }
         }

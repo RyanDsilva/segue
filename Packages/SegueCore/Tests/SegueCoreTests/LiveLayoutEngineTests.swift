@@ -102,20 +102,77 @@ struct LiveLayoutEngineTests {
         #expect(plan.columns.count == 1)
     }
 
+    /// decisions.md, "Columns": two columns win while they fit, even when three would
+    /// allow a slightly larger size.
     @Test
-    func `more columns win when they allow a larger size`() {
+    func `two columns are preferred over a larger three column layout`() {
         let model = Support.model(source: Support.longSong(lines: 24))
         let (plan, request) = Support.plan(model)
+        let (two, _) = Support.plan(model, columns: 2)
+        let (three, _) = Support.plan(model, columns: 3)
         #expect(plan.fit == .fits)
-        #expect(plan.columns.count > 1)
-        // No single column count could do better: one more step does not fit anywhere.
-        for columns in 1 ... 3 {
-            let (bigger, _) = Support.plan(
-                model,
-                minLyricSize: plan.lyricSize + 0.5,
-                columns: columns,
-            )
-            #expect(bigger.fit != .fits, "\(columns) columns fit above \(plan.lyricSize)")
+        #expect(plan.columns.count == 2)
+        #expect(plan.lyricSize == two.lyricSize)
+        #expect(three.fit == .fits && three.lyricSize > plan.lyricSize)
+        #expect(LayoutAudit.violations(of: plan, request: request, metrics: FixedAdvanceMetrics())
+            .isEmpty)
+    }
+
+    @Test
+    func `three columns only when two cannot fit at the minimum`() {
+        let model = Support.model(source: Support.longSong(lines: 36))
+        let (two, _) = Support.plan(model, columns: 2)
+        #expect(two.fit == .scrollsAtMinimum)
+        let (plan, request) = Support.plan(model)
+        #expect(plan.fit == .fits)
+        #expect(plan.columns.count == 3)
+        #expect(plan.lyricSize >= 22)
+        #expect(LayoutAudit.violations(of: plan, request: request, metrics: FixedAdvanceMetrics())
+            .isEmpty)
+    }
+
+    /// A "two column" layout that leaves its second column empty is just a narrower single
+    /// column, so a short song gets the full width.
+    @Test
+    func `a short song keeps the full width`() throws {
+        let line = "[G]" + String(repeating: "wide words here ", count: 6)
+        let model = Support.model(source: "{start_of_verse}\n\(line)\n[C]short\n{end_of_verse}")
+        let (plan, _) = Support.plan(model)
+        let (one, _) = Support.plan(model, columns: 1)
+        #expect(plan.columns.count == 1)
+        #expect(plan.lyricSize == one.lyricSize)
+        #expect(plan.blocks.flatMap(\.allRows).count == one.blocks.flatMap(\.allRows).count)
+        let column = try #require(plan.columns.first)
+        #expect(column.width == Support.macBook13.width)
+    }
+
+    /// decisions.md, "Auto-fit prefers no wrapping": the largest layout without a wrapped
+    /// lyric line wins unless it is more than 15% smaller than one that wraps.
+    @Test(arguments: [
+        // Height, whether the chosen layout wraps the long line.
+        (360.0, false),
+        (900.0, true),
+    ])
+    func `layouts without wrapping win unless they are much smaller`(
+        height: Double,
+        wraps: Bool,
+    ) {
+        // 40 characters at 0.5 em: the long line fits unwrapped up to exactly 30pt in a
+        // 676pt viewport (64pt gutter + 12pt gap + 600pt).
+        let long = "[G]" + String(repeating: "abcd ", count: 7) + "abc[C]ef"
+        #expect(long.count - 6 == 40)
+        let model = Support.model(source: "\(long)\n[D]one\n[G]two\n[C]three")
+        let viewport = LayoutSize(width: 676, height: height)
+        let (plan, request) = Support.plan(model, viewport: viewport)
+        let rows = plan.blocks.flatMap(\.allRows).filter { $0.kind == .lyric }
+        #expect(plan.fit == .fits)
+        #expect((rows.count > 4) == wraps, "\(plan.lyricSize)pt, \(rows.count) rows")
+        if wraps {
+            // Wrapping won because no-wrap tops out at 30pt, under 85% of this size.
+            #expect(plan.lyricSize * 0.85 > 30)
+        } else {
+            #expect(plan.lyricSize <= 30)
+            #expect(plan.lyricSize >= 29)
         }
         #expect(LayoutAudit.violations(of: plan, request: request, metrics: FixedAdvanceMetrics())
             .isEmpty)

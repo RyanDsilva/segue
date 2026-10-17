@@ -144,6 +144,84 @@ struct RomanizedHindiSearchTests {
         #expect(try await Set(store.search(query: query).titles) == Set(expected))
     }
 
+    @Test(arguments: [
+        ("dewana", "divana"),
+        ("deewana", "divana"),
+        ("diwana", "divana"),
+        ("Deewaana", "divana"),
+        ("mohabbat", "muhabat"),
+        ("muhabbat", "muhabat"),
+        ("jeevan", "jivan"),
+        ("jevan", "jivan"),
+        ("pyaasa", "pyasa"),
+        ("deewane", "divani"),
+        // Short words keep their vowels: distinct words in both languages.
+        ("mere", "mere"),
+        ("meri", "meri"),
+        ("pen", "pen"),
+        ("pin", "pin"),
+        ("tu", "tu"),
+        ("to", "to"),
+    ])
+    func `the loose form folds vowel quality in longer words`(input: String, expected: String) {
+        #expect(RomanNormalizer.loose(input) == expected)
+    }
+
+    @Test
+    func `the loose form leaves normalize unchanged`() {
+        #expect(RomanNormalizer.normalize("dewana deewana") == "devana divana")
+        #expect(RomanNormalizer.normalize("river") == "river")
+    }
+
+    /// e/ee/i and o/oo/u spellings of one word find each other, whichever is in the title
+    /// and whichever is typed: library search, the builder and quick search all go through
+    /// `LibraryStore.search`.
+    @Test(arguments: ["dewana", "deewana", "diwana", "Deewaana", "dewan", "DIWANA"])
+    func `e ee and i spellings all find each other`(query: String) async throws {
+        let lib = try TestLibrary()
+        let store = try await lib.openStore()
+        for source in Self.vowelFixtures {
+            _ = try await store.createSong(source: source)
+        }
+        let titles = try await store.search(query: query).titles
+        #expect(Set(titles.prefix(3)) == ["Dewana Hua", "Deewana Dil", "Diwana Mastana"])
+        #expect(!titles.contains("Lever Pulls"))
+    }
+
+    @Test(arguments: ["mohabbat", "muhabbat", "mohabat", "muhabat"])
+    func `o oo and u spellings all find each other`(query: String) async throws {
+        let lib = try TestLibrary()
+        let store = try await lib.openStore()
+        for source in Self.vowelFixtures {
+            _ = try await store.createSong(source: source)
+        }
+        #expect(try await Set(store.search(query: query).titles) == [
+            "Mohabbat Hai", "Muhabbat Ki Raat",
+        ])
+    }
+
+    /// The exact spelling ranks before its loose variants.
+    @Test
+    func `exact spellings rank before loose variants`() async throws {
+        let lib = try TestLibrary()
+        let store = try await lib.openStore()
+        for source in Self.vowelFixtures {
+            _ = try await store.createSong(source: source)
+        }
+        #expect(try await store.search(query: "dewana").titles.first == "Dewana Hua")
+        #expect(try await store.search(query: "diwana").titles.first == "Diwana Mastana")
+        #expect(try await store.search(query: "muhabbat").titles.first == "Muhabbat Ki Raat")
+    }
+
+    static let vowelFixtures = [
+        "{title: Dewana Hua}\n[G]Dil dewana hua\n",
+        "{title: Deewana Dil}\n[D]Yeh dil deewana\n",
+        "{title: Diwana Mastana}\n[Am]Diwana mastana\n",
+        "{title: Mohabbat Hai}\n[C]Mohabbat hai yahi\n",
+        "{title: Muhabbat Ki Raat}\n[F]Muhabbat ki raat\n",
+        "{title: Lever Pulls}\n[E]Pull the lever down\n",
+    ]
+
     @Test
     func `an empty query lists every song by title`() async throws {
         let (lib, store) = try await Self.fixtureLibrary()

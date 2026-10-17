@@ -5,15 +5,96 @@
     import SwiftUI
 
     /// Cmd-K or /: search the library mid-show without leaving the stage. Up/Down select,
-    /// Return plays now, Cmd-Return adds to requests, Option-Return inserts next, Esc goes
-    /// back to the song at the same scroll position (keys handled by `LiveKeyInput`).
+    /// Return plays now, Cmd-Return adds to requests (then a one-line note, Return to add or
+    /// skip it), Option-Return inserts next, Esc goes back to the song at the same scroll
+    /// position (keys handled by `LiveKeyInput`).
     struct QuickSearchOverlay: View {
         let session: LiveSession
         @FocusState private var fieldFocused: Bool
+        @FocusState private var noteFocused: Bool
 
         var body: some View {
+            Group {
+                if let song = session.search.requesting {
+                    noteStep(song)
+                } else {
+                    searchStep
+                }
+            }
+            .frame(width: 720)
+            .background(StagePanelBackground())
+            .shadow(color: .black.opacity(0.5), radius: 30, y: 12)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(AccessibilityID.liveSearch)
+        }
+
+        /// The request note: who asked, a table number. Return adds the request (a blank
+        /// note is skipped), Esc goes back to the results.
+        private func noteStep(_ song: SongRecord) -> some View {
             @Bindable var search = session.search
-            VStack(alignment: .leading, spacing: 0) {
+            return VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Add to requests")
+                        .font(Theme.font.label)
+                        .foregroundStyle(Theme.color.muted)
+                    Text(SongSummary.title(song))
+                        .font(SchibstedGrotesk.semiBold.font(size: 22))
+                        .foregroundStyle(Theme.color.ink)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+                HStack(spacing: 12) {
+                    Image(systemName: "text.bubble")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.color.muted)
+                        .accessibilityHidden(true)
+                    TextField("Note (optional), e.g. table 4", text: $search.note)
+                        .textFieldStyle(.plain)
+                        .font(SchibstedGrotesk.medium.font(size: 18))
+                        .foregroundStyle(Theme.color.ink)
+                        .autocorrectionDisabled()
+                        .focused($noteFocused)
+                        .accessibilityIdentifier(AccessibilityID.liveSearchNote)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(Theme.color.controlBorder, lineWidth: 1)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 16)
+                Rectangle().fill(Theme.color.line).frame(height: 1)
+                noteActions
+            }
+            .defaultFocus($noteFocused, true)
+            .task {
+                noteFocused = true
+                try? await Task.sleep(for: .milliseconds(50))
+                noteFocused = true
+            }
+        }
+
+        private var noteActions: some View {
+            HStack(spacing: 10) {
+                Text("↩ adds it, with or without a note  ·  Esc goes back")
+                    .font(Theme.font.label)
+                    .foregroundStyle(Theme.color.muted)
+                Spacer()
+                Button("Add Request  ↩") { session.commitRequest() }
+                    .buttonStyle(.seguePrimary)
+                    .accessibilityIdentifier(AccessibilityID.liveSearchAddRequestConfirm)
+            }
+            .controlSize(.regular)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+
+        private var searchStep: some View {
+            @Bindable var search = session.search
+            return VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 12) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 18, weight: .semibold))
@@ -34,11 +115,6 @@
                 Rectangle().fill(Theme.color.line).frame(height: 1)
                 actions
             }
-            .frame(width: 720)
-            .background(StagePanelBackground())
-            .shadow(color: .black.opacity(0.5), radius: 30, y: 12)
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier(AccessibilityID.liveSearch)
             .defaultFocus($fieldFocused, true)
             .task {
                 // Once the field is in the window (the stage is a borderless window).

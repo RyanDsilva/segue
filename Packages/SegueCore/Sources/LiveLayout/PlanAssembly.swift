@@ -5,6 +5,7 @@ struct PlanAssembly {
     let packer: ColumnPacker
     let request: LayoutRequest
     let columnWidth: Double
+    let gutterWidth: Double
     let lineCount: Int
 
     func plan(fit: LayoutFit) -> LayoutPlan {
@@ -31,6 +32,7 @@ struct PlanAssembly {
                 viewport: viewport,
             ),
             lineCount: lineCount,
+            gutterWidth: gutterWidth,
         )
     }
 
@@ -55,15 +57,14 @@ struct PlanAssembly {
         } else {
             .rows(rows)
         }
-        let firstBaseline = packer.firstBaseline(placement.section, placement.units)
-        let labelLines = isFirst
-            ? section.labelLines.map { line in
-                PlacedLine(text: line.text, baseline: line.baseline + firstBaseline)
-            }
-            : []
+        let top = packer.labelTop(placement.section, placement.units, part: placement.part)
+        let labelLines = packer.gutter(placement.section, part: placement.part).lines.map { line in
+            PlacedLine(text: line.text, baseline: line.baseline + top)
+        }
+        let continuation = section.name.map { "\($0) \(SongPreparation.continuationText)" }
         return LayoutBlock(
             id: section.id,
-            label: isFirst ? section.label : nil,
+            label: isFirst ? section.label : continuation,
             isChorusLabel: section.isChorus,
             tint: section.tint,
             y: placement.y,

@@ -10,9 +10,20 @@ import Foundation
 /// Every rule lives in `rules`, applied in order to each word after `words(_:)` has lowercased
 /// it, folded diacritics and stripped punctuation. Changing the table must bump `version`,
 /// which changes the index version and triggers a drop-and-rebuild.
+///
+/// A second, looser form (`loose(_:)`) also folds vowel *quality* in longer words: `e`/`i`
+/// and `o`/`u` (`dewana`/`deewana`/`diwana`, `mohabbat`/`muhabbat`). The index keeps it in its
+/// own columns and search ranks its matches after the exact and normalized ones, so English
+/// queries keep their precise results first.
 public enum RomanNormalizer {
-    /// Bump on any change to `rules` or `words(_:)`.
-    public static let version = 2
+    /// Bump on any change to `rules`, `words(_:)` or `looseWord(_:)`.
+    ///
+    /// History: 2 = phase 0 rules; 3 = the loose (vowel quality) form.
+    public static let version = 3
+
+    /// Shortest normalized word the loose form folds vowels in. Shorter words are mostly
+    /// distinct English and Hindi words (`pen`/`pin`, `mere`/`meri`), so they stay apart.
+    public static let looseMinLength = 5
 
     /// One rewrite applied to a single lowercased word.
     public enum Rule: Sendable, Equatable {
@@ -71,6 +82,27 @@ public enum RomanNormalizer {
             current = apply(rule, to: current)
         }
         return current
+    }
+
+    /// `text` in the loose form: normalized word by word, then `looseWord(_:)`.
+    public static func loose(_ text: String) -> String {
+        words(text).map { looseWord(normalizeWord($0)) }.joined(separator: " ")
+    }
+
+    /// One normalized word (`normalizeWord(_:)`) with vowel quality folded: `e` -> `i` and
+    /// `o` -> `u` in words of at least `looseMinLength` letters (`devana` -> `divana`), then
+    /// doubled letters collapsed again. Shorter words come back unchanged.
+    public static func looseWord(_ normalized: String) -> String {
+        guard normalized.count >= looseMinLength else { return normalized }
+        var folded = ""
+        for character in normalized {
+            switch character {
+            case "e": folded.append("i")
+            case "o": folded.append("u")
+            default: folded.append(character)
+            }
+        }
+        return collapseDoubles(folded)
     }
 
     /// Lowercased words of `text` with diacritics folded. Apostrophes are removed inside a

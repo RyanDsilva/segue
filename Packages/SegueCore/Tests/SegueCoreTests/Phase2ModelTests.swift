@@ -162,4 +162,40 @@ struct Phase2ModelTests {
         #expect(try SegueJSON.decode([CalendarDay].self, from: data) == [day])
         #expect(try #require(CalendarDay("2026-01-31")) < day)
     }
+
+    /// decisions.md, "Columns": the song's choice, else the global default, else auto.
+    @Test(arguments: [
+        // (song, global default, laid out with)
+        (Int?.none, Int?.none, Int?.none),
+        (nil, 2, 2),
+        (nil, 3, 3),
+        (1, nil, 1),
+        (1, 3, 1),
+        (3, 1, 3),
+        (7, nil, 3),
+        (nil, 0, 1),
+    ])
+    func `column precedence is song then global default then auto`(
+        song: Int?,
+        global: Int?,
+        expected: Int?,
+    ) {
+        let settings = LiveSettings(defaultColumns: global)
+        #expect(settings.columns(for: LivePrefs(columns: song)) == expected)
+    }
+
+    @Test
+    func `stored live settings without a default column count decode as auto`() throws {
+        let stored = Data(#"""
+        {"minLyricSize": 26, "startShortcut": "Gig Mode On", "hiddenChecklistItems": []}
+        """#.utf8)
+        let settings = try SegueJSON.decode(LiveSettings.self, from: stored)
+        #expect(settings.defaultColumns == nil)
+        #expect(settings.minLyricSize == 26)
+        let roundTrip = try SegueJSON.decode(
+            LiveSettings.self,
+            from: SegueJSON.encode(LiveSettings(defaultColumns: 2)),
+        )
+        #expect(roundTrip.defaultColumns == 2)
+    }
 }

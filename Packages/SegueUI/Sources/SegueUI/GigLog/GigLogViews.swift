@@ -34,14 +34,11 @@
         }
 
         private var list: some View {
-            List(selection: $model.selection) {
-                ForEach(model.entries) { entry in
-                    GigLogRow(entry: entry)
-                        .tag(entry.id)
-                }
+            SelectableList(items: model.entries, selection: $model.selection) { entry in
+                GigLogRow(entry: entry)
             }
-            .listStyle(.plain)
             .accessibilityIdentifier(AccessibilityID.gigLogList)
+            .background(Theme.color.ground)
             .overlay {
                 if model.entries.isEmpty {
                     ContentUnavailableView {
@@ -58,38 +55,30 @@
     /// "Fri 23 Oct 2026" / "The Anchor · Friday Set" / "9 played" and the rating.
     private struct GigLogRow: View {
         let entry: GigLogEntry
-        @Environment(\.backgroundProminence) private var prominence
-
-        private var isHighlighted: Bool {
-            prominence == .increased
-        }
 
         var body: some View {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(GigText.day(entry))
                         .font(SchibstedGrotesk.semiBold.font(size: 15))
-                        .foregroundStyle(isHighlighted ? Color.white : Theme.color.ink)
+                        .foregroundStyle(Theme.color.ink)
                     Text([entry.details.venue, entry.setlistName].compactMap(\.self)
                         .joined(separator: " · "))
                         .font(SchibstedGrotesk.medium.font(size: 13))
-                        .foregroundStyle(isHighlighted ? Color.white.opacity(0.8) : Theme.color
-                            .muted)
+                        .foregroundStyle(Theme.color.muted)
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("\(entry.played.count) played")
                         .font(SchibstedGrotesk.medium.font(size: 13))
-                        .foregroundStyle(isHighlighted ? Color.white.opacity(0.8) : Theme.color
-                            .muted)
+                        .foregroundStyle(Theme.color.muted)
                     if let rating = entry.details.rating {
                         RatingDots(rating: rating)
                     }
                 }
             }
             .padding(.vertical, 6)
-            .environment(\.onHighlight, isHighlighted)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier(AccessibilityID.gigLogRow)
         }
@@ -98,16 +87,13 @@
     /// A read-only 1-5 rating as small filled/empty stars.
     struct RatingDots: View {
         let rating: Int
-        @Environment(\.onHighlight) private var onHighlight
 
         var body: some View {
             HStack(spacing: 2) {
                 ForEach(GigDetails.ratingRange, id: \.self) { value in
                     Image(systemName: value <= rating ? "star.fill" : "star")
                         .font(.system(size: 9))
-                        .foregroundStyle(onHighlight
-                            ? Color.white.opacity(value <= rating ? 1 : 0.4)
-                            : value <= rating ? Theme.color.ink : Theme.color.lineStrong)
+                        .foregroundStyle(value <= rating ? Theme.color.ink : Theme.color.lineStrong)
                 }
             }
             .accessibilityElement(children: .ignore)

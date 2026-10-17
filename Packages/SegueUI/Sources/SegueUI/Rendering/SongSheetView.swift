@@ -1,5 +1,4 @@
 import ChordPro
-import CoreText
 import Editing
 import SwiftUI
 
@@ -25,14 +24,6 @@ struct SongSheetStyle: Equatable {
     /// Gap between a chord and the lyric below it.
     var chordGap: CGFloat {
         1
-    }
-
-    /// Distance from the top of a lyric line to its lyric baseline, so the section label
-    /// can sit on the first lyric's baseline rather than on the chord above it.
-    func lyricBaselineOffset(hasChords: Bool) -> CGFloat {
-        let lyric = FontMetrics(face: .regular, size: lyricSize)
-        let chord = FontMetrics(face: .bold, size: chordSize)
-        return (hasChords ? chord.lineHeight + chordGap : 0) + lyric.ascent
     }
 
     /// Editor preview and song detail (mockup E2 a: 18pt lyrics, 15pt chords).
@@ -145,9 +136,9 @@ private struct SheetRowView: View, Equatable {
                     .foregroundStyle(Theme.color.muted)
                     .frame(maxWidth: .infinity, alignment: .leading)
             case let .item(.lyrics(line)):
-                let offset = baselineOffset(line)
+                // The flow layout reports its first row's lyric baseline as its first text
+                // baseline, so the label sits on the first lyric, not on the chord above it.
                 ItemView(item: .lyrics(line), style: style)
-                    .alignmentGuide(.firstTextBaseline) { $0[.top] + offset }
                     .frame(maxWidth: .infinity, alignment: .leading)
             case let .item(item):
                 ItemView(item: item, style: style)
@@ -155,11 +146,6 @@ private struct SheetRowView: View, Equatable {
             }
         }
         .padding(.top, row.topSpacing)
-    }
-
-    /// The label sits on the first lyric's baseline, not on the chord above it.
-    private func baselineOffset(_ line: RenderLine) -> CGFloat {
-        style.lyricBaselineOffset(hasChords: !line.chords.isEmpty)
     }
 }
 
@@ -198,7 +184,8 @@ private struct ItemView: View {
 }
 
 /// One lyric line. Each chord sits above its character; the line wraps between words
-/// when it is wider than the column.
+/// when it is wider than the column. Only a row that carries chords has a chord band: a
+/// wrapped row without chords sits right under the row above, with no empty band between.
 private struct LyricLineView: View {
     let line: RenderLine
     let style: SongSheetStyle
@@ -208,10 +195,9 @@ private struct LyricLineView: View {
         if tokens.isEmpty {
             Color.clear.frame(height: style.lyricSize * 0.6)
         } else {
-            let hasChords = tokens.contains { $0.chord != nil }
-            LyricFlowLayout(rowSpacing: style.rowSpacing) {
+            LyricFlowLayout(rowSpacing: style.rowSpacing, alignsBottoms: true) {
                 ForEach(tokens) { token in
-                    TokenView(token: token, showsChordRow: hasChords, style: style)
+                    TokenView(token: token, showsChordRow: token.chord != nil, style: style)
                 }
             }
         }
@@ -336,8 +322,14 @@ struct LyricToken: Identifiable, Equatable {
 
 /// Lays children out left to right, wrapping to a new row when the next child would
 /// overflow the proposed width.
+///
+/// With `alignsBottoms`, children of a row share their bottom edge (lyric tokens: the lyric
+/// is the last line of every token, chord or not), so a row is only as tall as its tallest
+/// token, and the layout's first text baseline is its first row's last text baseline (the
+/// lyric under any chord).
 struct LyricFlowLayout: Layout {
     var rowSpacing: CGFloat
+    var alignsBottoms = false
 
     /// Child sizes, measured once per layout pass (children are fixed-size tokens).
     struct Cache {
@@ -375,8 +367,9 @@ struct LyricFlowLayout: Layout {
             var x = bounds.minX
             for index in row.indices {
                 let size = cache.sizes[index]
+                let top = alignsBottoms ? y + row.height - size.height : y
                 subviews[index].place(
-                    at: CGPoint(x: x, y: y),
+                    at: CGPoint(x: x, y: top),
                     anchor: .topLeading,
                     proposal: ProposedViewSize(size),
                 )
@@ -384,6 +377,24 @@ struct LyricFlowLayout: Layout {
             }
             y += row.height + rowSpacing
         }
+    }
+
+    func explicitAlignment(
+        of guide: VerticalAlignment,
+        in bounds: CGRect,
+        proposal _: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout Cache,
+    ) -> CGFloat? {
+        guard alignsBottoms, guide == .firstTextBaseline,
+              let row = rows(for: cache.sizes, width: bounds.width).first,
+              let first = row.indices.first
+        else {
+            return nil
+        }
+        let size = cache.sizes[first]
+        let baseline = subviews[first].dimensions(in: ProposedViewSize(size))[.lastTextBaseline]
+        return bounds.minY + row.height - size.height + baseline
     }
 
     private struct Row {
@@ -408,17 +419,5 @@ struct LyricFlowLayout: Layout {
             rows.append(row)
         }
         return rows
-    }
-}
-
-/// Line metrics of a bundled face, read from Core Text (matches what `Text` lays out).
-struct FontMetrics {
-    let ascent: CGFloat
-    let lineHeight: CGFloat
-
-    init(face: SchibstedGrotesk, size: CGFloat) {
-        let font = CTFontCreateWithName(face.rawValue as CFString, size, nil)
-        ascent = CTFontGetAscent(font)
-        lineHeight = CTFontGetAscent(font) + CTFontGetDescent(font) + CTFontGetLeading(font)
     }
 }

@@ -70,6 +70,7 @@ public enum AccessibilityID {
     public static let editorNashville = "segue.editor.display.nashville"
     public static let editorDiagramsToggle = "segue.editor.diagrams"
     public static let editorInstrument = "segue.editor.instrument"
+    public static let editorStageColumns = "segue.editor.stageColumns"
     public static let editorTuning = "segue.editor.tuning"
     public static let editorApplyTransposition = "segue.editor.applyTransposition"
     public static let editorFlaggedDefines = "segue.editor.flaggedDefines"

@@ -23,7 +23,7 @@
                         + "“\(first.relativePath)” (\(first.message))."
                 }
                 let check = try await shows.launchCheck()
-                pendingReorderReviews.append(contentsOf: check.autoClosed.compactMap(\.diff))
+                await enqueueReviews(check.autoClosed.compactMap(\.diff))
                 pendingResume = check.resumable
                 if !check.autoClosed.isEmpty {
                     await session.library.reload()
@@ -132,9 +132,7 @@
                     ),
                 )
                 let ending = try await controller.end()
-                if let diff = ending.diff {
-                    pendingReorderReviews.append(diff)
-                }
+                await enqueueReviews(ending.diff.map { [$0] } ?? [])
                 await session.library.reload()
             } catch {
                 session.library.errorMessage = "The show could not be ended "
@@ -149,7 +147,11 @@
         func resolveReorderReview(save: Bool, including inserted: Set<ShowItemID>) async {
             guard let diff = pendingReorderReviews.first else { return }
             pendingReorderReviews.removeFirst()
-            guard save, let session else { return }
+            let blocked = reviewSaveBlockers[diff.setlistId] != nil
+            if !pendingReorderReviews.contains(where: { $0.setlistId == diff.setlistId }) {
+                reviewSaveBlockers[diff.setlistId] = nil
+            }
+            guard save, !blocked, let session else { return }
             do {
                 _ = try await session.stores.setlists.replaceEntries(
                     diff.entries(including: inserted),
@@ -160,6 +162,34 @@
                 session.setlists.errorMessage = "“\(diff.setlistName)” was not updated "
                     + "(\(UserMessage.describe(error))). The show is in the gig log as played."
             }
+        }
+
+        /// Queues show-end reviews, first checking each setlist can still be saved (it may
+        /// have been deleted or become read-only during the show).
+        func enqueueReviews(_ diffs: [ReorderDiff]) async {
+            guard !diffs.isEmpty else { return }
+            let setlists = session?.stores.setlists
+            for diff in diffs {
+                if let setlists, let blocker = await setlists.saveBlocker(for: diff.setlistId) {
+                    reviewSaveBlockers[diff.setlistId] = Self.saveBlockedReason(
+                        blocker,
+                        name: diff.setlistName,
+                    )
+                }
+                pendingReorderReviews.append(diff)
+            }
+        }
+
+        /// The review's explanation when Save is disabled.
+        static func saveBlockedReason(_ blocker: SetlistError, name: String) -> String {
+            let reason = switch blocker {
+            case .readOnly:
+                "“\(name)” is read-only now (it was saved by a newer version of Segue)"
+            case .invalidOffsets, .notLoaded, .setlistNotFound:
+                "“\(name)” was deleted during the show"
+            }
+            return reason + ", so the played order cannot be saved to it. The show is in the "
+                + "gig log as played; Discard closes this."
         }
 
         /// Closes the "could not start" alert.
@@ -174,6 +204,7 @@
         func resetShowState() {
             pendingResume = nil
             pendingReorderReviews = []
+            reviewSaveBlockers = [:]
             preShow?.answer(false)
             preShow = nil
             startFailure = nil
@@ -256,9 +287,7 @@
                 self.live = nil
             }
             await runEndShortcut(kind: live.kind)
-            if let diff = ending?.diff {
-                pendingReorderReviews.append(diff)
-            }
+            await enqueueReviews(ending?.diff.map { [$0] } ?? [])
             await session?.library.reload()
         }
 

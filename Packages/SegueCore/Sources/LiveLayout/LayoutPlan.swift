@@ -187,7 +187,8 @@ public struct LayoutBlock: Sendable, Hashable, Identifiable {
 
     /// Index into `RenderModel.sections`; -1 for the notes block.
     public var id: Int
-    /// Gutter label ("Chorus", "Chorus x2"); nil for none.
+    /// Gutter label ("Chorus", "Chorus x2", "Chorus (cont.)" on a split section's later
+    /// parts); nil for none.
     public var label: String?
     /// Chorus labels use `text`, others `muted` (brand.md).
     public var isChorusLabel: Bool
@@ -197,14 +198,15 @@ public struct LayoutBlock: Sendable, Hashable, Identifiable {
     public var height: Double
     public var content: Content
     public var cues: [PlacedCue]
-    /// `label` broken to fit the gutter (it may also be set smaller than
-    /// `LayoutStyle.labelSize`): `x` from the column's left edge, baselines from the block's
-    /// top. Draw these rather than `label`.
+    /// The gutter lines, top-aligned with the block's first ink: the name (bold, at least
+    /// `LayoutStyle.minLabelSize`, wrapped only when the widest gutter cannot hold it), then
+    /// a smaller `TextRole.labelDetail` line ("x2", "(cont.)"). `x` from the column's left
+    /// edge, baselines from the block's top. Draw these rather than `label`.
     public var labelLines: [PlacedLine]
     /// For `.collapsed` content: the baseline of the collapsed line, from the block's top.
     public var collapsedBaseline: Double?
     /// 0 for a section's first (or only) part; 1, 2, ... for the continuation of a section
-    /// that had to be split across columns (no label or cues; same `id`).
+    /// that had to be split across columns (labelled "(cont.)", no cues; same `id`).
     public var part: Int
 
     public init(
@@ -263,6 +265,10 @@ public struct LayoutPlan: Sendable, Hashable {
     public var pageStops: [Double]
     /// Lyric lines (not rows) in the song: input to the tempo-based scroll estimate.
     public var lineCount: Int
+    /// This song's label gutter: `LayoutStyle.gutterWidth`, wider (up to `maxGutterWidth`)
+    /// when a label needs it. Lyrics start at `gutterWidth + LayoutStyle.gutterGap` from
+    /// each column's left edge.
+    public var gutterWidth: Double
 
     public init(
         lyricSize: Double,
@@ -273,6 +279,7 @@ public struct LayoutPlan: Sendable, Hashable {
         viewport: LayoutSize,
         pageStops: [Double],
         lineCount: Int,
+        gutterWidth: Double = LayoutStyle.stage.gutterWidth,
     ) {
         self.lyricSize = lyricSize
         self.chordSize = chordSize
@@ -282,6 +289,7 @@ public struct LayoutPlan: Sendable, Hashable {
         self.viewport = viewport
         self.pageStops = pageStops
         self.lineCount = lineCount
+        self.gutterWidth = gutterWidth
     }
 
     /// How far the content scrolls (0 when it fits).

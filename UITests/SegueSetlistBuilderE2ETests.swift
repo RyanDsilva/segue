@@ -31,7 +31,7 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
         XCTAssertEqual(SetlistE2E.texts(app, SetlistAXID.entryLength).last, "--:--")
         XCTAssertEqual(
             SetlistE2E.text(SetlistE2E.element(app, SetlistAXID.setlistTotal)),
-            "~13:50 + 1 unknown",
+            "≥13:50 + 1 unknown",
         )
         // Songs already in the set are marked in the library column.
         let library = SetlistE2E.texts(app, SetlistAXID.builderLibraryRow)
@@ -106,10 +106,11 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
             to: first.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.15)),
         )
         waitForEntries(app, reordered)
-        // Every start after the unknown length is a lower bound.
+        // Every start after the unknown length is a lower bound ("≥"); right after it,
+        // with nothing known yet, the start is unknown too.
         XCTAssertEqual(
             SetlistE2E.texts(app, SetlistAXID.entryStart),
-            ["0:00", "~0:00", "~3:33", "~6:45", "~10:10"],
+            ["0:00", "--:--", "≥3:33", "≥6:45", "≥10:10"],
         )
     }
 

@@ -77,11 +77,122 @@ extension StageWindowSuites {
             live.overlay = nil
         }
 
+        /// The integration pass's review set: the basic and 40-line fixtures through the real
+        /// stage at 13", 16" and 1080p, in `.build/screenshots/integration/`. Asserts the
+        /// build rulings on each: no wrapped lyric line when it fits, at most two columns
+        /// for the basic song, labels at least 12pt, and the plan sound.
+        @Test
+        func `fixtures render through the stage at every screen size`() async throws {
+            _ = NSApplication.shared
+            let env = try TestEnvironment()
+            let app = try await env.openApp()
+            let session = try #require(app.session)
+            var setlist = try #require(await session.setlists.create(name: "Integration"))
+            for name in ["basic-verse-chorus.cho", "live-forty-lines.cho"] {
+                let source = try String(
+                    contentsOf: StageLayoutSupport.fixtures.appending(path: name),
+                    encoding: .utf8,
+                )
+                let song = try await session.library.createSong(source: source)
+                await session.setlists.add(song.id, to: setlist.id)
+            }
+            setlist = try #require(session.setlists.selected)
+            app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
+            #expect(await app.startShow(setlist, kind: .rehearsal))
+            let live = try #require(app.live)
+            defer { StageWindowController.shared.close() }
+            let screens: [(name: String, size: CGSize)] = [
+                ("13in", CGSize(width: 1470, height: 956)),
+                ("16in", CGSize(width: 1728, height: 1117)),
+                ("1080p", CGSize(width: 1920, height: 1080)),
+            ]
+            for (index, song) in ["basic", "forty-lines"].enumerated() {
+                if index > 0 {
+                    live.dispatch(.next)
+                    _ = try await env.waitFor { live.state.current?.position == index ? true : nil }
+                }
+                for screen in screens {
+                    let plan = try render(
+                        live,
+                        screen: screen.size,
+                        name: "\(song)-\(screen.name)",
+                        directory: Self.integrationDirectory,
+                    )
+                    try checkRulings(
+                        plan,
+                        live: live,
+                        screen: screen.size,
+                        label: "\(song) at \(screen.name)",
+                    )
+                    if song == "basic" {
+                        #expect(plan.columns.count <= 2, "\(song) at \(screen.name)")
+                    }
+                }
+            }
+        }
+
+        /// The build rulings on one rendered plan: it fits at or above the minimum, labels
+        /// are at least 12pt, and lyric lines wrap only when every layout without wrapping is
+        /// more than 15% smaller.
+        private func checkRulings(
+            _ plan: LayoutPlan,
+            live: LiveSession,
+            screen: CGSize,
+            label: String,
+        ) throws {
+            #expect(plan.fit == .fits, "\(label)")
+            #expect(plan.lyricSize >= LiveSettings.defaultMinLyricSize, "\(label)")
+            let blocks = plan.columns.flatMap(\.blocks)
+            #expect(blocks.flatMap(\.labelLines).allSatisfy { $0.text.size >= 12 })
+            let wrapped = Self.wrappedLines(plan)
+            let unwrapped = try unwrappedSize(live, screen: screen)
+            #expect(
+                wrapped == 0 || plan.lyricSize * 0.85 > unwrapped,
+                "\(label): \(wrapped) wrapped at \(plan.lyricSize)pt, \(unwrapped)pt without",
+            )
+            print("Integration: \(label) \(plan.lyricSize)pt \(plan.columns.count) col, "
+                + "\(wrapped) wrapped (largest without wrapping \(unwrapped)pt)")
+        }
+
+        /// Lyric lines laid out on more than one row.
+        static func wrappedLines(_ plan: LayoutPlan) -> Int {
+            let rows = plan.columns.flatMap(\.blocks).flatMap(\.allRows)
+            let sources = rows.filter { $0.kind == .lyric }.compactMap(\.source)
+            return Dictionary(grouping: sources) { $0 }.values.count { $0.count > 1 }
+        }
+
+        /// The largest size any forced column count reaches without a wrapped lyric line.
+        private func unwrappedSize(_ live: LiveSession, screen: CGSize) throws -> Double {
+            let model = try #require(live.currentModel)
+            return (1 ... 3).map { columns in
+                LayoutEngine.plan(
+                    LayoutRequest(
+                        model: model,
+                        viewport: LiveView.viewport(for: screen, topInset: 0),
+                        minLyricSize: LiveSettings.defaultMinLyricSize,
+                        columns: columns,
+                    ),
+                    metrics: StageTextMetrics(),
+                )
+            }
+            .filter { $0.fit == .fits && Self.wrappedLines($0) == 0 }
+            .map(\.lyricSize)
+            .max() ?? 0
+        }
+
+        /// `<repo>/.build/screenshots/integration`.
+        static var integrationDirectory: URL {
+            screenshotDirectory
+                .deletingLastPathComponent()
+                .appending(path: "integration", directoryHint: .isDirectory)
+        }
+
         /// Lays out for `screen`, renders the stage and writes the PNG; returns the plan.
         private func render(
             _ live: LiveSession,
             screen: CGSize,
             name: String,
+            directory: URL = Self.screenshotDirectory,
         ) throws -> LayoutPlan {
             live.setViewport(LiveView.viewport(for: screen, topInset: 0))
             let plan = try #require(live.plan)
@@ -92,10 +203,7 @@ extension StageWindowSuites {
             renderer.scale = 2
             let image = try #require(renderer.cgImage, "no image for \(name)")
             #expect(image.width == Int(screen.width * 2))
-            try DiagramSnapshotTests.writePNG(
-                image,
-                to: Self.screenshotDirectory.appending(path: "\(name).png"),
-            )
+            try DiagramSnapshotTests.writePNG(image, to: directory.appending(path: "\(name).png"))
             return plan
         }
 

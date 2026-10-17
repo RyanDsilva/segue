@@ -25,7 +25,7 @@ enum StageFace: Hashable, Sendable {
         switch role {
         case .chord, .cue, .sectionLabel: .schibsted(.bold)
         case .collapsedRepeat, .lyric: .schibsted(.regular)
-        case .comment, .note: .schibsted(.medium)
+        case .comment, .labelDetail, .note: .schibsted(.medium)
         case .verbatim: .monospaced
         }
     }

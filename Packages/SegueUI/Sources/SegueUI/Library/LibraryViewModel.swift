@@ -263,9 +263,16 @@ public final class LibraryViewModel {
         // Display toggles write the sidecar only; the editor's base revision follows the
         // sidecar it wrote, so its own toggles never read as an outside change.
         typealias PersistPrefs = (SongID, DisplayPrefs) async throws -> SongRecord
+        typealias PersistLivePrefs = (SongID, LivePrefs) async throws -> SongRecord
         let persistPrefs: PersistPrefs = { [weak self] id, prefs in
             guard let self else { throw CancellationError() }
             let saved = try await updateDisplayPrefs(id: id, prefs)
+            base.revision.sidecarHash = saved.revision.sidecarHash
+            return saved
+        }
+        let persistLivePrefs: PersistLivePrefs = { [weak self] id, prefs in
+            guard let self else { throw CancellationError() }
+            let saved = try await updateLivePrefs(id: id, prefs)
             base.revision.sidecarHash = saved.revision.sidecarHash
             return saved
         }
@@ -273,9 +280,11 @@ public final class LibraryViewModel {
             mode: .edit(id),
             source: record.source,
             prefs: record.sidecar.displayPrefs,
+            livePrefs: record.sidecar.live,
             fileName: record.relativePath,
             userShapes: userShapes,
             persistPrefs: persistPrefs,
+            persistLivePrefs: persistLivePrefs,
             save: save,
         )
         if let text, text != record.source {
@@ -314,6 +323,10 @@ public final class LibraryViewModel {
             persistPrefs: { [weak self] id, prefs in
                 guard let self else { throw CancellationError() }
                 return try await updateDisplayPrefs(id: id, prefs)
+            },
+            persistLivePrefs: { [weak self] id, prefs in
+                guard let self else { throw CancellationError() }
+                return try await updateLivePrefs(id: id, prefs)
             },
             save: { [weak self] source in
                 guard let self else { throw CancellationError() }

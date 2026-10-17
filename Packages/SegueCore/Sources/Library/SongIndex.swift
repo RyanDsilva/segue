@@ -55,8 +55,8 @@ struct SongIndex: Sendable {
     /// Bump on any change to the tables below.
     ///
     /// History: 1 = phase 0 (songs + FTS); 2 = phase 2 (tags in `songs` and FTS, the
-    /// `plays` projection).
-    static let schemaVersion = 2
+    /// `plays` projection); 3 = the loose (vowel quality) FTS columns.
+    static let schemaVersion = 3
 
     /// Stored in `PRAGMA user_version`; covers both schema and normalization rules.
     static var version: Int {
@@ -66,9 +66,10 @@ struct SongIndex: Sendable {
     /// FTS5 columns, in table order (`song_id` is unindexed).
     private static let originalColumns = "{title artist lyrics tags}"
     private static let normalizedColumns = "{norm_title norm_artist norm_lyrics norm_tags}"
-    /// bm25 weights per FTS column: song_id, title, artist, lyrics, tags, norm_* in the same
-    /// order.
-    private static let rankExpression = "bm25(songs_fts, 0, 10, 5, 1, 5, 10, 5, 1, 5)"
+    private static let looseColumns = "{loose_title loose_artist loose_lyrics loose_tags}"
+    /// bm25 weights per FTS column: song_id, title, artist, lyrics, tags, then norm_* and
+    /// loose_* in the same order.
+    private static let rankExpression = "bm25(songs_fts, 0, 10, 5, 1, 5, 10, 5, 1, 5, 10, 5, 1, 5)"
 
     let pool: DatabasePool
 
@@ -135,6 +136,7 @@ struct SongIndex: Sendable {
                 song_id UNINDEXED,
                 title, artist, lyrics, tags,
                 norm_title, norm_artist, norm_lyrics, norm_tags,
+                loose_title, loose_artist, loose_lyrics, loose_tags,
                 tokenize = 'unicode61 remove_diacritics 2'
             );
             CREATE TABLE plays (
@@ -230,8 +232,9 @@ struct SongIndex: Sendable {
         try db.execute(
             sql: """
             INSERT INTO songs_fts (song_id, title, artist, lyrics, tags,
-                                   norm_title, norm_artist, norm_lyrics, norm_tags)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                   norm_title, norm_artist, norm_lyrics, norm_tags,
+                                   loose_title, loose_artist, loose_lyrics, loose_tags)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             arguments: [
                 song.id, song.title, song.artist, song.lyrics, song.tags,
@@ -239,6 +242,10 @@ struct SongIndex: Sendable {
                 RomanNormalizer.normalize(song.artist),
                 RomanNormalizer.normalize(song.lyrics),
                 RomanNormalizer.normalize(song.tags),
+                RomanNormalizer.loose(song.title),
+                RomanNormalizer.loose(song.artist),
+                RomanNormalizer.loose(song.lyrics),
+                RomanNormalizer.loose(song.tags),
             ],
         )
     }
@@ -262,6 +269,15 @@ struct SongIndex: Sendable {
             (token, offset == tokens.count - 1 && token.count >= Self.minimumPrefixLength)
         }
         return try match(columns: Self.normalizedColumns, terms: terms)
+    }
+
+    /// As `matchNormalized(tokens:)`, over the loose columns (`RomanNormalizer.loose`): the
+    /// tokens are already in the loose form.
+    func matchLoose(tokens: [String]) throws -> [String] {
+        let terms = tokens.enumerated().map { offset, token in
+            (token, offset == tokens.count - 1 && token.count >= Self.minimumPrefixLength)
+        }
+        return try match(columns: Self.looseColumns, terms: terms)
     }
 
     /// Shortest normalized last token that still matches as a prefix.

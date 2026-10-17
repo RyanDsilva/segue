@@ -61,13 +61,15 @@ enum SidecarCodec {
         do {
             switch outcome {
             case let .current(json):
-                return try .editable(SegueJSON.decode(Sidecar.self, from: json), migratedFrom: nil)
+                // Every field but `id` is optional and decoded on its own: a current-version
+                // file missing `displayPrefs`, `live` or another optional field (hand-edited,
+                // or written by a tool) still opens editable with that field's default.
+                guard let sidecar = try lenient(json, fallbackDate: fallbackDate) else {
+                    return .unreadable(message: "missing id", salvagedID: nil)
+                }
+                return .editable(sidecar, migratedFrom: nil)
             case let .migrated(json, version):
-                var object = try SegueJSON.decode(PartialSidecar.self, from: json)
-                object.createdAt = object.createdAt ?? fallbackDate
-                object.updatedAt = object.updatedAt ?? object.createdAt
-                guard let sidecar = object.complete(schemaVersion: Sidecar.currentSchemaVersion)
-                else {
+                guard let sidecar = try lenient(json, fallbackDate: fallbackDate) else {
                     return .unreadable(message: "missing id", salvagedID: nil)
                 }
                 return .editable(sidecar, migratedFrom: version)
@@ -78,6 +80,14 @@ enum SidecarCodec {
         } catch {
             return .unreadable(message: describe(error), salvagedID: salvageID(from: data))
         }
+    }
+
+    /// `json` decoded field by field at the current version; nil without a usable `id`.
+    private static func lenient(_ json: Data, fallbackDate: Date) throws -> Sidecar? {
+        var object = try SegueJSON.decode(PartialSidecar.self, from: json)
+        object.createdAt = object.createdAt ?? fallbackDate
+        object.updatedAt = object.updatedAt ?? object.createdAt
+        return object.complete(schemaVersion: Sidecar.currentSchemaVersion)
     }
 
     static func encode(_ sidecar: Sidecar) throws -> Data {

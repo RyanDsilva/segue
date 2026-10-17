@@ -9,6 +9,11 @@ struct LaidUnit {
     var rows: [LayoutRow]
     var height: Double
     var isBreak: Bool
+    /// The top of the unit's first ink (chord capitals, else its text), from the unit's top;
+    /// nil for a blank unit. Gutter labels top-align to the first ink of their block.
+    var inkTop: Double?
+    /// A lyric line that needed more than one row.
+    var wrapped = false
 }
 
 /// A section laid out at one size, ready to be packed into columns (whole or split between
@@ -16,31 +21,42 @@ struct LaidUnit {
 struct LaidSection {
     var id: Int
     var label: String?
+    /// `label` without a repeat count, for "(cont.)" labels.
+    var name: String?
     var isChorus: Bool
     var tint: SectionTint
     var isNotes: Bool
-    /// Label lines with baselines relative to the first content baseline (the first line at
-    /// 0), and how far the last line reaches below that baseline.
-    var labelLines: [PlacedLine]
-    var labelDepth: Double
-    /// Height of the first label line's ink above its baseline.
-    var labelInk: Double
+    /// The gutter of the first part ("Chorus" / "x2") and of later parts of a split section
+    /// ("Chorus" / "(cont.)").
+    var gutter: LabelLayout
+    var continuationGutter: LabelLayout
     /// Cues (y from the head's top) and the collapsed line above the units.
     var cues: [PlacedCue]
     var collapsedLine: PlacedText?
     var collapsedBaseline: Double?
     var headHeight: Double
+    /// The first ink in the head (a cue's box, the collapsed line), from the head's top.
+    var headInkTop: Double?
     var units: [LaidUnit]
     /// A verbatim line had to be broken to fit the column.
     var brokeVerbatim: Bool
+    /// A lyric line wraps (or the collapsed line is wider than the column).
+    var wrapped: Bool
 }
 
-/// A gutter label: its lines, how far the last reaches below the first baseline, and the
-/// first line's ink above its baseline.
+/// A gutter label, top-aligned: line baselines measured from the first line's ink top (0),
+/// and how far the last line reaches below it.
 struct LabelLayout {
     var lines: [PlacedLine]
-    var depth: Double
-    var ink: Double
+    var height: Double
+
+    static let empty = Self(lines: [], height: 0)
+}
+
+/// A section's gutter on its first part and on its continuations.
+struct SectionGutters {
+    var first: LabelLayout
+    var continuation: LabelLayout
 }
 
 /// Lays out sections for one (lyric size, column width).
@@ -48,6 +64,9 @@ struct SectionLayout {
     let context: SizeContext
     /// Width of the lyric area of a column (gutter excluded).
     let width: Double
+    /// Gutter labels per section index (`gutters(for:gutter:style:measurer:)`): they do not
+    /// depend on the lyric size, so they are laid out once per plan.
+    let gutters: [Int: SectionGutters]
     let measurer: Measurer
 
     var style: LayoutStyle {
@@ -57,6 +76,8 @@ struct SectionLayout {
     func lay(_ section: MeasuredSection) -> LaidSection {
         var cues: [PlacedCue] = []
         var head = 0.0
+        var headInkTop: Double? = section.cues.isEmpty ? nil : 0
+        var wrapped = false
         for cue in section.cues {
             let placed = callout(cue, y: head)
             cues.append(placed)
@@ -73,28 +94,35 @@ struct SectionLayout {
             let size = context.lyricSize
             let band = size * style.lineHeight
             collapsedLine = singleLine(line, size: size)
-            collapsedBaseline = head + SizeContext.baseline(
+            let baseline = head + SizeContext.baseline(
                 band: band, size: size, extents: context.lyricExtents,
             )
+            collapsedBaseline = baseline
+            headInkTop = headInkTop ?? baseline - context.lyricExtents.inkTop * size
+            if let collapsedLine, collapsedLine.width > width {
+                wrapped = true
+            }
             head += band
             units = differing.map { unit($0, broke: &broke) }
         }
-        let gutter = label(section.labelText)
+        wrapped = wrapped || units.contains(where: \.wrapped)
         return LaidSection(
             id: section.id,
             label: section.label,
+            name: section.name,
             isChorus: section.isChorus,
             tint: section.tint,
             isNotes: false,
-            labelLines: gutter.lines,
-            labelDepth: gutter.depth,
-            labelInk: gutter.ink,
+            gutter: gutters[section.id]?.first ?? .empty,
+            continuationGutter: gutters[section.id]?.continuation ?? .empty,
             cues: cues,
             collapsedLine: collapsedLine,
             collapsedBaseline: collapsedBaseline,
             headHeight: head,
+            headInkTop: headInkTop,
             units: units,
             brokeVerbatim: broke,
+            wrapped: wrapped,
         )
     }
 
@@ -126,18 +154,20 @@ struct SectionLayout {
         return LaidSection(
             id: -1,
             label: nil,
+            name: nil,
             isChorus: false,
             tint: .other,
             isNotes: true,
-            labelLines: [],
-            labelDepth: 0,
-            labelInk: 0,
+            gutter: .empty,
+            continuationGutter: .empty,
             cues: [],
             collapsedLine: nil,
             collapsedBaseline: nil,
             headHeight: 0,
+            headInkTop: nil,
             units: units,
             brokeVerbatim: false,
+            wrapped: false,
         )
     }
 
@@ -148,11 +178,13 @@ struct SectionLayout {
         case let .lyric(line):
             let drafts = LineBreaker(line: line, context: context, width: width, measurer: measurer)
                 .rows()
-            return stack(drafts.map { draft in
+            var laid = stack(drafts.map { draft in
                 draft.layoutRow(
                     kind: .lyric, y: 0, context: context, role: .lyric, source: line.path,
                 )
             })
+            laid.wrapped = drafts.count > 1
+            return laid
         case let .comment(paragraph, path):
             let size = context.lyricSize * style.commentScale
             return stack(textRows(paragraph, size: size, kind: .comment, path: path))
@@ -180,7 +212,7 @@ struct SectionLayout {
                 text: [],
                 source: path,
             )
-            return LaidUnit(rows: [row], height: height, isBreak: true)
+            return LaidUnit(rows: [row], height: height, isBreak: true, inkTop: nil)
         }
     }
 
@@ -216,34 +248,21 @@ struct SectionLayout {
             y += row.height
             return row
         }
-        return LaidUnit(rows: placed, height: y, isBreak: false)
+        let inkTop = placed.lazy.compactMap(inkTop(of:)).first
+        return LaidUnit(rows: placed, height: y, isBreak: false, inkTop: inkTop)
+    }
+
+    /// The top of a row's first ink (its chords, else its text), from the unit's top.
+    private func inkTop(of row: LayoutRow) -> Double? {
+        if let baseline = row.chordBaseline, !row.chords.isEmpty {
+            return row.y + baseline - context.chordExtents.inkTop * context.chordSize
+        }
+        guard let run = row.text.first else { return nil }
+        let extents = measurer.metrics.extents(of: run.role)
+        return row.y + row.textBaseline - extents.inkTop * run.size
     }
 
     // MARK: - Labels and cues
-
-    /// The gutter label: shrunk (down to `minLabelSize`) until its longest word fits, then
-    /// wrapped at words.
-    private func label(_ paragraph: MeasuredParagraph?) -> LabelLayout {
-        guard let paragraph, !paragraph.words.isEmpty else {
-            return LabelLayout(lines: [], depth: 0, ink: 0)
-        }
-        let gutter = style.gutterWidth
-        let widest = paragraph.words.map(\.inkWidth).max() ?? 0
-        var size = style.labelSize
-        if widest * size / referenceSize > gutter {
-            size = max(
-                style.minLabelSize,
-                ((gutter * referenceSize / widest) * 2).rounded(.down) / 2,
-            )
-        }
-        let band = size * style.smallLineHeight
-        let extents = measurer.metrics.extents(of: .sectionLabel)
-        let lines = wrap(paragraph, size: size, width: gutter).enumerated().map { index, text in
-            PlacedLine(text: text, baseline: Double(index) * band)
-        }
-        let depth = Double(max(lines.count - 1, 0)) * band + extents.descent * size
-        return LabelLayout(lines: lines, depth: depth, ink: extents.inkTop * size)
-    }
 
     private func callout(_ cue: MeasuredCue, y: Double) -> PlacedCue {
         let size = style.cueSize
@@ -276,6 +295,15 @@ struct SectionLayout {
     /// Greedy word wrap; a word wider than `width` is broken between characters. Each line is
     /// one run starting at x 0, trailing whitespace dropped.
     func wrap(_ paragraph: MeasuredParagraph, size: Double, width: Double) -> [PlacedText] {
+        Self.wrap(paragraph, size: size, width: width, measurer: measurer)
+    }
+
+    static func wrap(
+        _ paragraph: MeasuredParagraph,
+        size: Double,
+        width: Double,
+        measurer: Measurer,
+    ) -> [PlacedText] {
         let scale = size / referenceSize
         var lines: [[LyricPiece]] = []
         var current: [LyricPiece] = []

@@ -146,7 +146,7 @@ See `docs/research/phase5-audio.md`. Conflicts with earlier research to re-verif
 Defaults from docs/phases/2-interfaces.md stand except:
 - **Next** always goes to the song after the current one in playing order; songs passed over by "Play now" are not revisited automatically (they stay pending and can be picked).
 - **Missing songs at show start are removed** from the show (listed in the pre-show warning), not marked skipped.
-- **Unknown song length:** row shows `--:--`; set total reads e.g. "~38:20 + 2 unknown"; no made-up default.
+- **Unknown song length:** row shows `--:--`; set total reads e.g. "≥38:20 + 2 unknown" and later start times are lower bounds ("≥13:50"); no made-up default.
 - **Save reorder to setlist:** inserted songs / requests are **checked** by default.
 - **Rehearsal runs get the same safety as shows:** crash resume and the pre-show checklist (Shortcuts optional); still no gig-log entry.
 - **Auto-fit prefers no wrapping:** choose the largest layout with zero wrapped lyric lines; allow wrapping only if the best no-wrap layout is more than ~15% smaller or would go below the user minimum. Split-section continuations get a "(cont.)" label; gutter labels stay at least 12pt.

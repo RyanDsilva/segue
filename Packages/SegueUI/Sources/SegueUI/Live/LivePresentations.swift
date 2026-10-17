@@ -17,9 +17,12 @@
 
     struct LiveModePresentations: ViewModifier {
         let app: AppModel
+        /// The window's size, so the review sheet fits a small window (its rows scroll).
+        @State private var hostSize: CGSize = .zero
 
         func body(content: Content) -> some View {
             content
+                .onGeometryChange(for: CGSize.self) { $0.size } action: { hostSize = $0 }
                 .background { checklistHost }
                 .background { reviewHost }
                 .alert(
@@ -64,6 +67,8 @@
                         onDiscard: {
                             Task { await app.resolveReorderReview(save: false, including: []) }
                         },
+                        saveDisabledReason: app.reviewSaveBlockers[diff.setlistId],
+                        available: hostSize,
                     )
                     .interactiveDismissDisabled()
                     .id(diff.setlistId.description + "\(app.pendingReorderReviews.count)")

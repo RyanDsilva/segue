@@ -162,7 +162,11 @@ D implements:
   - "last played" and "times played" from `playStats()`.
 - **Gig log:** a sidebar destination with a list (newest first) and a detail view (played in order with request markers, skipped items, venue, date, notes and rating editing through `updateGigDetails`, and delete).
 - **The real `ReorderDiffSheet`** (same `init`).
-- **Core, pure:** `SongFilter` (`matches`, `parse`) and `SetlistTiming` (start times, total, estimate count; the fallback length is 3:30), each with unit tests.
+- **Core, pure:** `SongFilter` (`matches`, `parse`) and `SetlistTiming`, each with unit tests. `SetlistTiming` gives each row's start, the total of the known lengths and how many lengths are unknown (the build ruling: no made-up fallback length). Notation, through `ItemTiming.startText` and `SetlistTiming.totalText`:
+  - a row with an unknown length shows `--:--` and adds nothing;
+  - every later start is a lower bound, written `≥13:50`;
+  - a lower bound of zero says nothing, so that start reads `--:--`;
+  - the total reads `38:20`, `≥38:20 + 2 unknown`, or `2 unknown` when no length is known.
 
 ## File ownership
 
@@ -197,7 +201,7 @@ Shared rules:
 8. **Gig rating scale.** 1-5, optional.
 9. **Cue anchoring.** A section label (case-insensitive) plus an optional 1-based occurrence; nil means every occurrence. A cue whose label no longer exists is shown in the notes block.
 10. **"Smart filters" in the brief vs the spec.** The spec puts smart and saved filters in phase 3 (a non-goal here). D builds **simple** filtering only: typed tokens in the search field ("ready, upbeat, key G") plus chips. Nothing is saved.
-11. **Unknown song length in the builder.** Estimated at **3:30** and marked "~", with no changeover gap between songs.
+11. **Unknown song length in the builder.** Superseded by the build ruling: never estimated. The row shows `--:--`, later starts are lower bounds (`≥13:50`) and the total reads `≥38:20 + 2 unknown` (see unit D's `SetlistTiming` notation above).
 12. **Minimum lyric size range** in Settings: 16-48pt (default 22).
 13. **`bindings.json` location.** Application Support (per device; pedals are per machine). There is no editor UI in phase 2; defaults apply when the file is missing or malformed (the error is reported).
 14. **Stage presentation.** The stage stays the phase 0 borderless window that hides the menu bar and Dock (the spec's "full screen" step reads as this). The "Shortcut from full screen" verification in `0-walking-skeleton.md` is **still open and needs one manual run by Ryan**. C re-asserts the stage window as key after `NSWorkspace.open(shortcuts://...)` regardless, and confirms with the real in-app call.

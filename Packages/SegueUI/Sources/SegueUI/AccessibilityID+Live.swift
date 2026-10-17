@@ -22,6 +22,8 @@ public extension AccessibilityID {
     static let liveSearchResult = "segue.live.search.result"
     static let liveSearchPlayNow = "segue.live.search.playNow"
     static let liveSearchAddRequest = "segue.live.search.addRequest"
+    static let liveSearchNote = "segue.live.search.note"
+    static let liveSearchAddRequestConfirm = "segue.live.search.addRequestConfirm"
     static let liveSearchInsertNext = "segue.live.search.insertNext"
 
     // Request queue and set order drawer
@@ -47,6 +49,7 @@ public extension AccessibilityID {
 
     // Settings > Live
     static let settingsMinLyricSize = "segue.settings.live.minLyricSize"
+    static let settingsDefaultColumns = "segue.settings.live.defaultColumns"
     static let settingsStartShortcut = "segue.settings.live.startShortcut"
     static let settingsEndShortcut = "segue.settings.live.endShortcut"
     static let settingsRehearsalShortcuts = "segue.settings.live.rehearsalShortcuts"

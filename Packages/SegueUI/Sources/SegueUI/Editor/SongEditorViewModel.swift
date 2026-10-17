@@ -42,6 +42,8 @@ public final class SongEditorViewModel {
     public internal(set) var editorMode: EditorMode
     /// The per-song view toggles (persisted to the sidecar as `DisplayPrefs`).
     public internal(set) var options: DisplayOptions
+    /// The song's stage memory (sidecar `live`); the editor sets its column choice.
+    public internal(set) var livePrefs: LivePrefs
     /// The rendered song (debounced ~100 ms after typing): preview, header, diagram strip.
     public private(set) var renderModel: RenderModel?
     /// Inline diagnostics for the text as of `renderModel`.
@@ -82,6 +84,9 @@ public final class SongEditorViewModel {
     @ObservationIgnored let persistPrefs: ((SongID, DisplayPrefs) async throws
         -> SongRecord)?
     @ObservationIgnored var savedPrefs: DisplayPrefs
+    @ObservationIgnored let persistLivePrefs: ((SongID, LivePrefs) async throws
+        -> SongRecord)?
+    @ObservationIgnored var savedLivePrefs: LivePrefs
     @ObservationIgnored var renderTask: Task<Void, Never>?
     @ObservationIgnored var prefsTask: Task<Void, Never>?
     @ObservationIgnored var revision = 0
@@ -99,13 +104,16 @@ public final class SongEditorViewModel {
     ///   - prefs: the song's stored display preferences.
     ///   - persistPrefs: writes display preferences to a song's sidecar. Edits persist each
     ///     toggle at once; a new song persists its toggles after its first save.
+    ///   - livePrefs, persistLivePrefs: the song's stage memory and its writer, the same way.
     public init(
         mode: Mode,
         source: String,
         prefs: DisplayPrefs = DisplayPrefs(),
+        livePrefs: LivePrefs = LivePrefs(),
         fileName: String? = nil,
         userShapes: UserShapeLibrary = .empty,
         persistPrefs: ((SongID, DisplayPrefs) async throws -> SongRecord)? = nil,
+        persistLivePrefs: ((SongID, LivePrefs) async throws -> SongRecord)? = nil,
         save: @escaping (String) async throws -> SongRecord,
     ) {
         self.mode = mode
@@ -114,8 +122,11 @@ public final class SongEditorViewModel {
         originalSource = source
         self.save = save
         self.persistPrefs = persistPrefs
+        self.persistLivePrefs = persistLivePrefs
         self.fileName = fileName
         savedPrefs = prefs
+        self.livePrefs = livePrefs
+        savedLivePrefs = livePrefs
         options = prefs.displayOptions
         snapshot = SourceSnapshot(text: source)
         isEmpty = source.isEmpty
@@ -206,6 +217,9 @@ public final class SongEditorViewModel {
                 let prefs = DisplayPrefs(options)
                 if prefs != record.sidecar.displayPrefs, let persistPrefs {
                     _ = try await persistPrefs(record.id, prefs)
+                }
+                if livePrefs != record.sidecar.live, let persistLivePrefs {
+                    _ = try await persistLivePrefs(record.id, livePrefs)
                 }
             }
             return record

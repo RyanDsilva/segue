@@ -66,7 +66,7 @@
                 minLyricSize: minLyricSize,
                 zoom: prefs.zoom,
                 collapseRepeats: prefs.collapseRepeats,
-                columns: prefs.columns,
+                columns: context.settings.settings.columns(for: prefs),
                 cues: song.sidecar.cues,
                 notes: notes,
             )
@@ -248,13 +248,20 @@
                 }
             }
             if let prefs = currentPrefs {
-                flash(Self.columnsLabel(prefs.columns))
+                flash(Self.columnsLabel(
+                    prefs.columns,
+                    default: context.settings.settings.defaultColumns,
+                ))
             }
         }
 
-        /// "Columns: Auto", "Columns: 2".
-        static func columnsLabel(_ columns: Int?) -> String {
-            "Columns: " + (columns.map(String.init) ?? "Auto")
+        /// "Columns: Auto", "Columns: 2", or "Columns: default (2)" when the song follows a
+        /// fixed Settings > Live default.
+        static func columnsLabel(_ columns: Int?, default fallback: Int? = nil) -> String {
+            if let columns {
+                return "Columns: \(columns)"
+            }
+            return fallback.map { "Columns: default (\($0))" } ?? "Columns: Auto"
         }
 
         /// Shows `text` in the stage's mode indicator for 1.5 s.

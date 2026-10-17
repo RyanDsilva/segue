@@ -4,7 +4,9 @@
 // row shows its start time; the header shows total vs target).
 //
 // Ruling (decisions.md, phase 2 build rulings): an unknown song length is never made up. The
-// row shows `--:--`, it adds nothing to the total, and the total reads "~38:20 + 2 unknown".
+// row shows `--:--` and adds nothing to the total. Everything after it is a lower bound,
+// written with "≥" (start "≥13:50", total "≥38:20 + 2 unknown"); a lower bound of zero says
+// nothing, so it reads `--:--` (a start) or "2 unknown" (the total).
 
 import Foundation
 import Library
@@ -34,7 +36,7 @@ public struct ItemTiming: Sendable, Hashable {
     /// Offset from the start of the set, in seconds, counting known lengths only.
     public var start: TimeInterval
     /// True when an earlier row has an unknown length, so `start` is a lower bound
-    /// (shown as "~12:40").
+    /// (shown as "≥12:40", see `startText`).
     public var startIsApproximate: Bool
     /// Nil when the song's length is unknown (shown as `--:--`).
     public var length: SongLength?
@@ -49,6 +51,14 @@ public struct ItemTiming: Sendable, Hashable {
         self.start = start
         self.startIsApproximate = startIsApproximate
         self.length = length
+    }
+
+    /// The start as the builder shows it: "12:40"; "≥12:40" after an unknown length; `--:--`
+    /// when every earlier length is unknown (a lower bound of 0:00 says nothing).
+    public var startText: String {
+        guard startIsApproximate else { return SetlistTiming.format(start) }
+        guard start > 0 else { return SetlistTiming.unknownText }
+        return SetlistTiming.lowerBoundPrefix + SetlistTiming.format(start)
     }
 }
 
@@ -113,12 +123,16 @@ public struct SetlistTiming: Sendable, Hashable {
         return total / target
     }
 
-    /// The running total as the builder header shows it: "38:20", or "~38:20 + 2 unknown"
-    /// when some lengths are unknown.
+    /// The running total as the builder header shows it: "38:20"; "≥38:20 + 2 unknown" when
+    /// some lengths are unknown; "2 unknown" when none is known.
     public var totalText: String {
         guard isApproximate else { return Self.format(total) }
-        return "~\(Self.format(total)) + \(unknownCount) unknown"
+        guard total > 0 else { return "\(unknownCount) unknown" }
+        return "\(Self.lowerBoundPrefix)\(Self.format(total)) + \(unknownCount) unknown"
     }
+
+    /// Marks a time as a lower bound ("≥13:50"): later than shown by the unknown lengths.
+    public static let lowerBoundPrefix = "≥"
 
     /// The length a song declares through `{duration}`, if any.
     public static func directiveLength(of song: SongRecord) -> SongLength? {

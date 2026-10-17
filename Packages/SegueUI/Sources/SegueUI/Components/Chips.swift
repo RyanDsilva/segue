@@ -43,21 +43,17 @@ extension FilterChip where Label == Text {
 /// The key chip of a song row: just the key ("G"), 13 / 600, padding 3x8, radius 6.
 struct KeyChip: View {
     let key: String
-    @Environment(\.onHighlight) private var onHighlight
 
     var body: some View {
         Text(key)
             .font(SchibstedGrotesk.semiBold.font(size: 13))
-            .foregroundStyle(onHighlight ? Color.white : Theme.color.ink)
+            .foregroundStyle(Theme.color.ink)
             .lineLimit(1)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .overlay {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .strokeBorder(
-                        onHighlight ? Color.white.opacity(0.6) : Theme.color.controlBorder,
-                        lineWidth: 1,
-                    )
+                    .strokeBorder(Theme.color.controlBorder, lineWidth: 1)
             }
     }
 }

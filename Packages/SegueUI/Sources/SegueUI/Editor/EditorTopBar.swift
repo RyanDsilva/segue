@@ -16,7 +16,9 @@
                     transposeGroup.frame(height: 30).padding(.trailing, 28)
                     capoGroup.frame(height: 30).padding(.trailing, 28)
                     displayGroup.frame(height: 30).padding(.trailing, 28)
-                    diagramGroup.frame(height: 30).padding(.trailing, 20)
+                    diagramGroup.frame(height: 30).padding(.trailing, 12)
+                    // Compact, so it shares the diagrams row instead of adding one.
+                    stageGroup.frame(height: 30).padding(.trailing, 20)
                     if model.options.transpose != 0 {
                         Button("Apply to Source") { model.applyTranspositionToSource() }
                             .buttonStyle(.segueSecondary)
@@ -142,6 +144,39 @@
                 .accessibilityIdentifier(AccessibilityID.editorInstrument)
                 .help("Instrument and tuning for chord diagrams")
             }
+        }
+
+        /// Stage display settings: this song's column count in live mode.
+        private var stageGroup: some View {
+            Menu {
+                Picker("Columns on stage", selection: stageColumns) {
+                    Text("Auto (Settings > Live)").tag(Int?.none)
+                    ForEach(1 ... 3, id: \.self) { count in
+                        Text(count == 1 ? "1 column" : "\(count) columns").tag(Int?.some(count))
+                    }
+                }
+                .pickerStyle(.inline)
+            } label: {
+                Label(stageTitle, systemImage: "rectangle.split.2x1")
+                    .labelStyle(.titleAndIcon)
+                    .font(SchibstedGrotesk.semiBold.font(size: 13))
+            }
+            .accessibilityLabel("Columns on stage: \(stageTitle)")
+            .menuStyle(.button)
+            .buttonStyle(.segueSecondary)
+            .controlSize(.small)
+            .fixedSize()
+            .accessibilityIdentifier(AccessibilityID.editorStageColumns)
+            .help("Columns for this song on stage: Auto follows Settings > Live (C on stage "
+                + "changes it too)")
+        }
+
+        private var stageTitle: String {
+            model.livePrefs.columns.map(String.init) ?? "Auto"
+        }
+
+        private var stageColumns: Binding<Int?> {
+            Binding(get: { model.livePrefs.columns }, set: { model.setStageColumns($0) })
         }
 
         private var instrumentTitle: String {

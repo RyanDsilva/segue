@@ -43,6 +43,19 @@
                     Text("Songs that do not fit at this size scroll instead of shrinking.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
+                    Picker("Columns", selection: $store.settings.defaultColumns) {
+                        Text("Auto").tag(Int?.none)
+                        ForEach(LiveSettings.columnRange, id: \.self) { count in
+                            Text("\(count)").tag(Int?.some(count))
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                    .accessibilityIdentifier(AccessibilityID.settingsDefaultColumns)
+                    Text(Self.columnsHelp)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Section("Gig Mode Shortcuts") {
                     shortcutRow(
@@ -76,6 +89,10 @@
             .formStyle(.grouped)
             .frame(minHeight: 520)
         }
+
+        static let columnsHelp = "Auto fits each song at the largest size, preferring two "
+            + "columns. A song's own choice (C on stage, or Stage in the song editor) wins over "
+            + "this default."
 
         static let guide = "Segue cannot switch Focus on by itself, so it runs a Shortcut you own. "
             + "In the Shortcuts app, create a Shortcut named “Gig Mode On” with the action "

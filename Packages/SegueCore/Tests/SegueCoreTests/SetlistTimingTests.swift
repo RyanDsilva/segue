@@ -54,8 +54,29 @@ struct SetlistTimingTests {
         #expect(SetlistTiming.format(timing.items[1].length) == "1:40")
         #expect(timing.total == 200)
         #expect(timing.unknownCount == 2)
-        #expect(timing.totalText == "~3:20 + 2 unknown")
+        #expect(timing.totalText == "≥3:20 + 2 unknown")
         #expect(timing.progress == nil)
+        // A lower bound of zero says nothing: the second row reads --:--, not "≥0:00".
+        #expect(timing.items.map(\.startText) == ["0:00", "--:--", "≥1:40", "≥1:40"])
+    }
+
+    @Test
+    func `starts after an unknown length are lower bounds`() {
+        let lengths = [
+            songs[0]: SongLength(seconds: 830, source: .directive),
+            songs[2]: SongLength(seconds: 200, source: .directive),
+        ]
+        let timing = SetlistTiming(entries: entries([0, 1, 2, 3]), lengths: lengths, target: nil)
+        #expect(timing.items.map(\.startText) == ["0:00", "13:50", "≥13:50", "≥17:10"])
+        #expect(timing.totalText == "≥17:10 + 2 unknown")
+    }
+
+    @Test
+    func `a set of unknown lengths says so instead of a zero total`() {
+        let timing = SetlistTiming(entries: entries([1, 3]), lengths: [:], target: 2700)
+        #expect(timing.items.map(\.startText) == ["0:00", "--:--"])
+        #expect(timing.totalText == "2 unknown")
+        #expect(timing.progress == 0)
     }
 
     @Test

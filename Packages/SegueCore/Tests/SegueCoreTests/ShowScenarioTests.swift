@@ -8,6 +8,63 @@ import Testing
 /// The spec's show scenarios, driven through the real `ShowController` against a real temp
 /// library, asserting on the files written and on what a fresh store reads back.
 struct ShowScenarioTests {
+    /// The reorder review numbers a moved song by its planned position: E2E #5/#6's path
+    /// (Play now on song 7, then "Next" on song 9) marks song 9 "moved from #9", not the
+    /// song 8 it was dropped past; dragging song 3 below song 4 marks song 3, not song 4.
+    @Test(arguments: [
+        // (actions, the moved song, its planned position 1-based)
+        ("play-now-then-next", "Song 9", 9),
+        ("drag-down", "Song 3", 3),
+        ("drag-up", "Song 6", 6),
+    ])
+    func `the moved song is numbered by its planned position`(
+        scenario: String,
+        moved: String,
+        planned: Int,
+    ) async throws {
+        let harness = try await ShowHarness()
+        let (setlist, songs) = try await harness.makeSet(10)
+        let show = try await ShowController.start(
+            setlist: setlist,
+            kind: .gig,
+            environment: harness.environment(),
+        )
+        func index(_ title: String) async -> Int {
+            await show.state.record.items.firstIndex { $0.title == title } ?? -1
+        }
+        switch scenario {
+        case "play-now-then-next":
+            _ = try await show.perform(.next)
+            _ = try await show.perform(.next)
+            _ = try await show.perform(.playNow(songs[6].id))
+            #expect(await show.state.currentTitle == "Song 7")
+            // The drawer's "Next": right after the current song.
+            let current = await show.state.current?.position ?? 0
+            _ = try await show.perform(.move(
+                fromOffsets: [index("Song 9")],
+                toOffset: current + 1,
+            ))
+            _ = try await show.perform(.next)
+            #expect(await show.state.currentTitle == "Song 9")
+        case "drag-down":
+            // Song 3 dropped after song 4.
+            _ = try await show.perform(.move(fromOffsets: [2], toOffset: 4))
+        default:
+            // Song 6 dropped before song 5.
+            _ = try await show.perform(.move(fromOffsets: [5], toOffset: 4))
+        }
+        let ending = try await show.end()
+        let diff = try #require(ending.diff)
+        let changed = diff.performed.filter { $0.change != .unchanged }
+        #expect(changed.map(\.item.title) == [moved])
+        #expect(changed.first?.change == .moved(fromPosition: planned - 1))
+        // The planned column the sheet shows numbers the same song the same way.
+        let plannedTitles = diff.planned.map { entry in
+            diff.performed.first { $0.item.itemId == entry.itemId }?.item.title
+        }
+        #expect(plannedTitles[planned - 1] == moved)
+    }
+
     /// E2E #1 at the engine level: 10-song set, play 3, skip 4, a request via `R`, play to
     /// the end. 9 set songs + 1 request played, 1 skipped; the projection updates.
     @Test
