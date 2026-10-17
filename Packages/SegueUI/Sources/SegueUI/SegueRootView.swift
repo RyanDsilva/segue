@@ -1,4 +1,5 @@
 #if os(macOS)
+    import Library
     import SwiftUI
 
     /// Root of the app's main window: the library chooser until a library is open, then the
@@ -27,6 +28,8 @@
                 }
             }
             .task { await app.start() }
+            // Quit / close with unsaved edits asks first.
+            .background(UnsavedChangesWindowGuard(app: app))
         }
     }
 
@@ -152,6 +155,130 @@
             } message: { _ in
                 Text("Your edits will be lost if you don’t save them.")
             }
+            .alert(
+                conflictTitle,
+                isPresented: isShowingConflict,
+                presenting: session.library.saveConflict,
+            ) { conflict in
+                conflictButtons(conflict.kind)
+            } message: { conflict in
+                Text(conflictMessage(conflict.kind))
+            }
+            .alert(
+                performanceTitle,
+                isPresented: isShowingPerformanceCheck,
+                presenting: app.pendingPerformance,
+            ) { check in
+                if check.songs.isEmpty {
+                    Button("OK", role: .cancel) { app.cancelPendingPerformance() }
+                } else {
+                    Button("Perform Without Them") {
+                        if app.confirmPendingPerformance() {
+                            StageWindowController.shared.present(app)
+                        }
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    Button("Cancel", role: .cancel) { app.cancelPendingPerformance() }
+                }
+            } message: { check in
+                Text(performanceMessage(check))
+            }
+        }
+
+        // MARK: Save conflict
+
+        private var conflictTitle: String {
+            let title = session.library.saveConflict?.songTitle ?? "Untitled"
+            return switch session.library.saveConflict?.kind {
+            case .deleted: "“\(title)” was deleted in another app"
+            case .metadataChanged: "The metadata of “\(title)” changed in another app"
+            case nil, .sourceChanged: "“\(title)” was changed in another app"
+            }
+        }
+
+        private func conflictMessage(_ kind: SongConflict) -> String {
+            switch kind {
+            case .sourceChanged:
+                "Nothing was saved. Reload shows the file as it is now (your edits are "
+                    + "discarded), Overwrite replaces the other app’s changes with yours, and "
+                    + "Save as Copy keeps both."
+            case .deleted:
+                "Nothing was saved. Save your edits as a new song, or keep editing."
+            case .metadataChanged:
+                "Nothing was saved. Reload shows the song as it is now (your edits are "
+                    + "discarded); Save as Copy keeps your edits as a new song."
+            }
+        }
+
+        @ViewBuilder
+        private func conflictButtons(_ kind: SongConflict) -> some View {
+            switch kind {
+            case .sourceChanged:
+                Button("Reload") { resolveConflict(.reload) }
+                Button("Overwrite", role: .destructive) { resolveConflict(.overwrite) }
+                Button("Save as Copy") { resolveConflict(.saveAsCopy) }
+                    .keyboardShortcut(.defaultAction)
+            case .deleted:
+                Button("Save as New Song") { resolveConflict(.saveAsCopy) }
+                    .keyboardShortcut(.defaultAction)
+            case .metadataChanged:
+                Button("Reload") { resolveConflict(.reload) }
+                Button("Save as Copy") { resolveConflict(.saveAsCopy) }
+                    .keyboardShortcut(.defaultAction)
+            }
+            Button("Keep Editing", role: .cancel) { resolveConflict(.cancel) }
+        }
+
+        private var isShowingConflict: Binding<Bool> {
+            Binding(
+                get: { session.library.saveConflict != nil },
+                set: { isPresented in
+                    if !isPresented, session.library.saveConflict != nil {
+                        resolveConflict(.cancel)
+                    }
+                },
+            )
+        }
+
+        private func resolveConflict(_ choice: LibraryViewModel.SaveConflictChoice) {
+            Task { await session.library.resolveSaveConflict(choice) }
+        }
+
+        // MARK: Missing songs before Perform
+
+        private var performanceTitle: String {
+            guard let check = app.pendingPerformance else { return "" }
+            if check.songs.isEmpty {
+                return "None of the songs in “\(check.setlistName)” can be found"
+            }
+            let count = check.missingPositions.count
+            return count == 1
+                ? "1 song in “\(check.setlistName)” is missing"
+                : "\(count) songs in “\(check.setlistName)” are missing"
+        }
+
+        private func performanceMessage(_ check: AppModel.PerformanceCheck) -> String {
+            let positions = check.missingPositions.map { "#\($0)" }
+                .formatted(.list(type: .and))
+            let entries = check.missingPositions.count == 1 ? "Entry" : "Entries"
+            let gone = "\(entries) \(positions) "
+                + (check.missingPositions.count == 1 ? "is" : "are")
+                + " no longer in the library folder."
+            if check.songs.isEmpty {
+                return gone
+            }
+            return gone + " Perform the other \(songCount(check.songs.count)) without them?"
+        }
+
+        private var isShowingPerformanceCheck: Binding<Bool> {
+            Binding(
+                get: { app.pendingPerformance != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        app.cancelPendingPerformance()
+                    }
+                },
+            )
         }
 
         private var unsavedTitle: String {
@@ -186,8 +313,11 @@
                         model: session.setlists,
                         library: session.library,
                     ) { setlist in
-                        app.perform(setlist)
-                        StageWindowController.shared.present(app)
+                        Task {
+                            if await app.perform(setlist) {
+                                StageWindowController.shared.present(app)
+                            }
+                        }
                     }
                 } else {
                     ContentUnavailableView(
@@ -250,7 +380,8 @@
                     }
                 }
                 .keyboardShortcut("n")
-                .disabled(app.session == nil)
+                // Nothing in the main window may change while the stage is up.
+                .disabled(app.session == nil || app.isPerforming)
             }
             CommandMenu("Library") {
                 Button("Refresh") {
@@ -258,12 +389,12 @@
                     Task { await session.library.refresh() }
                 }
                 .keyboardShortcut("r")
-                .disabled(app.session == nil)
+                .disabled(app.session == nil || app.isPerforming)
                 Button("Rebuild Index") {
                     guard let session = app.session else { return }
                     Task { await session.library.rebuildIndex() }
                 }
-                .disabled(app.session == nil)
+                .disabled(app.session == nil || app.isPerforming)
                 Divider()
                 Button("Choose Library Folder…") {
                     let choose = { Task { await app.chooseLibrary() } }
@@ -273,6 +404,7 @@
                         _ = choose()
                     }
                 }
+                .disabled(app.isPerforming)
             }
         }
     }

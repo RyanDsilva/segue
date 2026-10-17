@@ -92,6 +92,7 @@ Editor and PDF use the same chord/lyric ratio so what you edit is what you see o
 - **Chips (key / capo / BPM):** 14 / 600 text, padding 5x10, radius 6, 1px `line` border, no fill. Key chip shows just the key ("G").
 - **Proficiency marks:** 8px dot plus label, 14 / 600. **Learning** is an outlined ring (2px, `#8E8E96`), **Ready** a filled grey dot, **Pro** a filled ink dot (white on stage). The states differ by fill and lightness, not hue.
 - **Buttons:** primary has an ink fill with paper text; secondary is paper with a `line` border. 15 / 600, padding 10x18, radius 8. Coral is never a button fill; it is reserved for the cue.
+  - **Control border in dark (2026-10-17):** dark `line` (#222326) is 1.2:1 against `stage`, so secondary buttons, steppers, chips and chord pills disappear. Their 1px outline uses `controlBorder`: `line` in light, `muted` at 40% in dark (about #424246, 1.9:1). Hairlines and dividers keep `line`. `controlBorder` is derived from existing tokens, not a new colour (`Theme.color.controlBorder`).
 - **Section label gutter (live view):** a 64px left column holding the label at 13 / 700. Chorus labels use `text`, other sections `muted`. Collapsed repeats render "Repeat chorus" in muted at lyric size.
 - **Set progress dots:** a row of 6x6 radius-3 dots in the live header.
   - Played songs: `played` (#55555C).

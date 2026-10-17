@@ -4,7 +4,10 @@ import SwiftUI
 ///
 /// - **Primary:** ink fill, paper text (`ground`), so in the dark appearance it is the light
 ///   ink tone with stage-coloured text.
-/// - **Secondary:** paper (`ground`) fill, 1px `line` border, ink text.
+/// - **Secondary:** paper (`ground`) fill, 1px `controlBorder` border, ink text. That is
+///   `line` in the light appearance; on the dark stage `line` (#222326) is 1.2:1 against
+///   `ground` and the button outline vanishes, so dark uses `muted` at 40% (about #424246,
+///   1.9:1). See docs/brand.md section 7, "Buttons".
 ///
 /// Both are 600 weight with radius 8. `.large` controls use the brand metrics (15pt, padding
 /// 10x18); regular and smaller controls (toolbars, sheets, list rows) use compact variants.
@@ -36,7 +39,7 @@ public extension ButtonStyle where Self == SegueButtonStyle {
         SegueButtonStyle(.primary)
     }
 
-    /// Paper fill with a `line` border.
+    /// Paper fill with a `controlBorder` border.
     static var segueSecondary: SegueButtonStyle {
         SegueButtonStyle(.secondary)
     }
@@ -88,7 +91,7 @@ private struct SegueButtonBody: View {
                             .opacity(feedbackOpacity),
                     )
                     if prominence == .secondary {
-                        shape.strokeBorder(Theme.color.line, lineWidth: 1)
+                        shape.strokeBorder(Theme.color.controlBorder, lineWidth: 1)
                     }
                 }
             }
@@ -114,3 +117,28 @@ private struct SegueButtonBody: View {
         return isHovered ? 0.06 : 0
     }
 }
+
+public extension ColorTokens {
+    /// The 1px outline of secondary buttons, steppers, chips and pills that sit on `ground`:
+    /// `line` in the light appearance, `muted` at 40% in the dark one, where `line` is too
+    /// close to `ground` to see (docs/brand.md section 7, "Buttons").
+    var controlBorder: Color {
+        #if os(macOS)
+            Color(nsColor: .segueControlBorder)
+        #else
+            line
+        #endif
+    }
+}
+
+#if os(macOS)
+    extension NSColor {
+        /// AppKit form of `Theme.color.controlBorder`, resolved per appearance at draw time.
+        static let segueControlBorder = NSColor(name: "segueControlBorder") { appearance in
+            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            let name = isDark ? "muted" : "line"
+            let base = NSColor(named: name, bundle: Theme.bundle) ?? .separatorColor
+            return isDark ? base.withAlphaComponent(0.4) : base
+        }
+    }
+#endif

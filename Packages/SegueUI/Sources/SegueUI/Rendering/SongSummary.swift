@@ -1,4 +1,5 @@
 import ChordPro
+import Editing
 import Foundation
 import Library
 
@@ -34,6 +35,47 @@ enum SongSummary {
             parts.append("capo \(capo)")
         }
         if let tempo = metadata.tempo, tempo > 0 {
+            parts.append(tempo.rounded() == tempo ? String(Int(tempo)) : String(tempo))
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+    }
+
+    /// The song as its display toggles render it (sidecar prefs). The live view passes
+    /// `showDiagrams: false` (its strip is phase 2).
+    static func renderModel(_ record: SongRecord, showDiagrams: Bool = true) -> RenderModel {
+        var options = record.sidecar.displayPrefs.displayOptions
+        options.showDiagrams = options.showDiagrams && showDiagrams
+        return RenderModel(document: record.document, options: options)
+    }
+
+    /// Artist and performance line for a rendered song: "Artist  ·  G, capo 2, 96". The key
+    /// is the displayed key (transposed, Nashville header in Nashville view), marked when
+    /// it was inferred; the capo only shows in Shapes mode, where the chords are shapes.
+    static func subtitle(_ model: RenderModel) -> String {
+        let artists = model.header.artists
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        return [
+            artists.isEmpty ? nil : artists.joined(separator: ", "),
+            performanceLine(model),
+        ].compactMap(\.self).joined(separator: "  ·  ")
+    }
+
+    /// Displayed key, capo (Shapes mode) and tempo: "G, capo 2, 96"; nil when none.
+    static func performanceLine(_ model: RenderModel) -> String? {
+        let header = model.header
+        var parts: [String] = []
+        if let key = header.key, !key.isEmpty {
+            switch header.keyStatus {
+            case .declared, .unknown: parts.append(key)
+            case .inferred: parts.append("\(key) (inferred)")
+            case .ambiguous: parts.append("\(key) (ambiguous)")
+            }
+        }
+        if let capo = header.capo, capo > 0, model.transform.options.capoMode == .shapes {
+            parts.append("capo \(capo)")
+        }
+        if let tempo = header.tempo, tempo > 0 {
             parts.append(tempo.rounded() == tempo ? String(Int(tempo)) : String(tempo))
         }
         return parts.isEmpty ? nil : parts.joined(separator: ", ")

@@ -1,102 +1,226 @@
 #if os(macOS)
+    import Diagrams
+    import Editing
     import SwiftUI
 
-    /// Raw ChordPro editor (monospaced, no autocorrect) with the rendered preview below.
+    /// The song editor (docs/decisions.md, "Key screen layouts": layout b). Visual canvas with
+    /// chord pills over syllables and a chord palette, or text mode (ChordPro source beside
+    /// a live preview); a display bar for transpose / capo / Nashville / diagrams; a status
+    /// bar. Both modes edit one source with one undo stack.
     struct SongEditorView: View {
         @Bindable var model: SongEditorViewModel
         var onSave: () -> Void
         var onCancel: () -> Void
+        @State private var customizing: ShapeCustomization?
 
         var body: some View {
-            VSplitView {
-                editor
-                    .frame(minHeight: 160, idealHeight: 320)
-                preview
-                    .frame(minHeight: 140, idealHeight: 280)
-            }
-            .navigationTitle(model.mode == .create ? "New Song" : "Edit Song")
-            .toolbar {
-                // The detail column's toolbar packs items at its leading edge; the flexible
-                // spacer pushes the actions to the trailing end, where macOS puts them.
-                ToolbarSpacer(.flexible)
-                ToolbarItem(placement: .automatic) {
-                    HStack(spacing: 8) {
-                        Button("Cancel", role: .cancel, action: onCancel)
-                            .keyboardShortcut(.cancelAction)
-                            .buttonStyle(.segueSecondary)
-                            .accessibilityIdentifier(AccessibilityID.editorCancel)
-                        Button("Save", action: onSave)
-                            .keyboardShortcut("s", modifiers: .command)
-                            .buttonStyle(.seguePrimary)
-                            .disabled(!model.canSave)
-                            .accessibilityIdentifier(AccessibilityID.editorSave)
-                    }
-                    .controlSize(.regular)
-                    // Without the shared glass capsule the toolbar gives no trailing inset.
-                    .padding(.trailing, 6)
-                }
-                .sharedBackgroundVisibility(.hidden)
-            }
-        }
-
-        private var editor: some View {
             VStack(spacing: 0) {
-                ZStack(alignment: .topLeading) {
-                    ChordProTextView(
-                        text: $model.source,
-                        accessibilityIdentifier: AccessibilityID.editorText,
-                        accessibilityLabel: "ChordPro source",
-                    )
-                    if model.source.isEmpty {
-                        Text(SongEditorViewModel.placeholder)
-                            .font(.system(size: 13, design: .monospaced))
-                            .foregroundStyle(.tertiary)
-                            // Matches the text view's container inset and line fragment padding.
-                            .padding(.horizontal, 17)
-                            .padding(.vertical, 12)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
+                EditorTopBar(model: model)
+                if !model.flaggedDefines.isEmpty {
+                    FlaggedDefinesBanner(model: model)
+                }
+                if model.editorMode == .visual {
+                    ChordPaletteBar(model: model)
+                }
+                content
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                EditorStatusBar(model: model)
+            }
+            .background(Theme.color.ground)
+            .navigationTitle(model.title)
+            .navigationSubtitle(subtitle)
+            .toolbar { toolbar }
+            .sheet(item: $customizing) { target in
+                ShapeEditorView(
+                    chordName: target.chordName,
+                    instrument: target.instrument,
+                    tuning: model.tuning,
+                    initialGuitar: target.diagram.guitar?.shape,
+                    initialPiano: target.diagram.piano,
+                    onSave: { definition in
+                        customizing = nil
+                        model.saveDefine(definition)
+                    },
+                    onCancel: { customizing = nil },
+                )
+            }
+        }
+
+        private var subtitle: String {
+            if model.hasUnsavedChanges {
+                return "Edited"
+            }
+            return model.mode == .create ? "New song" : "Saved"
+        }
+
+        @ToolbarContentBuilder private var toolbar: some ToolbarContent {
+            ToolbarItem(placement: .principal) {
+                EditorModePicker(model: model)
+            }
+            .sharedBackgroundVisibility(.hidden)
+            // The detail column's toolbar packs items at its leading edge; the flexible
+            // spacer pushes the actions to the trailing end, where macOS puts them.
+            ToolbarSpacer(.flexible)
+            ToolbarItem(placement: .automatic) {
+                HStack(spacing: 8) {
+                    // No Esc shortcut: Esc belongs to the editor (completion, chord
+                    // selection, palette) and must never discard the edit.
+                    Button("Cancel", role: .cancel, action: onCancel)
+                        .buttonStyle(.segueSecondary)
+                        .accessibilityIdentifier(AccessibilityID.editorCancel)
+                    Button("Save", action: onSave)
+                        .keyboardShortcut("s", modifiers: .command)
+                        .buttonStyle(.seguePrimary)
+                        .disabled(!model.canSave)
+                        .accessibilityIdentifier(AccessibilityID.editorSave)
+                }
+                .controlSize(.regular)
+                // Without the shared glass capsule the toolbar gives no trailing inset.
+                .padding(.trailing, 6)
+            }
+            .sharedBackgroundVisibility(.hidden)
+        }
+
+        @ViewBuilder private var content: some View {
+            switch model.editorMode {
+            case .text:
+                GeometryReader { proxy in
+                    if proxy.size.width >= 860 {
+                        HStack(spacing: 0) {
+                            source
+                            Rectangle().fill(Theme.color.line).frame(width: 1)
+                            preview
+                        }
+                    } else {
+                        VStack(spacing: 0) {
+                            source
+                            Hairline()
+                            preview
+                        }
                     }
                 }
-                statusBar
-            }
-            .background(Color(nsColor: .textBackgroundColor))
-        }
-
-        @ViewBuilder private var statusBar: some View {
-            let message = model.errorMessage ?? diagnosticsSummary
-            if let message {
-                Divider()
-                Label(message, systemImage: "exclamationmark.triangle.fill")
-                    .font(.callout)
-                    .foregroundStyle(model.errorMessage == nil ? Color.secondary : Color.red)
-                    .symbolRenderingMode(.multicolor)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .accessibilityIdentifier(AccessibilityID.editorError)
+            case .visual:
+                VStack(spacing: 0) {
+                    VisualEditorRepresentable(controller: model.visualEditor)
+                    if model.options.showDiagrams, !model.diagrams.isEmpty {
+                        diagramStrip(model.diagrams)
+                    }
+                }
             }
         }
 
-        private var diagnosticsSummary: String? {
-            guard let first = model.diagnostics.first else { return nil }
-            let more = model.diagnostics.count > 1
-                ? " (+\(model.diagnostics.count - 1) more)"
-                : ""
-            return "Line \(first.line), column \(first.column): \(first.message)\(more)"
+        private var source: some View {
+            ZStack(alignment: .topLeading) {
+                SourceEditorRepresentable(controller: model.sourceEditor)
+                if model.isEmpty {
+                    Text(SongEditorViewModel.placeholder)
+                        .font(.system(size: 14, design: .monospaced))
+                        .lineSpacing(EditorStyle.sourceLineHeight - 17)
+                        .foregroundStyle(Theme.color.muted.opacity(0.6))
+                        // Matches the text origin: gutter + line fragment padding, top inset.
+                        .padding(.leading, SourceTextView.gutterWidth + 5)
+                        .padding(.top, 23)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .background(Theme.color.surfaceAlt.opacity(0.5))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
 
         private var preview: some View {
-            ScrollView {
-                // Same insets as the song detail page, so saving doesn't shift the layout.
-                SongPageView(document: model.document)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 28)
+            // Its own view, so only the preview depends on `renderModel`.
+            EditorPreview(model: model, onCustomize: customize)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Theme.color.ground)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(AccessibilityID.editorPreview)
+        }
+
+        private func diagramStrip(_ diagrams: [RenderDiagram]) -> some View {
+            ScrollView(.horizontal) {
+                DiagramStrip(
+                    diagrams: diagrams,
+                    instrument: model.options.instrument,
+                    tuning: model.tuning,
+                    size: .compact,
+                    onCustomize: customize,
+                )
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
             }
-            .background(Theme.color.ground)
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier(AccessibilityID.editorPreview)
+            .scrollIndicators(.never)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .top) { Hairline() }
+        }
+
+        private func customize(_ diagram: RenderDiagram) {
+            guard let name = model.sourceChordName(forDiagram: diagram) else {
+                model.errorMessage = "Set the view back to +0 (Shapes) to draw a custom shape "
+                    + "for a chord as written."
+                return
+            }
+            customizing = ShapeCustomization(
+                chordName: name,
+                instrument: model.options.instrument,
+                diagram: diagram,
+            )
+        }
+    }
+
+    /// The live preview beside the source (text mode).
+    private struct EditorPreview: View {
+        let model: SongEditorViewModel
+        let onCustomize: (RenderDiagram) -> Void
+
+        var body: some View {
+            ScrollView {
+                if let renderModel = model.renderModel {
+                    SongPageView(model: renderModel, selectable: false, onCustomize: onCustomize)
+                        .padding(.horizontal, 40)
+                        .padding(.vertical, 24)
+                }
+            }
+        }
+    }
+
+    /// The Text / Visual switch (mockup: `surfaceAlt` track, 14 / 600).
+    private struct EditorModePicker: View {
+        let model: SongEditorViewModel
+
+        var body: some View {
+            SegmentedGroup {
+                SegmentButton(
+                    title: "Text",
+                    isOn: model.editorMode == .text,
+                    fontSize: 14,
+                    horizontalPadding: 14,
+                    verticalPadding: 5,
+                ) { model.setEditorMode(.text) }
+                    .accessibilityIdentifier(AccessibilityID.editorModeText)
+                    .help("Edit the ChordPro source")
+                SegmentButton(
+                    title: "Visual",
+                    isOn: model.editorMode == .visual,
+                    fontSize: 14,
+                    horizontalPadding: 14,
+                    verticalPadding: 5,
+                ) { model.setEditorMode(.visual) }
+                    .accessibilityIdentifier(AccessibilityID.editorModeVisual)
+                    .help("Place chords over the lyrics")
+            }
+            .fixedSize()
+        }
+    }
+
+    /// A diagram being customised in the shape editor.
+    private struct ShapeCustomization: Identifiable {
+        var chordName: String
+        var instrument: Instrument
+        var diagram: RenderDiagram
+
+        var id: String {
+            chordName
         }
     }
 #endif

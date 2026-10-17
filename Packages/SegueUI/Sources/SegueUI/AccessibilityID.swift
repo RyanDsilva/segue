@@ -23,6 +23,10 @@ public enum AccessibilityID {
     public static let refreshLibrary = "segue.library.refresh"
     public static let librarySearch = "segue.library.search"
     public static let libraryEmpty = "segue.library.empty"
+    /// The "N song files could not be loaded" footer (opens the list of files and reasons).
+    public static let libraryLoadIssues = "segue.library.loadIssues"
+    /// The spinner shown while a search is in flight and nothing matched yet.
+    public static let librarySearching = "segue.library.searching"
 
     // MARK: Song detail + editor
 
@@ -33,6 +37,54 @@ public enum AccessibilityID {
     public static let editorCancel = "segue.editor.cancel"
     public static let editorPreview = "segue.editor.preview"
     public static let editorError = "segue.editor.error"
+    /// "This song's file was deleted outside Segue" above an open editor.
+    public static let editorDeletedBanner = "segue.editor.deletedBanner"
+
+    // MARK: Editor (phase 1, unit D)
+
+    public static let editorModeText = "segue.editor.mode.text"
+    public static let editorModeVisual = "segue.editor.mode.visual"
+    /// The visual canvas text view (lyrics and section labels).
+    public static let editorVisual = "segue.editor.visual"
+    /// The chord-pill layer over the visual canvas.
+    public static let editorVisualChords = "segue.editor.visual.chords"
+    /// One chord pill (label = displayed chord).
+    public static let editorPill = "segue.editor.pill"
+    /// The chord slot above one lyric word (label = the word).
+    public static let editorLane = "segue.editor.lane"
+    public static let editorChordPopover = "segue.editor.chordPopover"
+    public static let editorChordField = "segue.editor.chordPopover.field"
+    public static let editorChordSuggestion = "segue.editor.chordPopover.suggestion"
+    public static let editorChordDelete = "segue.editor.chordPopover.delete"
+    /// The `[` / `{` completion panel and its chips.
+    public static let editorCompletions = "segue.editor.completions"
+    public static let editorCompletion = "segue.editor.completion"
+    public static let editorTransposeDown = "segue.editor.transpose.down"
+    public static let editorTransposeUp = "segue.editor.transpose.up"
+    public static let editorTransposeValue = "segue.editor.transpose.value"
+    public static let editorCapoDown = "segue.editor.capo.down"
+    public static let editorCapoUp = "segue.editor.capo.up"
+    public static let editorCapoValue = "segue.editor.capo.value"
+    public static let editorShapes = "segue.editor.display.shapes"
+    public static let editorConcert = "segue.editor.display.concert"
+    public static let editorNashville = "segue.editor.display.nashville"
+    public static let editorDiagramsToggle = "segue.editor.diagrams"
+    public static let editorInstrument = "segue.editor.instrument"
+    public static let editorTuning = "segue.editor.tuning"
+    public static let editorApplyTransposition = "segue.editor.applyTransposition"
+    public static let editorFlaggedDefines = "segue.editor.flaggedDefines"
+    public static let editorPalette = "segue.editor.palette"
+    public static let editorPaletteChord = "segue.editor.palette.chord"
+    public static let editorAddChord = "segue.editor.palette.add"
+    public static let editorProblems = "segue.editor.status.problems"
+    public static let editorCursor = "segue.editor.status.cursor"
+    public static let editorFileName = "segue.editor.status.file"
+    /// Hidden: keystroke latency stats ("n=40 max=3.1ms mean=1.2ms"), read by E2E.
+    public static let editorKeystrokeStats = "segue.editor.status.keystrokes"
+    /// Hidden: both editor views' text-input settings ("spelling=off quotes=off ...").
+    public static let editorInputSettings = "segue.editor.status.inputSettings"
+    public static let editorEditInTextMode = "segue.editor.editInTextMode"
+    public static let sheetKey = "segue.sheet.key"
 
     // MARK: Song sheet (rendered song, preview and stage)
 
