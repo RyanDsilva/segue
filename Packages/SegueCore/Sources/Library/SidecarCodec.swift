@@ -1,0 +1,146 @@
+import Foundation
+import Support
+
+/// Reads and writes `Sidecar` files with schema versioning:
+///
+/// - current version: decoded as is;
+/// - older (incl. pre-versioned files without `schemaVersion`, i.e. version 0): migrated
+///   forward in memory, written back at the current version on the next save;
+/// - newer: decoded leniently and opened read-only, never rewritten;
+/// - undecodable: reported, never rewritten.
+enum SidecarCodec {
+    /// Forward migrations, `steps[n]` takes version `n` to `n + 1`.
+    static let migrator = SchemaMigrator(
+        currentVersion: Sidecar.currentSchemaVersion,
+        steps: [
+            // v0: pre-versioned sidecar; any field but `id` may be missing.
+            0: { object in
+                object["tags"] = object["tags"] ?? [String]()
+                object["displayPrefs"] = object["displayPrefs"] ?? [String: Any]()
+                if object["createdAt"] == nil {
+                    object["createdAt"] = object["updatedAt"]
+                }
+                if object["updatedAt"] == nil {
+                    object["updatedAt"] = object["createdAt"]
+                }
+            },
+        ],
+    )
+
+    enum Decoded: Equatable {
+        /// Usable and editable. `migratedFrom` is set when the file is at an older version.
+        case editable(Sidecar, migratedFrom: Int?)
+        /// Written by a newer Segue: best-effort fields, read-only.
+        case newer(Sidecar?, found: Int)
+        /// Not decodable. `salvagedID` is the `id` field if it could still be read.
+        case unreadable(message: String, salvagedID: SongID?)
+    }
+
+    static func decode(_ data: Data, fallbackDate: Date) -> Decoded {
+        let outcome: SchemaMigrator.Outcome
+        do {
+            outcome = try migrator.migrate(data)
+        } catch {
+            return .unreadable(message: describe(error), salvagedID: salvageID(from: data))
+        }
+        do {
+            switch outcome {
+            case let .current(json):
+                return try .editable(SegueJSON.decode(Sidecar.self, from: json), migratedFrom: nil)
+            case let .migrated(json, version):
+                var object = try SegueJSON.decode(PartialSidecar.self, from: json)
+                object.createdAt = object.createdAt ?? fallbackDate
+                object.updatedAt = object.updatedAt ?? object.createdAt
+                guard let sidecar = object.complete(schemaVersion: Sidecar.currentSchemaVersion)
+                else {
+                    return .unreadable(message: "missing id", salvagedID: nil)
+                }
+                return .editable(sidecar, migratedFrom: version)
+            case let .newer(found):
+                let partial = try? SegueJSON.decode(PartialSidecar.self, from: data)
+                return .newer(partial?.complete(schemaVersion: found), found: found)
+            }
+        } catch {
+            return .unreadable(message: describe(error), salvagedID: salvageID(from: data))
+        }
+    }
+
+    static func encode(_ sidecar: Sidecar) throws -> Data {
+        try SegueJSON.encode(sidecar)
+    }
+
+    /// The `id` field of a sidecar that otherwise fails to decode, if it is a valid ULID, so
+    /// setlists keep resolving the song. Falls back to a textual scan when the JSON itself is
+    /// malformed (e.g. a truncated file).
+    private static func salvageID(from data: Data) -> SongID? {
+        if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            return (object["id"] as? String).flatMap(ULID.init(string:)).map(SongID.init)
+        }
+        let text = String(decoding: data, as: UTF8.self)
+        guard let match = text.firstMatch(of: /"id"\s*:\s*"([0-9A-Za-z]{26})"/) else {
+            return nil
+        }
+        return ULID(string: String(match.output.1)).map(SongID.init)
+    }
+
+    private static func describe(_ error: any Error) -> String {
+        switch error {
+        case let error as SchemaMigrationError:
+            error.description
+        case let DecodingError.dataCorrupted(context),
+             let DecodingError.keyNotFound(_, context),
+             let DecodingError.typeMismatch(_, context),
+             let DecodingError.valueNotFound(_, context):
+            context.codingPath.isEmpty
+                ? context.debugDescription
+                : "\(context.codingPath.map(\.stringValue).joined(separator: ".")): "
+                + context.debugDescription
+        default:
+            "invalid JSON"
+        }
+    }
+}
+
+/// Every sidecar field optional, each decoded independently so one bad or unknown-shaped
+/// field (from a newer schema) does not hide the others.
+private struct PartialSidecar: Decodable {
+    var id: SongID?
+    var tags: [String]?
+    var proficiency: Proficiency?
+    var notes: String?
+    var createdAt: Date?
+    var updatedAt: Date?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case tags
+        case proficiency
+        case notes
+        case createdAt
+        case updatedAt
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try? container.decodeIfPresent(SongID.self, forKey: .id)
+        tags = try? container.decodeIfPresent([String].self, forKey: .tags)
+        proficiency = try? container.decodeIfPresent(Proficiency.self, forKey: .proficiency)
+        notes = try? container.decodeIfPresent(String.self, forKey: .notes)
+        createdAt = try? container.decodeIfPresent(Date.self, forKey: .createdAt)
+        updatedAt = try? container.decodeIfPresent(Date.self, forKey: .updatedAt)
+    }
+
+    func complete(schemaVersion: Int) -> Sidecar? {
+        guard let id else { return nil }
+        let created = createdAt ?? updatedAt ?? .distantPast
+        return Sidecar(
+            schemaVersion: schemaVersion,
+            id: id,
+            tags: tags ?? [],
+            proficiency: proficiency,
+            notes: notes,
+            createdAt: created,
+            updatedAt: updatedAt ?? created,
+        )
+    }
+}
