@@ -143,6 +143,7 @@
                 detail
             }
             .safeAreaInset(edge: .bottom, spacing: 0) { errorBanner }
+            .liveModePresentations(app)
             .alert(
                 unsavedTitle,
                 isPresented: isPromptingUnsaved,

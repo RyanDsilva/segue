@@ -337,7 +337,7 @@ final class SegueE2ETests: XCTestCase {
             let sidecar = try XCTUnwrap(
                 JSONSerialization.jsonObject(with: Data(contentsOf: sidecarURL)) as? [String: Any],
             )
-            XCTAssertEqual(sidecar["schemaVersion"] as? Int, 2) // Phase 1: display prefs.
+            XCTAssertEqual(sidecar["schemaVersion"] as? Int, 3) // Phase 2: cues, live prefs.
             let id = try XCTUnwrap(sidecar["id"] as? String)
             XCTAssertEqual(id.count, 26, "ULID expected, got \(id)")
             idsByTitle[fileName] = id
@@ -352,7 +352,7 @@ final class SegueE2ETests: XCTestCase {
             JSONSerialization.jsonObject(with: Data(contentsOf: setlistURL)) as? [String: Any],
         )
         XCTAssertEqual(setlist["name"] as? String, "Friday Set")
-        XCTAssertEqual(setlist["schemaVersion"] as? Int, 1)
+        XCTAssertEqual(setlist["schemaVersion"] as? Int, 2) // Phase 2: item IDs.
         let entries = try XCTUnwrap(setlist["entries"] as? [[String: Any]])
         XCTAssertEqual(
             entries.compactMap { $0["songId"] as? String },

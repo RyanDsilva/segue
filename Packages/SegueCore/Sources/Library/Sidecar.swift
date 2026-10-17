@@ -15,15 +15,21 @@ public struct Sidecar: Sendable, Equatable, Codable {
     ///
     /// History: 0 = pre-versioned; 1 = phase 0 (`displayPrefs` an opaque object, `{}`);
     /// 2 = phase 1 (`displayPrefs` holds the view toggles: transpose, capo mode, Nashville,
-    /// diagrams, instrument, tuning).
-    public static let currentSchemaVersion = 2
+    /// diagrams, instrument, tuning); 3 = phase 2 (`cues`, `live` stage memory).
+    public static let currentSchemaVersion = 3
 
     public var schemaVersion: Int
     public var id: SongID
+    /// Free-form tags, in the user's order and spelling (matching is case-insensitive).
     public var tags: [String]
     public var proficiency: Proficiency?
+    /// Per-song notes, shown in live mode.
     public var notes: String?
+    /// Cues pinned to sections, shown as callouts in live mode.
+    public var cues: [SongCue]
     public var displayPrefs: DisplayPrefs
+    /// Per-song live-mode memory (zoom, columns, scroll speed, repeat collapsing).
+    public var live: LivePrefs
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -33,7 +39,9 @@ public struct Sidecar: Sendable, Equatable, Codable {
         tags: [String] = [],
         proficiency: Proficiency? = nil,
         notes: String? = nil,
+        cues: [SongCue] = [],
         displayPrefs: DisplayPrefs = DisplayPrefs(),
+        live: LivePrefs = LivePrefs(),
         createdAt: Date,
         updatedAt: Date,
     ) {
@@ -42,9 +50,81 @@ public struct Sidecar: Sendable, Equatable, Codable {
         self.tags = tags
         self.proficiency = proficiency
         self.notes = notes
+        self.cues = cues
         self.displayPrefs = displayPrefs
+        self.live = live
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+    }
+}
+
+/// A cue pinned to a section ("watch Ravi for the stop"), shown as a callout at the section's
+/// edge in live mode. Phase 2 frozen interface (docs/phases/2-interfaces.md).
+public struct SongCue: Sendable, Hashable, Codable {
+    /// The section label it is pinned to, as `RenderSection.label` shows it ("Chorus",
+    /// "Verse 2"); matched case-insensitively after trimming.
+    public var section: String
+    /// Which occurrence of that label (1-based); nil pins it to every occurrence.
+    public var occurrence: Int?
+    public var text: String
+
+    public init(section: String, occurrence: Int? = nil, text: String) {
+        self.section = section
+        self.occurrence = occurrence
+        self.text = text
+    }
+}
+
+/// Per-song live-mode memory, persisted in the sidecar as `live`. Phase 2 frozen interface.
+///
+/// Decoding is per field and lenient, like `DisplayPrefs`: a missing or unreadable field
+/// takes its default (so `collapseRepeats` reads as true when absent).
+public struct LivePrefs: Sendable, Hashable, Codable {
+    /// Multiplier on the auto-fit lyric size (Cmd +/-, pinch); 1 = as fitted. The result is
+    /// never below the user's minimum lyric size.
+    public var zoom: Double
+    /// Forced column count (1...3); nil = auto-fit chooses.
+    public var columns: Int?
+    /// Multiplier on the derived auto-scroll speed ([ and ] nudges); 1 = as derived.
+    public var scrollSpeedFactor: Double
+    /// Collapse later repeats of an identical section into a one-line reference.
+    public var collapseRepeats: Bool
+    /// Start auto-scroll on the first advance into this song instead of waiting for `A`.
+    public var autoStartScroll: Bool
+
+    public init(
+        zoom: Double = 1,
+        columns: Int? = nil,
+        scrollSpeedFactor: Double = 1,
+        collapseRepeats: Bool = true,
+        autoStartScroll: Bool = false,
+    ) {
+        self.zoom = zoom
+        self.columns = columns
+        self.scrollSpeedFactor = scrollSpeedFactor
+        self.collapseRepeats = collapseRepeats
+        self.autoStartScroll = autoStartScroll
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case zoom
+        case columns
+        case scrollSpeedFactor
+        case collapseRepeats
+        case autoStartScroll
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = Self()
+        func field<T: Decodable>(_ key: CodingKeys, _ fallback: T) -> T {
+            (try? container.decodeIfPresent(T.self, forKey: key)) ?? fallback
+        }
+        zoom = field(.zoom, defaults.zoom)
+        columns = (try? container.decodeIfPresent(Int.self, forKey: .columns))
+        scrollSpeedFactor = field(.scrollSpeedFactor, defaults.scrollSpeedFactor)
+        collapseRepeats = field(.collapseRepeats, defaults.collapseRepeats)
+        autoStartScroll = field(.autoStartScroll, defaults.autoStartScroll)
     }
 }
 

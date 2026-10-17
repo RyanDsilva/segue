@@ -32,6 +32,13 @@ enum SidecarCodec {
                     object["displayPrefs"] = [String: Any]()
                 }
             },
+            // v2 -> v3: `cues` and `live` are new; both decode leniently with defaults.
+            2: { object in
+                object["cues"] = object["cues"] ?? [Any]()
+                if !(object["live"] is [String: Any]) {
+                    object["live"] = [String: Any]()
+                }
+            },
         ],
     )
 
@@ -117,7 +124,9 @@ private struct PartialSidecar: Decodable {
     var tags: [String]?
     var proficiency: Proficiency?
     var notes: String?
+    var cues: [SongCue]?
     var displayPrefs: DisplayPrefs?
+    var live: LivePrefs?
     var createdAt: Date?
     var updatedAt: Date?
 
@@ -126,7 +135,9 @@ private struct PartialSidecar: Decodable {
         case tags
         case proficiency
         case notes
+        case cues
         case displayPrefs
+        case live
         case createdAt
         case updatedAt
     }
@@ -137,7 +148,9 @@ private struct PartialSidecar: Decodable {
         tags = try? container.decodeIfPresent([String].self, forKey: .tags)
         proficiency = try? container.decodeIfPresent(Proficiency.self, forKey: .proficiency)
         notes = try? container.decodeIfPresent(String.self, forKey: .notes)
+        cues = Self.lenientCues(container)
         displayPrefs = try? container.decodeIfPresent(DisplayPrefs.self, forKey: .displayPrefs)
+        live = try? container.decodeIfPresent(LivePrefs.self, forKey: .live)
         createdAt = try? container.decodeIfPresent(Date.self, forKey: .createdAt)
         updatedAt = try? container.decodeIfPresent(Date.self, forKey: .updatedAt)
     }
@@ -151,9 +164,24 @@ private struct PartialSidecar: Decodable {
             tags: tags ?? [],
             proficiency: proficiency,
             notes: notes,
+            cues: cues ?? [],
             displayPrefs: displayPrefs ?? DisplayPrefs(),
+            live: live ?? LivePrefs(),
             createdAt: created,
             updatedAt: updatedAt ?? created,
         )
+    }
+
+    /// Cues one by one, so one malformed cue does not hide the others.
+    private static func lenientCues(_ container: KeyedDecodingContainer<CodingKeys>) -> [SongCue]? {
+        struct Lenient: Decodable {
+            var cue: SongCue?
+
+            init(from decoder: any Decoder) throws {
+                cue = try? SongCue(from: decoder)
+            }
+        }
+        return (try? container.decodeIfPresent([Lenient].self, forKey: .cues))?
+            .compactMap(\.cue)
     }
 }

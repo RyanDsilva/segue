@@ -40,8 +40,25 @@ public struct RenderModel: Sendable, Equatable {
         options: DisplayOptions,
         userShapes: UserShapeLibrary = .empty,
     ) {
+        self.init(
+            document: document,
+            options: options,
+            userShapes: userShapes,
+            capo: document.metadata.capo,
+        )
+    }
+
+    /// Builds the model with `capo` in place of the song's `{capo}` (phase 2: a setlist's
+    /// capo override, see `SetlistOverrides.applied(to:songCapo:)`, which also adjusts
+    /// `options.transpose` so the concert key is unchanged). nil or 0 = no capo.
+    public init(
+        document: SongDocument,
+        options: DisplayOptions,
+        userShapes: UserShapeLibrary = .empty,
+        capo: Int?,
+    ) {
         let metadata = document.metadata
-        let capo = metadata.capo.flatMap { $0 > 0 ? $0 : nil }
+        let capo = capo.flatMap { $0 > 0 ? $0 : nil }
         let transform = DisplayTransform(
             options: options,
             key: KeyContext(document: document),

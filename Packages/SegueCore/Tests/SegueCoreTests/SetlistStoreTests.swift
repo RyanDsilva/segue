@@ -49,16 +49,23 @@ struct SetlistStoreTests {
         let song = SongID(lib.ids.next())
         try await store.addSong(song, to: setlist.id)
 
+        let saved = try #require(await store.setlist(id: setlist.id))
+        let item = try #require(saved.entries.first?.itemId)
+        // The test clock is frozen at 2026-01-01T00:00:00Z.
+        let stamp = "2026-01-01T00:00:00.000Z"
         #expect(try lib.read("setlists/sangeet-night.setlist.json") == """
         {
+          "createdAt" : "\(stamp)",
           "entries" : [
             {
+              "itemId" : "\(item)",
               "songId" : "\(song)"
             }
           ],
           "id" : "\(setlist.id)",
           "name" : "Sangeet Night",
-          "schemaVersion" : 1
+          "schemaVersion" : 2,
+          "updatedAt" : "\(stamp)"
         }
 
         """)
@@ -173,7 +180,7 @@ struct SetlistStoreTests {
         #expect(try lib.read("setlists/old-set.setlist.json") == legacy)
 
         try await store.addSong(SongID(lib.ids.next()), to: id)
-        #expect(try lib.read("setlists/old-set.setlist.json").contains("\"schemaVersion\" : 1"))
+        #expect(try lib.read("setlists/old-set.setlist.json").contains("\"schemaVersion\" : 2"))
     }
 
     @Test

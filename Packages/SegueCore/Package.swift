@@ -22,7 +22,7 @@ let package = Package(
             name: "SegueCore",
             targets: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
-                "Plugins", "Support",
+                "Shows", "LiveLayout", "Plugins", "Support",
             ],
         ),
     ],
@@ -81,7 +81,19 @@ let package = Package(
         ),
         .target(
             name: "Setlists",
-            dependencies: ["Library", "Support"],
+            dependencies: ["Editing", "Library", "Support"],
+            swiftSettings: strictSettings,
+        ),
+        // Phase 2 unit A: show engine, show store, gig log, reorder diff, command layer.
+        .target(
+            name: "Shows",
+            dependencies: ["Library", "Setlists", "Support"],
+            swiftSettings: strictSettings,
+        ),
+        // Phase 2 unit B: live auto-fit layout and auto-scroll model (pure).
+        .target(
+            name: "LiveLayout",
+            dependencies: ["ChordPro", "Editing", "Library"],
             swiftSettings: strictSettings,
         ),
         .target(
@@ -93,7 +105,7 @@ let package = Package(
             name: "SegueCoreTests",
             dependencies: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
-                "Plugins", "Support",
+                "Shows", "LiveLayout", "Plugins", "Support",
                 .product(name: "Tonic", package: "Tonic"),
             ],
             path: "Tests",

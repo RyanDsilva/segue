@@ -1,0 +1,124 @@
+#if os(macOS)
+    import Diagrams
+    import Foundation
+    import Library
+    import Observation
+    import Setlists
+    import Shows
+    import Support
+
+    /// An open library: both stores plus the view models of the main window.
+    @MainActor
+    @Observable
+    public final class LibrarySession {
+        /// Sidebar destinations of the main window.
+        public enum Section: Hashable {
+            case library
+            case setlists
+        }
+
+        public let root: LibraryRoot
+        /// The sidebar destination shown.
+        public var section: Section? = .library {
+            didSet {
+                if sidebarSelection != section {
+                    sidebarSelection = section
+                }
+            }
+        }
+
+        /// The sidebar's highlighted row (bound to the sidebar `List`). Changing it asks the
+        /// library to navigate, so unsaved edits are never dropped; if the user stays in the
+        /// editor it snaps back to `section`.
+        public var sidebarSelection: Section? = .library {
+            didSet {
+                guard sidebarSelection != oldValue, sidebarSelection != section else { return }
+                let target = sidebarSelection
+                let show: @MainActor () -> Void = { [weak self] in self?.section = target }
+                let stay: @MainActor () -> Void = { [weak self] in
+                    // After the sidebar finishes applying the click that moved it.
+                    Task { @MainActor in self?.sidebarSelection = self?.section }
+                }
+                library.navigate(show, onCancel: stay)
+            }
+        }
+
+        public let library: LibraryViewModel
+        public let setlists: SetlistsViewModel
+        /// The stores behind the view models, for the live session (phase 2, unit C) and the
+        /// gig log (unit D).
+        public let stores: LibraryStores
+
+        init(
+            root: LibraryRoot,
+            library: LibraryViewModel,
+            setlists: SetlistsViewModel,
+            stores: LibraryStores,
+        ) {
+            self.root = root
+            self.library = library
+            self.setlists = setlists
+            self.stores = stores
+        }
+
+        static func open(root: LibraryRoot, dependencies: AppDependencies) async throws
+            -> LibrarySession
+        {
+            let libraryStore = LibraryStore(
+                fileSystem: dependencies.fileSystem,
+                clock: dependencies.clock,
+                ids: dependencies.ids,
+            )
+            try await libraryStore.open(root: root)
+            let setlistStore = SetlistStore(
+                fileSystem: dependencies.fileSystem,
+                clock: dependencies.clock,
+                ids: dependencies.ids,
+            )
+            let issues = try await setlistStore.load(root: root)
+            let library = LibraryViewModel(store: libraryStore)
+            if let url = dependencies.shapeLibraryURL {
+                do {
+                    library.userShapes = try UserShapeLibrary.load(
+                        from: url,
+                        fileSystem: dependencies.fileSystem,
+                    )
+                } catch {
+                    // Diagrams fall back to curated and generated shapes; say why.
+                    library.errorMessage = "Segue could not read your chord shape library "
+                        + "(\(UserMessage.describe(error))), so built-in shapes are shown."
+                }
+            }
+            await library.reload()
+            let setlists = SetlistsViewModel(store: setlistStore, loadIssues: issues)
+            await setlists.reload()
+            // Shows are loaded (and the launch check run) by `AppModel` once the session is
+            // up (phase 2, unit C), so a show problem never blocks opening the library.
+            let shows = ShowStore(
+                fileSystem: dependencies.fileSystem,
+                clock: dependencies.clock,
+                playHistory: libraryStore,
+            )
+            let stores = LibraryStores(
+                library: libraryStore,
+                setlists: setlistStore,
+                shows: shows,
+                fileSystem: dependencies.fileSystem,
+                clock: dependencies.clock,
+                ids: dependencies.ids,
+            )
+            return LibrarySession(root: root, library: library, setlists: setlists, stores: stores)
+        }
+    }
+
+    /// The open library's stores and the injected process dependencies they share.
+    public struct LibraryStores: Sendable {
+        public let library: LibraryStore
+        public let setlists: SetlistStore
+        /// Not loaded until `AppModel` runs the launch check.
+        public let shows: ShowStore
+        public let fileSystem: any FileSystem
+        public let clock: any Clock
+        public let ids: any IDGenerator
+    }
+#endif

@@ -54,6 +54,25 @@ public actor SetlistStore {
             0: { object in
                 object["entries"] = object["entries"] ?? [Any]()
             },
+            // v1 -> v2: every entry gains a stable `itemId` (derived from the setlist ID and
+            // position, see `SetlistItemID.migrated`). The other v2 fields are optional.
+            1: { object in
+                guard let idString = object["id"] as? String,
+                      let ulid = ULID(string: idString)
+                else {
+                    return // decoding reports the missing/invalid id
+                }
+                let setlist = SetlistID(ulid)
+                let entries = object["entries"] as? [Any] ?? []
+                object["entries"] = entries.enumerated().map { offset, raw -> Any in
+                    guard var entry = raw as? [String: Any] else { return raw }
+                    if entry["itemId"] == nil {
+                        entry["itemId"] = SetlistItemID
+                            .migrated(setlist: setlist, position: offset).description
+                    }
+                    return entry
+                }
+            },
         ],
     )
 
@@ -126,7 +145,13 @@ public actor SetlistStore {
                 slug: candidate,
             ))
         }
-        let setlist = Setlist(id: SetlistID(ids.next()), name: name)
+        let now = SegueJSON.stamp(clock.now())
+        let setlist = Setlist(
+            id: SetlistID(ids.next()),
+            name: name,
+            createdAt: now,
+            updatedAt: now,
+        )
         let stored = Stored(setlist: setlist, slug: slug)
         try save(stored, root: root)
         setlists[setlist.id] = stored
@@ -137,7 +162,7 @@ public actor SetlistStore {
     @discardableResult
     public func addSong(_ songID: SongID, to setlistID: SetlistID) throws -> Setlist {
         try mutate(setlistID) { entries in
-            entries.append(SetlistEntry(songId: songID))
+            entries.append(SetlistEntry(itemId: SetlistItemID(ids.next()), songId: songID))
         }
     }
 
@@ -177,6 +202,55 @@ public actor SetlistStore {
         }
     }
 
+    // MARK: - Phase 2 (unit A; frozen in docs/phases/2-interfaces.md)
+
+    /// Renames setlist `id` (the file keeps its slug, like songs) and saves it.
+    @discardableResult
+    public func rename(_ id: SetlistID, to name: String) throws -> Setlist {
+        fatalError("unimplemented: unit A (SetlistStore.rename)")
+    }
+
+    /// Saves a copy of setlist `id` as a new setlist named `name` (default "<name> copy"):
+    /// a new setlist ID and new item IDs, same songs, overrides, notes and details.
+    public func duplicate(_ id: SetlistID, name: String? = nil) throws -> Setlist {
+        fatalError("unimplemented: unit A (SetlistStore.duplicate)")
+    }
+
+    /// Deletes the setlist's file. Shows that ran it keep their own snapshot.
+    public func delete(_ id: SetlistID) throws {
+        fatalError("unimplemented: unit A (SetlistStore.delete)")
+    }
+
+    /// Inserts `songIDs` (new item IDs each) at `offset` (nil = append) and saves.
+    @discardableResult
+    public func insertSongs(
+        _ songIDs: [SongID],
+        into id: SetlistID,
+        at offset: Int? = nil,
+    ) throws -> Setlist {
+        fatalError("unimplemented: unit A (SetlistStore.insertSongs)")
+    }
+
+    /// Replaces the entry with `entry.itemId` (overrides, note) and saves. Throws
+    /// `invalidOffsets` when no entry has that item ID.
+    @discardableResult
+    public func updateEntry(_ entry: SetlistEntry, in id: SetlistID) throws -> Setlist {
+        fatalError("unimplemented: unit A (SetlistStore.updateEntry)")
+    }
+
+    /// Replaces venue, date and target length and saves.
+    @discardableResult
+    public func updateDetails(_ details: SetlistDetails, of id: SetlistID) throws -> Setlist {
+        fatalError("unimplemented: unit A (SetlistStore.updateDetails)")
+    }
+
+    /// Replaces all entries at once ("Save to setlist" in the show-end reorder sheet) and
+    /// saves. Item IDs must be unique.
+    @discardableResult
+    public func replaceEntries(_ entries: [SetlistEntry], in id: SetlistID) throws -> Setlist {
+        fatalError("unimplemented: unit A (SetlistStore.replaceEntries)")
+    }
+
     // MARK: - Private
 
     private func mutate(
@@ -190,6 +264,7 @@ public actor SetlistStore {
         }
         try change(&stored.setlist.entries)
         stored.setlist.schemaVersion = Setlist.currentSchemaVersion
+        stored.setlist.updatedAt = SegueJSON.stamp(clock.now())
         try save(stored, root: root)
         setlists[id] = stored
         return stored.setlist
@@ -254,9 +329,16 @@ private struct PartialSetlist: Decodable {
 
     private struct LenientEntry: Decodable {
         var entry: SetlistEntry?
+        var songId: SongID?
+
+        private enum CodingKeys: String, CodingKey {
+            case songId
+        }
 
         init(from decoder: any Decoder) throws {
             entry = try? SetlistEntry(from: decoder)
+            songId = try? decoder.container(keyedBy: CodingKeys.self)
+                .decodeIfPresent(SongID.self, forKey: .songId)
         }
     }
 
@@ -264,7 +346,33 @@ private struct PartialSetlist: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(SetlistID.self, forKey: .id)
         name = try? container.decodeIfPresent(String.self, forKey: .name)
-        entries = (try? container.decodeIfPresent([LenientEntry].self, forKey: .entries))?
-            .compactMap(\.entry) ?? []
+        let lenient = (try? container.decodeIfPresent([LenientEntry].self, forKey: .entries))
+            ?? []
+        // An entry without a readable `itemId` still shows its song (derived ID).
+        entries = lenient.enumerated().compactMap { [id] offset, raw in
+            raw.entry ?? raw.songId.map { song in
+                SetlistEntry(
+                    itemId: SetlistItemID.migrated(setlist: id, position: offset),
+                    songId: song,
+                )
+            }
+        }
+    }
+}
+
+/// The editable gig details of a setlist (builder header).
+public struct SetlistDetails: Sendable, Equatable {
+    public var venue: String?
+    public var date: CalendarDay?
+    public var targetDuration: TimeInterval?
+
+    public init(
+        venue: String? = nil,
+        date: CalendarDay? = nil,
+        targetDuration: TimeInterval? = nil,
+    ) {
+        self.venue = venue
+        self.date = date
+        self.targetDuration = targetDuration
     }
 }

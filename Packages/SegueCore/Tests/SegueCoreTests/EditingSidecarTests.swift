@@ -9,7 +9,8 @@ import Testing
 /// the migrated and newer-schema paths, and prefs-only writes.
 struct EditingSidecarTests {
     @Test
-    func `version 1 sidecar migrates to 2 and keeps its display prefs`() async throws {
+    func `version 1 sidecar migrates to the current version and keeps its display prefs`(
+    ) async throws {
         let lib = try TestLibrary()
         let id = SongID(lib.ids.next())
         let v1 = """
@@ -23,7 +24,7 @@ struct EditingSidecarTests {
         let store = try await lib.openStore()
         let record = try #require(try await store.song(id: id))
         #expect(record.readOnly == nil)
-        #expect(record.sidecar.schemaVersion == 2)
+        #expect(record.sidecar.schemaVersion == Sidecar.currentSchemaVersion)
         #expect(record.sidecar.tags == ["wedding"])
         // Readable fields survive; the unreadable one takes its default.
         #expect(record.sidecar.displayPrefs == DisplayPrefs(transpose: 3, capoMode: .concert))
@@ -31,7 +32,7 @@ struct EditingSidecarTests {
 
         _ = try await store.updateSong(id: id, source: "{title: Old Prefs}\n[G]La la\n")
         let saved = try lib.read("songs/old-prefs.segue.json")
-        #expect(saved.contains("\"schemaVersion\" : 2"))
+        #expect(saved.contains("\"schemaVersion\" : \(Sidecar.currentSchemaVersion)"))
         #expect(saved.contains("\"transpose\" : 3"))
         #expect(saved.contains("\"capoMode\" : \"concert\""))
     }
@@ -76,7 +77,8 @@ struct EditingSidecarTests {
         #expect(record.readOnly == .newerSchema(found: 99, supported: Sidecar.currentSchemaVersion))
         #expect(record.sidecar.displayPrefs == DisplayPrefs(transpose: -4, nashville: true))
 
-        await #expect(throws: LibraryError.readOnly(id, .newerSchema(found: 99, supported: 2))) {
+        let newer = ReadOnlyReason.newerSchema(found: 99, supported: Sidecar.currentSchemaVersion)
+        await #expect(throws: LibraryError.readOnly(id, newer)) {
             try await store.updateDisplayPrefs(id: id, DisplayPrefs(transpose: 1))
         }
         #expect(try lib.read("songs/future.segue.json") == future)

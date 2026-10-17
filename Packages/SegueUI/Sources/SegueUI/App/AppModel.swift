@@ -4,6 +4,7 @@
     import Library
     import Observation
     import Setlists
+    import Shows
     import Support
 
     /// Process-wide dependencies, built by the app target and handed to `AppModel`.
@@ -244,85 +245,47 @@
         public func cancelPendingPerformance() {
             pendingPerformance = nil
         }
-    }
 
-    /// An open library: both stores plus the view models of the main window.
-    @MainActor
-    @Observable
-    public final class LibrarySession {
-        /// Sidebar destinations of the main window.
-        public enum Section: Hashable {
-            case library
-            case setlists
+        // MARK: - Phase 2 shows (unit C; frozen in docs/phases/2-interfaces.md)
+
+        /// The unfinished show the launch check found (< 12 h old): "Resume show?" is shown
+        /// while non-nil.
+        public private(set) var pendingResume: ShowRecord?
+
+        /// Reorder reviews waiting for Save/Discard (show end, or shows auto-closed at
+        /// launch), oldest first. The main window presents the first as `ReorderDiffSheet`.
+        public private(set) var pendingReorderReviews: [ReorderDiff] = []
+
+        /// After a library opens: loads its shows, auto-closes stale ones into the gig log
+        /// (queuing their reviews) and sets `pendingResume`.
+        public func runShowLaunchCheck() async {
+            fatalError("unimplemented: unit C (AppModel.runShowLaunchCheck)")
         }
 
-        public let root: LibraryRoot
-        /// The sidebar destination shown.
-        public var section: Section? = .library {
-            didSet {
-                if sidebarSelection != section {
-                    sidebarSelection = section
-                }
-            }
+        /// "Start show" / "Rehearse" in the setlist builder: refreshes the library, checks
+        /// for missing songs, shows the pre-show checklist (gig only, runs the start
+        /// Shortcut), then presents the stage. Returns false when it did not start.
+        @discardableResult
+        public func startShow(_ setlist: Setlist, kind: ShowKind) async -> Bool {
+            fatalError("unimplemented: unit C (AppModel.startShow)")
         }
 
-        /// The sidebar's highlighted row (bound to the sidebar `List`). Changing it asks the
-        /// library to navigate, so unsaved edits are never dropped; if the user stays in the
-        /// editor it snaps back to `section`.
-        public var sidebarSelection: Section? = .library {
-            didSet {
-                guard sidebarSelection != oldValue, sidebarSelection != section else { return }
-                let target = sidebarSelection
-                let show: @MainActor () -> Void = { [weak self] in self?.section = target }
-                let stay: @MainActor () -> Void = { [weak self] in
-                    // After the sidebar finishes applying the click that moved it.
-                    Task { @MainActor in self?.sidebarSelection = self?.section }
-                }
-                library.navigate(show, onCancel: stay)
-            }
+        /// "Resume" in the resume prompt: back on stage at the same song and scroll position.
+        @discardableResult
+        public func resumePendingShow() async -> Bool {
+            fatalError("unimplemented: unit C (AppModel.resumePendingShow)")
         }
 
-        public let library: LibraryViewModel
-        public let setlists: SetlistsViewModel
-
-        init(root: LibraryRoot, library: LibraryViewModel, setlists: SetlistsViewModel) {
-            self.root = root
-            self.library = library
-            self.setlists = setlists
+        /// "End Show" in the resume prompt: closes it into the gig log now (its review is
+        /// queued). Nothing is discarded.
+        public func endPendingShow() async {
+            fatalError("unimplemented: unit C (AppModel.endPendingShow)")
         }
 
-        static func open(root: LibraryRoot, dependencies: AppDependencies) async throws
-            -> LibrarySession
-        {
-            let libraryStore = LibraryStore(
-                fileSystem: dependencies.fileSystem,
-                clock: dependencies.clock,
-                ids: dependencies.ids,
-            )
-            try await libraryStore.open(root: root)
-            let setlistStore = SetlistStore(
-                fileSystem: dependencies.fileSystem,
-                clock: dependencies.clock,
-                ids: dependencies.ids,
-            )
-            let issues = try await setlistStore.load(root: root)
-            let library = LibraryViewModel(store: libraryStore)
-            if let url = dependencies.shapeLibraryURL {
-                do {
-                    library.userShapes = try UserShapeLibrary.load(
-                        from: url,
-                        fileSystem: dependencies.fileSystem,
-                    )
-                } catch {
-                    // Diagrams fall back to curated and generated shapes; say why.
-                    library.errorMessage = "Segue could not read your chord shape library "
-                        + "(\(UserMessage.describe(error))), so built-in shapes are shown."
-                }
-            }
-            await library.reload()
-            let setlists = SetlistsViewModel(store: setlistStore, loadIssues: issues)
-            await setlists.reload()
-            return LibrarySession(root: root, library: library, setlists: setlists)
+        /// Resolves the first pending review: Save writes `diff.entries(including:)` to the
+        /// setlist; Discard leaves the setlist file untouched.
+        public func resolveReorderReview(save: Bool, including inserted: Set<ShowItemID>) async {
+            fatalError("unimplemented: unit C (AppModel.resolveReorderReview)")
         }
     }
 #endif

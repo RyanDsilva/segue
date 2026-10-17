@@ -64,6 +64,9 @@ final class TestLibrary: Sendable {
         """
         {
           "createdAt" : "\(created)",
+          "cues" : [
+
+          ],
           "displayPrefs" : {
             "capoMode" : "shapes",
             "instrument" : "guitar",
@@ -83,6 +86,12 @@ final class TestLibrary: Sendable {
             }
           },
           "id" : "\(id)",
+          "live" : {
+            "autoStartScroll" : false,
+            "collapseRepeats" : true,
+            "scrollSpeedFactor" : 1,
+            "zoom" : 1
+          },
           "schemaVersion" : \(Sidecar.currentSchemaVersion),
           "tags" : [
 
