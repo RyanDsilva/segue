@@ -1,7 +1,7 @@
 // Owner: unit B. Auto-fit steps 3-6: the largest lyric size that fits, its column count,
 // the scroll fallback at the minimum, and zoom. Build rulings (decisions.md, phase 2):
-// layouts without wrapped lyric lines win unless they are more than `wrapTolerance` smaller,
-// and the column count leans toward `preferredColumns` (2).
+// a layout without wrapped lyric lines wins whenever it reaches a comfortable size
+// (`comfortableSize`), and the column count leans toward `preferredColumns` (2).
 
 /// One candidate layout: a size, a column count and how sections were packed.
 struct Candidate {
@@ -58,6 +58,15 @@ struct FitSearch {
         max(style.maxLyricSize, minSize)
     }
 
+    /// The size from which a layout without wrapping always wins (decisions.md, "Auto-fit
+    /// wrapping (revised)"): max(28pt, 1.25 x the user minimum), capped at the largest size.
+    var comfortableSize: Double {
+        min(
+            maxSize,
+            max(style.comfortableLyricSize, style.comfortableMinimumFactor * request.minLyricSize),
+        )
+    }
+
     func plan() -> LayoutPlan {
         let base = fitted()
         let zoom = min(max(request.zoom.isFinite ? request.zoom : 1, 0.25), 4)
@@ -102,8 +111,8 @@ struct FitSearch {
     }
 
     /// Steps 3-4: per column count, binary search the largest stepped size that fits. The
-    /// chosen layout without a wrapped lyric line wins unless it is more than
-    /// `wrapTolerance` smaller than the chosen one with wrapping allowed (or there is none).
+    /// chosen layout without a wrapped lyric line wins when it reaches `comfortableSize`;
+    /// below that the larger of it and the chosen layout with wrapping allowed wins.
     /// Within each, sections stay whole when any layout allows it; only then are they split
     /// between columns.
     private func fitted() -> Candidate? {
@@ -132,8 +141,8 @@ struct FitSearch {
             wrapping = wrapping ?? choose(wrapped)
         }
         guard let unwrapped else { return wrapping }
-        guard let wrapping else { return unwrapped }
-        return unwrapped.size < wrapping.size * (1 - style.wrapTolerance) ? wrapping : unwrapped
+        guard let wrapping, unwrapped.size < comfortableSize - 1e-9 else { return unwrapped }
+        return wrapping.size > unwrapped.size ? wrapping : unwrapped
     }
 
     /// The size step index of `size`.

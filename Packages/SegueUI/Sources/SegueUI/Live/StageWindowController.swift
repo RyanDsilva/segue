@@ -86,7 +86,14 @@
                 self.savedPresentationOptions = nil
             }
             window = nil
-            app?.live?.stop()
+            if let live = app?.live {
+                // Closed without ending (the run stays resumable): let go of its claim.
+                if live.isEnding {
+                    live.stop()
+                } else {
+                    live.abandon()
+                }
+            }
             app?.live = nil
         }
 

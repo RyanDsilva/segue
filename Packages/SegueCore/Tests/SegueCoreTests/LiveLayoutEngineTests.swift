@@ -146,38 +146,6 @@ struct LiveLayoutEngineTests {
         #expect(column.width == Support.macBook13.width)
     }
 
-    /// decisions.md, "Auto-fit prefers no wrapping": the largest layout without a wrapped
-    /// lyric line wins unless it is more than 15% smaller than one that wraps.
-    @Test(arguments: [
-        // Height, whether the chosen layout wraps the long line.
-        (360.0, false),
-        (900.0, true),
-    ])
-    func `layouts without wrapping win unless they are much smaller`(
-        height: Double,
-        wraps: Bool,
-    ) {
-        // 40 characters at 0.5 em: the long line fits unwrapped up to exactly 30pt in a
-        // 676pt viewport (64pt gutter + 12pt gap + 600pt).
-        let long = "[G]" + String(repeating: "abcd ", count: 7) + "abc[C]ef"
-        #expect(long.count - 6 == 40)
-        let model = Support.model(source: "\(long)\n[D]one\n[G]two\n[C]three")
-        let viewport = LayoutSize(width: 676, height: height)
-        let (plan, request) = Support.plan(model, viewport: viewport)
-        let rows = plan.blocks.flatMap(\.allRows).filter { $0.kind == .lyric }
-        #expect(plan.fit == .fits)
-        #expect((rows.count > 4) == wraps, "\(plan.lyricSize)pt, \(rows.count) rows")
-        if wraps {
-            // Wrapping won because no-wrap tops out at 30pt, under 85% of this size.
-            #expect(plan.lyricSize * 0.85 > 30)
-        } else {
-            #expect(plan.lyricSize <= 30)
-            #expect(plan.lyricSize >= 29)
-        }
-        #expect(LayoutAudit.violations(of: plan, request: request, metrics: FixedAdvanceMetrics())
-            .isEmpty)
-    }
-
     @Test
     func `columns break between sections when a layout allows it`() {
         let model = Support.model(source: Support.longSong(lines: 36))

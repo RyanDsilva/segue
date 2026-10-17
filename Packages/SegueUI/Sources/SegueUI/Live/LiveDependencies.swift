@@ -11,7 +11,8 @@
         public var settings: LiveSettingsStore
         public var shortcuts: any ShortcutRunner
         public var power: any PowerSourceReading
-        /// Drives auto-scroll. The system clock, or a time-scaled one in the auto-scroll E2E
+        /// Drives auto-scroll. A monotonic clock (`MonotonicClock`: NTP corrections and
+        /// sleep never move the scroll), or a time-scaled one in the auto-scroll E2E
         /// (`-SegueLiveTimeScale`), so a 3-minute song scrolls in seconds.
         public var scrollClock: any Clock
         /// `bindings.json` (Application Support); nil uses the default keys only.
@@ -21,7 +22,7 @@
             settings: LiveSettingsStore,
             shortcuts: any ShortcutRunner = WorkspaceShortcutRunner(),
             power: any PowerSourceReading = SystemPowerSource(),
-            scrollClock: any Clock = SystemClock(),
+            scrollClock: any Clock = MonotonicClock(),
             bindingsURL: URL? = nil,
         ) {
             self.settings = settings
@@ -39,19 +40,27 @@
         }
     }
 
-    /// A clock running `scale` times faster than real time from the moment it was made (test
-    /// runs only).
+    /// A monotonic clock running `scale` times faster than real time from the moment it was
+    /// made (test runs only).
     public struct ScaledClock: Clock {
         private let origin: Date
         private let scale: Double
+        private let base: MonotonicClock
 
         public init(scale: Double, origin: Date = Date()) {
             self.origin = origin
             self.scale = scale
+            base = MonotonicClock(origin: origin, elapsed: Self.elapsed())
+        }
+
+        private static func elapsed() -> @Sendable () -> Duration {
+            let clock = SuspendingClock()
+            let start = clock.now
+            return { start.duration(to: clock.now) }
         }
 
         public func now() -> Date {
-            origin.addingTimeInterval(Date().timeIntervalSince(origin) * scale)
+            origin.addingTimeInterval(base.now().timeIntervalSince(origin) * scale)
         }
     }
 

@@ -19,6 +19,10 @@
         /// Non-nil when the setlist can no longer be saved (deleted or read-only during the
         /// show): Save is disabled and this says why; only Discard is offered.
         let saveDisabledReason: String?
+        /// Why the last Save failed (the review stays up so it can be retried).
+        let saveFailure: String?
+        /// The setlist was edited after the show started: Save merges into it as it is now.
+        let setlistChanged: Bool
         /// The window the sheet is presented on: the sheet never outgrows it (the rows scroll
         /// instead). Nil = no limit beyond the defaults.
         let available: CGSize?
@@ -29,12 +33,16 @@
             onSave: @escaping (Set<ShowItemID>) -> Void,
             onDiscard: @escaping () -> Void,
             saveDisabledReason: String? = nil,
+            saveFailure: String? = nil,
+            setlistChanged: Bool = false,
             available: CGSize? = nil,
         ) {
             self.diff = diff
             self.onSave = onSave
             self.onDiscard = onDiscard
             self.saveDisabledReason = saveDisabledReason
+            self.saveFailure = saveFailure
+            self.setlistChanged = setlistChanged
             self.available = available
             _included = State(initialValue: Set(diff.insertedItemIds))
         }
@@ -64,6 +72,14 @@
                         .font(Theme.font.body)
                         .foregroundStyle(Theme.color.muted)
                         .fixedSize(horizontal: false, vertical: true)
+                    if let warning {
+                        Label(warning, systemImage: "exclamationmark.triangle.fill")
+                            .symbolRenderingMode(.multicolor)
+                            .font(Theme.font.body)
+                            .foregroundStyle(Theme.color.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier(AccessibilityID.reorderWarning)
+                    }
                 }
                 .padding(20)
                 Rule()
@@ -100,6 +116,16 @@
         /// The first performed row that moved or was inserted.
         private var firstChange: ShowItemID? {
             diff.performed.first { $0.change != .unchanged }?.id
+        }
+
+        /// A failed save, else the "edited during the show" warning.
+        private var warning: String? {
+            if let saveFailure {
+                return saveFailure
+            }
+            guard setlistChanged, saveDisabledReason == nil else { return nil }
+            return "“\(diff.setlistName)” was edited during the show. Save merges the played "
+                + "order into it as it is now, keeping those edits."
         }
 
         private var explanation: String {

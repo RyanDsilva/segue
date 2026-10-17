@@ -1,6 +1,7 @@
 import Foundation
 import Library
 import Setlists
+import Shows
 
 /// Turns errors into short, user-facing sentences.
 enum UserMessage {
@@ -9,6 +10,8 @@ enum UserMessage {
         case let error as LibraryError:
             describe(error)
         case let error as SetlistError:
+            describe(error)
+        case let error as ShowError:
             describe(error)
         case let error as any LocalizedError:
             error.errorDescription ?? error.localizedDescription
@@ -53,6 +56,27 @@ enum UserMessage {
             readOnlyText(reason)
         case .invalidOffsets:
             "Those setlist entries have changed. Try again."
+        }
+    }
+
+    private static func describe(_ error: ShowError) -> String {
+        switch error {
+        case let .writeFailed(message):
+            "The show file could not be written (\(message))."
+        case .claimedElsewhere:
+            "This show is open in another Segue window. End it there first."
+        case .finished:
+            "This show has already ended."
+        case .readOnly:
+            "This show was saved by a newer version of Segue."
+        case .emptySetlist:
+            "The setlist has no songs to perform."
+        case .songNotFound:
+            "That song is no longer in the library."
+        case .invalidOffsets, .itemNotFound, .requestNotFound:
+            "The set changed meanwhile. Try again."
+        case .invalidRating, .notFinished, .notLoaded, .showNotFound:
+            "The show could not be updated (\(String(describing: error)))."
         }
     }
 

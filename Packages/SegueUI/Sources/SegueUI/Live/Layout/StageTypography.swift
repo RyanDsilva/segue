@@ -109,6 +109,23 @@ public struct StageTextMetrics: TextMeasuring {
         }
     }
 
+    /// The glyph-path bounds of `text` set as one line (fallback fonts included, as
+    /// drawn), at the reference size of 100pt.
+    public func inkExtents(of text: String, role: TextRole) -> InkExtents {
+        if let cached = Self.cache.ink(text, role) {
+            return cached
+        }
+        let bounds = CTLineGetBoundsWithOptions(
+            line(text, role: role, size: 100),
+            .useGlyphPathBounds,
+        )
+        let ink = bounds.isNull || bounds.isEmpty
+            ? InkExtents(top: 0, bottom: 0)
+            : InkExtents(top: max(0, bounds.maxY) / 100, bottom: max(0, -bounds.minY) / 100)
+        Self.cache.store(ink, text, role)
+        return ink
+    }
+
     /// The font measurement and drawing use for `role` at `size`.
     public static func ctFont(_ role: TextRole, size: Double) -> CTFont {
         cache.font(role, size)
@@ -147,6 +164,25 @@ private final class MetricsCache: @unchecked Sendable {
     private var extentsByRole: [TextRole: FontExtents] = [:]
     private var widths: [WidthKey: Double] = [:]
     private var prefixWidths: [PrefixKey: [Double]] = [:]
+    private var inks: [InkKey: InkExtents] = [:]
+
+    private struct InkKey: Hashable {
+        var text: String
+        var role: TextRole
+    }
+
+    func ink(_ text: String, _ role: TextRole) -> InkExtents? {
+        lock.withLock { inks[InkKey(text: text, role: role)] }
+    }
+
+    func store(_ ink: InkExtents, _ text: String, _ role: TextRole) {
+        lock.withLock {
+            if inks.count >= limit {
+                inks.removeAll()
+            }
+            inks[InkKey(text: text, role: role)] = ink
+        }
+    }
 
     private struct PrefixKey: Hashable {
         var text: String

@@ -88,6 +88,9 @@ struct ShowRecoveryTests {
         let freshID = await fresh.state.record.id
         harness.lib.clock.advance(by: 60)
 
+        // kill -9: the process dies and the OS drops both runs' claims.
+        await stale.relinquish()
+        await fresh.relinquish()
         try await harness.relaunch()
         let check = try await harness.shows.launchCheck()
         #expect(check.resumable?.id == freshID)
@@ -187,7 +190,8 @@ struct ShowRecoveryTests {
             root: harness.lib.root,
             fileSystem: harness.fileSystem,
         )
-        #expect(samples.map(\.seconds) == [150, 210, 130])
+        // Song 4 counts from the resume (100 s), not across the 30 s the app was down.
+        #expect(samples.map(\.seconds) == [150, 210, 100])
         #expect(samples.map(\.songId) == [songs[0].id, songs[1].id, songs[3].id])
         #expect(samples.allSatisfy { $0.source == .rehearsal && $0.runId == id.ulid })
         #expect(try await timings.samples == samples)

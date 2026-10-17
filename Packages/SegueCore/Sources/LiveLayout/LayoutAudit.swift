@@ -1,7 +1,8 @@
 // Owner: unit B. Geometric invariants of a plan, for tests and debug checks: nothing
 // clipped, nothing overlapping, the lyric size never below the minimum. Vertically, a run's
-// glyphs span from its ink top (capitals, ascenders) to its descent: chords may sit closer
-// to the lyric than the font boxes would, but their ink never meets.
+// glyphs span from its ink top (capitals, ascenders, or the run's own taller glyphs such as
+// Devanagari matras) to its descent: chords may sit closer to the lyric than the font boxes
+// would, but their ink never meets.
 
 public enum LayoutAudit {
     /// Human-readable violations; empty when the plan is sound.
@@ -105,8 +106,11 @@ public enum LayoutAudit {
         var issues = horizontal(row.text, width: lyricWidth, what: "text")
             + horizontal(row.chords, width: lyricWidth, what: "chord")
         let chordBottom = row.chordBaseline.map { baseline in
-            baseline +
-                (row.chords.map { metrics.extents(of: $0.role).descent * $0.size }.max() ?? 0)
+            baseline + (row.chords.map { chord in
+                let descent = metrics.extents(of: chord.role).descent
+                return max(descent, metrics.inkExtents(of: chord.text, role: chord.role).bottom)
+                    * chord.size
+            }.max() ?? 0)
         } ?? 0
         for chord in row.chords {
             issues += glyphViolations(
@@ -148,9 +152,12 @@ public enum LayoutAudit {
         bottom: Double,
         _ metrics: any TextMeasuring,
     ) -> [String] {
+        // The face's capitals and descenders, or the run's own glyphs where they reach
+        // further (Devanagari matras, accents).
         let extents = metrics.extents(of: run.role)
-        let ascent = baseline - extents.inkTop * run.size
-        let descent = baseline + extents.descent * run.size
+        let ink = metrics.inkExtents(of: run.text, role: run.role)
+        let ascent = baseline - max(extents.inkTop, ink.top) * run.size
+        let descent = baseline + max(extents.descent, ink.bottom) * run.size
         guard ascent < top - epsilon || descent > bottom + epsilon else { return [] }
         return ["\"\(run.text)\" glyphs \(ascent)...\(descent) clipped by \(top)...\(bottom)"]
     }

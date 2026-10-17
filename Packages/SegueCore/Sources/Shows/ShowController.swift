@@ -24,152 +24,6 @@ extension LibraryStore: ShowSongSource {
     }
 }
 
-/// A state change the show engine performs. Argument-free commands from keys, pedals and
-/// MIDI arrive as `LiveCommand` and map here through `LiveCommand.showAction`; the rest come
-/// from UI (search overlay, request panel, drawer).
-public enum ShowAction: Sendable, Equatable {
-    /// Marks current played; the next `pending` item after it in `items` becomes current
-    /// (items passed over by a jump stay pending and are not revisited automatically). At
-    /// the end, current becomes nil.
-    case next
-    /// Current goes back to pending; the most recently played item becomes current again.
-    case previous
-    /// Marks current skipped and moves on like `next`.
-    case skipCurrent
-    /// Marks a pending item skipped (drawer). Skipping current is `skipCurrent`.
-    case skip(ShowItemID)
-    /// A skipped item back to pending.
-    case unskip(ShowItemID)
-    /// Makes `item` current (drawer). An interrupted current item goes back to pending.
-    case jump(ShowItemID)
-    /// Search "Play now": the first pending item of that song becomes current (like
-    /// `jump`); when none, a new `.inserted` item is placed before current and made current.
-    /// The interrupted item goes back to pending in its slot.
-    case playNow(SongID)
-    /// Search "Insert next": a new pending `.inserted` item right after current.
-    case insertNext(SongID)
-    /// Search "Add to requests".
-    case addRequest(SongID, note: String?)
-    /// `R`: the oldest queued request becomes an item before current and is made current;
-    /// current goes back to pending (so `next` returns to it). No-op without requests.
-    case playNextRequest
-    /// The same for a specific request (request panel).
-    case playRequest(ShowRequestID)
-    case dropRequest(ShowRequestID)
-    /// Drawer drag, as `Array.move(fromOffsets:toOffset:)` over `items`.
-    case move(fromOffsets: IndexSet, toOffset: Int)
-}
-
-/// An item with the song snapshot the stage draws.
-public struct ShowSlot: Sendable, Equatable {
-    public var item: ShowItem
-    /// Index in `ShowRecord.items`.
-    public var position: Int
-    /// The in-memory snapshot taken when the item became current (or was first shown as up
-    /// next). It is never refreshed mid-song: an external edit applies on the next advance,
-    /// and a deleted file keeps the last snapshot. Nil only if the song never loaded.
-    public var song: SongRecord?
-
-    public init(item: ShowItem, position: Int, song: SongRecord?) {
-        self.item = item
-        self.position = position
-        self.song = song
-    }
-}
-
-/// What the footer shows next.
-public enum UpNext: Sendable, Equatable {
-    /// A queued request wins over the next item ("Request: <title>").
-    case request(ShowRequest, song: SongRecord?)
-    case item(ShowSlot)
-}
-
-/// Everything the stage renders from the engine, replaced wholesale after each action.
-public struct ShowState: Sendable, Equatable {
-    public var record: ShowRecord
-    public var current: ShowSlot?
-    public var upNext: UpNext?
-
-    public init(record: ShowRecord, current: ShowSlot?, upNext: UpNext?) {
-        self.record = record
-        self.current = current
-        self.upNext = upNext
-    }
-}
-
-/// The result of ending a show (or auto-closing a stale one).
-public struct ShowEnding: Sendable, Equatable {
-    /// The finished record (as written, for a gig).
-    public var record: ShowRecord
-    /// The planned-vs-performed diff when the order changed or songs were inserted; nil
-    /// otherwise (no sheet). Always nil for a rehearsal.
-    public var diff: ReorderDiff?
-    /// The new gig log entry; nil for a rehearsal.
-    public var gigLogEntry: GigLogEntry?
-
-    public init(record: ShowRecord, diff: ReorderDiff?, gigLogEntry: GigLogEntry?) {
-        self.record = record
-        self.diff = diff
-        self.gigLogEntry = gigLogEntry
-    }
-}
-
-/// Errors from the show engine. Implementers may add cases.
-public enum ShowError: Error, Equatable {
-    /// The setlist has no performable entries.
-    case emptySetlist
-    /// No item, request or song with this ID.
-    case itemNotFound(ShowItemID)
-    case requestNotFound(ShowRequestID)
-    case songNotFound(SongID)
-    /// The show has already ended.
-    case finished(ShowID)
-    /// The show file is from a newer Segue and cannot be resumed.
-    case readOnly(ShowID, ReadOnlyReason)
-    /// `move` offsets out of range.
-    case invalidOffsets
-    /// `ShowStore` used before `load(root:)`.
-    case notLoaded
-    /// No stored show with this ID.
-    case showNotFound(ShowID)
-    /// Gig log edits need a finished show.
-    case notFinished(ShowID)
-    /// A gig rating outside `GigDetails.ratingRange`.
-    case invalidRating(Int)
-    /// Writing the show file or a timing sample failed. The action itself still took effect
-    /// in memory (the stage keeps going); the write is retried with the next action, scroll
-    /// flush or `end()`.
-    case writeFailed(String)
-}
-
-/// Injected dependencies of a show run.
-public struct ShowEnvironment: Sendable {
-    public var store: ShowStore
-    public var songs: any ShowSongSource
-    public var clock: any Clock
-    public var ids: any IDGenerator
-    /// Receives one sample per completed song (gig and rehearsal), for phase 3.
-    public var durations: (any DurationSampleSink)?
-    /// Minimum seconds between scroll-only writes (1 s: kill -9 loses at most a second).
-    public var scrollWriteInterval: TimeInterval
-
-    public init(
-        store: ShowStore,
-        songs: any ShowSongSource,
-        clock: any Clock,
-        ids: any IDGenerator,
-        durations: (any DurationSampleSink)? = nil,
-        scrollWriteInterval: TimeInterval = 1,
-    ) {
-        self.store = store
-        self.songs = songs
-        self.clock = clock
-        self.ids = ids
-        self.durations = durations
-        self.scrollWriteInterval = scrollWriteInterval
-    }
-}
-
 /// The show state machine: every show action goes through `perform(_:)`, which updates the
 /// record, appends an event stamped by the injected clock and writes the show file
 /// atomically before returning. One controller per run.
@@ -188,13 +42,18 @@ public actor ShowController {
     /// The `updatedAt` of the last successful write.
     private var lastWrite: Date?
     private var needsWrite = false
-    private var writing = false
+    /// The write loop in flight; later `persist()` calls wait for it (it picks up their
+    /// record), so a caller never returns before its record landed.
+    private var writeTask: Task<Void, any Error>?
     private var pendingSamples: [DurationSample] = []
     private var sendingSamples = false
+    /// This run's hold on the show (released when it ends).
+    private let claim: ShowClaim
 
-    private init(record: ShowRecord, environment: ShowEnvironment) {
+    private init(record: ShowRecord, environment: ShowEnvironment, claim: ShowClaim) {
         self.record = record
         self.environment = environment
+        self.claim = claim
         currentState = ShowState(record: record, current: nil, upNext: nil)
     }
 
@@ -253,10 +112,16 @@ public actor ShowController {
                 date: setlist.date ?? CalendarDay(now),
             ),
         )
-        let controller = ShowController(record: record, environment: environment)
+        let claim = try await environment.store.claim(record.id)
+        let controller = ShowController(record: record, environment: environment, claim: claim)
         await controller.takeSnapshotOfCurrent()
         await controller.refreshState()
-        try await controller.persist()
+        do {
+            try await controller.persist()
+        } catch {
+            claim.release()
+            throw error
+        }
         return controller
     }
 
@@ -270,20 +135,43 @@ public actor ShowController {
             throw ShowError.readOnly(record.id, reason)
         }
         guard !record.isFinished else { throw ShowError.finished(record.id) }
-        var resumed = record
+        // Only one run may hold a show: a second window or process resuming it would
+        // overwrite this one's writes.
+        let claim = try await environment.store.claim(record.id)
+        // The latest record on disk (the one offered may predate a write by another run).
+        let latest = await environment.store.reloaded(record.id) ?? record
+        if latest.isFinished || latest.readOnly != nil {
+            claim.release()
+            if let reason = latest.readOnly {
+                throw ShowError.readOnly(record.id, reason)
+            }
+            throw ShowError.finished(record.id)
+        }
+        var resumed = latest
         let now = SegueJSON.stamp(environment.clock.now())
-        resumed.events.append(ShowEvent(at: now, kind: .resumed, itemId: record.currentItemId))
+        resumed.events.append(ShowEvent(at: now, kind: .resumed, itemId: latest.currentItemId))
         resumed.updatedAt = now
-        let controller = ShowController(record: resumed, environment: environment)
+        let controller = ShowController(record: resumed, environment: environment, claim: claim)
         await controller.takeSnapshotOfCurrent()
         await controller.refreshState()
-        try await controller.persist()
+        do {
+            try await controller.persist()
+        } catch {
+            claim.release()
+            throw error
+        }
         return controller
     }
 
     /// The current state.
     public var state: ShowState {
         currentState
+    }
+
+    /// True while a change (action, scroll position, timing sample) is not on disk yet,
+    /// e.g. after a failed write that has not been retried successfully.
+    public var hasUnsavedChanges: Bool {
+        needsWrite || !pendingSamples.isEmpty || writeTask != nil
     }
 
     /// Applies `action`, persists and returns the new state. Actions that do nothing (e.g.
@@ -315,7 +203,14 @@ public actor ShowController {
     /// Records the scroll position (0...1) of the current song. Written with the next
     /// action, or on its own when `scrollWriteInterval` has passed since the last write.
     public func updateScrollPosition(_ fraction: Double) async throws {
-        guard !record.isFinished else { return }
+        guard let item = record.currentItemId else { return }
+        try await updateScrollPosition(fraction, for: item)
+    }
+
+    /// Records the scroll position of `item`; dropped when `item` is no longer current (a
+    /// late flush from the song just left must never land on the new one).
+    public func updateScrollPosition(_ fraction: Double, for item: ShowItemID) async throws {
+        guard !record.isFinished, record.currentItemId == item else { return }
         let clamped = fraction.isFinite ? min(max(fraction, 0), 1) : 0
         guard clamped != record.scrollPosition else { return }
         record.scrollPosition = clamped
@@ -354,11 +249,18 @@ public actor ShowController {
             throw ShowError.finished(record.id)
         }
         try await persistAndSendSamples()
+        claim.release(removingFile: true)
         return ShowEnding(
             record: record,
             diff: record.kind == .gig ? ReorderDiff.compute(record) : nil,
             gigLogEntry: GigLogEntry(record),
         )
+    }
+
+    /// Lets go of the show without ending it (the stage went away; the show stays
+    /// resumable). The controller must not be used afterwards.
+    public func relinquish() {
+        claim.release()
     }
 
     // MARK: - Songs
@@ -395,29 +297,48 @@ public actor ShowController {
         }
     }
 
-    /// Rebuilds `currentState` from the record and the snapshots.
+    /// Rebuilds `currentState` from the record and the snapshots. The songs the state may
+    /// need are looked up first; the state is then built from one read of `record` without
+    /// suspending, so an action landing during a lookup can never mix two records.
     private func refreshState() async {
+        var looked: [SongID: SongRecord] = [:]
+        for songId in songsForState() where snapshots[songId] == nil && looked[songId] == nil {
+            if let song = await environment.songs.cachedSong(id: songId) {
+                looked[songId] = song
+            }
+        }
+        let record = record
         let current = record.currentIndex.map { index in
             let item = record.items[index]
             return ShowSlot(item: item, position: index, song: snapshots[item.songId])
         }
         var upNext: UpNext?
         if let request = record.queuedRequests.first {
-            let song = await environment.songs.cachedSong(id: request.songId)
-            upNext = .request(request, song: song)
+            upNext = .request(request, song: snapshots[request.songId] ?? looked[request.songId])
         } else if let index = record.nextPendingIndex {
             let item = record.items[index]
-            var song = snapshots[item.songId]
-            if song == nil {
-                song = await environment.songs.cachedSong(id: item.songId)
-            }
+            let song = snapshots[item.songId] ?? looked[item.songId]
             upNext = .item(ShowSlot(item: item, position: index, song: song))
         }
         currentState = ShowState(record: record, current: current, upNext: upNext)
     }
 
-    // MARK: - Persistence
+    /// The songs the footer may show (first queued request, next pending item).
+    private func songsForState() -> [SongID] {
+        var ids: [SongID] = []
+        if let request = record.queuedRequests.first {
+            ids.append(request.songId)
+        }
+        if let index = record.nextPendingIndex {
+            ids.append(record.items[index].songId)
+        }
+        return ids
+    }
+}
 
+// MARK: - Persistence
+
+extension ShowController {
     private func queueSamples(for completed: [ShowItemID], at now: Date) {
         guard environment.durations != nil, !completed.isEmpty else { return }
         let played = record.playedSongs
@@ -451,13 +372,22 @@ public actor ShowController {
         }
     }
 
-    /// Writes the latest record; while a write is in flight, later calls only mark it dirty
-    /// and the in-flight loop writes again.
+    /// Writes the latest record and returns once it is on disk. While a write is in flight,
+    /// a later call marks the record dirty and waits for the in-flight loop, which writes
+    /// again until nothing is dirty, so it covers the caller's record too (or throws).
     private func persist() async throws {
         needsWrite = true
-        guard !writing else { return }
-        writing = true
-        defer { writing = false }
+        if let writeTask {
+            try await writeTask.value
+            return
+        }
+        let task = Task { try await self.writeLoop() }
+        writeTask = task
+        try await task.value
+    }
+
+    private func writeLoop() async throws {
+        defer { writeTask = nil }
         while needsWrite {
             needsWrite = false
             let snapshot = record

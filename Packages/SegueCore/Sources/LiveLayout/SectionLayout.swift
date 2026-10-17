@@ -180,7 +180,13 @@ struct SectionLayout {
                 .rows()
             var laid = stack(drafts.map { draft in
                 draft.layoutRow(
-                    kind: .lyric, y: 0, context: context, role: .lyric, source: line.path,
+                    kind: .lyric,
+                    y: 0,
+                    context: context,
+                    role: .lyric,
+                    source: line.path,
+                    ink: line.ink,
+                    metrics: measurer.metrics,
                 )
             })
             laid.wrapped = drafts.count > 1
@@ -259,7 +265,8 @@ struct SectionLayout {
         }
         guard let run = row.text.first else { return nil }
         let extents = measurer.metrics.extents(of: run.role)
-        return row.y + row.textBaseline - extents.inkTop * run.size
+        let ink = measurer.metrics.inkExtents(of: run.text, role: run.role)
+        return row.y + row.textBaseline - max(extents.inkTop, ink.top) * run.size
     }
 
     // MARK: - Labels and cues

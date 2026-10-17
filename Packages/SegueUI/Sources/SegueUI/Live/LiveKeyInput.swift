@@ -33,38 +33,69 @@
         }
 
         /// Handles `event`; false lets it through (typing in the search field, unbound keys).
+        ///
+        /// Key auto-repeat (a held key or a pedal that sticks) only repeats scrolling and
+        /// zoom: a repeat never advances songs, toggles panels, confirms or plays a result.
         static func handle(_ event: NSEvent, session: LiveSession) -> Bool {
             guard let stroke = keyStroke(event) else { return false }
-            switch session.overlay {
-            case .search:
-                return handleSearch(stroke, session: session)
-            case .endConfirm:
-                if stroke.key == KeyStroke.returnKey {
-                    session.confirmEnd()
-                    return true
-                }
-                if stroke.key == KeyStroke.escape {
-                    session.overlay = nil
-                    return true
-                }
-            case nil:
-                if stroke.key == KeyStroke.escape {
-                    session.dismissTopmost()
-                    return true
-                }
+            let isRepeat = event.isARepeat
+            if let handled = handleOverlay(stroke, isRepeat: isRepeat, session: session) {
+                return handled
             }
             guard let command = session.context.bindings.command(for: .key(stroke)) else {
-                // Swallow plain unbound keys on stage (no beep); let Cmd combinations
-                // (Cmd-Q) reach the app.
+                // Swallow plain unbound keys on stage (no beep); let other Cmd combinations
+                // reach the app.
                 return stroke.modifiers.isEmpty
+            }
+            if isRepeat, command.scope != .viewport {
+                return true
             }
             session.dispatch(command)
             return true
         }
 
-        private static func handleSearch(_ stroke: KeyStroke, session: LiveSession) -> Bool {
+        /// Cmd-W / Cmd-Q, and keys the open overlay takes; nil when the bindings decide.
+        private static func handleOverlay(
+            _ stroke: KeyStroke,
+            isRepeat: Bool,
+            session: LiveSession,
+        ) -> Bool? {
+            // Closing or quitting the stage always asks first (Cmd-W, Cmd-Q).
+            if stroke.modifiers == .command, stroke.key == "w" || stroke.key == "q" {
+                if !isRepeat {
+                    session.requestEnd(quitting: stroke.key == "q")
+                }
+                return true
+            }
+            switch (session.overlay, stroke.key) {
+            case (.search, _):
+                return handleSearch(stroke, isRepeat: isRepeat, session: session)
+            case (.endConfirm, KeyStroke.returnKey):
+                if !isRepeat {
+                    session.confirmEnd()
+                }
+                return true
+            case (.endConfirm, KeyStroke.escape):
+                session.cancelEnd()
+                return true
+            case (nil, KeyStroke.escape):
+                session.dismissTopmost()
+                return true
+            default:
+                return nil
+            }
+        }
+
+        private static func handleSearch(
+            _ stroke: KeyStroke,
+            isRepeat: Bool,
+            session: LiveSession,
+        ) -> Bool {
             let search = session.search
             if search.requesting != nil {
+                if isRepeat, stroke.key == KeyStroke.returnKey {
+                    return true
+                }
                 return handleRequestNote(stroke, session: session)
             }
             switch stroke.key {
@@ -75,7 +106,7 @@
             case KeyStroke.upArrow:
                 search.moveSelection(-1)
             case KeyStroke.returnKey:
-                guard let song = search.selected else { return true }
+                guard !isRepeat else { return true }
                 let action: LiveSession.SearchAction = if stroke.modifiers.contains(.command) {
                     .addRequest
                 } else if stroke.modifiers.contains(.option) {
@@ -83,7 +114,7 @@
                 } else {
                     .playNow
                 }
-                session.searchAction(action, song: song.id)
+                session.submitSearch(action)
             default:
                 return false
             }

@@ -130,6 +130,56 @@ struct StageLayoutRenderTests {
         #expect(checked >= 25)
     }
 
+    /// Review finding 12: Devanagari matras reach well above Latin capitals. Each lyric
+    /// row makes room for its own ink, so on every stage no lyric glyph (measured with Core
+    /// Text glyph paths, fallback font included, as drawn) reaches into the chord band
+    /// above it, and the audit (which now checks each run's own ink) agrees.
+    @Test
+    func `devanagari lyrics never reach into the chord band`() throws {
+        let model = try Support.model("live-devanagari.cho")
+        for (stage, size) in Support.stages {
+            for zoom in [1.0, 1.4] {
+                let request = LayoutRequest(
+                    model: model, viewport: size, minLyricSize: 22, zoom: zoom,
+                )
+                let plan = LayoutEngine.plan(request, metrics: metrics)
+                let issues = LayoutAudit.violations(of: plan, request: request, metrics: metrics)
+                #expect(issues.isEmpty, "\(stage) zoom \(zoom): \(issues.prefix(3))")
+                var checked = 0
+                for row in plan.columns.flatMap(\.blocks).flatMap(\.allRows) {
+                    guard let chordBaseline = row.chordBaseline, !row.chords.isEmpty else {
+                        continue
+                    }
+                    let chordBottom = row.chords.map { chord in
+                        chordBaseline - Self.glyphBounds(chord).minY
+                    }.max() ?? chordBaseline
+                    for run in row.text {
+                        let inkTop = row.textBaseline - Self.glyphBounds(run).maxY
+                        #expect(
+                            inkTop >= chordBottom - 0.01,
+                            "\(stage): \"\(run.text)\" ink at \(inkTop) above \(chordBottom)",
+                        )
+                        let inkBottom = row.textBaseline - Self.glyphBounds(run).minY
+                        #expect(inkBottom <= row.height + 0.01, "\(stage): \"\(run.text)\" clipped")
+                        checked += 1
+                    }
+                }
+                #expect(checked >= 6)
+            }
+        }
+    }
+
+    /// The glyph-path bounds of a placed run, as drawn (y up from the baseline).
+    private static func glyphBounds(_ run: PlacedText) -> CGRect {
+        let font = StageTextMetrics.ctFont(run.role, size: run.size)
+        let attributes = [kCTFontAttributeName: font] as CFDictionary
+        guard let string = CFAttributedStringCreate(nil, run.text as CFString, attributes) else {
+            return .null
+        }
+        let line = CTLineCreateWithAttributedString(string)
+        return CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
+    }
+
     @Test
     func `long and very long songs scroll at the minimum without clipping`() throws {
         for name in ["live-forty-lines.cho", "live-very-long.cho"] {

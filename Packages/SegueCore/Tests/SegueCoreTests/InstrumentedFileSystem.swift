@@ -21,6 +21,7 @@ final class InstrumentedFileSystem: FileSystem {
     private struct State {
         var reads: [String: Int] = [:]
         var failing: [(Operation, String)] = []
+        var slowWrites: [(String, TimeInterval)] = []
     }
 
     private let live = LiveFileSystem()
@@ -47,6 +48,11 @@ final class InstrumentedFileSystem: FileSystem {
 
     func heal() {
         state.withLock { $0.failing = [] }
+    }
+
+    /// Makes writes of files whose name ends with `suffix` take `seconds` longer.
+    func slowDown(writes suffix: String, by seconds: TimeInterval) {
+        state.withLock { $0.slowWrites.append((suffix, seconds)) }
     }
 
     private func check(_ operation: Operation, _ url: URL) throws {
@@ -83,6 +89,13 @@ final class InstrumentedFileSystem: FileSystem {
 
     func writeAtomically(_ data: Data, to url: URL) throws {
         try check(.write, url)
+        let name = url.lastPathComponent
+        let delay = state.withLock { state in
+            state.slowWrites.first { name.hasSuffix($0.0) }?.1
+        }
+        if let delay {
+            Thread.sleep(forTimeInterval: delay)
+        }
         try live.writeAtomically(data, to: url)
     }
 

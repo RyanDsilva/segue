@@ -35,6 +35,9 @@ struct MeasuredLine {
     var chords: [MeasuredChord]
     var lyricCount: Int
     var path: BlockPath
+    /// The lyric's own ink (nil for a blank lyric): rows make room for glyphs that reach
+    /// past the face's capitals or descenders, so they never meet the chord band.
+    var ink: InkExtents?
 }
 
 /// Plain text broken into words (each keeps its trailing whitespace).
@@ -134,7 +137,15 @@ struct Measurer {
                 kind: ChordKind(chord.kind),
             )
         }
-        return MeasuredLine(pieces: pieces, chords: chords, lyricCount: count, path: line.path)
+        let text = Self.untabbed(line.lyrics)
+        let ink = text.allSatisfy(\.isWhitespace) ? nil : metrics.inkExtents(of: text, role: .lyric)
+        return MeasuredLine(
+            pieces: pieces,
+            chords: chords,
+            lyricCount: count,
+            path: line.path,
+            ink: ink,
+        )
     }
 
     /// Piece boundaries in lyric offsets: chord positions and ends of whitespace runs, each

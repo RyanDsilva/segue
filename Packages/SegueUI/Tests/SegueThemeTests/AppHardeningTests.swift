@@ -360,6 +360,10 @@ final class TestEnvironment {
     let defaults: UserDefaults
     let clock = ManualClock()
     let ids: ULIDGenerator
+    /// The file system apps made by this environment use (a failing one in some tests).
+    var fileSystem: any FileSystem = LiveFileSystem()
+    /// `bindings.json` for live mode; nil uses the default keys.
+    var bindingsURL: URL?
 
     init() throws {
         scratch = FileManager.default.temporaryDirectory
@@ -384,7 +388,7 @@ final class TestEnvironment {
         -> AppDependencies
     {
         AppDependencies(
-            fileSystem: LiveFileSystem(),
+            fileSystem: fileSystem,
             clock: clock,
             ids: ids,
             location: location,
@@ -402,6 +406,7 @@ final class TestEnvironment {
             shortcuts: RecordingShortcutRunner(log: shortcutLog),
             power: FixedPowerSource(onCharger: true),
             scrollClock: clock,
+            bindingsURL: bindingsURL,
         )
     }
 

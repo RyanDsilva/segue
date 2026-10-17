@@ -127,13 +127,31 @@ extension StageWindowSuites {
                     if song == "basic" {
                         #expect(plan.columns.count <= 2, "\(song) at \(screen.name)")
                     }
+                    try renderHardeningSet(live, screen: screen, song: song)
                 }
             }
         }
 
+        /// The hardening review set (revised wrap ruling): the 13" stage, in
+        /// `.build/screenshots/hardening/`.
+        private func renderHardeningSet(
+            _ live: LiveSession,
+            screen: (name: String, size: CGSize),
+            song: String,
+        ) throws {
+            guard screen.name == "13in" else { return }
+            _ = try render(
+                live,
+                screen: screen.size,
+                name: "\(song)-13in",
+                directory: LiveHardeningTests.hardeningDirectory,
+            )
+        }
+
         /// The build rulings on one rendered plan: it fits at or above the minimum, labels
-        /// are at least 12pt, and lyric lines wrap only when every layout without wrapping is
-        /// more than 15% smaller.
+        /// are at least 12pt, and lyric lines wrap only when no layout without wrapping
+        /// reaches the comfortable size, max(28pt, 1.25 x the minimum) (decisions.md,
+        /// "Auto-fit wrapping (revised)"); a wrapped line never ends on a single word.
         private func checkRulings(
             _ plan: LayoutPlan,
             live: LiveSession,
@@ -146,12 +164,26 @@ extension StageWindowSuites {
             #expect(blocks.flatMap(\.labelLines).allSatisfy { $0.text.size >= 12 })
             let wrapped = Self.wrappedLines(plan)
             let unwrapped = try unwrappedSize(live, screen: screen)
+            let comfortable = max(28, 1.25 * LiveSettings.defaultMinLyricSize)
             #expect(
-                wrapped == 0 || plan.lyricSize * 0.85 > unwrapped,
+                wrapped == 0 || unwrapped < comfortable,
                 "\(label): \(wrapped) wrapped at \(plan.lyricSize)pt, \(unwrapped)pt without",
             )
+            #expect(Self.widows(plan) == 0, "\(label): a wrapped line ends on one word")
             print("Integration: \(label) \(plan.lyricSize)pt \(plan.columns.count) col, "
                 + "\(wrapped) wrapped (largest without wrapping \(unwrapped)pt)")
+        }
+
+        /// Wrapped lyric lines whose last row holds a single word.
+        static func widows(_ plan: LayoutPlan) -> Int {
+            let rows = plan.columns.flatMap(\.blocks).flatMap(\.allRows)
+                .filter { $0.kind == .lyric && $0.source != nil }
+            let lines = Dictionary(grouping: rows) { $0.source }.values.filter { $0.count > 1 }
+            return lines.count { line in
+                let last = line.max { $0.y < $1.y }
+                let words = last?.text.map(\.text).joined().split(whereSeparator: \.isWhitespace)
+                return words?.count == 1
+            }
         }
 
         /// Lyric lines laid out on more than one row.
@@ -161,9 +193,13 @@ extension StageWindowSuites {
             return Dictionary(grouping: sources) { $0 }.values.count { $0.count > 1 }
         }
 
-        /// The largest size any forced column count reaches without a wrapped lyric line.
+        /// The largest size any forced column count reaches without a wrapped lyric line
+        /// (with no comfortable size, so any layout without wrapping wins).
         private func unwrappedSize(_ live: LiveSession, screen: CGSize) throws -> Double {
             let model = try #require(live.currentModel)
+            var style = LayoutStyle.stage
+            style.comfortableLyricSize = 0
+            style.comfortableMinimumFactor = 0
             return (1 ... 3).map { columns in
                 LayoutEngine.plan(
                     LayoutRequest(
@@ -171,6 +207,7 @@ extension StageWindowSuites {
                         viewport: LiveView.viewport(for: screen, topInset: 0),
                         minLyricSize: LiveSettings.defaultMinLyricSize,
                         columns: columns,
+                        style: style,
                     ),
                     metrics: StageTextMetrics(),
                 )

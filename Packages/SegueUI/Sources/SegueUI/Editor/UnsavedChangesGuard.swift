@@ -16,8 +16,16 @@
             return library
         }
 
-        /// `applicationShouldTerminate`: prompts and answers later when edits are unsaved.
+        /// `applicationShouldTerminate`: on stage, quitting goes through the end-show
+        /// confirmation (and quits once the run ended); otherwise prompts and answers later
+        /// when edits are unsaved.
         func shouldTerminate() -> NSApplication.TerminateReply {
+            if let live = app?.live, !live.isEnding {
+                live.requestEnd(quitting: true)
+                StageWindowController.shared.stageWindow?.makeKeyAndOrderFront(nil)
+                NSApp.activate()
+                return .terminateCancel
+            }
             guard let library else { return .terminateNow }
             revealMainWindow()
             library.navigate {
@@ -53,6 +61,16 @@
 
     /// Install with `@NSApplicationDelegateAdaptor(SegueAppDelegate.self)` in the app.
     public final class SegueAppDelegate: NSObject, NSApplicationDelegate {
+        /// Single instance: a second launch hands over to the running Segue and quits
+        /// before it opens anything (two instances could perform the same show).
+        public func applicationWillFinishLaunching(_: Notification) {
+            MainActor.assumeIsolated {
+                if SingleInstance.activateExisting() {
+                    exit(0)
+                }
+            }
+        }
+
         public func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
             MainActor.assumeIsolated {
                 UnsavedChangesGuard.shared.shouldTerminate()

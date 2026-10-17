@@ -153,6 +153,9 @@ extension ShowRecord {
         endedAt = now
         updatedAt = now
         self.closure = closure
+        if self.kind == .gig, ReorderDiff.compute(self) != nil {
+            reorderReview = .pending
+        }
         return leaving
     }
 
@@ -263,9 +266,13 @@ extension ShowRecord {
         events.append(ShowEvent(at: now, kind: .jumped, itemId: itemId, fromItemId: leaving))
     }
 
-    /// Play now: the first pending item of the song is jumped to without moving it (open
+    /// Play now: a no-op when the song is already current (so a double press never duplicates
+    /// it); else the first pending item of the song is jumped to without moving it (open
     /// question 16); otherwise a new inserted item goes before current and becomes current.
     private mutating func playNow(_ songId: SongID, _ context: TransitionContext) throws {
+        if currentItem?.songId == songId {
+            return
+        }
         if let pending = items.first(where: { $0.songId == songId && $0.state == .pending }) {
             jump(to: pending.itemId, at: context.now)
             return

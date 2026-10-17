@@ -247,6 +247,17 @@ public struct GigDetails: Sendable, Hashable, Codable {
     public static let ratingRange = 1 ... 5
 }
 
+/// Whether the show-end reorder review (Save to setlist / Discard) still waits for an
+/// answer. Stored on the show so a review survives a quit or crash until it is resolved.
+public enum ReorderReviewState: String, Sendable, Hashable, Codable {
+    /// The played order differs from the plan and nobody has answered yet.
+    case pending
+    /// Saved to the setlist.
+    case saved
+    /// Discarded (the setlist kept its order), or the setlist could not take it.
+    case discarded
+}
+
 /// How a show was closed.
 public enum ShowClosure: String, Sendable, Hashable, Codable {
     /// The performer ended it (`endShow`).
@@ -288,6 +299,9 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
     public var closure: ShowClosure?
     /// Prefilled from the setlist (venue, date) at start; edited in the gig log afterwards.
     public var gig: GigDetails
+    /// Set when a gig finishes with a reorder diff: `.pending` until the review is answered.
+    /// Nil for rehearsals, unchanged orders and shows written before reviews were stored.
+    public var reorderReview: ReorderReviewState?
     /// Runtime state, not persisted: non-nil when the file is from a newer Segue.
     public var readOnly: ReadOnlyReason?
 
@@ -308,6 +322,7 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
         case endedAt
         case closure
         case gig
+        case reorderReview
     }
 
     public init(
@@ -327,6 +342,7 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
         endedAt: Date? = nil,
         closure: ShowClosure? = nil,
         gig: GigDetails = GigDetails(),
+        reorderReview: ReorderReviewState? = nil,
         readOnly: ReadOnlyReason? = nil,
     ) {
         self.id = id
@@ -345,6 +361,7 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
         self.endedAt = endedAt
         self.closure = closure
         self.gig = gig
+        self.reorderReview = reorderReview
         self.readOnly = readOnly
     }
 

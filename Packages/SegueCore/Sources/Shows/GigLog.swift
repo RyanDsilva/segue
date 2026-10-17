@@ -85,7 +85,8 @@ public struct GigLogEntry: Sendable, Hashable, Identifiable {
 
 public extension ShowRecord {
     /// Songs played so far, in play order, derived from `events` (start = the last time the
-    /// item became current, end = when it was advanced past as played).
+    /// item became current or the show was resumed on it, end = when it was advanced past as
+    /// played).
     ///
     /// Only items whose state is still `played` count (an item `previous` brought back is
     /// counted from its later play). A song's order is when it was last marked played.
@@ -103,7 +104,9 @@ public extension ShowRecord {
                 break
             }
             switch event.kind {
-            case .advanced, .jumped, .previous, .requestPlayed, .started:
+            // A resume restarts the current song's clock: the time the app was not running
+            // (crash, relaunch) is not part of the song.
+            case .advanced, .jumped, .previous, .requestPlayed, .resumed, .started:
                 if let current = event.itemId {
                     becameCurrent[current] = event.at
                 }

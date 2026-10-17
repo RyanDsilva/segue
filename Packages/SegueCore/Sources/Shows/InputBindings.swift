@@ -169,14 +169,66 @@ public struct InputBindingTable: Sendable, Hashable {
     /// Defaults plus the file at `url`, if it exists. A malformed file throws (the caller
     /// reports it and uses `defaults`).
     public static func load(from url: URL?, fileSystem: any FileSystem) throws -> Self {
-        guard let url, fileSystem.fileExists(at: url) else { return defaults }
-        let file = try SegueJSON.decode(File.self, from: fileSystem.readData(at: url))
-        return defaults.merged(with: file.bindings)
+        try loadReporting(from: url, fileSystem: fileSystem).table
     }
+
+    /// What `loadReporting` found.
+    public struct Loaded: Sendable, Equatable {
+        public var table: InputBindingTable
+        /// Set when the file was written by a newer Segue (its `schemaVersion`): the
+        /// bindings this version understands were applied, `skipped` others were ignored.
+        public var newerSchema: Int?
+        public var skipped: Int
+    }
+
+    /// Defaults plus the file at `url`, honouring its `schemaVersion`: the current version
+    /// (or a file without one, the pre-versioned format) decodes strictly and a malformed
+    /// file throws; a newer version is read best effort (bindings with triggers or commands
+    /// this version does not know are skipped and counted), never rewritten.
+    public static func loadReporting(from url: URL?, fileSystem: any FileSystem) throws
+        -> Loaded
+    {
+        guard let url, fileSystem.fileExists(at: url) else {
+            return Loaded(table: defaults, newerSchema: nil, skipped: 0)
+        }
+        let data = try fileSystem.readData(at: url)
+        switch try migrator.migrate(data) {
+        case let .current(json), let .migrated(json, _):
+            let file = try SegueJSON.decode(File.self, from: json)
+            return Loaded(table: defaults.merged(with: file.bindings), newerSchema: nil, skipped: 0)
+        case let .newer(found):
+            let file = try SegueJSON.decode(LenientFile.self, from: data)
+            let bindings = file.bindings.compactMap(\.binding)
+            return Loaded(
+                table: defaults.merged(with: bindings),
+                newerSchema: found,
+                skipped: file.bindings.count - bindings.count,
+            )
+        }
+    }
+
+    /// Version 0 (no `schemaVersion`) has the same shape as version 1.
+    private static let migrator = SchemaMigrator(
+        currentVersion: currentSchemaVersion,
+        steps: [0: { _ in }],
+    )
 
     private struct File: Codable {
         var schemaVersion: Int
         var bindings: [InputBinding]
+    }
+
+    /// A newer file: each binding decoded on its own.
+    private struct LenientFile: Decodable {
+        var bindings: [LenientBinding]
+    }
+
+    private struct LenientBinding: Decodable {
+        var binding: InputBinding?
+
+        init(from decoder: any Decoder) throws {
+            binding = try? InputBinding(from: decoder)
+        }
     }
 
     /// The default keys (phase 2 spec, "Command layer"). Pedals usually send PgUp/PgDn or

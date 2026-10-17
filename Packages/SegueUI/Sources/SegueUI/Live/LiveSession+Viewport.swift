@@ -186,6 +186,8 @@
                 return
             }
             let now = context.scrollClock.now()
+            // A scroll that reached the bottom is finished, so one press starts it over.
+            scroller.settle(at: now)
             switch scroller.phase {
             case .running:
                 scroller.pause(at: now)
@@ -196,6 +198,16 @@
                 scroller.start(at: now)
             }
             self.scroller = scroller
+        }
+
+        /// Records a running scroll that reached the bottom as finished, so the display
+        /// stops ticking (called on the flush tick).
+        func settleScroll() {
+            guard var settled = scroller else { return }
+            settled.settle(at: context.scrollClock.now())
+            if settled != scroller {
+                scroller = settled
+            }
         }
 
         func restartScroll() {
@@ -285,13 +297,46 @@
             guard prefs != before else { return }
             prefsCache[song.id] = prefs
             relayout()
+            savePrefs(prefs, of: song.id)
+        }
+
+        /// Queues `prefs` for the sidecar. Saves run one at a time and always write the
+        /// latest value, so quick presses can never land out of order.
+        func savePrefs(_ prefs: LivePrefs, of song: SongID) {
+            // Saves that failed earlier go again with this one.
+            unsavedPrefs.merge(failedPrefs) { queued, _ in queued }
+            failedPrefs = [:]
+            unsavedPrefs[song] = prefs
+            guard prefsWriter == nil else { return }
+            prefsWriter = Task { [weak self] in
+                await self?.drainPrefs()
+            }
+        }
+
+        /// Writes queued live memory until none is left.
+        private func drainPrefs() async {
+            defer { prefsWriter = nil }
             let library = context.library
-            Task { [weak self] in
+            while let (song, prefs) = unsavedPrefs.first {
+                unsavedPrefs[song] = nil
                 do {
-                    _ = try await library.updateLivePrefs(id: song.id, prefs)
+                    _ = try await library.updateLivePrefs(id: song, prefs)
+                    problems[.songPrefs] = nil
+                } catch LibraryError.readOnly, LibraryError.songNotFound {
+                    notice = "Kept for this show only: this song cannot be changed."
                 } catch {
-                    self?.notice = "Kept for this show only: \(UserMessage.describe(error))"
+                    failedPrefs[song] = prefs
+                    let reason = UserMessage.describe(error)
+                    problems[.songPrefs] = "Song settings not saved (\(reason)). "
+                        + "They apply for this show; Segue saves them with your next change."
                 }
+            }
+        }
+
+        /// Waits until queued live memory is written (tests, show end).
+        func prefsSaved() async {
+            while let writer = prefsWriter {
+                await writer.value
             }
         }
     }

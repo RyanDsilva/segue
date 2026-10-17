@@ -129,6 +129,65 @@ public actor ShowStore {
         shows[id]
     }
 
+    /// The show with `id` re-read from its file (another run may have written it since it
+    /// was loaded); nil when the file is gone or unreadable. Refreshes the cached copy.
+    public func reloaded(_ id: ShowID) -> ShowRecord? {
+        guard let root else { return nil }
+        let url = root.showsDirectory.appending(path: Self.fileName(id))
+        guard fileSystem.fileExists(at: url),
+              let record = try? Self.decode(fileSystem.readData(at: url)),
+              record.id == id
+        else { return nil }
+        shows[id] = record
+        return record
+    }
+
+    // MARK: - Claims
+
+    /// Claims show `id` for this run (see `ShowClaim`). Throws
+    /// `ShowError.claimedElsewhere` when another window or process holds it.
+    public func claim(_ id: ShowID) throws -> ShowClaim {
+        guard let root else { throw ShowError.notLoaded }
+        guard let claim = try ShowClaim.acquire(at: Self.claimURL(id, root: root)) else {
+            throw ShowError.claimedElsewhere(id)
+        }
+        return claim
+    }
+
+    /// Whether another run holds show `id` right now.
+    public func isClaimedElsewhere(_ id: ShowID) -> Bool {
+        guard let root else { return false }
+        guard let claim = try? ShowClaim.acquire(at: Self.claimURL(id, root: root)) else {
+            return true
+        }
+        claim.release()
+        return false
+    }
+
+    static func claimURL(_ id: ShowID, root: LibraryRoot) -> URL {
+        root.showsDirectory.appending(path: id.description + claimSuffix)
+    }
+
+    /// The lock file next to `<ulid>.show.json`.
+    static let claimSuffix = ".show.lock"
+
+    // MARK: - Reorder reviews
+
+    /// Finished gig shows whose reorder review is still unanswered, oldest first, with
+    /// their diffs (the main window offers them until each is saved or discarded).
+    public func pendingReviews() -> [ReorderDiff] {
+        all().filter { $0.reorderReview == .pending && $0.readOnly == nil }
+            .compactMap(ReorderDiff.compute)
+    }
+
+    /// Records the answer to show `id`'s reorder review, so it is not offered again.
+    public func resolveReview(of id: ShowID, saved: Bool) async throws {
+        guard var record = shows[id] else { throw ShowError.showNotFound(id) }
+        guard record.reorderReview == .pending else { return }
+        record.reorderReview = saved ? .saved : .discarded
+        try await save(record)
+    }
+
     /// Every stored show, oldest first.
     public func all() -> [ShowRecord] {
         shows.values.sorted { ($0.startedAt, $0.id) < ($1.startedAt, $1.id) }
@@ -181,15 +240,22 @@ public actor ShowStore {
     /// unfinished run (stale, or an older fresh one left behind) is closed with
     /// `closure = .stale` and `endedAt` = its last update. A closed rehearsal's ending has no
     /// diff and no gig log entry. Read-only shows are left untouched.
+    ///
+    /// A show updated in the future (the clock moved back, or another Mac with a skewed
+    /// clock wrote it) is treated as stale: its age cannot be trusted. Shows claimed by
+    /// another run (performing in another Segue right now) are neither offered nor closed.
     public func launchCheck() async throws -> LaunchShowCheck {
         let now = clock.now()
         let unfinished = all()
-            .filter { !$0.isFinished && $0.readOnly == nil }
+            .filter { !$0.isFinished && $0.readOnly == nil && !isClaimedElsewhere($0.id) }
             .sorted { ($0.updatedAt, $0.id) < ($1.updatedAt, $1.id) }
-        let resumable = unfinished.last { now.timeIntervalSince($0.updatedAt) < Self.staleInterval }
+        let resumable = unfinished.last { record in
+            let age = now.timeIntervalSince(record.updatedAt)
+            return age >= 0 && age < Self.staleInterval
+        }
         var closed: [ShowEnding] = []
         for var record in unfinished where record.id != resumable?.id {
-            _ = record.finish(at: record.updatedAt, closure: .stale)
+            _ = record.finish(at: min(record.updatedAt, now), closure: .stale)
             try await save(record)
             closed.append(ShowEnding(
                 record: record,

@@ -30,9 +30,39 @@
         public var note = ""
         /// The last search error, shown in place of results.
         public private(set) var errorMessage: String?
+        /// The (trimmed) query `results` belong to; differs from `query` while a search for
+        /// newer typing is still running.
+        public private(set) var resultsQuery = ""
+        /// Return pressed before the results for the query as typed landed: runs on their
+        /// first result when they do.
+        @ObservationIgnored private var pendingSubmit: (@MainActor (SongRecord) -> Void)?
 
         @ObservationIgnored private let library: LibraryStore
         @ObservationIgnored private var task: Task<Void, Never>?
+
+        /// The query as searched.
+        private var trimmedQuery: String {
+            query.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        /// Whether `results` belong to the query as typed.
+        var isCurrent: Bool {
+            resultsQuery == trimmedQuery
+        }
+
+        /// Return: runs `action` on the selected result now, or, while the results are
+        /// still for an earlier query, on the first result of this query once it lands
+        /// (nothing when it finds nothing). Never acts on a stale result.
+        func submit(_ action: @escaping @MainActor (SongRecord) -> Void) {
+            if isCurrent {
+                pendingSubmit = nil
+                if let selected {
+                    action(selected)
+                }
+            } else {
+                pendingSubmit = action
+            }
+        }
 
         init(library: LibraryStore) {
             self.library = library
@@ -40,7 +70,9 @@
 
         func reset() {
             task?.cancel()
+            pendingSubmit = nil
             query = ""
+            resultsQuery = ""
             results = []
             selection = 0
             errorMessage = nil
@@ -80,7 +112,9 @@
             let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else {
                 results = []
+                resultsQuery = ""
                 selection = 0
+                pendingSubmit = nil
                 return
             }
             let library = library
@@ -88,12 +122,25 @@
                 do {
                     let found = try await library.search(query: text)
                     guard !Task.isCancelled else { return }
-                    self?.results = Array(found.prefix(Self.limit))
-                    self?.selection = 0
-                    self?.errorMessage = nil
+                    self?.land(Array(found.prefix(Self.limit)), for: text)
                 } catch {
                     guard !Task.isCancelled else { return }
                     self?.errorMessage = UserMessage.describe(error)
+                    self?.resultsQuery = text
+                    self?.pendingSubmit = nil
+                }
+            }
+        }
+
+        private func land(_ found: [SongRecord], for text: String) {
+            results = found
+            resultsQuery = text
+            selection = 0
+            errorMessage = nil
+            if let pending = pendingSubmit {
+                pendingSubmit = nil
+                if let first = found.first {
+                    pending(first)
                 }
             }
         }

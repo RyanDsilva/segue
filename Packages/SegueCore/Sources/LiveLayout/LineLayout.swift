@@ -105,6 +105,8 @@ struct RowDraft {
 
 /// Breaks a measured lyric line into rows no wider than `width` (where possible): words stay
 /// whole, each chord stays above its character, and a wrapped row takes its chords with it.
+/// A wrapped line never ends on a row holding a single word when it can be avoided
+/// (decisions.md, "Auto-fit wrapping (revised)": widow avoidance).
 struct LineBreaker {
     let line: MeasuredLine
     let context: SizeContext
@@ -112,6 +114,41 @@ struct LineBreaker {
     let measurer: Measurer
 
     func rows() -> [RowDraft] {
+        let greedy = greedyRows()
+        guard greedy.count > 1, let last = greedy.last, Self.wordCount(last) == 1 else {
+            return greedy
+        }
+        // Narrow the measure as far as it goes without adding a row: the rows even out and
+        // the last one takes words from the row above.
+        var low = 0.0
+        var high = width
+        for _ in 0 ..< 12 {
+            let mid = (low + high) / 2
+            if narrowed(to: mid).greedyRows().count <= greedy.count {
+                high = mid
+            } else {
+                low = mid
+            }
+        }
+        let balanced = narrowed(to: high).greedyRows()
+        guard balanced.count == greedy.count, let end = balanced.last,
+              Self.wordCount(end) > 1
+        else { return greedy }
+        return balanced
+    }
+
+    private func narrowed(to measure: Double) -> Self {
+        Self(line: line, context: context, width: measure, measurer: measurer)
+    }
+
+    /// Words of lyric text on `row` (a chord-only row has none).
+    static func wordCount(_ row: RowDraft) -> Int {
+        row.pieces.map(\.piece.text).joined()
+            .split(whereSeparator: \.isWhitespace).count
+    }
+
+    /// First fit: each word goes on the current row while it fits.
+    private func greedyRows() -> [RowDraft] {
         let byOffset = Dictionary(grouping: line.chords, by: \.offset)
         var rows: [RowDraft] = []
         var current = RowDraft()
@@ -210,13 +247,58 @@ struct LineBreaker {
 
 extension RowDraft {
     /// The row as drawn: adjacent pieces merged into runs, trailing whitespace dropped.
+    /// `ink` is the line's measured ink: when its glyphs reach above the room the face
+    /// leaves under the chord band (or below the row), the row grows and the baseline moves
+    /// down so they never touch the chords. With `metrics`, chords whose own ink rises above
+    /// the band (the slash of "D/F#") push the row down the same way.
     func layoutRow(
         kind: LayoutRow.Kind,
         y: Double,
         context: SizeContext,
         role: TextRole,
         source: BlockPath?,
+        ink: InkExtents? = nil,
+        metrics: (any TextMeasuring)? = nil,
     ) -> LayoutRow {
+        let runs = textRuns(context: context, role: role)
+        let hasText = !runs.isEmpty
+        let hasChords = !chords.isEmpty
+        var chordBand = hasChords ? context.chordBand : 0
+        var chordBaseline = hasChords ? context.chordBaseline : nil
+        if let metrics, let baseline = chordBaseline {
+            let top = chords.map { metrics.inkExtents(of: $0.text, role: .chord).top }.max() ?? 0
+            let above = max(0, top * context.chordSize - baseline)
+            chordBaseline = baseline + above
+            chordBand += above
+        }
+        var textBaseline = hasText || !hasChords
+            ? chordBand + SizeContext.baseline(
+                band: context.textBand, size: context.lyricSize, extents: context.lyricExtents,
+            )
+            : chordBaseline ?? 0
+        var height = chordBand + (hasText || !hasChords ? context.textBand : 0)
+        if hasText, let ink {
+            let size = context.lyricSize
+            let above = max(0, chordBand - (textBaseline - ink.top * size))
+            textBaseline += above
+            height += above
+            height += max(0, textBaseline + ink.bottom * size - height)
+        }
+        return LayoutRow(
+            kind: kind,
+            y: y,
+            height: height,
+            chordBaseline: chordBaseline,
+            textBaseline: textBaseline,
+            chords: chords,
+            text: runs,
+            source: source,
+        )
+    }
+
+    /// The row's text as drawn: adjacent pieces merged into runs, trailing whitespace
+    /// dropped.
+    private func textRuns(context: SizeContext, role: TextRole) -> [PlacedText] {
         let scale = context.lyricScale
         // (run, advance so far): merged while pieces are contiguous; the width kept is the
         // ink width, so trailing whitespace never counts.
@@ -240,26 +322,7 @@ extension RowDraft {
                 merged.append((run, piece.width * scale))
             }
         }
-        let runs = merged.compactMap { Self.trimmed($0.run) }
-        let hasText = !runs.isEmpty
-        let hasChords = !chords.isEmpty
-        let chordBand = hasChords ? context.chordBand : 0
-        let chordBaseline = hasChords ? context.chordBaseline : nil
-        let textBaseline = hasText || !hasChords
-            ? chordBand + SizeContext.baseline(
-                band: context.textBand, size: context.lyricSize, extents: context.lyricExtents,
-            )
-            : chordBaseline ?? 0
-        return LayoutRow(
-            kind: kind,
-            y: y,
-            height: chordBand + (hasText || !hasChords ? context.textBand : 0),
-            chordBaseline: chordBaseline,
-            textBaseline: textBaseline,
-            chords: chords,
-            text: runs,
-            source: source,
-        )
+        return merged.compactMap { Self.trimmed($0.run) }
     }
 
     /// Drops trailing whitespace from a run (its width is already the ink width); nil for a

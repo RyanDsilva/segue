@@ -69,7 +69,7 @@ struct SegueApp: App {
         let shortcuts: any ShortcutRunner = options.shortcutLog.map(RecordingShortcutRunner.init)
             ?? WorkspaceShortcutRunner()
         let scrollClock: any Clock = options.liveTimeScale.map { ScaledClock(scale: $0) }
-            ?? SystemClock()
+            ?? MonotonicClock()
         let bindings: URL? = if options.isTestRun {
             options.bindingsPath
         } else {

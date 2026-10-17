@@ -61,9 +61,30 @@
             case .toggleSidebar:
                 showsDrawer.toggle()
             case .endShow:
-                overlay = overlay == .endConfirm ? nil : .endConfirm
+                if overlay == .endConfirm {
+                    cancelEnd()
+                } else {
+                    overlay = .endConfirm
+                }
             default:
                 break
+            }
+        }
+
+        /// Cmd-W, Cmd-Q (`quitting`) or a quit from the Dock while on stage: always through
+        /// the end confirmation, never a silent close.
+        func requestEnd(quitting: Bool) {
+            guard !isEnding else { return }
+            notice = nil
+            quitsAfterEnding = quitsAfterEnding || quitting
+            overlay = .endConfirm
+        }
+
+        /// "Keep Playing": closes the end confirmation (and forgets a pending quit).
+        func cancelEnd() {
+            quitsAfterEnding = false
+            if overlay == .endConfirm {
+                overlay = nil
             }
         }
 
@@ -75,6 +96,10 @@
         /// Esc: closes the topmost overlay or panel. Returns false when nothing was open.
         @discardableResult
         func dismissTopmost() -> Bool {
+            if overlay == .endConfirm {
+                cancelEnd()
+                return true
+            }
             if overlay != nil {
                 overlay = nil
                 return true
@@ -122,6 +147,16 @@
             case .playNow: perform(.playNow(song))
             case .addRequest: perform(.addRequest(song, note: nil))
             case .insertNext: perform(.insertNext(song))
+            }
+        }
+
+        /// Return in the results: acts on the selected result, or, while the results still
+        /// belong to an earlier query (typing outran the search), on the first result of the
+        /// query as typed once it lands.
+        func submitSearch(_ action: SearchAction) {
+            search.submit { [weak self] song in
+                guard let self, overlay == .search else { return }
+                searchAction(action, song: song.id)
             }
         }
 

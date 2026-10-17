@@ -115,8 +115,15 @@
             }
         }
 
+        /// Switching libraries is blocked while a show is on stage or starting: the run, its
+        /// keep-awake assertion and the stage window belong to the open library.
+        public var canSwitchLibrary: Bool {
+            !isPerforming && !isStartingShow
+        }
+
         /// "Create Library": save panel suggesting `~/Music/Segue`.
         public func createLibrary() async {
+            guard canSwitchLibrary else { return }
             do {
                 guard let url = try await dependencies.location.createFolder() else { return }
                 await adopt(url)
@@ -127,6 +134,7 @@
 
         /// "Choose Existing Folder": open panel.
         public func chooseLibrary() async {
+            guard canSwitchLibrary else { return }
             let hint: URL? = switch state {
             case let .needsLibrary(.accessLost(url)): url
             case let .ready(session): session.root.url
@@ -203,6 +211,8 @@
         /// Why a pending review cannot be saved, by setlist (deleted or read-only since the
         /// show started): the sheet disables Save and shows this (open question 17).
         public internal(set) var reviewSaveBlockers: [SetlistID: String] = [:]
+        /// Why the last "Save to Setlist" failed; the review stays up with this shown.
+        public internal(set) var reviewSaveFailure: String?
 
         /// The pre-show checklist while it is shown (start of a show or rehearsal).
         public internal(set) var preShow: PreShowChecklist?

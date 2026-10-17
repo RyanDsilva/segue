@@ -1,4 +1,5 @@
 #if os(macOS)
+    import AppKit
     import Foundation
     import Library
     import Setlists
@@ -23,10 +24,14 @@
                         + "“\(first.relativePath)” (\(first.message))."
                 }
                 let check = try await shows.launchCheck()
-                await enqueueReviews(check.autoClosed.compactMap(\.diff))
+                await reloadPendingReviews()
                 pendingResume = check.resumable
                 if !check.autoClosed.isEmpty {
                     await session.library.reload()
+                    // Gig Mode was likely left on by the run that never ended.
+                    if let kind = check.autoClosed.map(\.record.kind).first(where: runsShortcuts) {
+                        await runEndShortcut(kind: kind)
+                    }
                 }
             } catch {
                 session.library.errorMessage = "Segue could not read the shows in this library "
@@ -131,8 +136,8 @@
                         setlistName: record.setlistName,
                     ),
                 )
-                let ending = try await controller.end()
-                await enqueueReviews(ending.diff.map { [$0] } ?? [])
+                _ = try await controller.end()
+                await reloadPendingReviews()
                 await session.library.reload()
             } catch {
                 session.library.errorMessage = "The show could not be ended "
@@ -142,42 +147,75 @@
             await runEndShortcut(kind: record.kind)
         }
 
-        /// Resolves the first pending review: Save writes `diff.entries(including:)` to the
-        /// setlist; Discard leaves the setlist file untouched.
+        /// Resolves the first pending review. Save merges the played order into the setlist
+        /// as it is now (`ReorderDiff.entries(mergingInto:including:)`), so edits made
+        /// during the show are kept; Discard leaves the setlist file untouched. The answer
+        /// is stored on the show, so the review is offered until it is answered (a failed
+        /// save keeps it pending, with the reason in the sheet).
         func resolveReorderReview(save: Bool, including inserted: Set<ShowItemID>) async {
-            guard let diff = pendingReorderReviews.first else { return }
-            pendingReorderReviews.removeFirst()
+            guard let diff = pendingReorderReviews.first, let session else { return }
             let blocked = reviewSaveBlockers[diff.setlistId] != nil
+            if save, !blocked {
+                do {
+                    let current = await session.stores.setlists.setlist(id: diff.setlistId)
+                    _ = try await session.stores.setlists.replaceEntries(
+                        diff.entries(
+                            mergingInto: current?.entries ?? diff.planned,
+                            including: inserted,
+                        ),
+                        in: diff.setlistId,
+                    )
+                    await session.setlists.reload()
+                } catch {
+                    reviewSaveFailure = "“\(diff.setlistName)” was not updated "
+                        + "(\(UserMessage.describe(error))). Try again, or Discard to keep the "
+                        + "setlist as it is."
+                    return
+                }
+            }
+            reviewSaveFailure = nil
+            if let showId = diff.showId {
+                do {
+                    try await session.stores.shows.resolveReview(
+                        of: showId,
+                        saved: save && !blocked,
+                    )
+                } catch {
+                    session.library.errorMessage = "Segue could not record your answer to the "
+                        + "review of “\(diff.setlistName)” (\(UserMessage.describe(error))). "
+                        + "It may be offered again."
+                }
+            }
+            pendingReorderReviews.removeFirst()
             if !pendingReorderReviews.contains(where: { $0.setlistId == diff.setlistId }) {
                 reviewSaveBlockers[diff.setlistId] = nil
             }
-            guard save, !blocked, let session else { return }
-            do {
-                _ = try await session.stores.setlists.replaceEntries(
-                    diff.entries(including: inserted),
-                    in: diff.setlistId,
-                )
-                await session.setlists.reload()
-            } catch {
-                session.setlists.errorMessage = "“\(diff.setlistName)” was not updated "
-                    + "(\(UserMessage.describe(error))). The show is in the gig log as played."
-            }
         }
 
-        /// Queues show-end reviews, first checking each setlist can still be saved (it may
-        /// have been deleted or become read-only during the show).
-        func enqueueReviews(_ diffs: [ReorderDiff]) async {
-            guard !diffs.isEmpty else { return }
-            let setlists = session?.stores.setlists
-            for diff in diffs {
-                if let setlists, let blocker = await setlists.saveBlocker(for: diff.setlistId) {
-                    reviewSaveBlockers[diff.setlistId] = Self.saveBlockedReason(
+        /// Whether the review's setlist was edited after the show started (the sheet warns
+        /// that Save merges into the edited setlist).
+        func setlistChangedSinceShow(_ diff: ReorderDiff) -> Bool {
+            guard let current = session?.setlists.setlist(diff.setlistId) else { return false }
+            return diff.setlistChanged(current: current.entries)
+        }
+
+        /// Offers every stored review still unanswered (show end, auto-closed shows, and
+        /// reviews left open when Segue quit), first checking each setlist can still be saved
+        /// (it may have been deleted or become read-only during the show).
+        func reloadPendingReviews() async {
+            guard let session else { return }
+            let diffs = await session.stores.shows.pendingReviews()
+            var blockers: [SetlistID: String] = [:]
+            for diff in diffs where blockers[diff.setlistId] == nil {
+                if let blocker = await session.stores.setlists.saveBlocker(for: diff.setlistId) {
+                    blockers[diff.setlistId] = Self.saveBlockedReason(
                         blocker,
                         name: diff.setlistName,
                     )
                 }
-                pendingReorderReviews.append(diff)
             }
+            reviewSaveBlockers = blockers
+            pendingReorderReviews = diffs
         }
 
         /// The review's explanation when Save is disabled.
@@ -205,6 +243,7 @@
             pendingResume = nil
             pendingReorderReviews = []
             reviewSaveBlockers = [:]
+            reviewSaveFailure = nil
             preShow?.answer(false)
             preShow = nil
             startFailure = nil
@@ -257,13 +296,20 @@
         }
 
         /// The key bindings: defaults plus `bindings.json`; a malformed file is reported and
-        /// the defaults are used.
+        /// the defaults are used, and a file from a newer Segue is applied as far as this
+        /// version understands it (reported).
         private func loadBindings(_ session: LibrarySession) -> InputBindingTable {
             do {
-                return try InputBindingTable.load(
+                let loaded = try InputBindingTable.loadReporting(
                     from: dependencies.live.bindingsURL,
                     fileSystem: session.stores.fileSystem,
                 )
+                if loaded.newerSchema != nil, loaded.skipped > 0 {
+                    session.library.errorMessage = "Your key bindings file was saved by a newer "
+                        + "version of Segue: \(loaded.skipped) of its bindings are not available "
+                        + "in this version, so those keys keep their defaults."
+                }
+                return loaded.table
             } catch {
                 session.library.errorMessage = "Your key bindings file could not be read "
                     + "(\(UserMessage.describe(error))), so the default keys are used."
@@ -274,12 +320,13 @@
         /// After "End Show": ends the run, closes the stage, runs the end Shortcut and queues
         /// the reorder review.
         func finishRun(_ live: LiveSession) async {
-            var ending: ShowEnding?
+            await live.prefsSaved()
             do {
-                ending = try await live.context.controller.end()
+                _ = try await live.context.controller.end()
             } catch {
                 session?.library.errorMessage = "The show could not be closed "
                     + "(\(UserMessage.describe(error))). It will be offered again at next launch."
+                await live.context.controller.relinquish()
             }
             StageWindowController.shared.close()
             if self.live === live {
@@ -287,8 +334,11 @@
                 self.live = nil
             }
             await runEndShortcut(kind: live.kind)
-            await enqueueReviews(ending?.diff.map { [$0] } ?? [])
+            await reloadPendingReviews()
             await session?.library.reload()
+            if live.quitsAfterEnding {
+                NSApp.terminate(nil)
+            }
         }
 
         /// Shows the checklist (when it has anything to show) and waits for the answer. A
@@ -307,7 +357,7 @@
             return start
         }
 
-        private func runsShortcuts(_ kind: ShowKind) -> Bool {
+        func runsShortcuts(_ kind: ShowKind) -> Bool {
             kind == .gig || liveSettings.runsShortcutsForRehearsals
         }
 

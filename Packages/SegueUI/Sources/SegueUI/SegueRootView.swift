@@ -338,7 +338,9 @@
                         _ = choose()
                     }
                 }
-                .disabled(app.isPerforming)
+                // The show belongs to the open library: end it before switching.
+                .disabled(!app.canSwitchLibrary)
+                .help(app.canSwitchLibrary ? "" : "End the show before switching libraries.")
             }
         }
     }

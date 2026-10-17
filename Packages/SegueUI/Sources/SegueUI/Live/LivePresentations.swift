@@ -68,10 +68,13 @@
                             Task { await app.resolveReorderReview(save: false, including: []) }
                         },
                         saveDisabledReason: app.reviewSaveBlockers[diff.setlistId],
+                        saveFailure: app.reviewSaveFailure,
+                        setlistChanged: app.setlistChangedSinceShow(diff),
                         available: hostSize,
                     )
                     .interactiveDismissDisabled()
-                    .id(diff.setlistId.description + "\(app.pendingReorderReviews.count)")
+                    .id((diff.showId?.description ?? diff.setlistId.description)
+                        + "\(app.pendingReorderReviews.count)")
                 }
             }
         }

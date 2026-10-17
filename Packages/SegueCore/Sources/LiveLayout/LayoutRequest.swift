@@ -56,6 +56,18 @@ public struct FontExtents: Sendable, Hashable {
     }
 }
 
+/// The ink of one set line, as multiples of the point size: how far its glyphs reach above
+/// and below the baseline (both positive when they do).
+public struct InkExtents: Sendable, Hashable {
+    public var top: Double
+    public var bottom: Double
+
+    public init(top: Double, bottom: Double) {
+        self.top = top
+        self.bottom = bottom
+    }
+}
+
 /// Text measurement, injected so the engine stays pure: tests use `FixedAdvanceMetrics`,
 /// the stage uses Core Text with the bundled Schibsted Grotesk faces (SegueUI, unit B).
 ///
@@ -77,6 +89,10 @@ public protocol TextMeasuring: Sendable {
 
     /// Ascent and descent of the face `role` uses, as multiples of the point size.
     func extents(of role: TextRole) -> FontExtents
+
+    /// The ink of `text` set as one line in `role`, glyph fallback included (Devanagari
+    /// matras reach well above Latin capitals), as multiples of the point size.
+    func inkExtents(of text: String, role: TextRole) -> InkExtents
 }
 
 public extension TextMeasuring {
@@ -100,6 +116,12 @@ public extension TextMeasuring {
     /// A generic sans face: ascent 0.8, descent 0.2, ink top 0.7.
     func extents(of _: TextRole) -> FontExtents {
         FontExtents(ascent: 0.8, descent: 0.2, inkTop: 0.7)
+    }
+
+    /// The face's ink (`inkTop`, `descent`) for any text.
+    func inkExtents(of _: String, role: TextRole) -> InkExtents {
+        let face = extents(of: role)
+        return InkExtents(top: face.inkTop, bottom: face.descent)
     }
 }
 
@@ -179,10 +201,14 @@ public struct LayoutStyle: Sendable, Hashable {
     public var minLabelSize: Double
     /// Size of the gutter's second line (`TextRole.labelDetail`).
     public var labelDetailSize: Double
-    /// Auto-fit prefers layouts where no lyric line wraps: it takes a wrapping layout only
-    /// when the best one without wrapping is more than this fraction smaller (decisions.md,
-    /// "Auto-fit prefers no wrapping").
+    /// How much larger a layout with fewer columns must be to win over `preferredColumns`
+    /// (decisions.md, "Columns").
     public var wrapTolerance: Double
+    /// Auto-fit never wraps a lyric line when a layout without wrapping reaches a
+    /// comfortable size: the larger of this and `comfortableMinimumFactor` x the user's
+    /// minimum (decisions.md, "Auto-fit wrapping (revised)").
+    public var comfortableLyricSize: Double
+    public var comfortableMinimumFactor: Double
     /// The column count auto-fit leans toward (decisions.md, "Columns"): fewer columns only
     /// when their size is more than `wrapTolerance` larger, more only when this count does
     /// not fit at the minimum without wrapping.
@@ -217,6 +243,8 @@ public struct LayoutStyle: Sendable, Hashable {
         minLabelSize: Double = 12,
         labelDetailSize: Double = 12,
         wrapTolerance: Double = 0.15,
+        comfortableLyricSize: Double = 28,
+        comfortableMinimumFactor: Double = 1.25,
         preferredColumns: Int = 2,
         cuePadding: LayoutSize = LayoutSize(width: 8, height: 4),
         calloutSpacing: Double = 6,
@@ -245,6 +273,8 @@ public struct LayoutStyle: Sendable, Hashable {
         self.minLabelSize = minLabelSize
         self.labelDetailSize = labelDetailSize
         self.wrapTolerance = wrapTolerance
+        self.comfortableLyricSize = comfortableLyricSize
+        self.comfortableMinimumFactor = comfortableMinimumFactor
         self.preferredColumns = preferredColumns
         self.cuePadding = cuePadding
         self.calloutSpacing = calloutSpacing

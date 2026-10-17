@@ -30,6 +30,9 @@ public struct ReorderDiff: Sendable, Hashable {
         }
     }
 
+    /// The show the diff came from (its review state is stored there); nil for diffs built
+    /// by hand.
+    public var showId: ShowID?
     public var setlistId: SetlistID
     public var setlistName: String
     /// The setlist's entries at show start.
@@ -38,11 +41,13 @@ public struct ReorderDiff: Sendable, Hashable {
     public var performed: [Row]
 
     public init(
+        showId: ShowID? = nil,
         setlistId: SetlistID,
         setlistName: String,
         planned: [SetlistEntry],
         performed: [Row],
     ) {
+        self.showId = showId
         self.setlistId = setlistId
         self.setlistName = setlistName
         self.planned = planned
@@ -88,6 +93,7 @@ public struct ReorderDiff: Sendable, Hashable {
         // Entries left out at start (missing songs) are not a change: Save keeps them.
         guard changed else { return nil }
         return Self(
+            showId: record.id,
             setlistId: record.setlistId,
             setlistName: record.setlistName,
             planned: record.planned,
@@ -95,19 +101,37 @@ public struct ReorderDiff: Sendable, Hashable {
         )
     }
 
-    /// The entries "Save to setlist" writes (`SetlistStore.replaceEntries`): planned entries
-    /// in performed order (keeping their item IDs, overrides and notes), plus the inserted
-    /// rows in `including` (`defaultIncluded` unless the performer unticks some) as new
-    /// entries at their performed positions. Entries left out of the show because their song
-    /// was missing keep their place after their planned predecessor.
+    /// The entries "Save to setlist" writes when the setlist still holds the planned
+    /// entries: `entries(mergingInto: planned, including:)`.
     public func entries(including inserted: Set<ShowItemID>) -> [SetlistEntry] {
-        let plannedByID = Dictionary(
-            planned.map { ($0.itemId, $0) },
+        entries(mergingInto: planned, including: inserted)
+    }
+
+    /// The entries "Save to setlist" writes (`SetlistStore.replaceEntries`), merged into the
+    /// setlist as it is now (`current`, which may have been edited during the show):
+    ///
+    /// - entries still in `current` that the show performed take their performed order,
+    ///   with their current overrides and notes;
+    /// - the inserted rows in `including` (`defaultIncluded` unless the performer unticks
+    ///   some) become new entries at their performed positions;
+    /// - entries removed from the setlist during the show stay removed;
+    /// - entries the show never had (added to the setlist during the show, or left out at
+    ///   start because the song was missing) keep their place after the entry before them
+    ///   in `current`, or stay at the end when nothing after them was performed, so Save
+    ///   never drops a song.
+    public func entries(
+        mergingInto current: [SetlistEntry],
+        including inserted: Set<ShowItemID>,
+    ) -> [SetlistEntry] {
+        let currentByID = Dictionary(
+            current.map { ($0.itemId, $0) },
             uniquingKeysWith: { first, _ in first },
         )
         var written: [SetlistEntry] = performed.compactMap { row in
             if case .inserted = row.change {
-                guard inserted.contains(row.item.itemId) else { return nil }
+                guard inserted.contains(row.item.itemId),
+                      currentByID[row.item.itemId] == nil
+                else { return nil }
                 return SetlistEntry(
                     itemId: row.item.itemId,
                     songId: row.item.songId,
@@ -115,13 +139,17 @@ public struct ReorderDiff: Sendable, Hashable {
                     note: row.item.note,
                 )
             }
-            return plannedByID[row.item.itemId]
+            return currentByID[row.item.itemId]
         }
-        // Planned entries with no row (left out at start because the song was missing) go
-        // back right after the planned entry before them, so Save never drops a song.
-        var present = Set(written.map(\.itemId))
-        for (position, entry) in planned.enumerated() where !present.contains(entry.itemId) {
-            let anchor = planned[..<position].last { present.contains($0.itemId) }
+        let performedIDs = Set(written.map(\.itemId))
+        var present = performedIDs
+        for (position, entry) in current.enumerated() where !present.contains(entry.itemId) {
+            if !current[(position + 1)...].contains(where: { performedIDs.contains($0.itemId) }) {
+                written.append(entry)
+                present.insert(entry.itemId)
+                continue
+            }
+            let anchor = current[..<position].last { present.contains($0.itemId) }
             let index = anchor
                 .flatMap { anchor in written.firstIndex { $0.itemId == anchor.itemId } }
                 .map { $0 + 1 } ?? 0
@@ -129,6 +157,12 @@ public struct ReorderDiff: Sendable, Hashable {
             present.insert(entry.itemId)
         }
         return written
+    }
+
+    /// Whether `current` (the setlist's entries now) differs from the entries at show start,
+    /// so Save merges into a setlist that was edited during the show.
+    public func setlistChanged(current: [SetlistEntry]) -> Bool {
+        current != planned
     }
 
     /// What the sheet ticks before the performer touches it: every inserted song and played

@@ -59,6 +59,7 @@
             .overlay(alignment: .top) { searchOverlay }
             .overlay { endConfirm }
             .overlay(alignment: .bottom) { statusLine }
+            .overlay(alignment: .top) { problemBanner }
             .overlay(alignment: .topTrailing) { modeIndicator }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.liveView)
@@ -126,7 +127,28 @@
                 )
             } else if session.state.current == nil {
                 endOfSet
+            } else if session.currentModel == nil {
+                songUnavailable
             }
+        }
+
+        /// The current song never loaded (its file was gone or unreadable when it became
+        /// current): say so instead of a blank stage.
+        private var songUnavailable: some View {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Song unavailable")
+                    .font(Theme.font.sectionHeading)
+                    .foregroundStyle(Theme.color.ink)
+                Text(
+                    "“\(session.state.current?.item.title ?? "This song")” could not be read "
+                        + "from the library folder. Press → to continue.",
+                )
+                .font(Theme.font.body)
+                .foregroundStyle(Theme.color.muted)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier(AccessibilityID.liveSongUnavailable)
         }
 
         /// Fades the last 32pt when more of the song is below, so a row cut by the edge
@@ -207,6 +229,33 @@
             .animation(reduceMotion ? nil : .linear(duration: 0.15), value: session.indicator)
         }
 
+        /// Failures that stay up until resolved (the show file is not being written, song
+        /// settings not saved), under the header so they are never missed.
+        @ViewBuilder private var problemBanner: some View {
+            let problems = LiveSession.Problem.allCases.compactMap { session.problems[$0] }
+            if !problems.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(problems, id: \.self) { problem in
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Circle().fill(Theme.color.cue).frame(width: 8, height: 8)
+                                .accessibilityHidden(true)
+                            Text(problem)
+                                .foregroundStyle(Theme.color.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .font(Theme.font.label)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .frame(maxWidth: 760, alignment: .leading)
+                .background(StagePanelBackground(radius: 8))
+                .padding(.top, Self.headerHeight + topInset + 4)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier(AccessibilityID.liveProblem)
+            }
+        }
+
         @ViewBuilder private var statusLine: some View {
             if statusVisible || session.notice != nil {
                 StageStatusLine(session: session)
@@ -235,10 +284,11 @@
 
         var body: some View {
             let noun = session.kind == .gig ? "show" : "rehearsal"
+            let quitting = session.quitsAfterEnding
             ZStack {
                 Theme.color.ground.opacity(0.7)
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("End the \(noun)?")
+                    Text(quitting ? "End the \(noun) and quit Segue?" : "End the \(noun)?")
                         .font(Theme.font.sectionHeading)
                         .foregroundStyle(Theme.color.ink)
                     Text(
@@ -251,9 +301,11 @@
                     .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 10) {
                         Spacer()
-                        Button("Keep Playing (Esc)") { session.overlay = nil }
+                        Button("Keep Playing (Esc)") { session.cancelEnd() }
                             .buttonStyle(.segueSecondary)
-                        Button("End \(noun.capitalized) (Return)") { session.confirmEnd() }
+                        Button(
+                            quitting ? "End and Quit (Return)" : "End \(noun.capitalized) (Return)",
+                        ) { session.confirmEnd() }
                             .buttonStyle(.seguePrimary)
                             .accessibilityIdentifier(AccessibilityID.liveEndConfirm)
                     }

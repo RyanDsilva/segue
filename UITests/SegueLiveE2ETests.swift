@@ -5,8 +5,8 @@ import XCTest
 /// the pre-show checklist, the stage keys, the overlays, the gig log and the reorder review.
 /// Shortcuts are recorded by the fake runner (`-SegueShortcutLog`), never opened.
 final class SegueLiveE2ETests: XCTestCase {
-    private var library: LiveLibrary?
-    private var app: XCUIApplication?
+    var library: LiveLibrary?
+    var app: XCUIApplication?
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -319,7 +319,7 @@ extension SegueLiveE2ETests {
 
 extension SegueLiveE2ETests {
     @MainActor
-    private func launch(_ library: LiveLibrary, extra: [String] = []) -> XCUIApplication {
+    func launch(_ library: LiveLibrary, extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         self.app = app
         E2E.launch(app, arguments: library.arguments(extra: extra))
@@ -328,7 +328,7 @@ extension SegueLiveE2ETests {
 
     /// Setlists > the Friday setlist > Start Show (or Rehearse) > the checklist's Start.
     @MainActor
-    private func startShow(_ app: XCUIApplication, rehearse: Bool) {
+    func startShow(_ app: XCUIApplication, rehearse: Bool) {
         element(app, LiveAXID.sidebarSetlists).click(in: app)
         let row = element(app, LiveAXID.setlistRow)
         XCTAssertTrue(row.waitForExistence(timeout: 10))
@@ -387,7 +387,7 @@ extension SegueLiveE2ETests {
     // MARK: Helpers
 
     @MainActor
-    private func key(
+    @nonobjc func key(
         _ app: XCUIApplication,
         _ key: XCUIKeyboardKey,
         _ modifiers: XCUIElement.KeyModifierFlags = [],
@@ -396,7 +396,7 @@ extension SegueLiveE2ETests {
     }
 
     @MainActor
-    private func key(
+    @nonobjc func key(
         _ app: XCUIApplication,
         _ key: String,
         _ modifiers: XCUIElement.KeyModifierFlags = [],
@@ -405,7 +405,7 @@ extension SegueLiveE2ETests {
     }
 
     @MainActor
-    private func element(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {
+    func element(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
@@ -452,7 +452,7 @@ extension SegueLiveE2ETests {
     }
 
     @MainActor
-    private func screenshot(_ app: XCUIApplication, _ name: String) {
+    func screenshot(_ app: XCUIApplication, _ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "live-\(name)"
         attachment.lifetime = .keepAlways

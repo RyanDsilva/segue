@@ -106,6 +106,7 @@ public extension AccessibilityID {
     // MARK: Reorder review (show end)
 
     static let reorderSheet = "segue.reorder"
+    static let reorderWarning = "segue.reorder.warning"
     static let reorderPlannedRow = "segue.reorder.planned"
     static let reorderPerformedRow = "segue.reorder.performed"
     static let reorderInclude = "segue.reorder.include"
