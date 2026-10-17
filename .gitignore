@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Tuist-generated Xcode artefacts (manifests are the source of truth)
+*.xcodeproj
+*.xcworkspace
+Derived/
+Tuist/.build/
+.tuist-derived/
+graph.dot
+graph.png
+
+# Build output
+.build/
+DerivedData/
+build/
+*.xcresult
+
+# SwiftPM per-user state
+.swiftpm/
+Packages/*/.swiftpm/
+
+# Xcode per-user state
+xcuserdata/
+*.xcuserstate
+
+# Local signing overrides (not used yet; see Project.swift)
+Tuist/Signing.xcconfig

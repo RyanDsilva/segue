@@ -1,0 +1,24 @@
+{
+  "originHash" : "b83f9bc0246c6a28a25734fbdc17c3adefdccd2d49a14a4b94beabe6de5529a9",
+  "pins" : [
+    {
+      "identity" : "grdb.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/groue/GRDB.swift",
+      "state" : {
+        "revision" : "b83108d10f42680d78f23fe4d4d80fc88dab3212",
+        "version" : "7.11.1"
+      }
+    },
+    {
+      "identity" : "tonic",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AudioKit/Tonic",
+      "state" : {
+        "revision" : "601eeb26b06ff6edfa391b2fd2d8815ec8231a9b",
+        "version" : "2.1.2"
+      }
+    }
+  ],
+  "version" : 3
+}

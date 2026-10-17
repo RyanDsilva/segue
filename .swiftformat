@@ -1,0 +1,30 @@
+# SwiftFormat (nicklockwood) - version pinned in .mise.toml. Run `make format`.
+--swiftversion 6.2
+--exclude .build,**/.build,Derived,Tuist/.build,*.xcodeproj,*.xcworkspace
+
+# Layout
+--indent 4
+--maxwidth 100
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--closingparen balanced
+--commas always
+--ifdef indent
+--header ignore
+
+# Style
+--self remove
+--importgrouping alpha
+--stripunusedargs closure-only
+--redundanttype inferred
+--semicolons never
+--trimwhitespace always
+--linebreaks lf
+
+# Rules
+--enable isEmpty
+--enable sortSwitchCases
+--enable wrapEnumCases
+--enable docComments
+--disable redundantReturn

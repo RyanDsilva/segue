@@ -1,0 +1,175 @@
+import ProjectDescription
+
+// Segue - Tuist project manifest. Source of truth for targets, schemes, configurations,
+// entitlements and signing; the generated .xcodeproj/.xcworkspace are gitignored and never
+// hand-edited.
+
+// MARK: - Signing
+
+/// Apple Developer team used for automatic signing (a team ID is not a secret).
+/// Currently the free Personal Team of contact@ryandsilva.dev; swap for the paid team ID
+/// once that membership is active.
+let developmentTeam = "V6BM673U35"
+
+/// How builds are signed.
+/// - `.automatic`: Xcode automatic signing with `developmentTeam`. Command-line builds need
+///   `-allowProvisioningUpdates` (the Makefile passes it).
+/// - `.adHoc`: "Sign to Run Locally" (identity "-"), no team or Apple account needed.
+///   Fallback for machines where automatic signing is unavailable.
+enum SigningMode {
+    case automatic
+    case adHoc
+}
+
+let signingMode: SigningMode = .automatic
+
+let signingSettings: SettingsDictionary = switch signingMode {
+case .automatic:
+    [
+        "CODE_SIGN_STYLE": "Automatic",
+        "DEVELOPMENT_TEAM": .string(developmentTeam),
+        "CODE_SIGN_IDENTITY": "Apple Development",
+    ]
+case .adHoc:
+    [
+        "CODE_SIGN_STYLE": "Automatic",
+        "DEVELOPMENT_TEAM": "",
+        "CODE_SIGN_IDENTITY": "-",
+    ]
+}
+
+// MARK: - Identity
+
+let bundleID = "dev.ryandsilva.segue"
+let uiTestsBundleID = "dev.ryandsilva.segue.uitests"
+let deploymentTargets: DeploymentTargets = .macOS("26.0")
+
+// MARK: - Configurations
+
+let debugPersonal: ConfigurationName = "Debug-Personal"
+let releasePersonal: ConfigurationName = "Release-Personal"
+let debugAppStore: ConfigurationName = "Debug-AppStore"
+let releaseAppStore: ConfigurationName = "Release-AppStore"
+
+/// Strict build settings applied to every target in this project.
+let strictSettings: SettingsDictionary = [
+    "SWIFT_VERSION": "6.0",
+    "SWIFT_STRICT_CONCURRENCY": "complete",
+    "SWIFT_TREAT_WARNINGS_AS_ERRORS": "YES",
+    "GCC_TREAT_WARNINGS_AS_ERRORS": "YES",
+    "SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY": "YES",
+    "ENABLE_USER_SCRIPT_SANDBOXING": "YES",
+    "ENABLE_HARDENED_RUNTIME": "YES",
+    "MACOSX_DEPLOYMENT_TARGET": "26.0",
+]
+
+let projectSettings: Settings = .settings(
+    base: strictSettings.merging(signingSettings) { _, new in new },
+    configurations: [
+        .debug(name: debugPersonal),
+        .release(name: releasePersonal),
+        .debug(name: debugAppStore),
+        .release(name: releaseAppStore),
+    ],
+    defaultSettings: .recommended,
+)
+
+// MARK: - Targets
+
+/// Both app flavors compile the same sources and share bundle ID, Info.plist and
+/// entitlements. They are separate targets because SwiftPM product dependencies are
+/// per-target, not per-configuration: only `Segue` (Personal) links `SeguePersonalModules`,
+/// so the App Store flavor never references that package.
+func appTarget(name: String, personal: Bool) -> Target {
+    var dependencies: [TargetDependency] = [
+        .external(name: "SegueUI"),
+        .external(name: "SegueCore"),
+    ]
+    var settings: SettingsDictionary = [
+        "PRODUCT_NAME": "Segue",
+        "CODE_SIGN_ENTITLEMENTS": "App/Segue.entitlements",
+        "ENABLE_APP_SANDBOX": "YES",
+    ]
+    if personal {
+        dependencies.append(.external(name: "SeguePersonalModules"))
+        settings["SWIFT_ACTIVE_COMPILATION_CONDITIONS"] = "$(inherited) SEGUE_PERSONAL"
+    }
+    return .target(
+        name: name,
+        destinations: [.mac],
+        product: .app,
+        productName: "Segue",
+        bundleId: bundleID,
+        deploymentTargets: deploymentTargets,
+        infoPlist: .extendingDefault(with: [
+            "CFBundleDisplayName": "Segue",
+            "LSApplicationCategoryType": "public.app-category.music",
+            "CFBundleShortVersionString": "0.1.0",
+            "CFBundleVersion": "1",
+            "NSHumanReadableCopyright": "Copyright 2026 Ryan D'Silva",
+        ]),
+        sources: ["App/Sources/**"],
+        // Resources (asset catalog, app icon `.icon`, fonts) are added with the theme/icon work.
+        entitlements: .file(path: "App/Segue.entitlements"),
+        dependencies: dependencies,
+        // Signing is repeated at target level because Tuist's target defaults set
+        // CODE_SIGN_IDENTITY for macOS, which would override the project-level value.
+        settings: .settings(base: settings.merging(signingSettings) { _, new in new }),
+    )
+}
+
+let personalApp = appTarget(name: "Segue", personal: true)
+let appStoreApp = appTarget(name: "SegueAppStore", personal: false)
+
+let uiTests: Target = .target(
+    name: "SegueUITests",
+    destinations: [.mac],
+    product: .uiTests,
+    bundleId: uiTestsBundleID,
+    deploymentTargets: deploymentTargets,
+    infoPlist: .default,
+    sources: ["UITests/**"],
+    dependencies: [.target(name: "Segue")],
+    settings: .settings(base: signingSettings.merging(["TEST_TARGET_NAME": "Segue"]) { _, new in
+        new
+    }),
+)
+
+// MARK: - Schemes
+
+let personalScheme: Scheme = .scheme(
+    name: "Segue-Personal",
+    shared: true,
+    buildAction: .buildAction(targets: ["Segue"]),
+    testAction: .targets(
+        [.testableTarget(target: "SegueUITests")],
+        configuration: debugPersonal,
+    ),
+    runAction: .runAction(configuration: debugPersonal, executable: "Segue"),
+    archiveAction: .archiveAction(configuration: releasePersonal),
+    profileAction: .profileAction(configuration: releasePersonal, executable: "Segue"),
+    analyzeAction: .analyzeAction(configuration: debugPersonal),
+)
+
+let appStoreScheme: Scheme = .scheme(
+    name: "Segue-AppStore",
+    shared: true,
+    buildAction: .buildAction(targets: ["SegueAppStore"]),
+    runAction: .runAction(configuration: debugAppStore, executable: "SegueAppStore"),
+    archiveAction: .archiveAction(configuration: releaseAppStore),
+    profileAction: .profileAction(configuration: releaseAppStore, executable: "SegueAppStore"),
+    analyzeAction: .analyzeAction(configuration: debugAppStore),
+)
+
+// MARK: - Project
+
+let project = Project(
+    name: "Segue",
+    options: .options(
+        automaticSchemesOptions: .disabled,
+        developmentRegion: "en",
+    ),
+    settings: projectSettings,
+    targets: [personalApp, appStoreApp, uiTests],
+    schemes: [personalScheme, appStoreScheme],
+)

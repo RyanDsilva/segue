@@ -1,0 +1,6 @@
+# Tool versions for Segue. Install with `mise install` (or `make bootstrap`).
+# Never install these globally; every Makefile target runs them via `mise exec --`.
+[tools]
+tuist = "4.212.0"
+swiftlint = "0.65.1"
+swiftformat = "0.64.0"
