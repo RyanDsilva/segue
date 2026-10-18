@@ -46,7 +46,11 @@ sentry() { mise exec -- sentry-cli "$@"; }
 
 # Local check (no network, no token): every dSYM is usable and has the UUIDs we expect.
 for bundle in "${found[@]}"; do
-    sentry debug-files check "$bundle" || die "$bundle is not a usable debug file"
+    dwarf=("$bundle"/Contents/Resources/DWARF/*)
+    [[ -f "${dwarf[0]}" ]] || die "$bundle has no DWARF file"
+    for file in "${dwarf[@]}"; do
+        sentry debug-files check "$file" >/dev/null || die "$file is not a usable debug file"
+    done
     echo "upload-dsyms: $(basename "$bundle"): $(dwarfdump --uuid "$bundle" | awk '{print $2, $3}' | tr '\n' ' ')"
 done
 
