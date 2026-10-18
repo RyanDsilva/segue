@@ -1,30 +1,79 @@
 #!/bin/sh
-# Blocks a push whose commits touch website/ or content/ unless `make site-check STRICT=1`
-# passes: a push to main publishes the site, so placeholders and the draft maker note must
-# never reach it (docs/release/specs/WS4-website.md section 8.3, B-29).
+# Local stand-in for branch protection, which GitHub Free does not offer on a private repo
+# (docs/github-setup.md section 2). Blocks the push unless:
+#
+#   1. every commit being pushed is signed with a good signature (`%G?` is G, or U for a
+#      good signature whose key has unknown validity);
+#   2. `make repo-check` passes (exactly what the Linux CI runs);
+#   3. if any pushed commit touches website/ or content/, `make site-check STRICT=1` passes:
+#      a push to main publishes the site, so placeholders and the draft maker note must
+#      never reach it (docs/release/specs/WS4-website.md section 8.3, B-29).
+#
+# One-time bypass for check 3 only: SEGUE_ALLOW_SITE_PLACEHOLDERS=1 git push ...
+# It exists for the first push, while the site is still "Coming soon" and the Cloudflare
+# Pages project cannot exist before the repo is on GitHub (docs/release/README.md 2.4).
+# It skips nothing else; checks 1 and 2 always run. Do not set it in a shell profile.
+#
 # Installed by `make bootstrap` (git config core.hooksPath .githooks).
 
-touched=no
 remote="$1"
+touched=no
+unsigned=""
 
 while read -r _local_ref local_sha _remote_ref remote_sha; do
 	case "$local_sha" in
 	*[!0]*) ;;
 	*) continue ;; # deleting a remote ref
 	esac
+	# Commits the remote lacks. A remote sha we do not have (e.g. before a force push) is
+	# treated like a new branch: everything not on any remote-tracking ref is checked.
 	case "$remote_sha" in
-	*[!0]*) range="$remote_sha..$local_sha" ;;
-	*) range="$local_sha --not --remotes=$remote" ;; # new branch: commits this remote lacks
+	*[!0]*)
+		if git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+			range="$remote_sha..$local_sha"
+		else
+			range="$local_sha --not --remotes=$remote"
+		fi
+		;;
+	*) range="$local_sha --not --remotes=$remote" ;;
 	esac
+
 	# shellcheck disable=SC2086 # range is intentionally word-split
-	if ! commits=$(git log --format=%H $range -- website content 2>/dev/null); then
-		touched=yes # unknown remote commit (e.g. a force push): check to be safe
-	elif [ -n "$commits" ]; then
+	if ! sigs=$(git log --format='%G? %h %s' $range 2>/dev/null); then
+		echo "pre-push: could not list the commits being pushed ($range)" >&2
+		exit 1
+	fi
+	bad=$(printf '%s\n' "$sigs" | grep -v -e '^G ' -e '^U ' -e '^$')
+	if [ -n "$bad" ]; then
+		unsigned="$unsigned$bad
+"
+	fi
+
+	# shellcheck disable=SC2086
+	if [ -n "$(git log --format=%H $range -- website content 2>/dev/null)" ]; then
 		touched=yes
 	fi
 done
 
+if [ -n "$unsigned" ]; then
+	echo "pre-push: blocked. These commits are not signed with a good signature (%G? shown):" >&2
+	printf '%s' "$unsigned" | sed 's/^/  /' >&2
+	echo "Re-sign them (unlock 1Password first), e.g. git rebase --exec 'git commit --amend --no-edit -S' <base>" >&2
+	exit 1
+fi
+
+echo "pre-push: running make repo-check" >&2
+if ! make repo-check; then
+	echo "pre-push: blocked. Fix make repo-check above (the same checks CI runs)." >&2
+	exit 1
+fi
+
 [ "$touched" = yes ] || exit 0
+
+if [ "${SEGUE_ALLOW_SITE_PLACEHOLDERS:-}" = 1 ]; then
+	echo "pre-push: SEGUE_ALLOW_SITE_PLACEHOLDERS=1, skipping make site-check STRICT=1 (one-time first-push bypass)" >&2
+	exit 0
+fi
 
 echo "pre-push: website/ or content/ changed; running make site-check STRICT=1" >&2
 if ! make site-check STRICT=1; then

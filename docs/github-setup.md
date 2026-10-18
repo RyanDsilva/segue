@@ -32,7 +32,7 @@ DRY_RUN=1 make labels-sync   # preview the gh commands
 make labels-sync             # create or update every label in .github/labels.yml
 ```
 
-GitHub's default labels (`bug`, `enhancement`, `documentation`, ...) are left in place. To delete everything not in `labels.yml`, run `PRUNE=1 make labels-sync` (not run; needs a separate go-ahead since it deletes labels).
+Pruned 2026-10-17 with Ryan's go-ahead: `PRUNE=1 make labels-sync` deleted every label not in `labels.yml`, which were GitHub's defaults `accessibility`, `bug`, `documentation`, `duplicate`, `enhancement`, `good first issue`, `help wanted`, `invalid`, `question` and `wontfix` (no issue or PR used them). The repo now has exactly the 26 labels in `labels.yml`.
 
 ### Milestones
 
@@ -45,9 +45,19 @@ gh api repos/RyanDsilva/segue/milestones -f title=v0.6 \
 
 ## 2. Branch protection on `main` (not applied)
 
-**Blocker: GitHub Free does not offer branch protection or rulesets on private repositories.** The API answers `403 Upgrade to GitHub Pro or make this repository public to enable this feature.` (checked 2026-10-17). The command below is ready for the day the repo is on GitHub Pro or public; it must also wait until the workflows have been pushed and have run once, because required checks name CI jobs GitHub has seen.
+**Blocker: branch protection and rulesets on a private repository need GitHub Pro (or a public repo).** On GitHub Free the API answers `403 Upgrade to GitHub Pro or make this repository public to enable this feature.` (checked 2026-10-17). The command below is ready for the day the repo is on GitHub Pro or public; it must also wait until the workflows have been pushed and have run once, because required checks name CI jobs GitHub has seen.
 
-Until then the same rules hold locally: `make repo-check` before every push (the CI checks), commits signed by convention (`commit.gpgsign` is on), and the pre-push hook guards the website.
+### Until then: the pre-push hook enforces it
+
+`.githooks/pre-push` (installed by `make bootstrap` through `core.hooksPath`) blocks any push unless:
+
+1. every commit being pushed has a good signature (`git log --format=%G?` is `G`, or `U` for a good signature from a key of unknown validity). Unlock 1Password before pushing;
+2. `make repo-check` passes (the same checks CI runs);
+3. if a pushed commit touches `website/` or `content/`, `make site-check STRICT=1` passes (no placeholders or draft maker note on the live site).
+
+The first push may need a one-time bypass of check 3 only, while the site is still "Coming soon": `SEGUE_ALLOW_SITE_PLACEHOLDERS=1 git push origin main`. Checks 1 and 2 still run. Never export it in a shell profile.
+
+A hook is local: `git push --no-verify` skips it, and a fresh clone has no hook until `make bootstrap`. That is acceptable for a solo repo; server-side enforcement comes back with the command below.
 
 Required checks are the CI job names: `Swift lint`, `Scripts and workflows` (lint.yml), `Site tokens`, `Site HTML` (site.yml) and `Docs` (docs.yml). `app_id` 15368 is GitHub Actions.
 

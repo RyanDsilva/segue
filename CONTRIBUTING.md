@@ -11,7 +11,7 @@ Segue is a solo, proprietary project (see [LICENSE](LICENSE)); outside contribut
 ## Branches and pushes
 
 - Work lands on `main`. A short-lived branch (`ws2b-welcome`, `fix-autoscroll`) is fine for anything that wants CI before it reaches `main`; see [docs/github-setup.md](docs/github-setup.md) for how branch protection treats direct pushes.
-- Pushes need Ryan's explicit go-ahead. A push to `main` publishes the website, so the pre-push hook runs `make site-check STRICT=1` whenever `website/` or `content/` changed (`make bootstrap` installs the hook).
+- Pushes need Ryan's explicit go-ahead. The pre-push hook (`make bootstrap` installs it) stands in for branch protection: it blocks a push unless every pushed commit is signed and `make repo-check` passes, and, because a push to `main` publishes the website, runs `make site-check STRICT=1` whenever `website/` or `content/` changed. See [docs/github-setup.md](docs/github-setup.md).
 
 ## Commits
 
