@@ -55,32 +55,34 @@
         }
     }
 
-    /// Test-only runner (`-SegueShortcutLog <file>`, Debug builds): never opens Shortcuts;
-    /// appends each name it was asked to run as one line to `log`, so the E2E suite can
-    /// assert both hooks fired. A name starting with "fail" throws, to exercise the
-    /// unticked "Focus on" row.
-    @MainActor
-    public final class RecordingShortcutRunner: ShortcutRunner {
-        public let log: URL
-        public private(set) var names: [String] = []
+    #if DEBUG
+        /// Test-only runner (`-SegueShortcutLog <file>`, Debug builds): never opens Shortcuts;
+        /// appends each name it was asked to run as one line to `log`, so the E2E suite can
+        /// assert both hooks fired. A name starting with "fail" throws, to exercise the
+        /// unticked "Focus on" row.
+        @MainActor
+        public final class RecordingShortcutRunner: ShortcutRunner {
+            public let log: URL
+            public private(set) var names: [String] = []
 
-        public init(log: URL) {
-            self.log = log
-        }
+            public init(log: URL) {
+                self.log = log
+            }
 
-        public func run(_ name: String) async throws {
-            names.append(name)
-            let line = Data((name + "\n").utf8)
-            if let handle = try? FileHandle(forWritingTo: log) {
-                defer { try? handle.close() }
-                try handle.seekToEnd()
-                try handle.write(contentsOf: line)
-            } else {
-                try line.write(to: log, options: .atomic)
-            }
-            if name.lowercased().hasPrefix("fail") {
-                throw ShortcutRunError.openFailed("test failure")
+            public func run(_ name: String) async throws {
+                names.append(name)
+                let line = Data((name + "\n").utf8)
+                if let handle = try? FileHandle(forWritingTo: log) {
+                    defer { try? handle.close() }
+                    try handle.seekToEnd()
+                    try handle.write(contentsOf: line)
+                } else {
+                    try line.write(to: log, options: .atomic)
+                }
+                if name.lowercased().hasPrefix("fail") {
+                    throw ShortcutRunError.openFailed("test failure")
+                }
             }
         }
-    }
+    #endif
 #endif

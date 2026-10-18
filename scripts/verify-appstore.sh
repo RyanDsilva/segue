@@ -12,6 +12,8 @@
 #   2. Fails if the E2E temporary-exception entitlement is in the signed entitlements of any
 #      Release or AppStore product (Release-AppStore, Debug-AppStore, Release-Personal), or if
 #      `network.client` is missing from them (A61: both flavors make outgoing connections).
+#   3. Fails if the Release-AppStore binary carries a test hook (a launch-option flag,
+#      RecordingShortcutRunner) or an editor perf notice (WS1 4.8a/4.8f).
 #
 # The flavors have separate bundle IDs (docs/release/decisions.md R11): the App Store build is
 # dev.ryandsilva.segue (App/SegueAppStore.entitlements), Personal is
@@ -26,19 +28,13 @@ derived="${SEGUE_VERIFY_DERIVED_DATA:-.build/DerivedData-verify}"
 products="$derived/Build/Products"
 intermediates="$derived/Build/Intermediates.noindex"
 
-# Anything that can only come from the personal package or its compilation condition.
-forbidden='SeguePersonalModules|PersonalModules|SEGUE_PERSONAL'
+# `forbidden`, the test-hook strings and fail/pass come from the shared library so this
+# script and verify-archive.sh cannot drift.
+prefix="verify-appstore"
+# shellcheck source=lib/verify-common.sh
+source scripts/lib/verify-common.sh
 # The Debug-only E2E sandbox exception (App/Segue-Debug.entitlements).
 exception='com\.apple\.security\.temporary-exception'
-
-failures=0
-fail() {
-    echo "verify-appstore: FAIL: $*" >&2
-    failures=$((failures + 1))
-}
-pass() {
-    echo "verify-appstore: ok: $*"
-}
 
 # build <scheme> <configuration>: builds with a link map so the linker inputs are recorded.
 build() {
@@ -145,6 +141,7 @@ for config in Release-AppStore Debug-AppStore; do
     check_personal_free "$config"
     check_no_exception "$config"
 done
+check_no_test_hooks Release-AppStore "$products/Release-AppStore/Segue.app/Contents/MacOS/Segue"
 
 build Segue-Personal Release-Personal
 check_no_exception Release-Personal

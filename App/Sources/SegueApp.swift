@@ -17,69 +17,49 @@ struct SegueApp: App {
 
     init() {
         Theme.registerFonts()
-        let options = Self.launchOptions
-        let defaults = AppStateReset.defaults(for: options, bundleID: Bundle.main.bundleIdentifier)
-        if options.resetState {
-            AppStateReset.wipeTestState(defaults, bundleID: Bundle.main.bundleIdentifier)
-        }
         plugins = PluginRegistry()
         plugins.registerAll(Self.pluginModules)
 
         let clock = SystemClock()
-        let dependencies = AppDependencies(
-            fileSystem: LiveFileSystem(),
-            clock: clock,
-            ids: ULIDGenerator(clock: clock),
-            location: LibraryLocation(defaults: defaults),
-            libraryOverride: options.libraryPath,
-            rememberLibraryOverride: options.rememberLibrary,
-            shapeLibraryURL: Self.shapeLibraryURL(options),
-            live: Self.liveDependencies(options, defaults: defaults),
-        )
+        let fileSystem = LiveFileSystem()
+        let ids = ULIDGenerator(clock: clock)
+        #if DEBUG
+            // Test-only launch arguments are honoured in Debug builds only.
+            let options = LaunchOptions(arguments: ProcessInfo.processInfo.arguments)
+            let dependencies = options.dependencies(
+                fileSystem: fileSystem,
+                clock: clock,
+                ids: ids,
+                real: Self.realLiveDependencies,
+            )
+        #else
+            // Release never lets the command line redirect the library or wipe state, and
+            // has no test hooks compiled in (WS1 4.8f).
+            let dependencies = AppDependencies(
+                fileSystem: fileSystem,
+                clock: clock,
+                ids: ids,
+                location: LibraryLocation(defaults: .standard),
+                shapeLibraryURL: Self.realShapeLibraryURL,
+                live: Self.realLiveDependencies(defaults: .standard),
+            )
+        #endif
         _app = State(initialValue: AppModel(dependencies: dependencies))
     }
 
-    /// Test-only launch arguments are honoured in Debug builds only; Release builds never
-    /// let the command line redirect the library or wipe state.
-    private static var launchOptions: LaunchOptions {
-        #if DEBUG
-            LaunchOptions(arguments: ProcessInfo.processInfo.arguments)
-        #else
-            LaunchOptions()
-        #endif
+    /// The user's chord shape library in Application Support.
+    static var realShapeLibraryURL: URL? {
+        Bundle.main.bundleIdentifier.map(AppDependencies.defaultShapeLibraryURL)
     }
 
-    /// The user's chord shape library: Application Support, or only the explicit test file
-    /// in a test run.
-    private static func shapeLibraryURL(_ options: LaunchOptions) -> URL? {
-        if options.isTestRun {
-            return options.shapeLibraryPath
-        }
-        guard let bundleID = Bundle.main.bundleIdentifier else { return nil }
-        return AppDependencies.defaultShapeLibraryURL(bundleID: bundleID)
-    }
-
-    /// Live mode: the real Shortcut runner, system clock and Application Support bindings,
-    /// or the test doubles a test run asks for.
+    /// Live mode with the real Shortcut runner, system clock and Application Support bindings.
     @MainActor
-    private static func liveDependencies(_ options: LaunchOptions, defaults: UserDefaults)
-        -> LiveDependencies
-    {
-        let settings = LiveSettingsStore(defaults: defaults)
-        let shortcuts: any ShortcutRunner = options.shortcutLog.map(RecordingShortcutRunner.init)
-            ?? WorkspaceShortcutRunner()
-        let scrollClock: any Clock = options.liveTimeScale.map { ScaledClock(scale: $0) }
-            ?? MonotonicClock()
-        let bindings: URL? = if options.isTestRun {
-            options.bindingsPath
-        } else {
-            Bundle.main.bundleIdentifier.map(LiveDependencies.defaultBindingsURL)
-        }
-        return LiveDependencies(
-            settings: settings,
-            shortcuts: shortcuts,
-            scrollClock: scrollClock,
-            bindingsURL: bindings,
+    static func realLiveDependencies(defaults: UserDefaults) -> LiveDependencies {
+        LiveDependencies(
+            settings: LiveSettingsStore(defaults: defaults),
+            shortcuts: WorkspaceShortcutRunner(),
+            scrollClock: MonotonicClock(),
+            bindingsURL: Bundle.main.bundleIdentifier.map(LiveDependencies.defaultBindingsURL),
         )
     }
 
