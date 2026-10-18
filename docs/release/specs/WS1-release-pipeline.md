@@ -449,3 +449,13 @@ Everything from the earlier draft is resolved: Q1 -> R35 (probe, then Shortcuts 
 One new question; it blocks nothing, and the default applies if you do not answer:
 
 1. **Two apps called "Segue".** After the split, the Personal build and the TestFlight/App Store build are separate apps that both show as "Segue" in the Dock, Spotlight and Launchpad. Keep "Segue" for both (default; R3 names the store build only), or give the Personal flavor `CFBundleDisplayName = "Segue Personal"` so you can tell them apart?
+
+## 10. Implementation notes
+
+Recorded during the steps 1-7 session (2026-10-17); orchestrator rulings, no open questions.
+
+- **4.8b accessibility help (step 4).** Removing `setAccessibilityHelp` also removed the editor text views from the XCUITest tree (the editor E2E suite could not find them). Both views now call `setAccessibilityElement(true)` explicitly; no help text is set in any build.
+- **4.8d row state in E2E (step 6).** XCUITest does not expose the accessibility value of a SwiftUI row that contains its children, so the `done` / `not done` value cannot be read there. Each checklist row adds a 1x1 element only while `UITesting.isActive` (`segue.live.checklist.row.state`, label `"<row title>: done"`), the same pattern as the editor's typing-latency instrumentation. The row keeps its accessibility value for VoiceOver.
+- **4.2 item 9, B-6 (step 2).** Tuist applies no target settings to the synthesized `SegueUI_SegueUI` bundle target, and its derived plist hard-codes the placeholder copyright. A post build phase on both app targets, `scripts/stamp-resource-bundle.sh`, sets the bundle's `CFBundleIdentifier` to `dev.ryandsilva.segue.SegueUI.resources` and copies the app's `NSHumanReadableCopyright`, `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` into it before code signing. `check_resource_bundle` in `scripts/lib/verify-common.sh` asserts the result; verify-appstore runs it on Release-AppStore, and verify-archive (step 10) uses it for check 8.
+- **4.8g library lock wiring (step 7).** `AppDependencies.libraryLock: LibraryLockPolicy` (`.exclusive` by default, `.unlocked`). `LibrarySession` takes the lock before opening any store and holds it for its lifetime; re-opening the already open library reuses that session's lock. Package integration tests that deliberately run several in-process app instances on one library set `.unlocked`; `LibraryLockAppTests` keeps the real lock and proves a second `AppModel` lands on `.needsLibrary(.inUseByAnotherCopy)` and can open the library once the first is gone.
+- **Recording runner before step 9.** Names not starting with `fail` or `hang` return `.completed` (the Path SE behaviour) until step 9 picks the confirmation path.
