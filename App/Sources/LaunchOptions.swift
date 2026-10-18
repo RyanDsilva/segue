@@ -1,6 +1,8 @@
 import Foundation
 import SegueUI
+import Services
 import Support
+import VendorServices
 
 // Debug builds only (WS1 4.8f): Release has no launch-option parser, flag strings or test
 // doubles compiled in; scripts/verify-appstore.sh and verify-archive check the binary.
@@ -32,6 +34,16 @@ import Support
     /// - `-SegueImportPanelPaths <p1:p2>`: File > Import Songs… "chooses" these paths instead
     ///   of showing the open panel.
     /// - `-SegueAutosaveDelay <seconds>`: the autosave idle debounce (E2E uses 0.3).
+    /// - `-SegueServicesLog <file>`: Recording services adapters (WS3 14.1): every analytics
+    ///   signal, breadcrumb, crash-reporter start and stop and sent report is one JSON line
+    ///   in `<file>`; the diagnostic log rotates in a `Logs` folder beside it.
+    /// - `-SegueFeedbackResult <ok|offline|rejected>`: how the recording report sender answers.
+    /// - `-SegueServicesLive YES`: the real vendors from Info.plist (Sentry environment
+    ///   `debug`, TelemetryDeck test mode), for manual live checks only. Not a test run.
+    /// - `-SegueConsent <undecided|granted|declined|analyticsOnly|crashOnly>`: set both
+    ///   consent decisions at launch, as if answered in the prompt (nothing is recorded).
+    ///   Test runs without it decline any decision still undecided, so the consent prompt
+    ///   only appears in the tests that ask for it (`undecided`).
     struct LaunchOptions: Sendable, Equatable {
         static let libraryPathFlag = "-SegueLibraryPath"
         static let resetStateFlag = "-SegueResetState"
@@ -47,6 +59,19 @@ import Support
         static let trashPathFlag = "-SegueTrashPath"
         static let importPanelPathsFlag = "-SegueImportPanelPaths"
         static let autosaveDelayFlag = "-SegueAutosaveDelay"
+        static let servicesLogFlag = "-SegueServicesLog"
+        static let feedbackResultFlag = "-SegueFeedbackResult"
+        static let servicesLiveFlag = "-SegueServicesLive"
+        static let consentFlag = "-SegueConsent"
+
+        /// `-SegueConsent` values.
+        enum ConsentPreset: String, Sendable, CaseIterable {
+            case undecided
+            case granted
+            case declined
+            case analyticsOnly
+            case crashOnly
+        }
 
         var libraryPath: URL?
         var resetState = false
@@ -62,6 +87,10 @@ import Support
         var trashPath: URL?
         var importPanelPaths: [URL]?
         var autosaveDelay: Double?
+        var servicesLog: URL?
+        var feedbackResult: RecordingFeedbackSender.Outcome?
+        var servicesLive = false
+        var consentPreset: ConsentPreset?
 
         init(
             libraryPath: URL? = nil,
@@ -78,6 +107,10 @@ import Support
             trashPath: URL? = nil,
             importPanelPaths: [URL]? = nil,
             autosaveDelay: Double? = nil,
+            servicesLog: URL? = nil,
+            feedbackResult: RecordingFeedbackSender.Outcome? = nil,
+            servicesLive: Bool = false,
+            consentPreset: ConsentPreset? = nil,
         ) {
             self.libraryPath = libraryPath
             self.resetState = resetState
@@ -93,6 +126,10 @@ import Support
             self.trashPath = trashPath
             self.importPanelPaths = importPanelPaths
             self.autosaveDelay = autosaveDelay
+            self.servicesLog = servicesLog
+            self.feedbackResult = feedbackResult
+            self.servicesLive = servicesLive
+            self.consentPreset = consentPreset
         }
 
         /// Parses `arguments` (as in `ProcessInfo.arguments`; the first element is the
@@ -130,13 +167,19 @@ import Support
             autosaveDelay = values[Self.autosaveDelayFlag].flatMap(Double.init).flatMap { delay in
                 delay >= 0 ? delay : nil
             }
+            servicesLog = Self.path(values[Self.servicesLogFlag], directoryHint: .notDirectory)
+            feedbackResult = values[Self.feedbackResultFlag]
+                .flatMap(RecordingFeedbackSender.Outcome.init(rawValue:))
+            servicesLive = values[Self.servicesLiveFlag].map(Self.isTruthy) ?? false
+            consentPreset = values[Self.consentFlag].flatMap(ConsentPreset.init(rawValue:))
         }
 
         private static let flags: Set = [
             libraryPathFlag, resetStateFlag, rememberLibraryFlag, testDefaultsFlag,
             shapeLibraryPathFlag, shortcutLogFlag, liveTimeScaleFlag, bindingsPathFlag,
             startShortcutFlag, endShortcutFlag, workspaceLogFlag, trashPathFlag,
-            importPanelPathsFlag, autosaveDelayFlag,
+            importPanelPathsFlag, autosaveDelayFlag, servicesLogFlag, feedbackResultFlag,
+            servicesLiveFlag, consentFlag,
         ]
 
         /// A Shortcut name with surrounding blanks removed; nil when blank.
@@ -158,7 +201,8 @@ import Support
                 || shapeLibraryPath != nil || shortcutLog != nil || liveTimeScale != nil
                 || bindingsPath != nil || startShortcut != nil || endShortcut != nil
                 || workspaceLog != nil || trashPath != nil || importPanelPaths != nil
-                || autosaveDelay != nil
+                || autosaveDelay != nil || servicesLog != nil || feedbackResult != nil
+                || consentPreset != nil
         }
 
         private static func isTruthy(_ value: String) -> Bool {
@@ -205,6 +249,7 @@ import Support
             if resetState {
                 AppStateReset.wipeTestState(defaults, bundleID: bundleID)
             }
+            let services = servicesWiring(defaults: defaults, bundleID: bundleID)
             return AppDependencies(
                 fileSystem: fileSystem,
                 clock: clock,
@@ -218,7 +263,54 @@ import Support
                 workspace: workspaceLog.map(RecordingWorkspaceActions.init),
                 importPanel: importPanelPaths.map(FixedImportPanel.init),
                 autosaveDelay: autosaveDelay.map { .milliseconds(Int(($0 * 1000).rounded())) },
+                services: services.services,
+                consent: services.consent,
+                diagnosticLog: services.log,
             )
+        }
+
+        /// The services for a Debug launch: Recording adapters for E2E, the real vendors for a
+        /// manual live check, otherwise Null adapters. Then the consent preset.
+        private func servicesWiring(defaults: UserDefaults, bundleID: String?) -> ServicesWiring {
+            let mode: ServicesWiring.Mode = if let servicesLog {
+                .recording(RecordingLog(url: servicesLog), feedback: feedbackResult ?? .ok)
+            } else if servicesLive, let config = VendorConfig.load(from: .main) {
+                .vendor(config, .fixed(.debug))
+            } else {
+                .null
+            }
+            let suiteName = isTestRun ? bundleID.map { $0 + AppStateReset.testSuiteSuffix } : nil
+            let wiring = ServicesWiring(
+                mode: mode,
+                defaults: defaults,
+                suiteName: suiteName,
+                logDirectory: servicesLog.map { log in
+                    log.deletingLastPathComponent().appending(
+                        path: "Logs",
+                        directoryHint: .isDirectory,
+                    )
+                },
+            )
+            apply(consentPreset, to: wiring.consent)
+            return wiring
+        }
+
+        private func apply(_ preset: ConsentPreset?, to store: ConsentStore) {
+            switch preset {
+            case .undecided:
+                store.resetToUndecided()
+            case .analyticsOnly, .crashOnly, .declined, .granted:
+                let analytics = preset == .granted || preset == .analyticsOnly
+                let crash = preset == .granted || preset == .crashOnly
+                store.set(analytics, for: .analytics, source: nil)
+                store.set(crash, for: .crashReports, source: nil)
+            case nil:
+                // A test run that did not ask for the prompt never sees it.
+                guard isTestRun else { return }
+                for toggle in ConsentStore.Toggle.allCases where !store.isDecided(toggle) {
+                    store.set(false, for: toggle, source: nil)
+                }
+            }
         }
 
         /// The file system for this launch: deleted items go to `-SegueTrashPath` when given.

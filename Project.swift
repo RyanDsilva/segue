@@ -140,7 +140,7 @@ func appTarget(name: String, personal: Bool) -> Target {
     var dependencies: [TargetDependency] = [
         .external(name: "SegueUI"),
         .external(name: "SegueCore"),
-        // Linked only; consent and UI wiring land in WS3 phase 3.
+        // Hosted services (WS3): our TelemetryDeck ingest client and the Sentry SDK.
         .external(name: "VendorServices"),
     ]
     var settings: SettingsDictionary = [
@@ -164,6 +164,9 @@ func appTarget(name: String, personal: Bool) -> Target {
             personal ? telemetryDeckAppIDPersonal : telemetryDeckAppIDAppStore,
         ),
         "SEGUE_TELEMETRYDECK_NAMESPACE": .string(telemetryDeckNamespace),
+        // sentry-cocoa's static targets declare `linkedLibrary("c++")` and `("z")` in their
+        // package manifest; Tuist's static frameworks do not pass that on to the app's link.
+        "OTHER_LDFLAGS": "$(inherited) -lc++ -lz",
     ]
     if personal {
         dependencies.append(.external(name: "SeguePersonalModules"))

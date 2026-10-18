@@ -33,6 +33,8 @@
                 }
             }
             .task { await app.start() }
+            // The consent prompt (WS3 4.2) once the library state has settled.
+            .servicesPresentations(app)
             // A Dock click with no window open brings this window back (review risk F2).
             .onAppear {
                 let openWindow = openWindow

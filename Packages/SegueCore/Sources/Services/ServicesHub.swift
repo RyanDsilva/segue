@@ -87,15 +87,20 @@ public final class ServicesHub: Sendable {
         }
     }
 
-    /// Applies a consent change. Revocations take effect before this returns its first
-    /// suspension: the Null adapter is in place, then the old adapter is shut down
-    /// discarding its queue. Grants build the vendor adapter.
+    /// Applies a consent change: `beginApply` (synchronous) then its completion.
     public func apply(_ consent: ConsentState) async {
+        await beginApply(consent).complete()
+    }
+
+    /// The synchronous half of a consent change, for callers that must not suspend before a
+    /// revoke takes effect (the toggle in Settings > Privacy): records the target and swaps
+    /// the Null adapter in for anything no longer wanted, under the lock, before returning.
+    /// No event can reach a revoked adapter after this call. `complete()` then builds newly
+    /// granted adapters and shuts the retired ones down, discarding their queues.
+    public func beginApply(_ consent: ConsentState) -> ConsentApplication {
         let target = consent.effective
         let analyticsWanted = target.analytics.isGranted
         let crashWanted = target.crashReports.isGranted
-
-        // 1. Record the target and take down anything no longer wanted, under the lock.
         let retired = state.withLock { state -> Retired in
             state.consent = target
             var retired = Retired()
@@ -114,11 +119,15 @@ public final class ServicesHub: Sendable {
         if retired.analytics != nil {
             throttle.reset()
         }
+        return ConsentApplication(hub: self, target: target, retired: retired)
+    }
 
-        // 2. Build newly granted adapters outside the lock, then install them only if the
-        //    consent still wants them (a concurrent revoke may have won meanwhile).
-        let needsAnalytics = analyticsWanted && !state.withLock { $0.analyticsLive }
-        let needsCrash = crashWanted && !state.withLock { $0.crashLive }
+    /// Builds newly granted adapters outside the lock and installs them only if the consent
+    /// still wants them (a concurrent revoke may have won meanwhile), then shuts down what
+    /// was retired or lost a race.
+    fileprivate func finishApply(_ target: ConsentState, retired: Retired) async {
+        let needsAnalytics = target.analytics.isGranted && !state.withLock { $0.analyticsLive }
+        let needsCrash = target.crashReports.isGranted && !state.withLock { $0.crashLive }
         var stale = Retired()
         if needsAnalytics {
             let sink = factory.makeAnalytics()
@@ -140,13 +149,23 @@ public final class ServicesHub: Sendable {
                 return nil
             }
         }
-
-        // 3. Shut down what was retired or lost a race.
         await retired.shutDown()
         await stale.shutDown()
     }
 
-    private struct Retired {
+    /// A consent change whose revocations already took effect (`beginApply`).
+    public struct ConsentApplication: Sendable {
+        fileprivate let hub: ServicesHub
+        fileprivate let target: ConsentState
+        fileprivate let retired: Retired
+
+        /// Builds the newly granted adapters and shuts down the retired ones.
+        public func complete() async {
+            await hub.finishApply(target, retired: retired)
+        }
+    }
+
+    fileprivate struct Retired: Sendable {
         var analytics: (any AnalyticsSink)?
         var crashReporter: (any CrashReporter)?
 

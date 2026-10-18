@@ -4,6 +4,7 @@
     import Foundation
     import Library
     import Observation
+    import Services
     import Setlists
     import Shows
     import Support
@@ -38,6 +39,12 @@
         /// Test-only override of the autosave idle debounce (`-SegueAutosaveDelay`); nil
         /// uses `AutosavePolicy.idle`.
         public var autosaveDelay: Duration?
+        /// The consent-gated services (WS3): view models record analytics events through it.
+        public var services: ServicesHub
+        /// The consent decisions (prompt, Settings > Privacy).
+        public var consent: ConsentStore
+        /// The privacy-safe diagnostic log (WS3 spec 7); nil in in-process tests.
+        public var diagnosticLog: DiagnosticLog?
 
         public init(
             fileSystem: any FileSystem,
@@ -53,8 +60,14 @@
             workspace: (any WorkspaceActions)? = nil,
             importPanel: (any ImportPanel)? = nil,
             autosaveDelay: Duration? = nil,
+            services: ServicesHub? = nil,
+            consent: ConsentStore? = nil,
+            diagnosticLog: DiagnosticLog? = nil,
         ) {
             self.live = live ?? LiveDependencies(settings: LiveSettingsStore(defaults: .standard))
+            self.services = services ?? .inert()
+            self.consent = consent ?? .inert()
+            self.diagnosticLog = diagnosticLog
             self.hooks = hooks
             self.workspace = workspace ?? NSWorkspaceActions()
             self.importPanel = importPanel ?? OpenPanelImportPanel()

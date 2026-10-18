@@ -34,6 +34,7 @@ struct SegueApp: App {
         #else
             // Release never lets the command line redirect the library or wipe state, and
             // has no test hooks compiled in (WS1 4.8f).
+            let services = ServicesWiring.release(defaults: .standard)
             let dependencies = AppDependencies(
                 fileSystem: LiveFileSystem(),
                 clock: clock,
@@ -42,6 +43,9 @@ struct SegueApp: App {
                 shapeLibraryURL: Self.realShapeLibraryURL,
                 live: Self.realLiveDependencies(defaults: .standard),
                 hooks: Self.hooks,
+                services: services.services,
+                consent: services.consent,
+                diagnosticLog: services.log,
             )
         #endif
         _app = State(initialValue: AppModel(dependencies: dependencies))

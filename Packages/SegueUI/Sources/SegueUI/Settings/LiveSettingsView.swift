@@ -19,6 +19,12 @@
                         workspace: app.dependencies.workspace,
                     )
                 }
+                Tab("Privacy", systemImage: "hand.raised") {
+                    PrivacySettingsView(
+                        store: app.dependencies.consent,
+                        workspace: app.dependencies.workspace,
+                    )
+                }
             }
             .frame(width: 560)
         }

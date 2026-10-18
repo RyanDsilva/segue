@@ -22,7 +22,14 @@ public enum SegueLinks {
     /// Third-party licences on the web (About credits, A34).
     public static let acknowledgements = url("https://segue.ryandsilva.dev/acknowledgements")
     /// The support address (R28): Report a Problem's fallback.
-    public static let supportEmail = url("mailto:segue@ryandsilva.dev")
+    public static let supportEmail = url("mailto:\(supportAddress)")
+    /// The bare support address (R28), for copy and the bug report's email draft.
+    public static let supportAddress = "segue@ryandsilva.dev"
+    /// "What Segue collects": the policy's usage statistics section (Settings > Privacy).
+    public static let privacyUsage = url("https://segue.ryandsilva.dev/privacy#usage-statistics")
+    /// The host of the bug-report and crash service, named in the report preview's footer
+    /// (WS3 spec 8.3). Shown as text, never opened.
+    public static let bugReportServiceHost = "sentry.io"
 
     /// Segue's numeric App Store Apple ID; nil until the App Store Connect record exists
     /// (WS5 fills it). Help > Rate Segue on the App Store is hidden while it is nil.
