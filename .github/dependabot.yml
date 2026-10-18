@@ -1,0 +1,53 @@
+# Dependabot version updates. Security updates are switched on in the repo settings
+# (docs/github-setup.md). Dependabot only opens PRs; nothing merges without Ryan.
+version: 2
+updates:
+  # Workflow actions are pinned to full commit SHAs with the tag in a comment;
+  # Dependabot bumps both.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Los_Angeles
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: ["dependencies", "area/ci"]
+    commit-message:
+      prefix: ci
+
+  # SwiftPM. GRDB and Tonic are pinned `exact:` in BOTH Tuist/Package.swift and
+  # Packages/SegueCore/Package.swift, and the two must never drift (SwiftPM fails on
+  # conflicting exact pins). Dependabot rewrites `exact: "x"` to `exact: "y"`;
+  # group-by dependency-name puts every directory's change for one dependency into ONE PR,
+  # so both manifests and all four Package.resolved files move together. Resolution of
+  # all four directories was checked on Linux Swift 6.3, the toolchain Dependabot uses.
+  # A bump also needs THIRD_PARTY_NOTICES.md, the bundled licence copy in
+  # Packages/SegueUI/Sources/SegueUI/App/Licenses/ and a full local `make check`;
+  # `make docs-check` (CI "Docs") fails the PR until the notices name the new version.
+  - package-ecosystem: swift
+    directories:
+      - /Tuist
+      - /Packages/SegueCore
+      - /Packages/SegueUI
+      - /Packages/SeguePersonalModules
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Los_Angeles
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    groups:
+      swiftpm:
+        group-by: dependency-name
+        patterns: ["*"]
+    labels: ["dependencies", "area/build"]
+    commit-message:
+      prefix: build
+      include: scope

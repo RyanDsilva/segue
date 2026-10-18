@@ -1,0 +1,51 @@
+# Website checks that run on Linux. scripts/gen-site.swift needs AppKit, CryptoKit and
+# ImageIO, so `gen-site.swift --check` (the slot, changelog and staleness check) stays local:
+# `make site-check` in `make check`, and the pre-push hook runs `make site-check STRICT=1`
+# for any push that touches website/ or content/.
+name: Site
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MISE_EXEC_AUTO_INSTALL: "false"
+  MISE_NOT_FOUND_AUTO_INSTALL: "false"
+
+jobs:
+  tokens:
+    name: Site tokens
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # gen-tokens.swift is Foundation-only and runs as a Swift script.
+    container: swift:6.4-noble@sha256:19cbe56bdaec1918f7cf5fdeba42b9bd55bdd8a6149c9990d0e0e3a89a127d63
+    steps:
+      - name: Install make
+        run: apt-get update -qq && apt-get install -y -qq --no-install-recommends make
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Generated colour tokens are current (make tokens-check)
+        run: make tokens-check
+
+  html:
+    name: Site HTML
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.10.12
+          install_args: node pnpm
+      - name: html-validate (make site-html)
+        run: make site-html
