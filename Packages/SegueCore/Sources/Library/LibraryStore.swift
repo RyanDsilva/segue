@@ -127,10 +127,21 @@ public actor LibraryStore {
     /// metadata lands in the same write as its files (the seeder relies on this: a seeded
     /// song never exists without its seed tag).
     func createSong(source: String, configure: (inout Sidecar) -> Void) throws -> SongRecord {
+        try createSong(source: source, slugBase: nil, configure: configure)
+    }
+
+    /// `createSong(source:configure:)` whose file name comes from `slugBase` when the song
+    /// has no `{title}` (import uses the source file's name instead of `untitled`).
+    func createSong(
+        source: String,
+        slugBase: String?,
+        configure: (inout Sidecar) -> Void,
+    ) throws -> SongRecord {
         let library = try openLibrary()
         let (document, _) = ChordProParser.parse(source)
         let usedSlugs = Set(library.songs.values.map(\.slug))
-        let slug = Slug.unique(Slug.make(from: document.metadata.title ?? "")) { candidate in
+        let base = document.metadata.title.flatMap { $0.isEmpty ? nil : $0 } ?? slugBase ?? ""
+        let slug = Slug.unique(Slug.make(from: base)) { candidate in
             usedSlugs.contains(candidate) || library.files.isTaken(slug: candidate)
         }
         let now = SegueJSON.stamp(clock.now())
