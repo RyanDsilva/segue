@@ -35,9 +35,10 @@
       "name": "TelemetryDeck",
       "url": "https://telemetrydeck.com",
       "privacyUrl": "https://telemetrydeck.com/privacy",
-      "location": "Germany (EU), with some infrastructure in the United States",
-      "transferBasis": "Standard Contractual Clauses for data reaching its U.S. infrastructure",
-      "retention": "TelemetryDeck has no fixed deletion date for statistics; they may be kept in its archive for up to 10 years"
+      "location": "the European Union (Germany and the Netherlands), with Amazon Web Services, a U.S. company, among its hosting providers",
+      "transferBasis": "Standard Contractual Clauses for any transfer to its U.S. hosting provider",
+      "retention": "TelemetryDeck has no fixed deletion date for statistics; they may be kept in its archive for up to 10 years",
+      "source": "Checked 2026-10-17. telemetrydeck.com/docs/guides/privacy-faq/: servers on Microsoft Azure (Amsterdam), AWS (Frankfurt) and Hetzner (Falkenstein and Nuremberg). telemetrydeck.com/privacy/: hosting providers Microsoft Ireland Operations Ltd., Amazon Web Services, Inc. (Seattle, USA) and Hetzner Online GmbH; third-country transfers only under GDPR Art. 44 ff., e.g. Standard Contractual Clauses. telemetrydeck.com/dpa/ and /avv/ list no subprocessors."
     },
     "crash": {
       "name": "Sentry",

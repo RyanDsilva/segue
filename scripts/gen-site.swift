@@ -729,7 +729,7 @@ struct Renderer {
                 + (purposes.count > 1 ? " and " : "") + (purposes.last ?? "")
             let location = try config.string("vendors.\(group.roles[0].key).location")
             return "<tr><th scope=\"row\">\(escapeHTML(name))</th>"
-                + "<td>\(escapeHTML(sentenceCase(purpose)))</td><td>\(escapeHTML(location))</td>"
+                + "<td>\(escapeHTML(sentenceCase(purpose)))</td><td>\(escapeHTML(sentenceCase(location)))</td>"
                 + "<td><a href=\"\(escapeHTML(group.url))\">"
                 + "\(escapeHTML(name)) privacy policy</a></td></tr>"
         }
