@@ -93,7 +93,9 @@
                 ForEach(GigDetails.ratingRange, id: \.self) { value in
                     Image(systemName: value <= rating ? "star.fill" : "star")
                         .font(.system(size: 9))
-                        .foregroundStyle(value <= rating ? Theme.color.ink : Theme.color.lineStrong)
+                        .foregroundStyle(
+                            value <= rating ? Theme.color.ink : Theme.color.indicatorOff,
+                        )
                 }
             }
             .accessibilityElement(children: .ignore)

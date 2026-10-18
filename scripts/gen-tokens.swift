@@ -1,7 +1,8 @@
 #!/usr/bin/env swift
 // Generates Segue's colour tokens from `design/tokens.json` (the single source of truth):
 //
-//   - Packages/SegueUI/Sources/SegueUI/Theme/Tokens.xcassets  (colour sets, Any + Dark)
+//   - Packages/SegueUI/Sources/SegueUI/Theme/Tokens.xcassets  (colour sets, Any + Dark, plus
+//     High Contrast variants for tokens that declare `lightHigh` / `darkHigh`)
 //   - Packages/SegueUI/Sources/SegueUI/Theme/ColorTokens.generated.swift  (typed accessors)
 //   - website/assets/css/tokens.css  (CSS custom properties, dark first, light via media query)
 //
@@ -13,10 +14,15 @@
 
 import Foundation
 
+/// One colour token. Values are `#RRGGBB`, or `#RRGGBBAA` for a translucent colour.
+/// `lightHigh` / `darkHigh` are optional Increase Contrast values (asset catalog
+/// `"contrast": "high"`); absent, the system uses the standard value there too.
 struct ColorToken: Decodable {
     let name: String
     let light: String
     let dark: String
+    let lightHigh: String?
+    let darkHigh: String?
     let use: String
 }
 
@@ -32,7 +38,7 @@ enum GenError: Error, CustomStringConvertible {
     var description: String {
         switch self {
         case let .duplicate(name): "duplicate colour token '\(name)'"
-        case let .invalidHex(token, value): "token '\(token)': '\(value)' is not #RRGGBB"
+        case let .invalidHex(token, value): "token '\(token)': '\(value)' is not #RRGGBB[AA]"
         case let .invalidName(name): "token name '\(name)' is not a lowerCamelCase identifier"
         }
     }
@@ -48,37 +54,66 @@ let catalogPath = "\(themeDir)/Tokens.xcassets"
 let swiftPath = "\(themeDir)/ColorTokens.generated.swift"
 let cssPath = "website/assets/css/tokens.css"
 
-/// Splits "#RRGGBB" into Xcode's "0xRR" component strings.
-func components(_ hex: String, token: String) throws -> (red: String, green: String, blue: String) {
+struct Components {
+    let red: String
+    let green: String
+    let blue: String
+    /// Xcode's alpha string, "1.000" for opaque.
+    let alpha: String
+}
+
+/// Splits "#RRGGBB" or "#RRGGBBAA" into Xcode's "0xRR" component strings.
+func components(_ hex: String, token: String) throws -> Components {
     let digits = Array(hex.uppercased())
-    let isHex = digits.count == 7 && digits[0] == "#"
+    let isHex = (digits.count == 7 || digits.count == 9) && digits[0] == "#"
         && digits.dropFirst().allSatisfy(\.isHexDigit)
     guard isHex else { throw GenError.invalidHex(token: token, value: hex) }
     func pair(_ index: Int) -> String {
         "0x" + String(digits[index ..< index + 2])
     }
-    return (pair(1), pair(3), pair(5))
+    let alpha = digits.count == 9
+        ? Double(Int(String(digits[7 ..< 9]), radix: 16) ?? 255) / 255
+        : 1
+    return Components(
+        red: pair(1), green: pair(3), blue: pair(5), alpha: String(format: "%.3f", alpha),
+    )
 }
 
-func colorEntry(_ hex: String, token: String, dark: Bool) throws -> String {
+/// One asset catalog colour entry; `dark` and `high` add the luminosity and contrast
+/// appearances it applies to.
+func colorEntry(_ hex: String, token: String, dark: Bool, high: Bool = false) throws -> String {
     let rgb = try components(hex, token: token)
-    let appearance = dark
-        ? """
-
-              "appearances" : [
+    var appearances: [String] = []
+    if dark {
+        appearances.append("""
                 {
                   "appearance" : "luminosity",
                   "value" : "dark"
                 }
+        """)
+    }
+    if high {
+        appearances.append("""
+                {
+                  "appearance" : "contrast",
+                  "value" : "high"
+                }
+        """)
+    }
+    let appearance = appearances.isEmpty
+        ? ""
+        : """
+
+              "appearances" : [
+        \(appearances.joined(separator: ",\n"))
               ],
         """
-        : ""
     return """
         {\(appearance)
           "color" : {
             "color-space" : "srgb",
             "components" : {
-              "alpha" : "1.000",
+              "alpha" : "\(rgb.alpha)",
               "blue" : "\(rgb.blue)",
               "green" : "\(rgb.green)",
               "red" : "\(rgb.red)"
@@ -97,13 +132,20 @@ let info = """
 """
 
 func colorSet(_ token: ColorToken) throws -> String {
-    let any = try colorEntry(token.light, token: token.name, dark: false)
-    let dark = try colorEntry(token.dark, token: token.name, dark: true)
+    var entries = try [
+        colorEntry(token.light, token: token.name, dark: false),
+        colorEntry(token.dark, token: token.name, dark: true),
+    ]
+    if let lightHigh = token.lightHigh {
+        try entries.append(colorEntry(lightHigh, token: token.name, dark: false, high: true))
+    }
+    if let darkHigh = token.darkHigh {
+        try entries.append(colorEntry(darkHigh, token: token.name, dark: true, high: true))
+    }
     return """
     {
       "colors" : [
-    \(any),
-    \(dark)
+    \(entries.joined(separator: ",\n"))
       ],
     \(info)
     }
@@ -111,40 +153,107 @@ func colorSet(_ token: ColorToken) throws -> String {
     """
 }
 
-func swiftSource(_ tokens: [ColorToken]) -> String {
-    let properties = tokens.map { token in
-        """
-            /// \(token.use)
-            /// Light \(token.light.uppercased()), dark \(token.dark.uppercased()).
-            public let \(token.name) = Color("\(token.name)", bundle: .module)
-        """
-    }.joined(separator: "\n")
+/// "0xRRGGBB" for the colour part of a token value.
+func packed(_ hex: String) -> String {
+    "0x" + hex.dropFirst().prefix(6).uppercased()
+}
+
+/// The alpha of a token value as a Swift literal; nil when opaque.
+func alphaLiteral(_ hex: String, token: String) throws -> String? {
+    let alpha = try components(hex, token: token).alpha
+    return alpha == "1.000" ? nil : alpha
+}
+
+/// The `ColorTokens` property for `token`, with its values in the doc comment.
+func swiftProperty(_ token: ColorToken) -> String {
+    let high = [
+        token.lightHigh.map { "light \($0.uppercased())" },
+        token.darkHigh.map { "dark \($0.uppercased())" },
+    ]
+    .compactMap(\.self)
+    let highLine = high.isEmpty
+        ? ""
+        : "\n    /// Increase Contrast: \(high.joined(separator: ", "))."
+    return """
+        /// \(token.use)
+        /// Light \(token.light.uppercased()), dark \(token.dark.uppercased()).\(highLine)
+        public let \(token.name) = Color("\(token.name)", bundle: .module)
+    """
+}
+
+/// The `ColorTokenValue.all` entry for `token`; one argument per line when it has more
+/// than the three plain values, so generated lines stay short.
+func swiftValue(_ token: ColorToken) throws -> String {
+    let arguments = try [
+        "name: \"\(token.name)\"",
+        "light: \(packed(token.light))",
+        "dark: \(packed(token.dark))",
+        token.lightHigh.map { "lightHigh: \(packed($0))" },
+        token.darkHigh.map { "darkHigh: \(packed($0))" },
+        alphaLiteral(token.light, token: token.name).map { "lightAlpha: \($0)" },
+        alphaLiteral(token.dark, token: token.name).map { "darkAlpha: \($0)" },
+    ].compactMap(\.self)
+    guard arguments.count > 3 else {
+        return "        ColorTokenValue(\(arguments.joined(separator: ", "))),"
+    }
+    let lines = arguments.map { "            \($0)," }.joined(separator: "\n")
+    return "        ColorTokenValue(\n\(lines)\n        ),"
+}
+
+/// The generated `ColorTokenValue` type (fixed text).
+let valueTypeSource = """
+/// One colour token's sRGB values as 0xRRGGBB (plus alpha, and the Increase Contrast
+/// values when it has them), for tests and swatch views.
+public struct ColorTokenValue: Sendable, Hashable {
+    public let name: String
+    public let light: UInt32
+    public let dark: UInt32
+    /// Increase Contrast values; nil when the standard value applies there too.
+    public let lightHigh: UInt32?
+    public let darkHigh: UInt32?
+    public let lightAlpha: Double
+    public let darkAlpha: Double
+
+    init(
+        name: String,
+        light: UInt32,
+        dark: UInt32,
+        lightHigh: UInt32? = nil,
+        darkHigh: UInt32? = nil,
+        lightAlpha: Double = 1,
+        darkAlpha: Double = 1,
+    ) {
+        self.name = name
+        self.light = light
+        self.dark = dark
+        self.lightHigh = lightHigh
+        self.darkHigh = darkHigh
+        self.lightAlpha = lightAlpha
+        self.darkAlpha = darkAlpha
+    }
+}
+"""
+
+func swiftSource(_ tokens: [ColorToken]) throws -> String {
+    let properties = tokens.map(swiftProperty).joined(separator: "\n")
+    let values = try tokens.map(swiftValue).joined(separator: "\n")
     return """
     // Generated by scripts/gen-tokens.swift from design/tokens.json - do not edit by hand.
 
     import SwiftUI
 
     /// Colour tokens from `design/tokens.json`, backed by the `Tokens` asset catalog colour
-    /// sets (Any = light UI, Dark = dark stage).
+    /// sets (Any = light UI, Dark = dark stage, High Contrast where a token declares it).
     public struct ColorTokens: Sendable {
     \(properties)
     }
 
-    /// One colour token's sRGB values as 0xRRGGBB, for tests and swatch views.
-    public struct ColorTokenValue: Sendable, Hashable {
-        public let name: String
-        public let light: UInt32
-        public let dark: UInt32
-    }
+    \(valueTypeSource)
 
     public extension ColorTokenValue {
         /// Every colour token, in `tokens.json` order.
         static let all: [ColorTokenValue] = [
-    \(tokens.map { token in
-        let light = token.light.dropFirst().uppercased()
-        let dark = token.dark.dropFirst().uppercased()
-        return "        ColorTokenValue(name: \"\(token.name)\", light: 0x\(light), dark: 0x\(dark)),"
-    }.joined(separator: "\n"))
+    \(values)
         ]
     }
 
@@ -163,8 +272,7 @@ func kebab(_ name: String) -> String {
 }
 
 /// The website's tokens: `:root` holds the dark (stage) values, the light (paper) values
-/// swap in under `prefers-color-scheme: light`. `--control-border` is derived, not a token
-/// (docs/brand.md section 7, "Control border in dark").
+/// swap in under `prefers-color-scheme: light`. Increase Contrast values are app-only.
 func cssSource(_ tokens: [ColorToken]) throws -> String {
     func block(_ value: (ColorToken) -> String, indent: String) throws -> String {
         try tokens.map { token in
@@ -180,12 +288,10 @@ func cssSource(_ tokens: [ColorToken]) throws -> String {
     :root {
       color-scheme: dark light;
     \(dark)
-      --control-border: color-mix(in srgb, var(--muted) 40%, transparent);
     }
     @media (prefers-color-scheme: light) {
       :root {
     \(light)
-        --control-border: var(--line);
       }
     }
 

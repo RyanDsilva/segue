@@ -27,7 +27,11 @@ struct ThemeTokenTests {
         for (index, token) in ColorTokenValue.all.enumerated() {
             // Sample the centre of the token's swatch.
             let rendered = pixels.rgb(x: size / 2, y: index * size + size / 2)
-            let expected = scheme == .dark ? token.dark : token.light
+            // A translucent token renders over the view's `ground`.
+            let ground = try #require(ColorTokenValue.all.first { $0.name == "ground" })
+            let expected = scheme == .dark
+                ? blend(token.dark, alpha: token.darkAlpha, over: ground.dark)
+                : blend(token.light, alpha: token.lightAlpha, over: ground.light)
             #expect(
                 rendered.isClose(to: expected),
                 "\(token.name) (\(scheme)): got \(hex(rendered.packed)), want \(hex(expected))",
@@ -62,6 +66,143 @@ struct ThemeTokenTests {
         }
     }
 
+    /// A contrast requirement: `foreground` on `background` reaches `minimum` (WCAG 2.x) in
+    /// each of `appearances`. Text needs 4.5, state indicators and control edges 3.0
+    /// (docs/brand.md section 5, WS2b 4.9.1).
+    struct ContrastPair: Sendable, CustomTestStringConvertible {
+        let foreground: String
+        let background: String
+        let minimum: Double
+        let appearances: [NSAppearance.Name]
+
+        var testDescription: String {
+            "\(foreground) on \(background) >= \(minimum)"
+        }
+    }
+
+    nonisolated static let standard: [NSAppearance.Name] = [.aqua, .darkAqua]
+    nonisolated static let highContrast: [NSAppearance.Name] = [
+        .accessibilityHighContrastAqua, .accessibilityHighContrastDarkAqua,
+    ]
+
+    /// Every pair Segue relies on. A43: control borders reach 3:1 under Increase Contrast
+    /// only (Apple's criteria accept the setting for apps built on Apple's frameworks).
+    nonisolated static let contrastPairs: [ContrastPair] = [
+        // Text.
+        ContrastPair(
+            foreground: "ink",
+            background: "ground",
+            minimum: 4.5,
+            appearances: standard + highContrast,
+        ),
+        ContrastPair(
+            foreground: "muted",
+            background: "ground",
+            minimum: 4.5,
+            appearances: standard + highContrast,
+        ),
+        ContrastPair(
+            foreground: "cueText",
+            background: "ground",
+            minimum: 4.5,
+            appearances: standard + highContrast,
+        ),
+        // State indicators: progress dots, unrated stars (A44).
+        ContrastPair(
+            foreground: "indicatorOff",
+            background: "ground",
+            minimum: 3,
+            appearances: standard + highContrast,
+        ),
+        ContrastPair(
+            foreground: "played",
+            background: "ground",
+            minimum: 3,
+            appearances: standard + highContrast,
+        ),
+        ContrastPair(
+            foreground: "cue",
+            background: "ground",
+            minimum: 3,
+            appearances: standard + highContrast,
+        ),
+        // Control edges, under Increase Contrast (A43).
+        ContrastPair(
+            foreground: "controlBorder",
+            background: "ground",
+            minimum: 3,
+            appearances: highContrast,
+        ),
+    ]
+
+    @Test(arguments: contrastPairs)
+    func `contrast meets its minimum`(pair: ContrastPair) throws {
+        for name in pair.appearances {
+            let foreground = try resolve(pair.foreground, in: name)
+            let background = try resolve(pair.background, in: name)
+            let ratio = Self.contrast(foreground, background)
+            #expect(
+                ratio >= pair.minimum,
+                "\(pair.testDescription) in \(name.rawValue): \(String(format: "%.2f", ratio))",
+            )
+        }
+    }
+
+    @Test
+    func `the indicator ratios match the approved A44 values`() throws {
+        // token, appearance -> ratio on ground, as rendered for Ryan's approval.
+        let expected: [String: Double] = [
+            "indicatorOff/aqua": 3.43, "indicatorOff/darkAqua": 3.36,
+            "played/aqua": 7.39, "played/darkAqua": 5.81,
+        ]
+        for (key, value) in expected {
+            let parts = key.split(separator: "/").map(String.init)
+            let name: NSAppearance.Name = parts[1] == "aqua" ? .aqua : .darkAqua
+            let ratio = try Self.contrast(
+                resolve(parts[0], in: name),
+                resolve("ground", in: name),
+            )
+            #expect(abs(ratio - value) < 0.01, "\(key): \(ratio)")
+        }
+    }
+
+    /// Token `name` as it shows in `appearance` (the High Contrast value under Increase
+    /// Contrast, composited over `ground` when translucent), as sRGB components 0...1.
+    /// Computed from the generated values, which `make tokens-check` keeps equal to the
+    /// asset catalog: an in-process high-contrast `NSAppearance` does not select the
+    /// catalog's `contrast: high` entries (only the system setting does), so the live
+    /// rendering is checked in the manual Increase Contrast pass (WS2b 4.9.5).
+    private func resolve(_ name: String, in appearance: NSAppearance.Name) throws -> [Double] {
+        let token = try #require(ColorTokenValue.all.first { $0.name == name }, "\(name)")
+        let ground = try #require(ColorTokenValue.all.first { $0.name == "ground" })
+        let dark = appearance == .darkAqua || appearance == .accessibilityHighContrastDarkAqua
+        let high = appearance == .accessibilityHighContrastAqua
+            || appearance == .accessibilityHighContrastDarkAqua
+        let value = dark
+            ? (high ? token.darkHigh ?? token.dark : token.dark)
+            : (high ? token.lightHigh ?? token.light : token.light)
+        // High Contrast values are opaque; the standard ones may carry alpha.
+        let alpha = high && (dark ? token.darkHigh : token.lightHigh) != nil
+            ? 1
+            : (dark ? token.darkAlpha : token.lightAlpha)
+        let base = dark ? ground.dark : ground.light
+        return [16, 8, 0].map { shift in
+            let top = Double(value >> UInt32(shift) & 0xFF) / 255
+            let bottom = Double(base >> UInt32(shift) & 0xFF) / 255
+            return top * alpha + bottom * (1 - alpha)
+        }
+    }
+
+    /// WCAG 2.x contrast ratio of two sRGB colours.
+    static func contrast(_ lhs: [Double], _ rhs: [Double]) -> Double {
+        func luminance(_ rgb: [Double]) -> Double {
+            let linear = rgb.map { $0 <= 0.03928 ? $0 / 12.92 : pow(($0 + 0.055) / 1.055, 2.4) }
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+        }
+        let (high, low) = (max(luminance(lhs), luminance(rhs)), min(luminance(lhs), luminance(rhs)))
+        return (high + 0.05) / (low + 0.05)
+    }
+
     @Test
     func `bundled Schibsted Grotesk faces register and resolve`() {
         #expect(Theme.registerFonts())
@@ -88,6 +229,15 @@ struct ThemeTokenTests {
         renderer.scale = 1
         let image = try #require(renderer.cgImage, "ImageRenderer produced no image")
         return try Bitmap(image)
+    }
+
+    /// `value` at `alpha` composited over `base`, as 0xRRGGBB.
+    private func blend(_ value: UInt32, alpha: Double, over base: UInt32) -> UInt32 {
+        [16, 8, 0].reduce(0) { result, shift in
+            let top = Double(value >> UInt32(shift) & 0xFF)
+            let bottom = Double(base >> UInt32(shift) & 0xFF)
+            return result | UInt32((top * alpha + bottom * (1 - alpha)).rounded()) << UInt32(shift)
+        }
     }
 
     private func hex(_ value: UInt32) -> String {

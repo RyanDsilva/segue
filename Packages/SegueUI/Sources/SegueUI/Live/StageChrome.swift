@@ -49,7 +49,8 @@
     }
 
     /// Set progress: played dots in `played`, the current song as a 20px `cue` pill,
-    /// upcoming in `lineStrong`. Skipped songs are rings (shape, not hue, tells them apart).
+    /// upcoming in `indicatorOff` (all 3:1 on the stage, A44). Skipped songs are rings
+    /// (shape, not hue, tells them apart).
     private struct ProgressDots: View {
         let items: [ShowItem]
         let position: String
@@ -76,7 +77,7 @@
             case .skipped:
                 Circle().strokeBorder(Theme.color.played, lineWidth: 1.5).frame(width: 6, height: 6)
             case .pending:
-                Circle().fill(Theme.color.lineStrong).frame(width: 6, height: 6)
+                Circle().fill(Theme.color.indicatorOff).frame(width: 6, height: 6)
             }
         }
     }

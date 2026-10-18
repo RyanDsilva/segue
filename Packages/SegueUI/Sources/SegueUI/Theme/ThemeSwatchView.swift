@@ -35,8 +35,10 @@ public struct ThemeSwatchView: View {
             "ground": tokens.ground,
             "muted": tokens.muted,
             "line": tokens.line,
+            "controlBorder": tokens.controlBorder,
             "played": tokens.played,
             "lineStrong": tokens.lineStrong,
+            "indicatorOff": tokens.indicatorOff,
             "surfaceAlt": tokens.surfaceAlt,
         ]
         return byName[name] ?? .clear

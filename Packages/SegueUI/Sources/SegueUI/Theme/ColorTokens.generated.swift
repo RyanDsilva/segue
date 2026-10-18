@@ -3,7 +3,7 @@
 import SwiftUI
 
 /// Colour tokens from `design/tokens.json`, backed by the `Tokens` asset catalog colour
-/// sets (Any = light UI, Dark = dark stage).
+/// sets (Any = light UI, Dark = dark stage, High Contrast where a token declares it).
 public struct ColorTokens: Sendable {
     /// Live/next indicators, icon tape, wordmark dot. Non-text only on light.
     /// Light #F2555A, dark #F2555A.
@@ -20,25 +20,56 @@ public struct ColorTokens: Sendable {
     /// Secondary text, section labels, metadata.
     /// Light #55555C, dark #8E8E96.
     public let muted = Color("muted", bundle: .module)
-    /// Hairlines, chip borders, dividers.
+    /// Hairlines and dividers (decorative).
     /// Light #E4E4E7, dark #222326.
     public let line = Color("line", bundle: .module)
+    /// Outline of secondary buttons, chips, steppers; 3:1 with Increase Contrast.
+    /// Light #E4E4E7, dark #8E8E9666.
+    /// Increase Contrast: light #8A8A92, dark #66676E.
+    public let controlBorder = Color("controlBorder", bundle: .module)
     /// Played-song progress dots in the live header.
-    /// Light #55555C, dark #55555C.
+    /// Light #55555C, dark #8E8E96.
     public let played = Color("played", bundle: .module)
-    /// Inactive progress dots, icon greys.
+    /// Icon greys, piano black keys, dashed drop zones (not state indicators).
     /// Light #B9B9C0, dark #2A2B2F.
     public let lineStrong = Color("lineStrong", bundle: .module)
+    /// Off state of indicators: pending progress dots, unrated stars (3:1 on ground).
+    /// Light #8A8A92, dark #66676E.
+    public let indicatorOff = Color("indicatorOff", bundle: .module)
     /// Light icon ground, hovered rows.
     /// Light #F2F2F4, dark #1A1B1E.
     public let surfaceAlt = Color("surfaceAlt", bundle: .module)
 }
 
-/// One colour token's sRGB values as 0xRRGGBB, for tests and swatch views.
+/// One colour token's sRGB values as 0xRRGGBB (plus alpha, and the Increase Contrast
+/// values when it has them), for tests and swatch views.
 public struct ColorTokenValue: Sendable, Hashable {
     public let name: String
     public let light: UInt32
     public let dark: UInt32
+    /// Increase Contrast values; nil when the standard value applies there too.
+    public let lightHigh: UInt32?
+    public let darkHigh: UInt32?
+    public let lightAlpha: Double
+    public let darkAlpha: Double
+
+    init(
+        name: String,
+        light: UInt32,
+        dark: UInt32,
+        lightHigh: UInt32? = nil,
+        darkHigh: UInt32? = nil,
+        lightAlpha: Double = 1,
+        darkAlpha: Double = 1,
+    ) {
+        self.name = name
+        self.light = light
+        self.dark = dark
+        self.lightHigh = lightHigh
+        self.darkHigh = darkHigh
+        self.lightAlpha = lightAlpha
+        self.darkAlpha = darkAlpha
+    }
 }
 
 public extension ColorTokenValue {
@@ -50,8 +81,17 @@ public extension ColorTokenValue {
         ColorTokenValue(name: "ground", light: 0xFFFFFF, dark: 0x101113),
         ColorTokenValue(name: "muted", light: 0x55555C, dark: 0x8E8E96),
         ColorTokenValue(name: "line", light: 0xE4E4E7, dark: 0x222326),
-        ColorTokenValue(name: "played", light: 0x55555C, dark: 0x55555C),
+        ColorTokenValue(
+            name: "controlBorder",
+            light: 0xE4E4E7,
+            dark: 0x8E8E96,
+            lightHigh: 0x8A8A92,
+            darkHigh: 0x66676E,
+            darkAlpha: 0.400,
+        ),
+        ColorTokenValue(name: "played", light: 0x55555C, dark: 0x8E8E96),
         ColorTokenValue(name: "lineStrong", light: 0xB9B9C0, dark: 0x2A2B2F),
+        ColorTokenValue(name: "indicatorOff", light: 0x8A8A92, dark: 0x66676E),
         ColorTokenValue(name: "surfaceAlt", light: 0xF2F2F4, dark: 0x1A1B1E),
     ]
 }

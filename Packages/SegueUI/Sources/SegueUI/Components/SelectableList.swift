@@ -15,6 +15,7 @@
         @ViewBuilder let row: (Data.Element) -> Row
         @FocusState private var focused: Bool
         @Environment(\.colorScheme) private var colorScheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         /// `surfaceAlt` on paper; on the dark ground it is too close to tell, so `line`.
         private var selectedFill: Color {
@@ -37,7 +38,8 @@
                 .onKeyPress(.downArrow) { move(1) }
                 .onChange(of: selection) { _, id in
                     guard let id else { return }
-                    withAnimation(.easeOut(duration: 0.12)) {
+                    // Instant with Reduce Motion (brand.md section 8).
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12)) {
                         proxy.scrollTo(id)
                     }
                 }

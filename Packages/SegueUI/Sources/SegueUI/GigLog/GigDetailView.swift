@@ -191,7 +191,7 @@
                         Image(systemName: value <= (rating ?? 0) ? "star.fill" : "star")
                             .font(.system(size: 16))
                             .foregroundStyle(value <= (rating ?? 0)
-                                ? Theme.color.ink : Theme.color.lineStrong)
+                                ? Theme.color.ink : Theme.color.indicatorOff)
                             .frame(width: 22, height: 22)
                             .contentShape(Rectangle())
                     }

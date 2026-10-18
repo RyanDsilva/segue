@@ -7,10 +7,11 @@
   --ground: #101113;
   --muted: #8E8E96;
   --line: #222326;
-  --played: #55555C;
+  --control-border: #8E8E9666;
+  --played: #8E8E96;
   --line-strong: #2A2B2F;
+  --indicator-off: #66676E;
   --surface-alt: #1A1B1E;
-  --control-border: color-mix(in srgb, var(--muted) 40%, transparent);
 }
 @media (prefers-color-scheme: light) {
   :root {
@@ -20,9 +21,10 @@
     --ground: #FFFFFF;
     --muted: #55555C;
     --line: #E4E4E7;
+    --control-border: #E4E4E7;
     --played: #55555C;
     --line-strong: #B9B9C0;
+    --indicator-off: #8A8A92;
     --surface-alt: #F2F2F4;
-    --control-border: var(--line);
   }
 }

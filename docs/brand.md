@@ -60,9 +60,11 @@ Export each layer as SVG from a master file in `design/icon/` (git-tracked). Che
 | `ink` / `text` | #111113 | #ECECEE | primary text |
 | `ground` | #FFFFFF (`paper`) | #101113 (`stage`) | window and live view background |
 | `muted` | #55555C | #8E8E96 | secondary text, section labels, metadata |
-| `line` | #E4E4E7 | #222326 | hairlines, chip borders, dividers |
-| `played` | #55555C | #55555C | played-song progress dots |
-| `lineStrong` | #B9B9C0 | #2A2B2F | inactive progress dots, icon greys |
+| `line` | #E4E4E7 | #222326 | hairlines and dividers (decorative) |
+| `controlBorder` | #E4E4E7 | #8E8E96 at 40% | outline of secondary buttons, chips, steppers, pills; Increase Contrast #8A8A92 / #66676E |
+| `played` | #55555C | #8E8E96 | played-song progress dots |
+| `lineStrong` | #B9B9C0 | #2A2B2F | icon greys, piano black keys (not state indicators) |
+| `indicatorOff` | #8A8A92 | #66676E | off state of indicators: pending progress dots, unrated stars |
 | `surfaceAlt` | #F2F2F4 | #1A1B1E | light icon ground, hovered rows |
 
 Contrast, measured with WCAG 2.x:
@@ -70,7 +72,8 @@ Contrast, measured with WCAG 2.x:
 - **Text pairs that pass AA:** ink on paper 18.9:1; `cueText` on paper 5.6:1; muted on paper 7.4:1; text on stage 16.0:1; stage chord on stage 6.8:1; dark muted on stage 5.8:1.
 - **`cue #F2555A` on paper is 3.4:1.** That passes for non-text UI and large text only, so never use it for body or chord text on light. Use `cueText` instead.
 - **`cue` on stage is 5.6:1.** It's fine for dots and indicators.
-- **Lines are decorative,** at 1.2-1.3:1. Never rely on a line alone to convey state.
+- **Lines are decorative,** at 1.2-1.3:1. Never rely on a line alone to convey state. Control outlines reach 3:1 under Increase Contrast (`controlBorder`, see 7).
+- **State indicators reach 3:1 (2026-10-17, A44):** pending dots and unrated stars use `indicatorOff` (3.43:1 on paper, 3.36:1 on stage); played dots use `played` (7.39:1 on paper, 5.81:1 on stage); the current pill is `cue` (3.37:1 / 5.60:1). On the always-dark stage the order reads by lightness: pending 3.36 < played 5.81, with current as a coral pill.
 - **Paired states must differ in lightness or shape, not hue alone.** Proficiency marks use fill and outline (see 7).
 
 ## 6. Type scale (Schibsted Grotesk)
@@ -92,12 +95,14 @@ Editor and PDF use the same chord/lyric ratio so what you edit is what you see o
 - **Chips (key / capo / BPM):** 14 / 600 text, padding 5x10, radius 6, 1px `line` border, no fill. Key chip shows just the key ("G").
 - **Proficiency marks:** 8px dot plus label, 14 / 600. **Learning** is an outlined ring (2px, `#8E8E96`), **Ready** a filled grey dot, **Pro** a filled ink dot (white on stage). The states differ by fill and lightness, not hue.
 - **Buttons:** primary has an ink fill with paper text; secondary is paper with a `line` border. 15 / 600, padding 10x18, radius 8. Coral is never a button fill; it is reserved for the cue.
-  - **Control border in dark (2026-10-17):** dark `line` (#222326) is 1.2:1 against `stage`, so secondary buttons, steppers, chips and chord pills disappear. Their 1px outline uses `controlBorder`: `line` in light, `muted` at 40% in dark (about #424246, 1.9:1). Hairlines and dividers keep `line`. `controlBorder` is derived from existing tokens, not a new colour (`Theme.color.controlBorder`).
+  - **Control border in dark (2026-10-17):** dark `line` (#222326) is 1.2:1 against `stage`, so secondary buttons, steppers, chips and chord pills disappear. Their 1px outline uses the `controlBorder` token: `line`'s value in light, `muted` at 40% in dark (about #424246, 1.9:1). Hairlines and dividers keep `line`.
+  - **Control border under Increase Contrast (A43, 2026-10-17):** with Increase Contrast on, `controlBorder` is #8A8A92 / #66676E (3.43:1 / 3.36:1), the `indicatorOff` values. The default look is unchanged; Apple's Sufficient Contrast criteria accept the Increase Contrast setting for apps built on Apple's frameworks (quote in `docs/release/accessibility-audit.md`). `design/tokens.json` carries these as `lightHigh` / `darkHigh`, generated into the asset catalog's High Contrast appearances.
 - **Section label gutter (live view):** a 64px left column holding the label at 13 / 700. Chorus labels use `text`, other sections `muted`. Collapsed repeats render "Repeat chorus" in muted at lyric size.
 - **Set progress dots:** a row of 6x6 radius-3 dots in the live header.
-  - Played songs: `played` (#55555C).
+  - Played songs: `played` (#55555C light, #8E8E96 stage).
   - Current song: a 20px-wide `cue` pill.
-  - Upcoming songs: `lineStrong`.
+  - Upcoming songs: `indicatorOff` (#66676E on stage).
+  - Skipped songs: a 1.5px `played` ring (shape, not hue).
   - Elapsed set time sits beside the dots in muted.
 - **Header:** cue dot, song title (28 / 800), then key, capo and tempo as one muted line ("G, capo 2, 96").
 - **Next-song footer:** a 1px `line` top border.
