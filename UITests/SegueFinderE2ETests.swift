@@ -1,8 +1,11 @@
 import XCTest
 
 /// File-level integration through the real UI (WS2b 4.7, 4.8): File > Export Library Archive…
-/// writes a zip (its contents are checked by `LibraryArchiveTests` in SegueCore), and
-/// Open With routes `.cho` files into the library.
+/// writes a zip (its contents are checked by `LibraryArchiveTests` in SegueCore).
+///
+/// Open With is `OpenDocumentsTests` (in process): `XCUIApplication.open(_:)` with a file URL
+/// ended the app under test on macOS 26, so the Finder double-click is a manual check
+/// (docs/release/walkthrough.md).
 final class SegueFinderE2ETests: XCTestCase {
     private var app: XCUIApplication?
     private var library: WelcomeLibrary?

@@ -366,6 +366,7 @@
             await runEndShortcut(kind: live.kind)
             await reloadPendingReviews()
             await session?.library.reload()
+            runQueuedOpenRequests()
             if live.quitsAfterEnding {
                 NSApp.terminate(nil)
             }

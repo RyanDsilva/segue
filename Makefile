@@ -79,8 +79,9 @@ site-raster: ## Re-render OG image, touch icon, favicon PNG, wordmark PNGs and s
 site-fonts: ## Rebuild the subset WOFF2 web fonts from the bundled TTFs
 	scripts/gen-webfonts.sh
 
-icon: ## Regenerate the app icon layers, .icon bundle and previews from design/icon geometry
+icon: ## Regenerate the app icon layers, .icon bundle and previews, and the .cho document icon
 	scripts/gen-icon.swift
+	scripts/gen-doc-icon.swift
 
 icon-check: ## Fail if the generated icon layers or Segue.icon are stale
 	scripts/gen-icon.swift --check

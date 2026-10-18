@@ -153,6 +153,8 @@
         /// A completed gig armed the review prompt; the main window fires it once the
         /// end-of-show flow is done (WS2b 4.5).
         public internal(set) var reviewPromptPending = false
+        /// Files from Open With waiting for the library, the Welcome flow or a show (4.7).
+        var pendingOpenURLs: [URL] = []
         /// Export Library Archive is writing the zip (WS2b 4.8).
         public internal(set) var isExporting = false
         /// The run on stage (gig or rehearsal), shown in the stage window while non-nil.
@@ -175,6 +177,7 @@
         public init(dependencies: AppDependencies) {
             self.dependencies = dependencies
             dependencies.polish.router.app = self
+            OpenDocuments.shared.app = self
         }
 
         /// Activation picks up edits made in other apps (A19, B-16); leaving the app saves the
@@ -242,6 +245,7 @@
             }
             await seedWelcomeForLaunchIfAsked()
             checkWhatsNewAtLaunch()
+            runQueuedOpenRequests()
             recordLaunch()
         }
 

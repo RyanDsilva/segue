@@ -94,6 +94,9 @@ let projectSettings: Settings = .settings(
 
 // MARK: - Targets
 
+/// The imported ChordPro song type (A30); the extensions are SongFileTypes.claimedExtensions.
+let chordProTypeID = "dev.ryandsilva.segue.chordpro"
+
 /// The Info.plist both flavors share (explicit, not Tuist's default, so no
 /// NSMainStoryboardFile or empty CFBundleIconFile ships; the asset compiler adds the icon keys
 /// from ASSETCATALOG_COMPILER_APPICON_NAME).
@@ -122,6 +125,30 @@ let appInfoPlist: [String: Plist.Value] = [
     your Performing Focus, and checks that they finished. It runs only the Shortcuts you \
     name in Settings > Live.
     """,
+    // Finder integration (WS2b 4.7, A24, A30): the ChordPro type is imported, not exported
+    // (Segue does not own the format, so another app's exported declaration wins), and Segue
+    // opens it at rank Default without fighting other ChordPro apps. `.pro` is not claimed.
+    "UTImportedTypeDeclarations": [
+        [
+            "UTTypeIdentifier": .string(chordProTypeID),
+            "UTTypeDescription": "ChordPro Song",
+            "UTTypeConformsTo": ["public.plain-text"],
+            "UTTypeIconFile": "Segue-Document",
+            "UTTypeTagSpecification": [
+                "public.filename-extension": ["cho", "chordpro", "chopro"],
+                "public.mime-type": ["text/x-chordpro"],
+            ],
+        ],
+    ],
+    "CFBundleDocumentTypes": [
+        [
+            "CFBundleTypeName": "ChordPro Song",
+            "CFBundleTypeRole": "Editor",
+            "LSHandlerRank": "Default",
+            "LSItemContentTypes": [.string(chordProTypeID)],
+            "CFBundleTypeIconFile": "Segue-Document",
+        ],
+    ],
     // Hosted services (WS3): filled from the per-flavor build settings in `appTarget`.
     "SegueSentryDSN": "$(SEGUE_SENTRY_DSN)",
     "SegueTelemetryDeckAppID": "$(SEGUE_TELEMETRYDECK_APP_ID)",
@@ -187,6 +214,7 @@ func appTarget(name: String, personal: Bool) -> Target {
         // WS4's generated changelog from the bundle (WS2b 4.3, B-26); it is never fetched.
         resources: [
             "design/icon/Segue.icon", "App/PrivacyInfo.xcprivacy", "website/changelog.json",
+            "design/icon/document/Segue-Document.icns",
         ],
         entitlements: .file(path: .relativeToRoot(entitlementsPath)),
         scripts: [stampResourceBundle],

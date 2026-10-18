@@ -167,6 +167,7 @@
             polish.whatsNew.markSeen(polish.appVersion)
             onboarding.close()
             launchPromptShown = true
+            runQueuedOpenRequests()
         }
 
         // MARK: Revisit (Help > Welcome to Segue…)
