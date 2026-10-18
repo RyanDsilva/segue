@@ -53,6 +53,8 @@
         public var diagnostics: any DiagnosticsSource
         /// Report a Problem's "Email Instead".
         public var mail: any MailComposer
+        /// First run, What's New, review prompt, appearance and tips (WS2b).
+        public var polish: PolishDependencies
 
         public init(
             fileSystem: any FileSystem,
@@ -75,7 +77,14 @@
             reportPresenter: ReportProblemPresenter? = nil,
             diagnostics: (any DiagnosticsSource)? = nil,
             mail: (any MailComposer)? = nil,
+            polish: PolishDependencies? = nil,
         ) {
+            // In-process tests get inert polish: no review prompt, no test-run surprises.
+            self.polish = polish ?? PolishDependencies(
+                defaults: location.defaults,
+                reviewRequester: SilentReviewRequester(),
+                launch: PolishLaunch(isTestRun: true),
+            )
             self.flavor = flavor
             self.reportPresenter = reportPresenter ?? ReportProblemPresenter()
             self.diagnostics = diagnostics ?? LocalDiagnostics(log: diagnosticLog, store: nil)
@@ -152,6 +161,7 @@
 
         public init(dependencies: AppDependencies) {
             self.dependencies = dependencies
+            dependencies.polish.router.app = self
         }
 
         /// Activation picks up edits made in other apps (A19, B-16); leaving the app saves the
@@ -200,6 +210,7 @@
         public func start() async {
             guard case .starting = state else { return }
             observeActivation()
+            applyPolishPresets()
             if let override = dependencies.libraryOverride {
                 await open(override, remember: dependencies.rememberLibraryOverride)
             } else {

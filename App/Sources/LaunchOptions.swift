@@ -50,6 +50,20 @@ import VendorServices
     ///   tests that ask for it (`undecided`, or `asStored` after an unanswered prompt).
     /// - `-SegueAppearance <light|dark>`: force the app's appearance whatever the system
     ///   uses (the screenshot pass needs both).
+    /// - `-SegueOnboarding <fresh|done>` (WS2b 4.1): `fresh` runs the Welcome flow again for
+    ///   the override library, from page 2; `done` marks it finished. Test runs with a
+    ///   library path and without this flag treat onboarding as done.
+    /// - `-SegueSeedWelcome YES`: seed the Welcome songs and setlist once the library opens
+    ///   (never wipes anything). Without `-SegueLibraryPath` it seeds and opens
+    ///   `screenshotLibraryFolder` in the container (WS5's screenshots compose it).
+    /// - `-SegueChangelogPath <file>`: read What's New from `<file>` instead of the bundle.
+    /// - `-SegueLastSeenVersion <v>`: store `<v>` as the last version whose notes were seen.
+    /// - `-SegueAppVersion <v>`: the running version for What's New and the review prompt.
+    /// - `-SegueReviewLog <file>`: never ask the system for a review; append one line per
+    ///   request to `<file>`. Test runs without it never request a review.
+    /// - `-SegueTips <show|hide>`: show every tip, or none (test runs hide them by default).
+    /// - `-SegueExportPath <file>`: Export Library Archive writes `<file>` without the panel.
+    /// - `-SegueCompletedGigs <n>`: preset the completed-gig counter of the review prompt.
     struct LaunchOptions: Sendable, Equatable {
         static let libraryPathFlag = "-SegueLibraryPath"
         static let resetStateFlag = "-SegueResetState"
@@ -71,6 +85,25 @@ import VendorServices
         static let servicesLiveFlag = "-SegueServicesLive"
         static let consentFlag = "-SegueConsent"
         static let appearanceFlag = "-SegueAppearance"
+        static let onboardingFlag = "-SegueOnboarding"
+        static let seedWelcomeFlag = "-SegueSeedWelcome"
+        static let changelogPathFlag = "-SegueChangelogPath"
+        static let lastSeenVersionFlag = "-SegueLastSeenVersion"
+        static let appVersionFlag = "-SegueAppVersion"
+        static let reviewLogFlag = "-SegueReviewLog"
+        static let tipsFlag = "-SegueTips"
+        static let exportPathFlag = "-SegueExportPath"
+        static let completedGigsFlag = "-SegueCompletedGigs"
+
+        /// Where `-SegueSeedWelcome` puts the library when no library path is given: inside
+        /// the app's own container, so no sandbox exception is needed and the user's real
+        /// library bookmark is never touched (WS2b 4.2, I-4; WS5's `-SegueScreenshotLibrary`
+        /// wipes and reuses it).
+        static var screenshotLibraryFolder: URL {
+            URL.applicationSupportDirectory
+                .appending(path: "Segue-Screenshots", directoryHint: .isDirectory)
+                .appending(path: "Library", directoryHint: .isDirectory)
+        }
 
         /// `-SegueConsent` values.
         enum ConsentPreset: String, Sendable, CaseIterable {
@@ -103,6 +136,15 @@ import VendorServices
         var consentPreset: ConsentPreset?
         /// `-SegueAppearance`: `light` or `dark`; nil follows the system.
         var appearance: String?
+        var onboarding: PolishLaunch.Onboarding?
+        var seedWelcome = false
+        var changelogPath: URL?
+        var lastSeenVersion: String?
+        var appVersion: String?
+        var reviewLog: URL?
+        var tips: PolishLaunch.Tips?
+        var exportPath: URL?
+        var completedGigs: Int?
 
         init(
             libraryPath: URL? = nil,
@@ -187,6 +229,17 @@ import VendorServices
             consentPreset = values[Self.consentFlag].flatMap(ConsentPreset.init(rawValue:))
             appearance = values[Self.appearanceFlag]
                 .flatMap { ["light", "dark"].contains($0) ? $0 : nil }
+            onboarding = values[Self.onboardingFlag].flatMap(PolishLaunch.Onboarding.init)
+            seedWelcome = values[Self.seedWelcomeFlag].map(Self.isTruthy) ?? false
+            changelogPath = Self.path(values[Self.changelogPathFlag], directoryHint: .notDirectory)
+            lastSeenVersion = Self.name(values[Self.lastSeenVersionFlag])
+            appVersion = Self.name(values[Self.appVersionFlag])
+            reviewLog = Self.path(values[Self.reviewLogFlag], directoryHint: .notDirectory)
+            tips = values[Self.tipsFlag].flatMap(PolishLaunch.Tips.init)
+            exportPath = Self.path(values[Self.exportPathFlag], directoryHint: .notDirectory)
+            completedGigs = values[Self.completedGigsFlag].flatMap(Int.init).flatMap { count in
+                count >= 0 ? count : nil
+            }
         }
 
         private static let flags: Set = [
@@ -195,6 +248,8 @@ import VendorServices
             startShortcutFlag, endShortcutFlag, workspaceLogFlag, trashPathFlag,
             importPanelPathsFlag, autosaveDelayFlag, servicesLogFlag, feedbackResultFlag,
             servicesLiveFlag, consentFlag, appearanceFlag, mailLogFlag,
+            onboardingFlag, seedWelcomeFlag, changelogPathFlag, lastSeenVersionFlag,
+            appVersionFlag, reviewLogFlag, tipsFlag, exportPathFlag, completedGigsFlag,
         ]
 
         /// A Shortcut name with surrounding blanks removed; nil when blank.
@@ -218,6 +273,21 @@ import VendorServices
                 || workspaceLog != nil || trashPath != nil || importPanelPaths != nil
                 || autosaveDelay != nil || servicesLog != nil || feedbackResult != nil
                 || consentPreset != nil || mailLog != nil
+                || onboarding != nil || seedWelcome || changelogPath != nil
+                || lastSeenVersion != nil || appVersion != nil || reviewLog != nil
+                || tips != nil || exportPath != nil || completedGigs != nil
+        }
+
+        /// The library folder this launch opens without the bookmark: `-SegueLibraryPath`, or
+        /// the screenshot folder for `-SegueSeedWelcome` without a path.
+        var libraryOverride: URL? {
+            if let libraryPath {
+                return libraryPath
+            }
+            guard seedWelcome else { return nil }
+            let folder = Self.screenshotLibraryFolder
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            return folder
         }
 
         private static func isTruthy(_ value: String) -> Bool {
@@ -265,21 +335,17 @@ import VendorServices
                 AppStateReset.wipeTestState(defaults, bundleID: bundleID)
             }
             let services = servicesWiring(defaults: defaults, bundleID: bundleID)
-            if let appearance {
-                NSApplication.shared.appearance = NSAppearance(
-                    named: appearance == "dark" ? .darkAqua : .aqua,
-                )
-            }
+            let polish = polishDependencies(defaults: defaults)
             return AppDependencies(
                 fileSystem: fileSystem,
                 clock: clock,
                 ids: ids,
                 location: LibraryLocation(defaults: defaults),
-                libraryOverride: libraryPath,
+                libraryOverride: libraryOverride,
                 rememberLibraryOverride: rememberLibrary,
                 shapeLibraryURL: isTestRun ? shapeLibraryPath : SegueApp.realShapeLibraryURL,
                 live: isTestRun ? liveDependencies(defaults: defaults) : real(defaults),
-                hooks: services.hooks,
+                hooks: polish.router.filling(services.hooks),
                 workspace: workspaceLog.map(RecordingWorkspaceActions.init),
                 importPanel: importPanelPaths.map(FixedImportPanel.init),
                 autosaveDelay: autosaveDelay.map { .milliseconds(Int(($0 * 1000).rounded())) },
@@ -290,7 +356,42 @@ import VendorServices
                 reportPresenter: services.reportPresenter,
                 diagnostics: services.diagnostics,
                 mail: mailLog.map(RecordingMailComposer.init),
+                polish: polish,
             )
+        }
+
+        /// WS2b's stores and switches for this launch. A test run never asks the system for
+        /// a review, shows no tips and no What's New unless a flag asks for them.
+        private func polishDependencies(defaults: UserDefaults) -> PolishDependencies {
+            let requester: any ReviewRequester = if let reviewLog {
+                LogReviewRequester(log: reviewLog)
+            } else if isTestRun {
+                SilentReviewRequester()
+            } else {
+                SystemReviewRequester()
+            }
+            let forced = appearance.flatMap(AppearanceMode.init)
+            var polish = PolishDependencies(
+                defaults: defaults,
+                reviewRequester: requester,
+                appearance: AppearanceStore(defaults: defaults, forced: forced),
+                appVersion: appVersion,
+                launch: PolishLaunch(
+                    isTestRun: isTestRun,
+                    onboarding: onboarding,
+                    seedWelcome: seedWelcome,
+                    exportPath: exportPath,
+                    tips: tips ?? (isTestRun ? .hide : .standard),
+                    resetTips: resetState,
+                    completedGigs: completedGigs,
+                    lastSeenVersion: lastSeenVersion,
+                    allowsWhatsNew: changelogPath != nil || lastSeenVersion != nil,
+                ),
+            )
+            if let changelogPath {
+                polish.changelogURL = changelogPath
+            }
+            return polish
         }
 
         /// The services for a Debug launch: Recording adapters for E2E, the real vendors for a

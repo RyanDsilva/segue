@@ -36,6 +36,7 @@ struct SegueApp: App {
             // Release never lets the command line redirect the library or wipe state, and
             // has no test hooks compiled in (WS1 4.8f).
             let services = ServicesWiring.release(defaults: .standard)
+            let polish = PolishDependencies(defaults: .standard)
             let dependencies = AppDependencies(
                 fileSystem: LiveFileSystem(),
                 clock: clock,
@@ -43,15 +44,18 @@ struct SegueApp: App {
                 location: LibraryLocation(defaults: .standard),
                 shapeLibraryURL: Self.realShapeLibraryURL,
                 live: Self.realLiveDependencies(defaults: .standard),
-                hooks: services.hooks,
+                hooks: polish.router.filling(services.hooks),
                 services: services.services,
                 consent: services.consent,
                 diagnosticLog: services.log,
                 flavor: Self.flavor,
                 reportPresenter: services.reportPresenter,
                 diagnostics: services.diagnostics,
+                polish: polish,
             )
         #endif
+        // Settings > Appearance (R36) applies before the first window draws.
+        dependencies.polish.appearance.apply()
         _app = State(initialValue: AppModel(dependencies: dependencies))
     }
 
