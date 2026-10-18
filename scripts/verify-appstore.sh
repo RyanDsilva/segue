@@ -14,6 +14,8 @@
 #      `network.client` is missing from them (A61: both flavors make outgoing connections).
 #   3. Fails if the Release-AppStore binary carries a test hook (a launch-option flag,
 #      RecordingShortcutRunner) or an editor perf notice (WS1 4.8a/4.8f).
+#   4. Fails if the embedded SegueUI resource bundle lacks the real identifier or the app's
+#      copyright and version (B-6).
 #
 # The flavors have separate bundle IDs (docs/release/decisions.md R11): the App Store build is
 # dev.ryandsilva.segue (App/SegueAppStore.entitlements), Personal is
@@ -142,6 +144,7 @@ for config in Release-AppStore Debug-AppStore; do
     check_no_exception "$config"
 done
 check_no_test_hooks Release-AppStore "$products/Release-AppStore/Segue.app/Contents/MacOS/Segue"
+check_resource_bundle Release-AppStore "$products/Release-AppStore/Segue.app"
 
 build Segue-Personal Release-Personal
 check_no_exception Release-Personal

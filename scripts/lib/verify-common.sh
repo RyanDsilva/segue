@@ -2,7 +2,7 @@
 # Shared by scripts/verify-appstore.sh and scripts/verify-archive.sh so their checks cannot
 # drift. Source it from the repo root after defining `prefix` (the line prefix, e.g.
 # "verify-appstore"). Provides `forbidden`, `perf_strings`, `test_hook_strings`, `fail`,
-# `pass`, `failures` and `check_no_test_hooks`.
+# `pass`, `failures`, `check_no_test_hooks` and `check_resource_bundle`.
 
 # Anything that can only come from the personal package or its compilation condition.
 forbidden='SeguePersonalModules|PersonalModules|SEGUE_PERSONAL'
@@ -55,5 +55,35 @@ check_no_test_hooks() {
         fail "$label: test-only strings in $binary:"$'\n'"$hits"
     else
         pass "$label: no perf notices or test-hook strings in the binary"
+    fi
+}
+
+# check_resource_bundle <label> <app>: the embedded SegueUI resource bundle carries the real
+# identifier and the app's copyright and version (B-6, scripts/stamp-resource-bundle.sh),
+# not Tuist's placeholders. Fails closed on an unreadable plist.
+check_resource_bundle() {
+    local label="$1" app="$2"
+    local app_plist="$app/Contents/Info.plist"
+    local bundle_plist="$app/Contents/Resources/SegueUI_SegueUI.bundle/Contents/Info.plist"
+    local key want got problems=""
+    if [[ ! -r "$app_plist" || ! -r "$bundle_plist" ]]; then
+        fail "$label: cannot read $app_plist or $bundle_plist"
+        return
+    fi
+    if ! got=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$bundle_plist" 2>/dev/null) \
+        || [[ "$got" != "dev.ryandsilva.segue.SegueUI.resources" ]]; then
+        problems+="CFBundleIdentifier='${got:-}' "
+    fi
+    for key in NSHumanReadableCopyright CFBundleShortVersionString CFBundleVersion; do
+        want=$(/usr/libexec/PlistBuddy -c "Print :$key" "$app_plist" 2>/dev/null) || want=""
+        got=$(/usr/libexec/PlistBuddy -c "Print :$key" "$bundle_plist" 2>/dev/null) || got=""
+        if [[ -z "$want" || "$got" != "$want" ]]; then
+            problems+="$key='$got' (app '$want') "
+        fi
+    done
+    if [[ -n "$problems" ]]; then
+        fail "$label: SegueUI resource bundle plist is not stamped: $problems"
+    else
+        pass "$label: SegueUI resource bundle has the real identifier, copyright and version"
     fi
 }

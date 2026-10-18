@@ -151,6 +151,7 @@ func appTarget(name: String, personal: Bool) -> Target {
         // privacy manifest lands at Contents/Resources/PrivacyInfo.xcprivacy.
         resources: ["design/icon/Segue.icon", "App/PrivacyInfo.xcprivacy"],
         entitlements: .file(path: .relativeToRoot(entitlementsPath)),
+        scripts: [stampResourceBundle],
         dependencies: dependencies,
         // Signing is repeated at target level because Tuist's target defaults set
         // CODE_SIGN_IDENTITY for macOS, which would override the project-level value.
@@ -170,6 +171,22 @@ func appTarget(name: String, personal: Bool) -> Target {
 let e2eDebugConfiguration: Configuration = .debug(
     name: debugPersonal,
     settings: ["CODE_SIGN_ENTITLEMENTS": "App/Segue-Debug.entitlements"],
+)
+
+/// After resources are copied and before signing: the SegueUI resource bundle gets the app's
+/// copyright and version and a real identifier instead of Tuist's placeholder plist (B-6).
+let stampResourceBundle: TargetScript = .post(
+    path: "scripts/stamp-resource-bundle.sh",
+    name: "Stamp SegueUI resource bundle",
+    inputPaths: [
+        "$(SRCROOT)/scripts/stamp-resource-bundle.sh",
+        "$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+        "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SegueUI_SegueUI.bundle",
+    ],
+    outputPaths: [
+        "$(DERIVED_FILE_DIR)/stamp-resource-bundle.stamp",
+    ],
+    basedOnDependencyAnalysis: false,
 )
 
 let personalApp = appTarget(name: "Segue", personal: true)
