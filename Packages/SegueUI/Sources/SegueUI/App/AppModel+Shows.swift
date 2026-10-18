@@ -155,6 +155,7 @@
                 )
                 let ending = try await controller.end()
                 recordShowEnded(ending.record, autoScrollUsed: false, endedBy: .closedOnRelaunch)
+                countCompletedShow(kind: record.kind, quitsAfterEnding: false)
                 await reloadPendingReviews()
                 await session.library.reload()
             } catch {
@@ -349,6 +350,7 @@
                     autoScrollUsed: live.autoScrollUsed,
                     endedBy: live.quitsAfterEnding ? .quit : .endShow,
                 )
+                countCompletedShow(kind: live.kind, quitsAfterEnding: live.quitsAfterEnding)
             } catch {
                 session?.library.errorMessage = "The show could not be closed "
                     + "(\(UserMessage.describe(error))). It will be offered again at next launch."

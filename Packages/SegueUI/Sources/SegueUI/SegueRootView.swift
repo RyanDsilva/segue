@@ -175,6 +175,7 @@
                 }
             }
             .liveModePresentations(app)
+            .reviewPromptTrigger(app)
             // Deletes, import and metadata edits undo through the window (Edit > Undo).
             .onAppear { session.undoManager = undoManager }
             .onChange(of: undoManager.map(ObjectIdentifier.init)) {

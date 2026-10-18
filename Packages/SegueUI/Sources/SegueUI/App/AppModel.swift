@@ -150,6 +150,9 @@
         var launchPromptShown = false
         /// The What's New sheet's content while it is asked for (WS2b 4.3).
         public internal(set) var whatsNew: WhatsNewContent?
+        /// A completed gig armed the review prompt; the main window fires it once the
+        /// end-of-show flow is done (WS2b 4.5).
+        public internal(set) var reviewPromptPending = false
         /// Export Library Archive is writing the zip (WS2b 4.8).
         public internal(set) var isExporting = false
         /// The run on stage (gig or rehearsal), shown in the stage window while non-nil.
@@ -373,7 +376,15 @@
         public var startFailure: String?
 
         /// True while a start or resume is being prepared (blocks a second one).
-        var isStartingShow = false
+        var isStartingShow = false {
+            didSet {
+                // A show starting first cancels an armed review prompt (the next completed
+                // gig re-arms it, still once per version).
+                if isStartingShow {
+                    reviewPromptPending = false
+                }
+            }
+        }
 
         /// Whether the stage is up (library commands are disabled meanwhile).
         public var isPerforming: Bool {
