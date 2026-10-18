@@ -1,0 +1,79 @@
+name: Bug (internal)
+description: Something broken in the app, the website or the tooling. Users report through Help > Report a Problem; copy anything worth keeping from Sentry here.
+title: "bug: "
+labels: ["type/bug", "status/triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ryan's dev tracker. A report that came in through Sentry User Feedback expires after 30 days, so copy what matters (text, attachments) here and link the Sentry issue.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The shortest path from a fresh launch. Ideally the shape of an E2E test (`make e2e-one TEST=...`).
+      placeholder: |
+        1. Open the Welcome library
+        2. Start a show with "Welcome Set"
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: flavour
+    attributes:
+      label: Flavour
+      options:
+        - App Store (dev.ryandsilva.segue)
+        - Personal (dev.ryandsilva.segue.personal)
+        - Both
+        - Not the app (website, scripts, CI)
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Library and import
+        - Editor
+        - Setlists
+        - Stage mode and Gig Mode
+        - Settings, menus and first run
+        - Services (consent, analytics, crash and bug reports)
+        - Website
+        - Build, signing and release
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version and build
+      description: Segue > About Segue, or the commit for a local build.
+      placeholder: 0.5 (1) or 9c18805
+  - type: input
+    id: sentry
+    attributes:
+      label: Sentry link
+      description: The Sentry issue or user-feedback event, if it came from a user.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs, screenshots, files
+      description: Console output (`log show --predicate 'subsystem BEGINSWITH "dev.ryandsilva.segue"'`), screenshots, a minimal `.cho` file. Never paste a user's own songs without asking.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - p0 - blocks a release or breaks a gig
+        - p1 - next up
+        - p2 - soon
+        - p3 - someday

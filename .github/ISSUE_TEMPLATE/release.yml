@@ -1,0 +1,60 @@
+name: Release checklist
+description: Ship a version to the Mac App Store. The full runbook is docs/release/README.md.
+title: "release: Segue "
+labels: ["type/release"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        `make validate`, `make upload` and `make store-upload` arrive with WS1 steps 10-14 and WS5; until then follow docs/release/README.md section 2.5.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: MARKETING_VERSION in Config/Version.xcconfig (set with `make bump VERSION=...`).
+      placeholder: "0.6"
+    validations:
+      required: true
+  - type: checkboxes
+    id: build
+    attributes:
+      label: Build and gate
+      options:
+        - label: Spec workstreams for this version landed; open questions closed
+        - label: "`make bump VERSION=x.y` (marketing) or `make bump` (build number), committed"
+        - label: content/changelog.json entry written, `"draft"` false, `make site` run and committed
+        - label: Full `make check` green on the release commit
+        - label: "`make repo-check` green (the Linux CI checks)"
+        - label: "`make validate` green"
+  - type: checkboxes
+    id: testflight
+    attributes:
+      label: TestFlight (Ryan, in Terminal.app with 1Password unlocked)
+      options:
+        - label: "`make upload`, then wait for the processing email"
+        - label: Installed from TestFlight; clean-account pass of the review notes
+        - label: Vendor smoke test (TelemetryDeck and Sentry quiet before consent, working after)
+        - label: Played a real gig (or a full rehearsal for a fix-only build) on this exact build
+  - type: checkboxes
+    id: store
+    attributes:
+      label: App Store Connect
+      options:
+        - label: Store text and screenshots uploaded (`make store-upload`) and previewed
+        - label: App Privacy, age rating and accessibility labels still true for this version
+        - label: Submitted with "Manually release this version"; approved
+        - label: Released by hand
+  - type: checkboxes
+    id: after
+    attributes:
+      label: After release
+      options:
+        - label: Signed tag pushed (`git tag -s vX.Y.Z`, push approved); the Release workflow published the GitHub Release
+        - label: Site flipped or updated (`appStore.status`, changelog), push approved
+        - label: Watched Xcode Organizer and Sentry for 48 hours
+        - label: JOURNAL.md updated
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Rejections, surprises, follow-ups to file.

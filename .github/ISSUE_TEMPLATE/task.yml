@@ -1,0 +1,32 @@
+name: Task
+description: A unit of planned work - a feature, a spec step, a refactor or a chore.
+labels: ["type/task", "status/triage"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What is true when this is done, in one or two sentences.
+    validations:
+      required: true
+  - type: input
+    id: spec
+    attributes:
+      label: Spec or decision
+      description: The canonical doc this implements. The doc stays canonical; this issue points at it.
+      placeholder: docs/release/specs/WS2b-first-run-polish.md step 6, R16
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Acceptance checks, including the test that proves it (integration or E2E first).
+      value: |
+        - [ ]
+        - [ ] `make quick` green, plus `make e2e-one TEST=...` for touched UI
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Dependencies (blocked by #...), open questions, design directions to pick.

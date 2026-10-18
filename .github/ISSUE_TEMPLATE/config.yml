@@ -1,0 +1,13 @@
+# Issues here are Ryan's own dev tracker (docs/release/decisions.md R49).
+# Users report problems from the app and request features on the board.
+blank_issues_enabled: false
+contact_links:
+  - name: Request a feature or vote on one
+    url: https://segue.featurebase.app/
+    about: The public Segue feature board (also at segue.ryandsilva.dev/feedback).
+  - name: Report a problem with the app
+    url: https://segue.ryandsilva.dev/support
+    about: In Segue choose Help > Report a Problem, or email segue@ryandsilva.dev.
+  - name: Report a security issue privately
+    url: https://github.com/RyanDsilva/segue/security/policy
+    about: Email segue@ryandsilva.dev. Never put a vulnerability in a public issue.
