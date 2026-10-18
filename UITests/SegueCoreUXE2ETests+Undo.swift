@@ -147,6 +147,51 @@ extension SegueCoreUXE2ETests {
         XCTAssertFalse(element(app, CoreAXID.songTitle).exists)
     }
 
+    // MARK: - Pixel pass (step 11): the new surfaces in the light appearance
+
+    @MainActor
+    func testNewSurfacesInLightAppearance() throws {
+        let paths = try XCTUnwrap(paths)
+        try FileManager.default.createDirectory(
+            at: paths.importSource,
+            withIntermediateDirectories: true,
+        )
+        let river = paths.importSource.appending(path: "river-song.chopro")
+        try Data(CoreFixture.river.utf8).write(to: river)
+        let picture = paths.importSource.appending(path: "cover.png")
+        try Data([0x89, 0x50, 0x4E, 0x47]).write(to: picture)
+        let app = try launch(extraArguments: [
+            "-NSRequiresAquaSystemAppearance", "YES",
+            "-SegueImportPanelPaths", [river, picture].map { $0.path(percentEncoded: false) }
+                .joined(separator: ":"),
+        ])
+        XCTAssertTrue(element(app, CoreAXID.libraryEmpty).waitForExistence(timeout: 15))
+        attachScreenshot(app, name: "light-empty-library")
+
+        app.typeKey("i", modifierFlags: [.command, .shift], in: app)
+        XCTAssertTrue(element(app, CoreAXID.importSummary).waitForExistence(timeout: 10))
+        attachScreenshot(app, name: "light-import-summary")
+        element(app, CoreAXID.songMoreMenu).click(in: app)
+        attachScreen(name: "light-song-more-menu")
+        app.typeKey(.escape, modifierFlags: [], in: app)
+
+        let editor = openEditor(app, "River Song")
+        editor.typeText("\nMine", in: app)
+        XCTAssertTrue(waitForFile(paths.song("river-song"), contains: "Mine"))
+        try Data("{title: River Song}\nTheirs\n".utf8).write(
+            to: paths.song("river-song"),
+            options: .atomic,
+        )
+        editor.typeText(" and more", in: app)
+        XCTAssertTrue(element(app, CoreAXID.editorConflictBar).waitForExistence(timeout: 10))
+        attachScreenshot(app, name: "light-conflict-bar")
+        element(app, CoreAXID.editorConflictReload).click(in: app)
+
+        app.typeKey("/", modifierFlags: .command, in: app)
+        XCTAssertTrue(element(app, CoreAXID.shortcutsWindow).waitForExistence(timeout: 10))
+        attachScreen(name: "light-keyboard-shortcuts")
+    }
+
     /// The setlist name in a setlist file.
     func setlistName(_ url: URL) -> String? {
         sidecarValue(url, "name") as? String

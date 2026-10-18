@@ -113,7 +113,10 @@
                     }
                     .accessibilityIdentifier(AccessibilityID.gigDelete)
                 } label: {
+                    // The glyph alone is shorter than a line of text: give it the label height
+                    // of the text buttons beside it so the two line up.
                     Image(systemName: "ellipsis")
+                        .frame(minWidth: 18, minHeight: 20)
                         .accessibilityLabel("More")
                 }
                 .menuStyle(.button)
