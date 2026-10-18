@@ -10,6 +10,7 @@ import Foundation
 ///   shows/<ulid>.show.json            (phase 2: shows and the gig log)
 ///   timings/<ulid>.rehearsal.json     (phase 2: rehearse-setlist timings)
 ///   .segue/index.sqlite
+///   .segue/library.lock
 /// ```
 ///
 /// A plain value: security-scoped bookmark access is handled by the caller (Library/App)
@@ -46,6 +47,12 @@ public struct LibraryRoot: Sendable, Hashable {
     /// `<root>/.segue`: app-private, rebuildable state.
     public var appDirectory: URL {
         url.appending(path: ".segue", directoryHint: .isDirectory)
+    }
+
+    /// `<root>/.segue/library.lock`: held with `flock` by the copy of Segue that has the
+    /// library open (`LibraryLock`), so two copies never open the same library at once.
+    public var lockURL: URL {
+        appDirectory.appending(path: "library.lock", directoryHint: .notDirectory)
     }
 
     /// `<root>/.segue/index.sqlite`: the rebuildable GRDB index. Safe to delete.
