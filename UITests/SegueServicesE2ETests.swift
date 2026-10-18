@@ -161,6 +161,29 @@ final class SegueServicesE2ETests: XCTestCase, ServicesE2E {
         )
     }
 
+    // MARK: 14.3-6 Request a Feature opens the board
+
+    @MainActor
+    func testRequestFeatureOpensBoard() throws {
+        let library = try XCTUnwrap(library)
+        let app = launchServices(library, extra: ["-SegueConsent", "analyticsOnly"])
+        XCTAssertTrue(element(app, LiveAXID.songRow).appears(timeout: 15))
+        helpMenu(app, "Request a Feature…")
+        XCTAssertTrue(waitFor { self.workspaceOpens(library) == [ServicesLinks.feedback] })
+        XCTAssertTrue(waitFor {
+            library.signals(named: "Segue.Help.opened") == [["segue.item": "requestFeature"]]
+        })
+
+        // The report form's link goes to the same board and closes the form.
+        helpMenu(app, "Report a Problem…")
+        let link = element(app, ServicesAXID.reportRequestFeature)
+        XCTAssertTrue(link.appears(timeout: 10))
+        link.click(in: app)
+        XCTAssertTrue(element(app, ServicesAXID.reportSheet).disappears(timeout: 5))
+        XCTAssertTrue(waitFor { self.workspaceOpens(library).count == 2 })
+        XCTAssertEqual(Set(workspaceOpens(library)), [ServicesLinks.feedback])
+    }
+
     // MARK: 14.3-7 No user content in signals
 
     @MainActor
@@ -231,6 +254,17 @@ extension SegueServicesE2ETests {
         app.typeKey(".", modifierFlags: .command, in: app)
         XCTAssertTrue(element(app, LiveAXID.liveEndDialog).appears(timeout: 5))
         app.typeKey(.return, modifierFlags: [], in: app)
+    }
+
+    /// The URLs the recorded workspace was asked to open, in order.
+    func workspaceOpens(_ library: LiveLibrary) -> [String] {
+        let text = (try? String(contentsOf: library.workspaceLog, encoding: .utf8)) ?? ""
+        return text.split(separator: "\n").compactMap { line in
+            let object = try? JSONSerialization.jsonObject(with: Data(line.utf8))
+            guard let entry = object as? [String: Any], entry["action"] as? String == "open"
+            else { return nil }
+            return (entry["urls"] as? [String])?.first
+        }
     }
 
     /// The `segue.feature` values recorded so far.

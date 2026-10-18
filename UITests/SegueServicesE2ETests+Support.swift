@@ -186,6 +186,7 @@ enum ServicesAXID {
     static let editorNashville = "segue.editor.display.nashville"
     static let editorPaletteChord = "segue.editor.palette.chord"
     static let reportSheet = "segue.report.sheet"
+    static let reportRequestFeature = "segue.report.requestFeature"
     static let reportMessage = "segue.report.message"
     static let reportCounter = "segue.report.counter"
     static let reportAttachLogs = "segue.report.attach.logs"

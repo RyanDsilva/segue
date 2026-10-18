@@ -58,7 +58,7 @@
     },
     "board": {
       "name": "Featurebase",
-      "boardUrl": "{BOARD_URL}",
+      "boardUrl": "https://segue.featurebase.app/",
       "privacyUrl": "https://help.featurebase.app/articles/4744036-privacy-policy",
       "termsUrl": "https://help.featurebase.app/articles/5917992-terms-of-service",
       "location": "European Union",
