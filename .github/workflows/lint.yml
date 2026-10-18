@@ -26,8 +26,12 @@ jobs:
     # SwiftLint on Linux loads libsourcekitdInProc.so from a Swift toolchain.
     container: swift:6.4-noble@sha256:19cbe56bdaec1918f7cf5fdeba42b9bd55bdd8a6149c9990d0e0e3a89a127d63
     steps:
-      - name: Install make
-        run: apt-get update -qq && apt-get install -y -qq --no-install-recommends make
+      # The Swift image ships without a downloader; mise-action needs curl, and the
+      # SwiftLint/SwiftFormat release assets need unzip and xz.
+      - name: Install make and download tools
+        run: >-
+          apt-get update -qq && apt-get install -y -qq --no-install-recommends
+          make curl ca-certificates unzip xz-utils git
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
