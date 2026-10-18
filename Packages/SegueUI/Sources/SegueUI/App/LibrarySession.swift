@@ -61,6 +61,8 @@
         let workspace: any WorkspaceActions
         /// Where File > Import Songs… gets its files.
         let importPanel: any ImportPanel
+        /// Stores the section and selections for the next launch (3.10).
+        @ObservationIgnored var restore: SessionRestore?
         /// The New Setlist name sheet is up (sidebar button or Setlist > New Setlist…).
         public var isNamingNewSetlist = false
         /// A song waiting on "Move to Trash?" because setlists use it (A23).
@@ -181,7 +183,7 @@
                 clock: dependencies.clock,
                 ids: dependencies.ids,
             )
-            return LibrarySession(
+            let session = LibrarySession(
                 root: root,
                 library: library,
                 setlists: setlists,
@@ -191,6 +193,8 @@
                 workspace: dependencies.workspace,
                 importPanel: dependencies.importPanel,
             )
+            session.restore = SessionRestore(defaults: dependencies.location.defaults, root: root)
+            return session
         }
     }
 

@@ -267,6 +267,7 @@
                     session.undoManager = old.undoManager
                 }
                 state = .ready(session)
+                session.restoreState()
                 await runShowLaunchCheck()
                 return true
             } catch {

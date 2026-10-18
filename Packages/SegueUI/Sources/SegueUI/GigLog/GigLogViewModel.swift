@@ -11,6 +11,8 @@ import Support
 public final class GigLogViewModel {
     public private(set) var entries: [GigLogEntry] = []
     public var selection: ShowID?
+    /// The gig to select once the log first loads (restored from the last launch).
+    var restoredSelection: ShowID?
     /// The last failure, shown as a dismissible banner.
     public var errorMessage: String?
 
@@ -43,6 +45,12 @@ public final class GigLogViewModel {
 
     public func reload() async {
         entries = await shows.gigLog()
+        if let restored = restoredSelection {
+            restoredSelection = nil
+            if entries.contains(where: { $0.id == restored }) {
+                selection = restored
+            }
+        }
         if let selection, !entries.contains(where: { $0.id == selection }) {
             self.selection = nil
         }

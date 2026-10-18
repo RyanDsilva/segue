@@ -20,7 +20,9 @@
 
         static let bookmarkKey = "libraryFolderBookmark"
 
-        private let defaults: UserDefaults
+        /// The app's defaults (the test suite in test runs); session restore keeps its
+        /// per-library state here too.
+        let defaults: UserDefaults
         private let makeBookmark: @MainActor (URL) throws -> Data
         private var accessedURL: URL?
 

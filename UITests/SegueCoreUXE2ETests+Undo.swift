@@ -109,6 +109,44 @@ extension SegueCoreUXE2ETests {
         )
     }
 
+    // MARK: - State restore (3.10)
+
+    @MainActor
+    func testRestoresSectionAndSongAcrossLaunches() throws {
+        try seedSong("harbour-lights", CoreFixture.harbour, id: CoreFixture.harbourID)
+        try seedSetlist(
+            "friday",
+            id: CoreFixture.fridayID,
+            name: "Friday",
+            songIDs: [CoreFixture.harbourID],
+        )
+        let paths = try XCTUnwrap(paths)
+        var app = try launch()
+        element(app, CoreAXID.setlistRow).click(in: app)
+        XCTAssertTrue(element(app, CoreAXID.setlistEntry).waitForExistence(timeout: 10))
+        Thread.sleep(forTimeInterval: 1.5) // past the 0.5 s write debounce
+        app.terminate()
+
+        app = try launch(reset: false)
+        XCTAssertTrue(element(app, CoreAXID.setlistEntry).waitForExistence(timeout: 15), "builder")
+
+        element(app, CoreAXID.sidebarLibrary).click(in: app)
+        openEditor(app, "Harbour Lights")
+        Thread.sleep(forTimeInterval: 1.5)
+        app.terminate()
+
+        app = try launch(reset: false)
+        XCTAssertTrue(waitForValue(element(app, CoreAXID.songTitle), "Harbour Lights"))
+        XCTAssertFalse(app.textViews[CoreAXID.editorText].exists, "the editor never reopens")
+        app.terminate()
+
+        // The song is gone from disk: no selection, no crash.
+        try FileManager.default.removeItem(at: paths.song("harbour-lights"))
+        app = try launch(reset: false)
+        XCTAssertTrue(element(app, CoreAXID.libraryEmpty).waitForExistence(timeout: 15))
+        XCTAssertFalse(element(app, CoreAXID.songTitle).exists)
+    }
+
     /// The setlist name in a setlist file.
     func setlistName(_ url: URL) -> String? {
         sidecarValue(url, "name") as? String
