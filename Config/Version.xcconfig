@@ -1,0 +1,5 @@
+// Single source of truth for the app version. Edit only with scripts/bump-version.sh.
+// MARKETING_VERSION: at most three period-separated integers (App Store Connect ITMS-90060).
+// CURRENT_PROJECT_VERSION: one integer, strictly increasing on every upload, never reset.
+MARKETING_VERSION = 0.5
+CURRENT_PROJECT_VERSION = 1

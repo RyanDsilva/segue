@@ -13,7 +13,7 @@ UI_DIR      := Packages/SegueUI
 XCODEBUILD  := scripts/xcodebuild.sh
 
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test e2e lint format \
-	verify-appstore check site-fonts
+	verify-appstore check bump site-fonts
 
 bootstrap: ## Install pinned tools, fetch dependencies, generate the workspace
 	mise install
@@ -70,6 +70,9 @@ lint: ## Lint + format check (no changes)
 format: ## Auto-format and auto-fix lint where possible
 	$(MISE) swiftformat .
 	$(MISE) swiftlint lint --fix --quiet
+
+bump: ## Bump + commit the build number; `make bump VERSION=0.6` sets the marketing version
+	scripts/bump-version.sh $(if $(VERSION),marketing $(VERSION),build)
 
 verify-appstore: ## Build the App Store flavor and assert no personal-module symbols
 	scripts/verify-appstore.sh
