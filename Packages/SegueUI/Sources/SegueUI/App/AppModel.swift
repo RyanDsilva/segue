@@ -25,6 +25,9 @@
         /// Live mode: settings, Shortcut runner, power source, scroll clock, key bindings.
         /// Defaults to the standard UserDefaults and the real Shortcut runner.
         public var live: LiveDependencies
+        /// How an open library is claimed: the real cross-process lock, or none for tests
+        /// that run several in-process app instances on one library on purpose.
+        public var libraryLock: LibraryLockPolicy
 
         public init(
             fileSystem: any FileSystem,
@@ -35,8 +38,10 @@
             rememberLibraryOverride: Bool = false,
             shapeLibraryURL: URL? = nil,
             live: LiveDependencies? = nil,
+            libraryLock: LibraryLockPolicy = .exclusive,
         ) {
             self.live = live ?? LiveDependencies(settings: LiveSettingsStore(defaults: .standard))
+            self.libraryLock = libraryLock
             self.fileSystem = fileSystem
             self.clock = clock
             self.ids = ids
@@ -77,6 +82,8 @@
             case accessLost(URL?)
             /// Opening the folder failed.
             case openFailed(String)
+            /// Another copy of Segue (the other flavor) has the library open (B-2).
+            case inUseByAnotherCopy
         }
 
         public private(set) var state: State = .starting
@@ -165,11 +172,19 @@
         @discardableResult
         private func open(_ url: URL, remember: Bool) async -> Bool {
             let previous = state
+            let root = LibraryRoot(url: url)
+            // Re-opening the open library keeps its lock rather than contending with itself.
+            let heldLock: LibraryLock? = if case let .ready(open) = previous, open.root == root {
+                open.lock
+            } else {
+                nil
+            }
             state = .opening(url)
             do {
                 let session = try await LibrarySession.open(
-                    root: LibraryRoot(url: url),
+                    root: root,
                     dependencies: dependencies,
+                    heldLock: heldLock,
                 )
                 if remember {
                     do {
@@ -187,17 +202,22 @@
                 await runShowLaunchCheck()
                 return true
             } catch {
-                let message = UserMessage.describe(error)
+                let inUse = (error as? LibraryLock.Failure) == .inUse
+                let message = inUse ? Self.inUseMessage : UserMessage.describe(error)
                 if case let .ready(session) = previous {
                     // Keep the working library; surface the failure in it.
                     session.library.errorMessage = message
                     state = previous
                 } else {
-                    state = .needsLibrary(.openFailed(message))
+                    state = .needsLibrary(inUse ? .inUseByAnotherCopy : .openFailed(message))
                 }
                 return false
             }
         }
+
+        /// Shown when the library is locked by another copy of Segue.
+        static let inUseMessage = "This library is open in another copy of Segue. "
+            + "Quit it there, then choose the library again."
 
         // MARK: Phase 2 show state (lifecycle in AppModel+Shows.swift)
 

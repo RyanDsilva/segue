@@ -65,6 +65,8 @@ extension StageWindowSuites {
         @Test
         func `a second launch opens the library from the stored bookmark`() async throws {
             let env = try TestEnvironment()
+            // Several in-process app instances on one library, on purpose.
+            env.libraryLock = .unlocked
             let first = env.app(override: env.libraryURL, remember: true)
             await first.start()
             let session = try #require(first.session)
@@ -364,6 +366,9 @@ final class TestEnvironment {
     var fileSystem: any FileSystem = LiveFileSystem()
     /// `bindings.json` for live mode; nil uses the default keys.
     var bindingsURL: URL?
+    /// The real library lock by default; `.unlocked` for tests that run several in-process
+    /// app instances on this library on purpose.
+    var libraryLock: LibraryLockPolicy = .exclusive
 
     init() throws {
         scratch = FileManager.default.temporaryDirectory
@@ -395,6 +400,7 @@ final class TestEnvironment {
             libraryOverride: override,
             rememberLibraryOverride: remember,
             live: liveDependencies(),
+            libraryLock: libraryLock,
         )
     }
 

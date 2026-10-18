@@ -50,6 +50,8 @@ struct ShapeLibraryLoadingTests {
     @Test
     func `a missing shape library is empty and an unreadable one is reported`() async throws {
         let env = try TestEnvironment()
+        // Several in-process app instances on one library, on purpose.
+        env.libraryLock = .unlocked
         var dependencies = env.dependencies(
             location: env.location(),
             override: env.libraryURL,

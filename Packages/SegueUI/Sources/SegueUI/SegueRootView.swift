@@ -109,6 +109,8 @@
                 }
             case let .openFailed(message):
                 "That folder could not be opened as a library: \(message)"
+            case .inUseByAnotherCopy:
+                AppModel.inUseMessage
             }
         }
     }

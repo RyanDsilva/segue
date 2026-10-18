@@ -54,14 +54,19 @@
         /// The stores behind the view models, for the live session (phase 2, unit C) and the
         /// gig log (unit D).
         public let stores: LibraryStores
+        /// Held for the session's lifetime so no other copy of Segue opens this library
+        /// (B-2); nil under `LibraryLockPolicy.unlocked`.
+        let lock: LibraryLock?
 
         init(
             root: LibraryRoot,
             library: LibraryViewModel,
             setlists: SetlistsViewModel,
             stores: LibraryStores,
+            lock: LibraryLock?,
         ) {
             self.root = root
+            self.lock = lock
             self.library = library
             self.setlists = setlists
             self.stores = stores
@@ -82,9 +87,15 @@
             }
         }
 
-        static func open(root: LibraryRoot, dependencies: AppDependencies) async throws
-            -> LibrarySession
-        {
+        /// Opens the stores on `root`. The library lock is taken first (or `heldLock`, the
+        /// open session's own lock when the same library is re-opened), so nothing is read
+        /// while another copy of Segue has the library open.
+        static func open(
+            root: LibraryRoot,
+            dependencies: AppDependencies,
+            heldLock: LibraryLock? = nil,
+        ) async throws -> LibrarySession {
+            let lock = try heldLock ?? dependencies.libraryLock.acquire(root)
             let libraryStore = LibraryStore(
                 fileSystem: dependencies.fileSystem,
                 clock: dependencies.clock,
@@ -128,7 +139,30 @@
                 clock: dependencies.clock,
                 ids: dependencies.ids,
             )
-            return LibrarySession(root: root, library: library, setlists: setlists, stores: stores)
+            return LibrarySession(
+                root: root,
+                library: library,
+                setlists: setlists,
+                stores: stores,
+                lock: lock,
+            )
+        }
+    }
+
+    /// How a library session claims its folder (WS1 4.8g).
+    public enum LibraryLockPolicy: Sendable {
+        /// `LibraryLock` on `<root>/.segue/library.lock`: a second copy of Segue cannot open
+        /// the library while this one has it.
+        case exclusive
+        /// No lock: only for integration tests that deliberately run several in-process
+        /// app instances on one library.
+        case unlocked
+
+        func acquire(_ root: LibraryRoot) throws -> LibraryLock? {
+            switch self {
+            case .exclusive: try LibraryLock(root: root)
+            case .unlocked: nil
+            }
         }
     }
 

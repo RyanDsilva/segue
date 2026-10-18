@@ -64,6 +64,8 @@ extension StageWindowSuites {
         func `a stale show closed at launch runs the end Shortcut`() async throws {
             _ = NSApplication.shared
             let env = try TestEnvironment()
+            // Several in-process app instances on one library, on purpose.
+            env.libraryLock = .unlocked
             let app = try await env.openApp()
             let fixture = try await LiveFixture(app: app, titles: ["Alpha", "Bravo"])
             app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
@@ -86,6 +88,8 @@ extension StageWindowSuites {
         ) async throws {
             _ = NSApplication.shared
             let env = try TestEnvironment()
+            // Several in-process app instances on one library, on purpose.
+            env.libraryLock = .unlocked
             let app = try await env.openApp()
             let fixture = try await LiveFixture(app: app, titles: ["Alpha", "Bravo"])
             app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
@@ -105,6 +109,8 @@ extension StageWindowSuites {
         func `a show on stage is never offered for resume by another instance`() async throws {
             _ = NSApplication.shared
             let env = try TestEnvironment()
+            // Several in-process app instances on one library, on purpose.
+            env.libraryLock = .unlocked
             let app = try await env.openApp()
             let fixture = try await LiveFixture(app: app, titles: ["Alpha", "Bravo"])
             app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)

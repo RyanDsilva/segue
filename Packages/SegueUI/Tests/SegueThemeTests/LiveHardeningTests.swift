@@ -122,6 +122,8 @@ extension StageWindowSuites {
         ) async throws {
             _ = NSApplication.shared
             let env = try TestEnvironment()
+            // Several in-process app instances on one library, on purpose.
+            env.libraryLock = .unlocked
             let app = try await env.openApp()
             let fixture = try await LiveFixture(app: app, titles: ["Alpha", "Bravo", "Charlie"])
             let session = try #require(app.session)
