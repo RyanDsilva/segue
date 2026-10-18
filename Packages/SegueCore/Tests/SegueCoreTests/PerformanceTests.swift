@@ -44,21 +44,33 @@ struct PerformanceTests {
         let opened = try #require(store)
         #expect(try await opened.allSongs().count == songCount)
 
-        let refresh = try await Self.time {
-            let summary = try await opened.refresh()
-            #expect(summary == RefreshSummary())
+        // Fastest of 3, as the parse guard above and LiveLayoutCorpusTests do: load (other
+        // suites, other builds) only adds time, so the minimum tracks the real cost, while
+        // the regression this guards (re-reading every file) is slow on every run.
+        var refresh = Duration.seconds(60)
+        for _ in 0 ..< 3 {
+            let elapsed = try await Self.time {
+                let summary = try await opened.refresh()
+                #expect(summary == RefreshSummary())
+            }
+            refresh = min(refresh, elapsed)
         }
-        let relaunch = try await Self.time { store = try await lib.openStore() }
+        var relaunch = Duration.seconds(60)
+        for _ in 0 ..< 3 {
+            let elapsed = try await Self.time { store = try await lib.openStore() }
+            relaunch = min(relaunch, elapsed)
+        }
         let relaunched = try #require(store)
         #expect(try await relaunched.refresh() == RefreshSummary())
         let rebuild = try await Self.time { try await relaunched.rebuildIndex() }
 
         print("""
         [perf] \(songCount) songs: first open (orphans + full index) \(firstOpen), \
-        no-change refresh \(refresh), relaunch \(relaunch), rebuild index \(rebuild)
+        no-change refresh (best of 3) \(refresh), relaunch (best of 3) \(relaunch), rebuild index \(rebuild)
         """)
         // Before the short-circuit (2026-10-17, debug build): refresh 4.5 s, relaunch 4.6 s.
-        // After: about 0.25 s and 0.5 s (0.45 s and 1.2 s with the rest of the suite running).
+        // After: about 0.25 s and 0.5 s (0.45 s and 1.2 s with the rest of the suite running; a single run failed under heavy
+        // CPU load, hence the best of 3).
         #expect(refresh < .seconds(2), "no-change refresh: \(refresh)")
         #expect(relaunch < .milliseconds(2500), "relaunch: \(relaunch)")
     }
