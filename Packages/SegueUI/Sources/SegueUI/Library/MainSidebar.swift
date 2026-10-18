@@ -50,9 +50,7 @@
             }
             .sheet(item: $naming) { purpose in
                 SetlistNameSheet(purpose: purpose) { name in
-                    if case .create = purpose {
-                        Task { await session.setlists.create(name: name) }
-                    } else if let setlist = renaming {
+                    if let setlist = renaming {
                         Task { await session.setlists.rename(setlist.id, to: name) }
                     }
                 }
@@ -79,7 +77,7 @@
         /// expose their buttons to accessibility, so the action lives here).
         private var newSetlistButton: some View {
             Button {
-                naming = .create
+                session.isNamingNewSetlist = true
             } label: {
                 Label("New Setlist", systemImage: "plus")
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
@@ -92,6 +90,13 @@
             .padding(.vertical, 10)
             .help("New Setlist")
             .accessibilityIdentifier(AccessibilityID.newSetlist)
+            // Its own view, so it never competes with the rename sheet. Also opened by
+            // Setlist > New Setlist… (Shift-Cmd-N).
+            .sheet(isPresented: $session.isNamingNewSetlist) {
+                SetlistNameSheet(purpose: .create) { name in
+                    Task { await session.setlists.create(name: name) }
+                }
+            }
         }
 
         private func setlistRow(_ setlist: Setlist) -> some View {

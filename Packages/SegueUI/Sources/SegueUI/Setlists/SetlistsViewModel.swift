@@ -53,11 +53,12 @@ public final class SetlistsViewModel {
         }
     }
 
-    /// Appends `songID` to setlist `id`.
-    public func add(_ songID: SongID, to id: SetlistID) async {
+    /// Appends `songID` to setlist `id` (repeats allowed); returns whether it was saved.
+    @discardableResult
+    public func add(_ songID: SongID, to id: SetlistID) async -> Bool {
         await mutate { store in
             try await store.addSong(songID, to: id)
-        }
+        } != nil
     }
 
     /// Drag reorder (`onMove`).

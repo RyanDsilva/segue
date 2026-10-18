@@ -265,6 +265,28 @@ enum CoreFixture {
     static let fridayID = "01JC0000000000000000000F01"
 }
 
+/// The links the app should open (mirrors `SegueLinks`; UI tests cannot import SegueUI, so
+/// this is the one test file the SegueLinks lint rule allows).
+enum CoreLinks {
+    static let site = "https://segue.ryandsilva.dev"
+    static let supportMail = "mailto:segue@ryandsilva.dev"
+
+    /// The Help menu's visible items, in order (WS2a 3.5.6).
+    static let helpMenuTitles = [
+        "Segue Help", "Keyboard Shortcuts", "What's New in Segue", "Report a Problem…",
+        "Request a Feature…", "Privacy Policy", "Terms of Use", "Acknowledgements",
+    ]
+
+    /// Help items that open a web page, with the URL each opens.
+    static let helpLinks: [(String, String)] = [
+        ("Segue Help", site + "/help"),
+        ("What's New in Segue", site + "/changelog"),
+        ("Request a Feature…", site + "/feedback"),
+        ("Privacy Policy", site + "/privacy"),
+        ("Terms of Use", site + "/terms"),
+    ]
+}
+
 /// Accessibility identifiers (mirrors `AccessibilityID` in SegueUI).
 enum CoreAXID {
     static let songRow = "segue.library.row"
@@ -293,4 +315,12 @@ enum CoreAXID {
     static let setlistRevealAction = "segue.setlist.action.reveal"
     static let setlistEntry = "segue.setlist.entry"
     static let sidebarLibrary = "segue.sidebar.library"
+    static let shortcutsWindow = "segue.shortcuts"
+    static let shortcutsMainSection = "segue.shortcuts.main"
+    static let shortcutsStageSection = "segue.shortcuts.stage"
+    static let acknowledgements = "segue.acknowledgements"
+    static let checklist = "segue.live.checklist"
+    static let checklistCancel = "segue.live.checklist.cancel"
+    static let setlistNameField = "segue.setlists.new.name"
+    static let addToSetlistMenu = "segue.song.addToSetlist"
 }

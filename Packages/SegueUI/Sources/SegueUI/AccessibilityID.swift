@@ -25,6 +25,12 @@ public enum AccessibilityID {
     public static let songShowInFinder = "segue.song.showInFinder"
     /// "Move to Trash" in the confirmation for a song that setlists use.
     public static let songDeleteConfirm = "segue.song.moveToTrash.confirm"
+    /// Add to Setlist ▸ (Setlist menu, context and "…" menus).
+    public static let addToSetlistMenu = "segue.song.addToSetlist"
+    /// Help > Keyboard Shortcuts and its sections.
+    public static let shortcutsWindow = "segue.shortcuts"
+    public static let shortcutsMainSection = "segue.shortcuts.main"
+    public static let shortcutsStageSection = "segue.shortcuts.stage"
     public static let newSong = "segue.library.newSong"
     public static let refreshLibrary = "segue.library.refresh"
     public static let librarySearch = "segue.library.search"

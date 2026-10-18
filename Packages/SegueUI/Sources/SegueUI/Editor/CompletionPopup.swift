@@ -3,6 +3,26 @@
     import Observation
     import SwiftUI
 
+    /// The editor's own keys, which are not menu items, for Help > Keyboard Shortcuts. Kept
+    /// here, beside the completion and canvas key handling that own them.
+    enum EditorKeys {
+        struct Row {
+            let title: String
+            let keys: String
+        }
+
+        static let rows = [
+            Row(title: "Suggest chords (text mode)", keys: "["),
+            Row(title: "Suggest directives (text mode)", keys: "{"),
+            Row(title: "Choose a suggestion", keys: "← →  ↑ ↓"),
+            Row(title: "Accept a suggestion", keys: "↩  ⇥"),
+            Row(title: "Close suggestions, drop a picked-up chord", keys: "⎋"),
+            Row(title: "Delete the selected chord pill", keys: "⌫"),
+            Row(title: "Nudge the selected chord pill", keys: "← →"),
+            Row(title: "Edit the selected chord pill", keys: "↩"),
+        ]
+    }
+
     /// The `[` chord / `{` directive completion: a row of chips under the caret (mockup E2 a,
     /// "Chord  Em  E7  Esus4"). It floats in a child panel that never takes focus, so typing
     /// keeps going to the text view, which forwards ← → ↑ ↓, Return, Tab and Esc.

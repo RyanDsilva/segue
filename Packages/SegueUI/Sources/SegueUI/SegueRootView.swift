@@ -6,7 +6,11 @@
     /// Root of the app's main window: the library chooser until a library is open, then the
     /// Library / Setlists split view.
     public struct SegueRootView: View {
+        /// The main window scene's identity.
+        public static let windowID = "segue.main"
+
         let app: AppModel
+        @Environment(\.openWindow) private var openWindow
 
         public init(app: AppModel) {
             self.app = app
@@ -29,6 +33,13 @@
                 }
             }
             .task { await app.start() }
+            // A Dock click with no window open brings this window back (review risk F2).
+            .onAppear {
+                let openWindow = openWindow
+                PendingEditsGuard.shared.reopenMainWindow = {
+                    openWindow(id: Self.windowID)
+                }
+            }
             // Quit / close save pending edits first (and ask only if that fails).
             .background(PendingEditsWindowGuard(app: app))
         }
@@ -290,118 +301,6 @@
                 .background(.bar)
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier(AccessibilityID.transientMessage)
-            }
-        }
-    }
-
-    extension SegueCommands {
-        /// File > Show in Finder: the focused or shown song, else the shown setlist.
-        var revealTarget: (() -> Void)? {
-            guard let session = app.session, !app.isPerforming else { return nil }
-            if let id = focusedSongID {
-                return { session.revealSong(id) }
-            }
-            switch session.section {
-            case .library:
-                guard case let .song(id) = session.library.detail else { return nil }
-                return { session.revealSong(id) }
-            case let .setlist(id):
-                return { Task { await session.revealSetlist(id) } }
-            case .gigLog, nil:
-                return nil
-            }
-        }
-    }
-
-    /// Menu bar commands for the main window.
-    public struct SegueCommands: Commands {
-        let app: AppModel
-        @Environment(\.openWindow) private var openWindow
-        /// The song selected in the focused song list (File > Move to Trash needs it).
-        @FocusedValue(\.focusedSongID) private var focusedSongID
-
-        public init(app: AppModel) {
-            self.app = app
-        }
-
-        public var body: some Commands {
-            CommandGroup(after: .appInfo) {
-                Button("Acknowledgements") {
-                    openWindow(id: AcknowledgementsWindow.id)
-                }
-            }
-            CommandGroup(replacing: .newItem) {
-                Button("New Song") {
-                    guard let session = app.session else { return }
-                    if session.section == .library {
-                        session.library.beginNewSong()
-                    } else {
-                        session.library.navigate {
-                            session.section = .library
-                            session.library.beginNewSong()
-                        }
-                    }
-                }
-                .keyboardShortcut("n")
-                // Nothing in the main window may change while the stage is up.
-                .disabled(app.session == nil || app.isPerforming)
-                Button("Import Songs…") { Task { await app.importSongs() } }
-                    .keyboardShortcut("i", modifiers: [.command, .shift])
-                    .disabled(app.session == nil || app.isPerforming)
-                Divider()
-                Button("Show in Finder") { revealTarget?() }
-                    .keyboardShortcut("r", modifiers: [.command, .option])
-                    .disabled(revealTarget == nil)
-                // Only while the song list has focus, so ⌘⌫ keeps its text meaning in the
-                // editor and every field.
-                Button("Move to Trash") {
-                    guard let session = app.session, let id = focusedSongID else { return }
-                    session.requestMoveSongToTrash(id)
-                }
-                .keyboardShortcut(.delete, modifiers: .command)
-                .disabled(app.session == nil || app.isPerforming || focusedSongID == nil)
-                Divider()
-            }
-            CommandGroup(replacing: .saveItem) {
-                // Replacing the save group drops the system Close, so it is restated here.
-                Button("Close") {
-                    NSApp.keyWindow?.performClose(nil)
-                }
-                .keyboardShortcut("w")
-                // Edits save themselves (R17): Save only confirms, and never opens a panel.
-                Button("Save") {
-                    guard let session = app.session else { return }
-                    Task { await session.library.confirmSave() }
-                }
-                .keyboardShortcut("s")
-                .disabled(app.session == nil || app.isPerforming)
-            }
-            CommandMenu("Library") {
-                Button("Refresh") {
-                    guard let session = app.session else { return }
-                    Task { await session.refreshFromDisk() }
-                }
-                .keyboardShortcut("r")
-                .disabled(app.session == nil || app.isPerforming)
-                Button("Rebuild Index") {
-                    guard let session = app.session else { return }
-                    Task { await session.library.rebuildIndex() }
-                }
-                .disabled(app.session == nil || app.isPerforming)
-                Divider()
-                Button("Show Library in Finder") { app.session?.revealLibrary() }
-                    .disabled(app.session == nil)
-                Button("Choose Library Folder…") {
-                    let choose = { Task { await app.chooseLibrary() } }
-                    if let session = app.session {
-                        session.library.navigate { _ = choose() }
-                    } else {
-                        _ = choose()
-                    }
-                }
-                // The show belongs to the open library: end it before switching.
-                .disabled(!app.canSwitchLibrary)
-                .help(app.canSwitchLibrary ? "" : "End the show before switching libraries.")
             }
         }
     }

@@ -102,11 +102,12 @@
             HStack(spacing: 8) {
                 Button("Rehearse") { onStart(setlist, .rehearsal) }
                     .buttonStyle(.segueSecondary)
-                    .help("Run the set on stage to time each song (no gig log entry)")
+                    .help("Run the set on stage to time each song, no gig log entry "
+                        + "(\(MenuShortcuts.rehearse.displayText))")
                     .accessibilityIdentifier(AccessibilityID.setlistRehearse)
                 Button("Start show") { onStart(setlist, .gig) }
                     .buttonStyle(.seguePrimary)
-                    .help("Perform this setlist on stage")
+                    .help("Perform this setlist on stage (\(MenuShortcuts.startShow.displayText))")
                     .accessibilityIdentifier(AccessibilityID.setlistStartShow)
             }
             .controlSize(.large)

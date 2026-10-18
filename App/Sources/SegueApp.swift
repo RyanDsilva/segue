@@ -81,12 +81,26 @@ struct SegueApp: App {
     }
 
     var body: some Scene {
-        WindowGroup(id: "segue.main") {
+        // One main window (A32, I-11): Window > Segue Library (Cmd-0) brings it back after
+        // it was closed, instead of a second copy. The title bar shows the view's title.
+        // Spike 0d: SwiftUI lists no Window menu item for it once it is closed, so the
+        // scene's own commands are removed and `WindowCommands` provides the one item.
+        Window("Segue Library", id: SegueRootView.windowID) {
             SegueRootView(app: app)
                 .frame(minWidth: 820, minHeight: 520)
         }
         .defaultSize(width: 1120, height: 720)
+        .commandsRemoved()
         .commands { SegueCommands(app: app) }
+
+        Window("Keyboard Shortcuts", id: KeyboardShortcutsWindow.id) {
+            KeyboardShortcutsView()
+                .frame(minWidth: 560, idealWidth: 620, minHeight: 520, idealHeight: 720)
+        }
+        .defaultSize(width: 620, height: 720)
+        .windowResizability(.contentMinSize)
+        .restorationBehavior(.disabled)
+        .commandsRemoved()
 
         Window("Acknowledgements", id: AcknowledgementsWindow.id) {
             AcknowledgementsView()

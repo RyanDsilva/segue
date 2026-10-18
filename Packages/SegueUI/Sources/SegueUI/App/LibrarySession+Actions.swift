@@ -85,6 +85,19 @@
             await library.importSongs(urls)
         }
 
+        /// Add to Setlist: saves the song's pending edits, appends it to the setlist and
+        /// confirms in the bottom bar ("Added “Harbour Lights” to Friday."). Selection and
+        /// section stay as they are.
+        func addSong(_ songID: SongID, to setlistID: SetlistID) {
+            Task {
+                await library.flushEditor()
+                guard await setlists.add(songID, to: setlistID) else { return }
+                let song = library.song(id: songID).map(LibraryViewModel.sortTitle) ?? "the song"
+                let name = setlists.setlist(setlistID)?.name ?? "the setlist"
+                library.flash("Added “\(song)” to \(name).")
+            }
+        }
+
         /// Library > Show Library in Finder: the library folder itself.
         func revealLibrary() {
             workspace.reveal([root.url])

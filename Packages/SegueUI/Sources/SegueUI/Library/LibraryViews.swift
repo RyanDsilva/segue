@@ -197,19 +197,7 @@
         let songID: SongID
 
         var body: some View {
-            if session.setlists.setlists.isEmpty {
-                Button("Add to Setlist") {}
-                    .disabled(true)
-            } else {
-                Menu("Add to Setlist") {
-                    ForEach(session.setlists.setlists) { setlist in
-                        Button(setlist.name) {
-                            Task { await session.setlists.add(songID, to: setlist.id) }
-                        }
-                        .disabled(setlist.readOnly != nil)
-                    }
-                }
-            }
+            AddToSetlistMenu(session: session, songID: songID)
             Button("Show in Finder") { session.revealSong(songID) }
                 .accessibilityIdentifier(AccessibilityID.songShowInFinder)
             Divider()

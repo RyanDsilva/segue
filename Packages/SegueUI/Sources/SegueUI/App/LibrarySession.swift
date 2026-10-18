@@ -61,6 +61,8 @@
         let workspace: any WorkspaceActions
         /// Where File > Import Songs… gets its files.
         let importPanel: any ImportPanel
+        /// The New Setlist name sheet is up (sidebar button or Setlist > New Setlist…).
+        public var isNamingNewSetlist = false
         /// A song waiting on "Move to Trash?" because setlists use it (A23).
         public internal(set) var songTrashConfirmation: SongTrashConfirmation?
 
