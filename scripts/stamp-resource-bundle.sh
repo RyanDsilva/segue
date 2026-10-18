@@ -24,4 +24,7 @@ set_key CFBundleIdentifier "dev.ryandsilva.segue.SegueUI.resources"
 set_key NSHumanReadableCopyright "$copyright"
 set_key CFBundleShortVersionString "${MARKETING_VERSION:?}"
 set_key CFBundleVersion "${CURRENT_PROJECT_VERSION:?}"
+# PlistBuddy exits 0 when the script sandbox denies the write, so read the result back.
+[[ "$("$buddy" -c "Print :CFBundleIdentifier" "$bundle_plist")" == "dev.ryandsilva.segue.SegueUI.resources" ]] \
+    || { echo "error: $bundle_plist was not stamped (write denied?)" >&2; exit 1; }
 echo "stamped $bundle_plist ($copyright, ${MARKETING_VERSION} (${CURRENT_PROJECT_VERSION}))"

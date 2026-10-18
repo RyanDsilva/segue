@@ -183,8 +183,11 @@ let stampResourceBundle: TargetScript = .post(
         "$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
         "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SegueUI_SegueUI.bundle",
     ],
+    // The plist is a declared output: with user-script sandboxing on, PlistBuddy may only
+    // write to declared outputs, and it exits 0 when the sandbox denies the write.
     outputPaths: [
         "$(DERIVED_FILE_DIR)/stamp-resource-bundle.stamp",
+        "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SegueUI_SegueUI.bundle/Contents/Info.plist",
     ],
     basedOnDependencyAnalysis: false,
 )
