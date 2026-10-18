@@ -264,17 +264,10 @@
             .background(StagePanelBackground(radius: 8))
         }
 
+        /// Generated from the live bindings, so custom keys show truthfully.
         private var summary: String {
-            [
-                "Song \(session.positionText)",
-                "← → songs",
-                "A scroll",
-                "C columns",
-                "⌘K search",
-                "S set order",
-                "Q requests",
-                "⌘. end",
-            ].joined(separator: "  ·  ")
+            (["Song \(session.positionText)"] + KeyHelp.statusHints(session.context.bindings))
+                .joined(separator: "  ·  ")
         }
     }
 #endif

@@ -92,6 +92,11 @@
                     pendingFraction = nil
                     fresh.seek(to: fraction * newPlan.overflow, at: now)
                 }
+                if landsAtBottom {
+                    // Page Up from the top of a song: its predecessor opens at the bottom.
+                    fresh.seek(to: newPlan.overflow, at: now)
+                }
+                landsAtBottom = false
                 if prefs.autoStartScroll, arrivedByAdvance, newPlan.needsScroll {
                     fresh.start(at: now)
                 }
@@ -99,6 +104,8 @@
                 reportedFraction = nil
                 scroller = fresh
             } else if var scroller {
+                // No new item (Page Up on the first song): nothing to land on.
+                landsAtBottom = false
                 scroller.setOverflow(newPlan.overflow, at: now)
                 if scroller.speed != speed {
                     scroller.setSpeed(speed, at: now)
@@ -173,6 +180,33 @@
             let offset = scrollOffset(at: now)
             let stop = plan.pageStops.last { $0 < offset - 0.5 } ?? 0
             seek(stop, at: now)
+        }
+
+        /// Page-turner Page Down (R45): pages down, and at the song's bottom (or when it
+        /// fits) moves to the next song, at its top.
+        func pageForward() {
+            let now = context.scrollClock.now()
+            if let plan, plan.needsScroll {
+                let offset = scrollOffset(at: now)
+                if offset < plan.overflow - 0.5 {
+                    let stop = plan.pageStops.first { $0 > offset + 0.5 } ?? plan.overflow
+                    seek(min(stop, plan.overflow), at: now)
+                    return
+                }
+            }
+            perform(.next)
+        }
+
+        /// Page-turner Page Up (R45): pages up, and at the song's top moves to the previous
+        /// song, at its bottom.
+        func pageBack() {
+            let now = context.scrollClock.now()
+            if let plan, plan.needsScroll, scrollOffset(at: now) > 0.5 {
+                pageUp()
+                return
+            }
+            landsAtBottom = true
+            perform(.previous)
         }
 
         private func seek(_ offset: Double, at now: Date) {

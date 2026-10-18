@@ -78,7 +78,7 @@
             case (.endConfirm, KeyStroke.escape):
                 session.cancelEnd()
                 return true
-            case (nil, KeyStroke.escape):
+            case (.keys, KeyStroke.escape), (nil, KeyStroke.escape):
                 session.dismissTopmost()
                 return true
             default:

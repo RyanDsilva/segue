@@ -415,7 +415,7 @@ extension SegueLiveE2ETests {
 
     /// "scroll 0.42" from the body's accessibility value.
     @MainActor
-    private func scrollPosition(_ body: XCUIElement) -> Double? {
+    func scrollPosition(_ body: XCUIElement) -> Double? {
         number(after: "scroll ", in: body)
     }
 
@@ -425,7 +425,7 @@ extension SegueLiveE2ETests {
     }
 
     @MainActor
-    private func number(after prefix: String, in element: XCUIElement) -> Double? {
+    func number(after prefix: String, in element: XCUIElement) -> Double? {
         let value = element.label
         guard let range = value.range(of: prefix)
         else { return nil }
@@ -433,14 +433,14 @@ extension SegueLiveE2ETests {
     }
 
     @MainActor
-    private func waitForValue(_ element: XCUIElement, _ value: String) -> Bool {
+    func waitForValue(_ element: XCUIElement, _ value: String) -> Bool {
         waitFor(element) { $0.value as? String == value }
     }
 
     /// Polls `condition` on `element` (a predicate over a computed value is not
     /// re-evaluated reliably for SwiftUI elements).
     @MainActor
-    private func waitFor(
+    func waitFor(
         _ element: XCUIElement,
         timeout: TimeInterval = 10,
         _ condition: (XCUIElement) -> Bool,

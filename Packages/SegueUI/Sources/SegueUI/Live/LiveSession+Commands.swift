@@ -13,6 +13,11 @@
             if overlay == .endConfirm, command != .endShow {
                 return false
             }
+            // The key help never traps the performer: any other command closes it and
+            // still runs (A39).
+            if overlay == .keys, command != .showKeys {
+                overlay = nil
+            }
             switch command.scope {
             case .show:
                 guard let action = command.showAction else { return false }
@@ -33,6 +38,8 @@
             switch command {
             case .scrollPageDown: pageDown()
             case .scrollPageUp: pageUp()
+            case .pageForward: pageForward()
+            case .pageBack: pageBack()
             case .toggleAutoScroll: toggleAutoScroll()
             case .scrollFaster: nudgeScrollSpeed(faster: true)
             case .scrollSlower: nudgeScrollSpeed(faster: false)
@@ -60,6 +67,8 @@
                 showsRequests.toggle()
             case .toggleSidebar:
                 showsDrawer.toggle()
+            case .showKeys:
+                overlay = overlay == .keys ? nil : .keys
             case .endShow:
                 if overlay == .endConfirm {
                     cancelEnd()

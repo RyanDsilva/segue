@@ -39,8 +39,11 @@ public extension AccessibilityID {
     static let liveDrawerSkip = "segue.live.drawer.skip"
     static let liveDrawerUnskip = "segue.live.drawer.unskip"
 
-    // Before the show
+    /// Before the show
     static let checklist = "segue.live.checklist"
+    /// The stage's keyboard help overlay (`?`) and one of its rows.
+    static let keysOverlay = "segue.live.keys"
+    static let keysOverlayRow = "segue.live.keys.row"
     static let checklistStart = "segue.live.checklist.start"
     static let checklistCancel = "segue.live.checklist.cancel"
     static let checklistRow = "segue.live.checklist.row"

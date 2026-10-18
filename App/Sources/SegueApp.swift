@@ -94,7 +94,7 @@ struct SegueApp: App {
         .commands { SegueCommands(app: app) }
 
         Window("Keyboard Shortcuts", id: KeyboardShortcutsWindow.id) {
-            KeyboardShortcutsView()
+            KeyboardShortcutsWindowContent(app: app)
                 .frame(minWidth: 560, idealWidth: 620, minHeight: 520, idealHeight: 720)
         }
         .defaultSize(width: 620, height: 720)

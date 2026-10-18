@@ -240,6 +240,8 @@ enum LiveAXID {
     static let liveRequestRow = "segue.live.requests.row"
 
     static let checklist = "segue.live.checklist"
+    static let keysOverlay = "segue.live.keys"
+    static let keysOverlayRow = "segue.live.keys.row"
     static let checklistStart = "segue.live.checklist.start"
     static let checklistRow = "segue.live.checklist.row"
     static let checklistMissing = "segue.live.checklist.missing"

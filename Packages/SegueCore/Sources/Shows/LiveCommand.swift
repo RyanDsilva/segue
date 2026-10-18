@@ -14,6 +14,11 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
     case previous
     case scrollPageDown
     case scrollPageUp
+    /// Page-turner pedals (R45): Page Down, and at the song's bottom the next song (at its
+    /// top). The default for the Page Down key; arrows keep plain paging.
+    case pageForward
+    /// Page Up, and at the song's top the previous song (at its bottom).
+    case pageBack
     case toggleAutoScroll
     case scrollFaster
     case scrollSlower
@@ -36,6 +41,8 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
     case cycleColumns
     /// Asks for confirmation, then ends the show.
     case endShow
+    /// Shows or hides the keyboard help overlay (`?`).
+    case showKeys
 
     /// Who handles a command.
     public enum Scope: Sendable, Hashable {
@@ -51,11 +58,11 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
         switch self {
         case .next, .playNextRequest, .previous, .skipCurrent:
             .show
-        case .cycleColumns, .resetZoom, .restartScroll, .scrollFaster, .scrollPageDown,
-             .scrollPageUp, .scrollSlower, .toggleAutoScroll, .toggleCollapseRepeats, .zoomIn,
-             .zoomOut:
+        case .cycleColumns, .pageBack, .pageForward, .resetZoom, .restartScroll,
+             .scrollFaster, .scrollPageDown, .scrollPageUp, .scrollSlower, .toggleAutoScroll,
+             .toggleCollapseRepeats, .zoomIn, .zoomOut:
             .viewport
-        case .endShow, .openSearch, .toggleRequests, .toggleSidebar:
+        case .endShow, .openSearch, .showKeys, .toggleRequests, .toggleSidebar:
             .chrome
         }
     }
@@ -76,8 +83,10 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
         switch self {
         case .next: "Next Song"
         case .previous: "Previous Song"
-        case .scrollPageDown: "Page Down"
-        case .scrollPageUp: "Page Up"
+        case .scrollPageDown: "Page Down Within Song"
+        case .scrollPageUp: "Page Up Within Song"
+        case .pageForward: "Page Down, Then Next Song"
+        case .pageBack: "Page Up, Then Previous Song"
         case .toggleAutoScroll: "Start/Pause Auto-Scroll"
         case .scrollFaster: "Scroll Faster"
         case .scrollSlower: "Scroll Slower"
@@ -93,6 +102,7 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
         case .toggleCollapseRepeats: "Collapse Repeats"
         case .cycleColumns: "Columns"
         case .endShow: "End Show"
+        case .showKeys: "Keyboard Shortcuts"
         }
     }
 }

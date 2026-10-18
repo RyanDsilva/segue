@@ -58,6 +58,7 @@
             }
             .overlay(alignment: .top) { searchOverlay }
             .overlay { endConfirm }
+            .overlay { keysOverlay }
             .overlay(alignment: .bottom) { statusLine }
             .overlay(alignment: .top) { problemBanner }
             .overlay(alignment: .topTrailing) { modeIndicator }
@@ -201,6 +202,13 @@
             if session.overlay == .search {
                 QuickSearchOverlay(session: session)
                     .padding(.top, 96 + topInset)
+            }
+        }
+
+        @ViewBuilder private var keysOverlay: some View {
+            if session.overlay == .keys {
+                KeysOverlay(groups: KeyHelp.groups(session.context.bindings))
+                    .padding(.vertical, Self.headerHeight + topInset)
             }
         }
 

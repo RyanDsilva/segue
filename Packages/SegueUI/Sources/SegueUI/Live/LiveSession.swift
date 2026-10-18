@@ -18,6 +18,8 @@
         public enum Overlay: Equatable {
             case search
             case endConfirm
+            /// The keyboard help (`?`, WS2a 3.7): non-modal, any bound command closes it.
+            case keys
         }
 
         /// The process-wide pieces a session needs.
@@ -80,6 +82,8 @@
         @ObservationIgnored var reportedFraction: Double?
         /// The fraction to restore once the first plan exists (resume).
         @ObservationIgnored var pendingFraction: Double?
+        /// The next new item opens scrolled to its bottom (Page Up across songs, R45).
+        @ObservationIgnored var landsAtBottom = false
         /// Whether the current item was reached by an advance (for auto-start).
         @ObservationIgnored var arrivedByAdvance = false
 

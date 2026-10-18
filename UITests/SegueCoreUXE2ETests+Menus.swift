@@ -205,4 +205,34 @@ extension SegueCoreUXE2ETests {
         else { return -1 }
         return entries.count
     }
+
+    @MainActor
+    func testKeyboardShortcutsWindow() throws {
+        let app = try launch()
+        XCTAssertTrue(element(app, CoreAXID.libraryEmpty).waitForExistence(timeout: 15))
+        app.typeKey("/", modifierFlags: .command, in: app)
+        let window = element(app, CoreAXID.shortcutsWindow)
+        XCTAssertTrue(window.waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, CoreAXID.shortcutsMainSection).exists)
+        XCTAssertTrue(element(app, CoreAXID.shortcutsStageSection).exists)
+        // A main-window row matches the menu: Start Show is Cmd-Return.
+        let rows = window.descendants(matching: .staticText)
+        let startShow = rows.matching(NSPredicate(
+            format: "label CONTAINS %@ OR value CONTAINS %@",
+            "Start Show",
+            "Start Show",
+        ))
+        .firstMatch
+        XCTAssertTrue(startShow.exists)
+        let row = startShow.label + (startShow.value as? String ?? "")
+        XCTAssertTrue(row.contains("⌘↩"), row)
+        // And a stage row comes from the bindings.
+        XCTAssertTrue(rows.matching(NSPredicate(
+            format: "label CONTAINS %@ OR value CONTAINS %@",
+            "Page Down, Then Next Song",
+            "Page Down, Then Next Song",
+        ))
+        .firstMatch.exists)
+        attachScreen(name: "keyboard-shortcuts-window")
+    }
 }

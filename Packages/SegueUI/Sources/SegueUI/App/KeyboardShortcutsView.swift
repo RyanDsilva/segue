@@ -1,4 +1,5 @@
 #if os(macOS)
+    import Shows
     import SwiftUI
 
     /// Identity of the Help > Keyboard Shortcuts window scene.
@@ -10,10 +11,10 @@
     /// `MenuShortcuts` (the same table the menus use) plus the editor's own keys, and the
     /// stage's keys from the live bindings.
     public struct KeyboardShortcutsView: View {
-        let stage: [KeyHelpSection]
+        let stage: [KeyHelp.Group]
         let stageWarning: String?
 
-        public init(stage: [KeyHelpSection] = [], stageWarning: String? = nil) {
+        public init(stage: [KeyHelp.Group] = [], stageWarning: String? = nil) {
             self.stage = stage
             self.stageWarning = stageWarning
         }
@@ -42,13 +43,14 @@
                                     .font(.callout)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                            ForEach(stage) { stageSection in
+                            ForEach(stage, id: \.title) { stageSection in
                                 shortcutGroup(
                                     stageSection.title,
                                     rows: stageSection.rows.map { ($0.title, $0.keys) },
                                 )
                             }
-                            Text("Change stage keys in bindings.json.")
+                            Text("Change stage keys in bindings.json, in Segue’s Application "
+                                + "Support folder.")
                                 .font(Theme.font.label)
                                 .foregroundStyle(Theme.color.muted)
                         }
@@ -112,18 +114,42 @@
         }
     }
 
-    /// A help group of stage keys (built from the live bindings in step 9).
-    public struct KeyHelpSection: Identifiable, Sendable {
-        public let title: String
-        public let rows: [(title: String, keys: [String])]
+    /// The Keyboard Shortcuts window's content: the stage keys come from the same binding
+    /// table the stage uses (defaults plus `bindings.json`); a file that cannot be read
+    /// shows the defaults with the stage's warning.
+    public struct KeyboardShortcutsWindowContent: View {
+        let app: AppModel
 
-        public var id: String {
-            title
+        public init(app: AppModel) {
+            self.app = app
         }
 
-        public init(title: String, rows: [(title: String, keys: [String])]) {
-            self.title = title
-            self.rows = rows
+        public var body: some View {
+            let (table, warning) = loadBindings()
+            KeyboardShortcutsView(stage: KeyHelp.groups(table), stageWarning: warning)
+        }
+
+        private func loadBindings() -> (InputBindingTable, String?) {
+            do {
+                let loaded = try InputBindingTable.loadReporting(
+                    from: app.dependencies.live.bindingsURL,
+                    fileSystem: app.dependencies.fileSystem,
+                )
+                let warning: String? = if loaded.newerSchema != nil, loaded.skipped > 0 {
+                    "Your key bindings file was saved by a newer version of Segue: "
+                        + "\(loaded.skipped) of its bindings are not available in this "
+                        + "version, so those keys keep their defaults."
+                } else {
+                    nil
+                }
+                return (loaded.table, warning)
+            } catch {
+                return (
+                    .defaults,
+                    "Your key bindings file could not be read "
+                        + "(\(UserMessage.describe(error))), so the default keys are shown.",
+                )
+            }
         }
     }
 #endif

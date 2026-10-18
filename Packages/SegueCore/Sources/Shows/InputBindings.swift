@@ -238,9 +238,10 @@ public struct InputBindingTable: Sendable, Hashable {
             key(KeyStroke.rightArrow, .next),
             key(KeyStroke.space, .next),
             key(KeyStroke.leftArrow, .previous),
-            key(KeyStroke.pageDown, .scrollPageDown),
+            // Page turners send Page Down/Up: they cross song boundaries (R45).
+            key(KeyStroke.pageDown, .pageForward),
             key(KeyStroke.downArrow, .scrollPageDown),
-            key(KeyStroke.pageUp, .scrollPageUp),
+            key(KeyStroke.pageUp, .pageBack),
             key(KeyStroke.upArrow, .scrollPageUp),
             key(KeyStroke.home, .restartScroll),
             key("a", .toggleAutoScroll),
@@ -259,6 +260,7 @@ public struct InputBindingTable: Sendable, Hashable {
             key("-", .zoomOut, [.command]),
             key("0", .resetZoom, [.command]),
             key(".", .endShow, [.command]),
+            key("?", .showKeys),
         ],
     )
 
