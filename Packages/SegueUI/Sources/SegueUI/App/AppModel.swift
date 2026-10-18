@@ -47,6 +47,12 @@
         public var diagnosticLog: DiagnosticLog?
         /// Which app this is (`Segue.App.launched`'s `segue.flavor`).
         public var flavor: AppFlavor
+        /// Help > Report a Problem's presenter (the app's hook calls `present()`).
+        public var reportPresenter: ReportProblemPresenter
+        /// What a bug report may attach (the diagnostic log, the MetricKit payload).
+        public var diagnostics: any DiagnosticsSource
+        /// Report a Problem's "Email Instead".
+        public var mail: any MailComposer
 
         public init(
             fileSystem: any FileSystem,
@@ -66,8 +72,14 @@
             consent: ConsentStore? = nil,
             diagnosticLog: DiagnosticLog? = nil,
             flavor: AppFlavor = .appStore,
+            reportPresenter: ReportProblemPresenter? = nil,
+            diagnostics: (any DiagnosticsSource)? = nil,
+            mail: (any MailComposer)? = nil,
         ) {
             self.flavor = flavor
+            self.reportPresenter = reportPresenter ?? ReportProblemPresenter()
+            self.diagnostics = diagnostics ?? LocalDiagnostics(log: diagnosticLog, store: nil)
+            self.mail = mail ?? SharingServiceMailComposer()
             self.live = live ?? LiveDependencies(settings: LiveSettingsStore(defaults: .standard))
             self.services = services ?? .inert()
             self.consent = consent ?? .inert()

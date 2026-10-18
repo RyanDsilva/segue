@@ -52,7 +52,7 @@ Packages/*/Package.resolved	ALL
 Packages/*/Tests/*	NONE
 Packages/SegueVendorServices/*	NONE
 Packages/SeguePersonalModules/*	NONE
-Packages/SegueCore/Sources/Services/*	SegueServicesE2ETests
+Packages/SegueCore/Sources/Services/*	SegueServicesE2ETests SegueReportProblemE2ETests
 
 # SegueCore by module.
 Packages/SegueCore/Sources/ChordPro/*	SegueEditorE2ETests SegueLiveE2ETests SegueE2ETests SegueCoreUXE2ETests
@@ -81,7 +81,7 @@ Packages/SegueUI/Sources/SegueUI/Setlists/*	SegueSetlistBuilderE2ETests SegueCor
 Packages/SegueUI/Sources/SegueUI/GigLog/*	SegueSetlistGigLogE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/*	SegueLiveE2ETests SegueGigModeE2ETests
 Packages/SegueUI/Sources/SegueUI/Settings/*	SegueLiveE2ETests SegueGigModeE2ETests SegueServicesE2ETests
-Packages/SegueUI/Sources/SegueUI/Services/*	SegueServicesE2ETests
+Packages/SegueUI/Sources/SegueUI/Services/*	SegueServicesE2ETests SegueReportProblemE2ETests
 
 # The UI tests themselves: a class's own files run that class.
 UITests/E2ESupport.swift	ALL
@@ -97,5 +97,6 @@ UITests/SegueSetlistE2ESupport.swift	SegueSetlistBuilderE2ETests SegueSetlistLib
 UITests/SegueSetlistBuilderE2ETests.swift	SegueSetlistBuilderE2ETests
 UITests/SegueSetlistLibraryE2ETests.swift	SegueSetlistLibraryE2ETests
 UITests/SegueSetlistGigLogE2ETests.swift	SegueSetlistGigLogE2ETests
-UITests/SegueServicesE2ETests+Support.swift	SegueServicesE2ETests
+UITests/SegueServicesE2ETests+Support.swift	SegueServicesE2ETests SegueReportProblemE2ETests
 UITests/SegueServicesE2ETests.swift	SegueServicesE2ETests
+UITests/SegueReportProblemE2ETests.swift	SegueReportProblemE2ETests

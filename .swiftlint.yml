@@ -111,6 +111,7 @@ custom_rules:
     excluded:
       - 'Packages/SegueUI/Sources/SegueUI/App/SegueLinks\.swift$'
       - 'UITests/SegueCoreUXE2ETests\+Support\.swift$'
+      - 'UITests/SegueServicesE2ETests\+Support\.swift$'
     message: "External URLs live only in SegueLinks.swift (WS2a 3.1)."
     severity: error
   # Vendor boundary (WS3 spec 3.1): only Packages/SegueVendorServices may know a hosted

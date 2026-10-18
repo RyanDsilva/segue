@@ -43,11 +43,13 @@ struct SegueApp: App {
                 location: LibraryLocation(defaults: .standard),
                 shapeLibraryURL: Self.realShapeLibraryURL,
                 live: Self.realLiveDependencies(defaults: .standard),
-                hooks: Self.hooks,
+                hooks: services.hooks,
                 services: services.services,
                 consent: services.consent,
                 diagnosticLog: services.log,
                 flavor: Self.flavor,
+                reportPresenter: services.reportPresenter,
+                diagnostics: services.diagnostics,
             )
         #endif
         _app = State(initialValue: AppModel(dependencies: dependencies))
@@ -67,14 +69,6 @@ struct SegueApp: App {
             scrollClock: MonotonicClock(),
             bindingsURL: Bundle.main.bundleIdentifier.map(LiveDependencies.defaultBindingsURL),
         )
-    }
-
-    /// The menu hooks (WS2a 3.5.6). WS2b fills `showWelcome`, `showWhatsNew` and
-    /// `exportArchive`; WS3 fills `reportProblem` and `requestFeature`. Until then the
-    /// defaults fall back to the web and mail, and the optional items stay hidden.
-    @MainActor
-    static var hooks: AppHooks {
-        AppHooks()
     }
 
     /// `Segue.App.launched`'s flavour (Personal also reports to its own TelemetryDeck app).

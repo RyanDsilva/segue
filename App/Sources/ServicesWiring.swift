@@ -39,6 +39,10 @@ struct ServicesWiring {
     let services: ServicesHub
     let consent: ConsentStore
     let log: DiagnosticLog
+    /// Report a Problem: the presenter the Help hook calls, and what a report may attach.
+    let reportPresenter = ReportProblemPresenter()
+    let diagnostics: LocalDiagnostics
+    private let metricKit: MetricKitCollector
 
     /// - Parameters:
     ///   - defaults: the app's defaults (consent, throttle, install ID).
@@ -77,6 +81,15 @@ struct ServicesWiring {
             clock: clock,
             isAvailable: mode.hasServices,
         )
+        let store = DiagnosticStore(
+            directory: support.appending(path: "Diagnostics", directoryHint: .isDirectory),
+            log: log,
+        )
+        diagnostics = LocalDiagnostics(log: log, store: store)
+        metricKit = MetricKitCollector(store: store)
+        metricKit.subscribe()
+        // Email drafts of earlier launches (they had to outlive the compose window).
+        ReportFiles.clearDrafts()
         Self.logLaunch(log, mode: mode)
         hub.record(LifecycleCrumb.appLaunched)
         Self.observeTermination(hub: hub, log: log)
@@ -110,7 +123,7 @@ struct ServicesWiring {
                 ),
                 log: log,
             )
-            return (factory, NullFeedbackSender())
+            return (factory, SentryEnvelopeFeedbackSender(config: config, log: log))
         }
     }
 
@@ -160,6 +173,17 @@ struct ServicesWiring {
             }
             _ = done.wait(timeout: .now() + 1)
         }
+    }
+}
+
+// MARK: - Hooks
+
+extension ServicesWiring {
+    /// The Help menu hooks WS3 fills (WS2a 3.5.6): Report a Problem opens the native sheet;
+    /// Request a Feature keeps WS2a's board link (the menu records the analytics).
+    var hooks: AppHooks {
+        let presenter = reportPresenter
+        return AppHooks(reportProblem: { _ in presenter.present() })
     }
 }
 

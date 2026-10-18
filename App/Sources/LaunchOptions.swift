@@ -39,6 +39,8 @@ import VendorServices
     ///   signal, breadcrumb, crash-reporter start and stop and sent report is one JSON line
     ///   in `<file>`; the diagnostic log rotates in a `Logs` folder beside it.
     /// - `-SegueFeedbackResult <ok|offline|rejected>`: how the recording report sender answers.
+    /// - `-SegueMailLog <file>`: Report a Problem's "Email Instead" opens no draft; each
+    ///   draft is one JSON line in `<file>` (recipient, subject, attachment names).
     /// - `-SegueServicesLive YES`: the real vendors from Info.plist (Sentry environment
     ///   `debug`, TelemetryDeck test mode), for manual live checks only. Not a test run.
     /// - `-SegueConsent <undecided|granted|declined|analyticsOnly|crashOnly|asStored>`: set
@@ -65,6 +67,7 @@ import VendorServices
         static let autosaveDelayFlag = "-SegueAutosaveDelay"
         static let servicesLogFlag = "-SegueServicesLog"
         static let feedbackResultFlag = "-SegueFeedbackResult"
+        static let mailLogFlag = "-SegueMailLog"
         static let servicesLiveFlag = "-SegueServicesLive"
         static let consentFlag = "-SegueConsent"
         static let appearanceFlag = "-SegueAppearance"
@@ -95,6 +98,7 @@ import VendorServices
         var autosaveDelay: Double?
         var servicesLog: URL?
         var feedbackResult: RecordingFeedbackSender.Outcome?
+        var mailLog: URL?
         var servicesLive = false
         var consentPreset: ConsentPreset?
         /// `-SegueAppearance`: `light` or `dark`; nil follows the system.
@@ -178,6 +182,7 @@ import VendorServices
             servicesLog = Self.path(values[Self.servicesLogFlag], directoryHint: .notDirectory)
             feedbackResult = values[Self.feedbackResultFlag]
                 .flatMap(RecordingFeedbackSender.Outcome.init(rawValue:))
+            mailLog = Self.path(values[Self.mailLogFlag], directoryHint: .notDirectory)
             servicesLive = values[Self.servicesLiveFlag].map(Self.isTruthy) ?? false
             consentPreset = values[Self.consentFlag].flatMap(ConsentPreset.init(rawValue:))
             appearance = values[Self.appearanceFlag]
@@ -189,7 +194,7 @@ import VendorServices
             shapeLibraryPathFlag, shortcutLogFlag, liveTimeScaleFlag, bindingsPathFlag,
             startShortcutFlag, endShortcutFlag, workspaceLogFlag, trashPathFlag,
             importPanelPathsFlag, autosaveDelayFlag, servicesLogFlag, feedbackResultFlag,
-            servicesLiveFlag, consentFlag, appearanceFlag,
+            servicesLiveFlag, consentFlag, appearanceFlag, mailLogFlag,
         ]
 
         /// A Shortcut name with surrounding blanks removed; nil when blank.
@@ -212,7 +217,7 @@ import VendorServices
                 || bindingsPath != nil || startShortcut != nil || endShortcut != nil
                 || workspaceLog != nil || trashPath != nil || importPanelPaths != nil
                 || autosaveDelay != nil || servicesLog != nil || feedbackResult != nil
-                || consentPreset != nil
+                || consentPreset != nil || mailLog != nil
         }
 
         private static func isTruthy(_ value: String) -> Bool {
@@ -274,7 +279,7 @@ import VendorServices
                 rememberLibraryOverride: rememberLibrary,
                 shapeLibraryURL: isTestRun ? shapeLibraryPath : SegueApp.realShapeLibraryURL,
                 live: isTestRun ? liveDependencies(defaults: defaults) : real(defaults),
-                hooks: SegueApp.hooks,
+                hooks: services.hooks,
                 workspace: workspaceLog.map(RecordingWorkspaceActions.init),
                 importPanel: importPanelPaths.map(FixedImportPanel.init),
                 autosaveDelay: autosaveDelay.map { .milliseconds(Int(($0 * 1000).rounded())) },
@@ -282,6 +287,9 @@ import VendorServices
                 consent: services.consent,
                 diagnosticLog: services.log,
                 flavor: SegueApp.flavor,
+                reportPresenter: services.reportPresenter,
+                diagnostics: services.diagnostics,
+                mail: mailLog.map(RecordingMailComposer.init),
             )
         }
 

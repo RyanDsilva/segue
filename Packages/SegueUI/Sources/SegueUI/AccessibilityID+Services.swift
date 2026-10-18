@@ -44,3 +44,33 @@ public extension AccessibilityID {
     /// "Analytics and crash reporting are not part of this build."
     static let privacyUnavailable = "segue.privacy.unavailable"
 }
+
+public extension AccessibilityID {
+    // MARK: Report a Problem
+
+    static let reportSheet = "segue.report.sheet"
+    static let reportMessage = "segue.report.message"
+    static let reportCounter = "segue.report.counter"
+    static let reportProblem = "segue.report.problem"
+    static let reportEmail = "segue.report.email"
+    static let reportAttachLogs = "segue.report.attach.logs"
+    static let reportAttachMetricKit = "segue.report.attach.metricKit"
+    static let reportAttachSong = "segue.report.attach.song"
+    static let reportRequestFeature = "segue.report.requestFeature"
+    static let reportPreviewButton = "segue.report.preview"
+    static let reportSend = "segue.report.send"
+    static let reportCancel = "segue.report.cancel"
+    static let reportBack = "segue.report.back"
+    static let reportEmailInstead = "segue.report.emailInstead"
+    static let reportSaveReport = "segue.report.save"
+    static let reportTryAgain = "segue.report.tryAgain"
+    static let reportFailure = "segue.report.failure"
+    static let reportSent = "segue.report.sent"
+    static let reportDone = "segue.report.done"
+    /// The preview's scrolling content.
+    static let reportPreview = "segue.report.preview.content"
+    /// One attachment's disclosure in the preview (label = file name).
+    static let reportPreviewAttachment = "segue.report.preview.attachment"
+    /// UI testing only: the frozen payload's SHA-256 as the element's label.
+    static let reportPreviewHash = "segue.report.preview.hash"
+}

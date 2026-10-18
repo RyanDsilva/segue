@@ -148,9 +148,10 @@ actor IngestQueue {
         request.setValue("*", forHTTPHeaderField: "Accept-Language")
 
         let disposition: Disposition
+        var status = 0
         do {
             let (_, response) = try await session.data(for: request)
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            status = (response as? HTTPURLResponse)?.statusCode ?? 0
             disposition = Self.disposition(status: status)
         } catch {
             disposition = .retry
@@ -162,6 +163,7 @@ actor IngestQueue {
             pending.removeFirst(min(batch.count, pending.count))
             persist()
         case .sent:
+            log?.info(.analytics, "sent", ["status": .int(status), "signals": .int(batch.count)])
             pending.removeFirst(min(batch.count, pending.count))
             persist()
         case .retry:

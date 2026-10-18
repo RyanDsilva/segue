@@ -93,6 +93,15 @@ extension ServicesE2E {
         XCTAssertTrue(element(app, ServicesAXID.privacyToggle("analytics")).appears(timeout: 10))
     }
 
+    /// Chooses `title` in the Help menu.
+    func helpMenu(_ app: XCUIApplication, _ title: String) {
+        let help = app.menuBars.menuBarItems["Help"]
+        help.click(in: app)
+        let item = help.menuItems[title].firstMatch
+        XCTAssertTrue(item.appears(timeout: 5), "No Help > \(title)")
+        item.click()
+    }
+
     /// Answers the consent prompt and presses Continue.
     func answerConsent(_ app: XCUIApplication, analytics: Bool, crash: Bool) {
         element(
@@ -143,6 +152,13 @@ extension ServicesE2E {
     }
 }
 
+/// The links and addresses the services E2E asserts (mirrors `SegueLinks`; UI tests cannot
+/// import SegueUI).
+enum ServicesLinks {
+    static let supportAddress = "segue@ryandsilva.dev"
+    static let feedback = "https://segue.ryandsilva.dev/feedback"
+}
+
 /// Identifiers of the services UI (mirrors `AccessibilityID+Services` in SegueUI).
 enum ServicesAXID {
     static let consentSheet = "segue.consent.sheet"
@@ -169,6 +185,23 @@ enum ServicesAXID {
     static let editorTransposeUp = "segue.editor.transpose.up"
     static let editorNashville = "segue.editor.display.nashville"
     static let editorPaletteChord = "segue.editor.palette.chord"
+    static let reportSheet = "segue.report.sheet"
+    static let reportMessage = "segue.report.message"
+    static let reportCounter = "segue.report.counter"
+    static let reportAttachLogs = "segue.report.attach.logs"
+    static let reportAttachSong = "segue.report.attach.song"
+    static let reportPreviewButton = "segue.report.preview"
+    static let reportSend = "segue.report.send"
+    static let reportBack = "segue.report.back"
+    static let reportEmailInstead = "segue.report.emailInstead"
+    static let reportSaveReport = "segue.report.save"
+    static let reportTryAgain = "segue.report.tryAgain"
+    static let reportFailure = "segue.report.failure"
+    static let reportSent = "segue.report.sent"
+    static let reportDone = "segue.report.done"
+    static let reportPreview = "segue.report.preview.content"
+    static let reportPreviewAttachment = "segue.report.preview.attachment"
+    static let reportPreviewHash = "segue.report.preview.hash"
     static let privacyDiagnosticsID = "segue.privacy.diagnosticsID"
     static let privacyCopyID = "segue.privacy.diagnosticsID.copy"
     static let privacyRestartCaption = "segue.privacy.crashReports.restart"
