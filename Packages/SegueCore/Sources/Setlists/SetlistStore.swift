@@ -34,17 +34,17 @@ public struct SetlistLoadIssue: Sendable, Equatable {
 /// next save; a newer one loads read-only and is never rewritten; an undecodable one is
 /// reported as a `SetlistLoadIssue` and left untouched.
 public actor SetlistStore {
-    private let fileSystem: any FileSystem
+    let fileSystem: any FileSystem
     private let clock: any Clock
     private let ids: any IDGenerator
 
-    private struct Stored {
+    struct Stored {
         var setlist: Setlist
         var slug: String
     }
 
-    private var root: LibraryRoot?
-    private var setlists: [SetlistID: Stored] = [:]
+    var root: LibraryRoot?
+    var setlists: [SetlistID: Stored] = [:]
 
     /// Forward migrations, `steps[n]` takes version `n` to `n + 1`.
     private static let migrator = SchemaMigrator(
@@ -235,18 +235,6 @@ public actor SetlistStore {
         return copy
     }
 
-    /// Deletes the setlist's file. Shows that ran it keep their own snapshot. A file already
-    /// gone from disk is simply forgotten.
-    public func delete(_ id: SetlistID) throws {
-        guard let root else { throw SetlistError.notLoaded }
-        guard let stored = setlists[id] else { throw SetlistError.setlistNotFound(id) }
-        let url = Self.url(root: root, slug: stored.slug)
-        if fileSystem.fileExists(at: url) {
-            try fileSystem.removeItem(at: url)
-        }
-        setlists[id] = nil
-    }
-
     /// Inserts `songIDs` (new item IDs each) at `offset` (nil = append) and saves. Throws
     /// `invalidOffsets` when `offset` is outside `0 ... entries.count`.
     @discardableResult
@@ -316,7 +304,7 @@ public actor SetlistStore {
 
     /// Applies `change` to an editable setlist, stamps it and saves it atomically; nothing
     /// changes (in memory or on disk) when `change` or the write throws.
-    private func mutateSetlist(
+    func mutateSetlist(
         _ id: SetlistID,
         _ change: (inout Setlist) throws -> Void,
     ) throws -> Setlist {
@@ -348,7 +336,7 @@ public actor SetlistStore {
         try fileSystem.writeAtomically(data, to: Self.url(root: root, slug: stored.slug))
     }
 
-    private static func decode(_ data: Data) throws -> Setlist {
+    static func decode(_ data: Data) throws -> Setlist {
         switch try migrator.migrate(data) {
         case let .current(json), let .migrated(json, _):
             return try SegueJSON.decode(Setlist.self, from: json)
@@ -364,7 +352,7 @@ public actor SetlistStore {
         }
     }
 
-    private static func url(root: LibraryRoot, slug: String) -> URL {
+    static func url(root: LibraryRoot, slug: String) -> URL {
         root.setlistsDirectory.appending(path: slug + LibraryRoot.setlistSuffix)
     }
 

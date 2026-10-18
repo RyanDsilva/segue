@@ -218,19 +218,54 @@ public actor ShowStore {
         return record
     }
 
-    /// Deletes a show's file and its plays from the projection.
-    public func delete(_ id: ShowID) async throws {
+    /// Moves a show's file to the Trash and clears its plays from the projection. A file
+    /// already gone from disk is simply forgotten (empty receipt). Refused for read-only
+    /// shows.
+    @discardableResult
+    public func delete(_ id: ShowID) async throws -> TrashReceipt {
         guard let root else { throw ShowError.notLoaded }
         guard let record = shows[id] else { throw ShowError.showNotFound(id) }
         if let reason = record.readOnly {
             throw ShowError.readOnly(id, reason)
         }
         let url = root.showsDirectory.appending(path: Self.fileName(id))
+        var receipt = TrashReceipt()
         if fileSystem.fileExists(at: url) {
-            try fileSystem.removeItem(at: url)
+            try receipt.items.append(TrashedItem(
+                original: url,
+                trashed: fileSystem.trashItem(at: url),
+            ))
         }
         shows[id] = nil
         try await playHistory?.replacePlays(forShow: id.ulid, with: [])
+        return receipt
+    }
+
+    /// Puts a show deleted with `delete` back from `receipt`, loads it again and projects
+    /// its plays. Returns nil when the file holds no loadable show. Throws
+    /// `TrashRestoreError` when the file is no longer in the Trash or its path is taken.
+    @discardableResult
+    public func restore(_ receipt: TrashReceipt) async throws -> ShowRecord? {
+        guard let root else { throw ShowError.notLoaded }
+        guard let item = receipt.items.first(where: {
+            $0.original.lastPathComponent.hasSuffix(LibraryRoot.showSuffix)
+        }) else { return nil }
+        let url = root.showsDirectory.appending(path: item.original.lastPathComponent)
+        try TrashReceipt(items: [item]).restore(using: fileSystem) { _ in url }
+        guard let record = try? Self.decode(fileSystem.readData(at: url)),
+              url.lastPathComponent == Self.fileName(record.id)
+        else { return nil }
+        shows[record.id] = record
+        if record.isFinished {
+            try await playHistory?.replacePlays(forShow: record.id.ulid, with: record.playRecords)
+        }
+        return record
+    }
+
+    /// The file of show `id` (`shows/<ulid>.show.json`); nil before `load`. The file itself
+    /// may be gone from disk.
+    public func fileURL(for id: ShowID) -> URL? {
+        root?.showsDirectory.appending(path: Self.fileName(id))
     }
 
     /// Run once after `load` at launch: auto-closes stale unfinished shows (written back,

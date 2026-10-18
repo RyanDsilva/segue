@@ -9,19 +9,33 @@ final class TestLibrary: Sendable {
     let root: LibraryRoot
     let clock: ManualClock
     let ids: ULIDGenerator
-    let fileSystem = LiveFileSystem()
+    /// Real IO; trashed items go to `trash`, never the user's Trash (B-15).
+    let fileSystem: LiveFileSystem
+    /// The stand-in Trash folder, next to the library folder.
+    let trash: URL
 
     init(seed: UInt64 = 1) throws {
         let url = FileManager.default.temporaryDirectory
             .appending(path: "SegueCoreTests-\(UUID().uuidString)", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         root = LibraryRoot(url: url)
+        trash = url.deletingLastPathComponent()
+            .appending(path: url.lastPathComponent + "-trash", directoryHint: .isDirectory)
+        fileSystem = LiveFileSystem(trash: .directory(trash))
         clock = ManualClock()
         ids = ULIDGenerator(clock: clock, seed: seed)
     }
 
     deinit {
         try? FileManager.default.removeItem(at: root.url)
+        try? FileManager.default.removeItem(at: trash)
+    }
+
+    /// File names in the stand-in Trash, sorted.
+    func trashedNames() -> [String] {
+        let names = try? FileManager.default
+            .contentsOfDirectory(atPath: trash.path(percentEncoded: false))
+        return (names ?? []).sorted()
     }
 
     /// A new `LibraryStore` opened on this folder (a "relaunch" when called again).

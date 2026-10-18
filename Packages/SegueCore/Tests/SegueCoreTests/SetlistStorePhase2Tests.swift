@@ -88,14 +88,16 @@ struct SetlistStorePhase2Tests {
     }
 
     @Test
-    func `delete removes the file and forgets the setlist`() async throws {
+    func `delete moves the file to the trash and forgets the setlist`() async throws {
         let lib = try TestLibrary()
         let fix = try await Self.friday(lib)
         let (store, setlist) = (fix.store, fix.setlist)
         let other = try await store.create(name: "Saturday")
-        try await store.delete(setlist.id)
+        let receipt = try await store.delete(setlist.id)
 
         #expect(!lib.exists("setlists/friday.setlist.json"))
+        #expect(lib.trashedNames() == ["friday.setlist.json"])
+        #expect(receipt.items.map(\.original) == [lib.url("setlists/friday.setlist.json")])
         #expect(await store.setlist(id: setlist.id) == nil)
         let (reloaded, _) = try await lib.loadSetlists()
         #expect(await reloaded.all().map(\.id) == [other.id])
@@ -105,7 +107,7 @@ struct SetlistStorePhase2Tests {
         }
         // A file already deleted outside Segue is just forgotten.
         try FileManager.default.removeItem(at: lib.url("setlists/saturday.setlist.json"))
-        try await store.delete(other.id)
+        #expect(try await store.delete(other.id).isEmpty)
         #expect(await store.all().isEmpty)
     }
 

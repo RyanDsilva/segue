@@ -59,7 +59,8 @@ public struct RefreshSummary: Sendable, Equatable {
 /// `Clock` and `IDGenerator`, so integration tests are reproducible.
 /// Implementers may add methods (e.g. delete) as later phases need them.
 public actor LibraryStore {
-    private let fileSystem: any FileSystem
+    /// Internal for the extensions (trash, import).
+    let fileSystem: any FileSystem
     private let clock: any Clock
     private let ids: any IDGenerator
 

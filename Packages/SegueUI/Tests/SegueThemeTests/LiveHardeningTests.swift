@@ -310,7 +310,13 @@ final class ToggleFailingFileSystem: FileSystem {
         }
     }
 
-    private let live = LiveFileSystem()
+    private let live = LiveFileSystem(trash: .directory(
+        FileManager.default.temporaryDirectory
+            .appending(
+                path: "SegueUITests-trash-\(UUID().uuidString)",
+                directoryHint: .isDirectory,
+            ),
+    ))
     private let suffixes = Mutex<[String]>([])
 
     /// File name suffixes whose writes fail.
@@ -353,6 +359,10 @@ final class ToggleFailingFileSystem: FileSystem {
 
     func removeItem(at url: URL) throws {
         try live.removeItem(at: url)
+    }
+
+    func trashItem(at url: URL) throws -> URL {
+        try live.trashItem(at: url)
     }
 
     func moveItem(from source: URL, to destination: URL) throws {

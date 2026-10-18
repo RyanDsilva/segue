@@ -36,8 +36,13 @@ public protocol FileSystem: Sendable {
     func readFiles(_ urls: [URL], in directory: URL) -> [Result<Data, any Error>]
     /// Writes atomically (temp file + rename) through `NSFileCoordinator`.
     func writeAtomically(_ data: Data, to url: URL) throws
-    /// Removes the file or directory at `url` (coordinated).
+    /// Removes the file or directory at `url` (coordinated). Never used for user data:
+    /// songs, setlists and shows go to the Trash (`trashItem`).
     func removeItem(at url: URL) throws
+    /// Moves the item at `url` to the Trash (coordinated) and returns its new URL there.
+    /// Throws `FileSystemError.trashUnavailable` when the volume has no Trash; it never
+    /// falls back to removing the item.
+    func trashItem(at url: URL) throws -> URL
     /// Moves/renames `source` to `destination` (coordinated). Fails if destination exists.
     func moveItem(from source: URL, to destination: URL) throws
     /// Modification date and size of the file at `url`.
@@ -52,13 +57,38 @@ public extension FileSystem {
 }
 
 /// Errors raised by `LiveFileSystem` beyond the underlying Foundation errors.
-public enum FileSystemError: Error, Equatable {
+public enum FileSystemError: Error, Equatable, LocalizedError {
     case coordinationFailed(URL)
+    /// The item's volume has no Trash (some network volumes), so nothing was deleted.
+    case trashUnavailable(URL)
+
+    public var errorDescription: String? {
+        switch self {
+        case let .coordinationFailed(url):
+            "“\(url.lastPathComponent)” is busy in another app. Try again."
+        case .trashUnavailable:
+            "This volume has no Trash, so Segue did not delete it."
+        }
+    }
+}
+
+/// Where `LiveFileSystem.trashItem(at:)` puts things.
+public enum TrashLocation: Sendable, Equatable {
+    /// The user's Trash (`FileManager.trashItem`): Finder's Put Back works.
+    case system
+    /// A plain folder, created on demand. Tests use it so they never fill the user's Trash;
+    /// E2E runs pass it with `-SegueTrashPath`.
+    case directory(URL)
 }
 
 /// `FileSystem` backed by `FileManager` and `NSFileCoordinator`.
 public struct LiveFileSystem: FileSystem {
-    public init() {}
+    /// Where trashed items go.
+    public let trash: TrashLocation
+
+    public init(trash: TrashLocation = .system) {
+        self.trash = trash
+    }
 
     public func fileExists(at url: URL) -> Bool {
         FileManager.default.fileExists(atPath: url.path(percentEncoded: false))
@@ -158,6 +188,71 @@ public struct LiveFileSystem: FileSystem {
                 result = Result { try FileManager.default.removeItem(at: actual) }
             }
             try result.get()
+        }
+    }
+
+    public func trashItem(at url: URL) throws -> URL {
+        switch trash {
+        case .system:
+            return try coordinate { coordinator, errorPointer in
+                var result: Result<URL, any Error> = .failure(
+                    FileSystemError.coordinationFailed(url),
+                )
+                coordinator.coordinate(
+                    writingItemAt: url,
+                    options: .forDeleting,
+                    error: errorPointer,
+                ) { actual in
+                    result = Result {
+                        var resulting: NSURL?
+                        do {
+                            try FileManager.default.trashItem(
+                                at: actual,
+                                resultingItemURL: &resulting,
+                            )
+                        } catch let error as CocoaError where error.code == .featureUnsupported {
+                            throw FileSystemError.trashUnavailable(url)
+                        }
+                        guard let resulting = resulting as URL? else {
+                            throw FileSystemError.trashUnavailable(url)
+                        }
+                        return resulting
+                    }
+                }
+                return try result.get()
+            }
+        case let .directory(folder):
+            try createDirectory(at: folder)
+            let destination = Self.freeName(for: url.lastPathComponent, in: folder) { candidate in
+                fileExists(at: candidate)
+            }
+            try moveItem(from: url, to: destination)
+            return destination
+        }
+    }
+
+    /// `folder/name`, or `folder/<stem> 2.<rest>`, `... 3`, ... when taken (the stem ends
+    /// at the first dot, so `song.segue.json` becomes `song 2.segue.json`).
+    static func freeName(
+        for name: String,
+        in folder: URL,
+        isTaken: (URL) -> Bool,
+    ) -> URL {
+        let first = folder.appending(path: name, directoryHint: .notDirectory)
+        guard isTaken(first) else { return first }
+        let dot = name.firstIndex(of: ".").flatMap { $0 == name.startIndex ? nil : $0 }
+        let stem = dot.map { String(name[..<$0]) } ?? name
+        let rest = dot.map { String(name[$0...]) } ?? ""
+        var counter = 2
+        while true {
+            let candidate = folder.appending(
+                path: "\(stem) \(counter)\(rest)",
+                directoryHint: .notDirectory,
+            )
+            if !isTaken(candidate) {
+                return candidate
+            }
+            counter += 1
         }
     }
 

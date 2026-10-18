@@ -10,6 +10,7 @@ final class InstrumentedFileSystem: FileSystem {
         case read
         case write
         case remove
+        case trash
     }
 
     struct InjectedFailure: Error, LocalizedError {
@@ -24,7 +25,15 @@ final class InstrumentedFileSystem: FileSystem {
         var slowWrites: [(String, TimeInterval)] = []
     }
 
-    private let live = LiveFileSystem()
+    private let live: LiveFileSystem
+
+    /// Trashed items go to `trash` (a temp folder), never the user's Trash.
+    init(trash: URL = FileManager.default.temporaryDirectory
+        .appending(path: "SegueCoreTests-trash-\(UUID().uuidString)", directoryHint: .isDirectory))
+    {
+        live = LiveFileSystem(trash: .directory(trash))
+    }
+
     private let state = Mutex(State())
 
     /// Reads so far, keyed by file name.
@@ -102,6 +111,11 @@ final class InstrumentedFileSystem: FileSystem {
     func removeItem(at url: URL) throws {
         try check(.remove, url)
         try live.removeItem(at: url)
+    }
+
+    func trashItem(at url: URL) throws -> URL {
+        try check(.trash, url)
+        return try live.trashItem(at: url)
     }
 
     func moveItem(from source: URL, to destination: URL) throws {

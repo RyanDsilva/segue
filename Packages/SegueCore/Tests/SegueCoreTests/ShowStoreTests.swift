@@ -67,6 +67,7 @@ struct ShowStoreTests {
 
         try await harness.shows.delete(id)
         #expect(!harness.lib.exists(harness.showPath(id)))
+        #expect(harness.lib.trashedNames() == ["\(id)\(LibraryRoot.showSuffix)"])
         #expect(await harness.shows.gigLog().map(\.id) == [endings[1].record.id])
         #expect(try await harness.library.playStats()[songs[0].id]?.timesPlayed == 1)
         await #expect(throws: ShowError.showNotFound(id)) {
