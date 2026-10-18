@@ -22,11 +22,13 @@ public extension SongEditorViewModel {
         }
         updateOptions { $0.transpose = value }
         recordFeature(.transpose)
+        SegueTips.transposeChanged()
     }
 
     func setCapoMode(_ mode: CapoMode) {
         updateOptions { $0.capoMode = mode }
         recordFeature(.capo)
+        SegueTips.transposeChanged()
     }
 
     func setNashville(_ on: Bool) {
@@ -63,6 +65,7 @@ public extension SongEditorViewModel {
 
     /// Changes `{capo}` in the source (an undoable edit; 0 removes it).
     func stepCapo(by delta: Int) {
+        SegueTips.transposeChanged()
         let value = min(max(capo + delta, 0), 11)
         guard value != capo else { return }
         perform(.setDirective(name: "capo", value: value == 0 ? nil : String(value)))

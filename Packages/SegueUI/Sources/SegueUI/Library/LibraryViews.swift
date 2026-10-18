@@ -2,6 +2,7 @@
     import Library
     import Setlists
     import SwiftUI
+    import TipKit
 
     /// The Library destination (layout a, "three pane"): the song list column beside the
     /// selected song's preview (or its editor). The sidebar is the window's first pane.
@@ -116,6 +117,7 @@
                         prompt: "Search or filter",
                         accessibilityIdentifier: AccessibilityID.librarySearch,
                     )
+                    .popoverTip(SearchAnyLineTip())
                     Button("New song") { model.beginNewSong() }
                         .buttonStyle(.seguePrimary)
                         .help("New Song (⌘N)")

@@ -155,6 +155,7 @@
         let app: AppModel
         @Bindable var session: LibrarySession
         @Environment(\.undoManager) private var undoManager
+        @Environment(\.openSettings) private var openSettings
 
         var body: some View {
             NavigationSplitView {
@@ -265,6 +266,11 @@
                         onReveal: { Task { await session.revealSetlist(id) } },
                         onStart: { setlist, kind in
                             Task { await app.startShow(setlist, kind: kind) }
+                        },
+                        onOpenLiveSettings: {
+                            app.polish.preferences.selectedPane = SegueSettingsView.Pane.live
+                                .rawValue
+                            openSettings()
                         },
                     )
                     .id(id)

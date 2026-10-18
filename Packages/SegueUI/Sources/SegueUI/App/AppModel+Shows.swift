@@ -301,6 +301,7 @@
         )
             async
         {
+            SegueTips.donate(SegueTips.showStarted)
             let state = await controller.state
             recordShowStarted(state, kind: kind, resumed: resumed)
             let live = LiveSession(state: state, kind: kind, context: LiveSession.Context(

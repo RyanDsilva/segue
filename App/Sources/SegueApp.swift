@@ -54,8 +54,13 @@ struct SegueApp: App {
                 polish: polish,
             )
         #endif
-        // Settings > Appearance (R36) applies before the first window draws.
+        // Settings > Appearance (R36) applies before the first window draws; TipKit is
+        // configured before any tip view exists (WS2b 4.4).
         dependencies.polish.appearance.apply()
+        SegueTips.configure(
+            launch: dependencies.polish.launch,
+            preferences: dependencies.polish.preferences,
+        )
         _app = State(initialValue: AppModel(dependencies: dependencies))
     }
 

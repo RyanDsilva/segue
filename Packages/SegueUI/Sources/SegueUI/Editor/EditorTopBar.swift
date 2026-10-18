@@ -3,6 +3,7 @@
     import Editing
     import MusicTheory
     import SwiftUI
+    import TipKit
 
     /// The editor's display bar (mockup E2 b): transpose, capo, Shapes / Concert, Nashville,
     /// diagrams and instrument, and "Apply to source" while transposed. Toggles are view
@@ -13,7 +14,9 @@
         var body: some View {
             HStack(alignment: .center, spacing: 0) {
                 LyricFlowLayout(rowSpacing: 8) {
-                    transposeGroup.frame(height: 30).padding(.trailing, 28)
+                    transposeGroup.frame(height: 30)
+                        .popoverTip(TransposeViewTip())
+                        .padding(.trailing, 28)
                     capoGroup.frame(height: 30).padding(.trailing, 28)
                     displayGroup.frame(height: 30).padding(.trailing, 28)
                     diagramGroup.frame(height: 30).padding(.trailing, 12)

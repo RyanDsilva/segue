@@ -36,7 +36,15 @@
         func body(content: Content) -> some View {
             let showsWelcome = app.showsWelcomeSheet
             let showsWhatsNew = app.showsWhatsNewSheet
+            let onboarding = showsWelcome || app.showsConsentPrompt
             content
+                // Tips stay away from every launch sheet (WS2b 4.4).
+                .onChange(of: onboarding, initial: true) { _, value in
+                    SegueTips.isOnboarding = value
+                }
+                .onChange(of: showsWhatsNew, initial: true) { _, value in
+                    SegueTips.isWhatsNewShowing = value
+                }
                 .background {
                     Color.clear.sheet(isPresented: .constant(showsWelcome)) {
                         WelcomeSheet(app: app, model: app.onboarding)

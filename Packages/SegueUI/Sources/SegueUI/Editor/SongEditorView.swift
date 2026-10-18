@@ -2,6 +2,7 @@
     import Diagrams
     import Editing
     import SwiftUI
+    import TipKit
 
     /// The song editor (docs/decisions.md, "Key screen layouts": layout b). Visual canvas with
     /// chord pills over syllables and a chord palette, or text mode (ChordPro source beside
@@ -21,6 +22,9 @@
                 }
                 if model.editorMode == .visual {
                     ChordPaletteBar(model: model)
+                    TipView(MoveChordTip())
+                        .padding(.horizontal, 24)
+                        .padding(.top, 8)
                 }
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -17,6 +17,7 @@ public final class LiveSettingsStore {
         didSet {
             if settings != oldValue {
                 save()
+                updateGigModeTip()
                 services.record(.featureUsed(.liveSettings, .settings))
             }
         }
@@ -48,6 +49,12 @@ public final class LiveSettingsStore {
         self.defaults = defaults
         settings = Self.load(from: defaults)
         runsShortcutsForRehearsals = defaults.bool(forKey: Self.rehearsalShortcutsKey)
+        updateGigModeTip()
+    }
+
+    /// `GigModeTip` stops once a Gig Mode Shortcut is set up (A37).
+    private func updateGigModeTip() {
+        SegueTips.gigModeConfigured = settings.startShortcut != nil || settings.endShortcut != nil
     }
 
     /// The stored settings; defaults when none are stored or they cannot be read.

@@ -85,6 +85,7 @@ public extension LibraryViewModel {
         let show: @MainActor () -> Void = { [weak self] in
             self?.selection = id
             self?.detail = .song(id)
+            SegueTips.donate(SegueTips.songViewed)
         }
         let stay: @MainActor () -> Void = { [weak self] in self?.restoreListSelection() }
         navigate(show, onCancel: stay)

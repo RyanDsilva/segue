@@ -3,6 +3,7 @@
     import Setlists
     import Shows
     import SwiftUI
+    import TipKit
 
     /// The setlist builder (layout a, "library to set"): the library column on the left,
     /// the set on the right with start times and the running total against the target.
@@ -14,6 +15,8 @@
         var onReveal: () -> Void = {}
         /// Start show (`.gig`) or Rehearse (`.rehearsal`).
         let onStart: (Setlist, ShowKind) -> Void
+        /// GigModeTip's "Open Settings": Settings on the Live pane.
+        var onOpenLiveSettings: () -> Void = {}
         @State private var naming: SetlistNameSheet.Purpose?
         @State private var isEditingDetails = false
 
@@ -28,6 +31,17 @@
                     .frame(width: min(max(proxy.size.width * 0.36, 280), 520))
                     Rule(axis: .vertical)
                     VStack(spacing: 0) {
+                        // Never while performing (TipKit keeps an inline tip on screen
+                        // when its rule parameters change under it).
+                        if !library.isPerforming {
+                            TipView(GigModeTip()) { action in
+                                if action.id == GigModeTip.openSettingsAction {
+                                    onOpenLiveSettings()
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 12)
+                        }
                         header
                         Rule()
                         SetEntriesList(setlist: setlist, model: model, library: library)
@@ -38,6 +52,9 @@
             }
             .navigationTitle(setlist.name)
             .toolbar { menu }
+            .onChange(of: setlist.entries.isEmpty, initial: true) { _, isEmpty in
+                SegueTips.openSetlistHasEntries = !isEmpty
+            }
             .sheet(item: $naming) { purpose in
                 SetlistNameSheet(purpose: purpose) { name in
                     Task { await model.rename(setlist.id, to: name) }
@@ -107,6 +124,7 @@
                     .accessibilityIdentifier(AccessibilityID.setlistRehearse)
                 Button("Start show") { onStart(setlist, .gig) }
                     .buttonStyle(.seguePrimary)
+                    .popoverTip(StartShowTip())
                     .help("Perform this setlist on stage (\(MenuShortcuts.startShow.displayText))")
                     .accessibilityIdentifier(AccessibilityID.setlistStartShow)
             }

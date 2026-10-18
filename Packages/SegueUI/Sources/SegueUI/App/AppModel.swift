@@ -159,6 +159,7 @@
         public var live: LiveSession? {
             didSet {
                 session?.library.isPerforming = live != nil
+                SegueTips.isPerforming = live != nil
             }
         }
 

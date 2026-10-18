@@ -41,7 +41,14 @@ public final class SongEditorViewModel {
 
     /// `.create` until a new song's first autosave writes its file, then `.edit`.
     public internal(set) var mode: Mode
-    public internal(set) var editorMode: EditorMode
+    public internal(set) var editorMode: EditorMode {
+        didSet {
+            if editorMode == .visual, oldValue != .visual {
+                SegueTips.donate(SegueTips.visualEditorOpened)
+            }
+        }
+    }
+
     /// The per-song view toggles (persisted to the sidecar as `DisplayPrefs`).
     public internal(set) var options: DisplayOptions
     /// The song's stage memory (sidecar `live`); the editor sets its column choice.

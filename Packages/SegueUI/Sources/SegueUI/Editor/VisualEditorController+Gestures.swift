@@ -93,7 +93,9 @@
             if finished.duplicate {
                 model.perform(.duplicateChord(pill.chord.ref, to: position))
             } else {
-                model.perform(.moveChord(pill.chord.ref, to: position))
+                if model.perform(.moveChord(pill.chord.ref, to: position)) {
+                    SegueTips.chordMoved()
+                }
             }
             resolveSelection()
             NSCursor.openHand.set()

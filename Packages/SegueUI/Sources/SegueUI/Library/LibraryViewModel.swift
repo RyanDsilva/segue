@@ -47,6 +47,9 @@ public final class LibraryViewModel {
             if filterState != oldValue {
                 scheduleSearch()
             }
+            if !filterState.query.isEmpty, oldValue.query.isEmpty {
+                SegueTips.donate(SegueTips.searched)
+            }
         }
     }
 
@@ -91,6 +94,9 @@ public final class LibraryViewModel {
             if let editor, editor !== oldValue {
                 editor.services = services
                 services.record(.editorOpened(editor.editorMode == .visual ? .visual : .text))
+                if editor.editorMode == .visual {
+                    SegueTips.donate(SegueTips.visualEditorOpened)
+                }
             }
         }
     }
@@ -189,6 +195,7 @@ public final class LibraryViewModel {
         do {
             let songs = try await store.allSongs()
             catalog = songs
+            SegueTips.librarySongCount = songs.count
             catalogIndex = Dictionary(songs.map { ($0.id, $0) }) { first, _ in first }
             loadIssues = await store.loadIssues
             tags = try await store.allTags()
