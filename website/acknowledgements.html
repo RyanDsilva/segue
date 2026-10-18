@@ -6,10 +6,13 @@
 <title>Acknowledgements - Segue</title>
 <meta name="description" content="The open-source projects and fonts Segue is built with, and their full licence texts.">
 <link rel="canonical" href="https://segue.ryandsilva.dev/acknowledgements">
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/site.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/css/tokens.css">
 <!--slot:meta:og-->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Segue">
@@ -50,8 +53,10 @@
 </header>
 <!--/slot-->
 <main id="main">
+<div class="doc">
 <h1>Acknowledgements</h1>
-<p>Segue is built with these open-source projects and fonts. Thank you to their authors.</p>
+<p class="lede">Segue is built with these open-source projects and fonts. Thank you to their authors.</p>
+<div class="prose">
 <!--slot:credits-->
 <section class="credit">
 <h2>Schibsted Grotesk</h2>
@@ -199,6 +204,12 @@ SOFTWARE.</pre>
 </details>
 </section>
 <!--/slot-->
+<section id="this-website">
+<h2>This website</h2>
+<p>This website uses Schibsted Grotesk, served from this site, and no other third-party code of its own. <!--slot:vendors.hosting.shortName-->Cloudflare<!--/slot--> adds a small script to count visits; see the <a href="/privacy#this-website">Privacy Policy</a>.</p>
+</section>
+</div>
+</div>
 </main>
 <!--slot:partial:footer-->
 <footer class="site-footer">

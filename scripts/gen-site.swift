@@ -6,6 +6,10 @@
 // content/partials/*.html and the hand-written pages under website/, whose
 // `<!--slot:name-->...<!--/slot-->` regions this script fills.
 //
+// Slots: <config.path> (escaped value), vendors.<role>.link / .siteLink / .termsLink (anchors
+// to privacyUrl / url / termsUrl), vendors.<role>.shortName (first word of the name),
+// owner.email.link (mailto anchor), and the computed slots in Renderer.render.
+//
 // Usage: scripts/gen-site.swift                   fill every slot in place, write generated files
 //        scripts/gen-site.swift --check           exit 1 if any output is stale or a check fails
 //        scripts/gen-site.swift --check --strict  also refuse placeholders, maker-note markers,
@@ -124,7 +128,7 @@ enum Spec {
     /// Section 9.3, checked byte for byte in `_headers`.
     static let csp = "Content-Security-Policy: default-src 'none'; "
         + "script-src https://static.cloudflareinsights.com; "
-        + "connect-src https://cloudflareinsights.com; img-src 'self'; style-src 'self'; "
+        + "connect-src 'self'; img-src 'self'; style-src 'self'; "
         + "font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
         + "upgrade-insecure-requests"
     static let homeTitle = "Segue - Setlists & Chords for Mac"
@@ -611,15 +615,29 @@ struct Renderer {
     }
 
     func configValue(_ name: String) throws -> String {
-        for (suffix, field) in [(".link", "privacyUrl"), (".siteLink", "url")]
-            where name.hasSuffix(suffix)
-        {
+        if name == "owner.email.link" {
+            let email = try escapeHTML(config.string("owner.email"))
+            return "<a href=\"mailto:\(email)\">\(email)</a>"
+        }
+        if name.hasSuffix(".shortName"), name.hasPrefix("vendors.") {
+            // "Cloudflare (Cloudflare Pages)" -> "Cloudflare", for running text.
+            let full = try config.string(String(name.dropLast(".shortName".count)) + ".name")
+            return escapeHTML(String(full.split(separator: " ").first ?? ""))
+        }
+        let links = [(".link", "privacyUrl"), (".siteLink", "url"), (".termsLink", "termsUrl")]
+        for (suffix, field) in links where name.hasSuffix(suffix) {
             let base = String(name.dropLast(suffix.count))
             guard base.hasPrefix("vendors."), config.value(base) is [String: Any] else {
                 throw SiteError.config("unknown slot \"\(name)\" (\(suffix) needs a vendor)")
             }
             let href = try config.string("\(base).\(field)")
-            let label = try config.string("\(base).name")
+            // A placeholder renders as visible text, never as a dead link.
+            if isPlaceholder(href) {
+                return escapeHTML(href)
+            }
+            let label = suffix == ".termsLink"
+                ? href.replacingOccurrences(of: "https://", with: "")
+                : try config.string("\(base).name")
             return "<a href=\"\(escapeHTML(href))\">\(escapeHTML(label))</a>"
         }
         switch config.value(name) {
@@ -849,7 +867,7 @@ func longDate(_ iso: String) -> String {
 func changelogTemplate(_ releases: [Release], origin: String) -> String {
     let sections = releases.map { release in
         var lines = [
-            "<section id=\"v\(release.version)\">",
+            "<section class=\"release\" id=\"v\(release.version)\">",
             "<h2>Version \(release.version): \(escapeHTML(release.title))</h2>",
             "<p><time datetime=\"\(release.date)\">\(longDate(release.date))</time></p>",
         ]
@@ -883,18 +901,25 @@ func changelogTemplate(_ releases: [Release], origin: String) -> String {
     <title>Changelog - Segue</title>
     <meta name="description" content="What changed in each version of Segue for Mac: new features, improvements and fixes, newest first.">
     <link rel="canonical" href="\(origin)/changelog">
+    <link rel="preload" href="/assets/fonts/schibsted-grotesk-800.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/assets/css/tokens.css">
+    <link rel="stylesheet" href="/assets/css/site.css">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <link rel="stylesheet" href="/assets/css/tokens.css">
     <!--slot:meta:og--><!--/slot-->
     </head>
     <body>
     <!--slot:partial:header--><!--/slot-->
     <main id="main">
+    <div class="doc">
     <h1>Changelog</h1>
-    <p>What changed in each version of Segue. Segue shows the bigger updates in the app too, under Help &gt; What's New in Segue.</p>
+    <p class="lede">What changed in each version of Segue. Segue shows the bigger updates in the app too, under <span class="nowrap">Help &gt; What's New in Segue</span>.</p>
+    <div class="prose">
     \(body)
+    </div>
+    </div>
     </main>
     <!--slot:partial:footer--><!--/slot-->
     </body>

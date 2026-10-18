@@ -6,10 +6,13 @@
 <title>Privacy Policy - Segue</title>
 <meta name="description" content="What Segue, its website and its feedback board collect, why, who processes it, how long it is kept, and how to turn it off or delete it.">
 <link rel="canonical" href="https://segue.ryandsilva.dev/privacy">
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/site.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/css/tokens.css">
 <!--slot:meta:og-->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Segue">
@@ -50,23 +53,121 @@
 </header>
 <!--/slot-->
 <main id="main">
+<div class="doc">
 <h1>Privacy Policy</h1>
-<p>Effective <!--slot:legal.privacyEffectiveDate-->{POLICY_EFFECTIVE_DATE}<!--/slot--></p>
+<p class="effective">Effective <!--slot:legal.privacyEffectiveDate-->{POLICY_EFFECTIVE_DATE}<!--/slot--></p>
+<div class="prose">
+<section id="the-short-version">
+<h2>The short version</h2>
+<ul class="summary-box">
+<li>Your songs, setlists and gig history are files on your Mac. Segue never uploads them, and we never see them.</li>
+<li>Segue has no accounts, no ads and no tracking. We don't sell or share your personal information.</li>
+<li>Segue sends usage statistics and crash reports only if you say yes to each one, and you can change your mind at any time in <span class="nowrap">Settings &gt; Privacy</span>.</li>
+<li>A bug report is sent only when you press Send, after you've seen everything in it.</li>
+<li>This website sets no cookies. It counts visits with <!--slot:vendors.webAnalytics.name-->Cloudflare Web Analytics<!--/slot-->, which doesn't use cookies or track you across sites.</li>
+</ul>
+</section>
+<section id="who-we-are">
+<h2>Who we are</h2>
+<p>Segue is made by <!--slot:owner.legalName-->Ryan Rony Dsilva<!--/slot-->, an independent developer in the United States ("we", "us"). We decide how the information described here is used, which makes us the "controller" under European data protection law. You can reach us about anything in this policy at <!--slot:owner.email.link--><a href="mailto:segue@ryandsilva.dev">segue@ryandsilva.dev</a><!--/slot-->.</p>
+<p>This policy covers the Segue app for Mac from the Mac App Store, this website (segue.ryandsilva.dev), the Segue feature board, and email you send us.</p>
+</section>
+<section id="what-stays-on-your-mac">
+<h2>What stays on your Mac</h2>
+<p>Your library is a folder you choose. Your songs (ChordPro files), the details Segue keeps beside them (tags, proficiency, notes), your setlists and your gig log all live in that folder. Segue's search index, settings and preferences stay on your Mac too. We have no copy of any of it, and no way to get one.</p>
+<p>Segue also keeps a short technical log of its last four launches on your Mac, such as when a library opened, how long a show ran and which errors happened. It records only codes, counts and timings, never song titles, lyrics, file names or anything you type. It leaves your Mac only inside a bug report you choose to send.</p>
+<p>Removing Segue does not delete your library folder. Back it up like any other folder, for example with Time Machine.</p>
+</section>
 <section id="usage-statistics">
 <h2>Usage statistics (optional)</h2>
+<p><strong>Off until you say yes.</strong> The first time you open Segue, it asks whether to share usage statistics, with two equal choices and nothing picked for you. Nothing is sent before you answer, and nothing is sent if you say no. You can change your answer at any time in <span class="nowrap">Settings &gt; Privacy</span>; turning it off takes effect immediately and deletes anything waiting to be sent.</p>
+<p><strong>What is sent:</strong></p>
+<ul>
+<li>which features are used, from a fixed list built into the app (for example "song created", "setlist created", "show started", "transpose used", or "a search matched a romanized Hindi spelling");</li>
+<li>rough sizes and durations, always as ranges (for example "50 to 99 songs" or "a 60 to 90 minute show");</li>
+<li>the Segue version and the macOS version;</li>
+<li>your Mac's region setting (for example "United States"), which tells us your country. Nothing is worked out from your internet address;</li>
+<li>a random identifier that Segue creates on your Mac, so we can count how many people use Segue over time. Segue scrambles (hashes) it before sending and <!--slot:vendors.analytics.name-->TelemetryDeck<!--/slot--> scrambles it again, so neither of us can turn it back into the original. It is not your name, email address, Apple Account or any hardware identifier, and we don't link it to them.</li>
+</ul>
+<p>Segue sends these through its own small piece of code that can send only the items above. No analytics software from another company runs inside Segue.</p>
+<p><strong>Never sent:</strong> song titles, lyrics, chords, notes, file or folder names, setlist names, venue names, anything you type into search, your contacts, your precise location, your internet address (it isn't stored), or any advertising identifier.</p>
+<p><strong>Why:</strong> to learn which features matter, which ones confuse people, and which versions of macOS to support.</p>
+<p><strong>Who processes it:</strong> <!--slot:vendors.analytics.name-->TelemetryDeck<!--/slot-->, in <!--slot:vendors.analytics.location-->Germany (EU), with some infrastructure in the United States<!--/slot-->, on our behalf. Its privacy policy: <!--slot:vendors.analytics.link--><a href="https://telemetrydeck.com/privacy">TelemetryDeck</a><!--/slot-->.</p>
+<p><strong>How long:</strong> <!--slot:vendors.analytics.retention-->TelemetryDeck has no fixed deletion date for statistics; they may be kept in its archive for up to 10 years<!--/slot-->. Because the identifier is scrambled twice, those statistics can't be traced back to you or your Mac.</p>
 </section>
 <section id="crash-reports">
 <h2>Crash reports (optional)</h2>
+<p>macOS can give Segue technical reports when it crashes, hangs, or uses too much memory or energy. Segue asks about these separately from usage statistics. If you allow it ("Send crash reports", at first launch or later in <span class="nowrap">Settings &gt; Privacy</span>), Segue uploads these reports automatically. Turning it off stops sending immediately and deletes any reports waiting to be sent.</p>
+<p><strong>What is sent:</strong> the kind of problem, where in Segue's code it happened (a technical stack trace), the Segue and macOS versions, the type of Mac, its processor and memory, your language setting, technical measurements such as memory and processor use at the time, and a short trail of Segue's own recent steps (codes only, like the log above). Each report also carries a random <strong>Diagnostics ID</strong> that Segue creates on your Mac, so reports from the same Mac can be grouped and deleted on request. You can see your Diagnostics ID in <span class="nowrap">Settings &gt; Privacy</span>. Crash reports don't contain your songs, file names, your Mac's name, or anything you typed, and Segue strips your user name out of any file path before sending.</p>
+<p><strong>Who processes it:</strong> <!--slot:vendors.crash.name-->Sentry<!--/slot-->, in <!--slot:vendors.crash.location-->United States (Sentry&#39;s U.S. region)<!--/slot-->. Its privacy policy: <!--slot:vendors.crash.link--><a href="https://sentry.io/privacy/">Sentry</a><!--/slot-->.</p>
+<p><strong>How long:</strong> <!--slot:vendors.crash.retention-->30 days<!--/slot-->, then deleted.</p>
+<p><strong>Apple's crash reports.</strong> Separately, if you've turned on "Share with app developers" in System <span class="nowrap">Settings &gt; Privacy</span> &amp; Security &gt; Analytics &amp; Improvements, Apple shares crash reports and usage figures for Segue with us. Apple controls that sharing under Apple's own privacy policy, and the figures we see from Apple don't identify you.</p>
 </section>
 <section id="bug-reports">
 <h2>Bug reports you send</h2>
+<p>You can send us a bug report from Segue's Help menu (<span class="nowrap">Help &gt; Report a Problem...</span>).</p>
+<p><strong>What is sent, and only when you press Send:</strong></p>
+<ul>
+<li>what you write;</li>
+<li>system information, always included and shown to you before sending: the Segue version and build, the macOS version, the Mac model and processor type, your language setting, the approximate size of your library (for example "50 to 99 songs", never titles), and your current privacy choices;</li>
+<li><strong>only if ticked</strong> (you can untick them): Segue's technical log of its last four launches, and the latest crash or hang diagnostics macOS gave Segue;</li>
+<li><strong>only if you tick it</strong> (it's off every time you open the form): the song that's open, meaning its ChordPro file and Segue's details file. This includes its lyrics, so leave it off if you'd rather not share them;</li>
+<li><strong>only if you enter it:</strong> your email address, so we can reply.</li>
+</ul>
+<p>Before anything is sent, Segue shows you the complete report, including the full text of every attached file. What you see is exactly what is sent.</p>
+<p><strong>Who processes it:</strong> <!--slot:vendors.bugReports.name-->Sentry<!--/slot-->, in <!--slot:vendors.bugReports.location-->United States (Sentry&#39;s U.S. region)<!--/slot-->. Its privacy policy: <!--slot:vendors.bugReports.link--><a href="https://sentry.io/privacy/">Sentry</a><!--/slot-->. Because a report can include your email address, we treat each report as connected to you.</p>
+<p>If Segue can't reach the service, it offers to put the same report into an email for you to send (covered by "Email" below) or to save it as a file on your Mac. Nothing is sent later without you.</p>
+<p><strong>Why:</strong> to find and fix problems, and to answer you.</p>
+<p><strong>How long:</strong> <!--slot:vendors.bugReports.retention-->30 days<!--/slot-->, then deleted, including any song you attached. A song you attached is used only to reproduce the problem. You can ask us to delete a report sooner.</p>
+</section>
+<section id="the-feature-board">
+<h2>The feature board</h2>
+<p><a href="/feedback">segue.ryandsilva.dev/feedback</a> takes you to Segue's feature board, run by <!--slot:vendors.board.name-->Featurebase<!--/slot-->. There you can suggest features, comment, and vote. The board is a separate website; the Segue app sends it nothing.</p>
+<ul>
+<li><strong>What you post is public.</strong> Please don't include personal information about yourself or anyone else.</li>
+<li><strong>Email is optional.</strong> If you give it, it's used only to tell you about ideas you posted or voted for, for example when one ships, and you can unsubscribe from any such email. We never use it for marketing and never share it.</li>
+<li><!--slot:vendors.board.name-->Featurebase<!--/slot--> also collects technical information (such as your internet address, browser details and the cookies the board needs to work) under its own privacy policy: <!--slot:vendors.board.link--><a href="https://help.featurebase.app/articles/4744036-privacy-policy">Featurebase</a><!--/slot-->. It asks before setting any optional cookies.</li>
+</ul>
+<p><strong>How long:</strong> posts and votes stay <!--slot:vendors.board.retention-->until you delete them or ask us to<!--/slot-->; your email stays until you unsubscribe or ask us to remove it.</p>
+</section>
+<section id="email">
+<h2>Email</h2>
+<p>When you write to <!--slot:owner.email.link--><a href="mailto:segue@ryandsilva.dev">segue@ryandsilva.dev</a><!--/slot-->, your message passes through <!--slot:vendors.emailRouting.name-->Mailgun<!--/slot-->, which forwards it, and is stored in an inbox run by <!--slot:vendors.inbox.name-->Google (Gmail)<!--/slot-->. We use your email only to help you, keep it <!--slot:vendors.inbox.retention-->as long as needed to answer you, and at most 2 years<!--/slot-->, and delete it sooner if you ask.</p>
 </section>
 <section id="this-website">
 <h2>This website</h2>
+<p>segue.ryandsilva.dev is a set of static pages hosted by <!--slot:vendors.hosting.name-->Cloudflare (Cloudflare Pages)<!--/slot-->. It sets no cookies, and its fonts and images all come from this site. Like any web host, <!--slot:vendors.hosting.shortName-->Cloudflare<!--/slot--> processes your internet address and request details to deliver the pages and protect the site from abuse, under its privacy policy (<!--slot:vendors.hosting.link--><a href="https://www.cloudflare.com/privacypolicy/">Cloudflare (Cloudflare Pages)</a><!--/slot-->). We don't receive logs of individual visits.</p>
+<p><strong>Website analytics.</strong> We use <!--slot:vendors.webAnalytics.name-->Cloudflare Web Analytics<!--/slot--> to see how many people visit and which pages they read. When a page loads, a small script from <!--slot:vendors.webAnalytics.shortName-->Cloudflare<!--/slot--> reports the page's address, the page you came from, your browser and operating system type, your screen size, how quickly the page loaded, and your country, which <!--slot:vendors.webAnalytics.shortName-->Cloudflare<!--/slot--> works out from your internet address. It sets no cookies, stores nothing on your device, doesn't build a profile of you, and doesn't follow you across other websites. We see only totals, such as "120 visits to the privacy policy this week". <!--slot:vendors.webAnalytics.shortName-->Cloudflare<!--/slot--> keeps these reports for <!--slot:vendors.webAnalytics.retention-->six months<!--/slot-->.</p>
+<p>Links to the Mac App Store carry a campaign tag (for example "website-hero"). Apple uses it to tell us, in aggregate, how many people found Segue through this website. It doesn't identify you.</p>
+</section>
+<section id="apple">
+<h2>Apple</h2>
+<p>You download Segue from the Mac App Store, and Apple handles that, along with any ratings and reviews you leave, under Apple's own privacy policy (<a href="https://www.apple.com/legal/privacy/">www.apple.com/legal/privacy</a>). We get only aggregate figures from Apple, such as the number of downloads.</p>
+</section>
+<section id="what-we-never-do">
+<h2>What we never do</h2>
+<ul>
+<li>We don't sell your personal information, and we don't share it for advertising.</li>
+<li>We don't show ads, and we don't track you across other companies' apps or websites.</li>
+<li>We don't build profiles of you or use data brokers.</li>
+<li>We don't ask for an account.</li>
+<li>We don't collect sensitive information such as health, financial or precise location data.</li>
+<li>We don't use your songs to train AI. We never receive them, except a song you choose to attach to a bug report, which is used only to fix that bug.</li>
+</ul>
+</section>
+<section id="legal-bases-european-economic-area-uk-and-switzerland">
+<h2>Legal bases (European Economic Area, UK and Switzerland)</h2>
+<ul>
+<li>Usage statistics and crash reports: your <strong>consent</strong>, given separately for each. You can withdraw it at any time in <span class="nowrap">Settings &gt; Privacy</span>; withdrawing doesn't affect what was sent before.</li>
+<li>Bug reports: your <strong>consent</strong> when you press Send, and our <strong>legitimate interest</strong> in fixing and improving Segue.</li>
+<li>Feature board posts and votes: our <strong>legitimate interest</strong> in learning what to build; board update emails: your <strong>consent</strong>.</li>
+<li>Email: our <strong>legitimate interest</strong> in answering you.</li>
+<li>Website hosting, security and website analytics: our <strong>legitimate interest</strong> in delivering a working, safe website and knowing, in aggregate, how it is used.</li>
+</ul>
 </section>
 <section id="who-receives-data">
 <h2>Who receives data</h2>
-<!--slot:vendor-table-->
+<div class="table-scroll"><!--slot:vendor-table-->
 <table>
 <thead><tr><th scope="col">Provider</th><th scope="col">What for</th><th scope="col">Where</th><th scope="col">Privacy policy</th></tr></thead>
 <tbody>
@@ -78,11 +179,17 @@
 <tr><th scope="row">Google (Gmail)</th><td>Email inbox</td><td>United States</td><td><a href="https://policies.google.com/privacy">Google (Gmail) privacy policy</a></td></tr>
 </tbody>
 </table>
-<!--/slot-->
+<!--/slot--></div>
+<p>Apple handles App Store downloads, ratings, reviews and its own crash sharing as an independent controller under its own privacy policy.</p>
+<p>Each provider processes data for us under a contract (its data processing terms) that requires it to protect the data at least as well as this policy does and to use it only to provide its service to us. We may also disclose information if the law requires it, or to protect the safety of anyone.</p>
 </section>
-<section id="retention">
+<section id="international-transfers">
+<h2>International transfers</h2>
+<p>We are in the United States, and our providers process data in the United States, the European Union and other countries. When data from the European Economic Area, the UK or Switzerland is transferred to a country without an adequacy decision, it is protected as follows: usage statistics (<!--slot:vendors.analytics.name-->TelemetryDeck<!--/slot-->): <!--slot:vendors.analytics.transferBasis-->Standard Contractual Clauses for data reaching its U.S. infrastructure<!--/slot-->; crash reports and bug reports (<!--slot:vendors.crash.name-->Sentry<!--/slot-->, processed in the United States): <!--slot:vendors.crash.transferBasis-->Standard Contractual Clauses<!--/slot-->; the feature board (<!--slot:vendors.board.name-->Featurebase<!--/slot-->): <!--slot:vendors.board.transferBasis-->Standard Contractual Clauses for any transfer outside the EU<!--/slot-->; this website (<!--slot:vendors.hosting.name-->Cloudflare (Cloudflare Pages)<!--/slot-->): <!--slot:vendors.hosting.transferBasis-->the EU-U.S. Data Privacy Framework and Standard Contractual Clauses<!--/slot-->.</p>
+</section>
+<section id="how-long-we-keep-data">
 <h2>How long we keep data</h2>
-<!--slot:retention-table-->
+<div class="table-scroll"><!--slot:retention-table-->
 <table>
 <thead><tr><th scope="col">What</th><th scope="col">How long</th></tr></thead>
 <tbody>
@@ -92,15 +199,45 @@
 <tr><th scope="row">Feature board posts and votes</th><td>until you delete them or ask us to</td></tr>
 <tr><th scope="row">Feature board email</th><td>until you unsubscribe or ask us to remove it</td></tr>
 <tr><th scope="row">Email to segue@ryandsilva.dev</th><td>as long as needed to answer you, and at most 2 years</td></tr>
-<tr><th scope="row">Website analytics (totals only)</th><td>{WEB_ANALYTICS_RETENTION}</td></tr>
+<tr><th scope="row">Website analytics (totals only)</th><td>six months</td></tr>
 <tr><th scope="row">Website request logs</th><td>Cloudflare&#39;s standard retention; we receive no per-visit logs</td></tr>
 </tbody>
 </table>
-<!--/slot-->
+<!--/slot--></div>
 </section>
 <section id="your-choices">
 <h2>Your choices and rights</h2>
+<p><strong>Turn things off.</strong> <span class="nowrap">Settings &gt; Privacy</span> in Segue has a separate switch for usage statistics and for crash reports. Turning either off takes effect immediately.</p>
+<p><strong>Ask us.</strong> Email <!--slot:owner.email.link--><a href="mailto:segue@ryandsilva.dev">segue@ryandsilva.dev</a><!--/slot--> to see, correct, export or delete what we hold about you, or to object to how we use it. To help us find it, tell us:</p>
+<ul>
+<li>for crash reports, your Diagnostics ID (shown in <span class="nowrap">Settings &gt; Privacy</span>, with a Copy button);</li>
+<li>for bug reports, the email address you entered and roughly when you sent it;</li>
+<li>for the feature board, a link to your post.</li>
+</ul>
+<p>We'll answer within one month, and we may ask you to confirm the request from the same email address.</p>
+<p><strong>Usage statistics can't be looked up by person.</strong> The identifier in them is scrambled twice and isn't linked to your name, email or Diagnostics ID, so neither we nor <!--slot:vendors.analytics.name-->TelemetryDeck<!--/slot--> can find your statistics. Turning statistics off stops all collection.</p>
+<p><strong>If you're in the European Economic Area, the UK or Switzerland</strong>, you have the right to access, correct, delete, restrict and port your data, to object to processing based on legitimate interest, and to withdraw consent at any time. You can also complain to your data protection authority (<a href="https://www.edpb.europa.eu/about-edpb/about-edpb/members_en">www.edpb.europa.eu/about-edpb/about-edpb/members_en</a> ; in the UK, the ICO at <a href="https://ico.org.uk">ico.org.uk</a>). We'd appreciate the chance to fix things first.</p>
+<p><strong>If you're in California or another U.S. state with a privacy law</strong>, you can ask to know what we collect, and to correct or delete it, as described above, and we won't treat you differently for asking. We don't sell or share personal information, so there is nothing to opt out of; we treat Global Privacy Control signals as an opt-out anyway. We don't use sensitive personal information. An authorized agent can make a request for you with your written permission.</p>
 </section>
+<section id="security">
+<h2>Security</h2>
+<p>Everything Segue sends travels encrypted (HTTPS). Only we can access bug reports, crash reports, statistics and email, and our providers secure the systems they run. No system is perfectly secure, so we collect as little as we can in the first place.</p>
+</section>
+<section id="children">
+<h2>Children</h2>
+<p>Segue isn't directed at children under 13, and the feature board isn't for anyone under 16 in the European Economic Area or the UK. If you think a child has sent us personal information, email us and we'll delete it.</p>
+</section>
+<section id="changes-to-this-policy">
+<h2>Changes to this policy</h2>
+<p>When this policy changes, we update the effective date above and note the change in the <a href="/changelog">changelog</a>. If a change affects what the app sends, Segue asks you again before sending anything new.</p>
+</section>
+<section id="contact">
+<h2>Contact</h2>
+<p><!--slot:owner.legalName-->Ryan Rony Dsilva<!--/slot--><br>
+<!--slot:owner.email.link--><a href="mailto:segue@ryandsilva.dev">segue@ryandsilva.dev</a><!--/slot--></p>
+</section>
+</div>
+</div>
 </main>
 <!--slot:partial:footer-->
 <footer class="site-footer">

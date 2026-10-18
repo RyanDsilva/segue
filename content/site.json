@@ -59,7 +59,7 @@
       "name": "Featurebase",
       "boardUrl": "{BOARD_URL}",
       "privacyUrl": "https://help.featurebase.app/articles/4744036-privacy-policy",
-      "termsUrl": "{BOARD_VENDOR_TERMS_URL}",
+      "termsUrl": "https://help.featurebase.app/articles/5917992-terms-of-service",
       "location": "European Union",
       "transferBasis": "Standard Contractual Clauses for any transfer outside the EU",
       "retention": "until you delete them or ask us to"
@@ -75,7 +75,7 @@
       "privacyUrl": "https://www.cloudflare.com/privacypolicy/",
       "location": "United States and Cloudflare's global network",
       "transferBasis": "the EU-U.S. Data Privacy Framework and Standard Contractual Clauses",
-      "retention": "{WEB_ANALYTICS_RETENTION}"
+      "retention": "six months"
     },
     "emailRouting": {
       "name": "Mailgun",

@@ -6,10 +6,13 @@
 <title>Support - Segue</title>
 <meta name="description" content="Get help with Segue: contact, bug reports, feature requests, system requirements and answers to common questions.">
 <link rel="canonical" href="https://segue.ryandsilva.dev/support">
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/site.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/css/tokens.css">
 <!--slot:meta:og-->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Segue">
@@ -50,13 +53,61 @@
 </header>
 <!--/slot-->
 <main id="main">
+<div class="doc">
 <h1>Support</h1>
+<p class="lede"><strong>We're here to help.</strong> Email <!--slot:owner.email.link--><a href="mailto:segue@ryandsilva.dev">segue@ryandsilva.dev</a><!--/slot--> and you'll hear back from a real person, usually within a few days.</p>
+<div class="prose">
 <section id="report-a-bug">
 <h2>Report a bug</h2>
+<p>The fastest way is from inside Segue: choose <strong><span class="nowrap">Help &gt; Report a Problem...</span></strong>. Segue attaches the details we need to find the problem, and shows you everything before you send it. Attaching the song you're looking at is optional and off by default.</p>
+<p>If you can't open Segue, email <!--slot:owner.email.link--><a href="mailto:segue@ryandsilva.dev">segue@ryandsilva.dev</a><!--/slot--> with:</p>
+<ul>
+<li>your Segue version (<span class="nowrap">Segue &gt; About Segue</span>) and your macOS version;</li>
+<li>what you did, what you expected, and what happened instead;</li>
+<li>a song file (.cho) if the problem is with one particular song, and you're happy to share it.</li>
+</ul>
 </section>
 <section id="request-a-feature">
 <h2>Request a feature</h2>
+<p>Suggest ideas and vote for the ones you want on the feature board: <strong><a href="/feedback">segue.ryandsilva.dev/feedback</a></strong>. You can also choose <strong><span class="nowrap">Help &gt; Request a Feature...</span></strong> in Segue.</p>
 </section>
+<section id="system-requirements">
+<h2>System requirements</h2>
+<ul>
+<li>A Mac with Apple silicon and macOS 26 or later.</li>
+<li>No internet connection needed to write songs, build sets or play a show.</li>
+</ul>
+</section>
+<section id="frequently-asked-questions">
+<h2>Frequently asked questions</h2>
+<dl class="faq">
+<dt><strong>Where are my songs stored?</strong></dt>
+<dd>In the library folder you chose the first time you opened Segue (we suggest <span class="nowrap">Music &gt; Segue</span>). Each song is a ChordPro file (.cho) with a small file beside it that holds Segue's extras, like tags and proficiency. Your setlists and your gig log live in the same folder.</dd>
+<dt><strong>How do I back up my library, or move it to another Mac?</strong></dt>
+<dd>It's a normal folder, so Time Machine and any backup tool already cover it. To move it, copy the folder to the other Mac and choose it with <span class="nowrap">Library &gt; Choose Library Folder</span>. You can also use <strong><span class="nowrap">File &gt; Export Library Archive...</span></strong> to make a single file.</dd>
+<dt><strong>What is ChordPro?</strong></dt>
+<dd>A plain-text format for songs with chords, used by many apps: chords go in square brackets right before the syllable they belong to, like <code>[G]Take me [C]home</code>. See the ChordPro site at <a href="https://www.chordpro.org">www.chordpro.org</a>.</dd>
+<dt><strong>Can I import songs I already have?</strong></dt>
+<dd>Yes. Drag ChordPro or text files (.cho, .chordpro, .chopro, .pro or .txt) onto the library, or choose <strong><span class="nowrap">File &gt; Import Songs...</span></strong>. See <a href="/help/import">Importing songs</a>.</dd>
+<dt><strong>Does Segue need the internet?</strong></dt>
+<dd>No. Everything for writing and playing works offline, and the stage view never waits on the network. Segue goes online only for the things you turn on or ask for: usage statistics and crash reports if you said yes, sending a bug report, and opening web pages such as help or the feature board.</dd>
+<dt><strong>What does Segue collect, and how do I turn it off?</strong></dt>
+<dd>Nothing about your songs, ever. If you agreed to share usage statistics or send crash reports, you can turn each off in <span class="nowrap">Settings &gt; Privacy</span>. Details are in the <a href="/privacy">Privacy Policy</a>.</dd>
+<dt><strong>How do I keep notifications quiet during a show?</strong></dt>
+<dd>Create a Shortcut that turns on a Focus, then pick it in <span class="nowrap">Settings &gt; Live &gt; Gig Mode Shortcuts</span>. See <a href="/help/shortcuts#gig-mode">Shortcuts</a>.</dd>
+<dt><strong>Will my page-turner pedal work?</strong></dt>
+<dd>Pedals that send arrow keys or Page Up / Page Down work out of the box. See <a href="/help/live">Stage mode</a>.</dd>
+<dt><strong>Is there an iPhone or iPad version?</strong></dt>
+<dd>Not yet. It's on the list; vote for it on the feature board.</dd>
+<dt><strong>Is Segue really free?</strong></dt>
+<dd>Yes. No ads, no subscription and no in-app purchases.</dd>
+<dt><strong>A song shows the wrong chord or layout.</strong></dt>
+<dd>Please send a bug report and tick "Current song file" so we can see the exact file.</dd>
+</dl>
+<p>Also see: <a href="/help">Help</a>, <a href="/changelog">Changelog</a>, <a href="/privacy">Privacy Policy</a>.</p>
+</section>
+</div>
+</div>
 </main>
 <!--slot:partial:footer-->
 <footer class="site-footer">
