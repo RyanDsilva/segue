@@ -91,21 +91,23 @@ struct LiveLayoutCorpusTests {
         }
     }
 
+    /// Best of 10, like `PerformanceTests`: load from parallel suites only ever adds time, so
+    /// the fastest run is the closest estimate of what planning costs, while a real
+    /// regression slows every run, the fastest included. (The mean of 10 failed at load 28.)
     @Test
     func `a long song plans quickly`() throws {
         let model = try Support.model("live-very-long.cho")
         let clock = ContinuousClock()
         _ = Support.plan(model)
-        let elapsed = clock.measure {
-            for _ in 0 ..< 10 {
-                _ = Support.plan(model)
-            }
+        var best = Duration.seconds(10)
+        for _ in 0 ..< 10 {
+            best = min(best, clock.measure { _ = Support.plan(model) })
         }
         #if DEBUG
             let budget = Duration.milliseconds(40)
         #else
             let budget = Duration.milliseconds(8)
         #endif
-        #expect(elapsed / 10 < budget, "\(elapsed / 10) per plan")
+        #expect(best < budget, "best of 10: \(best) per plan")
     }
 }
