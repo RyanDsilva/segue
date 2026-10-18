@@ -29,7 +29,7 @@ FM first and falls back to MLX).
 | FM supported languages (runtime) | da, de, en (AU/GB), es (419/US), fr (CA), it, ja, ko, nb, nl, pt (PT), sv, tr, vi, zh (HK/TW). **No `hi`** |
 | MLX | `ml-explore/mlx-swift-lm` **3.32.3** (latest release, 2026-09-30), `mlx-swift` 0.32.3, `swift-transformers` 1.3.x. Built with `xcodebuild`, because SwiftPM on the CLI does not build the Metal library |
 | Constrained decoding | `MLXGuidedGeneration` standalone (`GrammarConstraint(jsonSchema:)` + `GuidedGenerationLoop.run`, greedy argmax). It works on macOS 26; `MLXFoundationModels` needs the 27 SDK and was not used |
-| Spike code | `$SCRATCHPAD/phase3-spikes/` (outside the repo): `Spike/` (SwiftPM: `SpikeCore`, `fmspike`, `mlxspike`), `fixtures/` (20 pastes), `gold.py`, `score.py`, `results/*.jsonl` (one JSON line per model call), `fgapp/` (a foreground AppKit latency probe) |
+| Spike code | `research/phase3-spikes/` (committed; the downloaded models in `models/`, the xcodebuild output in `dd/` and compiled binaries are not, see `.gitignore`): `Spike/` (SwiftPM: `SpikeCore`, `fmspike`, `mlxspike`), `fixtures/` (20 pastes), `gold.py`, `score.py`, `results/*.jsonl` (one JSON line per model call), `fgapp/` (a foreground AppKit latency probe) |
 
 **SDK note.** `tokenCount(for:)` is `@available(macOS 26.4)`, and the spike package had to set its
 deployment target to 26.4 to call it. With the app's macOS 26.0 floor, it needs

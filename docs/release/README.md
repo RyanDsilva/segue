@@ -22,22 +22,31 @@ Legend: **-> paste to Claude** = not secret, give it to the session. **-> 1Passw
 
 - [x] **1Password CLI integration.** (Works in Terminal.app only; per R46 you run `make upload` there.) 1Password app > Settings > Developer > tick **Integrate with 1Password CLI**. In Terminal: `op whoami` (or `op vault list`) asks to unlock and then shows your account; confirm a vault named **`Private`** exists (the scripts default to it). Keep 1Password unlocked during agent sessions: signed commits and tags fail with "failed to fill whole buffer" when it is locked.
 - [ ] **Back up both certificate private keys (.p12).** Keychain Access (Spotlight "Keychain Access") > **login** > **My Certificates** > select `Apple Distribution: Ryan Rony Dsilva (V6BM673U35)` and `3rd Party Mac Developer Installer: Ryan Rony Dsilva (V6BM673U35)` (expand each: a private key must sit under it) > **File > Export Items...** > format **Personal Information Exchange (.p12)** > save outside the repo > set a strong password. In 1Password (vault `Private`) create an item, e.g. `Segue Distribution Certificates`, attach the `.p12` and store its password. Then delete the local `.p12` and empty the Trash. **-> 1Password only.** (p12 export not possible - is this required?)
-- [x] **Quick Look App ID and profile (I-14).** Certificates, IDs & Profiles > **Identifiers > "+"** > App IDs > App > Continue > Description `Segue Quick Look`, Bundle ID **Explicit** `dev.ryandsilva.segue.quicklook`, no capabilities > Continue > Register. Then **Profiles > "+"** > Distribution **Mac App Store Connect** > Continue > App ID `dev.ryandsilva.segue.quicklook` > Continue > the Apple Distribution certificate > Continue > Name **`Segue Mac App Store QuickLook`** (exactly) > Generate > Downlopad > double-click. Do not register any `.personal` IDs by hand (automatic signing does it).
-- [x] **TelemetryDeck: account and two apps.** dashboard.telemetrydeck.com > sign up (segue@ryandsilva.dev or your usual address; free tier 50k signals/month). Top-left app dropdown > **Create New App** > `Segue`; again > `Segue Personal`. For each: sidebar **Settings > Set Up App** > bottom of page > click the App ID to copy. **-> paste to Claude**, labelled (App Store vs Personal). Also say whether the organisation settings show a **namespace** (paste it if so).
-Segue - CDF7AF01-FB23-4A30-AFAB-8EAB4BF6EFB5 - namespace: dev.ryandsilva
-Segue Personal - 6E38DC85-EE5E-4ECF-A8E0-E4FDFDE9B208 - namspace: dev.ryandsilva
+- [x] **Quick Look App ID and profile (I-14).** Certificates, IDs & Profiles > **Identifiers > "+"** > App IDs > App > Continue > Description `Segue Quick Look`, Bundle ID **Explicit** `dev.ryandsilva.segue.quicklook`, no capabilities > Continue > Register. Then **Profiles > "+"** > Distribution **Mac App Store Connect** > Continue > App ID `dev.ryandsilva.segue.quicklook` > Continue > the Apple Distribution certificate > Continue > Name **`Segue Mac App Store QuickLook`** (exactly) > Generate > Download > double-click. Do not register any `.personal` IDs by hand (automatic signing does it).
+- [x] **TelemetryDeck: account and two apps.** dashboard.telemetrydeck.com > sign up (segue@ryandsilva.dev or your usual address; free tier 50k signals/month). Top-left app dropdown > **Create New App** > `Segue`; again > `Segue Personal`. For each: sidebar **Settings > Set Up App** > bottom of page > click the App ID to copy. **-> paste to Claude**, labelled (App Store vs Personal). Also say whether the organisation settings show a **namespace** (paste it if so). Values: [Service values](#service-values).
 - [x] **TelemetryDeck: retention.** Look in the app and organisation settings for any retention or deletion option and tell Claude what exists. Email TelemetryDeck support (dashboard contact link) asking whether raw signals for this app can be deleted after a shorter period, e.g. 13 months, or on request. Runs in parallel, blocks nothing; if they offer one, tell the WS4 session (only `vendors.analytics.retention` changes). (Info unavailable)
-- [x] **Sentry: org and project.** sentry.io/signup > create the organisation (slug e.g. `ryandsilva`) with data storage location **United States** (R33; cannot be changed later). **Projects > Create Project** > **Apple > macOS** > name `segue-macos` > "Alert me on every new issue" > Create. **Settings > Projects > segue-macos > Client Keys (DSN)** > copy the DSN. **-> paste to Claude** (a DSN is not secret), plus the org slug (for `.sentryclirc`).
-DSN: https://997bf383bbb7edd32a15c839fba202b8@o4512275137691648.ingest.us.sentry.io/4512275142475776
-org slug: ryandsilva
+- [x] **Sentry: org and project.** sentry.io/signup > create the organisation (slug e.g. `ryandsilva`) with data storage location **United States** (R33; cannot be changed later). **Projects > Create Project** > **Apple > macOS** > name `segue-macos` > "Alert me on every new issue" > Create. **Settings > Projects > segue-macos > Client Keys (DSN)** > copy the DSN. **-> paste to Claude** (a DSN is not secret), plus the org slug (for `.sentryclirc`). Values: [Service values](#service-values).
 - [x] **Sentry: scrubbing.** In both **Settings > Security & Privacy** (organisation) and **Settings > Projects > segue-macos > Security & Privacy**: **Prevent Storing of IP Addresses** on; **Data Scrubber** on; **Use Default Scrubbers** on; **Additional Sensitive Fields** `title`, `lyrics`, `filename`, `path`, `email`; Safe Fields empty.
 - [x] **Sentry: alerts.** Confirm the default "new issue" email alert exists. **Alerts > Create Alert > Issues** "A new issue is created" filtered to `issue.category:feedback` (or **Settings > Account > Notifications** > User Feedback) so every bug report emails you.
 - [x] **Sentry: dSYM upload token.** **Settings > Auth Tokens** (organisation tokens) > **Create New Token** > name `segue dsym upload`. Copy it once into 1Password: vault **`Private`**, item **`Segue Sentry`**, field **`token`**. **-> 1Password only.** Tell Claude the item exists (the session tests `op read 'op://Private/Segue Sentry/token'`).
-- [x] **Featurebase board.** featurebase.app > sign up > workspace `Segue` (subdomain e.g. `segue.featurebase.app`) > one board "Feature Requests" with statuses Under Review, Planned, In Progress, Shipped, Declined. **Settings > Requests > Collection > Feedback Portal > Participation**: tick the **Guest actions** boxes (post, upvote, comment without login), turn on **Request moderation** and **Comment moderation**. If either is missing on the Free plan, stop and tell Claude (fallback: Fider Cloud). **Settings > Branding**: logo (taped-setlist icon PNG), accent `#F2555A`, dark default theme if offered, name "Segue". Board URL **-> paste to Claude** (WS4 `/feedback` redirect).
-https://segue.featurebase.app/
+- [x] **Featurebase board.** featurebase.app > sign up > workspace `Segue` (subdomain e.g. `segue.featurebase.app`) > one board "Feature Requests" with statuses Under Review, Planned, In Progress, Shipped, Declined. **Settings > Requests > Collection > Feedback Portal > Participation**: tick the **Guest actions** boxes (post, upvote, comment without login), turn on **Request moderation** and **Comment moderation**. If either is missing on the Free plan, stop and tell Claude (fallback: Fider Cloud). **Settings > Branding**: logo (taped-setlist icon PNG), accent `#F2555A`, dark default theme if offered, name "Segue". Board URL **-> paste to Claude** (WS4 `/feedback` redirect). Value: [Service values](#service-values).
 - [x] **Cloudflare account.** dash.cloudflare.com > create a free account (or sign in). Nothing else yet: the Pages project needs the GitHub push (2.4). ryan.dsilva.98@gmail.com
 - [x] **Mailgun route for segue@.** Send a test email to `segue@ryandsilva.dev` from another account. If it arrives (the route may be a catch-all), done. Otherwise app.mailgun.com > **Send > Receiving** (Routes) > edit the existing route (free plan allows one) > Expression **Custom** `match_recipient("^(contact|segue)@ryandsilva\.dev$")` > Forward to your Gmail > Save; re-send and confirm (check spam).
 - [x] **DMARC.** account.squarespace.com/domains > `ryandsilva.dev` > **DNS** > **Custom records** > **Add record**: Type **TXT**, Host `_dmarc`, Data `v=DMARC1; p=none` > Save. Skip if a `_dmarc` record exists. Do not touch the apex A record or the Mailgun MX/TXT records.
+
+#### Service values
+
+Pasted by Ryan from the steps above. None is secret: the IDs and the DSN ship inside the app binary, and the board URL is public. Sessions that wire the services (WS3, WS4) take them from here.
+
+| Service | Item | Value | Used by |
+|---|---|---|---|
+| TelemetryDeck | App ID, `Segue` (App Store flavor) | `CDF7AF01-FB23-4A30-AFAB-8EAB4BF6EFB5` | WS3 ingest client |
+| TelemetryDeck | App ID, `Segue Personal` | `6E38DC85-EE5E-4ECF-A8E0-E4FDFDE9B208` | WS3 ingest client |
+| TelemetryDeck | Namespace (both apps) | `dev.ryandsilva` | WS3 ingest client |
+| TelemetryDeck | Retention option | Unknown (Ryan: "Info unavailable") | WS4 `vendors.analytics.retention` |
+| Sentry | DSN (`segue-macos`) | `https://997bf383bbb7edd32a15c839fba202b8@o4512275137691648.ingest.us.sentry.io/4512275142475776` | WS3 Sentry init |
+| Sentry | Organisation slug | `ryandsilva` | `.sentryclirc`, dSYM upload |
+| Featurebase | Board URL | `https://segue.featurebase.app/` | WS4 `/feedback` redirect, Request a Feature |
 
 ### 2.2 When App Store Connect is live
 
@@ -115,6 +124,7 @@ https://segue.featurebase.app/
 - [ ] **Manual release (A51).** After approval, at a moment you choose: Apps > Segue > macOS App > 0.5 > **Release This Version**.
 - [ ] **Flip the site to the badge.** The session sets `appStore.status` to `"live"`, runs `make site && make site-check STRICT=1`, commits; you approve the push. Check the badge links to the live listing.
 - [ ] **After release.** Search "Segue setlists" on the US Mac App Store; check screenshots, preview, privacy and accessibility labels render. Watch Xcode Organizer and Sentry for 48 h. Weekly habit: Sentry **User Feedback**, copy anything worth keeping into GitHub by hand (reports expire after 30 days).
+- [ ] **Post-launch doc fold (agent session).** After v0.5 ships, fold `research/01-09` and `open-questions.md` into `decisions.md` (the chosen option per A/B id as an appendix) and a `research/SUMMARY.md` (findings that still matter for 0.6+), repoint the spec citations, then delete the originals. See `docs/cleanup-proposal.md` section 2 while it exists.
 
 ---
 
@@ -142,7 +152,7 @@ Dependency summary: WS1 steps 1-5 come first (everyone builds on them). WS2a nee
 
 | Document | What it is |
 |---|---|
-| [decisions.md](decisions.md) | Canonical rulings R1-R41 from the release kickoff; specs follow it |
+| [decisions.md](decisions.md) | Canonical release rulings R1-R50 (kickoff, then repo health R47-R50); specs follow it. Product rulings for phases 0-7 are in [../decisions.md](../decisions.md) |
 | [open-questions.md](open-questions.md) | The resolved question sheet: A items (Ryan), B defaults, I-1..I-17 cross-spec fixes, section 5 implementation order |
 | [specs/WS1-release-pipeline.md](specs/WS1-release-pipeline.md) | Signing, bundle-ID split, version, privacy manifest, readiness fixes, Gig Mode/R35, archive/validate/upload, verify-archive |
 | [specs/WS2a-core-ux.md](specs/WS2a-core-ux.md) | Import, Delete + Trash, autosave, menus (File/Setlist/Help/Window), About, `?` overlay, Show in Finder, undo, state restore |
@@ -159,7 +169,10 @@ Dependency summary: WS1 steps 1-5 come first (everyone builds on them). WS2a nee
 | [research/07-services.md](research/07-services.md) | Analytics, crash, board and bug-report vendor survey |
 | [research/08-polish-features.md](research/08-polish-features.md) | Polish features survey and HIG gap analysis |
 | [research/09-shortcut-confirmation.md](research/09-shortcut-confirmation.md) | How to confirm a Gig Mode Shortcut ran (R35); probe results land here |
-| `accessibility-audit.md` (WS2b step 12, not yet written) | Per-label pass/fail evidence that decides the accessibility claims |
+| [accessibility-audit.md](accessibility-audit.md) | Per-label pass/fail evidence that decides the accessibility claims (completed in WS2b step 12) |
+| [../github-setup.md](../github-setup.md) | GitHub repo settings runbook: labels, security toggles, the pre-push hook that stands in for branch protection |
+| [../cleanup-proposal.md](../cleanup-proposal.md) | Pre-push repo clean-up audit (approved items carried out 2026-10-17); kept until the first push |
+| [../../README.md](../../README.md), [LICENSE](../../LICENSE), [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md), [SECURITY.md](../../SECURITY.md), [CONTRIBUTING.md](../../CONTRIBUTING.md) | Repo-health files (R47): overview, all-rights-reserved licence, dependency notices, security policy, contributing guide |
 
 ---
 

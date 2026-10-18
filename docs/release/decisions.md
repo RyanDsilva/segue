@@ -2,6 +2,8 @@
 
 Ryan's rulings from the release kickoff, 2026-10-17. They are canonical; specs must follow them. Research behind them is in `research/01-08`.
 
+Release rulings live here; product rulings for phases 0-7 live in [../decisions.md](../decisions.md).
+
 ## Account and store
 - R1. Paid Apple Developer Program, individual, team `V6BM673U35`. The membership was renewed 2026-10-17; App Store Connect access is pending (up to 48h). Seller name: Ryan's legal name.
 - R2. Price: free, no IAP. No Paid Apps agreement, no banking. US resident.
@@ -79,3 +81,9 @@ Overrides and specifics:
 - R44 (A14). The Welcome titles were searched with no conflicts: "Soundcheck at Seven", "Kitaabon Wali Gali", "Kettle On, Lights Low", "Ferry Lights Over Calder Bay", setlist "Welcome Set".
 - R45. Page-turner pedals: on stage, Page Down scrolls, and at the end of a song the next press moves to the next song; Page Up mirrors this backwards (forScore-style, so one pedal runs a whole gig). Owned by WS2a, with an E2E test.
 - R46. Credential-carrying steps (`make upload`, the Sentry dSYM upload, anything that runs `op`) are run by **Ryan in Terminal.app**. The 1Password CLI works there but not from the agent shell (sandboxed). Agents prepare and verify everything up to `make validate`, then hand Ryan the exact command. Scripts must fail with a clear message when `op` is unavailable, and must never fall back to plaintext keys.
+
+## Repo health (2026-10-17)
+- R47. The GitHub repo stays **private but polished**: README, LICENSE (all rights reserved), third-party notices, SECURITY, CONTRIBUTING, issue forms, PR template, CODEOWNERS.
+- R48. CI is **lightweight Linux only** (lint, site check, docs checks, actionlint). Builds and tests stay local under `make check`.
+- R49. GitHub Issues are Ryan's dev tracker. Users go to Report a Problem (Sentry) and Featurebase.
+- R50. Extras: Dependabot, branch protection on main (CI checks + signed commits, no PR required), and release automation (a `v*` tag creates a GitHub Release from changelog.json). GitHub settings changes and pushes need Ryan's explicit go-ahead.

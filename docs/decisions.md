@@ -2,6 +2,8 @@
 
 Closed answers to the open questions raised by the phase specs (2026-10-16/17). Specs are updated to match; this log is the audit trail.
 
+Product rulings for phases 0-7 live here; the v0.5 App Store release rulings (R1-R50) live in [release/decisions.md](release/decisions.md).
+
 ## Cross-cutting
 
 - **Testing:** integration-first. Real parser + real file store + real index + real UI flows (XCUITest). Unit tests only for tricky pure logic (transposition, layout fitting, set packing). No mock-heavy unit padding.

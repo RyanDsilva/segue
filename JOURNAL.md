@@ -10,7 +10,7 @@
 ### State
 - `make check` green at 9feaf72 (lint, tokens/icon checks, both schemes 0 warnings, 288 core + 86 UI-package tests, 19 XCUITests, verify-appstore).
 - Test budget: `make quick` while iterating, `make e2e-one TEST=Class/test` for touched UI, one full `make check` per gate.
-- Uncommitted: `docs/research/phase3-spikes.md` may be written by a still-running phase 3 spike agent (FM/MLX eval in scratchpad) - review and commit it when it lands.
+- `docs/research/phase3-spikes.md` landed and is committed (see the addendum below).
 - Remote `origin` = github.com/RyanDsilva/segue (private); nothing pushed since the docs commits - push only when Ryan asks.
 
 ### Decisions (see docs/decisions.md for all)
@@ -39,4 +39,27 @@ Start the App Store publishing session: enrol in / confirm the paid Apple Develo
 - Results: `docs/research/phase3-spikes.md`; spike code/fixtures/scoring kept in `research/phase3-spikes/` (models excluded, lint-excluded).
 - Headline: Apple FM on this M1 Pro: 89% label accuracy but median 18 s/song (5-69 s), Hindi songs sometimes rejected (`unsupportedLanguageOrLocale`, fails fast). MLX Qwen3-4B-Instruct-2507 4bit: 98% labels, ~6.5 s, 3 GB RAM, 2.28 GB download. Set requests: code-first parsing beats both models.
 - Open phase 3 decisions (ask Ryan when phase 3 resumes): MLX-first routing when installed? curated model Qwen3-4B vs Gemma 4 E2B? keep a model call for set requests at all?
-- ~10 GB of downloaded models sit in the session scratchpad (`.../scratchpad/phase3-spikes/{models,dd}`); delete by hand if not cleaned automatically.
+- The ~10 GB of downloaded models in the session scratchpad are gone (checked 2026-10-17); a phase 3 re-run re-downloads them into `research/phase3-spikes/models/` (git-ignored).
+
+## 2026-10-17 - Release kickoff, build phase 1, repo health, pre-push clean-up
+
+### What changed
+- Release planning: `docs/release/` (README guide, `decisions.md` R1-R50, open-questions, WS1-WS5 specs, research 01-09). Build phase 1 (section 3) landed: WS1 steps 1-7, WS2b steps 1-2, WS3 steps 1-2, WS4 steps 1-2 and 4-7 (see `git log`; the home page uses the Stage direction).
+- Repo health (R47-R50): README, LICENSE, notices, SECURITY, CONTRIBUTING, `.github/` (issue forms, PR template, CODEOWNERS, Linux CI, Dependabot, release workflow, labels), `make repo-check`, `docs/github-setup.md`. GitHub labels pruned to `labels.yml`.
+- Clean-up (`docs/cleanup-proposal.md`, approved items): dropped 13 tracked spike binaries/logs/caches, ignore rules for the spike harness outputs; `scripts/xcodebuild.sh` keeps the newest 10 result bundles; `make clean-local` trashes per-agent build dirs, old DerivedData copies, attachments and logs (about 33 GB freed this time, in the Trash until emptied).
+- Pre-push hook now stands in for branch protection (needs GitHub Pro on a private repo): signed commits + `make repo-check` + site strict check, with a one-time `SEGUE_ALLOW_SITE_PLACEHOLDERS=1` bypass for the site check only.
+
+### State
+- `make lint`, `make repo-check`, `make build` green. Nothing pushed; all commits local and signed.
+- `docs/cleanup-proposal.md` is kept until the first push (orchestrator decides then).
+
+### Decisions
+- See `docs/release/decisions.md` (release R1-R50) and `docs/decisions.md` (product phases); the two now cross-link.
+
+### Surprises
+- Branch protection is unavailable on GitHub Free for private repos (403), hence the hook.
+- The scratchpad spike models were already gone; only `Spike/` (595 MB, build output) remains there.
+
+### Next
+- Empty the macOS Trash to actually reclaim the space.
+- First push (needs Ryan's go-ahead; may use the site bypass while the site is "Coming soon"), then build phase 2 per `docs/release/README.md` section 3 (WS2a takes the app shell).
