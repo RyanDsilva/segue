@@ -59,6 +59,8 @@
         let lock: LibraryLock?
         /// Reveals files in Finder (Show in Finder) and opens links.
         let workspace: any WorkspaceActions
+        /// Where File > Import Songs… gets its files.
+        let importPanel: any ImportPanel
         /// A song waiting on "Move to Trash?" because setlists use it (A23).
         public internal(set) var songTrashConfirmation: SongTrashConfirmation?
 
@@ -79,10 +81,12 @@
             lock: LibraryLock?,
             autosave: AutosaveTiming = .standard,
             workspace: any WorkspaceActions,
+            importPanel: any ImportPanel,
         ) {
             self.root = root
             self.lock = lock
             self.workspace = workspace
+            self.importPanel = importPanel
             self.library = library
             self.setlists = setlists
             self.stores = stores
@@ -183,6 +187,7 @@
                 lock: lock,
                 autosave: autosave,
                 workspace: dependencies.workspace,
+                importPanel: dependencies.importPanel,
             )
         }
     }

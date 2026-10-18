@@ -134,6 +134,11 @@
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 VStack(spacing: 0) {
                     errorBanner
+                    if let summary = session.library.importSummary {
+                        ImportSummaryBar(summary: summary) {
+                            session.library.dismissImportSummary()
+                        }
+                    }
                     transientBar
                 }
             }
@@ -340,6 +345,9 @@
                 .keyboardShortcut("n")
                 // Nothing in the main window may change while the stage is up.
                 .disabled(app.session == nil || app.isPerforming)
+                Button("Import Songs…") { Task { await app.importSongs() } }
+                    .keyboardShortcut("i", modifiers: [.command, .shift])
+                    .disabled(app.session == nil || app.isPerforming)
                 Divider()
                 Button("Show in Finder") { revealTarget?() }
                     .keyboardShortcut("r", modifiers: [.command, .option])

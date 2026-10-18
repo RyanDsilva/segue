@@ -7,6 +7,8 @@
     /// selected song's preview (or its editor). The sidebar is the window's first pane.
     struct LibraryPane: View {
         let session: LibrarySession
+        /// A file drag is over the list or the detail pane (and import is possible).
+        @State private var isDropTargeted = false
 
         private var model: LibraryViewModel {
             session.library
@@ -16,12 +18,15 @@
             GeometryReader { proxy in
                 HStack(spacing: 0) {
                     SongListView(model: model, session: session)
+                        .overlay { dropHighlight }
+                        .importDrop(model: model, isTargeted: $isDropTargeted)
                         // Layout a gives the list 420 of 1440pt; small windows keep the
                         // preview (or editor) the wider pane.
                         .frame(width: min(max(proxy.size.width * 0.32, 290), 420))
                     Rule(axis: .vertical)
                     LibraryDetailView(model: model, session: session)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .importDrop(model: model, isTargeted: $isDropTargeted)
                 }
             }
             .navigationTitle("Library")
@@ -35,6 +40,43 @@
                     .help("Pick up changes made in other apps (⌘R)")
                     .accessibilityIdentifier(AccessibilityID.refreshLibrary)
                 }
+            }
+        }
+    }
+
+    extension LibraryPane {
+        /// The drop target highlight on the list column (A25): a 2pt cue inset border and
+        /// "Drop to import".
+        @ViewBuilder var dropHighlight: some View {
+            if isDropTargeted {
+                ZStack(alignment: .bottom) {
+                    Rectangle()
+                        .strokeBorder(Theme.color.cue, lineWidth: 2)
+                    Label("Drop to import", systemImage: "square.and.arrow.down")
+                        .font(SchibstedGrotesk.semiBold.font(size: 13))
+                        .foregroundStyle(Theme.color.ink)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(.regularMaterial, in: Capsule())
+                        .padding(.bottom, 16)
+                }
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
+        }
+    }
+
+    extension View {
+        /// Accepts dropped files and folders for import while import is possible; refused
+        /// drops show no highlight.
+        func importDrop(model: LibraryViewModel, isTargeted: Binding<Bool>) -> some View {
+            dropDestination(for: URL.self) { urls, _ in
+                let files = urls.filter(\.isFileURL)
+                guard model.canImport, !files.isEmpty else { return false }
+                Task { await model.importSongs(files) }
+                return true
+            } isTargeted: { targeted in
+                isTargeted.wrappedValue = targeted && model.canImport
             }
         }
     }
@@ -131,10 +173,16 @@
                     ContentUnavailableView {
                         Label("No Songs Yet", systemImage: "music.note")
                     } description: {
-                        Text("Write your first song in ChordPro.")
+                        Text("Write your first song in ChordPro, or drop ChordPro files here.")
                     } actions: {
-                        Button("New Song") { model.beginNewSong() }
-                            .buttonStyle(.segueSecondary)
+                        HStack(spacing: 8) {
+                            Button("New Song") { model.beginNewSong() }
+                                .buttonStyle(.segueSecondary)
+                            Button("Import Songs…") { Task { await session.chooseAndImport() } }
+                                .buttonStyle(.segueSecondary)
+                                .help("Import ChordPro or text files (⇧⌘I)")
+                                .accessibilityIdentifier(AccessibilityID.importSongs)
+                        }
                     }
                     .accessibilityIdentifier(AccessibilityID.libraryEmpty)
                 }

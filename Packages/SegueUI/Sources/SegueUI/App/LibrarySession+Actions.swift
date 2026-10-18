@@ -77,6 +77,14 @@
             reveal(url)
         }
 
+        /// File > Import Songs… and the empty library's button: the open panel (or the E2E
+        /// stand-in), then the import.
+        func chooseAndImport() async {
+            guard library.canImport else { return }
+            let urls = await importPanel.chooseFiles()
+            await library.importSongs(urls)
+        }
+
         /// Library > Show Library in Finder: the library folder itself.
         func revealLibrary() {
             workspace.reveal([root.url])

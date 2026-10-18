@@ -282,6 +282,8 @@ enum CoreAXID {
     static let editorConflictCopy = "segue.editor.conflict.copy"
     static let transientMessage = "segue.main.transient"
     static let songList = "segue.library.list"
+    static let importSummary = "segue.import.summary"
+    static let importSummaryDetails = "segue.import.summary.details"
     static let librarySearch = "segue.library.search"
     static let songMoreMenu = "segue.song.more"
     static let songMoveToTrash = "segue.song.moveToTrash"

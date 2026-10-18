@@ -106,7 +106,17 @@
 
         public private(set) var state: State = .starting
         /// The run on stage (gig or rehearsal), shown in the stage window while non-nil.
-        public var live: LiveSession?
+        public var live: LiveSession? {
+            didSet {
+                session?.library.isPerforming = live != nil
+            }
+        }
+
+        /// File > Import Songs…: the open panel (or the E2E stand-in), then the import.
+        public func importSongs() async {
+            guard let session, !isPerforming else { return }
+            await session.chooseAndImport()
+        }
 
         let dependencies: AppDependencies
         @ObservationIgnored private var activationObservers: [any NSObjectProtocol] = []

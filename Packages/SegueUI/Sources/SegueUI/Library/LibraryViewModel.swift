@@ -121,6 +121,15 @@ public final class LibraryViewModel {
     @ObservationIgnored weak var undoManager: UndoManager?
     /// Undo targets of Move to Trash, one per song.
     let trashTargets = UndoTargets<SongID>()
+    /// What the last import did, shown in the summary bar until dismissed.
+    public internal(set) var importSummary: ImportSummary?
+    /// A show is on stage: the main window takes no imports or drops meanwhile.
+    public internal(set) var isPerforming = false
+    /// Undo targets of Import, one per import.
+    let importTargets = UndoTargets<Int>()
+    var importCount = 0
+    /// Undo/redo file work of imports, run in order.
+    var importWork: Task<Void, Never>?
     private let debounce: Duration
     private var searchTask: Task<Void, Never>?
     /// Bumped per scheduled search, so only the newest one clears `isSearching`.

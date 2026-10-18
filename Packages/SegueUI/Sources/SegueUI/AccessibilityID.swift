@@ -29,6 +29,11 @@ public enum AccessibilityID {
     public static let refreshLibrary = "segue.library.refresh"
     public static let librarySearch = "segue.library.search"
     public static let libraryEmpty = "segue.library.empty"
+    /// The empty library's "Import Songs…".
+    public static let importSongs = "segue.library.import"
+    /// The import summary bar and its Details button.
+    public static let importSummary = "segue.import.summary"
+    public static let importSummaryDetails = "segue.import.summary.details"
     /// The "N song files could not be loaded" footer (opens the list of files and reasons).
     public static let libraryLoadIssues = "segue.library.loadIssues"
     /// The spinner shown while a search is in flight and nothing matched yet.
