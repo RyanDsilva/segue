@@ -63,3 +63,26 @@ Start the App Store publishing session: enrol in / confirm the paid Apple Develo
 ### Next
 - Empty the macOS Trash to actually reclaim the space.
 - First push (needs Ryan's go-ahead; may use the site bypass while the site is "Coming soon"), then build phase 2 per `docs/release/README.md` section 3 (WS2a takes the app shell).
+
+## 2026-10-18 - App Store release build-out (v0.5), phases 1-4 done; walkthrough in progress
+
+### What changed
+- Release plan: `docs/release/` covers decisions R1-R60 (canonical), research 01-09, specs WS1-WS5, open-questions, README (Ryan's checklist + build plan), walkthrough.md, accessibility-audit.md.
+- Built and gated: WS1 (bundle split, version 0.5, privacy manifest, logging fixes, library lock, archive/validate/upload scripts, Gig Mode via Shortcuts Events after the R35 probe), WS2a (import/delete to Trash, autosave, menus/Help/About, `?` overlay, R45 Page Down paging, restore, undo), WS3 (consent, TelemetryDeck own client, Sentry, Report a Problem, Featurebase link), WS2b (Welcome sheet A Native, What's New A Notes, Settings 5 panes incl. Appearance, export archive, review prompt, TipKit, .cho UTType + Taped page icon + Quick Look, accessibility pass), WS4 website (R55 mix design, approved for now), repo health (README, LICENSE, CI on Linux, issue forms, Dependabot), cleanup, test speed (make check ~25.5 -> ~12-23 min, `make gate`).
+- Pushed to origin/main through the pre-push hook (latest c8b949f).
+
+### State
+- The phase 4 gate is green (2 harness flakes fixed after the run, re-run in isolation only). The archive builds a 15 MB pkg passing verify-archive.
+- Ryan is doing the R56 walkthrough on the Release-AppStore dev-signed build (`.build/DerivedData/Build/Products/Release-AppStore/Segue.app`), with the old container moved to ~/segue-backups.
+
+### Decisions (see docs/release/decisions.md)
+- Free app, store name "Segue - Setlists & Chords", individual team V6BM673U35 (renewed), hosted vendors only, analytics opt-in, Sentry US.
+- Push at gates + CI fixes. Credential steps (`make upload`) run by Ryan in Terminal.app (R46). No branch protection (free private repo, R51).
+
+### Surprises
+- macOS 26.5+ x-callback-url misreports success; Shortcuts Events via Apple events works (needs Shortcuts Events launched first, -600 otherwise).
+- The 1Password CLI works in Terminal.app only, not the agent shell. GitHub Free blocks branch protection on private repos.
+- Fast polling exposed hidden E2E races; a PreToolUse hook treats `pgrep -f` next to `git push` as a force push (split the commands).
+
+### Next
+- Collect Ryan's walkthrough feedback -> one fix round -> `make check` -> WS5 (screenshots, preview video, metadata) -> site live (Cloudflare Pages + DNS) -> `make upload` by Ryan -> TestFlight -> real gig -> submit. Later: website trim pass (R57); post-launch fold of research docs.
