@@ -12,11 +12,16 @@ UI_DIR      := Packages/SegueUI
 # xcodebuild on the generated workspace; fails on any warning Xcode records.
 XCODEBUILD  := scripts/xcodebuild.sh
 
+# Website tooling (dev-only, fetched at run time at exact versions; nothing ships).
+HTMLVALIDATE := pnpm dlx html-validate@11.16.4
+WRANGLER     := pnpm dlx wrangler@4.151.1
+
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test e2e lint format \
 	verify-appstore check bump site-fonts
 
 bootstrap: ## Install pinned tools, fetch dependencies, generate the workspace
 	mise install
+	git config core.hooksPath .githooks
 	$(MISE) tuist install
 	$(MISE) tuist generate --no-open
 
@@ -28,6 +33,21 @@ tokens: ## Regenerate colour tokens (asset catalog, Swift, website tokens.css) f
 
 tokens-check: ## Fail if the generated colour tokens are stale
 	scripts/gen-tokens.swift --check
+
+site: ## Regenerate the website: tokens.css, changelog, slots, redirects, sitemap
+	scripts/gen-tokens.swift
+	scripts/gen-site.swift
+
+site-check: ## Fail if the website is stale or invalid (STRICT=1 also refuses placeholders)
+	scripts/gen-tokens.swift --check
+	scripts/gen-site.swift --check $(if $(STRICT),--strict)
+	$(MISE) $(HTMLVALIDATE) --config .htmlvalidate.json 'website/**/*.html'
+
+site-serve: ## Preview the site locally with Cloudflare's Pages emulator (redirects, headers, 404)
+	WRANGLER_SEND_METRICS=false $(MISE) $(WRANGLER) pages dev website --port 8788
+
+site-raster: ## Re-render OG image, touch icon, favicon PNG, wordmark PNGs and screenshot JPEGs
+	scripts/gen-site.swift --raster
 
 site-fonts: ## Rebuild the subset WOFF2 web fonts from the bundled TTFs
 	scripts/gen-webfonts.sh
@@ -77,4 +97,4 @@ bump: ## Bump + commit the build number; `make bump VERSION=0.6` sets the market
 verify-appstore: ## Build the App Store flavor and assert no personal-module symbols
 	scripts/verify-appstore.sh
 
-check: lint tokens-check icon-check build build-appstore test e2e verify-appstore ## Everything CI would run
+check: lint tokens-check icon-check site-check build build-appstore test e2e verify-appstore ## Everything CI would run

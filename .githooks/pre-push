@@ -1,0 +1,32 @@
+#!/bin/sh
+# Blocks a push whose commits touch website/ or content/ unless `make site-check STRICT=1`
+# passes: a push to main publishes the site, so placeholders and the draft maker note must
+# never reach it (docs/release/specs/WS4-website.md section 8.3, B-29).
+# Installed by `make bootstrap` (git config core.hooksPath .githooks).
+
+touched=no
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+	case "$local_sha" in
+	*[!0]*) ;;
+	*) continue ;; # deleting a remote ref
+	esac
+	case "$remote_sha" in
+	*[!0]*) range="$remote_sha..$local_sha" ;;
+	*) range="$local_sha --not --remotes" ;; # new branch: commits not on any remote yet
+	esac
+	# shellcheck disable=SC2086 # range is intentionally word-split
+	if ! commits=$(git log --format=%H $range -- website content 2>/dev/null); then
+		touched=yes # unknown remote commit (e.g. a force push): check to be safe
+	elif [ -n "$commits" ]; then
+		touched=yes
+	fi
+done
+
+[ "$touched" = yes ] || exit 0
+
+echo "pre-push: website/ or content/ changed; running make site-check STRICT=1" >&2
+if ! make site-check STRICT=1; then
+	echo "pre-push: blocked. Fix the site check above (placeholders, maker note, stale files)." >&2
+	exit 1
+fi

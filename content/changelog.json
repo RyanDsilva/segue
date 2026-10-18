@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "releases": [
+    {
+      "version": "0.5",
+      "date": "2026-11-20",
+      "title": "First beta",
+      "summary": "Segue's first public release on the Mac App Store.",
+      "showInApp": false,
+      "draft": true,
+      "highlights": [
+        { "kind": "new", "text": "Stage mode that fits every song on one screen, never below your minimum size.", "help": "/help/live#minimum-size" },
+        { "kind": "new", "text": "Setlists with drag and drop, per-show key and capo, and running time.", "help": "/help/setlists" },
+        { "kind": "new", "text": "Import ChordPro and text files by dragging them onto the library.", "help": "/help/import" }
+      ]
+    }
+  ]
+}

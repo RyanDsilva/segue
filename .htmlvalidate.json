@@ -1,0 +1,9 @@
+{
+  "extends": ["html-validate:recommended"],
+  "rules": {
+    "wcag/h37": "error",
+    "no-dup-id": "error",
+    "heading-level": "error",
+    "no-inline-style": "error"
+  }
+}

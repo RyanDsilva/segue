@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "site": {
+    "origin": "https://segue.ryandsilva.dev",
+    "name": "Segue",
+    "tagline": "Your chart, your set, your cue."
+  },
+  "owner": {
+    "legalName": "Ryan Rony Dsilva",
+    "email": "segue@ryandsilva.dev",
+    "country": "United States",
+    "governingState": "Washington"
+  },
+  "legal": {
+    "privacyEffectiveDate": "{POLICY_EFFECTIVE_DATE}",
+    "termsEffectiveDate": "{TERMS_EFFECTIVE_DATE}",
+    "copyrightYear": "2026"
+  },
+  "app": {
+    "requirements": "a Mac with Apple silicon and macOS 26 or later"
+  },
+  "appStore": {
+    "status": "upcoming",
+    "appleId": "{APPLE_ID}",
+    "providerToken": "{PROVIDER_TOKEN}",
+    "mediaType": "{MT}",
+    "campaigns": {
+      "hero": "website-hero",
+      "footer": "website-footer",
+      "press": "press"
+    }
+  },
+  "vendors": {
+    "analytics": {
+      "name": "TelemetryDeck",
+      "url": "https://telemetrydeck.com",
+      "privacyUrl": "https://telemetrydeck.com/privacy",
+      "location": "Germany (EU), with some infrastructure in the United States",
+      "transferBasis": "Standard Contractual Clauses for data reaching its U.S. infrastructure",
+      "retention": "TelemetryDeck has no fixed deletion date for statistics; they may be kept in its archive for up to 10 years"
+    },
+    "crash": {
+      "name": "Sentry",
+      "url": "https://sentry.io",
+      "privacyUrl": "https://sentry.io/privacy/",
+      "location": "United States (Sentry's U.S. region)",
+      "transferBasis": "Standard Contractual Clauses",
+      "retention": "30 days"
+    },
+    "bugReports": {
+      "name": "Sentry",
+      "url": "https://sentry.io",
+      "privacyUrl": "https://sentry.io/privacy/",
+      "location": "United States (Sentry's U.S. region)",
+      "transferBasis": "Standard Contractual Clauses",
+      "retention": "30 days"
+    },
+    "board": {
+      "name": "Featurebase",
+      "boardUrl": "{BOARD_URL}",
+      "privacyUrl": "https://help.featurebase.app/articles/4744036-privacy-policy",
+      "termsUrl": "{BOARD_VENDOR_TERMS_URL}",
+      "location": "European Union",
+      "transferBasis": "Standard Contractual Clauses for any transfer outside the EU",
+      "retention": "until you delete them or ask us to"
+    },
+    "hosting": {
+      "name": "Cloudflare (Cloudflare Pages)",
+      "privacyUrl": "https://www.cloudflare.com/privacypolicy/",
+      "location": "United States and Cloudflare's global network",
+      "transferBasis": "the EU-U.S. Data Privacy Framework and Standard Contractual Clauses"
+    },
+    "webAnalytics": {
+      "name": "Cloudflare Web Analytics",
+      "privacyUrl": "https://www.cloudflare.com/privacypolicy/",
+      "location": "United States and Cloudflare's global network",
+      "transferBasis": "the EU-U.S. Data Privacy Framework and Standard Contractual Clauses",
+      "retention": "{WEB_ANALYTICS_RETENTION}"
+    },
+    "emailRouting": {
+      "name": "Mailgun",
+      "privacyUrl": "https://www.mailgun.com/legal/privacy-policy/",
+      "location": "United States"
+    },
+    "inbox": {
+      "name": "Google (Gmail)",
+      "privacyUrl": "https://policies.google.com/privacy",
+      "location": "United States",
+      "retention": "as long as needed to answer you, and at most 2 years"
+    }
+  },
+  "credits": [
+    {
+      "name": "Schibsted Grotesk",
+      "summary": "Typeface used throughout Segue and this website.",
+      "licence": "SIL Open Font License 1.1",
+      "source": "https://github.com/schibsted/schibsted-grotesk",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/Theme/Fonts/OFL.txt"
+    },
+    {
+      "name": "GRDB",
+      "summary": "SQLite toolkit behind the song search index.",
+      "licence": "MIT License",
+      "source": "https://github.com/groue/GRDB.swift",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/GRDB.txt"
+    },
+    {
+      "name": "Tonic",
+      "summary": "Music theory types for keys and chords.",
+      "licence": "MIT License",
+      "source": "https://github.com/AudioKit/Tonic",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/Tonic.txt"
+    }
+  ]
+}
