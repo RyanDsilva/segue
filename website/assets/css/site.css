@@ -1,4 +1,4 @@
-/* Segue website - direction "Stage" (R43). Colours come only from tokens.css (var(--token));
+/* Segue website - R55: Keynote base and rounded tiles, House Lights hero. Colours come only from tokens.css (var(--token));
    site-check refuses colour literals here. No JavaScript, no external assets. */
 
 @font-face {
@@ -133,7 +133,7 @@ kbd {
 }
 
 .wrap {
-  max-width: 1080px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 0 16px;
 }
@@ -146,28 +146,27 @@ kbd {
 
 /* ---------- Type ---------- */
 
-.display,
 h1 {
-  font-size: clamp(44px, 7vw, 72px);
-  line-height: 1;
-  font-weight: 800;
+  font-size: clamp(40px, 6vw, 64px);
+  line-height: 1.02;
+  font-weight: 600;
   letter-spacing: -0.045em;
   text-wrap: balance;
 }
 
 h2 {
-  font-size: clamp(28px, 4vw, 40px);
-  line-height: 1.1;
-  font-weight: 800;
-  letter-spacing: -0.035em;
+  font-size: clamp(36px, 5vw, 64px);
+  line-height: 1.04;
+  font-weight: 600;
+  letter-spacing: -0.045em;
   text-wrap: balance;
 }
 
 h3 {
-  font-size: 20px;
+  font-size: 19px;
   line-height: 1.3;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 .label {
@@ -222,7 +221,7 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  max-width: 1080px;
+  max-width: 1120px;
   min-height: 72px;
   margin: 0 auto;
   padding: 0 16px;
@@ -343,7 +342,7 @@ h3 {
 /* ---------- Footer ---------- */
 
 .site-footer {
-  max-width: 1080px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 48px 16px 64px;
 }
@@ -414,18 +413,114 @@ h3 {
   }
 }
 
-/* ---------- Home: hero ---------- */
+/* The email address needs the full width on the narrowest phones. */
+@media (max-width: 359px) {
+  .footer-nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- Home ---------- */
+
+/* Rhythm: sections sit 160 px apart on desktop, 96 px on phones (8 px grid). */
+
+.kicker {
+  margin-bottom: 12px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.center {
+  text-align: center;
+}
+
+.center h2,
+.center .lede {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.section {
+  padding-top: 160px;
+}
+
+.section h2 {
+  max-width: 16ch;
+}
+
+/* Hero: the house lights. Always dark (.scheme-stage), in both schemes. */
+
+.masthead {
+  background: var(--ground);
+}
+
+.masthead .site-header {
+  position: relative;
+  z-index: 2;
+}
 
 .hero {
-  padding-top: 72px;
+  position: relative;
+  padding: 72px 0 112px;
+  background: var(--ground);
+  color: var(--ink);
   text-align: center;
+  overflow-x: clip;
+}
+
+/* One spotlight, from above the header down onto the stage view. */
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -72px;
+  left: 50%;
+  width: min(1600px, 220vw);
+  height: calc(100% - 120px);
+  transform: translateX(-50%);
+  background:
+    radial-gradient(ellipse 22% 40% at 50% 0%, color-mix(in srgb, var(--ink) 9%, transparent), transparent),
+    linear-gradient(to bottom, color-mix(in srgb, var(--ink) 9%, transparent), transparent 92%);
+  clip-path: polygon(42% 0, 58% 0, 88% 100%, 12% 100%);
+  pointer-events: none;
+}
+
+/* A soft pool of light on the stage floor, under the screenshot. */
+.hero::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: min(1400px, 200vw);
+  height: 280px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse 50% 60% at 50% 100%, color-mix(in srgb, var(--ink) 5%, transparent), transparent);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero::before,
+  .hero::after {
+    animation: house-lights 1.4s ease-out both;
+  }
+}
+
+@keyframes house-lights {
+  from {
+    opacity: 0;
+  }
+}
+
+.hero > * {
+  position: relative;
+  z-index: 1;
 }
 
 .eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   font-size: 15px;
   font-weight: 600;
   color: var(--muted);
@@ -439,16 +534,34 @@ h3 {
   background: var(--cue);
 }
 
+/* The one heavy moment on the site. */
 .hero h1 {
-  max-width: 12ch;
   margin: 0 auto;
+  font-size: clamp(48px, 7.2vw, 108px);
+  line-height: 0.95;
+  font-weight: 800;
+  letter-spacing: -0.055em;
+}
+
+.hero h1 span {
+  white-space: nowrap;
+}
+
+.hero h1 br {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .hero h1 br {
+    display: inline;
+  }
 }
 
 .hero .sub {
-  max-width: 34ch;
-  margin: 24px auto 0;
-  font-size: clamp(18px, 2vw, 21px);
-  line-height: 1.5;
+  max-width: 30ch;
+  margin: 28px auto 0;
+  font-size: clamp(19px, 1.8vw, 22px);
+  line-height: 1.45;
   color: var(--muted);
   text-wrap: balance;
 }
@@ -458,7 +571,7 @@ h3 {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  margin-top: 32px;
+  margin-top: 36px;
 }
 
 /* "Coming soon" while upcoming; the badge (with its own clear space) once live. */
@@ -473,7 +586,8 @@ h3 {
   font-weight: 600;
 }
 
-.appstore-cta:has(img) {
+.appstore-cta:has(img),
+.appstore-cta:has(a) {
   padding: 12px;
   border: 0;
 }
@@ -484,283 +598,256 @@ h3 {
 }
 
 .appstore .fine {
-  max-width: 52ch;
+  max-width: 46ch;
   text-wrap: balance;
 }
 
-.hero-art {
-  max-width: 1080px;
-  margin: 56px auto 0;
-  padding: 0 16px;
+.caption {
+  margin-top: 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
-@media (min-width: 640px) {
-  .hero {
-    padding-top: 96px;
-  }
-  .hero-art {
-    margin-top: 72px;
-    padding: 0 32px;
-  }
-}
+/* ---------- Product shots ----------
+   A .shot frames one screen. Its child (.ui) is either an HTML re-creation of the app
+   (interim) or, after the WS5 swap, an <img class="ui"> of the real screenshot. Crops
+   are expressed in shot widths (cqw), so both kinds of child crop the same way. */
 
-/* ---------- Screenshot placeholders (until the R10 screenshot set exists) ---------- */
-
-.shot-placeholder {
+.shot {
+  container-type: inline-size;
   position: relative;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  border: 1px dashed var(--line-strong);
+}
+
+.shot > img.ui {
+  display: block;
+}
+
+.shot > .ui {
+  width: 100%;
+  height: auto;
   border-radius: 12px;
-  background: var(--surface-alt);
-  text-align: left;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ink) 9%, transparent),
+    0 48px 96px -40px color-mix(in srgb, black 70%, transparent);
 }
 
-.shot-placeholder .ph-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4.5% 4% 0;
+.shot-hero,
+.shot-band {
+  max-width: 1184px;
+  margin: 80px auto 0;
+  padding: 0 32px;
 }
 
-.shot-placeholder .ph-body {
-  display: grid;
-  grid-template-columns: 12% 1fr;
-  gap: 7% 3%;
-  align-content: start;
-  padding: 6% 4% 0;
-}
+/* ---------- Workflow tiles ---------- */
 
-.shot-placeholder .ph-foot {
-  padding: 0 4% 4.5%;
-}
-
-.ph-dot {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--line-strong);
-}
-
-.ph-line {
-  display: block;
-  height: 8px;
-  border-radius: 4px;
-  background: var(--line);
-}
-
-.ph-line.w20 {
-  width: 20%;
-}
-.ph-line.w40 {
-  width: 40%;
-}
-.ph-line.w60 {
-  width: 60%;
-}
-.ph-line.w80 {
-  width: 80%;
-}
-.ph-line.thick {
-  height: 14px;
-  border-radius: 7px;
-}
-
-.ph-tag {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  max-width: calc(100% - 24px);
-  padding: 4px 10px;
-  border: 1px solid var(--control-border);
-  border-radius: 999px;
-  background: var(--ground);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.4;
-  color: var(--muted);
-}
-
-/* ---------- Home: bands ---------- */
-
-.band {
-  padding: 96px 0;
-  border-top: 1px solid var(--line);
-}
-
-.hero + .hero-art + .band {
-  margin-top: 96px;
-}
-
-.band h2 {
-  max-width: 20ch;
-  margin-top: 12px;
-}
-
-.band .intro {
-  max-width: 52ch;
-  margin-top: 16px;
-  color: var(--muted);
-}
-
-@media (max-width: 639px) {
-  .band {
-    padding: 64px 0;
-  }
-  .hero + .hero-art + .band {
-    margin-top: 64px;
-  }
-}
-
-/* How it works: four days */
-
-.steps {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 40px 24px;
-  margin-top: 56px;
-}
-
-.step .shot-placeholder {
-  aspect-ratio: 4 / 3;
-  margin-bottom: 20px;
-}
-
-.step .day {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-.step h3 {
-  margin: 4px 0 8px;
-}
-
-.step p:last-child {
-  font-size: 15px;
-  color: var(--muted);
-}
-
-/* Stage mode spotlight */
-
-.spot {
-  position: relative;
-  margin-top: 56px;
-}
-
-.callouts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px 24px;
-  margin-top: 48px;
-  counter-reset: callout;
-}
-
-.callouts li {
-  counter-increment: callout;
-  font-size: 15px;
-  color: var(--muted);
-}
-
-.callouts li::before {
-  content: counter(callout);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  margin-bottom: 12px;
-  border: 1px solid var(--control-border);
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.callouts strong {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 17px;
-  color: var(--ink);
-}
-
-/* Numbered markers drawn over the stage screenshot (desktop only; a plain list on phones). */
-.marker {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: var(--ink);
-  color: var(--ground);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-/* Feature grid */
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 48px;
-  border-top: 1px solid var(--line);
-  border-left: 1px solid var(--line);
-}
-
-.grid li {
-  padding: 24px 20px 28px;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.grid h3 {
-  margin-bottom: 6px;
-  font-size: 17px;
-}
-
-.grid p {
-  font-size: 15px;
-  color: var(--muted);
-}
-
-/* Two-column bands: privacy, what's next */
-
-.split {
+.tiles {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 32px 64px;
-  align-items: start;
+  gap: 20px;
+  margin-top: 56px;
 }
 
-.split:has(> div:empty) {
-  grid-template-columns: minmax(0, 1fr);
+.tile {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--surface-alt);
 }
 
-.split .body {
-  max-width: 60ch;
+.tile-text {
+  padding: 40px 40px 32px;
+}
+
+.tile-label {
+  font-size: 15px;
+  font-weight: 600;
   color: var(--muted);
 }
 
-.split .body + .more,
-.split h2 + .body {
-  margin-top: 20px;
+.tile h3 {
+  margin: 6px 0 10px;
+  font-size: clamp(26px, 2.6vw, 34px);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+.tile-text > p:last-child {
+  max-width: 38ch;
+  color: var(--muted);
+}
+
+/* The art sits at the tile's foot: the window starts inset and runs off the edges.
+   --x and --y are the app point (of 1440) shown at the inset corner; --w is the window
+   width in shot widths. */
+.shot-tile {
+  --w: 176;
+  --x: 0;
+  --y: 0;
+  --ix: 40px;
+  margin-top: auto;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+
+.shot-tile > .ui {
+  position: absolute;
+  top: calc(40px - var(--y) * var(--w) * 1cqw / 1440);
+  left: calc(var(--ix) - var(--x) * var(--w) * 1cqw / 1440);
+  width: calc(var(--w) * 1cqw);
+  max-width: none;
+  border-radius: 10px;
+}
+
+/* Crops inside a window start flush with the tile's left edge. */
+.crop-editor {
+  --x: 640;
+  --ix: 0px;
+}
+
+.crop-setlist {
+  --x: 659;
+  --ix: 0px;
+}
+
+.crop-stage {
+  --w: 150;
+}
+
+/* ---------- Stage band (always dark) ---------- */
+
+.stage-band {
+  margin-top: 160px;
+  padding: 144px 0 160px;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+.stage-band .lede {
+  max-width: 34ch;
+  margin-top: 24px;
+  font-size: clamp(19px, 1.8vw, 22px);
+  text-wrap: balance;
+}
+
+.feats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 48px 48px;
+  margin-top: 88px;
+}
+
+.feats svg {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 16px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.feats h3,
+.details h3,
+.trio h3 {
+  margin-bottom: 6px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.feats p,
+.details p,
+.trio p {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+/* ---------- Details and privacy ---------- */
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 40px;
+  margin-top: 56px;
+}
+
+.details li {
+  padding: 24px 0 40px;
+  border-top: 1px solid var(--line);
+}
+
+.trio {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px;
+  max-width: 960px;
+  margin: 56px auto 0;
 }
 
 .more {
-  font-size: 15px;
+  margin-top: 40px;
+  font-size: 17px;
   font-weight: 600;
 }
 
+/* ---------- The close ---------- */
+
+.close {
+  padding: 160px 0 144px;
+  text-align: center;
+}
+
+.note {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.note blockquote p {
+  font-size: clamp(20px, 2.2vw, 26px);
+  line-height: 1.45;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.note .who {
+  margin-top: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.close h2 {
+  max-width: none;
+  margin-top: 128px;
+  font-size: clamp(44px, 6.4vw, 88px);
+  letter-spacing: -0.05em;
+}
+
+.close .appstore {
+  margin-top: 32px;
+}
+
+.board {
+  margin-top: 56px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.board a {
+  white-space: nowrap;
+}
+
 .latest-release {
+  max-width: 520px;
+  margin: 32px auto 0;
   padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 20px;
+  background: var(--surface-alt);
+  text-align: left;
 }
 
 .latest-release-title {
@@ -793,76 +880,128 @@ h3 {
   color: var(--muted);
 }
 
-/* Maker note and final call to action */
+/* ---------- Home: narrower screens ---------- */
 
-.note {
-  max-width: 720px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.note blockquote p {
-  font-size: clamp(22px, 2.6vw, 28px);
-  line-height: 1.35;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  text-wrap: balance;
-}
-
-.note .who {
-  margin-top: 16px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.final {
-  padding-bottom: 72px;
-  text-align: center;
-}
-
-.final h2 {
-  margin: 0 auto;
-}
-
-.final .appstore {
-  margin-top: 24px;
-}
-
-@media (max-width: 959px) {
-  .steps,
-  .grid {
+@media (max-width: 999px) {
+  .details {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .callouts {
+  .feats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 859px) {
+  .tiles {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 639px) {
-  .steps,
-  .grid,
-  .callouts,
-  .split {
-    grid-template-columns: 1fr;
+  .section {
+    padding-top: 96px;
   }
-  .marker {
-    display: none;
+  .hero {
+    padding: 48px 0 72px;
   }
-  .callouts li {
-    display: grid;
-    grid-template-columns: 36px 1fr;
+  .hero::before {
+    top: -64px;
   }
-  .callouts li::before {
-    grid-row: span 2;
-    margin: 0;
+  .hero h1 span {
+  white-space: nowrap;
+}
+
+.hero h1 br {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .hero h1 br {
+    display: inline;
+  }
+}
+
+.hero .sub {
+    margin-top: 20px;
+  }
+  .shot-hero,
+  .shot-band {
+    --w: 200;
+    aspect-ratio: 1 / 1.05;
+    margin: 56px 16px 0;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 9%, transparent);
+  }
+  /* Phones get a readable crop of the screen rather than the whole window. */
+  .shot-hero > .ui,
+  .shot-band > .ui {
+    position: absolute;
+    top: 0;
+    width: calc(var(--w) * 1cqw);
+    max-width: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  /* The stage band's crop centres on the quick search panel. */
+  .shot-band {
+    --w: 190;
+  }
+  .shot-band > .ui {
+    left: calc(-350 * var(--w) * 1cqw / 1440);
+  }
+  .tiles {
+    margin-top: 40px;
+  }
+  .tile {
+    border-radius: 24px;
+  }
+  .tile-text {
+    padding: 28px 24px 24px;
+  }
+  .shot-tile {
+    --w: 230;
+  }
+  .shot-tile > .ui {
+    top: calc(24px - var(--y) * var(--w) * 1cqw / 1440);
+    left: calc(min(var(--ix), 24px) - var(--x) * var(--w) * 1cqw / 1440);
+  }
+  .stage-band {
+    margin-top: 96px;
+    padding: 96px 0;
+  }
+  .feats,
+  .details,
+  .trio {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .feats {
+    gap: 40px;
+    margin-top: 64px;
+  }
+  .details {
+    margin-top: 40px;
+  }
+  .details li {
+    padding-bottom: 28px;
+  }
+  .trio {
+    gap: 32px;
+    margin-top: 40px;
+  }
+  .close {
+    padding: 96px 0;
+  }
+  .close h2 {
+    margin-top: 96px;
   }
 }
 
 /* ---------- Document pages (legal, support, help, press, changelog) ---------- */
 
 .doc {
-  max-width: 1080px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 56px 16px 32px;
 }
@@ -948,16 +1087,17 @@ h3 {
   color: var(--muted);
 }
 
+/* Document pages echo the home tiles: soft filled panels with a larger radius. */
 .summary-box {
   padding: 24px 24px 24px 44px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 20px;
+  background: var(--surface-alt);
 }
 
 .table-scroll {
   overflow-x: auto;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 16px;
 }
 
 .prose table {
@@ -996,7 +1136,7 @@ h3 {
 
 .prose details {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 16px;
 }
 
 .prose summary {
@@ -1146,9 +1286,10 @@ h3 {
 .cards a {
   display: block;
   height: 100%;
-  padding: 16px 20px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  padding: 20px 24px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background: var(--surface-alt);
   text-decoration: none;
 }
 

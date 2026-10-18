@@ -10,6 +10,7 @@
 <link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/css/tokens.css">
 <link rel="stylesheet" href="/assets/css/site.css">
+<link rel="stylesheet" href="/assets/css/screens.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -38,7 +39,22 @@
 }
 </script>
 </head>
-<body>
+<body class="home">
+<!--
+  Claims to verify in the WS4 step 8 claims audit (features still being built for 0.5;
+  confirm each in the App Store build or cut the line that makes it):
+  - Import by drag and drop (tile "Bring your songs in"; R15)
+  - Autosave, "edits save as you go" (details "Nothing to save"; R17)
+  - Deletes go to the Trash (details "Nothing to save"; R15)
+  - Opening .cho files from Finder, and their Quick Look preview (details "At home in Finder"; R16)
+  - Library archive export (details "At home in Finder"; R16)
+  - The ? keyboard overlay (details "Keyboard first"; R15)
+  - Page Down paging into the next song, one pedal for the whole set (stage "One pedal, whole set"; R45)
+  Product art below is interim: HTML re-creations of real screens (Welcome library songs only).
+  The line after each "screen:NAME" comment is the swap point for the WS5 screenshot
+  (WS4 spec section 9.2, "Screen swap points").
+-->
+<div class="masthead scheme-stage">
 <!--slot:partial:header-->
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header">
@@ -64,159 +80,144 @@
 </details>
 </header>
 <!--/slot-->
+</div>
 <main id="main">
-<section class="hero wrap" aria-labelledby="hero-title">
+<section class="hero scheme-stage" aria-labelledby="hero-title">
+<div class="wrap">
 <p class="eyebrow">Segue for Mac</p>
-<h1 id="hero-title">Your chart, your set, your cue.</h1>
-<p class="sub">Lyrics, chords and setlists for musicians who play live. Built for a MacBook on a music stand.</p>
+<h1 id="hero-title"><span>Your chart,</span> <span>your set,</span><br> <span>your cue.</span></h1>
+<p class="sub">Lyrics, chords and setlists for musicians who play live.</p>
 <div class="appstore">
 <p class="appstore-cta"><!--slot:appstore:hero-->Coming soon to the Mac App Store.<!--/slot--></p>
 <p class="fine">Free, with no ads and no in-app purchases. Requires a Mac with Apple silicon and macOS 26 or later.</p>
 </div>
+</div>
+<div class="shot shot-hero">
+<!--screen:stage-->
+<div class="ui ui-stage" role="img" aria-label="Segue&#x27;s stage view: a song&#x27;s lyrics with chords above the words, section labels in a left column, set progress at the top and the next song in the footer"><div class="ui-sh"><i class="ui-cue"></i><span class="ui-st">Soundcheck at Seven</span><span class="ui-sm">G, capo 2, 96</span><span class="ui-sp"></span><span class="ui-dots"><i class="cur"></i><i></i><i></i><i></i></span><span class="ui-el">0:42</span></div><div class="ui-sb"><div class="ui-col"><div class="ui-sec"><span class="ui-sl">Verse 1</span><div class="ui-ls"><p class="ui-l"><span><b>G</b>Van door slides and the </span><span><b>D</b>street lamps hum,</span></p><p class="ui-l"><span><b>Em</b>Cables coiled like a </span><span><b>C</b>sleeping drum,</span></p><p class="ui-l"><span><b>G</b>Someone tapes the </span><span><b>D</b>setlist down,</span></p><p class="ui-l"><span><b>C</b>Loudest piece of </span><span><b>D</b>paper in town.</span></p></div></div><div class="ui-sec ch"><span class="ui-sl ch">Chorus</span><div class="ui-ls"><p class="ui-l"><span><b>C</b>Soundcheck at </span><span><b>G</b>seven, </span><span><b>D</b>doors at </span><span><b>Em</b>eight,</span></p><p class="ui-l"><span><b>C</b>Tune it, count it, </span><span><b>G</b>never mind the </span><span><b>D</b>wait,</span></p><p class="ui-l"><span><b>C</b>One, two, can you </span><span><b>G</b>hear me in the </span><span><b>Em</b>back?</span></p><p class="ui-l"><span><b>C</b>Turn the monitor </span><span><b>D</b>up and we&#x27;re on </span><span><b>G</b>track.</span></p></div></div></div><div class="ui-col"><div class="ui-sec"><span class="ui-sl">Verse 2</span><div class="ui-ls"><p class="ui-l"><span><b>G</b>Coffee&#x27;s cold on the </span><span><b>D</b>amplifier,</span></p><p class="ui-l"><span><b>Em</b>Bass is singing a </span><span><b>C</b>little higher,</span></p><p class="ui-l"><span><b>G</b>Lights go blue and the </span><span><b>D</b>lights go red,</span></p><p class="ui-l"><span><b>C</b>Every word we </span><span><b>D</b>never said.</span></p></div></div><div class="ui-sec"><span class="ui-sl ch">Chorus</span><p class="ui-rep">Repeat chorus</p></div></div></div><div class="ui-sf"><span class="ui-fl">Up next</span><span class="ui-ft">Kitaabon Wali Gali</span><span class="ui-fd">Gm, no capo</span><span class="ui-fd ui-fx">Purani si gali mein kitaabon ki dukaan,</span><span class="ui-sp"></span><span class="ui-fd">Scroll ready (A)</span></div></div>
+</div>
+<p class="caption wrap">Built for a MacBook on a music stand.</p>
 </section>
-<div class="hero-art">
-<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of Segue's stage view: a song's lyrics with chords above the words, section labels in a left column, set progress at the top and the next song in the footer">
-<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
-<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
-<div class="ph-foot"><span class="ph-line w40"></span></div>
-<span class="ph-tag">Screenshot placeholder</span>
-</div>
-</div>
 
-<section class="band" id="features" aria-labelledby="features-title">
+<section class="section" id="features" aria-labelledby="features-title">
 <div class="wrap">
-<p class="label">How it works</p>
-<h2 id="features-title">From a pile of chord sheets to a Friday night set.</h2>
-<ol class="steps">
-<li class="step">
-<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of your song library">
-<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
-<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
-<div class="ph-foot"><span class="ph-line w40"></span></div>
-<span class="ph-tag">Screenshot placeholder</span>
+<p class="kicker">How it works</p>
+<h2 id="features-title">From chord sheet to stage.</h2>
+<ol class="tiles">
+<li class="tile">
+<div class="tile-text">
+<p class="tile-label">Library</p>
+<h3>Bring your songs in.</h3>
+<p>Drag in ChordPro or text files, or start a new song. Each one stays a plain file in a folder you choose.</p>
 </div>
-<p class="day">Monday</p>
-<h3>Get your songs in.</h3>
-<p>Drag ChordPro or text files onto your library, or start a new song from scratch. Each song is a plain file in a folder you choose, so it opens in any ChordPro app and backs up like everything else on your Mac.</p>
+<div class="shot shot-tile crop-library">
+<!--screen:library-->
+<div class="ui ui-win" role="img" aria-label="Segue's library: a sidebar with the library, gig log, setlists and tags, a searchable song list with keys and proficiency marks, and the selected song's details and chart"><div class="ui-side"><div class="ui-tl"><i></i><i></i><i></i></div><div class="ui-si on"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h9M3 9h9M3 13h6M15 4v9.5"/><circle cx="13" cy="14" r="2"/></svg><span>Library</span><small>4</small></div><div class="ui-si"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7" y="2.5" width="6" height="10" rx="3"/><path d="M4.5 10a5.5 5.5 0 0 0 11 0M10 15.5V18"/></svg><span>Gig Log</span><small></small></div><p class="ui-sx">Setlists</p><div class="ui-si"><span>Welcome Set</span><small>4</small></div><p class="ui-sx">Tags</p><div class="ui-si"><span>Welcome</span><small>4</small></div><div class="ui-si"><span>folk</span><small>1</small></div><div class="ui-si"><span>hindi</span><small>1</small></div><div class="ui-si"><span>upbeat</span><small>1</small></div><div class="ui-si"><span>waltz</span><small>1</small></div><div class="ui-new">+ New Setlist</div></div><div class="ui-list"><div class="ui-tb"><span class="ui-ttl">Library<small>4 songs</small></span></div><div class="ui-lh"><span class="ui-search"><svg class="ui-ico" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4.5 4.5"/></svg>Search or filter</span><em class="ui-btn p">New song</em></div><div class="ui-chips"><em class="ui-chip"><span class="ui-pm learning"><i></i>Learning</span></em><em class="ui-chip"><span class="ui-pm ready"><i></i>Ready</span></em><em class="ui-chip"><span class="ui-pm pro"><i></i>Pro</span></em><i class="ui-vr"></i><em class="ui-chip">Welcome</em><em class="ui-chip">folk</em><em class="ui-chip">hindi</em><em class="ui-chip">upbeat</em><em class="ui-chip">waltz</em></div><div class="ui-rows"><div class="ui-row"><span><b>Ferry Lights Over Calder Bay</b><small>Segue Originals</small></span><em class="ui-chip">D</em><span class="ui-pslot"><span class="ui-pm learning"><i></i>Learning</span></span></div><div class="ui-row"><span><b>Kettle On, Lights Low</b><small>Segue Originals</small></span><em class="ui-chip">G</em><span class="ui-pslot"><span class="ui-pm ready"><i></i>Ready</span></span></div><div class="ui-row"><span><b>Kitaabon Wali Gali</b><small>Segue Originals</small></span><em class="ui-chip">Am</em><span class="ui-pslot"><span class="ui-pm ready"><i></i>Ready</span></span></div><div class="ui-row on"><span><b>Soundcheck at Seven</b><small>Segue Originals</small></span><em class="ui-chip">G</em><span class="ui-pslot"><span class="ui-pm pro"><i></i>Pro</span></span></div></div></div><div class="ui-det"><div class="ui-tb"></div><div class="ui-dp"><div class="ui-dh"><h4>Soundcheck at Seven</h4><span class="ui-sp"></span><em class="ui-btn ui-more">…</em><em class="ui-btn">Edit</em></div><p class="ui-dsub">Segue Originals  ·  G, capo 2, 96  ·  3:20</p><dl class="ui-meta"><dt>Proficiency</dt><dd><em class="ui-chip">Learning</em><em class="ui-chip">Ready</em><em class="ui-chip on">Pro</em></dd><dt>Tags</dt><dd><em class="ui-chip">Welcome ×</em><em class="ui-chip">folk ×</em><span class="ui-muted">Add tag</span></dd><dt>Played</dt><dd>Not played at a gig yet</dd><dt>Notes</dt><dd>Count in 1-2-3-4. Brushes on the snare until the first chorus.</dd></dl><div class="ui-chart"><div class="ui-sec"><span class="ui-sl">Verse 1</span><div class="ui-ls"><p class="ui-l"><span><b>G</b>Van door slides and the </span><span><b>D</b>street lamps hum,</span></p><p class="ui-l"><span><b>Em</b>Cables coiled like a </span><span><b>C</b>sleeping drum,</span></p><p class="ui-l"><span><b>G</b>Someone tapes the </span><span><b>D</b>setlist down,</span></p><p class="ui-l"><span><b>C</b>Loudest piece of </span><span><b>D</b>paper in town.</span></p></div></div><div class="ui-sec ch"><span class="ui-sl ch">Chorus</span><div class="ui-ls"><p class="ui-l"><span><b>C</b>Soundcheck at </span><span><b>G</b>seven, </span><span><b>D</b>doors at </span><span><b>Em</b>eight,</span></p><p class="ui-l"><span><b>C</b>Tune it, count it, </span><span><b>G</b>never mind the </span><span><b>D</b>wait,</span></p><p class="ui-l"><span><b>C</b>One, two, can you </span><span><b>G</b>hear me in the </span><span><b>Em</b>back?</span></p><p class="ui-l"><span><b>C</b>Turn the monitor </span><span><b>D</b>up and we&#x27;re on </span><span><b>G</b>track.</span></p></div></div></div></div></div></div>
+</div>
 </li>
-<li class="step">
-<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of the song editor">
-<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
-<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
-<div class="ph-foot"><span class="ph-line w40"></span></div>
-<span class="ph-tag">Screenshot placeholder</span>
+<li class="tile">
+<div class="tile-text">
+<p class="tile-label">Editor</p>
+<h3>Make each chart yours.</h3>
+<p>Type ChordPro, or place chords right on the syllable. Transpose, add a capo, or switch to Nashville numbers.</p>
 </div>
-<p class="day">Tuesday</p>
-<h3>Make the chart yours.</h3>
-<p>Type ChordPro directly, or switch to the visual editor and drop a chord right onto the syllable. Transpose in one step, add a capo, or flip to Nashville numbers when the singer changes key at the last minute.</p>
+<div class="shot shot-tile crop-editor">
+<!--screen:editor-->
+<div class="ui ui-win" role="img" aria-label="Segue's song editor: ChordPro source with chords in brackets, a live preview, and transpose, capo, Nashville and diagram controls"><div class="ui-side"><div class="ui-tl"><i></i><i></i><i></i></div><div class="ui-si on"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h9M3 9h9M3 13h6M15 4v9.5"/><circle cx="13" cy="14" r="2"/></svg><span>Library</span><small>4</small></div><div class="ui-si"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7" y="2.5" width="6" height="10" rx="3"/><path d="M4.5 10a5.5 5.5 0 0 0 11 0M10 15.5V18"/></svg><span>Gig Log</span><small></small></div><p class="ui-sx">Setlists</p><div class="ui-si"><span>Welcome Set</span><small>4</small></div><p class="ui-sx">Tags</p><div class="ui-si"><span>Welcome</span><small>4</small></div><div class="ui-si"><span>folk</span><small>1</small></div><div class="ui-si"><span>hindi</span><small>1</small></div><div class="ui-si"><span>upbeat</span><small>1</small></div><div class="ui-si"><span>waltz</span><small>1</small></div><div class="ui-new">+ New Setlist</div></div><div class="ui-list"><div class="ui-tb"><span class="ui-ttl">Library<small>4 songs</small></span></div><div class="ui-lh"><span class="ui-search"><svg class="ui-ico" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4.5 4.5"/></svg>Search or filter</span><em class="ui-btn p">New song</em></div><div class="ui-chips"><em class="ui-chip"><span class="ui-pm learning"><i></i>Learning</span></em><em class="ui-chip"><span class="ui-pm ready"><i></i>Ready</span></em><em class="ui-chip"><span class="ui-pm pro"><i></i>Pro</span></em><i class="ui-vr"></i><em class="ui-chip">Welcome</em><em class="ui-chip">folk</em><em class="ui-chip">hindi</em><em class="ui-chip">upbeat</em><em class="ui-chip">waltz</em></div><div class="ui-rows"><div class="ui-row"><span><b>Ferry Lights Over Calder Bay</b><small>Segue Originals</small></span><em class="ui-chip">D</em><span class="ui-pslot"><span class="ui-pm learning"><i></i>Learning</span></span></div><div class="ui-row on"><span><b>Kettle On, Lights Low</b><small>Segue Originals</small></span><em class="ui-chip">G</em><span class="ui-pslot"><span class="ui-pm ready"><i></i>Ready</span></span></div><div class="ui-row"><span><b>Kitaabon Wali Gali</b><small>Segue Originals</small></span><em class="ui-chip">Am</em><span class="ui-pslot"><span class="ui-pm ready"><i></i>Ready</span></span></div><div class="ui-row"><span><b>Soundcheck at Seven</b><small>Segue Originals</small></span><em class="ui-chip">G</em><span class="ui-pslot"><span class="ui-pm pro"><i></i>Pro</span></span></div></div></div><div class="ui-det"><div class="ui-tb"><span class="ui-ttl">Kettle On, Lights Low<small>All changes saved</small></span><span class="ui-sp"></span><span class="ui-seg"><em class="on">Text</em><em>Visual</em></span><span class="ui-sp"></span><em class="ui-btn p">Done</em></div><div class="ui-etb"><span class="ui-stl">Transpose</span><em class="ui-btn sq">−</em><b class="ui-stv">G, +0</b><em class="ui-btn sq">+</em><span class="ui-stl">Capo</span><em class="ui-btn sq">−</em><b class="ui-stv">3</b><em class="ui-btn sq">+</em><span class="ui-seg"><em class="on">Shapes</em><em>Concert</em></span><span class="ui-seg"><em>Nashville</em></span><span class="ui-seg"><em>Diagrams</em></span><span class="ui-muted">Guitar</span></div><div class="ui-src"><p><i>1</i><span class="dir">{title: Kettle On, Lights Low}</span></p><p><i>2</i><span class="dir">{artist: Segue Originals}</span></p><p><i>3</i><span class="dir">{key: G}</span></p><p><i>4</i><span class="dir">{capo: 3}</span></p><p><i>5</i><span class="dir">{time: 3/4}</span></p><p><i>6</i><span class="dir">{tempo: 72}</span></p><p><i>7</i><span class="dir">{duration: 3:05}</span></p><p><i>8</i><span class="dir">{define: Cadd9 base-fret 1 frets x 3 2 0 3 3}</span></p><p><i>9</i> </p><p><i>10</i><span class="sec">{start_of_intro: Intro}</span></p><p><i>11</i><b>[G]</b>  <b>[Cadd9]</b>  <b>[G]</b>  <b>[D/F#]</b></p><p><i>12</i><span class="sec">{end_of_intro}</span></p><p><i>13</i> </p><p><i>14</i><span class="sec">{start_of_verse: Verse 1}</span></p><p><i>15</i><b>[G]</b>Kettle on, <b>[Cadd9]</b>lights low,</p><p><i>16</i><b>[G]</b>Rain on the <b>[D/F#]</b>window glass,</p><p><i>17</i><b>[Em7]</b>Nowhere we <b>[Cadd9]</b>need to go,</p><p><i>18</i><b>[G]</b>Let the <b>[D]</b>evening <b>[G]</b>pass.</p><p><i>19</i><span class="sec">{end_of_verse}</span></p><p><i>20</i> </p><p><i>21</i><span class="sec">{start_of_verse: Verse 2}</span></p></div><div class="ui-prev"><div class="ui-sec"><span class="ui-sl">Verse 1</span><div class="ui-ls"><p class="ui-l"><span><b>G</b>Kettle on, </span><span><b>Cadd9</b>lights low,</span></p><p class="ui-l"><span><b>G</b>Rain on the </span><span><b>D/F#</b>window glass,</span></p><p class="ui-l"><span><b>Em7</b>Nowhere we </span><span><b>Cadd9</b>need to go,</span></p><p class="ui-l"><span><b>G</b>Let the </span><span><b>D</b>evening </span><span><b>G</b>pass.</span></p></div></div></div><div class="ui-status"><span>No problems</span><span>Line 14, column 18</span><span class="ui-sp"></span><span>ChordPro - kettle-on-lights-low.cho</span></div></div></div>
+</div>
 </li>
-<li class="step">
-<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of the setlist builder">
-<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
-<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
-<div class="ph-foot"><span class="ph-line w40"></span></div>
-<span class="ph-tag">Screenshot placeholder</span>
-</div>
-<p class="day">Thursday</p>
+<li class="tile">
+<div class="tile-text">
+<p class="tile-label">Setlists</p>
 <h3>Build the set.</h3>
-<p>Drag songs into tonight's order and see the running time add up. Change a song's key or capo for this show only, without touching the song itself.</p>
-</li>
-<li class="step">
-<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of the stage view">
-<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
-<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
-<div class="ph-foot"><span class="ph-line w40"></span></div>
-<span class="ph-tag">Screenshot placeholder</span>
+<p>Drag songs into order and watch the running time add up. Change a key or capo for one show only.</p>
 </div>
-<p class="day">Friday</p>
-<h3>Play.</h3>
-<p>Start the show and Segue goes dark and full screen. Every song fits the screen at a size you can read from a stool, and what's next is always at the bottom.</p>
+<div class="shot shot-tile crop-setlist">
+<!--screen:setlist-->
+<div class="ui ui-win ui-builder" role="img" aria-label="Segue's setlist builder: the library on the left, and the Welcome Set on the right with four songs in order, each with key, capo, length and start time, the running total against a 20 minute target, and Rehearse and Start show buttons"><div class="ui-side"><div class="ui-tl"><i></i><i></i><i></i></div><div class="ui-si"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h9M3 9h9M3 13h6M15 4v9.5"/><circle cx="13" cy="14" r="2"/></svg><span>Library</span><small>4</small></div><div class="ui-si"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7" y="2.5" width="6" height="10" rx="3"/><path d="M4.5 10a5.5 5.5 0 0 0 11 0M10 15.5V18"/></svg><span>Gig Log</span><small></small></div><p class="ui-sx">Setlists</p><div class="ui-si on"><span>Welcome Set</span><small>4</small></div><p class="ui-sx">Tags</p><div class="ui-si"><span>Welcome</span><small>4</small></div><div class="ui-si"><span>folk</span><small>1</small></div><div class="ui-si"><span>hindi</span><small>1</small></div><div class="ui-si"><span>upbeat</span><small>1</small></div><div class="ui-si"><span>waltz</span><small>1</small></div><div class="ui-new">+ New Setlist</div></div><div class="ui-blib"><div class="ui-tb"><span class="ui-ttl">Welcome Set</span></div><p class="ui-bh">Library</p><span class="ui-search"><svg class="ui-ico" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4.5 4.5"/></svg>Search or filter: ready, upbeat, key G</span><div class="ui-chips"><em class="ui-chip">Welcome</em><em class="ui-chip">folk</em><em class="ui-chip">hindi</em><em class="ui-chip">upbeat</em><em class="ui-chip">waltz</em></div><div class="ui-dim"><div class="ui-br"><i class="ui-grip"></i><span><b>Ferry Lights Over Calder Bay</b><small>D · 120 · 4:40</small></span><span class="ui-muted">In set</span><em class="ui-btn sq">+</em></div><div class="ui-br"><i class="ui-grip"></i><span><b>Kettle On, Lights Low</b><small>G · 72 · 3:05</small></span><span class="ui-muted">In set</span><em class="ui-btn sq">+</em></div><div class="ui-br"><i class="ui-grip"></i><span><b>Kitaabon Wali Gali</b><small>Am · 84 · 4:05</small></span><span class="ui-muted">In set</span><em class="ui-btn sq">+</em></div><div class="ui-br"><i class="ui-grip"></i><span><b>Soundcheck at Seven</b><small>G · 96 · 3:20</small></span><span class="ui-muted">In set</span><em class="ui-btn sq">+</em></div></div></div><div class="ui-set"><div class="ui-tb"></div><div class="ui-seth"><p class="ui-lab">Setlist</p><h4>Welcome Set</h4><p class="ui-muted">Add venue, date and target…</p><div class="ui-tot"><div class="ui-run"><b>15:10</b><span>target 20:00</span><i><s></s></i></div><span class="ui-sp"></span><em class="ui-btn lg">Rehearse</em><em class="ui-btn lg p">Start show</em></div></div><div class="ui-ers"><div class="ui-er"><span class="n">1</span><span class="t"><b>Soundcheck at Seven</b></span><span class="k">G</span><span class="c">Capo 2</span><span class="d">3:20</span><span class="s">0:00</span></div><div class="ui-er"><span class="n">2</span><span class="t"><b>Kitaabon Wali Gali</b></span><span class="k ov">Gm</span><span class="c">-</span><span class="d">4:05</span><span class="s">3:20</span></div><div class="ui-er"><span class="n">3</span><span class="t"><b>Kettle On, Lights Low</b><small>Brushes, start soft</small></span><span class="k">G</span><span class="c">Capo 3</span><span class="d">3:05</span><span class="s">7:25</span></div><div class="ui-er"><span class="n">4</span><span class="t"><b>Ferry Lights Over Calder Bay</b><small>Closer: big finish</small></span><span class="k">D</span><span class="c">-</span><span class="d">4:40</span><span class="s">10:30</span></div></div><p class="ui-drop">Drag more songs here</p></div></div>
+</div>
+</li>
+<li class="tile">
+<div class="tile-text">
+<p class="tile-label">Stage</p>
+<h3>Play the show.</h3>
+<p>Segue goes dark and full screen. Every song fits at a size you can read from a stool.</p>
+</div>
+<div class="shot shot-tile crop-stage">
+<!--screen:stage-hindi-->
+<div class="ui ui-stage hindi" role="img" aria-label="Segue&#x27;s stage view of a romanized Hindi song, transposed down a tone for this show, with chords above the words"><div class="ui-sh"><i class="ui-cue"></i><span class="ui-st">Kitaabon Wali Gali</span><span class="ui-sm">Gm, 84</span><span class="ui-sp"></span><span class="ui-dots"><i class="played"></i><i class="cur"></i><i></i><i></i></span><span class="ui-el">4:31</span></div><div class="ui-sb"><div class="ui-col"><div class="ui-sec"><span class="ui-sl">Verse 1</span><div class="ui-ls"><p class="ui-l"><span><b>Gm</b>Purani si gali mein </span><span><b>F</b>kitaabon ki dukaan,</span></p><p class="ui-l"><span><b>Eb</b>Panne palatte haathon mein </span><span><b>D</b>chhupi thi muskaan,</span></p><p class="ui-l"><span><b>Gm</b>Chai ka cup thanda tha, </span><span><b>F</b>baatein thi garam,</span></p><p class="ui-l"><span><b>Eb</b>Shaam ne dheere dheere </span><span><b>D</b>badle apne kadam.</span></p></div></div><div class="ui-sec ch"><span class="ui-sl ch">Chorus</span><div class="ui-ls"><p class="ui-l"><span><b>Eb</b>Kitaabon wali </span><span><b>F</b>gali, </span><span><b>Bb</b>phir se bula </span><span><b>Gm</b>rahi,</span></p><p class="ui-l"><span><b>Eb</b>Har ek kahaani </span><span><b>F</b>mein teri </span><span><b>D</b>yaad chhupi,</span></p><p class="ui-l"><span><b>Eb</b>Lafzon ke </span><span><b>F</b>mele mein </span><span><b>Bb</b>main kho </span><span><b>Gm</b>jaaun,</span></p><p class="ui-l"><span><b>Cm</b>Tera naam likha </span><span><b>D</b>panna dhoondh </span><span><b>Gm</b>laaun.</span></p></div></div></div><div class="ui-col"><div class="ui-sec"><span class="ui-sl">Verse 2</span><div class="ui-ls"><p class="ui-l"><span><b>Gm</b>Baarish ki boondein </span><span><b>F</b>khidki pe likhti,</span></p><p class="ui-l"><span><b>Eb</b>Adhoori si kavita </span><span><b>D</b>jo tujh tak pahunchti,</span></p><p class="ui-l"><span><b>Gm</b>Raaste wahi hain, </span><span><b>F</b>mausam naya,</span></p><p class="ui-l"><span><b>Eb</b>Dil ne phir se </span><span><b>D</b>wahi geet gaaya.</span></p></div></div><div class="ui-sec"><span class="ui-sl ch">Chorus</span><p class="ui-rep">Repeat chorus</p></div></div></div><div class="ui-sf"><span class="ui-fl">Up next</span><span class="ui-ft">Kettle On, Lights Low</span><span class="ui-fd">G, capo 3</span><span class="ui-fd ui-fx">Kettle on, lights low,</span><span class="ui-sp"></span><span class="ui-fd">Scroll ready (A)</span></div></div>
+</div>
 </li>
 </ol>
 </div>
 </section>
 
-<section class="band" id="stage-mode" aria-labelledby="stage-title">
+<section class="stage-band scheme-stage" id="stage-mode" aria-labelledby="stage-title">
+<div class="wrap center">
+<p class="kicker">Stage mode</p>
+<h2 id="stage-title">Built for the stage.</h2>
+<p class="lede">One job: the right words at the right moment, and nothing in your way.</p>
+</div>
+<div class="shot shot-band">
+<!--screen:stage-search-->
+<div class="ui ui-stage" role="img" aria-label="Segue&#x27;s stage view with quick search open over the song: the search &quot;lights&quot; lists two songs from the library, with Insert Next, Add to Requests and Play Now buttons"><div class="ui-sh"><i class="ui-cue"></i><span class="ui-st">Soundcheck at Seven</span><span class="ui-sm">G, capo 2, 96</span><span class="ui-sp"></span><span class="ui-dots"><i class="cur"></i><i></i><i></i><i></i></span><span class="ui-el">1:58</span></div><div class="ui-sb"><div class="ui-col"><div class="ui-sec"><span class="ui-sl">Verse 1</span><div class="ui-ls"><p class="ui-l"><span><b>G</b>Van door slides and the </span><span><b>D</b>street lamps hum,</span></p><p class="ui-l"><span><b>Em</b>Cables coiled like a </span><span><b>C</b>sleeping drum,</span></p><p class="ui-l"><span><b>G</b>Someone tapes the </span><span><b>D</b>setlist down,</span></p><p class="ui-l"><span><b>C</b>Loudest piece of </span><span><b>D</b>paper in town.</span></p></div></div><div class="ui-sec ch"><span class="ui-sl ch">Chorus</span><div class="ui-ls"><p class="ui-l"><span><b>C</b>Soundcheck at </span><span><b>G</b>seven, </span><span><b>D</b>doors at </span><span><b>Em</b>eight,</span></p><p class="ui-l"><span><b>C</b>Tune it, count it, </span><span><b>G</b>never mind the </span><span><b>D</b>wait,</span></p><p class="ui-l"><span><b>C</b>One, two, can you </span><span><b>G</b>hear me in the </span><span><b>Em</b>back?</span></p><p class="ui-l"><span><b>C</b>Turn the monitor </span><span><b>D</b>up and we&#x27;re on </span><span><b>G</b>track.</span></p></div></div></div><div class="ui-col"><div class="ui-sec"><span class="ui-sl">Verse 2</span><div class="ui-ls"><p class="ui-l"><span><b>G</b>Coffee&#x27;s cold on the </span><span><b>D</b>amplifier,</span></p><p class="ui-l"><span><b>Em</b>Bass is singing a </span><span><b>C</b>little higher,</span></p><p class="ui-l"><span><b>G</b>Lights go blue and the </span><span><b>D</b>lights go red,</span></p><p class="ui-l"><span><b>C</b>Every word we </span><span><b>D</b>never said.</span></p></div></div><div class="ui-sec"><span class="ui-sl ch">Chorus</span><p class="ui-rep">Repeat chorus</p></div></div></div><div class="ui-sf"><span class="ui-fl">Up next</span><span class="ui-ft">Kitaabon Wali Gali</span><span class="ui-fd">Gm, no capo</span><span class="ui-fd ui-fx">Purani si gali mein kitaabon ki dukaan,</span><span class="ui-sp"></span><span class="ui-fd">Scroll ready (A)</span></div><div class="ui-pal"><div class="ui-pf"><svg class="ui-ico" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4.5 4.5"/></svg><span>lights</span><i class="ui-caret"></i></div><div class="ui-prs"><div class="ui-pr on"><span><b>Ferry Lights Over Calder Bay</b><small>Segue Originals</small></span><em class="ui-chip">In set</em><em class="ui-chip">D</em><span class="ui-pm learning"><i></i>Learning</span></div><div class="ui-pr"><span><b>Kettle On, Lights Low</b><small>Segue Originals</small></span><em class="ui-chip">In set</em><em class="ui-chip">G</em><em class="ui-chip">Capo 3</em><span class="ui-pm ready"><i></i>Ready</span></div></div><div class="ui-pb"><span>Esc returns to the song</span><span class="ui-sp"></span><em class="ui-btn">Insert Next ⌥↩</em><em class="ui-btn">Add to Requests ⌘↩</em><em class="ui-btn p">Play Now ↩</em></div></div></div>
+</div>
 <div class="wrap">
-<p class="label">Stage mode</p>
-<h2 id="stage-title">Built for the stage, not the desk.</h2>
-<p class="intro">The stage view has one job: show you the right words at the right moment, and stay out of your way.</p>
-<div class="spot">
-<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of the stage view, with numbered callouts matching the list below">
-<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
-<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
-<div class="ph-foot"><span class="ph-line w40"></span></div>
-<span class="ph-tag">Screenshot placeholder</span>
-</div>
-</div>
-<ol class="callouts">
-<li><strong>Never too small to read.</strong><span>Set a minimum lyric size. If a song can't fit at that size, Segue scrolls instead of shrinking it.</span></li>
-<li><strong>Know what's next.</strong><span>The footer shows the next song with its key and capo. When someone requests a song, it takes that spot.</span></li>
-<li><strong>Take requests mid-set.</strong><span>Press Cmd-K, type a few letters of a title or a line you remember, and play it now, next, or later.</span></li>
-<li><strong>Hands stay on the instrument.</strong><span>Arrow and Page keys move through the set, so page-turner pedals that send those keys work out of the box.</span></li>
-<li><strong>Back where you were.</strong><span>If your Mac restarts or Segue quits mid-gig, it reopens at the song you were on.</span></li>
-<li><strong>A quiet Mac.</strong><span>Run your own Shortcut when the show starts, for example to turn on a Focus, and a short checklist reminds you about the charger and brightness.</span></li>
-</ol>
-</div>
-</section>
-
-<section class="band" id="details" aria-labelledby="details-title">
-<div class="wrap">
-<h2 id="details-title">The details, done properly.</h2>
-<ul class="grid">
-<li><h3>Your songs, as files.</h3><p>One ChordPro file per song in a folder you choose. No account, no sign-in, no lock-in.</p></li>
-<li><h3>Search the way you spell.</h3><p>Find a song by any half-remembered line, including romanized Hindi lyrics typed the way people actually type them.</p></li>
-<li><h3>Transpose, capo, Nashville.</h3><p>Shapes or concert pitch, any key, one click.</p></li>
-<li><h3>Guitar and piano diagrams.</h3><p>Chord diagrams for guitar, with your own shapes saved in the song, plus piano voicings.</p></li>
-<li><h3>Learning, Ready, Pro.</h3><p>Tags and proficiency marks show at a glance what's gig-ready.</p></li>
-<li><h3>Nothing to save.</h3><p>Every edit is saved as you go, and deleted songs go to the Trash.</p></li>
-<li><h3>At home in Finder.</h3><p>Open .cho files with Segue, preview them with Quick Look, and export your whole library as one archive.</p></li>
-<li><h3>Keyboard first.</h3><p>Every command has a key. Press ? to see them all.</p></li>
+<ul class="feats">
+<li><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 22 10 6l6 16M6.5 16h7M18 22l4-10 4 10M19.4 19h5.2"/></svg><h3>Never too small.</h3><p>Set a minimum lyric size. If a song won't fit, Segue scrolls instead of shrinking it.</p></li>
+<li><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 8h20M4 14h20M4 20h12"/><circle cx="22" cy="20" r="2.2"/></svg><h3>Know what's next.</h3><p>The footer shows the next song with its key and capo, or the request you queued.</p></li>
+<li><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="m17 17 7 7"/></svg><h3>Take requests.</h3><p>Press Cmd-K, type a title or a line you remember, and play it now, next or later.</p></li>
+<li><svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="9" width="22" height="12" rx="3"/><path d="M9 13v4M14 13v4M19 13v4"/></svg><h3>One pedal, whole set.</h3><p>Page Down scrolls, then moves on to the next song. A page-turner pedal just works.</p></li>
+<li><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 14a9 9 0 1 0 3-6.7"/><path d="M4 4v5h5"/></svg><h3>Back where you were.</h3><p>If your Mac restarts mid-show, Segue offers to pick up right where you left off.</p></li>
+<li><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M20 17A9 9 0 0 1 11 5a9 9 0 1 0 9 12Z"/></svg><h3>A quiet Mac.</h3><p>Run your own Shortcut as the show starts, for example to turn on a Focus.</p></li>
 </ul>
 </div>
 </section>
 
-<section class="band" id="privacy" aria-labelledby="privacy-title">
-<div class="wrap split">
-<div>
-<p class="label">Privacy</p>
-<h2 id="privacy-title">Your songs stay yours.</h2>
+<section class="section" id="details" aria-labelledby="details-title">
+<div class="wrap">
+<h2 id="details-title">The details, done properly.</h2>
+<ul class="details">
+<li><h3>Your songs, as files.</h3><p>One ChordPro file per song, in a folder you choose. No account, no lock-in.</p></li>
+<li><h3>Search the way you spell.</h3><p>Find any half-remembered line, romanized Hindi included.</p></li>
+<li><h3>Guitar and piano.</h3><p>Chord diagrams for both, with your own guitar shapes saved in the song.</p></li>
+<li><h3>Learning, Ready, Pro.</h3><p>Proficiency marks and tags show what's ready for the gig.</p></li>
+<li><h3>Nothing to save.</h3><p>Edits save as you go. Deleted songs go to the Trash.</p></li>
+<li><h3>At home in Finder.</h3><p>Open .cho files from Finder, preview them in Quick Look, and export your whole library.</p></li>
+<li><h3>Rehearse first.</h3><p>Run the set at home to time each song, without a gig log entry.</p></li>
+<li><h3>Keyboard first.</h3><p>Stage mode runs from the keyboard. Press ? to see every key.</p></li>
+</ul>
 </div>
-<div>
-<p class="body">No account and no sign-in. Your songs, setlists and gig history live in files on your Mac, and Segue never uploads them. The first time you open Segue, it asks two separate questions: whether to share usage statistics, and whether to send crash reports. The choices are equal, nothing is picked for you, and you can change your mind any time in <span class="nowrap">Settings &gt; Privacy</span>. Neither ever includes your songs. Bug reports go out only when you press Send, after you've seen everything in them. No ads, and no tracking.</p>
+</section>
+
+<section class="section center" id="privacy" aria-labelledby="privacy-title">
+<div class="wrap">
+<p class="kicker">Privacy</p>
+<h2 id="privacy-title">Your songs stay yours.</h2>
+<ul class="trio">
+<li><h3>No account.</h3><p>No sign-in. Your songs, setlists and gig history are files on your Mac.</p></li>
+<li><h3>Never uploaded.</h3><p>Segue never uploads your songs. A bug report goes out only when you press Send.</p></li>
+<li><h3>Your choice.</h3><p>Usage statistics and crash reports are two separate questions, with nothing picked for you.</p></li>
+</ul>
 <p class="more"><a href="/privacy">Read the privacy policy</a></p>
 </div>
-</div>
 </section>
 
-<section class="band" id="whats-next" aria-labelledby="next-title">
-<div class="wrap split">
-<div>
-<p class="label">What's next</p>
-<h2 id="next-title">Shaped by the people who play it.</h2>
-<p class="body">Suggest a feature, or vote for the ones you want most. The board is where the next version of Segue gets decided.</p>
-<p class="more"><a href="/feedback">Visit the feature board</a></p>
-</div>
-<div><!--slot:latest-release--><!--/slot--></div>
-</div>
-</section>
-
-<section class="band" id="maker" aria-label="A note from the maker">
-<div class="wrap note">
+<section class="close" id="download" aria-labelledby="download-title">
+<div class="wrap">
+<div class="note">
 <!--ryan-edit-->
 <blockquote><p>I built Segue for my own gigs: a MacBook on a stand, and a set list that changes the moment someone shouts a request. If it helps you play, I'd love to hear about it.</p></blockquote>
-<p class="who">- Ryan</p>
+<p class="who">Ryan</p>
 <!--/ryan-edit-->
 </div>
-</section>
-
-<section class="band final" id="download" aria-labelledby="download-title">
-<div class="wrap">
-<h2 id="download-title">Ready for Friday?</h2>
+<h2 id="download-title">Ready when you are.</h2>
 <div class="appstore">
 <p class="appstore-cta"><!--slot:appstore:footer-->Coming soon to the Mac App Store.<!--/slot--></p>
 <p class="fine">Free. Requires a Mac with Apple silicon and macOS 26 or later.</p>
 </div>
+<p class="board">Shaped by the people who play it. <a href="/feedback">Visit the feature board</a></p>
+<!--slot:latest-release--><!--/slot-->
 </div>
 </section>
 </main>
