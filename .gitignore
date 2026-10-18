@@ -36,3 +36,6 @@ design/icon/previews/
 
 # Local Cloudflare Pages preview state (make site-serve)
 .wrangler/
+
+# Python bytecode (research spikes)
+__pycache__/
