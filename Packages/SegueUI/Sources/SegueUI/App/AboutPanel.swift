@@ -8,8 +8,43 @@
     enum AboutPanel {
         @MainActor
         static func show() {
-            NSApp.orderFrontStandardAboutPanel(options: [.credits: credits()])
+            let credits = credits()
+            NSApp.orderFrontStandardAboutPanel(options: [.credits: credits])
+            styleLinks(showing: credits)
             NSApp.activate()
+        }
+
+        /// The app's link style (as in the editor): `cueText`, with the pointing hand. The
+        /// standard panel's text view draws links in system blue through its own
+        /// `linkTextAttributes`, which override the string's, so they are set on it here.
+        @MainActor
+        private static func styleLinks(showing credits: NSAttributedString) {
+            let cueText = NSColor(named: "cueText", bundle: Theme.bundle) ?? .linkColor
+            for window in NSApp.windows {
+                guard let textView = textView(in: window.contentView, showing: credits.string)
+                else { continue }
+                textView.linkTextAttributes = [
+                    .foregroundColor: cueText,
+                    .cursor: NSCursor.pointingHand,
+                ]
+                textView.needsDisplay = true
+            }
+        }
+
+        @MainActor
+        private static func textView(in view: NSView?, showing string: String) -> NSTextView? {
+            guard let view else {
+                return nil
+            }
+            if let textView = view as? NSTextView, textView.string == string {
+                return textView
+            }
+            for subview in view.subviews {
+                if let found = textView(in: subview, showing: string) {
+                    return found
+                }
+            }
+            return nil
         }
 
         /// "Version 0.5 (12)", as the panel shows it, from `bundle`'s Info.plist.
@@ -25,7 +60,8 @@
             bundle.infoDictionary?["NSHumanReadableCopyright"] as? String
         }
 
-        /// Two centred paragraphs in the brand face, muted: the links, then the credits.
+        /// Two centred paragraphs in the brand face, muted, each set as balanced lines: the
+        /// links, then the credits.
         static func credits() -> NSAttributedString {
             let font = NSFont(name: SchibstedGrotesk.medium.rawValue, size: 11)
                 ?? NSFont.systemFont(ofSize: 11)
@@ -45,18 +81,22 @@
                 }
                 text.append(NSAttributedString(string: string, attributes: attributes))
             }
-            let separator = " · "
+            // Set lines, not wrapping: the panel's width would otherwise break the lists
+            // wherever it falls. U+2028 breaks a line inside the paragraph; no-break spaces
+            // keep every name whole even if a line ever has to wrap.
+            let lineBreak = "\u{2028}"
+            let separator = "\u{00A0}· "
             append(SegueLinks.site.host() ?? "", link: SegueLinks.site)
             append(separator)
             append("Help", link: SegueLinks.help)
-            append(separator)
+            append(lineBreak)
             append("Support", link: SegueLinks.support)
             append(separator)
-            // No-break spaces keep each name on one line when the panel wraps.
             append("Privacy\u{00A0}Policy", link: SegueLinks.privacy)
             append("\n")
-            append("Built with open-source software: Schibsted\u{00A0}Grotesk "
-                + "(SIL\u{00A0}OFL\u{00A0}1.1), GRDB\u{00A0}(MIT), Tonic\u{00A0}(MIT). ")
+            append("Built with open-source software:" + lineBreak
+                + "Schibsted\u{00A0}Grotesk\u{00A0}(SIL\u{00A0}OFL\u{00A0}1.1), GRDB\u{00A0}(MIT),"
+                + lineBreak + "Tonic\u{00A0}(MIT). ")
             append("Acknowledgements", link: SegueLinks.acknowledgements)
             return text
         }
