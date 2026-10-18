@@ -7,7 +7,7 @@
 touched=no
 remote="$1"
 
-while read -r local_ref local_sha remote_ref remote_sha; do
+while read -r _local_ref local_sha _remote_ref remote_sha; do
 	case "$local_sha" in
 	*[!0]*) ;;
 	*) continue ;; # deleting a remote ref

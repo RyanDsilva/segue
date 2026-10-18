@@ -1,0 +1,30 @@
+# Text files are stored and checked out with LF. Byte-exact test data opts out in nested
+# .gitattributes files, which win over this one for their directory:
+#   Packages/SegueCore/Tests/Fixtures/.gitattributes   *.cho -text
+#   research/phase3-spikes/fixtures/.gitattributes     * -text
+* text=auto eol=lf
+
+# Binary assets.
+*.png binary
+*.jpg binary
+*.ttf binary
+*.woff2 binary
+*.mp4 binary
+*.mov binary
+*.pdf binary
+
+# Generated files: never edit by hand, regenerate them. Collapsed in GitHub diffs.
+# make tokens (scripts/gen-tokens.swift from design/tokens.json)
+Packages/SegueUI/Sources/SegueUI/Theme/ColorTokens.generated.swift linguist-generated
+Packages/SegueUI/Sources/SegueUI/Theme/Tokens.xcassets/** linguist-generated
+website/assets/css/tokens.css linguist-generated
+# make site (scripts/gen-site.swift from content/)
+website/changelog.html linguist-generated
+website/changelog.json linguist-generated
+website/_redirects linguist-generated
+website/sitemap.xml linguist-generated
+# make icon (scripts/gen-icon.swift from the geometry in docs/brand.md)
+design/icon/** linguist-generated
+
+# Keep GitHub's language bar about the product: research spikes are not part of it.
+research/** linguist-vendored

@@ -17,7 +17,8 @@ HTMLVALIDATE := pnpm dlx html-validate@11.16.4
 WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test e2e lint format \
-	verify-appstore check bump site-fonts
+	verify-appstore check bump site-fonts site-html docs-check shellcheck actionlint repo-check \
+	release-notes labels-sync
 
 bootstrap: ## Install pinned tools, fetch dependencies, generate the workspace
 	mise install
@@ -38,9 +39,10 @@ site: ## Regenerate the website: tokens.css, changelog, slots, redirects, sitema
 	scripts/gen-tokens.swift
 	scripts/gen-site.swift
 
-site-check: ## Fail if the website is stale or invalid (STRICT=1 also refuses placeholders)
-	scripts/gen-tokens.swift --check
+site-check: tokens-check site-html ## Fail if the website is stale or invalid (STRICT=1 also refuses placeholders)
 	scripts/gen-site.swift --check $(if $(STRICT),--strict)
+
+site-html: ## Validate every website page with html-validate (runs on Linux too)
 	$(MISE) $(HTMLVALIDATE) --config .htmlvalidate.json 'website/**/*.html'
 
 site-serve: ## Preview the site locally with Cloudflare's Pages emulator (redirects, headers, 404)
@@ -97,4 +99,27 @@ bump: ## Bump + commit the build number; `make bump VERSION=0.6` sets the market
 verify-appstore: ## Build the App Store flavor and assert no personal-module symbols
 	scripts/verify-appstore.sh
 
-check: lint tokens-check icon-check site-check build build-appstore test e2e verify-appstore ## Everything CI would run
+check: generate lint repo-check tokens-check icon-check site-check build build-appstore test e2e verify-appstore ## Everything: the CI checks plus builds and tests
+
+# Repo hygiene. repo-check is exactly what the Linux CI runs (.github/workflows), offline apart
+# from the first fetch of pinned tools, so run it before pushing. gen-site.swift needs AppKit,
+# so the full site-check stays local (the pre-push hook enforces it for website changes).
+docs-check: ## No em dashes, valid JSON and YAML metadata, third-party notices match the pins
+	$(MISE) scripts/check-docs.sh
+
+shellcheck: ## Lint shell scripts and git hooks (scripts/lib is checked through its callers)
+	$(MISE) shellcheck scripts/*.sh .githooks/pre-push
+
+actionlint: ## Lint the GitHub workflows (shellchecks their run: steps too)
+	$(MISE) actionlint
+
+repo-check: lint tokens-check site-html docs-check shellcheck actionlint ## The Linux CI checks, locally
+
+release-notes: ## Preview the GitHub Release notes for a tag: make release-notes TAG=v0.5.0
+	@test -n "$(TAG)" || (echo "usage: make release-notes TAG=vX.Y.Z" >&2; exit 2)
+	$(MISE) scripts/release-notes.sh --title $(TAG)
+	@echo
+	$(MISE) scripts/release-notes.sh $(TAG)
+
+labels-sync: ## Sync GitHub labels to .github/labels.yml (changes GitHub; DRY_RUN=1 to preview)
+	$(MISE) scripts/sync-labels.sh

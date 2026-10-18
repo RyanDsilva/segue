@@ -1,0 +1,5 @@
+# ShellCheck config (version pinned in .mise.toml; run by `make shellcheck` and CI).
+# Scripts cd to the repo root before sourcing scripts/lib/*: resolve sources from either.
+source-path=SCRIPTDIR
+source-path=SCRIPTDIR/..
+external-sources=true

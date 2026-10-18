@@ -1,0 +1,32 @@
+# https://editorconfig.org - matches .swiftformat (4 spaces, 100 columns) and the Makefile.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.swift]
+max_line_length = 100
+
+[{Makefile,*.mk}]
+indent_style = tab
+
+[*.{json,yml,yaml,html,css,js,svg,xml}]
+indent_size = 2
+
+[*.md]
+# Two trailing spaces are a Markdown line break.
+trim_trailing_whitespace = false
+
+# Byte-exact test data: never touch whitespace or line endings.
+[{Packages/SegueCore/Tests/Fixtures/**,research/phase3-spikes/fixtures/**}]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset

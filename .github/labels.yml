@@ -1,0 +1,91 @@
+# Issue and PR labels - the source of truth. Sync to GitHub with `make labels-sync`
+# (DRY_RUN=1 to preview, PRUNE=1 to also delete labels not listed here). See docs/github-setup.md.
+# Each issue gets one type/, one or more area/, and at most one priority/ and status/ label.
+
+# Type
+- name: type/bug
+  color: d73a4a
+  description: Something is broken
+- name: type/feature
+  color: 0e8a16
+  description: New capability or user-visible change
+- name: type/task
+  color: 1d76db
+  description: Engineering work with no user-visible change
+- name: type/docs
+  color: 0075ca
+  description: Docs, specs, decisions and the website copy
+- name: type/release
+  color: 5319e7
+  description: Release checklist or release engineering
+- name: type/security
+  color: b60205
+  description: Security or privacy issue
+
+# Area
+- name: area/core
+  color: c5def5
+  description: SegueCore - ChordPro, music theory, library, setlists, shows
+- name: area/editor
+  color: c5def5
+  description: Text and visual chart editor
+- name: area/live
+  color: c5def5
+  description: Stage mode, Gig Mode and live layout
+- name: area/ui
+  color: c5def5
+  description: SegueUI - app shell, menus, settings, theme, accessibility
+- name: area/accessibility
+  color: c5def5
+  description: VoiceOver, Voice Control, contrast and the accessibility labels
+- name: area/services
+  color: c5def5
+  description: Consent, TelemetryDeck, Sentry and Report a Problem
+- name: area/personal
+  color: c5def5
+  description: SeguePersonalModules - Personal flavour only, never shipped
+- name: area/website
+  color: c5def5
+  description: segue.ryandsilva.dev (content/, website/, gen-site)
+- name: area/store
+  color: c5def5
+  description: App Store listing, screenshots, preview and review
+- name: area/build
+  color: c5def5
+  description: Tuist, Makefile, scripts, signing and archive
+- name: area/ci
+  color: c5def5
+  description: GitHub workflows, Dependabot and repo settings
+
+# Priority
+- name: priority/p0
+  color: b60205
+  description: Blocks a release or breaks a gig - drop everything
+- name: priority/p1
+  color: d93f0b
+  description: Next up
+- name: priority/p2
+  color: fbca04
+  description: Soon
+- name: priority/p3
+  color: fef2c0
+  description: Someday
+
+# Status
+- name: status/triage
+  color: ededed
+  description: New, not yet sorted
+- name: status/blocked
+  color: 000000
+  description: Waiting on another issue or an outside step
+- name: status/needs-decision
+  color: d4c5f9
+  description: Needs a ruling before work starts
+- name: status/parked
+  color: bfdadc
+  description: Deliberately deferred
+
+# Automation
+- name: dependencies
+  color: 0366d6
+  description: Dependency update (Dependabot)
