@@ -18,7 +18,7 @@ WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test e2e lint format \
 	verify-appstore check bump site-fonts site-html docs-check shellcheck actionlint repo-check \
-	release-notes labels-sync clean-local archive validate upload upload-dsyms
+	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
 bootstrap: ## Install pinned tools, fetch dependencies, generate the workspace
 	mise install
@@ -113,6 +113,9 @@ upload: ## validate, upload the verified .pkg, signed local tag, dSYMs to Sentry
 upload-dsyms: ## Upload an archive's dSYMs to Sentry (ARCHIVE=path or DSYMS=dir; DRY_RUN=1)
 	@test -n "$(ARCHIVE)$(DSYMS)" || (echo "usage: make upload-dsyms ARCHIVE=<xcarchive> | DSYMS=<dir>" >&2; exit 2)
 	scripts/upload-dsyms.sh $(if $(DRY_RUN),--dry-run) $(ARCHIVE)
+
+probe-shortcuts: ## R35 probe: build the sandboxed Shortcuts Events probe app (research/shortcuts-events-probe)
+	research/shortcuts-events-probe/build.sh
 
 verify-appstore: ## Build the App Store flavor and assert no personal-module symbols
 	scripts/verify-appstore.sh
