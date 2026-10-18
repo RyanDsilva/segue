@@ -25,6 +25,7 @@ final class SegueLiveE2ETests: XCTestCase {
         let library = try XCTUnwrap(library)
         let app = launch(library, extra: LiveLibrary.gigModeShortcuts)
         startShow(app, rehearse: false)
+        E2E.waitUntil(timeout: 5) { !library.shortcutsRun().isEmpty }
         XCTAssertEqual(library.shortcutsRun(), ["Gig Mode On"])
         let title = app.staticTexts[LiveAXID.liveTitle]
         XCTAssertEqual(title.value as? String, "Harbor Lights")
@@ -44,7 +45,9 @@ final class SegueLiveE2ETests: XCTestCase {
         requestPyaar(app)
         playRequestAndFinish(app)
         endShow(app)
-        // Shortcut hooks fired at start and end, and live mode kept focus throughout.
+        // Shortcut hooks fired at start and end (the end one after the stage closes), and
+        // live mode kept focus throughout.
+        E2E.waitUntil(timeout: 5) { library.shortcutsRun().count == 2 }
         XCTAssertEqual(library.shortcutsRun(), ["Gig Mode On", "Gig Mode Off"])
 
         // The request was inserted, so the review appears; Discard keeps the setlist as is.
