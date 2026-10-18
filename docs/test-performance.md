@@ -233,3 +233,131 @@ fewer UI tests (B1 taken further), which is a coverage decision, not a speed fix
    entitlements) or replace with a static check of `CODE_SIGN_ENTITLEMENTS` for that
    configuration plus `App/Segue.entitlements`, leaving the signed proof to `make archive`?
 6. **C4 (E2E in a VM):** make it a research ticket?
+
+## 6. Results (R58, implemented 2026-10-18)
+
+Groups A, B and C are in (commits `e756b61` A; `3a3ccc0`, `bac4ff1`, `8b290c8`, `51a3ac0`
+B; `5f577f5` C; waits fixed after the final runs in `49b5617` and `503d296`). Two items came out differently from the proposal; see 6.4.
+
+### 6.1 Timings, before and after
+
+Before: a fresh full `make e2e` on 2026-10-18 (48 tests, the suite as it was) and the
+stage times of section 1. After: the final `make check` below (51 tests: the sibling Gig
+Mode work added three) and the runs noted.
+
+| Stage | Before | After | How |
+|---|---|---|---|
+| generate + lint + repo-check + generated-file checks | 0.5 min | about 0.3 min | unchanged |
+| build Personal | 0.1-0.4 min | under 0.1 min (incremental) | no index store (A5) |
+| build AppStore (Debug-AppStore) | 0.2-0.5 min | 0 (dropped) | verify-appstore builds it (A4) |
+| package tests (3 packages) | 0.75 min serial | 0.3 min side by side | A6 |
+| verify-appstore | 2.4 min | 0.3 min incremental, 1.2-1.3 min after a rebuild; beside the package tests | A7 (tests + verify side by side: 20 s incremental, 74-78 s rebuilt) |
+| timing-budget package tests | (inside the above) | 0.15 min, alone | A6 |
+| E2E (XCUITest) | 21.5 min (`make e2e` 21:33, tests 1277 s) | about 12.1 min (tests 694-711 s, 42 tests) | A1, A3, B |
+| **`make check`** | **about 25.5 min** | **12:47 and 13:27 (two runs, see 6.5)** | |
+| `make quick` | 0.7-1.7 min | about 0.5-0.8 min (package tests 31 s incl. budgets) | A5, A6 |
+| `make test` | about 0.75 min | 0.5 min (31.6 s) | A6 |
+| `make gate` (a Live change: Live class + smoke set) | n/a | 5:51 | C1 |
+| `make e2e-smoke` | about 6 min | about 2.5 min (smoke part of the gate run) | C3 |
+
+E2E by class, before (fresh baseline) -> after A -> after A + B:
+
+| Class | Before | After A | After A + B |
+|---|---|---|---|
+| LaunchSmokeTests (1) | 7.7 s | 4.7 s | 3.7 s |
+| SegueCoreUXE2ETests | 430 s (22 tests) | 232 s | 188 s (14 tests) |
+| SegueE2ETests (2) | 99 s | 55 s | 55 s |
+| SegueEditorE2ETests | 190 s (6) | 97 s | 94 s (5) |
+| SegueGigModeE2ETests (sibling; 4 then 7) | 81 s | 117 s (7) | unchanged by this work |
+| SegueLiveE2ETests (10) | 235 s | 144-150 s | 141 s |
+| SegueSetlistBuilderE2ETests (1) | 108 s | 47.5 s | 47.5 s |
+| SegueSetlistGigLogE2ETests (1) | 36 s | 20.7 s | 20.7 s |
+| SegueSetlistLibraryE2ETests (1) | 91 s | 39 s | 39 s |
+| **All** | **1277 s** | **762 s** | **694-711 s** |
+
+A1 (fast polling) is nearly all of A's E2E gain. A2 (animations off) measured as noise:
+CoreUX 220.5 s with animations vs 221.4 s without, Editor 97.4 vs 99.3, Builder 47.2 vs
+47.5, so it was taken out again (6.4).
+
+### 6.2 What changed
+
+- A1: `E2E.waitUntil` / `E2E.expect` (0.05 s polls) and `appears`, `disappears`,
+  `hasValue`, `reaches` on the elements and app replace every `waitForExistence`,
+  `waitForNonExistence`, `XCUIApplication.wait(for:)` and `XCTNSPredicateExpectation`
+  helper (except in the sibling-owned `SegueGigModeE2ETests.swift`, which still has its own
+  0.1 s poll and a few `waitForExistence`). Lists that re-render while polled are read from
+  one snapshot (`E2E.snapshots`), and `settles` waits for a sliding panel to stop.
+- A3: the crash test waits for the scroll position in the show file instead of 2 s; the
+  rehearsal waits on the scroll status ("Scrolling", "Scroll paused") with 0.5 s holds only
+  for "nothing moves" checks; the page-turner loop waits for each press instead of 0.4 s.
+  Kept: the two 1.5 s sleeps in `testRestoresSectionAndSongAcrossLaunches` (the restore
+  write lands in the app's sandboxed defaults, which the sandboxed runner cannot read).
+  Not done: `-SegueLiveTimeScale 30` for the Gig Mode timeout test (sibling-owned file).
+- A4-A7: `make check` no longer builds Debug-AppStore twice; `COMPILER_INDEX_STORE_ENABLE=NO`
+  and `--disable-index-store`; `scripts/parallel.sh` runs the three package test runs side
+  by side and verify-appstore beside them; the timing-budget tests (`*PerformanceTests`,
+  the 2,000-song search) run alone afterwards (`make test-perf`); `make quick` also skips
+  the long property tests. DerivedData: the Personal build, every E2E target and the gate
+  share `.build/DerivedData`; verify-appstore keeps `.build/DerivedData-verify` (its checks
+  read that build graph, so sharing would be unsafe); each SwiftPM package keeps its own
+  `.build` (SwiftPM scratch paths are per root package).
+- B1/B2: see the mapping in 6.3.
+- C: `make gate`, `make e2e-smoke`, `UITests/e2e-map.tsv`, `scripts/gate.sh`;
+  `make check` is the release and phase-end gate (README, CONTRIBUTING, release README 3).
+
+### 6.3 Coverage mapping (old test and assertion -> new location)
+
+Counts: 5 E2E tests' assertions moved (wholly or in part) to 4 new in-process tests plus
+one new test in `AutosaveTests`; 12 tests merged into 4 scenarios; 1 duplicate check
+(Acknowledgements credits) merged into a scenario; everything else kept as it was. E2E
+tests: 51 -> 42 (CoreUX 22 -> 14, Editor 6 -> 5).
+
+| Old test: assertion | New location |
+|---|---|
+| CoreUX `testAutosaveRealDebounce`: nothing on disk right after typing; written within 5 s; not before 0.8 s | `AutosaveTests` `the shipped debounce writes after a one second pause in real time` (real clock, real app session, real file); E2E test removed |
+| CoreUX `testHelpMenu`: What's New, Request a Feature, Privacy Policy, Terms of Use open their pages; Report a Problem opens a support mail | `HelpMenuTests` `each help link opens its page and report a problem mails support` (the menu now renders `HelpMenu.items`; URLs through `RecordingWorkspaceActions`, the URL table in `SegueLinksTests`) |
+| CoreUX `testHelpMenu`: titles in order; Segue Help opens its page; Keyboard Shortcuts and Acknowledgements windows open; Export hidden; About panel | kept in `testMenus` (plus in process: `HelpMenuTests` titles, window items, hidden items) |
+| CoreUX `testKeyboardShortcutsWindow`, `testSetlistMenuShortcuts`, `testReopenMainWindow`: all assertions | kept, merged into `testMenus` (the Shortcuts window now opens from the Help menu; Cmd-/ is still pressed in `testNewSurfacesInLightAppearance`) |
+| `LaunchSmokeTests`: Acknowledgements credits Schibsted Grotesk, GRDB, Tonic and the OFL text | kept, moved into `testMenus` (the Acknowledgements step) |
+| CoreUX `testShowInFinder`, `testDeleteSongToTrashAndUndo`, `testImportFromMenu`, `testDeleteShortcutNeverFiresInText`: all assertions | kept, merged into `testLibraryFileActions` ("trash is empty" became "trash unchanged", the import's "4 in the trash" became "4 more") |
+| CoreUX `testCleanEditorPicksUpExternalEdit`, `testExternalEditConflict`: all assertions | kept, merged into `testExternalEdits` |
+| CoreUX `testSetlistBuilderUndoRedo`: Undo Rename, Undo Add, Redo Add, Redo Rename, each on disk | `UndoWalkTests` `builder add rename and remove undo one by one and redo in order` (also checks every action name); the E2E keeps the UI edits, Cmd-Z (Undo Remove), Shift-Cmd-Z and the external-edit check |
+| CoreUX `testSongMetadataUndo`: Undo tag, Redo tag | `UndoWalkTests` `song tag and proficiency undo one by one and redo in order`; the E2E keeps the UI edits, Cmd-Z and Shift-Cmd-Z |
+| Editor `testPillGestures`, `testNashvilleNumberEntry`: all assertions | kept, merged into `testVisualEditorGestures` |
+| Live `testZoomMemoryAndMinimumLyricSize`: zoom kept per song across navigation, second column step and its memory, the indicator goes away, the long song at 30pt scrolls at the minimum | `LiveStageZoomTests` (real app model, stage, layout engine and stores; values read from the stage body's accessibility value as the E2E reads them); the E2E keeps the Settings stepper, fitted size >= 30, Cmd-= and C on the real stage |
+
+### 6.4 Open questions: what was decided, and what is still open
+
+1. B1: taken for the listed checks, except `testDeleteShortcutNeverFiresInText`, which stays
+   an E2E check (merged): it is about the real key equivalent reaching the real text view,
+   which no in-process test can reproduce.
+2. **B4 (one app launch per class): not done; needs Ryan's call.** It was built (a Debug-only
+   reset channel) and dropped on two platform facts found on the way: XCTest terminates
+   the app under test at the end of every test once an `XCUIApplication` has launched or
+   driven it (also when launched from class set-up or a test observer), and a sandboxed
+   runner cannot pass launch arguments through Launch Services. The only way left is a
+   Debug-only "launch arguments from a file" bootstrap that rewrites the app's argument
+   domain at startup, for a gain of about 1 s per test (a launch now costs about 1.1 s):
+   about 30-45 s per full run. Options: build that bootstrap, or skip B4.
+3. A2: implemented and measured; no measurable effect (6.1), so removed rather than kept
+   as a no-op. Options: leave it out (current), or keep it anyway for future animations.
+4. Taken: `make check` is the release and phase-end gate, `make gate` the workstream gate.
+5. Kept the Release-Personal build in verify-appstore (no coverage change); it now runs
+   beside the package tests, so it costs little wall time.
+6. C4 (E2E in a VM): recommended as a research ticket; not filed (GitHub changes need
+   Ryan's go-ahead).
+
+### 6.5 The final runs
+
+- `make check` (13:27): green apart from one failure, `testFridayGig` reading the Shortcut
+  log before the end Shortcut was written; fixed in `49b5617`.
+- `make check` again (12:47): green apart from one failure, `testExternalEdits` writing the
+  external edit while the editor's own save was still finishing (its bytes were on disk, the
+  editor not yet clean); fixed in `503d296` by waiting for "Saved". Both were waits the old one-second
+  polling had hidden.
+- The re-run of that test could not start: the Mac stopped granting UI automation
+  ("Timed out while enabling automation mode", AutomationModeUI waiting). The last fix is
+  therefore not yet proven by a full `make check`; the next run needs Ryan at an unlocked
+  Mac.
+- `make gate` (a Live-only change since its base: Live class + smoke set, package tests,
+  App Store build): 5:51. It found the two Live waits fixed in `51a3ac0`.
