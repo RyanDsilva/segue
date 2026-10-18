@@ -125,6 +125,10 @@ public final class LibraryViewModel {
     public internal(set) var importSummary: ImportSummary?
     /// A show is on stage: the main window takes no imports or drops meanwhile.
     public internal(set) var isPerforming = false
+    /// Undo targets of metadata edits, one per song (3.9.1).
+    let metadataTargets = UndoTargets<SongID>()
+    /// Metadata undo and redo writes, run in order.
+    var metadataWork: Task<Void, Never>?
     /// Undo targets of Import, one per import.
     let importTargets = UndoTargets<Int>()
     var importCount = 0

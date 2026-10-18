@@ -3,14 +3,19 @@ import Library
 
 /// Store round trips that only reload afterwards (refresh, rebuild, display toggles).
 public extension LibraryViewModel {
-    /// Rescans the folder for external edits, then reloads.
+    /// Rescans the folder for external edits, then reloads. A song whose files changed on
+    /// disk loses its metadata undo actions (an undo must not overwrite another app's edit).
     func refresh() async {
+        let before = Dictionary(catalog.map { ($0.id, $0.revision) }) { first, _ in first }
         do {
             try await store.refresh()
         } catch {
             errorMessage = UserMessage.describe(error)
         }
         await reload()
+        for (id, revision) in before where song(id: id)?.revision != revision {
+            metadataTargets.removeActions(of: id, from: undoManager)
+        }
     }
 
     /// Deletes and rebuilds the index from the files on disk, then reloads.

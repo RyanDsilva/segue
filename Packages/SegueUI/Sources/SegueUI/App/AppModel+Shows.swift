@@ -165,14 +165,14 @@
             if save, !blocked {
                 do {
                     let current = await session.stores.setlists.setlist(id: diff.setlistId)
-                    _ = try await session.stores.setlists.replaceEntries(
+                    // Undoable in the main window afterwards ("Save Show Order").
+                    try await session.setlists.saveShowOrder(
                         diff.entries(
                             mergingInto: current?.entries ?? diff.planned,
                             including: inserted,
                         ),
                         in: diff.setlistId,
                     )
-                    await session.setlists.reload()
                 } catch {
                     reviewSaveFailure = "“\(diff.setlistName)” was not updated "
                         + "(\(UserMessage.describe(error))). Try again, or Discard to keep the "

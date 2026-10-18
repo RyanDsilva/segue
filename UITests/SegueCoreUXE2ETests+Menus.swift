@@ -148,6 +148,11 @@ extension SegueCoreUXE2ETests {
         contextItem.hover()
         app.menuItems["Friday"].firstMatch.click()
         XCTAssertTrue(wait { self.entryCount(setlistFile) == 3 })
+
+        // Edit > Undo ("Add Song") takes the last copy out again.
+        harbour.click(in: app)
+        app.typeKey("z", modifierFlags: .command, in: app)
+        XCTAssertTrue(wait { self.entryCount(setlistFile) == 2 }, "Undo Add Song")
     }
 }
 

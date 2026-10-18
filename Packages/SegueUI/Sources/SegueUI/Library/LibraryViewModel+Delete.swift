@@ -49,6 +49,8 @@ extension LibraryViewModel {
         let title = song(id: id).map(Self.sortTitle) ?? "The song"
         do {
             let receipt = try await store.deleteSong(id: id)
+            // Its metadata edits cannot be undone once it is in the Trash.
+            metadataTargets.removeActions(of: id, from: undoManager)
             if !receipt.leftBehind.isEmpty {
                 errorMessage = "“\(title)” is in the Trash, but its metadata file could not be "
                     + "moved there and stays in the library folder."

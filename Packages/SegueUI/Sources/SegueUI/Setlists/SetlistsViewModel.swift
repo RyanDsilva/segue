@@ -15,13 +15,21 @@ public final class SetlistsViewModel {
     /// The last failure, shown as a dismissible banner.
     public var errorMessage: String?
     /// Setlist files that could not be loaded (reported, never deleted).
-    public private(set) var loadIssues: [SetlistLoadIssue]
+    public internal(set) var loadIssues: [SetlistLoadIssue]
 
     let store: SetlistStore
     /// The main window's undo manager (Edit > Undo).
     @ObservationIgnored weak var undoManager: UndoManager?
     /// Undo targets of Move Setlist to Trash, one per setlist.
     let trashTargets = UndoTargets<SetlistID>()
+    /// Undo targets of builder edits, one per setlist, so one setlist's actions can be
+    /// dropped (an external edit, a failed undo) without touching the others (3.9).
+    let editTargets = UndoTargets<SetlistID>()
+    /// Each setlist as Segue last loaded or wrote it: a reload that finds another value was
+    /// edited in another app, and its undo actions go (B-16).
+    var known: [SetlistID: Setlist] = [:]
+    /// Undo and redo file work, run in order.
+    var undoWork: Task<Void, Never>?
 
     public init(store: SetlistStore, loadIssues: [SetlistLoadIssue] = []) {
         self.store = store
@@ -36,6 +44,7 @@ public final class SetlistsViewModel {
 
     public func reload() async {
         setlists = await store.all()
+        known = Dictionary(setlists.map { ($0.id, $0) }) { first, _ in first }
         if let selection, !setlists.contains(where: { $0.id == selection }) {
             self.selection = nil
         }
@@ -46,17 +55,21 @@ public final class SetlistsViewModel {
     public func create(name: String) async -> Setlist? {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
-        return await mutate { store in
+        let created = await mutate { store in
             try await store.create(name: trimmed)
         } then: { setlist in
             self.selection = setlist.id
         }
+        if let created {
+            registerCreationUndo(created.id, actionName: "New Setlist")
+        }
+        return created
     }
 
     /// Appends `songID` to setlist `id` (repeats allowed); returns whether it was saved.
     @discardableResult
     public func add(_ songID: SongID, to id: SetlistID) async -> Bool {
-        await mutate { store in
+        await mutate(undo: (id, "Add Song")) { store in
             try await store.addSong(songID, to: id)
         } != nil
     }
@@ -69,14 +82,14 @@ public final class SetlistsViewModel {
         if let index = setlists.firstIndex(where: { $0.id == id }) {
             setlists[index].entries.move(fromOffsets: source, toOffset: destination)
         }
-        await mutate { store in
+        await mutate(undo: (id, "Move Song")) { store in
             try await store.move(in: id, fromOffsets: source, toOffset: destination)
         }
     }
 
     /// Removes entries (`onDelete`, context menu).
     public func remove(in id: SetlistID, atOffsets offsets: IndexSet) async {
-        await mutate { store in
+        await mutate(undo: (id, offsets.count == 1 ? "Remove Song" : "Remove Songs")) { store in
             try await store.remove(in: id, atOffsets: offsets)
         }
     }
@@ -85,7 +98,7 @@ public final class SetlistsViewModel {
     public func rename(_ id: SetlistID, to name: String) async {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        await mutate { store in
+        await mutate(undo: (id, "Rename Setlist")) { store in
             try await store.rename(id, to: trimmed)
         }
     }
@@ -93,11 +106,15 @@ public final class SetlistsViewModel {
     /// Saves a copy of setlist `id` ("<name> copy") and selects it.
     @discardableResult
     public func duplicate(_ id: SetlistID) async -> Setlist? {
-        await mutate { store in
+        let copy = await mutate { store in
             try await store.duplicate(id)
         } then: { copy in
             self.selection = copy.id
         }
+        if let copy {
+            registerCreationUndo(copy.id, actionName: "Duplicate Setlist")
+        }
+        return copy
     }
 
     /// Moves setlist `id`'s file to the Trash (shows that ran it keep their snapshot);
@@ -151,21 +168,21 @@ public final class SetlistsViewModel {
     /// library column, or its `+` button.
     public func insert(_ songIDs: [SongID], into id: SetlistID, at offset: Int?) async {
         guard !songIDs.isEmpty else { return }
-        await mutate { store in
+        await mutate(undo: (id, songIDs.count == 1 ? "Add Song" : "Add Songs")) { store in
             try await store.insertSongs(songIDs, into: id, at: offset)
         }
     }
 
     /// Saves one entry's overrides and note.
     public func updateEntry(_ entry: SetlistEntry, in id: SetlistID) async {
-        await mutate { store in
+        await mutate(undo: (id, "Edit Song Settings")) { store in
             try await store.updateEntry(entry, in: id)
         }
     }
 
     /// Saves venue, date and target length.
     public func updateDetails(_ details: SetlistDetails, of id: SetlistID) async {
-        await mutate { store in
+        await mutate(undo: (id, "Edit Details")) { store in
             try await store.updateDetails(details, of: id)
         }
     }
@@ -175,15 +192,27 @@ public final class SetlistsViewModel {
         setlists.first { $0.id == id }
     }
 
+    /// Runs `operation` through the store, then reloads. With `undo`, the setlist's value
+    /// before (from the store, not any optimistic local change) and after are registered
+    /// as one undoable step named `undo.name`.
     @discardableResult
     private func mutate(
+        undo: (id: SetlistID, name: String)? = nil,
         _ operation: (SetlistStore) async throws -> Setlist,
         then: (Setlist) -> Void = { _ in },
     ) async -> Setlist? {
+        let before: Setlist? = if let undo {
+            await store.setlist(id: undo.id)
+        } else {
+            nil
+        }
         do {
             let updated = try await operation(store)
             await reload()
             then(updated)
+            if let undo, let before {
+                registerSnapshotUndo(undo.id, actionName: undo.name, before: before, after: updated)
+            }
             return updated
         } catch {
             errorMessage = UserMessage.describe(error)

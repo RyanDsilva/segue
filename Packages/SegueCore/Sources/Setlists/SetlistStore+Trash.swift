@@ -64,6 +64,13 @@ public extension SetlistStore {
         }
     }
 
+    /// Loads every setlist file again (picking up edits made in other apps); like `load`.
+    @discardableResult
+    func reloadFromDisk() throws -> [SetlistLoadIssue] {
+        guard let root else { throw SetlistError.notLoaded }
+        return try load(root: root)
+    }
+
     /// The file of setlist `id` (`setlists/<slug>.setlist.json`), or nil when it is not
     /// loaded. The file itself may be gone from disk.
     func fileURL(for id: SetlistID) -> URL? {

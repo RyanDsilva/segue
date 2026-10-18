@@ -102,7 +102,7 @@
         /// becomes active (not while performing).
         public func refreshFromDisk() async {
             await library.refresh()
-            await setlists.reload()
+            await setlists.reloadFromDisk()
         }
 
         /// Shows the builder of the setlist selected in `setlists` (after create or

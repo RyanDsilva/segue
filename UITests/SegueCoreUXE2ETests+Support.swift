@@ -323,4 +323,12 @@ enum CoreAXID {
     static let checklistCancel = "segue.live.checklist.cancel"
     static let setlistNameField = "segue.setlists.new.name"
     static let addToSetlistMenu = "segue.song.addToSetlist"
+    static let setlistMenu = "segue.setlist.menu"
+    static let setlistRenameAction = "segue.setlist.action.rename"
+    static let renameField = "segue.setlistName.field"
+    static let entryRemove = "segue.setlist.entry.remove"
+    static let songTagField = "segue.song.tag.field"
+    static func proficiency(_ level: String) -> String {
+        "segue.song.proficiency.\(level)"
+    }
 }
