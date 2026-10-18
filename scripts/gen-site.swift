@@ -817,7 +817,7 @@ struct Renderer {
             ("property", "og:image", "\(origin)/assets/img/og.png"),
             ("property", "og:image:width", "1200"),
             ("property", "og:image:height", "630"),
-            ("property", "og:image:alt", "The Segue wordmark and app icon"),
+            ("property", "og:image:alt", "Segue for Mac: your chart, your set, your cue."),
             ("name", "twitter:card", "summary_large_image"),
         ]
         let lines = tags.map { kind, key, value in
@@ -1531,26 +1531,65 @@ func writeImage(_ context: CGContext, to path: String, type: CFString, quality: 
     print("gen-site: rendered website/\(path)")
 }
 
+func textWidth(_ text: String, font: CTFont, tracking: CGFloat = 0) -> CGFloat {
+    let attributes: [NSAttributedString.Key: Any] = [
+        NSAttributedString.Key(kCTFontAttributeName as String): font,
+        NSAttributedString.Key(kCTKernAttributeName as String): tracking * CTFontGetSize(font),
+    ]
+    let line = CTLineCreateWithAttributedString(
+        NSAttributedString(string: text, attributes: attributes),
+    )
+    return CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil))
+}
+
+/// Splits `text` into two lines of as-equal-as-possible width.
+func balancedLines(_ text: String, font: CTFont, tracking: CGFloat) -> [String] {
+    let words = text.split(separator: " ").map(String.init)
+    guard words.count > 1 else { return [text] }
+    let splits = (1 ..< words.count).map { index in
+        [words[..<index].joined(separator: " "), words[index...].joined(separator: " ")]
+    }
+    return splits.min { lhs, rhs in
+        let left = lhs.map { textWidth($0, font: font, tracking: tracking) }.max() ?? 0
+        let right = rhs.map { textWidth($0, font: font, tracking: tracking) }.max() ?? 0
+        return left < right
+    } ?? [text]
+}
+
+/// The Open Graph card, in the site's Stage direction: centred eyebrow, the tagline as a
+/// big tight headline, and the wordmark at the foot.
 func renderOpenGraph(_ palette: Palette, tagline: String) throws {
-    let context = try bitmapContext(width: 1200, height: 630)
+    let (width, height): (CGFloat, CGFloat) = (1200, 630)
+    let context = try bitmapContext(width: Int(width), height: Int(height))
+    let ink = try palette.color("ink", dark: true)
+    let muted = try palette.color("muted", dark: true)
+    let cue = try palette.color("cue", dark: true)
     try context.setFillColor(palette.color("ground", dark: true))
-    context.fill(CGRect(x: 0, y: 0, width: 1200, height: 630))
-    try drawSVG(
-        "design/icon/master.svg",
-        in: CGRect(x: 96, y: 630 - 96 - 128, width: 128, height: 128),
-        context: context,
-    )
+    context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+
+    let eyebrowFont = try font("SemiBold", 30)
+    let eyebrow = "Segue for Mac"
+    let eyebrowWidth = textWidth(eyebrow, font: eyebrowFont) + 22
+    let eyebrowX = (width - eyebrowWidth) / 2
+    context.setFillColor(cue)
+    context.fillEllipse(in: CGRect(x: eyebrowX, y: 488, width: 12, height: 12))
+    drawText(eyebrow, font: eyebrowFont, color: muted, x: eyebrowX + 22, y: 484, in: context)
+
+    let headline = try font("ExtraBold", 104)
+    let lines = balancedLines(tagline, font: headline, tracking: -0.045)
+    for (index, line) in lines.enumerated() {
+        let lineWidth = textWidth(line, font: headline, tracking: -0.045)
+        drawText(
+            line, font: headline, color: ink, tracking: -0.045, x: (width - lineWidth) / 2,
+            y: 370 - CGFloat(index) * 104, in: context,
+        )
+    }
+
+    let markSize: CGFloat = 40
+    let markWidth = try measureWordmark(size: markSize)
     try drawWordmark(
-        size: 132, x: 90, baseline: 250, word: palette.color("ink", dark: true),
-        dot: palette.color("cue", dark: true), in: context,
-    )
-    try drawText(
-        tagline, font: font("Bold", 48), color: palette.color("ink", dark: true), tracking: -0.02,
-        x: 96, y: 160, in: context,
-    )
-    try drawText(
-        "Lyrics, chords and setlists for Mac", font: font("SemiBold", 30),
-        color: palette.color("muted", dark: true), x: 96, y: 104, in: context,
+        size: markSize, x: (width - markWidth) / 2, baseline: 64, word: ink, dot: cue,
+        in: context,
     )
     try writeImage(context, to: "assets/img/og.png", type: "public.png" as CFString)
 }
