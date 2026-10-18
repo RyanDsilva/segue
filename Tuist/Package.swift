@@ -26,6 +26,17 @@ import PackageDescription
         "GCC_WARN_INHIBIT_ALL_WARNINGS": "NO",
     ]
 
+    /// sentry-cocoa's static targets hold files that compile to nothing on macOS (iOS-only
+    /// and other-architecture sources); libtool warns once per such object, and the build's
+    /// zero-warning gate (scripts/xcodebuild.sh) would fail on a vendored dependency's layout.
+    private let sentryStaticTargets = [
+        "_SentryCrashV9Headers", "_SentryPrivate", "SentryCrashV9", "SentryCrashV9Swift",
+        "SentryHeaders", "SentryObjCInternal", "SentrySwift",
+    ]
+    private let quietLibtool: SettingsDictionary = [
+        "OTHER_LIBTOOLFLAGS": "$(inherited) -no_warning_for_no_symbols",
+    ]
+
     let packageSettings = PackageSettings(
         productTypes: [:],
         baseSettings: .settings(
@@ -42,7 +53,7 @@ import PackageDescription
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists", "Shows",
                 "LiveLayout", "Plugins", "Support", "Services",
                 "SegueUI", "SeguePersonalModules", "VendorServices",
-            ].map { ($0, firstPartyStrict) },
+            ].map { ($0, firstPartyStrict) } + sentryStaticTargets.map { ($0, quietLibtool) },
         ),
     )
 #endif

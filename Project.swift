@@ -47,6 +47,15 @@ let personalBundleID = "dev.ryandsilva.segue.personal"
 let uiTestsBundleID = "dev.ryandsilva.segue.uitests"
 let deploymentTargets: DeploymentTargets = .macOS("26.0")
 
+// MARK: - Hosted services (WS3, docs/release/README.md "Service values")
+
+/// Not secrets: a DSN and TelemetryDeck app IDs ship inside the app binary. The app reads
+/// them from Info.plist (`VendorConfig` in Packages/SegueVendorServices).
+let sentryDSN = "https://997bf383bbb7edd32a15c839fba202b8@o4512275137691648.ingest.us.sentry.io/4512275142475776"
+let telemetryDeckAppIDAppStore = "CDF7AF01-FB23-4A30-AFAB-8EAB4BF6EFB5"
+let telemetryDeckAppIDPersonal = "6E38DC85-EE5E-4ECF-A8E0-E4FDFDE9B208"
+let telemetryDeckNamespace = "dev.ryandsilva"
+
 // MARK: - Configurations
 
 let debugPersonal: ConfigurationName = "Debug-Personal"
@@ -85,6 +94,34 @@ let projectSettings: Settings = .settings(
 
 // MARK: - Targets
 
+/// The Info.plist both flavors share (explicit, not Tuist's default, so no
+/// NSMainStoryboardFile or empty CFBundleIconFile ships; the asset compiler adds the icon keys
+/// from ASSETCATALOG_COMPILER_APPICON_NAME).
+let appInfoPlist: [String: Plist.Value] = [
+    "CFBundleDevelopmentRegion": "$(DEVELOPMENT_LANGUAGE)",
+    "CFBundleExecutable": "$(EXECUTABLE_NAME)",
+    "CFBundleIdentifier": "$(PRODUCT_BUNDLE_IDENTIFIER)",
+    "CFBundleInfoDictionaryVersion": "6.0",
+    "CFBundleName": "$(PRODUCT_NAME)",
+    // R3: the Dock name stays "Segue".
+    "CFBundleDisplayName": "Segue",
+    "CFBundlePackageType": "APPL",
+    "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+    "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
+    // R3 primary category.
+    "LSApplicationCategoryType": "public.app-category.music",
+    "LSMinimumSystemVersion": "$(MACOSX_DEPLOYMENT_TARGET)",
+    "NSPrincipalClass": "NSApplication",
+    // R30: one copyright string everywhere.
+    "NSHumanReadableCopyright": "© 2026 Ryan Rony Dsilva",
+    // Only CryptoKit hashing and OS-provided HTTPS, both exempt.
+    "ITSAppUsesNonExemptEncryption": false,
+    // Hosted services (WS3): filled from the per-flavor build settings in `appTarget`.
+    "SegueSentryDSN": "$(SEGUE_SENTRY_DSN)",
+    "SegueTelemetryDeckAppID": "$(SEGUE_TELEMETRYDECK_APP_ID)",
+    "SegueTelemetryDeckNamespace": "$(SEGUE_TELEMETRYDECK_NAMESPACE)",
+]
+
 /// Both app flavors compile the same sources and share the Info.plist. They differ in bundle
 /// ID (`personalBundleID` / `appStoreBundleID`, R11) and entitlements file: the App Store
 /// flavor uses `App/SegueAppStore.entitlements` (asserted exactly by the release checks),
@@ -97,6 +134,8 @@ func appTarget(name: String, personal: Bool) -> Target {
     var dependencies: [TargetDependency] = [
         .external(name: "SegueUI"),
         .external(name: "SegueCore"),
+        // Linked only; consent and UI wiring land in WS3 phase 3.
+        .external(name: "VendorServices"),
     ]
     var settings: SettingsDictionary = [
         "PRODUCT_NAME": "Segue",
@@ -113,6 +152,12 @@ func appTarget(name: String, personal: Bool) -> Target {
         // No app accent colour: controls keep the system accent, because coral is reserved
         // for the cue and is never a control fill (docs/brand.md section 7).
         "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "",
+        // Read through Info.plist by VendorConfig; each flavor has its own TelemetryDeck app.
+        "SEGUE_SENTRY_DSN": .string(sentryDSN),
+        "SEGUE_TELEMETRYDECK_APP_ID": .string(
+            personal ? telemetryDeckAppIDPersonal : telemetryDeckAppIDAppStore,
+        ),
+        "SEGUE_TELEMETRYDECK_NAMESPACE": .string(telemetryDeckNamespace),
     ]
     if personal {
         dependencies.append(.external(name: "SeguePersonalModules"))
@@ -125,29 +170,7 @@ func appTarget(name: String, personal: Bool) -> Target {
         productName: "Segue",
         bundleId: personal ? personalBundleID : appStoreBundleID,
         deploymentTargets: deploymentTargets,
-        // Explicit dictionary (not Tuist's default) so no NSMainStoryboardFile or empty
-        // CFBundleIconFile ships; the asset compiler adds the icon keys from
-        // ASSETCATALOG_COMPILER_APPICON_NAME.
-        infoPlist: .dictionary([
-            "CFBundleDevelopmentRegion": "$(DEVELOPMENT_LANGUAGE)",
-            "CFBundleExecutable": "$(EXECUTABLE_NAME)",
-            "CFBundleIdentifier": "$(PRODUCT_BUNDLE_IDENTIFIER)",
-            "CFBundleInfoDictionaryVersion": "6.0",
-            "CFBundleName": "$(PRODUCT_NAME)",
-            // R3: the Dock name stays "Segue".
-            "CFBundleDisplayName": "Segue",
-            "CFBundlePackageType": "APPL",
-            "CFBundleShortVersionString": "$(MARKETING_VERSION)",
-            "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
-            // R3 primary category.
-            "LSApplicationCategoryType": "public.app-category.music",
-            "LSMinimumSystemVersion": "$(MACOSX_DEPLOYMENT_TARGET)",
-            "NSPrincipalClass": "NSApplication",
-            // R30: one copyright string everywhere.
-            "NSHumanReadableCopyright": "© 2026 Ryan Rony Dsilva",
-            // Only CryptoKit hashing and OS-provided HTTPS, both exempt.
-            "ITSAppUsesNonExemptEncryption": false,
-        ]),
+        infoPlist: .dictionary(appInfoPlist),
         sources: ["App/Sources/**"],
         // App icon: the Icon Composer document generated by scripts/gen-icon.swift. Colour
         // tokens and fonts ship in the SegueUI package's resource bundle, not here. The

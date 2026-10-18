@@ -68,6 +68,7 @@ build-appstore: ## Build the App Store flavor
 
 test: ## Core integration suite + parser corpus + theme tokens (Swift Testing)
 	cd $(CORE_DIR) && swift test
+	cd Packages/SegueVendorServices && swift test
 	# SegueUI theme tests need Swift Build (the native build system copies asset catalogs
 	# uncompiled). Swift Build suppresses warnings in the non-root SegueCore package, which
 	# conflicts with its warnings-as-errors setting, so warnings are failed by grep instead.
