@@ -294,6 +294,11 @@ func cssSource(_ tokens: [ColorToken]) throws -> String {
     \(light)
       }
     }
+    /* Always the stage: dark values in both schemes, like the app's stage window. */
+    .scheme-stage {
+      color-scheme: dark;
+    \(dark)
+    }
 
     """
 }

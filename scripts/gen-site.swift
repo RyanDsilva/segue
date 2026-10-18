@@ -1257,19 +1257,25 @@ struct Checker {
         }
     }
 
-    /// Check 5: site.css uses tokens only.
+    /// Check 5: every hand-written stylesheet (all of assets/css except the generated
+    /// tokens.css) uses tokens only.
     mutating func checkSiteCSS() {
-        guard let css = data("assets/css/site.css").flatMap({ String(data: $0, encoding: .utf8) })
-        else { return }
-        let literals = captures(
-            #"#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\("#,
-            in: css,
-        )
-        for literal in literals {
-            fail("website/assets/css/site.css: colour literal \"\(literal[0])\"; use var(--token)")
+        let sheets = publishedFiles().filter {
+            $0.hasPrefix("assets/css/") && $0.hasSuffix(".css") && $0 != "assets/css/tokens.css"
         }
-        if !captures(#"url\(\s*["']?(?:https?:)?//"#, in: css).isEmpty {
-            fail("website/assets/css/site.css: loads a url() from another origin")
+        for sheet in sheets {
+            guard let css = data(sheet).flatMap({ String(data: $0, encoding: .utf8) })
+            else { continue }
+            let literals = captures(
+                #"#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\("#,
+                in: css,
+            )
+            for literal in literals {
+                fail("website/\(sheet): colour literal \"\(literal[0])\"; use var(--token)")
+            }
+            if !captures(#"url\(\s*["']?(?:https?:)?//"#, in: css).isEmpty {
+                fail("website/\(sheet): loads a url() from another origin")
+            }
         }
     }
 

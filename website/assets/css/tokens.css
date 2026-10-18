@@ -28,3 +28,18 @@
     --surface-alt: #F2F2F4;
   }
 }
+/* Always the stage: dark values in both schemes, like the app's stage window. */
+.scheme-stage {
+  color-scheme: dark;
+  --cue: #F2555A;
+  --cue-text: #FF6B6F;
+  --ink: #ECECEE;
+  --ground: #101113;
+  --muted: #8E8E96;
+  --line: #222326;
+  --control-border: #8E8E9666;
+  --played: #8E8E96;
+  --line-strong: #2A2B2F;
+  --indicator-off: #66676E;
+  --surface-alt: #1A1B1E;
+}
