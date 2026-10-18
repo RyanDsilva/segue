@@ -28,6 +28,15 @@
         /// How an open library is claimed: the real cross-process lock, or none for tests
         /// that run several in-process app instances on one library on purpose.
         public var libraryLock: LibraryLockPolicy
+        /// Menu slots later workstreams fill (Welcome, What's New, export, feedback).
+        public var hooks: AppHooks
+        /// Opens links and reveals files (Help links, Show in Finder).
+        public var workspace: any WorkspaceActions
+        /// Where File > Import Songs… gets its files.
+        public var importPanel: any ImportPanel
+        /// Test-only override of the autosave idle debounce (`-SegueAutosaveDelay`); nil
+        /// uses `AutosavePolicy.idle`.
+        public var autosaveDelay: Duration?
 
         public init(
             fileSystem: any FileSystem,
@@ -39,8 +48,16 @@
             shapeLibraryURL: URL? = nil,
             live: LiveDependencies? = nil,
             libraryLock: LibraryLockPolicy = .exclusive,
+            hooks: AppHooks = AppHooks(),
+            workspace: (any WorkspaceActions)? = nil,
+            importPanel: (any ImportPanel)? = nil,
+            autosaveDelay: Duration? = nil,
         ) {
             self.live = live ?? LiveDependencies(settings: LiveSettingsStore(defaults: .standard))
+            self.hooks = hooks
+            self.workspace = workspace ?? NSWorkspaceActions()
+            self.importPanel = importPanel ?? OpenPanelImportPanel()
+            self.autosaveDelay = autosaveDelay
             self.libraryLock = libraryLock
             self.fileSystem = fileSystem
             self.clock = clock

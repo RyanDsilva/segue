@@ -24,6 +24,13 @@ import Support
     /// - `-SegueStartShortcut <name>` / `-SegueEndShortcut <name>`: store these Gig Mode
     ///   Shortcut names in the test suite's Live settings at launch, as if the user had set
     ///   them in Settings > Live (the Shortcuts are off by default, R18).
+    /// - `-SegueWorkspaceLog <file>`: open no links and reveal nothing in Finder; record each
+    ///   call as one JSON line in `<file>` (Help links, Show in Finder).
+    /// - `-SegueTrashPath <dir>`: move deleted items into `<dir>` instead of the user's Trash.
+    ///   Must be under `/private/tmp/segue-e2e/` (the sandbox exception).
+    /// - `-SegueImportPanelPaths <p1:p2>`: File > Import Songs… "chooses" these paths instead
+    ///   of showing the open panel.
+    /// - `-SegueAutosaveDelay <seconds>`: the autosave idle debounce (E2E uses 0.3).
     struct LaunchOptions: Sendable, Equatable {
         static let libraryPathFlag = "-SegueLibraryPath"
         static let resetStateFlag = "-SegueResetState"
@@ -35,6 +42,10 @@ import Support
         static let bindingsPathFlag = "-SegueBindingsPath"
         static let startShortcutFlag = "-SegueStartShortcut"
         static let endShortcutFlag = "-SegueEndShortcut"
+        static let workspaceLogFlag = "-SegueWorkspaceLog"
+        static let trashPathFlag = "-SegueTrashPath"
+        static let importPanelPathsFlag = "-SegueImportPanelPaths"
+        static let autosaveDelayFlag = "-SegueAutosaveDelay"
 
         var libraryPath: URL?
         var resetState = false
@@ -46,6 +57,10 @@ import Support
         var bindingsPath: URL?
         var startShortcut: String?
         var endShortcut: String?
+        var workspaceLog: URL?
+        var trashPath: URL?
+        var importPanelPaths: [URL]?
+        var autosaveDelay: Double?
 
         init(
             libraryPath: URL? = nil,
@@ -58,6 +73,10 @@ import Support
             bindingsPath: URL? = nil,
             startShortcut: String? = nil,
             endShortcut: String? = nil,
+            workspaceLog: URL? = nil,
+            trashPath: URL? = nil,
+            importPanelPaths: [URL]? = nil,
+            autosaveDelay: Double? = nil,
         ) {
             self.libraryPath = libraryPath
             self.resetState = resetState
@@ -69,6 +88,10 @@ import Support
             self.bindingsPath = bindingsPath
             self.startShortcut = startShortcut
             self.endShortcut = endShortcut
+            self.workspaceLog = workspaceLog
+            self.trashPath = trashPath
+            self.importPanelPaths = importPanelPaths
+            self.autosaveDelay = autosaveDelay
         }
 
         /// Parses `arguments` (as in `ProcessInfo.arguments`; the first element is the
@@ -96,12 +119,23 @@ import Support
             liveTimeScale = values[Self.liveTimeScaleFlag].flatMap(Double.init).flatMap { scale in
                 scale > 0 ? scale : nil
             }
+            workspaceLog = Self.path(values[Self.workspaceLogFlag], directoryHint: .notDirectory)
+            trashPath = Self.path(values[Self.trashPathFlag], directoryHint: .isDirectory)
+            importPanelPaths = values[Self.importPanelPathsFlag].map { list in
+                list.split(separator: ":").compactMap { part in
+                    Self.path(String(part), directoryHint: .inferFromPath)
+                }
+            }
+            autosaveDelay = values[Self.autosaveDelayFlag].flatMap(Double.init).flatMap { delay in
+                delay >= 0 ? delay : nil
+            }
         }
 
         private static let flags: Set = [
             libraryPathFlag, resetStateFlag, rememberLibraryFlag, testDefaultsFlag,
             shapeLibraryPathFlag, shortcutLogFlag, liveTimeScaleFlag, bindingsPathFlag,
-            startShortcutFlag, endShortcutFlag,
+            startShortcutFlag, endShortcutFlag, workspaceLogFlag, trashPathFlag,
+            importPanelPathsFlag, autosaveDelayFlag,
         ]
 
         /// A Shortcut name with surrounding blanks removed; nil when blank.
@@ -122,6 +156,8 @@ import Support
             libraryPath != nil || resetState || rememberLibrary || testDefaults
                 || shapeLibraryPath != nil || shortcutLog != nil || liveTimeScale != nil
                 || bindingsPath != nil || startShortcut != nil || endShortcut != nil
+                || workspaceLog != nil || trashPath != nil || importPanelPaths != nil
+                || autosaveDelay != nil
         }
 
         private static func isTruthy(_ value: String) -> Bool {
@@ -177,7 +213,16 @@ import Support
                 rememberLibraryOverride: rememberLibrary,
                 shapeLibraryURL: isTestRun ? shapeLibraryPath : SegueApp.realShapeLibraryURL,
                 live: isTestRun ? liveDependencies(defaults: defaults) : real(defaults),
+                hooks: SegueApp.hooks,
+                workspace: workspaceLog.map(RecordingWorkspaceActions.init),
+                importPanel: importPanelPaths.map(FixedImportPanel.init),
+                autosaveDelay: autosaveDelay.map { .milliseconds(Int(($0 * 1000).rounded())) },
             )
+        }
+
+        /// The file system for this launch: deleted items go to `-SegueTrashPath` when given.
+        var fileSystem: LiveFileSystem {
+            trashPath.map { LiveFileSystem(trash: .directory($0)) } ?? LiveFileSystem()
         }
 
         /// Live mode for a test run: the recording runner and scaled clock when asked for,

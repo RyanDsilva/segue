@@ -100,3 +100,16 @@ function_body_length:
 
 nesting:
   type_level: 2
+
+# URL boundary (WS2a 3.1) and, below it, any other repo-wide pattern rules.
+custom_rules:
+  segue_links_only:
+    name: "SegueLinks only"
+    regex: '(ryandsilva\.dev|apps\.apple\.com)'
+    # WS2a 3.1: every site, support and App Store URL lives in SegueLinks. The E2E support
+    # file mirrors the few it asserts in the workspace log (UI tests cannot import SegueUI).
+    excluded:
+      - 'Packages/SegueUI/Sources/SegueUI/App/SegueLinks\.swift$'
+      - 'UITests/SegueCoreUXE2ETests\+Support\.swift$'
+    message: "External URLs live only in SegueLinks.swift (WS2a 3.1)."
+    severity: error

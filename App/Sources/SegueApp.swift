@@ -21,13 +21,12 @@ struct SegueApp: App {
         plugins.registerAll(Self.pluginModules)
 
         let clock = SystemClock()
-        let fileSystem = LiveFileSystem()
         let ids = ULIDGenerator(clock: clock)
         #if DEBUG
             // Test-only launch arguments are honoured in Debug builds only.
             let options = LaunchOptions(arguments: ProcessInfo.processInfo.arguments)
             let dependencies = options.dependencies(
-                fileSystem: fileSystem,
+                fileSystem: options.fileSystem,
                 clock: clock,
                 ids: ids,
                 real: Self.realLiveDependencies,
@@ -36,12 +35,13 @@ struct SegueApp: App {
             // Release never lets the command line redirect the library or wipe state, and
             // has no test hooks compiled in (WS1 4.8f).
             let dependencies = AppDependencies(
-                fileSystem: fileSystem,
+                fileSystem: LiveFileSystem(),
                 clock: clock,
                 ids: ids,
                 location: LibraryLocation(defaults: .standard),
                 shapeLibraryURL: Self.realShapeLibraryURL,
                 live: Self.realLiveDependencies(defaults: .standard),
+                hooks: Self.hooks,
             )
         #endif
         _app = State(initialValue: AppModel(dependencies: dependencies))
@@ -61,6 +61,14 @@ struct SegueApp: App {
             scrollClock: MonotonicClock(),
             bindingsURL: Bundle.main.bundleIdentifier.map(LiveDependencies.defaultBindingsURL),
         )
+    }
+
+    /// The menu hooks (WS2a 3.5.6). WS2b fills `showWelcome`, `showWhatsNew` and
+    /// `exportArchive`; WS3 fills `reportProblem` and `requestFeature`. Until then the
+    /// defaults fall back to the web and mail, and the optional items stay hidden.
+    @MainActor
+    static var hooks: AppHooks {
+        AppHooks()
     }
 
     /// Plugin modules for this flavor. Only the Personal build sees the personal package.
