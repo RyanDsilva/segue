@@ -139,6 +139,8 @@ final class SegueLiveE2ETests: XCTestCase {
         XCTAssertTrue(rows.element(boundBy: 2).label.contains("Salt Road, pending"))
         let nightBus = rows.element(boundBy: 8)
         XCTAssertTrue(nightBus.label.contains("Night Bus"))
+        // The drawer slides in: click its button only once it has stopped moving.
+        XCTAssertTrue(nightBus.settles(), "the set order drawer kept moving")
         nightBus.descendants(matching: .button).matching(identifier: LiveAXID.liveDrawerPlayNext)
             .firstMatch.click(in: app)
         XCTAssertTrue(waitForValue(app.staticTexts[LiveAXID.liveUpNext], "Night Bus"))
@@ -350,6 +352,8 @@ extension SegueLiveE2ETests {
         }
         XCTAssertTrue(app.staticTexts["\(size) pt"].appears(timeout: 5))
         app.typeKey("w", modifierFlags: .command, in: app)
+        // Gone before the next click, which would otherwise land on the closing window.
+        XCTAssertTrue(stepper.disappears(timeout: 10), "Settings did not close")
     }
 
     /// Gig log: the newest entry lists the played and skipped songs (unit D's view).

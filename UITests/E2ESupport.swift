@@ -155,6 +155,17 @@ extension XCUIElement {
         E2E.waitUntil(timeout: timeout) { !exists }
     }
 
+    /// Waits until the element's frame stops changing (a panel sliding in, a list
+    /// re-laying out), so a click lands where the element ends up.
+    func settles(timeout: TimeInterval = 5) -> Bool {
+        var last = CGRect.null
+        return E2E.waitUntil(timeout: timeout) {
+            let frame = exists ? self.frame : .null
+            defer { last = frame }
+            return !frame.isNull && frame == last
+        }
+    }
+
     /// Waits until the element exists with `value` as its accessibility value.
     func hasValue(_ value: String, timeout: TimeInterval = 10) -> Bool {
         E2E.waitUntil(timeout: timeout) { exists && self.value as? String == value }
