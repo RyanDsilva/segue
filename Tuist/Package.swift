@@ -39,7 +39,7 @@ import PackageDescription
         targetSettings: Dictionary(
             uniqueKeysWithValues: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists", "Shows",
-                "LiveLayout", "Plugins", "Support",
+                "LiveLayout", "Plugins", "Support", "Services",
                 "SegueUI", "SeguePersonalModules",
             ].map { ($0, firstPartyStrict) },
         ),

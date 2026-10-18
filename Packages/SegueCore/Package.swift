@@ -22,7 +22,7 @@ let package = Package(
             name: "SegueCore",
             targets: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
-                "Shows", "LiveLayout", "Plugins", "Support",
+                "Shows", "LiveLayout", "Plugins", "Support", "Services",
             ],
         ),
     ],
@@ -101,11 +101,18 @@ let package = Package(
             dependencies: ["ChordPro", "Support"],
             swiftSettings: strictSettings,
         ),
+        // WS3: hosted-services core (ports, closed analytics vocabulary, consent, safe log).
+        // No vendor code: Foundation, Synchronization, os and CryptoKit only.
+        .target(
+            name: "Services",
+            dependencies: ["Support"],
+            swiftSettings: strictSettings,
+        ),
         .testTarget(
             name: "SegueCoreTests",
             dependencies: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
-                "Shows", "LiveLayout", "Plugins", "Support",
+                "Shows", "LiveLayout", "Plugins", "Support", "Services",
                 .product(name: "Tonic", package: "Tonic"),
             ],
             path: "Tests",
