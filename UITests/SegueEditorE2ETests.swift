@@ -51,11 +51,19 @@ final class SegueEditorE2ETests: XCTestCase {
         try assertFileContains(["{key: A}", "{capo: 2}", "[D]Dil", "{define: G "])
     }
 
+    /// The visual editor's gestures (B2: one scenario, both on a fresh song in the light
+    /// appearance): pill gestures, then Nashville number entry on a second song.
+    @MainActor
+    func testVisualEditorGestures() throws {
+        let app = try launch(extraArguments: ["-NSRequiresAquaSystemAppearance", "YES"])
+        pillGestures(app)
+        nashvilleNumberEntry(app)
+    }
+
     /// Pill gestures: select + Backspace deletes, ← → nudges, Option-drag duplicates; all
     /// on the shared undo stack.
     @MainActor
-    func testPillGestures() throws {
-        let app = try launch(extraArguments: ["-NSRequiresAquaSystemAppearance", "YES"])
+    private func pillGestures(_ app: XCUIApplication) {
         element(app, EditorAXID.newSong).click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
         XCTAssertTrue(editor.appears(timeout: 10))
@@ -97,13 +105,14 @@ final class SegueEditorE2ETests: XCTestCase {
         )
     }
 
-    /// Nashville view accepts numbers in the chord popover; the source gets letters.
+    /// Nashville view accepts numbers in the chord popover; the source gets letters. A new
+    /// song started from the open editor (which saves it first).
     @MainActor
-    func testNashvilleNumberEntry() throws {
-        let app = try launch(extraArguments: ["-NSRequiresAquaSystemAppearance", "YES"])
+    private func nashvilleNumberEntry(_ app: XCUIApplication) {
         element(app, EditorAXID.newSong).click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
         XCTAssertTrue(editor.appears(timeout: 10))
+        XCTAssertTrue(wait { (editor.value as? String)?.isEmpty == true }, "not a new song")
         editor.click(in: app)
         editor.typeText(EditorFixture.gestures, in: app)
         app.typeKey(.escape, modifierFlags: [], in: app)
