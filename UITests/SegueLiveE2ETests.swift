@@ -211,57 +211,33 @@ final class SegueLiveE2ETests: XCTestCase {
         XCTAssertTrue(files.contains { $0.hasSuffix(".rehearsal.json") }, "\(files)")
     }
 
-    // MARK: E2E 4, 7: zoom memory and the minimum lyric size
+    // MARK: E2E 4, 7: zoom and the minimum lyric size
 
+    /// The real keys and the Settings stepper; the per-song memory, the second column step,
+    /// the indicator timing and the long song at the minimum are checked in process
+    /// (`LiveStageZoomTests`).
     @MainActor
     func testZoomMemoryAndMinimumLyricSize() throws {
         let library = try XCTUnwrap(library)
         let app = launch(library)
         setMinimumLyricSize(app, to: 30)
         startShow(app, rehearse: false)
-        let title = app.staticTexts[LiveAXID.liveTitle]
         let body = element(app, LiveAXID.liveBody)
         XCTAssertTrue(body.appears(timeout: 5))
         let fitted = try XCTUnwrap(lyricSize(body))
         XCTAssertGreaterThanOrEqual(fitted, 30)
 
-        // Zoom song A; song B is unaffected; A keeps its zoom on return.
+        // Cmd-= zooms the song on stage.
         key(app, "=", [.command])
         XCTAssertTrue(waitFor(body) { self.lyricSize($0) != fitted })
-        let zoomed = try XCTUnwrap(lyricSize(body))
-        key(app, .rightArrow)
-        XCTAssertTrue(waitForValue(title, "Paper Boats"))
-        key(app, .leftArrow)
-        XCTAssertTrue(waitForValue(title, "Harbor Lights"))
-        XCTAssertTrue(waitFor(body) { self.lyricSize($0) == zoomed })
         screenshot(app, "40-zoomed")
 
-        // C cycles the song's columns (Auto -> 1 -> 2): a brief indicator, an immediate
-        // re-layout, and the choice is remembered for the song.
+        // C cycles the song's columns: a brief indicator and an immediate re-layout.
         key(app, "c")
         let indicator = app.staticTexts[LiveAXID.liveIndicator]
         XCTAssertTrue(waitForValue(indicator, "Columns: 1"))
         XCTAssertTrue(waitFor(body) { $0.label.hasSuffix("columns 1") })
-        key(app, "c")
-        XCTAssertTrue(waitForValue(indicator, "Columns: 2"))
-        XCTAssertTrue(waitFor(body) { $0.label.hasSuffix("columns 2") })
-        screenshot(app, "42-columns-2")
-        key(app, .rightArrow)
-        XCTAssertTrue(waitForValue(title, "Paper Boats"))
-        key(app, .leftArrow)
-        XCTAssertTrue(waitForValue(title, "Harbor Lights"))
-        XCTAssertTrue(waitFor(body) { $0.label.hasSuffix("columns 2") })
-        XCTAssertTrue(indicator.disappears(timeout: 5), "the indicator goes away")
-
-        // The 56-line song does not fit at 30pt: it renders at 30 and scrolls.
-        for _ in 0 ..< 4 {
-            key(app, .rightArrow)
-        }
-        XCTAssertTrue(waitForValue(title, "Long Way Home"))
-        XCTAssertTrue(waitFor(body) {
-            $0.label.contains("lyric 30 scrolls at minimum")
-        })
-        screenshot(app, "41-min-font-scrolls")
+        screenshot(app, "42-columns-1")
         endShow(app)
     }
 }
