@@ -8,7 +8,7 @@ Segue itself is proprietary (see [LICENSE](LICENSE)). It ships the open-source c
 |---|---|---|---|---|
 | GRDB.swift | 7.11.1 | https://github.com/groue/GRDB.swift | MIT | `Packages/SegueUI/Sources/SegueUI/App/Licenses/GRDB.txt` |
 | Tonic | 2.1.2 | https://github.com/AudioKit/Tonic | MIT | `Packages/SegueUI/Sources/SegueUI/App/Licenses/Tonic.txt` |
-| Sentry Cocoa SDK (sentry-cocoa) | 9.30.2 | https://github.com/getsentry/sentry-cocoa | MIT | Not yet: WS3 adds `Packages/SegueUI/Sources/SegueUI/App/Licenses/Sentry.txt` with the About panel credit |
+| Sentry Cocoa SDK (sentry-cocoa) | 9.30.2 | https://github.com/getsentry/sentry-cocoa | MIT | `Packages/SegueUI/Sources/SegueUI/App/Licenses/Sentry.txt` |
 | Schibsted Grotesk (Regular, Medium, SemiBold, Bold, ExtraBold) | 1.100 | https://github.com/schibsted/schibsted-grotesk | SIL Open Font License 1.1 | `Packages/SegueUI/Sources/SegueUI/Theme/Fonts/OFL.txt` |
 
 Versions are the exact pins in `Tuist/Package.swift`, `Packages/SegueCore/Package.swift` and `Tuist/Package.resolved` (GRDB.swift at `b83108d`, Tonic at `601eeb2`, sentry-cocoa at `4bb2282`); the font version is the `name` table of the bundled TTFs. `make docs-check` fails if a pin in `Tuist/Package.resolved` is missing from the table above, so a dependency bump must update this file in the same change.
@@ -23,7 +23,7 @@ Copyright (c) 2022 Audulus LLC. MIT License; full text in `Tonic.txt` (byte-iden
 
 ### Sentry Cocoa SDK
 
-Copyright (c) 2015 Sentry. MIT License (the `LICENSE.md` of the 9.30.2 release, checked in the resolved package source at `4bb2282`). Linked into both app flavours through `Packages/SegueVendorServices`; it sends crash and hang reports only if the user allows crash reports.
+Copyright (c) 2015 Sentry. MIT License; full text in `Sentry.txt` (byte-identical to the `LICENSE.md` of the 9.30.2 release, from the resolved package source at `4bb2282`). Linked into both app flavours through `Packages/SegueVendorServices`; it sends crash and hang reports only if the user allows crash reports.
 
 ### Schibsted Grotesk
 

@@ -45,6 +45,13 @@
                 source: "github.com/AudioKit/Tonic",
                 resource: ("Licenses", "Tonic"),
             ),
+            Credit(
+                name: "Sentry",
+                summary: "Crash and hang reports, sent only if you allow them.",
+                licence: "MIT License",
+                source: "github.com/getsentry/sentry-cocoa",
+                resource: ("Licenses", "Sentry"),
+            ),
         ]
 
         public init() {}

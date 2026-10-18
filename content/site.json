@@ -111,6 +111,13 @@
       "licence": "MIT License",
       "source": "https://github.com/AudioKit/Tonic",
       "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/Tonic.txt"
+    },
+    {
+      "name": "Sentry",
+      "summary": "Crash and hang reports, sent only if you allow them.",
+      "licence": "MIT License",
+      "source": "https://github.com/getsentry/sentry-cocoa",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/Sentry.txt"
     }
   ]
 }

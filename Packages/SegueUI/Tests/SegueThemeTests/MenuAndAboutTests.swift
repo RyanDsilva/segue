@@ -87,7 +87,7 @@ struct AboutPanelTests {
         ])
         let plain = credits.string.replacingOccurrences(of: "\u{00A0}", with: " ")
             .replacingOccurrences(of: "\u{2028}", with: " ")
-        #expect(plain.contains("Schibsted Grotesk (SIL OFL 1.1), GRDB (MIT), Tonic (MIT)."))
+        #expect(plain.contains("Schibsted Grotesk (SIL OFL 1.1), GRDB (MIT), Tonic (MIT), Sentry (MIT)."))
     }
 
     @Test

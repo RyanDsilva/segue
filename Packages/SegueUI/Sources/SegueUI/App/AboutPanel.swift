@@ -96,7 +96,7 @@
             append("\n")
             append("Built with open-source software:" + lineBreak
                 + "Schibsted\u{00A0}Grotesk\u{00A0}(SIL\u{00A0}OFL\u{00A0}1.1), GRDB\u{00A0}(MIT),"
-                + lineBreak + "Tonic\u{00A0}(MIT). ")
+                + lineBreak + "Tonic\u{00A0}(MIT), Sentry\u{00A0}(MIT). ")
             append("Acknowledgements", link: SegueLinks.acknowledgements)
             return text
         }
