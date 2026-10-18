@@ -5,6 +5,7 @@
 # Installed by `make bootstrap` (git config core.hooksPath .githooks).
 
 touched=no
+remote="$1"
 
 while read -r local_ref local_sha remote_ref remote_sha; do
 	case "$local_sha" in
@@ -13,7 +14,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 	esac
 	case "$remote_sha" in
 	*[!0]*) range="$remote_sha..$local_sha" ;;
-	*) range="$local_sha --not --remotes" ;; # new branch: commits not on any remote yet
+	*) range="$local_sha --not --remotes=$remote" ;; # new branch: commits this remote lacks
 	esac
 	# shellcheck disable=SC2086 # range is intentionally word-split
 	if ! commits=$(git log --format=%H $range -- website content 2>/dev/null); then
