@@ -662,3 +662,9 @@ All earlier questions are closed (see the header). These two came up while apply
 
 1. **Symbolicating Personal crashes.** With A61, Release-Personal reports to Sentry, but only `make upload` (App Store archives) uploads dSYMs, so Personal crashes would show unsymbolicated frames. How do you install your daily Personal build? Default: `scripts/upload-dsyms.sh` also accepts `DSYMS=<dir>`, Release-Personal keeps `DEBUG_INFORMATION_FORMAT = dwarf-with-dsym`, and a `make upload-dsyms-personal` target uploads the newest Release-Personal dSYMs from DerivedData; you run it after installing a new Personal build. Alternatives: (b) a post-build script phase on Release-Personal that uploads automatically (needs 1Password unlocked at every Release-Personal build); (c) leave Personal crashes unsymbolicated.
 2. **Analytics identity after revoke and re-grant.** Default (built in 3.9): revoking analytics deletes the per-install ID, so a later re-grant counts as a new anonymous user (more private; slightly inflates "new users" in TelemetryDeck for people who toggle). Alternative: keep the ID across revoke and re-grant (retention charts stay continuous for that install).
+
+## Implementation notes (orchestrator rulings during build)
+- Bug-report description: the form caps at **4,096 characters** with a visible counter (Sentry's message limit), replacing the spec's 5,000. The builder keeps refusing anything oversized; it never truncates silently.
+- CryptoKit is allowed in the Services target for the SHA-256 (an Apple system framework, no new dependency).
+- Diagnostic keys may contain digits (`segue.nonUTF8`); the key regex in 14.2-4 is widened to allow them.
+- `ServicesHub.init(feedback:)` defaults to the Null sender; it is fine as built.

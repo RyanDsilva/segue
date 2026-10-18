@@ -74,3 +74,8 @@ Overrides and specifics:
 - R39 (A41). Show 2-3 design directions each for the Welcome sheet, the What's New sheet, the `.cho` document icon and the website home page before building them.
 - R40 (A60). Before the TestFlight install, move Ryan's current `dev.ryandsilva.segue` container aside, and copy his shapes and bindings into the Personal container.
 - R41. Xcode 27.1 / Swift 6.4 is the release toolchain (baseline `make check` green, commit 78d2a1d). arm64 only (A59).
+- R42 (A44). Ryan approved the indicator token change as rendered: light #8A8A92, dark #66676E, dark played dot #8E8E96.
+- R43 (R39). Home page direction: **Stage** (centred hero, wide screenshot, hairline sections, numbered stage callouts, 4-column feature grid).
+- R44 (A14). The Welcome titles were searched with no conflicts: "Soundcheck at Seven", "Kitaabon Wali Gali", "Kettle On, Lights Low", "Ferry Lights Over Calder Bay", setlist "Welcome Set".
+- R45. Page-turner pedals: on stage, Page Down scrolls, and at the end of a song the next press moves to the next song; Page Up mirrors this backwards (forScore-style, so one pedal runs a whole gig). Owned by WS2a, with an E2E test.
+- R46. Credential-carrying steps (`make upload`, the Sentry dSYM upload, anything that runs `op`) are run by **Ryan in Terminal.app**. The 1Password CLI works there but not from the agent shell (sandboxed). Agents prepare and verify everything up to `make validate`, then hand Ryan the exact command. Scripts must fail with a clear message when `op` is unavailable, and must never fall back to plaintext keys.

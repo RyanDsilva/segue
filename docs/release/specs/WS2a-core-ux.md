@@ -525,3 +525,6 @@ None. Every question this spec raised is closed; the map below records where eac
 | Help URL slugs | I-16: WS4's table is the contract | 3.1 |
 
 Recorded only: research 08 recommended keeping explicit Save for 1.0 and one combined Send Feedback item; R17 and R15 override both (autosave; separate Report a Problem / Request a Feature). The spec follows the rulings.
+
+## Addendum - R45 page-turner pedals (added after the spec was finalised)
+On stage, Page Down scrolls the current song. When the song is already at its bottom, the next Page Down advances to the next song in the set, at its top. Page Up mirrors this: it scrolls up, and at the top it goes to the previous song at its bottom. Arrow keys and Space keep their current meanings. Stay consistent with key rebinding (`bindings.json`) and the `?` overlay text. E2E: a long song is paged to its end; the next Page Down shows the next song's title; Page Up at the top returns to the previous song at its bottom.
