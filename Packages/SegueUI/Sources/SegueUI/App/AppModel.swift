@@ -142,7 +142,12 @@
             case inUseByAnotherCopy
         }
 
-        public private(set) var state: State = .starting
+        public internal(set) var state: State = .starting
+        /// The Welcome sheet's state (WS2b 4.1).
+        public let onboarding = OnboardingModel()
+        /// A Welcome flow or consent sheet was shown this launch: What's New waits for the
+        /// next launch (never more than one of them per launch, 4.1).
+        var launchPromptShown = false
         /// The run on stage (gig or rehearsal), shown in the stage window while non-nil.
         public var live: LiveSession? {
             didSet {
@@ -213,16 +218,21 @@
             applyPolishPresets()
             if let override = dependencies.libraryOverride {
                 await open(override, remember: dependencies.rememberLibraryOverride)
+                await applyOnboardingOverride()
             } else {
                 switch dependencies.location.resolveStored() {
                 case .notChosen:
                     state = .needsLibrary(.firstLaunch)
+                    beginOnboardingWithoutLibrary()
                 case let .lost(url):
                     state = .needsLibrary(.accessLost(url))
                 case let .resolved(url):
-                    await open(url, remember: false)
+                    if await open(url, remember: false) {
+                        continueOnboardingAfterStoredLibrary()
+                    }
                 }
             }
+            await seedWelcomeForLaunchIfAsked()
             recordLaunch()
         }
 

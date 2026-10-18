@@ -3,10 +3,9 @@
 
     extension AppModel {
         /// Whether WS2b's Welcome flow is on screen (it then hosts the consent choice as its
-        /// last page). WS2b replaces this with its model's state; until then the standalone
-        /// `ConsentSheet` covers first run too (WS3 spec 4.4).
+        /// last page), so the standalone `ConsentSheet` stays away (WS3 spec 4.4, I-1).
         var isPresentingWelcome: Bool {
-            false
+            onboarding.isPresentingWelcome
         }
 
         /// The consent prompt is due and nothing else is in the way (spec 4.2 step 2, 4.4):

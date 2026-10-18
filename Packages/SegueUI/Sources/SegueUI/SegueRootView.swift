@@ -24,7 +24,12 @@
                         .controlSize(.small)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case let .needsLibrary(reason):
-                    LibraryChooserView(app: app, reason: reason)
+                    // Behind the Welcome sheet's page 1: the wordmark ground only.
+                    LibraryChooserView(
+                        app: app,
+                        reason: reason,
+                        showsActions: app.onboarding.mode != .flow,
+                    )
                 case let .opening(url):
                     ProgressView("Opening \(url.lastPathComponent)…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -35,6 +40,8 @@
             .task { await app.start() }
             // The consent prompt (WS3 4.2) once the library state has settled.
             .servicesPresentations(app)
+            // The Welcome sheet (WS2b 4.1).
+            .polishPresentations(app)
             // A Dock click with no window open brings this window back (review risk F2).
             .onAppear {
                 let openWindow = openWindow
@@ -51,6 +58,8 @@
     struct LibraryChooserView: View {
         let app: AppModel
         let reason: AppModel.NeedsLibraryReason
+        /// False behind the Welcome sheet's page 1, which has the same two buttons.
+        var showsActions = true
 
         var body: some View {
             VStack(spacing: 0) {
@@ -66,41 +75,16 @@
                         .frame(width: 12, height: 12)
                         .accessibilityHidden(true)
                 }
-                Text(message)
-                    .font(Theme.font.body)
-                    .foregroundStyle(Theme.color.muted)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: 420)
-                    .padding(.top, 18)
-                    .accessibilityIdentifier(AccessibilityID.chooserMessage)
-                VStack(spacing: 10) {
-                    Button {
-                        Task { await app.createLibrary() }
-                    } label: {
-                        Text("Create Library in Music…")
-                            .frame(minWidth: 240)
-                    }
-                    .buttonStyle(.seguePrimary)
-                    .controlSize(.large)
-                    .keyboardShortcut(.defaultAction)
-                    .accessibilityIdentifier(AccessibilityID.chooserCreate)
-                    Button {
-                        Task { await app.chooseLibrary() }
-                    } label: {
-                        Text("Choose Existing Folder…")
-                            .frame(minWidth: 240)
-                    }
-                    .buttonStyle(.segueSecondary)
-                    .controlSize(.large)
-                    .accessibilityIdentifier(AccessibilityID.chooserOpen)
+                if showsActions {
+                    actions
                 }
-                .padding(.top, 32)
                 Spacer(minLength: 32)
                 Text("Songs are plain ChordPro files you can open in any editor.")
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                     .padding(.bottom, 24)
+                    .opacity(showsActions ? 1 : 0)
+                    .accessibilityHidden(!showsActions)
             }
             .padding(.horizontal, 32)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -110,7 +94,42 @@
             .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         }
 
-        private var message: String {
+        @ViewBuilder private var actions: some View {
+            Text(Self.message(for: reason))
+                .font(Theme.font.body)
+                .foregroundStyle(Theme.color.muted)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 420)
+                .padding(.top, 18)
+                .accessibilityIdentifier(AccessibilityID.chooserMessage)
+            VStack(spacing: 10) {
+                Button {
+                    Task { await app.createLibrary() }
+                } label: {
+                    Text("Create Library in Music…")
+                        .frame(minWidth: 240)
+                }
+                .buttonStyle(.seguePrimary)
+                .controlSize(.large)
+                .keyboardShortcut(.defaultAction)
+                .accessibilityIdentifier(AccessibilityID.chooserCreate)
+                Button {
+                    Task { await app.chooseLibrary() }
+                } label: {
+                    Text("Choose Existing Folder…")
+                        .frame(minWidth: 240)
+                }
+                .buttonStyle(.segueSecondary)
+                .controlSize(.large)
+                .accessibilityIdentifier(AccessibilityID.chooserOpen)
+            }
+            .padding(.top, 32)
+        }
+
+        /// The chooser's text for `reason` (page 1 of the Welcome sheet reuses the
+        /// `openFailed` text).
+        static func message(for reason: AppModel.NeedsLibraryReason) -> String {
             switch reason {
             case .firstLaunch:
                 "Choose where your songs live. We suggest a Segue folder in your Music folder."

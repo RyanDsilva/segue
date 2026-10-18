@@ -1,6 +1,7 @@
 import XCTest
 
-/// E2E smoke test: the app launches from a clean baseline and shows the library chooser.
+/// E2E smoke test: the app launches from a clean baseline and shows the Welcome sheet's
+/// library page (WS2b 4.1) over the wordmark.
 /// (Help > Acknowledgements and its credits are checked in `SegueCoreUXE2ETests.testMenus`.)
 final class LaunchSmokeTests: XCTestCase {
     override func setUpWithError() throws {
@@ -15,11 +16,13 @@ final class LaunchSmokeTests: XCTestCase {
         let title = app.staticTexts["segue.root.title"]
         XCTAssertTrue(title.appears(timeout: 10))
         XCTAssertEqual(title.value as? String, "Segue")
-        // Reset state + no library path: the first-launch library chooser.
-        XCTAssertTrue(app.buttons["segue.chooser.create"].exists)
+        // Reset state + no library path: the chooser's buttons are on the Welcome sheet's
+        // page 1.
+        XCTAssertTrue(app.buttons["segue.chooser.create"].appears(timeout: 10))
         XCTAssertTrue(app.buttons["segue.chooser.open"].exists)
+        XCTAssertTrue(app.staticTexts["segue.welcome.step"].exists)
         let screenshot = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
-        screenshot.name = "library-chooser"
+        screenshot.name = "welcome-library-page"
         screenshot.lifetime = .keepAlways
         add(screenshot)
 
