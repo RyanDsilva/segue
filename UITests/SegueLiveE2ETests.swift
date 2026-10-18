@@ -347,6 +347,10 @@ extension SegueLiveE2ETests {
     @MainActor
     private func setMinimumLyricSize(_ app: XCUIApplication, to size: Int) {
         app.typeKey(",", modifierFlags: .command, in: app)
+        // Settings reopens on the last tab it showed: pick Live.
+        let tab = app.toolbars.buttons["Live"].firstMatch
+        XCTAssertTrue(tab.appears(timeout: 10))
+        tab.click(in: app)
         let stepper = app.steppers[LiveAXID.settingsMinLyricSize].firstMatch
         XCTAssertTrue(stepper.appears(timeout: 10))
         let increment = stepper.incrementArrows.firstMatch

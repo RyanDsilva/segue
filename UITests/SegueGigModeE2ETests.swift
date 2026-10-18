@@ -237,6 +237,10 @@ extension SegueGigModeE2ETests {
     /// Settings (Cmd-,) on the Live pane.
     func openLiveSettings(_ app: XCUIApplication) {
         app.typeKey(",", modifierFlags: .command, in: app)
+        // Settings reopens on the last tab it showed: pick Live.
+        let tab = app.toolbars.buttons["Live"].firstMatch
+        XCTAssertTrue(tab.appears(timeout: 10))
+        tab.click(in: app)
         XCTAssertTrue(
             app.textFields[GigAXID.settingsStartShortcut].firstMatch.appears(timeout: 10),
         )
