@@ -33,8 +33,8 @@ extension SegueCoreUXE2ETests {
         let titles = help.menuItems.allElementsBoundByIndex.map(\.title).filter { !$0.isEmpty }
         attachScreen(name: "help-menu")
         app.typeKey(.escape, modifierFlags: [], in: app)
-        // Welcome to Segue… and Rate Segue on the App Store stay hidden in this build (their
-        // hook and the App Store ID are unset).
+        // Welcome to Segue… is WS2b's filled hook; Rate Segue on the App Store stays hidden
+        // until the App Store ID is set.
         XCTAssertEqual(titles, CoreLinks.helpMenuTitles)
 
         let (title, url) = CoreLinks.helpLinks[0]
@@ -89,11 +89,11 @@ extension SegueCoreUXE2ETests {
         XCTAssertTrue(acknowledgements.disappears(timeout: 10))
     }
 
-    /// File > Export Library Archive… waits for its hook (WS2b); About shows the panel with
-    /// the version and the credits.
+    /// File > Export Library Archive… is there once WS2b fills its hook (the export itself
+    /// is `SegueFinderE2ETests`); About shows the panel with the version and the credits.
     private func fileMenuAndAbout(_ app: XCUIApplication) {
         app.menuBars.menuBarItems["File"].click(in: app)
-        XCTAssertFalse(app.menuBars.menuItems["Export Library Archive…"].exists)
+        XCTAssertTrue(app.menuBars.menuItems["Export Library Archive…"].exists)
         app.typeKey(.escape, modifierFlags: [], in: app)
 
         app.menuBars.menuBarItems["Segue"].click(in: app)

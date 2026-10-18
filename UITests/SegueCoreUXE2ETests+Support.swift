@@ -269,7 +269,8 @@ enum CoreLinks {
 
     /// The Help menu's visible items, in order (WS2a 3.5.6).
     static let helpMenuTitles = [
-        "Segue Help", "Keyboard Shortcuts", "What's New in Segue", "Report a Problem…",
+        "Segue Help", "Keyboard Shortcuts", "Welcome to Segue…", "What's New in Segue",
+        "Report a Problem…",
         "Request a Feature…", "Privacy Policy", "Terms of Use", "Acknowledgements",
     ]
 

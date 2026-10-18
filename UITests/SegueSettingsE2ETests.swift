@@ -100,9 +100,13 @@ final class SegueSettingsE2ETests: XCTestCase {
             E2E.waitUntil { (try? library.songFiles())?.isEmpty == true },
             "songs still there",
         )
-        let trashed = try FileManager.default.contentsOfDirectory(atPath: trash.path)
-        XCTAssertTrue(trashed.contains("soundcheck-at-seven.cho"), "\(trashed)")
-        XCTAssertTrue(trashed.contains("welcome-set.setlist.json"), "\(trashed)")
+        // The songs move first, then the setlist: wait for both.
+        let trashed = { (try? FileManager.default.contentsOfDirectory(atPath: trash.path)) ?? [] }
+        XCTAssertTrue(
+            E2E.waitUntil { trashed().contains("welcome-set.setlist.json") },
+            "\(trashed())",
+        )
+        XCTAssertTrue(trashed().contains("soundcheck-at-seven.cho"), "\(trashed())")
 
         darkPanesAndRestore(app)
 
