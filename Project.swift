@@ -175,20 +175,21 @@ let e2eDebugConfiguration: Configuration = .debug(
 
 /// After resources are copied and before signing: the SegueUI resource bundle gets the app's
 /// copyright and version and a real identifier instead of Tuist's placeholder plist (B-6).
+let resourcesFolder = "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)"
+let segueUIBundle = "\(resourcesFolder)/SegueUI_SegueUI.bundle"
 let stampResourceBundle: TargetScript = .post(
     path: "scripts/stamp-resource-bundle.sh",
     name: "Stamp SegueUI resource bundle",
     inputPaths: [
         "$(SRCROOT)/scripts/stamp-resource-bundle.sh",
         "$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
-        "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SegueUI_SegueUI.bundle",
+        "\(segueUIBundle)",
     ],
     // The plist is a declared output: with user-script sandboxing on, PlistBuddy may only
     // write to declared outputs, and it exits 0 when the sandbox denies the write.
     outputPaths: [
         "$(DERIVED_FILE_DIR)/stamp-resource-bundle.stamp",
-        "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)"
-            + "/SegueUI_SegueUI.bundle/Contents/Info.plist",
+        "\(segueUIBundle)/Contents/Info.plist",
     ],
     basedOnDependencyAnalysis: false,
 )

@@ -15,6 +15,7 @@ excluded:
   - Packages/SegueCore/.build
   - Packages/SegueUI/.build
   - Packages/SeguePersonalModules/.build
+  - Packages/SegueVendorServices/.build
   - "**/.build-*"
   - research
 
