@@ -37,7 +37,7 @@ extension SegueLiveE2ETests {
         let library = try XCTUnwrap(library)
         let app = launch(library)
         XCTAssertTrue(element(app, LiveAXID.sidebarSetlists).waitForExistence(timeout: 15))
-        let bundleID = "dev.ryandsilva.segue"
+        let bundleID = "dev.ryandsilva.segue.personal"
         let first = try XCTUnwrap(
             NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first,
         )

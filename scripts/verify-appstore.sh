@@ -10,7 +10,12 @@
 #        - the .app bundle (any file: binary strings, symbols, resources) or its linked
 #          libraries.
 #   2. Fails if the E2E temporary-exception entitlement is in the signed entitlements of any
-#      Release or AppStore product (Release-AppStore, Debug-AppStore, Release-Personal).
+#      Release or AppStore product (Release-AppStore, Debug-AppStore, Release-Personal), or if
+#      `network.client` is missing from them (A61: both flavors make outgoing connections).
+#
+# The flavors have separate bundle IDs (docs/release/decisions.md R11): the App Store build is
+# dev.ryandsilva.segue (App/SegueAppStore.entitlements), Personal is
+# dev.ryandsilva.segue.personal (App/Segue.entitlements).
 #
 # Uses its own DerivedData (SEGUE_VERIFY_DERIVED_DATA, default .build/DerivedData-verify) so
 # Personal builds never share intermediates with the checked App Store build.
@@ -112,7 +117,8 @@ check_personal_free() {
 }
 
 # check_no_exception <configuration>: the signed entitlements must not carry the E2E
-# temporary exception. Requires the sandbox key so a failed extraction cannot pass.
+# temporary exception and must carry network.client. Requires the sandbox key so a failed
+# extraction cannot pass.
 check_no_exception() {
     local config="$1" app="$products/$1/Segue.app" entitlements
     [[ -d "$app" ]] || { fail "$config: no product at $app"; return; }
@@ -126,6 +132,11 @@ check_no_exception() {
         fail "$config: signed entitlements carry the temporary-exception entitlement"
     else
         pass "$config: signed entitlements have no temporary exception"
+    fi
+    if grep -q 'com.apple.security.network.client' <<<"$entitlements"; then
+        pass "$config: signed entitlements carry network.client"
+    else
+        fail "$config: signed entitlements lack network.client"
     fi
 }
 

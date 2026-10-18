@@ -28,7 +28,8 @@ import PackageDescription
     let packageSettings = PackageSettings(
         productTypes: [:],
         baseSettings: .settings(
-            base: ["MACOSX_DEPLOYMENT_TARGET": "26.0"],
+            // arm64 only, like the app targets (docs/release/decisions.md R41, A59).
+            base: ["MACOSX_DEPLOYMENT_TARGET": "26.0", "ARCHS": "arm64"],
             configurations: configurationNames.map { name in
                 name.hasPrefix("Debug")
                     ? .debug(name: ConfigurationName(stringLiteral: name))
