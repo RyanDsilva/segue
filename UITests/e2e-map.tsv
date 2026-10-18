@@ -1,0 +1,98 @@
+# Which XCUITest classes `make gate` runs for a changed path (docs/test-performance.md C1).
+#
+# Format: <path glob><TAB><classes, space-separated | ALL | NONE>
+# - A changed path collects the classes of EVERY line whose glob matches it (bash pattern
+#   matching, where * also matches /).
+# - A changed path that matches no line runs the full suite: add a line rather than let a
+#   new folder fall through.
+# - NONE: nothing beyond the smoke set (`make e2e-smoke`), which every gate runs anyway.
+# - ALL: the full suite (shared shell code, the test support everyone uses, the build).
+# `make check` (the release gate) always runs everything, whatever this file says.
+
+# Docs, site, research, repo hygiene: no app code.
+*.md	NONE
+LICENSE	NONE
+docs/*	NONE
+research/*	NONE
+website/*	NONE
+content/*	NONE
+.github/*	NONE
+.githooks/*	NONE
+.claude/*	NONE
+.editorconfig	NONE
+.gitattributes	NONE
+.gitignore	NONE
+.htmlvalidate.json	NONE
+.sentryclirc	NONE
+.shellcheckrc	NONE
+.swiftformat	NONE
+.swiftlint.yml	NONE
+.mise.toml	ALL
+Makefile	NONE
+UITests/e2e-map.tsv	NONE
+Config/ExportOptions-AppStore.plist	NONE
+scripts/*	NONE
+scripts/xcodebuild.sh	ALL
+scripts/stamp-resource-bundle.sh	ALL
+scripts/gen-tokens.swift	SegueEditorE2ETests SegueLiveE2ETests
+scripts/gen-icon.swift	NONE
+design/icon/*	NONE
+design/tokens.json	SegueEditorE2ETests SegueLiveE2ETests
+
+# The build and the app shell.
+Project.swift	ALL
+Tuist.swift	ALL
+Tuist/*	ALL
+Config/Version.xcconfig	ALL
+App/*	ALL
+Packages/*/Package.swift	ALL
+Packages/*/Package.resolved	ALL
+
+# Package tests run in every gate; services and personal modules have no E2E of their own.
+Packages/*/Tests/*	NONE
+Packages/SegueVendorServices/*	NONE
+Packages/SeguePersonalModules/*	NONE
+Packages/SegueCore/Sources/Services/*	NONE
+
+# SegueCore by module.
+Packages/SegueCore/Sources/ChordPro/*	SegueEditorE2ETests SegueLiveE2ETests SegueE2ETests SegueCoreUXE2ETests
+Packages/SegueCore/Sources/Editing/*	SegueEditorE2ETests SegueCoreUXE2ETests
+Packages/SegueCore/Sources/MusicTheory/*	SegueEditorE2ETests SegueSetlistBuilderE2ETests
+Packages/SegueCore/Sources/Diagrams/*	SegueEditorE2ETests
+Packages/SegueCore/Sources/LiveLayout/*	SegueLiveE2ETests
+Packages/SegueCore/Sources/Library/*	SegueCoreUXE2ETests SegueSetlistLibraryE2ETests SegueE2ETests SegueSetlistGigLogE2ETests
+Packages/SegueCore/Sources/Setlists/*	SegueSetlistBuilderE2ETests SegueCoreUXE2ETests SegueLiveE2ETests
+Packages/SegueCore/Sources/Shows/*	SegueLiveE2ETests SegueGigModeE2ETests SegueSetlistGigLogE2ETests
+Packages/SegueCore/Sources/Support/*	ALL
+Packages/SegueCore/Sources/Plugins/*	ALL
+
+# SegueUI by feature folder.
+Packages/SegueUI/Sources/SegueUI/App/*	ALL
+Packages/SegueUI/Sources/SegueUI/SegueRootView.swift	ALL
+Packages/SegueUI/Sources/SegueUI/AccessibilityID*.swift	ALL
+Packages/SegueUI/Sources/SegueUI/Components/*	ALL
+Packages/SegueUI/Sources/SegueUI/Support/*	ALL
+Packages/SegueUI/Sources/SegueUI/Theme/*	SegueEditorE2ETests SegueLiveE2ETests
+Packages/SegueUI/Sources/SegueUI/Editor/*	SegueEditorE2ETests SegueCoreUXE2ETests
+Packages/SegueUI/Sources/SegueUI/Diagrams/*	SegueEditorE2ETests
+Packages/SegueUI/Sources/SegueUI/Rendering/*	SegueEditorE2ETests SegueLiveE2ETests
+Packages/SegueUI/Sources/SegueUI/Library/*	SegueCoreUXE2ETests SegueSetlistLibraryE2ETests
+Packages/SegueUI/Sources/SegueUI/Setlists/*	SegueSetlistBuilderE2ETests SegueCoreUXE2ETests
+Packages/SegueUI/Sources/SegueUI/GigLog/*	SegueSetlistGigLogE2ETests
+Packages/SegueUI/Sources/SegueUI/Live/*	SegueLiveE2ETests SegueGigModeE2ETests
+Packages/SegueUI/Sources/SegueUI/Settings/*	SegueLiveE2ETests SegueGigModeE2ETests
+
+# The UI tests themselves: a class's own files run that class.
+UITests/E2ESupport.swift	ALL
+UITests/SegueUITests.entitlements	ALL
+UITests/LaunchSmokeTests.swift	LaunchSmokeTests
+UITests/SegueE2ETests.swift	SegueE2ETests
+UITests/SegueCoreUXE2ETests*.swift	SegueCoreUXE2ETests
+UITests/SegueEditorE2ETests*.swift	SegueEditorE2ETests
+UITests/SegueLiveE2ETests+Support.swift	SegueLiveE2ETests SegueGigModeE2ETests
+UITests/SegueLiveE2ETests*.swift	SegueLiveE2ETests
+UITests/SegueGigModeE2ETests.swift	SegueGigModeE2ETests
+UITests/SegueSetlistE2ESupport.swift	SegueSetlistBuilderE2ETests SegueSetlistLibraryE2ETests SegueSetlistGigLogE2ETests
+UITests/SegueSetlistBuilderE2ETests.swift	SegueSetlistBuilderE2ETests
+UITests/SegueSetlistLibraryE2ETests.swift	SegueSetlistLibraryE2ETests
+UITests/SegueSetlistGigLogE2ETests.swift	SegueSetlistGigLogE2ETests

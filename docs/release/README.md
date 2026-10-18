@@ -134,7 +134,7 @@ Pasted by Ryan from the steps above. None is secret: the IDs and the DSN ship in
 
 ## 3. Build plan
 
-Every step: `make quick`, then the step's targeted `make e2e-one TEST=<Class>[/<test>]`, then one signed local commit (`git commit -S`), never a push. One full `make check` per workstream gate, never after every small fix. Workstreams that run in parallel share a working tree: expect unrelated diffs.
+Test budget (R58, docs/test-performance.md): per step, filtered suites only (`make quick` plus the step's targeted `make e2e-one TEST=<Class>[/<test>]`), then one signed local commit (`git commit -S`), never a push. Per assignment (workstream gate): `make quick` plus `make gate` (the smoke set and the E2E classes mapped from the changed paths). Release, and the end of each phase: `make check`, never after every small fix. Workstreams that run in parallel share a working tree: expect unrelated diffs.
 
 WS2a, WS2b and WS3 all edit the app shell (`AppModel`, `SegueRootView`/`SegueCommands`, `SegueApp.swift`, `LaunchOptions.swift`, `Project.swift`, the Settings host), so they take the shell in turn; their file-disjoint parts run alongside.
 

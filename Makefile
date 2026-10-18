@@ -29,12 +29,19 @@ SLOW_TESTS  := random command sequences
 PKG_SKIP    := $(PERF_TESTS)
 PERF_RUN    := $(PERF_TESTS)
 
+# The E2E smoke set (docs/test-performance.md C3): the primary path, library to editor to
+# setlist to live. `make e2e-smoke` runs it; `make gate` runs it plus the mapped classes.
+E2E_SMOKE   := LaunchSmokeTests SegueE2ETests/testSongToSetlistToLiveView \
+	SegueEditorE2ETests/testEditorFlow SegueLiveE2ETests/testFridayGig \
+	SegueSetlistBuilderE2ETests/testBuildSetlistFromTheLibrary \
+	SegueCoreUXE2ETests/testAutosaveWritesWithoutSave
+
 # Website tooling (dev-only, fetched at run time at exact versions; nothing ships).
 HTMLVALIDATE := pnpm dlx html-validate@11.16.4
 WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
-	test-perf e2e e2e-one quick lint format verify-appstore check bump \
+	test-perf e2e e2e-one e2e-smoke gate quick lint format verify-appstore check bump \
 	site-fonts site-html docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
@@ -105,9 +112,16 @@ e2e-one: ## Run selected UI tests only: make e2e-one TEST=SegueLiveE2ETests[/tes
 	@test -n "$(TEST)" || (echo "usage: make e2e-one TEST=Class[/test]" >&2; exit 2)
 	$(XCODEBUILD) -scheme Segue-Personal -configuration Debug-Personal test -only-testing:SegueUITests/$(TEST)
 
+e2e-smoke: ## The E2E smoke set: library to editor to setlist to live (E2E_SMOKE)
+	$(XCODEBUILD) -scheme Segue-Personal -configuration Debug-Personal test \
+		$(addprefix -only-testing:SegueUITests/,$(E2E_SMOKE))
+
 quick: PKG_SKIP := $(PERF_TESTS)|$(SLOW_TESTS)
 quick: PERF_RUN := PerformanceTests
 quick: lint build test-packages test-perf ## Inner loop: lint, build, package tests (no UI tests, no long property tests)
+
+gate: generate lint repo-check tokens-check icon-check site-check build ## Workstream gate: package tests, App Store build or verify, E2E smoke + classes mapped from changes since GATE_BASE (default origin/main)
+	E2E_SMOKE="$(E2E_SMOKE)" scripts/gate.sh
 
 lint: ## Lint + format check (no changes)
 	$(MISE) swiftlint lint --strict --quiet
@@ -143,7 +157,7 @@ probe-shortcuts: ## R35 probe: build the sandboxed Shortcuts Events probe app (r
 verify-appstore: ## Build the App Store flavor and assert no personal-module symbols
 	scripts/verify-appstore.sh
 
-check: generate lint repo-check tokens-check icon-check site-check build ## Everything: CI checks, builds, all package tests, verify-appstore, the full E2E suite
+check: generate lint repo-check tokens-check icon-check site-check build ## Release gate, everything: CI checks, builds, all package tests, verify-appstore, the full E2E suite
 	# verify-appstore (which builds Debug- and Release-AppStore) runs beside the package
 	# tests; the timing budgets run after both, and E2E (keystroke latency) last, alone.
 	scripts/parallel.sh tests "make --no-print-directory test-packages" \

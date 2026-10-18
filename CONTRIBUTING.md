@@ -27,12 +27,12 @@ Tests are integration-first: real parser, real file-system library, real index, 
 
 | When | Run |
 |---|---|
-| After each small change | `make quick` (lint, Personal build, core and UI-package tests) |
-| UI you touched | `make e2e-one TEST=Class[/testName]` |
+| Each step | Filtered suites only: `make quick` (lint, Personal build, package tests without the long ones) and `make e2e-one TEST=Class[/testName]` for the UI you touched |
+| Each assignment (workstream gate) | `make quick`, then `make gate`: package tests, the App Store build (or verify-appstore when the App Store's contents may have changed), the E2E smoke set and the E2E classes `UITests/e2e-map.tsv` maps your changed paths to (since `GATE_BASE`, default `origin/main`) |
 | Before pushing | `make repo-check` (exactly what CI runs: lint, token and HTML checks, docs-check, ShellCheck, actionlint) |
-| Phase or workstream gate, release commit | `make check` (everything, once) |
+| Release (before `make archive`/`validate`) and the end of each phase | `make check` (everything, once: the release gate) |
 
-Do not run the full `make check` after every small fix; it is the gate, not the inner loop. Flaky tests, lint warnings and build warnings get fixed when seen, even when unrelated to the change at hand.
+`make e2e-smoke` runs just the smoke set (library to editor to setlist to live). Do not run the full `make check` after every small fix; it is the release gate, not the inner loop. A new source folder needs a line in `UITests/e2e-map.tsv` (an unmapped path makes `make gate` run the full suite). Logic belongs in in-process SegueUI tests (real stores, files and parser); XCUITest is for real user flows. See [docs/test-performance.md](docs/test-performance.md). Flaky tests, lint warnings and build warnings get fixed when seen, even when unrelated to the change at hand.
 
 ## Tools
 
