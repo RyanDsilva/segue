@@ -11,5 +11,16 @@
 	<!-- Outgoing connections for the hosted services (docs/release/decisions.md R23, A61). -->
 	<key>com.apple.security.network.client</key>
 	<true/>
+	<!-- Gig Mode Shortcuts run through Shortcuts Events (docs/release/decisions.md R59):
+	     Apple events to the one Apple-published access group, no temporary exception. -->
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+	<key>com.apple.security.scripting-targets</key>
+	<dict>
+		<key>com.apple.shortcuts.events</key>
+		<array>
+			<string>com.apple.shortcuts.run</string>
+		</array>
+	</dict>
 </dict>
 </plist>

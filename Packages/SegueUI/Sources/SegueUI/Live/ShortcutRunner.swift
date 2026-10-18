@@ -4,12 +4,23 @@
 
     /// Runs one of the user's Shortcuts by name ("Gig Mode On"). A sandboxed app has no API
     /// to turn on Focus, so show start and end delegate to a Shortcut the user owns
-    /// (decisions.md, phase 2).
+    /// (decisions.md, phase 2). The app runs them through Shortcuts Events
+    /// (`AppleEventShortcutRunner`, docs/release/decisions.md R59).
     @MainActor
     public protocol ShortcutRunner: AnyObject {
         /// Asks Shortcuts to run `name` and reports what was observed. Hand-over is not
-        /// completion: only `.completed` means the Shortcut was seen to finish (R18).
+        /// completion: only `.completed` means the Shortcut was seen to finish (R18). Never
+        /// shows a system prompt (it runs mid-show).
         func run(_ name: String) async -> ShortcutOutcome
+        /// Like `run`, but may show the one-time system permission prompt first (Settings >
+        /// Live "Test", so the prompt never first appears during a show).
+        func runAskingPermission(_ name: String) async -> ShortcutOutcome
+    }
+
+    public extension ShortcutRunner {
+        func runAskingPermission(_ name: String) async -> ShortcutOutcome {
+            await run(name)
+        }
     }
 
     /// What a runner observed about one Shortcut run.
@@ -46,7 +57,8 @@
     /// Shortcuts. It can only hand the request over, never observe completion, so it returns
     /// `.handedOver` (or `.failed` when the URL could not be opened). The caller re-asserts
     /// its own window as key afterwards (`LiveFocus`), since some macOS versions still bring
-    /// Shortcuts forward.
+    /// Shortcuts forward. Kept as the fallback behind this protocol (R59 risk: Path AI); the
+    /// app uses `AppleEventShortcutRunner`.
     @MainActor
     public final class WorkspaceShortcutRunner: ShortcutRunner {
         public init() {}
@@ -79,35 +91,71 @@
     }
 
     #if DEBUG
-        /// Test-only runner (`-SegueShortcutLog <file>`, Debug builds): never opens Shortcuts;
-        /// appends each name it was asked to run as one line to `log`, so the E2E suite can
-        /// assert both hooks fired. A name starting with "fail" fails, one starting with
-        /// "hang" is only handed over (exercising the confirmation timeout), and any other
-        /// name completes.
+        /// Test-only runner (`-SegueShortcutLog <file>`, Debug builds): the production
+        /// `AppleEventShortcutRunner` talking to `RecordingShortcutsEvents` instead of the
+        /// real Shortcuts Events, so the E2E suite exercises the real reply mapping without
+        /// the user's Shortcuts or an Automation prompt.
         @MainActor
         public final class RecordingShortcutRunner: ShortcutRunner {
             public let log: URL
-            public private(set) var names: [String] = []
+            private let runner: AppleEventShortcutRunner
+
+            public init(log: URL) {
+                self.log = log
+                runner = AppleEventShortcutRunner(events: RecordingShortcutsEvents(log: log))
+            }
+
+            public func run(_ name: String) async -> ShortcutOutcome {
+                await runner.run(name)
+            }
+
+            public func runAskingPermission(_ name: String) async -> ShortcutOutcome {
+                await runner.runAskingPermission(name)
+            }
+        }
+
+        /// A stand-in for Shortcuts Events that never sends an Apple event: permission is
+        /// always granted, and each name it is asked to run is appended as one line to `log`
+        /// (so the E2E suite can assert both hooks fired) and answered like the real one
+        /// (probe results, research 09) by its prefix:
+        ///
+        /// - `fail…`: the Shortcut's own error (`-1753`, "simulated failure")
+        /// - `missing…`: no such Shortcut (`-1728`)
+        /// - `denied…`: Automation turned off (`-1743`)
+        /// - `hang…`: no reply in time (`-1712`), so the run is only handed over
+        /// - anything else: finished.
+        public struct RecordingShortcutsEvents: ShortcutsEvents {
+            public let log: URL
 
             public init(log: URL) {
                 self.log = log
             }
 
-            public func run(_ name: String) async -> ShortcutOutcome {
-                names.append(name)
+            public func permission(askUserIfNeeded _: Bool) async -> OSStatus {
+                OSStatus(noErr)
+            }
+
+            public func run(_ name: String) async -> ShortcutsEventsReply {
                 do {
                     try append(name)
                 } catch {
-                    return .failed("could not write the Shortcut log (\(error))")
+                    return ShortcutsEventsReply(
+                        errorNumber: -1,
+                        errorMessage: "could not write the Shortcut log (\(error))",
+                    )
                 }
                 let lowered = name.lowercased()
-                if lowered.hasPrefix("fail") {
-                    return .failed("simulated failure")
+                return if lowered.hasPrefix("fail") {
+                    ShortcutsEventsReply(errorNumber: -1753, errorMessage: "simulated failure.")
+                } else if lowered.hasPrefix("missing") {
+                    ShortcutsEventsReply(errorNumber: -1728)
+                } else if lowered.hasPrefix("denied") {
+                    ShortcutsEventsReply(errorNumber: -1743)
+                } else if lowered.hasPrefix("hang") {
+                    ShortcutsEventsReply(errorNumber: -1712)
+                } else {
+                    .finished
                 }
-                if lowered.hasPrefix("hang") {
-                    return .handedOver
-                }
-                return .completed
             }
 
             private func append(_ name: String) throws {

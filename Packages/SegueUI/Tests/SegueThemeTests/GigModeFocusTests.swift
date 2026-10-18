@@ -111,6 +111,63 @@ struct GigModeFocusTests {
         #expect(checklist.visibleRows.contains(.focus) == (status != .notConfigured))
     }
 
+    // MARK: Shortcuts Events replies (Path SE, R59; probe results in research 09)
+
+    @Test(arguments: [
+        (ShortcutsEventsReply.finished, ShortcutOutcome.completed),
+        (
+            ShortcutsEventsReply(errorNumber: -1728),
+            .failed(AppleEventShortcutRunner.Message.notFound),
+        ),
+        (
+            ShortcutsEventsReply(errorNumber: -1743),
+            .failed(AppleEventShortcutRunner.Message.notPermitted),
+        ),
+        (
+            ShortcutsEventsReply(
+                errorNumber: -1753,
+                errorMessage: "A server with the specified hostname could not be found.",
+            ),
+            .failed("A server with the specified hostname could not be found"),
+        ),
+        (ShortcutsEventsReply(errorNumber: -1753), .failed("Shortcuts reported error -1753")),
+        (ShortcutsEventsReply(errorNumber: -1712), .handedOver),
+        (ShortcutsEventsReply(errorNumber: -10000, errorMessage: "Boom"), .failed("Boom")),
+    ])
+    func `each Shortcuts Events reply maps to one outcome`(
+        reply: ShortcutsEventsReply,
+        expected: ShortcutOutcome,
+    ) async {
+        let events = ScriptedShortcutsEvents(permission: 0, reply: reply)
+        let runner = AppleEventShortcutRunner(events: events)
+        #expect(await runner.run("Gig Mode On") == expected)
+        #expect(events.calls == ["permission(ask: false)", "run(Gig Mode On)"])
+    }
+
+    @Test(arguments: [
+        (-1743, AppleEventShortcutRunner.Message.notPermitted),
+        (-1744, AppleEventShortcutRunner.Message.needsConsent),
+        (-600, "Shortcuts Events did not start"),
+        (-50, "Segue could not reach Shortcuts Events (error -50)"),
+    ])
+    func `a refused permission check fails without sending the event`(
+        status: Int,
+        message: String,
+    ) async {
+        let events = ScriptedShortcutsEvents(permission: OSStatus(status), reply: .finished)
+        let runner = AppleEventShortcutRunner(events: events)
+        #expect(await runner.run("Gig Mode On") == .failed(message))
+        #expect(events.calls == ["permission(ask: false)"])
+    }
+
+    @Test
+    func `only the Settings test may ask for the Automation permission`() async {
+        let events = ScriptedShortcutsEvents(permission: 0, reply: .finished)
+        let runner = AppleEventShortcutRunner(events: events)
+        #expect(await runner.runAskingPermission("Gig Mode On") == .completed)
+        #expect(events.calls == ["permission(ask: true)", "run(Gig Mode On)"])
+    }
+
     private func makeChecklist(focus: Status, clock: ManualClock) -> PreShowChecklist {
         let suite = "dev.ryandsilva.segue.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite) ?? .standard
@@ -124,5 +181,33 @@ struct GigModeFocusTests {
             power: FixedPowerSource(onCharger: true),
             clock: clock,
         )
+    }
+}
+
+/// Answers every permission check with `permission` and every run with `reply`, recording
+/// the calls in order.
+private final class ScriptedShortcutsEvents: ShortcutsEvents, @unchecked Sendable {
+    let permission: OSStatus
+    let reply: ShortcutsEventsReply
+    private let lock = NSLock()
+    private var recorded: [String] = []
+
+    init(permission: OSStatus, reply: ShortcutsEventsReply) {
+        self.permission = permission
+        self.reply = reply
+    }
+
+    var calls: [String] {
+        lock.withLock { recorded }
+    }
+
+    func permission(askUserIfNeeded: Bool) async -> OSStatus {
+        lock.withLock { recorded.append("permission(ask: \(askUserIfNeeded))") }
+        return permission
+    }
+
+    func run(_ name: String) async -> ShortcutsEventsReply {
+        lock.withLock { recorded.append("run(\(name))") }
+        return reply
     }
 }

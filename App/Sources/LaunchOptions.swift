@@ -16,8 +16,9 @@ import Support
     ///   relaunch opens the library from the bookmark stored by an earlier test launch.
     /// - `-SegueShapeLibraryPath <file>`: read the user chord shape library from `<file>`. Test
     ///   runs without it use no shape library, so they never see the user's real shapes.
-    /// - `-SegueShortcutLog <file>`: never open Shortcuts; record each Shortcut the app would run
-    ///   as one line in `<file>` (live-mode E2E #9).
+    /// - `-SegueShortcutLog <file>`: never contact Shortcuts Events; record each Shortcut the
+    ///   app would run as one line in `<file>` and answer it like Shortcuts Events would by its
+    ///   name's prefix (`RecordingShortcutsEvents`: fail, missing, denied, hang).
     /// - `-SegueLiveTimeScale <n>`: auto-scroll runs `n` times faster than real time (E2E #3).
     /// - `-SegueBindingsPath <file>`: read key bindings from `<file>` instead of Application
     ///   Support. Test runs without it use the default keys only.
@@ -229,7 +230,7 @@ import Support
         /// and only the explicit bindings file.
         private func liveDependencies(defaults: UserDefaults) -> LiveDependencies {
             let shortcuts: any ShortcutRunner = shortcutLog.map(RecordingShortcutRunner.init)
-                ?? WorkspaceShortcutRunner()
+                ?? AppleEventShortcutRunner()
             let scrollClock: any Support.Clock = liveTimeScale.map { ScaledClock(scale: $0) }
                 ?? MonotonicClock()
             let settings = LiveSettingsStore(defaults: defaults)

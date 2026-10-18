@@ -3,8 +3,14 @@ import XCTest
 /// Gig Mode Shortcuts and the pre-show checklist's Focus row (R18, R35; WS1 6.3): the
 /// Shortcuts are off until the user sets them up, and the Focus row ticks only on observed
 /// completion or the performer's Done. Every test starts from a reset library with the
-/// recording runner (`-SegueShortcutLog`): names starting with "fail" fail, names starting
-/// with "hang" are only handed over, any other name completes.
+/// recording runner (`-SegueShortcutLog`): the production Shortcuts Events runner talking to a
+/// fake Shortcuts Events that answers by name prefix like the real one did in the R35 probe
+/// ("fail" -1753, "missing" -1728, "denied" -1743, "hang" a timeout, anything else finishes).
+///
+/// Manual check (needs the user's real Shortcuts, not automatable): on the Personal build set
+/// the start Shortcut to a real one, press Test in Settings > Live and allow the Automation
+/// prompt once, then start a gig; the row ticks only after the Shortcut finished, Shortcuts
+/// does not come to the front, and a failing or missing Shortcut shows its failure.
 final class SegueGigModeE2ETests: XCTestCase {
     var library: LiveLibrary?
     var app: XCUIApplication?
@@ -121,6 +127,74 @@ final class SegueGigModeE2ETests: XCTestCase {
         done.click(in: app)
         XCTAssertTrue(waitForFocus(app, "done"))
     }
+
+    // MARK: 5. Observed completion ticks (Path SE)
+
+    @MainActor
+    func testObservedCompletionTicksWithoutDone() throws {
+        let library = try XCTUnwrap(library)
+        let app = launch(library, extra: ["-SegueStartShortcut", "Gig Mode On"])
+        openChecklist(app)
+        let row = focusRow(app)
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertTrue(waitForFocus(app, "done"))
+        XCTAssertTrue(detail(row, containing: "“Gig Mode On” ran.").waitForExistence(timeout: 5))
+        XCTAssertFalse(element(app, GigAXID.checklistFocusDone).exists)
+        XCTAssertFalse(element(app, GigAXID.checklistFocusRetry).exists)
+        XCTAssertEqual(library.shortcutsRun(), ["Gig Mode On"])
+    }
+
+    // MARK: 6. Not set up (-1728) and not permitted (-1743)
+
+    @MainActor
+    func testMissingShortcutFailsAsNotSetUp() throws {
+        let library = try XCTUnwrap(library)
+        let app = launch(library, extra: ["-SegueStartShortcut", "missing-gig"])
+        openChecklist(app)
+        let row = focusRow(app)
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertTrue(waitForFocus(app, "not done"))
+        let detail = detail(row, containing: "no Shortcut with this name")
+        XCTAssertTrue(detail.waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, GigAXID.checklistFocusRetry).exists)
+        XCTAssertTrue(element(app, GigAXID.checklistFocusDone).exists)
+        screenshot(app, "checklist-focus-missing")
+    }
+
+    @MainActor
+    func testDeniedAutomationPointsToSystemSettings() throws {
+        let library = try XCTUnwrap(library)
+        let workspaceLog = library.root.appending(path: "workspace.log")
+        let app = launch(
+            library,
+            extra: [
+                "-SegueStartShortcut", "denied-gig",
+                "-SegueWorkspaceLog", workspaceLog.path(percentEncoded: false),
+            ],
+        )
+        openLiveSettings(app)
+        app.buttons["Test"].firstMatch.click(in: app)
+        let result = element(app, GigAXID.settingsShortcutTestResult)
+        XCTAssertTrue(waitFor { result.exists && self.text(result).contains("System Settings") })
+        let open = element(app, GigAXID.settingsAutomationSettings)
+        XCTAssertTrue(open.waitForExistence(timeout: 5))
+        screenshot(app, "settings-automation-denied")
+        open.click(in: app)
+        XCTAssertTrue(waitFor {
+            let log = (try? String(contentsOf: workspaceLog, encoding: .utf8)) ?? ""
+            return log.contains("Privacy_Automation")
+        })
+        app.typeKey("w", modifierFlags: .command, in: app)
+
+        openChecklist(app)
+        let row = focusRow(app)
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertTrue(waitForFocus(app, "not done"))
+        XCTAssertTrue(detail(row, containing: "Privacy & Security").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, GigAXID.checklistFocusDone).exists)
+        screenshot(app, "checklist-focus-denied")
+        XCTAssertEqual(library.shortcutsRun(), ["denied-gig", "denied-gig"])
+    }
 }
 
 // MARK: - Steps
@@ -208,6 +282,11 @@ extension SegueGigModeE2ETests {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
+    /// A static text's label or value.
+    func text(_ element: XCUIElement) -> String {
+        [element.label, element.value as? String ?? ""].joined(separator: " ")
+    }
+
     func waitForValue(_ element: XCUIElement, _ value: String) -> Bool {
         waitFor { element.exists && element.value as? String == value }
     }
@@ -240,4 +319,6 @@ enum GigAXID {
     static let checklistRowState = "segue.live.checklist.row.state"
     static let checklistFocusDone = "segue.live.checklist.focus.done"
     static let checklistFocusRetry = "segue.live.checklist.focus.retry"
+    static let settingsShortcutTestResult = "segue.settings.live.shortcutTestResult"
+    static let settingsAutomationSettings = "segue.settings.live.automationSettings"
 }

@@ -116,6 +116,12 @@ let appInfoPlist: [String: Plist.Value] = [
     "NSHumanReadableCopyright": "© 2026 Ryan Rony Dsilva",
     // Only CryptoKit hashing and OS-provided HTTPS, both exempt.
     "ITSAppUsesNonExemptEncryption": false,
+    // R59 (Path SE): shown in the one-time Automation prompt for Shortcuts Events.
+    "NSAppleEventsUsageDescription": """
+    Segue runs your Gig Mode Shortcuts when a show starts and ends, for example to turn on \
+    your Performing Focus, and checks that they finished. It runs only the Shortcuts you \
+    name in Settings > Live.
+    """,
     // Hosted services (WS3): filled from the per-flavor build settings in `appTarget`.
     "SegueSentryDSN": "$(SEGUE_SENTRY_DSN)",
     "SegueTelemetryDeckAppID": "$(SEGUE_TELEMETRYDECK_APP_ID)",

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Shared by scripts/verify-appstore.sh and scripts/verify-archive.sh so their checks cannot
 # drift. Source it from the repo root after defining `prefix` (the line prefix, e.g.
-# "verify-appstore"). Provides `forbidden`, `perf_strings`, `test_hook_strings`, `fail`,
-# `pass`, `failures`, `check_no_test_hooks` and `check_resource_bundle`.
+# "verify-appstore"). Provides `forbidden`, `perf_strings`, `test_hook_strings`,
+# `app_entitlements`, `fail`, `pass`, `failures`, `check_no_test_hooks` and
+# `check_resource_bundle`.
 
 # Anything that can only come from the personal package or its compilation condition.
 forbidden='SeguePersonalModules|PersonalModules|SEGUE_PERSONAL'
@@ -22,6 +23,25 @@ test_hook_strings() {
         return 1
     fi
     printf '%s\n' "$flags" "-SegueUITesting" "RecordingShortcutRunner"
+}
+
+# app_entitlements: the app's own entitlements as sorted JSON, the same in both flavors'
+# Release builds (App/SegueAppStore.entitlements, App/Segue.entitlements). Signing adds the
+# identifiers on top (verify-archive) or get-task-allow for local development builds
+# (verify-appstore); anything else is a failure. The Apple-events pair is Path SE
+# (docs/release/decisions.md R59): Gig Mode Shortcuts run through Shortcuts Events, limited
+# to its one Apple-published access group.
+app_entitlements() {
+    jq -n -S '{
+        "com.apple.security.app-sandbox": true,
+        "com.apple.security.files.user-selected.read-write": true,
+        "com.apple.security.files.bookmarks.app-scope": true,
+        "com.apple.security.network.client": true,
+        "com.apple.security.automation.apple-events": true,
+        "com.apple.security.scripting-targets": {
+            "com.apple.shortcuts.events": ["com.apple.shortcuts.run"]
+        }
+    }'
 }
 
 failures=0

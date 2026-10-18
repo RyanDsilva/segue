@@ -16,6 +16,7 @@
                     LiveSettingsView(
                         store: app.liveSettings,
                         shortcuts: app.dependencies.live.shortcuts,
+                        workspace: app.dependencies.workspace,
                     )
                 }
             }
@@ -28,7 +29,10 @@
     struct LiveSettingsView: View {
         @Bindable var store: LiveSettingsStore
         let shortcuts: any ShortcutRunner
+        let workspace: any WorkspaceActions
         @State private var testResult: String?
+        /// The last Test was refused because Automation is off for Segue.
+        @State private var testNotPermitted = false
 
         var body: some View {
             Form {
@@ -76,6 +80,14 @@
                         Text(testResult)
                             .font(.callout)
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier(AccessibilityID.settingsShortcutTestResult)
+                    }
+                    if testNotPermitted,
+                       let url = AppleEventShortcutRunner.Message.automationSettingsURL
+                    {
+                        Button("Open Automation Settings…") { workspace.open(url) }
+                            .accessibilityIdentifier(AccessibilityID.settingsAutomationSettings)
                     }
                     Text(Self.guide)
                         .font(.callout)
@@ -100,8 +112,9 @@
             + "Focus on by itself, so it can run a Shortcut you own when a show starts and ends. "
             + "Create a Shortcut named “\(LiveSettings.suggestedStartShortcut)” that turns on "
             + "your Performing Focus, then enter its name here. Do the same with "
-            + "“\(LiveSettings.suggestedEndShortcut)” turning it off. Segue brings the stage "
-            + "back to the front afterwards."
+            + "“\(LiveSettings.suggestedEndShortcut)” turning it off. Press Test once and "
+            + "allow Segue to control Shortcuts Events: that lets Segue run them and see that "
+            + "they finished. Segue brings the stage back to the front afterwards."
 
         private func shortcutRow(
             _ label: String,
@@ -114,6 +127,7 @@
                     // The suggested name is a placeholder only, never a stored value (R18).
                     TextField("Shortcut name", text: text, prompt: Text(prompt))
                         .textFieldStyle(.roundedBorder)
+                        .labelsHidden()
                         .autocorrectionDisabled()
                         .accessibilityIdentifier(id)
                     Button("Test") { test(text.wrappedValue) }
@@ -123,10 +137,16 @@
         }
 
         /// Runs the Shortcut through the app's runner and shows what was really observed.
+        /// This is where the one-time Automation prompt appears, so it never first shows up
+        /// mid-show.
         private func test(_ name: String) {
             guard let name = LiveSettingsStore.shortcutName(name) else { return }
+            testResult = "Running “\(name)”…"
+            testNotPermitted = false
             Task {
-                testResult = switch await shortcuts.run(name) {
+                let outcome = await shortcuts.runAskingPermission(name)
+                testNotPermitted = outcome == .failed(AppleEventShortcutRunner.Message.notPermitted)
+                testResult = switch outcome {
                 case .completed: "“\(name)” ran."
                 case .handedOver:
                     "Asked Shortcuts to run “\(name)”; Segue can’t confirm it finished."

@@ -11,11 +11,9 @@
 # "Bundles" are the app plus every Contents/PlugIns/*.appex. The only allowed extension is the
 # Quick Look preview dev.ryandsilva.segue.quicklook (I-14, built by WS2b); with no extension
 # embedded the extension rules simply have nothing to check, so nothing here changes when it
-# lands. The Shortcuts Events confirmation path (4.8d Path SE) is detected from
-# App/SegueAppStore.entitlements: when that file declares
-# com.apple.security.automation.apple-events, the app's allowed entitlements gain the two
-# Path SE keys and NSAppleEventsUsageDescription becomes required; otherwise all three are
-# forbidden.
+# lands. Gig Mode confirmation runs through Shortcuts Events (Path SE, docs/release/decisions.md
+# R59): the app's allowed entitlements include the Apple-events pair (`app_entitlements` in
+# scripts/lib/verify-common.sh) and NSAppleEventsUsageDescription is required.
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 
@@ -90,12 +88,6 @@ main_binary() {
 }
 short() { echo "${1#"$scratch/pkg/"}"; }
 
-# Path SE (4.8d) is chosen when the App Store entitlements declare Apple events.
-path_se=0
-if grep -q 'com.apple.security.automation.apple-events' App/SegueAppStore.entitlements; then
-    path_se=1
-fi
-
 # MARK: 1. Right product
 
 check_1() {
@@ -165,19 +157,10 @@ check_3() {
 expected_entitlements() {
     local id="$1"
     if [[ "$id" == "$app_id" ]]; then
-        jq -n -S --arg app "$team.$id" --arg team "$team" --argjson se "$path_se" '{
-            "com.apple.security.app-sandbox": true,
-            "com.apple.security.files.user-selected.read-write": true,
-            "com.apple.security.files.bookmarks.app-scope": true,
-            "com.apple.security.network.client": true,
+        app_entitlements | jq -S --arg app "$team.$id" --arg team "$team" '. + {
             "com.apple.application-identifier": $app,
             "com.apple.developer.team-identifier": $team
-        } + (if $se == 1 then {
-            "com.apple.security.automation.apple-events": true,
-            "com.apple.security.scripting-targets": {
-                "com.apple.shortcuts.events": ["com.apple.shortcuts.run"]
-            }
-        } else {} end)'
+        }'
     else
         jq -n -S --arg app "$team.$id" --arg team "$team" '{
             "com.apple.security.app-sandbox": true,
@@ -306,17 +289,14 @@ check_8() {
     value=$(plist_get "$plist" CFBundleDisplayName)
     [[ "$value" == "Segue" ]] || problems+="CFBundleDisplayName='$value'; "
     plist_get "$plist" NSMainStoryboardFile >/dev/null && problems+="NSMainStoryboardFile present; "
-    if plist_get "$plist" NSAppleEventsUsageDescription >/dev/null; then
-        ((path_se)) || problems+="NSAppleEventsUsageDescription present without Path SE; "
-    else
-        ((path_se)) && problems+="NSAppleEventsUsageDescription missing (Path SE); "
-    fi
+    value=$(plist_get "$plist" NSAppleEventsUsageDescription)
+    [[ -n "$value" ]] || problems+="NSAppleEventsUsageDescription missing (Path SE, R59); "
     if [[ ! -r "$plist" ]]; then
         fail "8: cannot read $plist"
     elif [[ -n "$problems" ]]; then
         fail "8: Info.plist: $problems"
     else
-        pass "8: Info.plist keys (encryption, category, copyright, minimum OS, display name)"
+        pass "8: Info.plist keys (encryption, category, copyright, minimum OS, display name, Apple events)"
     fi
     check_resource_bundle "8" "$app"
 }

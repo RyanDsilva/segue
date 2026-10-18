@@ -57,7 +57,7 @@ struct SegueApp: App {
     static func realLiveDependencies(defaults: UserDefaults) -> LiveDependencies {
         LiveDependencies(
             settings: LiveSettingsStore(defaults: defaults),
-            shortcuts: WorkspaceShortcutRunner(),
+            shortcuts: AppleEventShortcutRunner(),
             scrollClock: MonotonicClock(),
             bindingsURL: Bundle.main.bundleIdentifier.map(LiveDependencies.defaultBindingsURL),
         )

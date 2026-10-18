@@ -9,9 +9,12 @@
 #        - the linker map,
 #        - the .app bundle (any file: binary strings, symbols, resources) or its linked
 #          libraries.
-#   2. Fails if the E2E temporary-exception entitlement is in the signed entitlements of any
-#      Release or AppStore product (Release-AppStore, Debug-AppStore, Release-Personal), or if
-#      `network.client` is missing from them (A61: both flavors make outgoing connections).
+#   2. Fails unless the signed entitlements of every Release or AppStore product
+#      (Release-AppStore, Debug-AppStore, Release-Personal) are exactly the app's set
+#      (`app_entitlements` in scripts/lib/verify-common.sh: sandbox, user-selected files,
+#      app-scope bookmarks, `network.client` (A61), and the Shortcuts Events Apple-events pair
+#      (R59)), plus only the get-task-allow that local development signing adds. So the E2E
+#      temporary exception, or any other extra key, fails.
 #   3. Fails if the Release-AppStore binary carries a test hook (a launch-option flag,
 #      RecordingShortcutRunner) or an editor perf notice (WS1 4.8a/4.8f).
 #   4. Fails if the embedded SegueUI resource bundle lacks the real identifier or the app's
@@ -35,8 +38,6 @@ intermediates="$derived/Build/Intermediates.noindex"
 prefix="verify-appstore"
 # shellcheck source=lib/verify-common.sh
 source scripts/lib/verify-common.sh
-# The Debug-only E2E sandbox exception (App/Segue-Debug.entitlements).
-exception='com\.apple\.security\.temporary-exception'
 
 # build <scheme> <configuration>: builds with a link map so the linker inputs are recorded.
 build() {
@@ -114,40 +115,49 @@ check_personal_free() {
     fi
 }
 
-# check_no_exception <configuration>: the signed entitlements must not carry the E2E
-# temporary exception and must carry network.client. Requires the sandbox key so a failed
-# extraction cannot pass.
-check_no_exception() {
-    local config="$1" app="$products/$1/Segue.app" entitlements
+# check_entitlements <configuration>: the signed entitlements must be exactly
+# `app_entitlements`, ignoring only get-task-allow (local development signing adds it; the
+# exported store build is checked without it by verify-archive check 4). Fails closed when
+# the entitlements cannot be read.
+check_entitlements() {
+    local config="$1" app="$products/$1/Segue.app" got want
     [[ -d "$app" ]] || { fail "$config: no product at $app"; return; }
-    if ! entitlements=$(codesign -d --entitlements - --xml "$app" 2>/dev/null); then
+    if ! got=$(codesign -d --entitlements - --xml "$app" 2>/dev/null \
+        | plutil -convert json -o - - 2>/dev/null \
+        | jq -S 'del(."com.apple.security.get-task-allow")') || [[ -z "$got" ]]; then
         fail "$config: could not read signed entitlements"
         return
     fi
-    if ! grep -q 'com.apple.security.app-sandbox' <<<"$entitlements"; then
-        fail "$config: signed entitlements unreadable or not sandboxed"
-    elif grep -E -q "$exception" <<<"$entitlements"; then
-        fail "$config: signed entitlements carry the temporary-exception entitlement"
+    want=$(app_entitlements)
+    if [[ "$got" == "$want" ]]; then
+        pass "$config: signed entitlements are exactly the app's set ($(jq 'length' <<<"$got") keys)"
     else
-        pass "$config: signed entitlements have no temporary exception"
+        fail "$config: signed entitlements differ from the app's set:"$'\n'"$(diff <(echo "$want") <(echo "$got"))"
     fi
-    if grep -q 'com.apple.security.network.client' <<<"$entitlements"; then
-        pass "$config: signed entitlements carry network.client"
+}
+
+# check_apple_events_usage <configuration>: Path SE needs the Automation prompt's text.
+check_apple_events_usage() {
+    local config="$1" plist="$products/$1/Segue.app/Contents/Info.plist" value
+    value=$(/usr/libexec/PlistBuddy -c "Print :NSAppleEventsUsageDescription" "$plist" 2>/dev/null) || value=""
+    if [[ -n "$value" ]]; then
+        pass "$config: NSAppleEventsUsageDescription is set"
     else
-        fail "$config: signed entitlements lack network.client"
+        fail "$config: NSAppleEventsUsageDescription missing (Path SE, R59)"
     fi
 }
 
 for config in Release-AppStore Debug-AppStore; do
     build Segue-AppStore "$config"
     check_personal_free "$config"
-    check_no_exception "$config"
+    check_entitlements "$config"
 done
+check_apple_events_usage Release-AppStore
 check_no_test_hooks Release-AppStore "$products/Release-AppStore/Segue.app/Contents/MacOS/Segue"
 check_resource_bundle Release-AppStore "$products/Release-AppStore/Segue.app"
 
 build Segue-Personal Release-Personal
-check_no_exception Release-Personal
+check_entitlements Release-Personal
 
 if ((failures > 0)); then
     echo "verify-appstore: $failures check(s) failed" >&2

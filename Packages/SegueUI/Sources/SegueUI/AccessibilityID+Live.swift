@@ -62,4 +62,6 @@ public extension AccessibilityID {
     static let settingsStartShortcut = "segue.settings.live.startShortcut"
     static let settingsEndShortcut = "segue.settings.live.endShortcut"
     static let settingsRehearsalShortcuts = "segue.settings.live.rehearsalShortcuts"
+    static let settingsShortcutTestResult = "segue.settings.live.shortcutTestResult"
+    static let settingsAutomationSettings = "segue.settings.live.automationSettings"
 }

@@ -20,7 +20,7 @@
 
         public init(
             settings: LiveSettingsStore,
-            shortcuts: any ShortcutRunner = WorkspaceShortcutRunner(),
+            shortcuts: any ShortcutRunner = AppleEventShortcutRunner(),
             power: any PowerSourceReading = SystemPowerSource(),
             scrollClock: any Clock = MonotonicClock(),
             bindingsURL: URL? = nil,

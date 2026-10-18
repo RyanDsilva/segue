@@ -253,7 +253,7 @@ chordpro,songbook,transpose,prompter,worship,hindi,guitar,piano,capo,nashville,s
 | Contact first/last name | `Ryan` / `Dsilva` (R30 legal name) |
 | Contact email | `segue@ryandsilva.dev` |
 | Contact phone | Ryan's phone. **Not committed to git.** Enter by hand, or pass it to `deliver` through an environment variable. |
-| Notes | below (2,967 / 4,000 bytes as drafted; recount after the 14.2 pass) |
+| Notes | below (3,557 / 4,000 bytes as drafted, including the Apple-events paragraph for WS1 Path SE, R59; recount after the 14.2 pass) |
 | Attachment | the 60-90 s walkthrough video from section 9.5 (B-31) |
 
 Notes. The names below follow the resolved specs (WS2a, WS2b, WS3). Before pasting, check each against the built App Store flavor and correct the notes, never the other way round:
@@ -284,8 +284,8 @@ THINGS TO TRY
 NETWORK USE
 Segue works fully offline. It uses the network only for: (a) usage statistics, only after the user chooses Share; (b) crash and hang reports, only after the user chooses Send; (c) Help > Report a Problem..., which the user sends explicitly after a preview of exactly what will be sent (attaching the current song is off by default, and the reply email field is optional). Help documentation, the privacy policy, the terms and the feature-request board (Help > Request a Feature...) open in the default web browser.
 
-OPTIONAL SHORTCUTS INTEGRATION
-Settings > Live can run shortcuts the user creates in the Shortcuts app when a show starts and ends (for example, to turn on a Focus). It is off until the user sets it up and is not needed to use the app.
+OPTIONAL SHORTCUTS INTEGRATION (APPLE EVENTS)
+Settings > Live can run shortcuts the user creates in the Shortcuts app when a show starts and ends (for example, to turn on a Focus). It is off until the user sets it up and is not needed to use the app. Segue runs those shortcuts by sending the "run shortcut" Apple event to Shortcuts Events, through the com.apple.security.scripting-targets entitlement limited to the Apple-published access group com.apple.shortcuts.run (no temporary exception). The reply tells Segue whether the shortcut finished, so the pre-show checklist ticks "Focus on" only when it really ran. Segue sends no other Apple events and controls no other app. macOS asks for Automation permission once, when the user presses Test in Settings > Live; to see it, type the name of any shortcut and press Test.
 
 Support: segue@ryandsilva.dev - https://segue.ryandsilva.dev/support
 ```

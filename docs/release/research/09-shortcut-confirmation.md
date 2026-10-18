@@ -147,3 +147,39 @@ Manual step for Ryan: in Shortcuts, create **"Segue Focus Probe"** with one harm
 4. Re-run 1 and 2 from a real sandboxed build (a scratch target or Segue Debug with the scripting-targets entitlement added locally): does the sandbox allow it, and does the TCC prompt appear?
 
 Record results in this doc. Cleanup note: my sandbox probe left an empty container at `~/Library/Containers/dev.ryandsilva.segueshortcutprobe`; a guard hook blocked me from deleting it, so Ryan can remove it by hand.
+
+---
+
+## Probe results (2026-10-18)
+
+The R35 probe (`research/shortcuts-events-probe/`, WS1 4.10 and section 5 step 8) ran on macOS 26.6.2 (build 25G83). The app is sandboxed with hardened runtime, signed with Ryan's Apple Development identity, and carries exactly `app-sandbox`, `automation.apple-events` and `scripting-targets` = `{com.apple.shortcuts.events: [com.apple.shortcuts.run]}`, with no temporary exception. Each run was launched through LaunchServices (`run.sh`), so TCC attributed the Automation request to the probe and not to Terminal. The raw JSON lines are in `.build/shortcuts-probe/results/`. The Shortcuts used were "Segue Probe OK" (shows a notification), "Segue Probe Fail" (Get Contents of URL on an unresolvable host) and "Segue Probe Missing" (does not exist).
+
+| # | Shortcut | Mode | permission | errorNumber | errorMessage | seconds | frontmost before / after |
+|---|---|---|---|---|---|---|---|
+| 1 | Segue Probe OK | permission | 0 | - | - | 2.85 (includes Ryan answering the prompt) | VS Code / VS Code |
+| 2 | Segue Probe OK | event | 0 | none | - (reply `'msng'`) | 0.32 | VS Code / VS Code |
+| 3 | Segue Probe OK | event | 0 | none | - (reply `'msng'`) | 0.22 | VS Code / VS Code |
+| 4 | Segue Probe OK | event | 0 | none | - (reply `'msng'`) | 0.22 | VS Code / VS Code |
+| 5 | Segue Probe Fail | event | 0 | -1753 | "A server with the specified hostname could not be found." | 0.28 | VS Code / VS Code |
+| 6 | Segue Probe Fail | event | 0 | -1753 | same | 0.21 | VS Code / VS Code |
+| 7 | Segue Probe Missing | event | 0 | -1728 | (none) | 0.08 | VS Code / VS Code |
+
+Both error numbers came back in the reply's `keyErrorNumber` / `keyErrorString` parameters; `sendEvent` did not throw. A reader that only catches the thrown error would have taken rows 5-7 as successes, so production reads the reply's error keys too.
+
+Ryan's observations: one Automation prompt only (on run 1; none on any later run, so no CVE-2026-28993-style per-run consent); the notification from "Segue Probe OK" appeared on each OK run; neither Shortcuts nor anything else came to the front. The unsandboxed `osascript` control was not recorded.
+
+Rule outcome (WS1 section 5 step 8.6):
+
+| Letter | Rule | Result |
+|---|---|---|
+| a | every OK run after the one-time OK returns with no error | holds (runs 2-4) |
+| b | every Fail run returns a non-zero error number | holds (-1753 twice) |
+| c | the missing name returns -1728 | holds (run 7) |
+| d | no prompt after the first run | holds (Ryan) |
+| e | the frontmost app is unchanged by a run | holds (all runs) |
+| f | each OK run finishes in under 10 s | holds (0.22-0.32 s) |
+| g | the signed entitlements needed no temporary exception | holds |
+
+**Chosen path: Path SE** (docs/release/decisions.md R59), plus the manual Done fallback. Error mapping in `AppleEventShortcutRunner`: success means `.completed` (the row ticks); -1728 means not found / not set up; -1743 means not permitted (the user turned Automation off; the message points at System Settings > Privacy & Security > Automation, and Settings > Live offers an "Open Automation Settings…" button); -1712 (no reply within 60 s) is only a hand-over, which becomes "couldn't confirm" after 30 s; anything else, including -1753, is `.failed` with the Shortcut's own message.
+
+Follow-up check during WS1 step 9 (same Mac, same probe signature): with Shortcuts Events not running (it quits when idle), `AEDeterminePermissionToAutomateTarget` returns -600 (`procNotFound`) and the probe never sent the event. A variant that first starts Shortcuts Events hidden through `NSWorkspace.openApplication` (allowed in the sandbox, `activates = false`) got permission 0 straight after and then -1728 for the missing name, with the front app unchanged. Production therefore starts Shortcuts Events in the background when the check answers -600, then checks again; during a show it still only checks and never prompts (-1744, never asked, means "press Test in Settings > Live").
