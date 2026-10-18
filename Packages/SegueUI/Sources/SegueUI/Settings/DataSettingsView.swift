@@ -13,6 +13,23 @@
         var body: some View {
             Form {
                 Section("Library") {
+                    LabeledContent("Archive") {
+                        HStack(spacing: 8) {
+                            if app.isExporting {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .accessibilityLabel("Exporting")
+                                    .accessibilityIdentifier(AccessibilityID.exportProgress)
+                            }
+                            Button("Export Library Archive…") {
+                                Task { await app.exportLibraryArchive() }
+                            }
+                            .disabled(!app.canExportArchive)
+                            .accessibilityIdentifier(AccessibilityID.exportArchive)
+                        }
+                    }
+                    SettingsNote(text: "One zip of your songs, setlists, shows and timings, "
+                        + "as they are in the library folder.")
                     LabeledContent("Index") {
                         Button("Rebuild Index") {
                             guard let session = app.session else { return }

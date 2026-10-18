@@ -148,6 +148,8 @@
         /// A Welcome flow or consent sheet was shown this launch: What's New waits for the
         /// next launch (never more than one of them per launch, 4.1).
         var launchPromptShown = false
+        /// Export Library Archive is writing the zip (WS2b 4.8).
+        public internal(set) var isExporting = false
         /// The run on stage (gig or rehearsal), shown in the stage window while non-nil.
         public var live: LiveSession? {
             didSet {
