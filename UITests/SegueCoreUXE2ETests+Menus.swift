@@ -4,81 +4,11 @@ import XCTest
 /// Menus, the main window and the About panel (WS2a 6.3, tests 14-16a).
 @MainActor
 extension SegueCoreUXE2ETests {
-    func testHelpMenu() throws {
-        try seedSong("harbour-lights", CoreFixture.harbour)
-        let app = try launch()
-        XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 15))
-
-        let help = app.menuBars.menuBarItems["Help"]
-        help.click(in: app)
-        let titles = help.menuItems.allElementsBoundByIndex.map(\.title).filter { !$0.isEmpty }
-        attachScreen(name: "help-menu")
-        app.typeKey(.escape, modifierFlags: [], in: app)
-        // Welcome to Segue… and Rate Segue on the App Store stay hidden in this build (their
-        // hook and the App Store ID are unset).
-        XCTAssertEqual(titles, CoreLinks.helpMenuTitles)
-
-        for (title, url) in CoreLinks.helpLinks {
-            menu(app, "Help", title)
-            XCTAssertTrue(waitForWorkspace("open", [url]), "\(title): \(workspaceCalls())")
-        }
-        menu(app, "Help", "Report a Problem…")
-        XCTAssertTrue(wait {
-            self.workspaceCalls()
-                .contains { $0.0 == "open" && $0.1.first?.hasPrefix(CoreLinks.supportMail) == true }
-        })
-
-        menu(app, "Help", "Keyboard Shortcuts")
-        XCTAssertTrue(element(app, CoreAXID.shortcutsWindow).appears(timeout: 10))
-        menu(app, "Help", "Acknowledgements")
-        XCTAssertTrue(element(app, CoreAXID.acknowledgements).appears(timeout: 10))
-
-        // File > Export Library Archive… waits for its hook (WS2b).
-        app.menuBars.menuBarItems["File"].click(in: app)
-        XCTAssertFalse(app.menuBars.menuItems["Export Library Archive…"].exists)
-        app.typeKey(.escape, modifierFlags: [], in: app)
-
-        // About: the panel with the version and the credits.
-        app.menuBars.menuBarItems["Segue"].click(in: app)
-        app.menuBars.menuItems["About Segue"].click(in: app)
-        XCTAssertTrue(app.staticTexts["© 2026 Ryan Rony Dsilva"].appears(timeout: 10))
-        attachScreen(name: "about-panel")
-    }
-
-    func testReopenMainWindow() throws {
-        try seedSong("harbour-lights", CoreFixture.harbour)
-        let app = try launch()
-        let harbour = row(app, "Harbour Lights")
-        XCTAssertTrue(harbour.appears(timeout: 15))
-
-        // Window > Segue Library (exactly one such item).
-        app.typeKey("w", modifierFlags: .command, in: app)
-        XCTAssertTrue(harbour.disappears(timeout: 10))
-        let window = app.menuBars.menuBarItems["Window"]
-        window.click()
-        let items = window.menuItems.matching(NSPredicate(format: "title == %@", "Segue Library"))
-        attachScreen(name: "window-menu")
-        XCTAssertEqual(items.count, 1, "\(window.menuItems.allElementsBoundByIndex.map(\.title))")
-        items.firstMatch.click()
-        XCTAssertTrue(harbour.appears(timeout: 10), "Window > Segue Library")
-        XCTAssertEqual(app.windows.count, 1)
-
-        // Cmd-0.
-        app.typeKey("w", modifierFlags: .command, in: app)
-        XCTAssertTrue(harbour.disappears(timeout: 10))
-        app.typeKey("0", modifierFlags: .command)
-        XCTAssertTrue(harbour.appears(timeout: 10), "Cmd-0")
-        XCTAssertEqual(app.windows.count, 1)
-
-        // A Dock click (a reopen event) with no window open.
-        app.typeKey("w", modifierFlags: .command, in: app)
-        XCTAssertTrue(harbour.disappears(timeout: 10))
-        try reopenFromDock()
-        XCTAssertTrue(harbour.appears(timeout: 10), "Dock reopen")
-        XCTAssertEqual(app.windows.count, 1)
-    }
-
-    func testSetlistMenuShortcuts() throws {
+    /// One scenario over the menu bar (B2: these shared their setup): the Help menu, the
+    /// Keyboard Shortcuts and Acknowledgements windows, the About panel, the Setlist menu's
+    /// keys, then closing and reopening the main window. What each Help link opens is
+    /// checked in process (`HelpMenuTests`); one link is clicked here to prove the wiring.
+    func testMenus() throws {
         try seedSong("harbour-lights", CoreFixture.harbour, id: CoreFixture.harbourID)
         try seedSetlist(
             "friday",
@@ -89,7 +19,95 @@ extension SegueCoreUXE2ETests {
         let app = try launch()
         XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 15))
 
-        // Outside a builder, Start Show is disabled.
+        helpMenu(app)
+        shortcutsAndAcknowledgements(app)
+        fileMenuAndAbout(app)
+        setlistMenuKeys(app)
+        try reopenMainWindow(app)
+    }
+
+    /// Help: the canonical items, and one link click through the recorded workspace.
+    private func helpMenu(_ app: XCUIApplication) {
+        let help = app.menuBars.menuBarItems["Help"]
+        help.click(in: app)
+        let titles = help.menuItems.allElementsBoundByIndex.map(\.title).filter { !$0.isEmpty }
+        attachScreen(name: "help-menu")
+        app.typeKey(.escape, modifierFlags: [], in: app)
+        // Welcome to Segue… and Rate Segue on the App Store stay hidden in this build (their
+        // hook and the App Store ID are unset).
+        XCTAssertEqual(titles, CoreLinks.helpMenuTitles)
+
+        let (title, url) = CoreLinks.helpLinks[0]
+        menu(app, "Help", title)
+        XCTAssertTrue(waitForWorkspace("open", [url]), "\(title): \(workspaceCalls())")
+    }
+
+    /// Help > Keyboard Shortcuts and Help > Acknowledgements, each closed again.
+    private func shortcutsAndAcknowledgements(_ app: XCUIApplication) {
+        menu(app, "Help", "Keyboard Shortcuts")
+        let window = element(app, CoreAXID.shortcutsWindow)
+        XCTAssertTrue(window.appears(timeout: 10))
+        XCTAssertTrue(element(app, CoreAXID.shortcutsMainSection).exists)
+        XCTAssertTrue(element(app, CoreAXID.shortcutsStageSection).exists)
+        // A main-window row matches the menu: Start Show is Cmd-Return.
+        let rows = window.descendants(matching: .staticText)
+        let startShow = rows.matching(NSPredicate(
+            format: "label CONTAINS %@ OR value CONTAINS %@",
+            "Start Show",
+            "Start Show",
+        ))
+        .firstMatch
+        XCTAssertTrue(startShow.exists)
+        let row = startShow.label + (startShow.value as? String ?? "")
+        XCTAssertTrue(row.contains("⌘↩"), row)
+        // And a stage row comes from the bindings.
+        XCTAssertTrue(rows.matching(NSPredicate(
+            format: "label CONTAINS %@ OR value CONTAINS %@",
+            "Page, Then Next Song",
+            "Page, Then Next Song",
+        ))
+        .firstMatch.exists)
+        attachScreen(name: "keyboard-shortcuts-window")
+        app.typeKey("w", modifierFlags: .command, in: app)
+        XCTAssertTrue(window.disappears(timeout: 10))
+
+        // Acknowledgements (moved from the app menu, A34) credits the bundled font and
+        // dependencies.
+        menu(app, "Help", "Acknowledgements")
+        let acknowledgements = element(app, CoreAXID.acknowledgements)
+        XCTAssertTrue(acknowledgements.appears(timeout: 10))
+        for name in ["Schibsted Grotesk", "GRDB", "Tonic"] {
+            XCTAssertTrue(acknowledgements.staticTexts[name].exists, "\(name) not credited")
+        }
+        let ofl = NSPredicate(format: "value BEGINSWITH %@", "SIL Open Font License 1.1")
+        XCTAssertTrue(acknowledgements.staticTexts.matching(ofl).firstMatch.exists)
+        let credits = XCTAttachment(screenshot: app.windows["Acknowledgements"].screenshot())
+        credits.name = "acknowledgements"
+        credits.lifetime = .keepAlways
+        add(credits)
+        app.typeKey("w", modifierFlags: .command, in: app)
+        XCTAssertTrue(acknowledgements.disappears(timeout: 10))
+    }
+
+    /// File > Export Library Archive… waits for its hook (WS2b); About shows the panel with
+    /// the version and the credits.
+    private func fileMenuAndAbout(_ app: XCUIApplication) {
+        app.menuBars.menuBarItems["File"].click(in: app)
+        XCTAssertFalse(app.menuBars.menuItems["Export Library Archive…"].exists)
+        app.typeKey(.escape, modifierFlags: [], in: app)
+
+        app.menuBars.menuBarItems["Segue"].click(in: app)
+        app.menuBars.menuItems["About Segue"].click(in: app)
+        let copyright = app.staticTexts["© 2026 Ryan Rony Dsilva"]
+        XCTAssertTrue(copyright.appears(timeout: 10))
+        attachScreen(name: "about-panel")
+        app.typeKey("w", modifierFlags: .command, in: app)
+        XCTAssertTrue(copyright.disappears(timeout: 10))
+    }
+
+    /// Setlist: Start Show is disabled outside a builder; in one, Cmd-Return starts,
+    /// Opt-Cmd-Return rehearses (each up to the checklist) and Shift-Cmd-N names a new set.
+    private func setlistMenuKeys(_ app: XCUIApplication) {
         let setlistMenu = app.menuBars.menuBarItems["Setlist"]
         setlistMenu.click(in: app)
         XCTAssertFalse(setlistMenu.menuItems["Start Show"].isEnabled)
@@ -109,7 +127,43 @@ extension SegueCoreUXE2ETests {
         XCTAssertTrue(checklist.disappears(timeout: 10))
 
         app.typeKey("n", modifierFlags: [.command, .shift], in: app)
-        XCTAssertTrue(element(app, CoreAXID.setlistNameField).appears(timeout: 10))
+        let name = element(app, CoreAXID.setlistNameField)
+        XCTAssertTrue(name.appears(timeout: 10))
+        app.typeKey(.escape, modifierFlags: [], in: app)
+        XCTAssertTrue(name.disappears(timeout: 10))
+    }
+
+    /// Window > Segue Library (exactly one such item), Cmd-0 and a Dock click each bring the
+    /// closed main window back, never a second one.
+    private func reopenMainWindow(_ app: XCUIApplication) throws {
+        element(app, CoreAXID.sidebarLibrary).click(in: app)
+        let harbour = row(app, "Harbour Lights")
+        XCTAssertTrue(harbour.appears(timeout: 10))
+        XCTAssertEqual(app.windows.count, 1)
+
+        app.typeKey("w", modifierFlags: .command, in: app)
+        XCTAssertTrue(harbour.disappears(timeout: 10))
+        let window = app.menuBars.menuBarItems["Window"]
+        window.click()
+        let items = window.menuItems.matching(NSPredicate(format: "title == %@", "Segue Library"))
+        attachScreen(name: "window-menu")
+        XCTAssertEqual(items.count, 1, "\(window.menuItems.allElementsBoundByIndex.map(\.title))")
+        items.firstMatch.click()
+        XCTAssertTrue(harbour.appears(timeout: 10), "Window > Segue Library")
+        XCTAssertEqual(app.windows.count, 1)
+
+        app.typeKey("w", modifierFlags: .command, in: app)
+        XCTAssertTrue(harbour.disappears(timeout: 10))
+        app.typeKey("0", modifierFlags: .command)
+        XCTAssertTrue(harbour.appears(timeout: 10), "Cmd-0")
+        XCTAssertEqual(app.windows.count, 1)
+
+        // A Dock click (a reopen event) with no window open.
+        app.typeKey("w", modifierFlags: .command, in: app)
+        XCTAssertTrue(harbour.disappears(timeout: 10))
+        try reopenFromDock()
+        XCTAssertTrue(harbour.appears(timeout: 10), "Dock reopen")
+        XCTAssertEqual(app.windows.count, 1)
     }
 
     func testAddSelectedSongToSetlist() throws {
@@ -204,35 +258,5 @@ extension SegueCoreUXE2ETests {
               let entries = object["entries"] as? [Any]
         else { return -1 }
         return entries.count
-    }
-
-    @MainActor
-    func testKeyboardShortcutsWindow() throws {
-        let app = try launch()
-        XCTAssertTrue(element(app, CoreAXID.libraryEmpty).appears(timeout: 15))
-        app.typeKey("/", modifierFlags: .command, in: app)
-        let window = element(app, CoreAXID.shortcutsWindow)
-        XCTAssertTrue(window.appears(timeout: 10))
-        XCTAssertTrue(element(app, CoreAXID.shortcutsMainSection).exists)
-        XCTAssertTrue(element(app, CoreAXID.shortcutsStageSection).exists)
-        // A main-window row matches the menu: Start Show is Cmd-Return.
-        let rows = window.descendants(matching: .staticText)
-        let startShow = rows.matching(NSPredicate(
-            format: "label CONTAINS %@ OR value CONTAINS %@",
-            "Start Show",
-            "Start Show",
-        ))
-        .firstMatch
-        XCTAssertTrue(startShow.exists)
-        let row = startShow.label + (startShow.value as? String ?? "")
-        XCTAssertTrue(row.contains("⌘↩"), row)
-        // And a stage row comes from the bindings.
-        XCTAssertTrue(rows.matching(NSPredicate(
-            format: "label CONTAINS %@ OR value CONTAINS %@",
-            "Page, Then Next Song",
-            "Page, Then Next Song",
-        ))
-        .firstMatch.exists)
-        attachScreen(name: "keyboard-shortcuts-window")
     }
 }

@@ -39,6 +39,38 @@ struct AutosaveTests {
         #expect(session.gigLog.autosave.policy == AutosavePolicy())
     }
 
+    /// The shipped one-second debounce in real time, on an app opened as the E2E suite opens
+    /// it (moved down from `SegueCoreUXE2ETests.testAutosaveRealDebounce`): nothing reaches
+    /// the file at once, and it lands soon after the pause.
+    @Test
+    func `the shipped debounce writes after a one second pause in real time`() async throws {
+        let env = try TestEnvironment()
+        try FileManager.default.createDirectory(
+            at: env.libraryURL.appending(path: "songs", directoryHint: .isDirectory),
+            withIntermediateDirectories: true,
+        )
+        let original = "{title: Harbour Lights}\n[G]Lanterns on the [C]water\n"
+        try env.write(original, to: "songs/harbour-lights.cho")
+        let app = try await env.openApp()
+        let library = try #require(app.session?.library)
+        #expect(app.dependencies.autosaveDelay == nil)
+        let song = try #require(library.catalog.first)
+        library.beginEditing(song)
+        let editor = try #require(library.editor)
+
+        editor.sourceTextDidChange(original + "Shipped timing\n")
+        let typed = ContinuousClock.now
+        #expect(try !env.read("songs/harbour-lights.cho").contains("Shipped timing"))
+        let deadline = typed + .seconds(5)
+        while ContinuousClock.now < deadline,
+              try !env.read("songs/harbour-lights.cho").contains("Shipped timing")
+        {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(try env.read("songs/harbour-lights.cho").contains("Shipped timing"))
+        #expect(ContinuousClock.now - typed > .milliseconds(800))
+    }
+
     @Test
     func `a burst of changes saves once, one idle period after the last`() async {
         let harness = Harness()

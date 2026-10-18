@@ -1,12 +1,12 @@
 import AppKit
 import XCTest
 
-/// Delete and Trash, Show in Finder and import (WS2a 6.3, tests 8-13).
+/// Delete and Trash, Show in Finder and import (WS2a 6.3, tests 8-13), as one scenario on
+/// one seeded library (B2: these shared their setup): Show in Finder, Cmd-Delete in text,
+/// Move to Trash and Undo, then File > Import Songs….
 @MainActor
 extension SegueCoreUXE2ETests {
-    // MARK: - Delete and Trash (3.3)
-
-    func testDeleteSongToTrashAndUndo() throws {
+    func testLibraryFileActions() throws {
         try seedSong("harbour-lights", CoreFixture.harbour, id: CoreFixture.harbourID)
         try seedSong("river-song", CoreFixture.river, id: CoreFixture.riverID)
         try seedSetlist(
@@ -15,9 +15,24 @@ extension SegueCoreUXE2ETests {
             name: "Friday",
             songIDs: [CoreFixture.riverID],
         )
-        let app = try launch()
+        let importFiles = try seedImportSource()
+        let app = try launch(extraArguments: [
+            "-SegueImportPanelPaths",
+            importFiles.joined(separator: ":"),
+        ])
         let paths = try XCTUnwrap(paths)
+        XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 15))
 
+        showInFinder(app, paths)
+        try deleteSongToTrashAndUndo(app, paths)
+        importFromMenu(app, paths)
+        // Last: it edits Harbour Lights, whose bytes the import's duplicate check compares.
+        deleteShortcutNeverFiresInText(app, paths)
+    }
+
+    // MARK: - Delete and Trash (3.3)
+
+    private func deleteSongToTrashAndUndo(_ app: XCUIApplication, _ paths: Paths) throws {
         // In no setlist: File > Move to Trash (Cmd-Delete on the focused list), no dialog.
         let harbour = row(app, "Harbour Lights")
         XCTAssertTrue(harbour.appears(timeout: 15))
@@ -71,11 +86,8 @@ extension SegueCoreUXE2ETests {
         XCTAssertFalse(exists(paths.song("river-song")))
     }
 
-    func testDeleteShortcutNeverFiresInText() throws {
-        try seedSong("harbour-lights", CoreFixture.harbour)
-        let app = try launch()
-        let paths = try XCTUnwrap(paths)
-
+    private func deleteShortcutNeverFiresInText(_ app: XCUIApplication, _ paths: Paths) {
+        let trashed = names(in: paths.trash)
         // In the editor, Cmd-Delete deletes to the line start.
         let editor = openEditor(app, "Harbour Lights")
         editor.typeText("\nkeep this", in: app)
@@ -95,22 +107,13 @@ extension SegueCoreUXE2ETests {
             "Cmd-Delete left \(String(describing: search.value))",
         )
         XCTAssertTrue(exists(paths.song("harbour-lights")))
-        XCTAssertTrue(names(in: paths.trash).isEmpty)
+        XCTAssertEqual(names(in: paths.trash), trashed, "Cmd-Delete in text trashed something")
         XCTAssertTrue(row(app, "Harbour Lights").exists)
     }
 
     // MARK: - Show in Finder (3.8)
 
-    func testShowInFinder() throws {
-        try seedSong("harbour-lights", CoreFixture.harbour, id: CoreFixture.harbourID)
-        try seedSetlist(
-            "friday",
-            id: CoreFixture.fridayID,
-            name: "Friday",
-            songIDs: [CoreFixture.harbourID],
-        )
-        let app = try launch()
-        let paths = try XCTUnwrap(paths)
+    private func showInFinder(_ app: XCUIApplication, _ paths: Paths) {
         let library = paths.library.path(percentEncoded: false)
         let songPath = library + "songs/harbour-lights.cho"
 
@@ -139,8 +142,9 @@ extension SegueCoreUXE2ETests {
 
     // MARK: - Import (3.2)
 
-    func testImportFromMenu() throws {
-        try seedSong("harbour-lights", CoreFixture.harbour)
+    /// The files File > Import Songs… "chooses" (`-SegueImportPanelPaths`): a duplicate of
+    /// Harbour Lights, River Song, a plain-text song and a picture.
+    private func seedImportSource() throws -> [String] {
         let paths = try XCTUnwrap(paths)
         let source = paths.importSource
         try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
@@ -153,12 +157,14 @@ extension SegueCoreUXE2ETests {
         for (name, data) in files {
             try data.write(to: source.appending(path: name))
         }
-        let list = files.map { source.appending(path: $0.0).path(percentEncoded: false) }
-        let app = try launch(extraArguments: [
-            "-SegueImportPanelPaths",
-            list.joined(separator: ":"),
-        ])
-        XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 15))
+        return files.map { source.appending(path: $0.0).path(percentEncoded: false) }
+    }
+
+    /// Runs after the delete steps: River Song is in the Trash again, so its file imports.
+    private func importFromMenu(_ app: XCUIApplication, _ paths: Paths) {
+        element(app, CoreAXID.sidebarLibrary).click(in: app)
+        XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 10))
+        let trashedBefore = names(in: paths.trash).count
 
         app.typeKey("i", modifierFlags: [.command, .shift], in: app)
 
@@ -167,7 +173,7 @@ extension SegueCoreUXE2ETests {
         XCTAssertTrue(wait {
             summary.label == "Imported 2 songs. 2 skipped." || summary
                 .value as? String == "Imported 2 songs. 2 skipped."
-        })
+        }, "summary: \(summary.label) \(String(describing: summary.value))")
         attachScreenshot(app, name: "import-summary")
         element(app, CoreAXID.importSummaryDetails).click(in: app)
         XCTAssertTrue(app.staticTexts["Already in your library as “Harbour Lights”"]
@@ -187,7 +193,10 @@ extension SegueCoreUXE2ETests {
         // Edit > Undo Import moves both to the Trash.
         row(app, "River Song").click(in: app)
         app.typeKey("z", modifierFlags: .command, in: app)
-        XCTAssertTrue(wait { self.names(in: paths.trash).count == 4 }, "\(names(in: paths.trash))")
+        XCTAssertTrue(
+            wait { self.names(in: paths.trash).count == trashedBefore + 4 },
+            "\(names(in: paths.trash))",
+        )
         XCTAssertFalse(exists(paths.song("river-song")))
         XCTAssertTrue(row(app, "River Song").disappears(timeout: 10))
     }

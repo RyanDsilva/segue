@@ -57,25 +57,6 @@ final class SegueCoreUXE2ETests: XCTestCase {
     }
 
     @MainActor
-    func testAutosaveRealDebounce() throws {
-        try seedSong("harbour-lights", CoreFixture.harbour)
-        let app = try launch(autosaveDelay: nil)
-        let paths = try XCTUnwrap(paths)
-        let editor = openEditor(app, "Harbour Lights")
-
-        editor.typeText("\nShipped timing", in: app)
-        let typed = Date()
-        // Not before the 1 s pause, and soon after it.
-        XCTAssertFalse(read(paths.song("harbour-lights")).contains("Shipped timing"))
-        XCTAssertTrue(waitForFile(
-            paths.song("harbour-lights"),
-            contains: "Shipped timing",
-            timeout: 5,
-        ))
-        XCTAssertGreaterThan(Date().timeIntervalSince(typed), 0.8)
-    }
-
-    @MainActor
     func testSwitchingSongsFlushes() throws {
         try seedSong("harbour-lights", CoreFixture.harbour)
         try seedSong("river-song", CoreFixture.river)
@@ -106,8 +87,11 @@ final class SegueCoreUXE2ETests: XCTestCase {
         XCTAssertTrue(read(paths.song("harbour-lights")).contains("Saved on quit"))
     }
 
+    /// Edits made in another app (B2: one scenario, one seeded song): a clean editor picks
+    /// them up; an edited one shows the conflict bar and saves a copy; a file deleted
+    /// elsewhere is saved as a new song.
     @MainActor
-    func testExternalEditConflict() throws {
+    func testExternalEdits() throws {
         try seedSong("harbour-lights", CoreFixture.harbour)
         let app = try launch()
         let paths = try XCTUnwrap(paths)
@@ -116,7 +100,31 @@ final class SegueCoreUXE2ETests: XCTestCase {
         editor.typeText("\nMine", in: app)
         XCTAssertTrue(waitForFile(file, contains: "Mine"))
 
-        // Another app rewrites the file; the next autosave must not overwrite it.
+        // Clean (saved) editor: another app's rewrite replaces its text on activation.
+        let rewritten = "{title: Harbour Lights}\nRewritten elsewhere\n"
+        try Data(rewritten.utf8).write(to: file, options: .atomic)
+        reactivate(app)
+        XCTAssertTrue(wait { (editor.value as? String) == rewritten }, "The editor kept old text")
+        XCTAssertTrue(waitForStatus(app, "Saved"))
+        XCTAssertFalse(element(app, CoreAXID.editorConflictBar).exists)
+        XCTAssertEqual(read(file), rewritten)
+
+        try conflictWhileEditing(app, paths, editor)
+    }
+
+    /// Another app rewrites the file while the editor has typing in it: the next autosave
+    /// must not overwrite it.
+    @MainActor
+    private func conflictWhileEditing(
+        _ app: XCUIApplication,
+        _ paths: Paths,
+        _ editor: XCUIElement,
+    ) throws {
+        let file = paths.song("harbour-lights")
+        editor.typeKey(.downArrow, modifierFlags: .command, in: app)
+        editor.typeText("\nMine", in: app)
+        XCTAssertTrue(waitForFile(file, contains: "Mine"))
+
         let external = "{title: Harbour Lights}\nEdited in another app\n"
         try Data(external.utf8).write(to: file, options: .atomic)
         editor.typeText(" and more", in: app)
@@ -159,26 +167,6 @@ final class SegueCoreUXE2ETests: XCTestCase {
                     .contains("After the delete")
             }
         })
-    }
-
-    @MainActor
-    func testCleanEditorPicksUpExternalEdit() throws {
-        try seedSong("harbour-lights", CoreFixture.harbour)
-        let app = try launch()
-        let paths = try XCTUnwrap(paths)
-        let file = paths.song("harbour-lights")
-        let editor = openEditor(app, "Harbour Lights")
-        editor.typeText("\nMine", in: app)
-        XCTAssertTrue(waitForFile(file, contains: "Mine"))
-
-        let external = "{title: Harbour Lights}\nRewritten elsewhere\n"
-        try Data(external.utf8).write(to: file, options: .atomic)
-        reactivate(app)
-
-        XCTAssertTrue(wait { (editor.value as? String) == external }, "The editor kept old text")
-        XCTAssertTrue(waitForStatus(app, "Saved"))
-        XCTAssertFalse(element(app, CoreAXID.editorConflictBar).exists)
-        XCTAssertEqual(read(file), external)
     }
 
     @MainActor

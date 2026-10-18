@@ -1,6 +1,7 @@
 import XCTest
 
 /// E2E smoke test: the app launches from a clean baseline and shows the library chooser.
+/// (Help > Acknowledgements and its credits are checked in `SegueCoreUXE2ETests.testMenus`.)
 final class LaunchSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -21,23 +22,6 @@ final class LaunchSmokeTests: XCTestCase {
         screenshot.name = "library-chooser"
         screenshot.lifetime = .keepAlways
         add(screenshot)
-
-        // Help > Acknowledgements (moved from the app menu, A34) credits the bundled font
-        // and dependencies.
-        app.menuBars.menuBarItems["Help"].click(in: app)
-        app.menuBars.menuBarItems["Help"].menuItems["Acknowledgements"].click(in: app)
-        let acknowledgements = app.descendants(matching: .any)
-            .matching(identifier: "segue.acknowledgements").firstMatch
-        XCTAssertTrue(acknowledgements.appears(timeout: 5))
-        for name in ["Schibsted Grotesk", "GRDB", "Tonic"] {
-            XCTAssertTrue(acknowledgements.staticTexts[name].exists, "\(name) not credited")
-        }
-        let ofl = NSPredicate(format: "value BEGINSWITH %@", "SIL Open Font License 1.1")
-        XCTAssertTrue(acknowledgements.staticTexts.matching(ofl).firstMatch.exists)
-        let credits = XCTAttachment(screenshot: app.windows["Acknowledgements"].screenshot())
-        credits.name = "acknowledgements"
-        credits.lifetime = .keepAlways
-        add(credits)
 
         app.terminate()
     }

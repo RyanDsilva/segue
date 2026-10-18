@@ -1,7 +1,9 @@
 import AppKit
 import XCTest
 
-/// Setlist builder and song metadata undo (WS2a 6.3, tests 16a undo, 19, 19a).
+/// Setlist builder and song metadata undo (WS2a 6.3, tests 16a undo, 19, 19a). The full
+/// step-by-step undo and redo walks are in process (`UndoWalkTests`); these prove Cmd-Z and
+/// Shift-Cmd-Z reach the window's undo stack after real UI edits.
 extension SegueCoreUXE2ETests {
     @MainActor
     func testSetlistBuilderUndoRedo() throws {
@@ -37,18 +39,12 @@ extension SegueCoreUXE2ETests {
         first.buttons[CoreAXID.entryRemove].click(in: app)
         XCTAssertTrue(wait { self.entryCount(file) == 1 })
 
-        // Undo walks back each step, with the file on disk after each.
+        // Cmd-Z undoes the last step on disk; Shift-Cmd-Z redoes it.
         app.typeKey("z", modifierFlags: .command, in: app)
         XCTAssertTrue(wait { self.entryCount(file) == 2 }, "Undo Remove Song")
-        app.typeKey("z", modifierFlags: .command, in: app)
-        XCTAssertTrue(wait { self.setlistName(file) == "Friday" }, "Undo Rename Setlist")
-        app.typeKey("z", modifierFlags: .command, in: app)
-        XCTAssertTrue(wait { self.entryCount(file) == 1 }, "Undo Add Song")
-        // Redo replays them.
         app.typeKey("z", modifierFlags: [.command, .shift], in: app)
-        XCTAssertTrue(wait { self.entryCount(file) == 2 }, "Redo Add Song")
-        app.typeKey("z", modifierFlags: [.command, .shift], in: app)
-        XCTAssertTrue(wait { self.setlistName(file) == "Friday Late" }, "Redo Rename Setlist")
+        XCTAssertTrue(wait { self.entryCount(file) == 1 }, "Redo Remove Song")
+        XCTAssertEqual(setlistName(file), "Friday Late")
 
         try externalEditDropsUndo(app, file)
     }
@@ -92,16 +88,6 @@ extension SegueCoreUXE2ETests {
         app.typeKey("z", modifierFlags: .command, in: app)
         XCTAssertTrue(wait { self.sidecarValue(sidecar, "proficiency") == nil }, "Undo proficiency")
         XCTAssertEqual(sidecarValue(sidecar, "tags") as? [String], ["opener"])
-        app.typeKey("z", modifierFlags: .command, in: app)
-        XCTAssertTrue(
-            wait { (self.sidecarValue(sidecar, "tags") as? [String])?.isEmpty == true },
-            "Undo tag",
-        )
-        app.typeKey("z", modifierFlags: [.command, .shift], in: app)
-        XCTAssertTrue(
-            wait { self.sidecarValue(sidecar, "tags") as? [String] == ["opener"] },
-            "Redo tag",
-        )
         app.typeKey("z", modifierFlags: [.command, .shift], in: app)
         XCTAssertTrue(
             wait { self.sidecarValue(sidecar, "proficiency") as? String == "ready" },
