@@ -15,7 +15,10 @@ final class PreviewViewController: NSViewController, @preconcurrency QLPreviewin
         view.appearance = NSAppearance(named: .aqua)
     }
 
-    func preparePreviewOfFile(at url: URL, completionHandler handler: @escaping ((any Error)?) -> Void) {
+    func preparePreviewOfFile(
+        at url: URL,
+        completionHandler handler: @escaping ((any Error)?) -> Void,
+    ) {
         do {
             let data = try Data(contentsOf: url)
             _ = Theme.registerFonts()
