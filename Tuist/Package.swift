@@ -2,7 +2,8 @@
 //
 // External dependencies for the Tuist-generated workspace. Local packages under
 // `Packages/` are integrated as Xcode targets through here, alongside GRDB and Tonic.
-// GRDB and Tonic are pinned to the SAME exact versions as `Packages/SegueCore/Package.swift`.
+// GRDB and Tonic are pinned to the SAME exact versions as `Packages/SegueCore/Package.swift`,
+// sentry-cocoa to the same exact version as `Packages/SegueVendorServices/Package.swift`.
 
 import PackageDescription
 
@@ -40,7 +41,7 @@ import PackageDescription
             uniqueKeysWithValues: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists", "Shows",
                 "LiveLayout", "Plugins", "Support", "Services",
-                "SegueUI", "SeguePersonalModules",
+                "SegueUI", "SeguePersonalModules", "VendorServices",
             ].map { ($0, firstPartyStrict) },
         ),
     )
@@ -51,8 +52,11 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift", exact: "7.11.1"),
         .package(url: "https://github.com/AudioKit/Tonic", exact: "2.1.2"),
+        // WS3: the Sentry SDK (no TelemetryDeck package: our own ingest client, R34).
+        .package(url: "https://github.com/getsentry/sentry-cocoa", exact: "9.30.2"),
         .package(path: "../Packages/SegueCore"),
         .package(path: "../Packages/SegueUI"),
         .package(path: "../Packages/SeguePersonalModules"),
+        .package(path: "../Packages/SegueVendorServices"),
     ],
 )

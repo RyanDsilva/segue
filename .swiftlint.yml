@@ -113,3 +113,21 @@ custom_rules:
       - 'UITests/SegueCoreUXE2ETests\+Support\.swift$'
     message: "External URLs live only in SegueLinks.swift (WS2a 3.1)."
     severity: error
+  # Vendor boundary (WS3 spec 3.1): only Packages/SegueVendorServices may know a hosted
+  # vendor. The TelemetryDeck SDK names stay listed so it can never creep back in (R34).
+  vendor_sdk_import:
+    name: "Vendor SDK import"
+    regex: '^\s*(@\w+(\([^)]*\))?\s+)*import\s+(TelemetryDeck|TelemetryClient|_?Sentry)'
+    excluded: 'Packages/SegueVendorServices/'
+    message: "Vendor SDKs are imported only in Packages/SegueVendorServices (WS3 spec 3.1)."
+    severity: error
+  vendor_host:
+    name: "Vendor host"
+    regex: '(telemetrydeck\.com|sentry\.io)'
+    # The DSN build setting lives in Project.swift (spec 3.7); SegueLinks holds every URL.
+    excluded:
+      - 'Packages/SegueVendorServices/'
+      - 'Packages/SegueUI/Sources/SegueUI/App/SegueLinks\.swift$'
+      - '(^|/)Project\.swift$'
+    message: "Vendor hosts are spelled only in Packages/SegueVendorServices (WS3 spec 3.1)."
+    severity: error
