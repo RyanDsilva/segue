@@ -148,6 +148,8 @@
         /// A Welcome flow or consent sheet was shown this launch: What's New waits for the
         /// next launch (never more than one of them per launch, 4.1).
         var launchPromptShown = false
+        /// The What's New sheet's content while it is asked for (WS2b 4.3).
+        public internal(set) var whatsNew: WhatsNewContent?
         /// Export Library Archive is writing the zip (WS2b 4.8).
         public internal(set) var isExporting = false
         /// The run on stage (gig or rehearsal), shown in the stage window while non-nil.
@@ -235,6 +237,7 @@
                 }
             }
             await seedWelcomeForLaunchIfAsked()
+            checkWhatsNewAtLaunch()
             recordLaunch()
         }
 

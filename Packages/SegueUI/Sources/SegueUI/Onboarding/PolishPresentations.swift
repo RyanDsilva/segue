@@ -2,7 +2,8 @@
     import SwiftUI
 
     public extension View {
-        /// WS2b's sheets over the main window: the Welcome sheet (first run, resume, revisit).
+        /// WS2b's sheets over the main window: the Welcome sheet (first run, resume, revisit)
+        /// and What's New.
         func polishPresentations(_ app: AppModel) -> some View {
             modifier(PolishPresentations(app: app))
         }
@@ -34,10 +35,29 @@
 
         func body(content: Content) -> some View {
             let showsWelcome = app.showsWelcomeSheet
+            let showsWhatsNew = app.showsWhatsNewSheet
             content
                 .background {
                     Color.clear.sheet(isPresented: .constant(showsWelcome)) {
                         WelcomeSheet(app: app, model: app.onboarding)
+                    }
+                }
+                .background {
+                    Color.clear.sheet(isPresented: Binding(
+                        get: { showsWhatsNew },
+                        set: {
+                            if !$0 {
+                                app.dismissWhatsNew()
+                            }
+                        },
+                    )) {
+                        if let content = app.whatsNew {
+                            WhatsNewSheet(
+                                content: content,
+                                workspace: app.dependencies.workspace,
+                                onDismiss: { app.dismissWhatsNew() },
+                            )
+                        }
                     }
                 }
         }

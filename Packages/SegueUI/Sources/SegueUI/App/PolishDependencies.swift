@@ -171,6 +171,13 @@
         public func filling(_ hooks: AppHooks) -> AppHooks {
             var hooks = hooks
             hooks.showWelcome = { [weak self] _ in self?.app?.showWelcomeRevisit() }
+            hooks.showWhatsNew = { [weak self] workspace in
+                guard let app = self?.app else {
+                    AppHooks.openChangelog(workspace)
+                    return
+                }
+                app.showWhatsNewFromHelp()
+            }
             hooks.exportArchive = { [weak self] _ in
                 guard let app = self?.app else { return }
                 Task { await app.exportLibraryArchive() }
