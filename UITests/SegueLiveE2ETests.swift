@@ -457,11 +457,13 @@ extension SegueLiveE2ETests {
     /// On failure, attach what the app looked like.
     override func record(_ issue: XCTIssue) {
         nonisolated(unsafe) var issue = issue
+        if MainActor.assumeIsolated({ E2E.isExpectedExit(issue) }) {
+            return
+        }
         let app = app
-        if let app {
-            MainActor.assumeIsolated {
-                issue.add(XCTAttachment(screenshot: app.screenshot()))
-                issue.add(XCTAttachment(string: app.debugDescription))
+        MainActor.assumeIsolated {
+            for attachment in E2E.failureAttachments(for: app) {
+                issue.add(attachment)
             }
         }
         super.record(issue)

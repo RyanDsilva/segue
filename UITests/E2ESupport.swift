@@ -12,6 +12,46 @@ import XCTest
 /// position.
 @MainActor
 enum E2E {
+    /// True while a keystroke that quits the app is in flight (see `pressQuitting`).
+    private static var isQuitting = false
+
+    /// Runs `quit`, an action that makes the app quit (a keystroke or a click). XCTest
+    /// snapshots the app after such an event, and an app that quits quickly (no window left
+    /// to close) is gone by then: it reports "Lost connection to the application". That is
+    /// the expected outcome here, so `record` drops it (`isExpectedExit`); the caller
+    /// asserts the exit itself with `reaches(.notRunning)`.
+    static func quitting(_ quit: () -> Void) {
+        isQuitting = true
+        defer { isQuitting = false }
+        quit()
+    }
+
+    /// Whether `issue` is the post-event snapshot failing because the app quit on purpose.
+    static func isExpectedExit(_ issue: XCTIssue) -> Bool {
+        isQuitting
+            && "\(issue.compactDescription) \(issue.detailedDescription ?? "")"
+            .contains("Lost connection to the application")
+    }
+
+    /// What to attach to a recorded issue: the screenshot and accessibility tree of a
+    /// running app. Nothing while the app is quitting, nor for an app that is not running (after a
+    /// quit, a screenshot
+    /// fails, which records an issue, which asks for a screenshot again: unbounded
+    /// recursion that crashed the runner), and nothing while already collecting.
+    private static var isCollectingFailureAttachments = false
+
+    static func failureAttachments(for app: XCUIApplication?) -> [XCTAttachment] {
+        guard let app, !isCollectingFailureAttachments, !isQuitting,
+              app.state == .runningForeground || app.state == .runningBackground
+        else { return [] }
+        isCollectingFailureAttachments = true
+        defer { isCollectingFailureAttachments = false }
+        return [
+            XCTAttachment(screenshot: app.screenshot()),
+            XCTAttachment(string: app.debugDescription),
+        ]
+    }
+
     /// Arguments every test launch carries: no restored windows from an earlier run (each
     /// test starts from a fresh app instance, not from the last test's window state), and
     /// the test-only instrumentation switched on (`UITesting` in SegueUI).

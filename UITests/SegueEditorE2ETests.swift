@@ -152,7 +152,7 @@ final class SegueEditorE2ETests: XCTestCase {
         XCTAssertEqual(app.state, .runningForeground)
 
         // Quit: no prompt, the app quits.
-        app.typeKey("q", modifierFlags: .command, in: app)
+        E2E.quitting { app.typeKey("q", modifierFlags: .command, in: app) }
         XCTAssertTrue(app.reaches(.notRunning, timeout: 15), "App did not quit")
     }
 
@@ -214,10 +214,13 @@ final class SegueEditorE2ETests: XCTestCase {
 
     override func record(_ issue: XCTIssue) {
         nonisolated(unsafe) var issue = issue
-        if let app {
-            MainActor.assumeIsolated {
-                issue.add(XCTAttachment(screenshot: app.screenshot()))
-                issue.add(XCTAttachment(string: app.debugDescription))
+        if MainActor.assumeIsolated({ E2E.isExpectedExit(issue) }) {
+            return
+        }
+        let app = app
+        MainActor.assumeIsolated {
+            for attachment in E2E.failureAttachments(for: app) {
+                issue.add(attachment)
             }
         }
         super.record(issue)

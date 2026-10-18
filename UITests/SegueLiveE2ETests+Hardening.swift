@@ -23,7 +23,7 @@ extension SegueLiveE2ETests {
         XCTAssertTrue(app.buttons["End and Quit (Return)"].exists)
         screenshot(app, "13-quit-confirm")
         XCTAssertEqual(app.state, .runningForeground)
-        key(app, .return)
+        E2E.quitting { key(app, .return) }
         XCTAssertTrue(app.reaches(.notRunning, timeout: 20), "Segue did not quit")
         // Ended properly: in the gig log, with the end Shortcut run.
         let show = try XCTUnwrap(library.shows().first)
