@@ -60,7 +60,7 @@ final class SegueGigModeE2ETests: XCTestCase {
         let row = focusRow(app)
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         XCTAssertEqual(library.shortcutsRun(), ["Gig Mode On"])
-        XCTAssertTrue(waitForValue(row, "done"), "an observed completion ticks the row")
+        XCTAssertTrue(waitForFocus(app, "done"), "an observed completion ticks the row")
         XCTAssertFalse(element(app, GigAXID.checklistFocusDone).exists)
         screenshot(app, "checklist-focus-ran")
         startFromChecklist(app)
@@ -77,7 +77,7 @@ final class SegueGigModeE2ETests: XCTestCase {
         openChecklist(app)
         let row = focusRow(app)
         XCTAssertTrue(row.waitForExistence(timeout: 10))
-        XCTAssertEqual(row.value as? String, "not done")
+        XCTAssertTrue(waitForFocus(app, "not done"))
         XCTAssertTrue(detail(row, containing: "failed").waitForExistence(timeout: 5))
         XCTAssertTrue(element(app, GigAXID.checklistFocusRetry).exists)
         let done = element(app, GigAXID.checklistFocusDone)
@@ -85,14 +85,14 @@ final class SegueGigModeE2ETests: XCTestCase {
         screenshot(app, "checklist-focus-failed")
 
         done.click(in: app)
-        XCTAssertTrue(waitForValue(row, "done"))
+        XCTAssertTrue(waitForFocus(app, "done"))
         element(app, GigAXID.checklistFocusDone).click(in: app)
-        XCTAssertTrue(waitForValue(row, "not done"))
+        XCTAssertTrue(waitForFocus(app, "not done"))
 
         // Retry runs the start Shortcut again (it fails again).
         element(app, GigAXID.checklistFocusRetry).click(in: app)
         XCTAssertTrue(waitFor { library.shortcutsRun() == ["fail-gig", "fail-gig"] })
-        XCTAssertTrue(waitForValue(row, "not done"))
+        XCTAssertTrue(waitForFocus(app, "not done"))
     }
 
     // MARK: 4. A timeout stays unticked
@@ -100,25 +100,26 @@ final class SegueGigModeE2ETests: XCTestCase {
     @MainActor
     func testUnconfirmedShortcutTimesOutUnticked() throws {
         let library = try XCTUnwrap(library)
-        // The live clock runs 10x faster: the 30 s confirmation timeout passes in 3 s.
+        // The live clock runs 3x faster: the 30 s confirmation timeout passes in 10 s, long
+        // enough to see the pending state first.
         let app = launch(
             library,
-            extra: ["-SegueStartShortcut", "hang-gig", "-SegueLiveTimeScale", "10"],
+            extra: ["-SegueStartShortcut", "hang-gig", "-SegueLiveTimeScale", "3"],
         )
         openChecklist(app)
         let row = focusRow(app)
         XCTAssertTrue(row.waitForExistence(timeout: 10))
-        XCTAssertTrue(detail(row, containing: "Running").waitForExistence(timeout: 2))
-        XCTAssertEqual(row.value as? String, "not done")
+        XCTAssertTrue(detail(row, containing: "Running").waitForExistence(timeout: 5))
+        XCTAssertTrue(waitForFocus(app, "not done"))
         XCTAssertFalse(element(app, GigAXID.checklistFocusDone).exists)
 
-        XCTAssertTrue(detail(row, containing: "confirm it finished").waitForExistence(timeout: 10))
-        XCTAssertEqual(row.value as? String, "not done")
+        XCTAssertTrue(detail(row, containing: "confirm it finished").waitForExistence(timeout: 20))
+        XCTAssertTrue(waitForFocus(app, "not done"))
         screenshot(app, "checklist-focus-unknown")
         let done = element(app, GigAXID.checklistFocusDone)
         XCTAssertTrue(done.exists)
         done.click(in: app)
-        XCTAssertTrue(waitForValue(row, "done"))
+        XCTAssertTrue(waitForFocus(app, "done"))
     }
 }
 
@@ -185,6 +186,18 @@ extension SegueGigModeE2ETests {
         ).firstMatch
     }
 
+    /// Waits until the Focus row's E2E state marker reads `state` ("done" / "not done").
+    func waitForFocus(_ app: XCUIApplication, _ state: String) -> Bool {
+        let marker = app.descendants(matching: .any).matching(
+            NSPredicate(
+                format: "identifier == %@ AND label == %@",
+                GigAXID.checklistRowState,
+                "Focus on: \(state)",
+            ),
+        ).firstMatch
+        return marker.waitForExistence(timeout: 10)
+    }
+
     func detail(_ row: XCUIElement, containing text: String) -> XCUIElement {
         row.descendants(matching: .staticText).matching(
             NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", text, text),
@@ -224,6 +237,7 @@ extension SegueGigModeE2ETests {
 enum GigAXID {
     static let settingsStartShortcut = "segue.settings.live.startShortcut"
     static let settingsEndShortcut = "segue.settings.live.endShortcut"
+    static let checklistRowState = "segue.live.checklist.row.state"
     static let checklistFocusDone = "segue.live.checklist.focus.done"
     static let checklistFocusRetry = "segue.live.checklist.focus.retry"
 }

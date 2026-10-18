@@ -117,6 +117,7 @@
                 }
                 Spacer(minLength: 8)
                 rowButtons(item, done: done)
+                stateMarker(item, done: done)
                 Menu {
                     Button("Hide for This \(noun)") { checklist.dismissed.insert(item) }
                     Button("Don’t Show Again") { checklist.hideForGood(item) }
@@ -137,6 +138,18 @@
             .accessibilityIdentifier(AccessibilityID.checklistRow)
             .accessibilityValue(done ? "done" : "not done")
             .accessibilityLabel(title(item))
+        }
+
+        /// Instrumentation for the E2E suite only (a container's value is not exposed to
+        /// XCUITest): never shown to VoiceOver users.
+        @ViewBuilder private func stateMarker(_ item: ChecklistItem, done: Bool) -> some View {
+            if UITesting.isActive {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityElement()
+                    .accessibilityLabel("\(title(item)): \(done ? "done" : "not done")")
+                    .accessibilityIdentifier(AccessibilityID.checklistRowState)
+            }
         }
 
         /// The row's own buttons: Done / Undo on the brightness reminder, and the Focus
