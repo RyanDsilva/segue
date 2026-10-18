@@ -23,3 +23,12 @@ Items the agents could not verify headlessly:
 ## Menus and windows
 - [ ] Help menu items all open the right pages; About panel; Acknowledgements; Window > Segue Library (Cmd-0) reopens a closed main window.
 - [ ] The window size and position are restored after relaunch.
+
+## Services (WS3)
+- [ ] **TelemetryDeck smoke signal (agent-sent 2026-10-18 08:23 PT):** in the dashboard, open the **Segue Personal** app (the run was a Debug-Personal build), switch on **Test Mode**, and find one request of five signals: `TelemetryDeck.Session.started`, `Segue.App.launched`, `Segue.Library.snapshot`, `Segue.Help.opened` and `Segue.Feedback.sent`. The ingest API answered HTTP 200. Check that each payload carries only `segue.*` keys plus the five context keys (OS, OS version, app version, build, region) and no song titles. Nothing should have reached the **Segue** (App Store) app.
+- [ ] **Sentry smoke report (agent-sent 2026-10-18 08:23 PT):** in Sentry, **User Feedback** for `segue-macos`: one report whose message starts "SMOKE TEST - ignore", with the log attachment(s) (`segue-0.log` and older) and the `segue` context (app version, build, flavor `personal`, Mac model). The envelope endpoint answered HTTP 200. Resolve or delete it afterwards.
+- [ ] Sentry > Issues shows nothing from that run (no crash was sent) and no sessions.
+- [ ] First run of the App Store build: the consent prompt shows two equal choices; with `nettop -p Segue -L 1` open, nothing connects to `telemetrydeck.com` or `sentry.io` before Continue.
+- [ ] Settings > Privacy: turn both off and read the captions; Copy puts the Diagnostics ID on the clipboard; turning crash reports back on says it starts next time.
+- [ ] Help > Report a Problem with Wi-Fi off: "Email Instead" opens Mail with the attachments; "Save Report..." writes a folder with `report.txt`.
+- [ ] Request a Feature opens `segue.ryandsilva.dev/feedback`, which redirects to `segue.featurebase.app` once the site is deployed.

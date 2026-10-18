@@ -154,3 +154,13 @@ Defaults from docs/phases/2-interfaces.md stand except:
 - **Auto-fit prefers no wrapping:** choose the largest layout with zero wrapped lyric lines; allow wrapping only if the best no-wrap layout is more than ~15% smaller or would go below the user minimum. Split-section continuations get a "(cont.)" label; gutter labels stay at least 12pt.
 - **Columns:** auto-fit is biased toward 2 columns (3 only when 2 cannot fit without going below the minimum font or wrapping); a stage key cycles Auto / 1 / 2 / 3 for the current song and remembers it in the sidecar live prefs; a global default column setting (Auto or a fixed count) in Settings; per-song column choice also editable in the song editor display settings. Precedence: per-song choice > global default > auto.
 - **Auto-fit wrapping (revised):** never wrap lyric lines when a no-wrap layout reaches a comfortable size (max(28pt, 1.25 x user minimum)); wrap only songs whose no-wrap layout would fall below that; when wrapping, never leave a single word alone on a continuation row (widow avoidance).
+
+## WS3 services (2026-10-18)
+
+Hosted services follow docs/release/decisions.md R22-R26, R32-R34, R46, R53, R54 and R59/R60 (A4-A11, A61, A62). Build-time rulings:
+- **Test runs see the consent prompt only on request:** a Debug test run without `-SegueConsent` declines whatever is still undecided; `-SegueConsent undecided` (or `asStored` after an unanswered prompt) shows it.
+- **Revocation is synchronous:** `ServicesHub.beginApply` swaps the Null adapter in before the toggle's setter returns; adapters are built and shut down afterwards, in order.
+- **Search counts once results settle** (0.8 s unchanged), so partial typing never produces a `Segue.Search.performed`.
+- **Report a Problem:** Send always opens the preview first; the description is refused, never cut, over 4,096 characters; oversized logs are trimmed to their newest lines and the preview says so.
+- **Request a Feature** keeps opening `/feedback`; the site redirects it to the board (`content/site.json`), so the board can change without an app update.
+- Open questions 1 and 2 of the WS3 spec keep their defaults until Ryan rules (dSYM upload for Personal builds; a new analytics identity after revoke and re-grant).
