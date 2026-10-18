@@ -128,6 +128,10 @@ Pasted by Ryan from the steps above. None is secret: the IDs and the DSN ship in
 
 ---
 
+### Later tasks (recorded)
+- [ ] **Website trim pass (R57):** in a fresh session once the app is feature-complete, cut copy and sections (Ryan: "too much text and site is too long"), then swap in real screenshots (WS5).
+- [ ] **Post-launch:** fold research 01-09 and open-questions.md into decisions.md plus a short summary.
+
 ## 3. Build plan
 
 Every step: `make quick`, then the step's targeted `make e2e-one TEST=<Class>[/<test>]`, then one signed local commit (`git commit -S`), never a push. One full `make check` per workstream gate, never after every small fix. Workstreams that run in parallel share a working tree: expect unrelated diffs.
