@@ -6,10 +6,13 @@
 <title>Segue - Setlists &amp; Chords for Mac</title>
 <meta name="description" content="Segue keeps your songs as ChordPro files, builds tonight&#x27;s set, and fits every song on one screen on stage. Free for Mac.">
 <link rel="canonical" href="https://segue.ryandsilva.dev/">
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/site.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/css/tokens.css">
 <!--slot:meta:og-->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Segue">
@@ -22,6 +25,18 @@
 <meta property="og:image:alt" content="The Segue wordmark and app icon">
 <meta name="twitter:card" content="summary_large_image">
 <!--/slot-->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Segue",
+  "applicationCategory": "MusicApplication",
+  "operatingSystem": "macOS 26 or later",
+  "processorRequirements": "Apple silicon (arm64)",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "url": "https://segue.ryandsilva.dev/"
+}
+</script>
 </head>
 <body>
 <!--slot:partial:header-->
@@ -50,28 +65,159 @@
 </header>
 <!--/slot-->
 <main id="main">
-<h1>Your chart, your set, your cue.</h1>
-<p class="appstore"><!--slot:appstore:hero-->Coming soon to the Mac App Store.<!--/slot--></p>
-<section id="features">
-<h2>From a pile of chord sheets to a Friday night set.</h2>
+<section class="hero wrap" aria-labelledby="hero-title">
+<p class="eyebrow">Segue for Mac</p>
+<h1 id="hero-title">Your chart, your set, your cue.</h1>
+<p class="sub">Lyrics, chords and setlists for musicians who play live. Built for a MacBook on a music stand.</p>
+<div class="appstore">
+<p class="appstore-cta"><!--slot:appstore:hero-->Coming soon to the Mac App Store.<!--/slot--></p>
+<p class="fine">Free, with no ads and no in-app purchases. Requires a Mac with Apple silicon and macOS 26 or later.</p>
+</div>
 </section>
-<section id="stage-mode">
-<h2>Built for the stage, not the desk.</h2>
+<div class="hero-art">
+<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of Segue's stage view: a song's lyrics with chords above the words, section labels in a left column, set progress at the top and the next song in the footer">
+<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
+<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
+<div class="ph-foot"><span class="ph-line w40"></span></div>
+<span class="ph-tag">Screenshot placeholder</span>
+</div>
+</div>
+
+<section class="band" id="features" aria-labelledby="features-title">
+<div class="wrap">
+<p class="label">How it works</p>
+<h2 id="features-title">From a pile of chord sheets to a Friday night set.</h2>
+<ol class="steps">
+<li class="step">
+<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of your song library">
+<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
+<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
+<div class="ph-foot"><span class="ph-line w40"></span></div>
+<span class="ph-tag">Screenshot placeholder</span>
+</div>
+<p class="day">Monday</p>
+<h3>Get your songs in.</h3>
+<p>Drag ChordPro or text files onto your library, or start a new song from scratch. Each song is a plain file in a folder you choose, so it opens in any ChordPro app and backs up like everything else on your Mac.</p>
+</li>
+<li class="step">
+<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of the song editor">
+<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
+<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
+<div class="ph-foot"><span class="ph-line w40"></span></div>
+<span class="ph-tag">Screenshot placeholder</span>
+</div>
+<p class="day">Tuesday</p>
+<h3>Make the chart yours.</h3>
+<p>Type ChordPro directly, or switch to the visual editor and drop a chord right onto the syllable. Transpose in one step, add a capo, or flip to Nashville numbers when the singer changes key at the last minute.</p>
+</li>
+<li class="step">
+<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of the setlist builder">
+<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
+<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
+<div class="ph-foot"><span class="ph-line w40"></span></div>
+<span class="ph-tag">Screenshot placeholder</span>
+</div>
+<p class="day">Thursday</p>
+<h3>Build the set.</h3>
+<p>Drag songs into tonight's order and see the running time add up. Change a song's key or capo for this show only, without touching the song itself.</p>
+</li>
+<li class="step">
+<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of the stage view">
+<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
+<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
+<div class="ph-foot"><span class="ph-line w40"></span></div>
+<span class="ph-tag">Screenshot placeholder</span>
+</div>
+<p class="day">Friday</p>
+<h3>Play.</h3>
+<p>Start the show and Segue goes dark and full screen. Every song fits the screen at a size you can read from a stool, and what's next is always at the bottom.</p>
+</li>
+</ol>
+</div>
 </section>
-<section id="details">
-<h2>The details, done properly.</h2>
+
+<section class="band" id="stage-mode" aria-labelledby="stage-title">
+<div class="wrap">
+<p class="label">Stage mode</p>
+<h2 id="stage-title">Built for the stage, not the desk.</h2>
+<p class="intro">The stage view has one job: show you the right words at the right moment, and stay out of your way.</p>
+<div class="spot">
+<div class="shot-placeholder" role="img" aria-label="Placeholder for a screenshot of the stage view, with numbered callouts matching the list below">
+<div class="ph-bar"><span class="ph-dot"></span><span class="ph-line w20"></span></div>
+<div class="ph-body"><span class="ph-line w60"></span><span class="ph-line thick w80"></span><span></span><span class="ph-line thick w60"></span><span></span><span class="ph-line thick w80"></span><span class="ph-line w40"></span><span class="ph-line thick w60"></span></div>
+<div class="ph-foot"><span class="ph-line w40"></span></div>
+<span class="ph-tag">Screenshot placeholder</span>
+</div>
+</div>
+<ol class="callouts">
+<li><strong>Never too small to read.</strong><span>Set a minimum lyric size. If a song can't fit at that size, Segue scrolls instead of shrinking it.</span></li>
+<li><strong>Know what's next.</strong><span>The footer shows the next song with its key and capo. When someone requests a song, it takes that spot.</span></li>
+<li><strong>Take requests mid-set.</strong><span>Press Cmd-K, type a few letters of a title or a line you remember, and play it now, next, or later.</span></li>
+<li><strong>Hands stay on the instrument.</strong><span>Arrow and Page keys move through the set, so page-turner pedals that send those keys work out of the box.</span></li>
+<li><strong>Back where you were.</strong><span>If your Mac restarts or Segue quits mid-gig, it reopens at the song you were on.</span></li>
+<li><strong>A quiet Mac.</strong><span>Run your own Shortcut when the show starts, for example to turn on a Focus, and a short checklist reminds you about the charger and brightness.</span></li>
+</ol>
+</div>
 </section>
-<section id="privacy">
-<h2>Your songs stay yours.</h2>
+
+<section class="band" id="details" aria-labelledby="details-title">
+<div class="wrap">
+<h2 id="details-title">The details, done properly.</h2>
+<ul class="grid">
+<li><h3>Your songs, as files.</h3><p>One ChordPro file per song in a folder you choose. No account, no sign-in, no lock-in.</p></li>
+<li><h3>Search the way you spell.</h3><p>Find a song by any half-remembered line, including romanized Hindi lyrics typed the way people actually type them.</p></li>
+<li><h3>Transpose, capo, Nashville.</h3><p>Shapes or concert pitch, any key, one click.</p></li>
+<li><h3>Guitar and piano diagrams.</h3><p>Chord diagrams for guitar, with your own shapes saved in the song, plus piano voicings.</p></li>
+<li><h3>Learning, Ready, Pro.</h3><p>Tags and proficiency marks show at a glance what's gig-ready.</p></li>
+<li><h3>Nothing to save.</h3><p>Every edit is saved as you go, and deleted songs go to the Trash.</p></li>
+<li><h3>At home in Finder.</h3><p>Open .cho files with Segue, preview them with Quick Look, and export your whole library as one archive.</p></li>
+<li><h3>Keyboard first.</h3><p>Every command has a key. Press ? to see them all.</p></li>
+</ul>
+</div>
 </section>
-<section id="whats-next">
-<h2>Shaped by the people who play it.</h2>
-<p><a href="/feedback">Visit the feature board</a></p>
-<!--slot:latest-release--><!--/slot-->
+
+<section class="band" id="privacy" aria-labelledby="privacy-title">
+<div class="wrap split">
+<div>
+<p class="label">Privacy</p>
+<h2 id="privacy-title">Your songs stay yours.</h2>
+</div>
+<div>
+<p class="body">No account and no sign-in. Your songs, setlists and gig history live in files on your Mac, and Segue never uploads them. The first time you open Segue, it asks two separate questions: whether to share usage statistics, and whether to send crash reports. The choices are equal, nothing is picked for you, and you can change your mind any time in <span class="nowrap">Settings &gt; Privacy</span>. Neither ever includes your songs. Bug reports go out only when you press Send, after you've seen everything in them. No ads, and no tracking.</p>
+<p class="more"><a href="/privacy">Read the privacy policy</a></p>
+</div>
+</div>
 </section>
-<section id="download">
-<h2>Ready for Friday?</h2>
-<p><!--slot:appstore:footer-->Coming soon to the Mac App Store.<!--/slot--></p>
+
+<section class="band" id="whats-next" aria-labelledby="next-title">
+<div class="wrap split">
+<div>
+<p class="label">What's next</p>
+<h2 id="next-title">Shaped by the people who play it.</h2>
+<p class="body">Suggest a feature, or vote for the ones you want most. The board is where the next version of Segue gets decided.</p>
+<p class="more"><a href="/feedback">Visit the feature board</a></p>
+</div>
+<div><!--slot:latest-release--><!--/slot--></div>
+</div>
+</section>
+
+<section class="band" id="maker" aria-label="A note from the maker">
+<div class="wrap note">
+<!--ryan-edit-->
+<blockquote><p>I built Segue for my own gigs: a MacBook on a stand, and a set list that changes the moment someone shouts a request. If it helps you play, I'd love to hear about it.</p></blockquote>
+<p class="who">- Ryan</p>
+<!--/ryan-edit-->
+</div>
+</section>
+
+<section class="band final" id="download" aria-labelledby="download-title">
+<div class="wrap">
+<h2 id="download-title">Ready for Friday?</h2>
+<div class="appstore">
+<p class="appstore-cta"><!--slot:appstore:footer-->Coming soon to the Mac App Store.<!--/slot--></p>
+<p class="fine">Free. Requires a Mac with Apple silicon and macOS 26 or later.</p>
+</div>
+</div>
 </section>
 </main>
 <!--slot:partial:footer-->
@@ -83,7 +229,7 @@
 <li><a href="/">Home</a></li>
 <li><a href="/help">Help</a></li>
 <li><a href="/changelog">Changelog</a></li>
-<li>Coming soon to the Mac App Store.</li>
+<li><span class="footer-download">Coming soon to the Mac App Store.</span></li>
 </ul>
 </div>
 <div class="footer-column">
