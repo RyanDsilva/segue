@@ -1,0 +1,92 @@
+### qwen3-4b-2507 paste
+loaded qwen3-4b-2507 in 574 ms, footprint 2252 MB, mlx peak 2159 MB
+"artist" :"100000000000000000000000000000000000000000000000000000 loadMs=574 footprintMB=2824
+E01-ug-headers false GuidedGenerationError 6008 ms -1 tok 
+E02-bare-no-headers false GuidedGenerationError 4902 ms -1 tok 
+E03-inline-chordpro false GuidedGenerationError 5103 ms -1 tok 
+E04-tabs-mixed false GuidedGenerationError 6032 ms -1 tok 
+E05-colon-headers-repeats false GuidedGenerationError 5824 ms -1 tok 
+E06-crlf-smartquotes false GuidedGenerationError 5059 ms -1 tok 
+E07-short-unlabelled false GuidedGenerationError 3753 ms -1 tok 
+E08-long false GuidedGenerationError 9907 ms -1 tok 
+E09-web-junk false GuidedGenerationError 5404 ms -1 tok 
+E10-edgy-lyrics false GuidedGenerationError 5116 ms -1 tok 
+E11-abbrev-headers false GuidedGenerationError 5766 ms -1 tok 
+E12-bare-lyrics false GuidedGenerationError 5381 ms -1 tok 
+H01-ug-hinglish false GuidedGenerationError 5977 ms -1 tok 
+H02-bare-hinglish false GuidedGenerationError 5196 ms -1 tok 
+H03-mukhda-antara-inline false GuidedGenerationError 5661 ms -1 tok 
+H04-long-hinglish false GuidedGenerationError 10108 ms -1 tok 
+H05-indian-site-junk false GuidedGenerationError 5867 ms -1 tok 
+H06-scale-capo-tab false GuidedGenerationError 5714 ms -1 tok 
+H07-bare-hinglish-lyrics false GuidedGenerationError 4550 ms -1 tok 
+H08-codemixed false GuidedGenerationError 5235 ms -1 tok 
+footprint now 2850 MB, mlx active 2159 cache 512
+final footprint 2850 MB, mlx peak 2982 MB
+### qwen3-4b-2507 setreq
+loaded qwen3-4b-2507 in 535 ms, footprint 2241 MB, mlx peak 2159 MB
+"artist" :"100000000000000000000000000000000000000000000000000000 loadMs=535 footprintMB=2802
+footprint now 2887 MB, mlx active 2159 cache 512
+final footprint 2887 MB, mlx peak 2940 MB
+### qwen3.5-2b paste
+loaded qwen3.5-2b in 1062 ms, footprint 1914 MB, mlx peak 1642 MB
+:"10000000000000000000000000000000000000000000000000000 loadMs=1062 footprintMB=1677
+E02-bare-no-headers false GuidedGenerationError 3183 ms -1 tok 
+E03-inline-chordpro false GuidedGenerationError 3243 ms -1 tok 
+E07-short-unlabelled false GuidedGenerationError 2737 ms -1 tok 
+E10-edgy-lyrics false GuidedGenerationError 3255 ms -1 tok 
+E12-bare-lyrics false GuidedGenerationError 3451 ms -1 tok 
+H02-bare-hinglish false GuidedGenerationError 3278 ms -1 tok 
+H04-long-hinglish false GuidedGenerationError 5330 ms -1 tok 
+H05-indian-site-junk false GuidedGenerationError 3513 ms -1 tok 
+H07-bare-hinglish-lyrics false GuidedGenerationError 2922 ms -1 tok 
+footprint now 1693 MB, mlx active 1010 cache 512
+final footprint 1693 MB, mlx peak 2092 MB
+### qwen3.5-2b setreq
+loaded qwen3.5-2b in 1063 ms, footprint 1929 MB, mlx peak 1642 MB
+:"10000000000000000000000000000000000000000000000000000 loadMs=1063 footprintMB=1688
+footprint now 1709 MB, mlx active 1010 cache 512
+final footprint 1709 MB, mlx peak 1820 MB
+### gemma4-e2b paste
+loaded gemma4-e2b in 1653 ms, footprint 3581 MB, mlx peak 3386 MB
+E01-ug-headers false GuidedGenerationError 4101 ms -1 tok 
+E02-bare-no-headers false GuidedGenerationError 3292 ms -1 tok 
+E03-inline-chordpro false GuidedGenerationError 3324 ms -1 tok 
+E04-tabs-mixed false GuidedGenerationError 3788 ms -1 tok 
+E05-colon-headers-repeats false GuidedGenerationError 3786 ms -1 tok 
+E06-crlf-smartquotes false GuidedGenerationError 3285 ms -1 tok 
+E07-short-unlabelled false GuidedGenerationError 3170 ms -1 tok 
+E08-long false GuidedGenerationError 5891 ms -1 tok 
+E09-web-junk false GuidedGenerationError 3523 ms -1 tok 
+E10-edgy-lyrics false GuidedGenerationError 3331 ms -1 tok 
+E11-abbrev-headers false GuidedGenerationError 3783 ms -1 tok 
+E12-bare-lyrics false GuidedGenerationError 3753 ms -1 tok 
+H01-ug-hinglish false GuidedGenerationError 3778 ms -1 tok 
+H02-bare-hinglish false GuidedGenerationError 3285 ms -1 tok 
+H03-mukhda-antara-inline false GuidedGenerationError 3526 ms -1 tok 
+H04-long-hinglish false GuidedGenerationError 5871 ms -1 tok 
+H05-indian-site-junk false GuidedGenerationError 3539 ms -1 tok 
+H06-scale-capo-tab false GuidedGenerationError 3548 ms -1 tok 
+H07-bare-hinglish-lyrics false GuidedGenerationError 3020 ms -1 tok 
+H08-codemixed false GuidedGenerationError 3266 ms -1 tok 
+footprint now 3134 MB, mlx active 2483 cache 397
+final footprint 3134 MB, mlx peak 3386 MB
+### gemma4-e2b setreq
+loaded gemma4-e2b in 1628 ms, footprint 3558 MB, mlx peak 3386 MB
+footprint now 3222 MB, mlx active 2483 cache 512
+final footprint 3222 MB, mlx peak 3386 MB
+### phi4-mini paste
+loaded phi4-mini in 907 ms, footprint 2187 MB, mlx peak 2058 MB
+E07-short-unlabelled false GuidedGenerationError 3323 ms -1 tok 
+E12-bare-lyrics false GuidedGenerationError 4696 ms -1 tok 
+H02-bare-hinglish false GuidedGenerationError 4360 ms -1 tok 
+H05-indian-site-junk false GuidedGenerationError 4774 ms -1 tok 
+H07-bare-hinglish-lyrics false GuidedGenerationError 3909 ms -1 tok 
+footprint now 2672 MB, mlx active 2058 cache 482
+final footprint 2672 MB, mlx peak 2964 MB
+### phi4-mini setreq
+loaded phi4-mini in 864 ms, footprint 2187 MB, mlx peak 2058 MB
+footprint now 2782 MB, mlx active 2058 cache 512
+final footprint 2782 MB, mlx peak 2863 MB
+### fm
+ALLDONE

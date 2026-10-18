@@ -1,0 +1,17 @@
+Hint: A new version of huggingface_hub (2.2.0) is available! You are using version 1.23.0.
+To update, run: hf update
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+path=/private/tmp/claude-501/-Users-ryan-Desktop-Projects-setlist/11e6f3f5-3259-4d95-a8b2-e97811cddc3b/scratchpad/phase3-spikes/models/Qwen3-4B-Instruct-2507-4bit
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Still waiting to acquire lock on /private/tmp/claude-501/-Users-ryan-Desktop-Projects-setlist/11e6f3f5-3259-4d95-a8b2-e97811cddc3b/scratchpad/phase3-spikes/models/Qwen3.5-2B-MLX-4bit/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+Still waiting to acquire lock on /private/tmp/claude-501/-Users-ryan-Desktop-Projects-setlist/11e6f3f5-3259-4d95-a8b2-e97811cddc3b/scratchpad/phase3-spikes/models/Qwen3.5-2B-MLX-4bit/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+Still waiting to acquire lock on /private/tmp/claude-501/-Users-ryan-Desktop-Projects-setlist/11e6f3f5-3259-4d95-a8b2-e97811cddc3b/scratchpad/phase3-spikes/models/Qwen3.5-2B-MLX-4bit/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+path=/private/tmp/claude-501/-Users-ryan-Desktop-Projects-setlist/11e6f3f5-3259-4d95-a8b2-e97811cddc3b/scratchpad/phase3-spikes/models/Qwen3.5-2B-MLX-4bit
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Still waiting to acquire lock on /private/tmp/claude-501/-Users-ryan-Desktop-Projects-setlist/11e6f3f5-3259-4d95-a8b2-e97811cddc3b/scratchpad/phase3-spikes/models/gemma-4-e2b-it-4bit/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+path=/private/tmp/claude-501/-Users-ryan-Desktop-Projects-setlist/11e6f3f5-3259-4d95-a8b2-e97811cddc3b/scratchpad/phase3-spikes/models/gemma-4-e2b-it-4bit
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Still waiting to acquire lock on /private/tmp/claude-501/-Users-ryan-Desktop-Projects-setlist/11e6f3f5-3259-4d95-a8b2-e97811cddc3b/scratchpad/phase3-spikes/models/Phi-4-mini-instruct-4bit/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+Still waiting to acquire lock on /private/tmp/claude-501/-Users-ryan-Desktop-Projects-setlist/11e6f3f5-3259-4d95-a8b2-e97811cddc3b/scratchpad/phase3-spikes/models/Phi-4-mini-instruct-4bit/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+Still waiting to acquire lock on /private/tmp/claude-501/-Users-ryan-Desktop-Projects-setlist/11e6f3f5-3259-4d95-a8b2-e97811cddc3b/scratchpad/phase3-spikes/models/Phi-4-mini-instruct-4bit/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+path=/private/tmp/claude-501/-Users-ryan-Desktop-Projects-setlist/11e6f3f5-3259-4d95-a8b2-e97811cddc3b/scratchpad/phase3-spikes/models/Phi-4-mini-instruct-4bit

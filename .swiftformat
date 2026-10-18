@@ -1,6 +1,6 @@
 # SwiftFormat (nicklockwood) - version pinned in .mise.toml. Run `make format`.
 --swiftversion 6.2
---exclude .build,**/.build,.build-*,**/.build-*,Derived,**/Derived,Tuist/.build,*.xcodeproj,**/*.xcodeproj,*.xcworkspace,**/*.xcworkspace
+--exclude .build,**/.build,.build-*,**/.build-*,Derived,**/Derived,Tuist/.build,*.xcodeproj,**/*.xcodeproj,*.xcworkspace,**/*.xcworkspace,research
 
 # Layout
 --indent 4

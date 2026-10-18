@@ -1,0 +1,18 @@
+### qwen3-4b-2507 setreq v3
+loaded qwen3-4b-2507 in 545 ms, footprint 2249 MB, mlx peak 2159 MB
+footprint now 2802 MB, mlx active 2159 cache 512
+final footprint 2802 MB, mlx peak 2991 MB
+### qwen3.5-2b setreq v3
+loaded qwen3.5-2b in 1038 ms, footprint 1922 MB, mlx peak 1642 MB
+footprint now 1696 MB, mlx active 1010 cache 512
+final footprint 1696 MB, mlx peak 2156 MB
+### gemma4-e2b setreq v3
+loaded gemma4-e2b in 1612 ms, footprint 3574 MB, mlx peak 3386 MB
+footprint now 3239 MB, mlx active 2483 cache 512
+final footprint 3239 MB, mlx peak 3420 MB
+### phi4-mini setreq v3
+loaded phi4-mini in 893 ms, footprint 2166 MB, mlx peak 2058 MB
+footprint now 2726 MB, mlx active 2058 cache 513
+final footprint 2726 MB, mlx peak 2878 MB
+### fm
+ALLDONE

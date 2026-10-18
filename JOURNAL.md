@@ -34,3 +34,9 @@
 
 ### Next
 Start the App Store publishing session: enrol in / confirm the paid Apple Developer Program, then work through App Store Connect setup (app record, bundle ID, signing switch from Personal Team, privacy manifest + sandbox review, metadata, screenshots, privacy policy, archive + TestFlight) using the AppStore scheme and `make verify-appstore`.
+
+### Addendum - phase 3 spikes landed
+- Results: `docs/research/phase3-spikes.md`; spike code/fixtures/scoring kept in `research/phase3-spikes/` (models excluded, lint-excluded).
+- Headline: Apple FM on this M1 Pro: 89% label accuracy but median 18 s/song (5-69 s), Hindi songs sometimes rejected (`unsupportedLanguageOrLocale`, fails fast). MLX Qwen3-4B-Instruct-2507 4bit: 98% labels, ~6.5 s, 3 GB RAM, 2.28 GB download. Set requests: code-first parsing beats both models.
+- Open phase 3 decisions (ask Ryan when phase 3 resumes): MLX-first routing when installed? curated model Qwen3-4B vs Gemma 4 E2B? keep a model call for set requests at all?
+- ~10 GB of downloaded models sit in the session scratchpad (`.../scratchpad/phase3-spikes/{models,dd}`); delete by hand if not cleaned automatically.

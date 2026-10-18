@@ -1,0 +1,49 @@
+### qwen3-4b-2507 paste
+loaded qwen3-4b-2507 in 606 ms, footprint 2251 MB, mlx peak 2159 MB
+final footprint 11593 MB, mlx peak 2985 MB
+### qwen3-4b-2507 setreq
+loaded qwen3-4b-2507 in 819 ms, footprint 2247 MB, mlx peak 2159 MB
+final footprint 5741 MB, mlx peak 2950 MB
+### qwen3.5-2b paste
+loaded qwen3.5-2b in 1096 ms, footprint 1930 MB, mlx peak 1642 MB
+E01-ug-headers false GuidedGenerationError 3254 ms -1 tok 
+E04-tabs-mixed false GuidedGenerationError 3044 ms -1 tok 
+E05-colon-headers-repeats false GuidedGenerationError 2991 ms -1 tok 
+E06-crlf-smartquotes false GuidedGenerationError 2624 ms -1 tok 
+E07-short-unlabelled false GuidedGenerationError 2143 ms -1 tok 
+E08-long false GuidedGenerationError 4937 ms -1 tok 
+E09-web-junk false GuidedGenerationError 2823 ms -1 tok 
+E10-edgy-lyrics false GuidedGenerationError 2568 ms -1 tok 
+H01-ug-hinglish false GuidedGenerationError 3283 ms -1 tok 
+H02-bare-hinglish false GuidedGenerationError 2686 ms -1 tok 
+H03-mukhda-antara-inline false GuidedGenerationError 2963 ms -1 tok 
+H04-long-hinglish false GuidedGenerationError 5020 ms -1 tok 
+H06-scale-capo-tab false GuidedGenerationError 2935 ms -1 tok 
+H08-codemixed false GuidedGenerationError 2530 ms -1 tok 
+final footprint 11630 MB, mlx peak 2068 MB
+### qwen3.5-2b setreq
+loaded qwen3.5-2b in 1101 ms, footprint 1928 MB, mlx peak 1642 MB
+final footprint 5195 MB, mlx peak 1917 MB
+### gemma4-e2b paste
+loaded gemma4-e2b in 1650 ms, footprint 3548 MB, mlx peak 3386 MB
+E08-long false GuidedGenerationError 5483 ms -1 tok 
+H04-long-hinglish false GuidedGenerationError 5198 ms -1 tok 
+final footprint 11696 MB, mlx peak 3386 MB
+### gemma4-e2b setreq
+loaded gemma4-e2b in 1693 ms, footprint 3548 MB, mlx peak 3386 MB
+final footprint 6402 MB, mlx peak 3386 MB
+### phi4-mini paste
+loaded phi4-mini in 875 ms, footprint 2202 MB, mlx peak 2058 MB
+E01-ug-headers false GuidedGenerationError 4932 ms -1 tok 
+E03-inline-chordpro false GuidedGenerationError 3934 ms -1 tok 
+E08-long false GuidedGenerationError 7805 ms -1 tok 
+E09-web-junk false GuidedGenerationError 4205 ms -1 tok 
+E11-abbrev-headers false GuidedGenerationError 4583 ms -1 tok 
+E12-bare-lyrics false GuidedGenerationError 4230 ms -1 tok 
+H04-long-hinglish false GuidedGenerationError 8142 ms -1 tok 
+H05-indian-site-junk false GuidedGenerationError 4350 ms -1 tok 
+final footprint 11637 MB, mlx peak 2922 MB
+### phi4-mini setreq
+loaded phi4-mini in 904 ms, footprint 2203 MB, mlx peak 2058 MB
+final footprint 5895 MB, mlx peak 2878 MB
+ALLDONE

@@ -1,0 +1,51 @@
+### qwen3-4b-2507 paste
+loaded qwen3-4b-2507 in 556 ms, footprint 2253 MB, mlx peak 2159 MB
+footprint now 2830 MB, mlx active 2159 cache 512
+final footprint 2830 MB, mlx peak 2977 MB
+### qwen3-4b-2507 setreq v2
+loaded qwen3-4b-2507 in 533 ms, footprint 2250 MB, mlx peak 2159 MB
+footprint now 2875 MB, mlx active 2159 cache 512
+final footprint 2875 MB, mlx peak 2920 MB
+### qwen3.5-2b paste
+loaded qwen3.5-2b in 1080 ms, footprint 1922 MB, mlx peak 1642 MB
+E01-ug-headers false GuidedGenerationError 3250 ms -1 tok 
+E04-tabs-mixed false GuidedGenerationError 2948 ms -1 tok 
+E05-colon-headers-repeats false GuidedGenerationError 2899 ms -1 tok 
+E06-crlf-smartquotes false GuidedGenerationError 2488 ms -1 tok 
+E08-long false GuidedGenerationError 4765 ms -1 tok 
+E09-web-junk false GuidedGenerationError 2820 ms -1 tok 
+E10-edgy-lyrics false GuidedGenerationError 2561 ms -1 tok 
+H01-ug-hinglish false GuidedGenerationError 3059 ms -1 tok 
+H03-mukhda-antara-inline false GuidedGenerationError 2886 ms -1 tok 
+H04-long-hinglish false GuidedGenerationError 4754 ms -1 tok 
+H06-scale-capo-tab false GuidedGenerationError 2881 ms -1 tok 
+H08-codemixed false GuidedGenerationError 2474 ms -1 tok 
+footprint now 1700 MB, mlx active 1010 cache 512
+final footprint 1699 MB, mlx peak 2114 MB
+### qwen3.5-2b setreq v2
+loaded qwen3.5-2b in 1036 ms, footprint 1920 MB, mlx peak 1642 MB
+footprint now 1697 MB, mlx active 1010 cache 512
+final footprint 1697 MB, mlx peak 1860 MB
+### gemma4-e2b paste
+loaded gemma4-e2b in 1642 ms, footprint 3579 MB, mlx peak 3386 MB
+E08-long false GuidedGenerationError 5592 ms -1 tok 
+H04-long-hinglish false GuidedGenerationError 5131 ms -1 tok 
+footprint now 3161 MB, mlx active 2483 cache 436
+final footprint 3161 MB, mlx peak 3397 MB
+### gemma4-e2b setreq v2
+loaded gemma4-e2b in 1623 ms, footprint 3555 MB, mlx peak 3386 MB
+footprint now 3215 MB, mlx active 2483 cache 512
+final footprint 3215 MB, mlx peak 3386 MB
+### phi4-mini paste
+loaded phi4-mini in 884 ms, footprint 2155 MB, mlx peak 2058 MB
+E01-ug-headers false GuidedGenerationError 5006 ms -1 tok 
+E08-long false GuidedGenerationError 7647 ms -1 tok 
+H04-long-hinglish false GuidedGenerationError 7737 ms -1 tok 
+footprint now 2691 MB, mlx active 2058 cache 501
+final footprint 2691 MB, mlx peak 2976 MB
+### phi4-mini setreq v2
+loaded phi4-mini in 897 ms, footprint 2155 MB, mlx peak 2058 MB
+footprint now 2785 MB, mlx active 2058 cache 512
+final footprint 2785 MB, mlx peak 2836 MB
+### fm
+ALLDONE
