@@ -239,6 +239,12 @@ extension SegueCoreUXE2ETests {
         _ = finder.reaches(.runningForeground, timeout: 5)
         app.activate()
         XCTAssertTrue(app.reaches(.runningForeground, timeout: 10))
+        // Frontmost is a process state: the switch back from Finder's Space can still be
+        // animating, and until it ends Segue's accessibility tree has no window.
+        XCTAssertTrue(
+            app.windows.firstMatch.appears(timeout: 15),
+            "Segue is frontmost but has no window on screen",
+        )
     }
 
     @MainActor
