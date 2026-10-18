@@ -17,6 +17,10 @@ struct KeyHelpTests {
         #expect(byCommand[.scrollPageDown] == ["↓"])
         #expect(byCommand[.openSearch] == ["⌘K", "/"])
         #expect(byCommand[.endShow] == ["⌘."])
+        // Titles say what a command does, never a key name a keycap beside it repeats.
+        #expect(Set(rows.map(\.title)).count == rows.count)
+        #expect(LiveCommand.pageForward.title == "Page, Then Next Song")
+        #expect(LiveCommand.scrollPageDown.title == "Scroll Down a Page")
     }
 
     @Test

@@ -229,8 +229,8 @@ extension SegueCoreUXE2ETests {
         // And a stage row comes from the bindings.
         XCTAssertTrue(rows.matching(NSPredicate(
             format: "label CONTAINS %@ OR value CONTAINS %@",
-            "Page Down, Then Next Song",
-            "Page Down, Then Next Song",
+            "Page, Then Next Song",
+            "Page, Then Next Song",
         ))
         .firstMatch.exists)
         attachScreen(name: "keyboard-shortcuts-window")
