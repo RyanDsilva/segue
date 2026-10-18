@@ -10,11 +10,12 @@
         let setlist: Setlist
         let model: SetlistsViewModel
         let library: LibraryViewModel
+        /// Show in Finder for this setlist's file.
+        var onReveal: () -> Void = {}
         /// Start show (`.gig`) or Rehearse (`.rehearsal`).
         let onStart: (Setlist, ShowKind) -> Void
         @State private var naming: SetlistNameSheet.Purpose?
         @State private var isEditingDetails = false
-        @State private var isConfirmingDelete = false
 
         var body: some View {
             GeometryReader { proxy in
@@ -41,18 +42,6 @@
                 SetlistNameSheet(purpose: purpose) { name in
                     Task { await model.rename(setlist.id, to: name) }
                 }
-            }
-            .confirmationDialog(
-                "Delete “\(setlist.name)”?",
-                isPresented: $isConfirmingDelete,
-            ) {
-                Button("Delete Setlist", role: .destructive) {
-                    Task { await model.delete(setlist.id) }
-                }
-                .accessibilityIdentifier(AccessibilityID.setlistDeleteAction + ".confirm")
-            } message: {
-                Text("Its file is deleted from the library folder. Gig log entries of shows "
-                    + "that ran it keep their own copy.")
             }
         }
 
@@ -156,10 +145,10 @@
                         model: model,
                         onRename: { naming = .rename(setlist.name) },
                         onDetails: { isEditingDetails = true },
-                        onDelete: { isConfirmingDelete = true },
+                        onReveal: onReveal,
                     )
                 }
-                .help("Rename, duplicate or delete this setlist")
+                .help("Rename, duplicate, show in Finder or move this setlist to the Trash")
                 .accessibilityIdentifier(AccessibilityID.setlistMenu)
             }
         }
@@ -172,7 +161,7 @@
         let model: SetlistsViewModel
         let onRename: () -> Void
         var onDetails: (() -> Void)?
-        let onDelete: () -> Void
+        let onReveal: () -> Void
 
         var body: some View {
             Button("Rename…", action: onRename)
@@ -187,9 +176,14 @@
                 Task { await model.duplicate(setlist.id) }
             }
             .accessibilityIdentifier(AccessibilityID.setlistDuplicateAction)
+            Button("Show in Finder", action: onReveal)
+                .accessibilityIdentifier(AccessibilityID.setlistRevealAction)
             Divider()
-            Button("Delete…", role: .destructive, action: onDelete)
-                .accessibilityIdentifier(AccessibilityID.setlistDeleteAction)
+            // No confirmation: the file goes to the Trash and Edit > Undo brings it back (A23).
+            Button("Move to Trash", role: .destructive) {
+                Task { await model.delete(setlist.id) }
+            }
+            .accessibilityIdentifier(AccessibilityID.setlistDeleteAction)
         }
     }
 

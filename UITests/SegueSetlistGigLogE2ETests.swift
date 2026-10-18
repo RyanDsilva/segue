@@ -104,18 +104,35 @@ final class SegueSetlistGigLogE2ETests: SetlistE2ETestCase {
         let rows = SetlistE2E.all(app, SetlistAXID.gigLogRow)
         SetlistE2E.waitUntil("Gig log never came back") { rows.count == 2 }
         rows.element(boundBy: 1).click(in: app)
+        // Show in Finder reveals the gig's show file (A28).
+        SetlistE2E.element(app, SetlistAXID.gigMoreMenu).click(in: app)
+        SetlistE2E.element(app, SetlistAXID.gigReveal).click(in: app)
+        let showFile = "shows/\(finishedShow).show.json"
+        SetlistE2E.waitForDisk("Show in Finder never revealed the show file") {
+            let log = try String(contentsOf: Self.workspaceLog(root), encoding: .utf8)
+            return log.contains(#""action":"reveal""#) && log.contains(showFile)
+        }
+        // Move to Trash from the gig's "…" menu: no confirmation (A23).
+        SetlistE2E.element(app, SetlistAXID.gigMoreMenu).click(in: app)
         SetlistE2E.element(app, SetlistAXID.gigDelete).click(in: app)
-        let confirm = app.sheets.buttons["Delete Gig"].firstMatch
-        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
-        confirm.click(in: app)
+        XCTAssertFalse(app.sheets.firstMatch.waitForExistence(timeout: 1), "No dialog expected")
         SetlistE2E.waitUntil("The gig was never deleted") { rows.count == 1 }
         let showURL = root.appending(path: "shows/\(finishedShow).show.json")
         XCTAssertFalse(FileManager.default.fileExists(atPath: showURL.path))
+        XCTAssertEqual(Self.trashed(root), ["\(finishedShow).show.json"])
 
         showHarbor(app)
         SetlistE2E.waitUntil("Play stats never dropped to 1: \(SetlistE2E.text(stats))") {
             SetlistE2E.text(stats).hasPrefix("Played once")
         }
+
+        // Edit > Undo puts the gig back with its plays.
+        app.typeKey("z", modifierFlags: .command, in: app)
+        SetlistE2E.waitUntil("Undo never restored the play count: \(SetlistE2E.text(stats))") {
+            SetlistE2E.text(stats).hasPrefix("Played 2 times")
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: showURL.path))
+        XCTAssertTrue(Self.trashed(root).isEmpty)
     }
 
     @MainActor

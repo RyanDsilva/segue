@@ -19,6 +19,12 @@ public enum AccessibilityID {
 
     public static let songList = "segue.library.list"
     public static let songRow = "segue.library.row"
+    /// The song detail pane's "…" menu (Add to Setlist, Show in Finder, Move to Trash).
+    public static let songMoreMenu = "segue.song.more"
+    public static let songMoveToTrash = "segue.song.moveToTrash"
+    public static let songShowInFinder = "segue.song.showInFinder"
+    /// "Move to Trash" in the confirmation for a song that setlists use.
+    public static let songDeleteConfirm = "segue.song.moveToTrash.confirm"
     public static let newSong = "segue.library.newSong"
     public static let refreshLibrary = "segue.library.refresh"
     public static let librarySearch = "segue.library.search"

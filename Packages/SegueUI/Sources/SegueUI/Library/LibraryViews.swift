@@ -6,18 +6,21 @@
     /// The Library destination (layout a, "three pane"): the song list column beside the
     /// selected song's preview (or its editor). The sidebar is the window's first pane.
     struct LibraryPane: View {
-        @Bindable var model: LibraryViewModel
-        let setlists: SetlistsViewModel
+        let session: LibrarySession
+
+        private var model: LibraryViewModel {
+            session.library
+        }
 
         var body: some View {
             GeometryReader { proxy in
                 HStack(spacing: 0) {
-                    SongListView(model: model, setlists: setlists)
+                    SongListView(model: model, session: session)
                         // Layout a gives the list 420 of 1440pt; small windows keep the
                         // preview (or editor) the wider pane.
                         .frame(width: min(max(proxy.size.width * 0.32, 290), 420))
                     Rule(axis: .vertical)
-                    LibraryDetailView(model: model, setlists: setlists)
+                    LibraryDetailView(model: model, session: session)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
@@ -40,7 +43,7 @@
     /// then one row per song (key chip, proficiency mark).
     struct SongListView: View {
         @Bindable var model: LibraryViewModel
-        let setlists: SetlistsViewModel
+        let session: LibrarySession
         @State private var isShowingLoadIssues = false
 
         var body: some View {
@@ -49,9 +52,14 @@
                 Rule()
                 SelectableList(items: model.results, selection: $model.listSelection) { record in
                     SongRow(record: record, stats: model.playStats[record.id])
-                        .contextMenu { addToSetlistMenu(record) }
+                } menu: { record in
+                    SongActions(session: session, songID: record.id)
                 }
                 .accessibilityIdentifier(AccessibilityID.songList)
+                // File > Move to Trash and Show in Finder act on this only while the list
+                // itself has focus (never while typing in a field or the editor), so this is
+                // a focused value, not a scene value.
+                .focusedValue(\.focusedSongID, model.editor == nil ? model.listSelection : nil)
                 .overlay { emptyState }
                 .safeAreaInset(edge: .bottom, spacing: 0) { loadIssuesFooter }
             }
@@ -132,22 +140,41 @@
                 }
             }
         }
+    }
 
-        @ViewBuilder
-        private func addToSetlistMenu(_ record: SongRecord) -> some View {
-            if setlists.setlists.isEmpty {
-                Text("No setlists yet")
+    /// A song's actions, shared by its list row's context menu and the detail pane's "…"
+    /// menu: Add to Setlist ▸, Show in Finder, Move to Trash.
+    struct SongActions: View {
+        let session: LibrarySession
+        let songID: SongID
+
+        var body: some View {
+            if session.setlists.setlists.isEmpty {
+                Button("Add to Setlist") {}
+                    .disabled(true)
             } else {
                 Menu("Add to Setlist") {
-                    ForEach(setlists.setlists) { setlist in
+                    ForEach(session.setlists.setlists) { setlist in
                         Button(setlist.name) {
-                            Task { await setlists.add(record.id, to: setlist.id) }
+                            Task { await session.setlists.add(songID, to: setlist.id) }
                         }
                         .disabled(setlist.readOnly != nil)
                     }
                 }
             }
+            Button("Show in Finder") { session.revealSong(songID) }
+                .accessibilityIdentifier(AccessibilityID.songShowInFinder)
+            Divider()
+            Button("Move to Trash", role: .destructive) {
+                session.requestMoveSongToTrash(songID)
+            }
+            .accessibilityIdentifier(AccessibilityID.songMoveToTrash)
         }
+    }
+
+    extension FocusedValues {
+        /// The song selected in the focused song list (nil while an editor is open).
+        @Entry var focusedSongID: SongID?
     }
 
     /// The files the last library scan could not load, with the reason for each.
@@ -233,7 +260,7 @@
     /// The Library detail pane: the selected song, its editor, or the new-song editor.
     struct LibraryDetailView: View {
         let model: LibraryViewModel
-        let setlists: SetlistsViewModel
+        let session: LibrarySession
 
         var body: some View {
             // One branch for the editor whatever `detail` says, so a new song's first
@@ -241,7 +268,7 @@
             if let editor = model.editor {
                 editorView(editor)
             } else if case let .song(id) = model.detail, let record = model.song(id: id) {
-                SongDetailPane(model: model, setlists: setlists, record: record)
+                SongDetailPane(model: model, session: session, record: record)
                     .id(id)
             } else {
                 noSelection

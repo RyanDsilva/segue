@@ -7,6 +7,8 @@
     /// The Gig log destination: finished gigs newest first beside the selected gig.
     struct GigLogPane: View {
         @Bindable var model: GigLogViewModel
+        /// Show in Finder for a gig's show file.
+        var onReveal: (ShowID) -> Void = { _ in }
 
         var body: some View {
             HStack(spacing: 0) {
@@ -15,7 +17,7 @@
                 Rule(axis: .vertical)
                 Group {
                     if let entry = model.selected {
-                        GigDetailView(entry: entry, model: model)
+                        GigDetailView(entry: entry, model: model) { onReveal(entry.id) }
                             .id(entry.id)
                     } else {
                         ContentUnavailableView(

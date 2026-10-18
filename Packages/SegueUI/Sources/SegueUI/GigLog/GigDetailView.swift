@@ -9,10 +9,11 @@
     struct GigDetailView: View {
         let entry: GigLogEntry
         let model: GigLogViewModel
+        /// Show in Finder for this gig's show file (A28).
+        var onReveal: () -> Void = {}
         @State private var draft = Draft()
         /// Saves the draft after a pause (`AutosavePolicy`, shared with the song editor).
         @State private var autosave: AutosaveScheduler?
-        @State private var isConfirmingDelete = false
 
         /// The editable fields as typed (dates as `Date` for the picker).
         private struct Draft: Equatable {
@@ -68,14 +69,6 @@
                 let autosave = autosave
                 Task { await autosave?.flush() }
             }
-            .confirmationDialog("Delete this gig?", isPresented: $isConfirmingDelete) {
-                Button("Delete Gig", role: .destructive) {
-                    Task { await model.delete(entry.id) }
-                }
-                .accessibilityIdentifier(AccessibilityID.gigDelete + ".confirm")
-            } message: {
-                Text("Its show file is deleted and its songs no longer count as played.")
-            }
         }
 
         private var fallbackDay: CalendarDay {
@@ -110,10 +103,26 @@
                         .accessibilityIdentifier(AccessibilityID.gigSummary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                Button("Delete…") { isConfirmingDelete = true }
-                    .buttonStyle(.segueSecondary)
-                    .controlSize(.large)
+                Menu {
+                    Button("Show in Finder", action: onReveal)
+                        .accessibilityIdentifier(AccessibilityID.gigReveal)
+                    Divider()
+                    // No confirmation: Edit > Undo brings the gig and its plays back (A23).
+                    Button("Move to Trash", role: .destructive) {
+                        Task { await model.delete(entry.id) }
+                    }
                     .accessibilityIdentifier(AccessibilityID.gigDelete)
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .accessibilityLabel("More")
+                }
+                .menuStyle(.button)
+                .menuIndicator(.hidden)
+                .buttonStyle(.segueSecondary)
+                .controlSize(.large)
+                .fixedSize()
+                .help("Show in Finder or move this gig to the Trash")
+                .accessibilityIdentifier(AccessibilityID.gigMoreMenu)
             }
         }
 

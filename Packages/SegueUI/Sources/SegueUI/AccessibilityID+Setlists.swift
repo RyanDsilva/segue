@@ -77,7 +77,9 @@ public extension AccessibilityID {
     static let setlistNameSave = "segue.setlistName.save"
     static let setlistRenameAction = "segue.setlist.action.rename"
     static let setlistDuplicateAction = "segue.setlist.action.duplicate"
+    /// "Move to Trash" in the setlist's menus.
     static let setlistDeleteAction = "segue.setlist.action.delete"
+    static let setlistRevealAction = "segue.setlist.action.reveal"
     static let setlistDetailsAction = "segue.setlist.action.details"
     static let detailsVenue = "segue.setlistDetails.venue"
     static let detailsHasDate = "segue.setlistDetails.hasDate"
@@ -101,7 +103,10 @@ public extension AccessibilityID {
 
     static let gigPlayedRow = "segue.gig.played"
     static let gigSkippedRow = "segue.gig.skipped"
+    /// The gig's "…" menu and its items.
+    static let gigMoreMenu = "segue.gig.more"
     static let gigDelete = "segue.gig.delete"
+    static let gigReveal = "segue.gig.reveal"
 
     // MARK: Reorder review (show end)
 

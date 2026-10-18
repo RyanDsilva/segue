@@ -122,6 +122,7 @@
     struct MainView: View {
         let app: AppModel
         @Bindable var session: LibrarySession
+        @Environment(\.undoManager) private var undoManager
 
         var body: some View {
             NavigationSplitView {
@@ -137,6 +138,28 @@
                 }
             }
             .liveModePresentations(app)
+            // Deletes, import and metadata edits undo through the window (Edit > Undo).
+            .onAppear { session.undoManager = undoManager }
+            .onChange(of: undoManager.map(ObjectIdentifier.init)) {
+                session.undoManager = undoManager
+            }
+            .confirmationDialog(
+                session.songTrashConfirmation?.headline ?? "",
+                isPresented: isConfirmingSongTrash,
+                titleVisibility: .visible,
+                presenting: session.songTrashConfirmation,
+            ) { _ in
+                Button("Move to Trash", role: .destructive) {
+                    session.resolveSongTrashConfirmation(moveToTrash: true)
+                }
+                .accessibilityIdentifier(AccessibilityID.songDeleteConfirm)
+                Button("Cancel", role: .cancel) {
+                    session.resolveSongTrashConfirmation(moveToTrash: false)
+                }
+                .keyboardShortcut(.defaultAction)
+            } message: { confirmation in
+                Text(confirmation.message)
+            }
             .onChange(of: session.setlists.selection) { session.followSetlistSelection() }
             .onChange(of: session.setlists.setlists) { session.followSetlistSelection() }
             .alert(
@@ -153,6 +176,17 @@
                 Text("Segue could not save them to the song’s file. Save them as a new song, "
                     + "or discard them.")
             }
+        }
+
+        private var isConfirmingSongTrash: Binding<Bool> {
+            Binding(
+                get: { session.songTrashConfirmation != nil },
+                set: { isPresented in
+                    if !isPresented, session.songTrashConfirmation != nil {
+                        session.resolveSongTrashConfirmation(moveToTrash: false)
+                    }
+                },
+            )
         }
 
         private var unsavedTitle: String {
@@ -179,18 +213,22 @@
         @ViewBuilder private var detail: some View {
             switch session.section {
             case .library, nil:
-                LibraryPane(model: session.library, setlists: session.setlists)
+                LibraryPane(session: session)
             case .gigLog:
-                GigLogPane(model: session.gigLog)
+                GigLogPane(model: session.gigLog) { id in
+                    Task { await session.revealGig(id) }
+                }
             case let .setlist(id):
                 if let setlist = session.setlists.setlist(id) {
                     SetlistBuilderView(
                         setlist: setlist,
                         model: session.setlists,
                         library: session.library,
-                    ) { setlist, kind in
-                        Task { await app.startShow(setlist, kind: kind) }
-                    }
+                        onReveal: { Task { await session.revealSetlist(id) } },
+                        onStart: { setlist, kind in
+                            Task { await app.startShow(setlist, kind: kind) }
+                        },
+                    )
                     .id(id)
                 } else {
                     ContentUnavailableView(
@@ -251,10 +289,31 @@
         }
     }
 
+    extension SegueCommands {
+        /// File > Show in Finder: the focused or shown song, else the shown setlist.
+        var revealTarget: (() -> Void)? {
+            guard let session = app.session, !app.isPerforming else { return nil }
+            if let id = focusedSongID {
+                return { session.revealSong(id) }
+            }
+            switch session.section {
+            case .library:
+                guard case let .song(id) = session.library.detail else { return nil }
+                return { session.revealSong(id) }
+            case let .setlist(id):
+                return { Task { await session.revealSetlist(id) } }
+            case .gigLog, nil:
+                return nil
+            }
+        }
+    }
+
     /// Menu bar commands for the main window.
     public struct SegueCommands: Commands {
         let app: AppModel
         @Environment(\.openWindow) private var openWindow
+        /// The song selected in the focused song list (File > Move to Trash needs it).
+        @FocusedValue(\.focusedSongID) private var focusedSongID
 
         public init(app: AppModel) {
             self.app = app
@@ -281,6 +340,19 @@
                 .keyboardShortcut("n")
                 // Nothing in the main window may change while the stage is up.
                 .disabled(app.session == nil || app.isPerforming)
+                Divider()
+                Button("Show in Finder") { revealTarget?() }
+                    .keyboardShortcut("r", modifiers: [.command, .option])
+                    .disabled(revealTarget == nil)
+                // Only while the song list has focus, so ⌘⌫ keeps its text meaning in the
+                // editor and every field.
+                Button("Move to Trash") {
+                    guard let session = app.session, let id = focusedSongID else { return }
+                    session.requestMoveSongToTrash(id)
+                }
+                .keyboardShortcut(.delete, modifiers: .command)
+                .disabled(app.session == nil || app.isPerforming || focusedSongID == nil)
+                Divider()
             }
             CommandGroup(replacing: .saveItem) {
                 // Replacing the save group drops the system Close, so it is restated here.
@@ -309,6 +381,8 @@
                 }
                 .disabled(app.session == nil || app.isPerforming)
                 Divider()
+                Button("Show Library in Finder") { app.session?.revealLibrary() }
+                    .disabled(app.session == nil)
                 Button("Choose Library Folder…") {
                     let choose = { Task { await app.chooseLibrary() } }
                     if let session = app.session {

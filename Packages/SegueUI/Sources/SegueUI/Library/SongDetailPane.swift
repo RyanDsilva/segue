@@ -9,7 +9,7 @@
     /// chart as its display toggles render it.
     struct SongDetailPane: View {
         let model: LibraryViewModel
-        let setlists: SetlistsViewModel
+        let session: LibrarySession
         let record: SongRecord
 
         var body: some View {
@@ -52,7 +52,7 @@
                         .textSelection(.enabled)
                         .accessibilityIdentifier(AccessibilityID.songTitle)
                     HStack(spacing: 8) {
-                        addToSetlistMenu
+                        moreMenu
                         Button("Edit") { model.beginEditing(record) }
                             .buttonStyle(.segueSecondary)
                             .help(record.isReadOnly ? "This song is read-only" : "Edit ChordPro")
@@ -73,24 +73,20 @@
             }
         }
 
-        private var addToSetlistMenu: some View {
+        /// "…": Add to Setlist ▸, Show in Finder, Move to Trash.
+        private var moreMenu: some View {
             Menu {
-                if setlists.setlists.isEmpty {
-                    Text("No setlists yet")
-                }
-                ForEach(setlists.setlists) { setlist in
-                    Button(setlist.name) {
-                        Task { await setlists.add(record.id, to: setlist.id) }
-                    }
-                    .disabled(setlist.readOnly != nil)
-                }
+                SongActions(session: session, songID: record.id)
             } label: {
-                Text("Add to Setlist")
+                Image(systemName: "ellipsis")
+                    .accessibilityLabel("More")
             }
             .menuStyle(.button)
+            .menuIndicator(.hidden)
             .buttonStyle(.segueSecondary)
             .fixedSize()
-            .help("Append this song to a setlist")
+            .help("Add to a setlist, show in Finder or move to the Trash")
+            .accessibilityIdentifier(AccessibilityID.songMoreMenu)
         }
 
         private func chart(_ render: RenderModel) -> some View {

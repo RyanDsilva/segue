@@ -9,7 +9,6 @@
         @Bindable var session: LibrarySession
         @State private var naming: SetlistNameSheet.Purpose?
         @State private var renaming: Setlist?
-        @State private var deleting: Setlist?
 
         var body: some View {
             List(selection: $session.sidebarSelection) {
@@ -57,18 +56,6 @@
                         Task { await session.setlists.rename(setlist.id, to: name) }
                     }
                 }
-            }
-            .confirmationDialog(
-                "Delete “\(deleting?.name ?? "")”?",
-                isPresented: isConfirmingDelete,
-                presenting: deleting,
-            ) { setlist in
-                Button("Delete Setlist", role: .destructive) {
-                    Task { await session.setlists.delete(setlist.id) }
-                }
-            } message: { _ in
-                Text("Its file is deleted from the library folder. Gig log entries of shows "
-                    + "that ran it keep their own copy.")
             }
         }
 
@@ -121,7 +108,7 @@
                             renaming = setlist
                             naming = .rename(setlist.name)
                         },
-                        onDelete: { deleting = setlist },
+                        onReveal: { Task { await session.revealSetlist(setlist.id) } },
                     )
                 }
         }
@@ -146,17 +133,6 @@
             .buttonStyle(.plain)
             .help("Show songs tagged “\(tag.tag)”")
             .accessibilityIdentifier(AccessibilityID.sidebarTag)
-        }
-
-        private var isConfirmingDelete: Binding<Bool> {
-            Binding(
-                get: { deleting != nil },
-                set: {
-                    if !$0 {
-                        deleting = nil
-                    }
-                },
-            )
         }
 
         @ViewBuilder private var loadIssuesFooter: some View {

@@ -7,12 +7,14 @@
     /// text. Click selects;
     /// Up/Down move the selection while the list has keyboard focus, and the selected row is
     /// kept scrolled into view.
-    struct SelectableList<Data: RandomAccessCollection, Row: View>: View
+    struct SelectableList<Data: RandomAccessCollection, Row: View, Menu: View>: View
         where Data.Element: Identifiable
     {
         let items: Data
         @Binding var selection: Data.Element.ID?
         @ViewBuilder let row: (Data.Element) -> Row
+        /// The row's context menu, on the whole row (its hit shape), not just its content.
+        @ViewBuilder var menu: (Data.Element) -> Menu
         @FocusState private var focused: Bool
         @Environment(\.colorScheme) private var colorScheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -57,6 +59,7 @@
                     Rectangle().fill(Theme.color.line).frame(height: 1)
                 }
                 .contentShape(Rectangle())
+                .contextMenu { menu(item) }
                 .onTapGesture {
                     focused = true
                     selection = item.id
@@ -74,6 +77,17 @@
                 ?? (delta > 0 ? 0 : ids.count - 1)
             selection = ids[next]
             return .handled
+        }
+    }
+
+    extension SelectableList where Menu == EmptyView {
+        /// A list without context menus.
+        init(
+            items: Data,
+            selection: Binding<Data.Element.ID?>,
+            @ViewBuilder row: @escaping (Data.Element) -> Row,
+        ) {
+            self.init(items: items, selection: selection, row: row) { _ in EmptyView() }
         }
     }
 #endif

@@ -251,6 +251,11 @@
                 }
                 live = nil
                 resetShowState()
+                if case let .ready(old) = previous, old !== session {
+                    // Undo belongs to the library it was made in.
+                    old.undoManager?.removeAllActions()
+                    session.undoManager = old.undoManager
+                }
                 state = .ready(session)
                 await runShowLaunchCheck()
                 return true

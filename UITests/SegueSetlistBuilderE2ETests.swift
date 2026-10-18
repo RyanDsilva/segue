@@ -207,16 +207,30 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
             return files.count == 2 && ids.count == 2 && Set(items).count == items.count
         }
 
+        // Move to Trash: no confirmation (A23), the file lands in the trash, Undo brings
+        // it back and Redo trashes it again.
         menuAction(app, SetlistAXID.setlistDeleteAction)
-        let confirm = app.sheets.buttons["Delete Setlist"].firstMatch
-        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
-        confirm.click(in: app)
-        SetlistE2E.waitUntil("The copy was never deleted") {
+        XCTAssertFalse(app.sheets.firstMatch.waitForExistence(timeout: 1), "No dialog expected")
+        SetlistE2E.waitUntil("The copy was never moved to the Trash") {
             SetlistE2E.all(app, SetlistAXID.setlistRow).count == 1
         }
         SetlistE2E.waitForDisk("The copy's file was never removed") {
             let files = try SetlistFixture.setlistFiles(root)
             return files.count == 1 && files[0]["name"] as? String == "Friday - Dockside Late"
+        }
+        XCTAssertEqual(Self.trashed(root), ["friday-dockside-late-copy.setlist.json"])
+        app.typeKey("z", modifierFlags: .command, in: app)
+        SetlistE2E.waitUntil("Undo never restored the copy") {
+            SetlistE2E.all(app, SetlistAXID.setlistRow).count == 2
+        }
+        XCTAssertTrue(Self.trashed(root).isEmpty)
+        waitForTitle(app, "Friday - Dockside Late copy")
+        app.typeKey("z", modifierFlags: [.command, .shift], in: app)
+        SetlistE2E.waitUntil("Redo never trashed the copy again") {
+            SetlistE2E.all(app, SetlistAXID.setlistRow).count == 1
+        }
+        SetlistE2E.waitForDisk("Redo left the copy's file") {
+            try SetlistFixture.setlistFiles(root).count == 1
         }
     }
 

@@ -117,6 +117,10 @@ public final class LibraryViewModel {
     /// rename) it; nil for other editors.
     var createdSong: CreatedSong?
     var transientTask: Task<Void, Never>?
+    /// The main window's undo manager (Edit > Undo for deletes, import, metadata).
+    @ObservationIgnored weak var undoManager: UndoManager?
+    /// Undo targets of Move to Trash, one per song.
+    let trashTargets = UndoTargets<SongID>()
     private let debounce: Duration
     private var searchTask: Task<Void, Never>?
     /// Bumped per scheduled search, so only the newest one clears `isSearching`.

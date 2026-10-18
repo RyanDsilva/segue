@@ -2,6 +2,7 @@ import Foundation
 import Library
 import Observation
 import Shows
+import Support
 
 /// The gig log as the main window sees it: finished gig shows, newest first, and the edits
 /// a gig allows afterwards (venue, date, notes, rating; delete).
@@ -14,6 +15,10 @@ public final class GigLogViewModel {
     public var errorMessage: String?
 
     private let shows: ShowStore
+    /// The main window's undo manager (Edit > Undo).
+    @ObservationIgnored weak var undoManager: UndoManager?
+    /// Undo targets of Move Gig to Trash, one per gig.
+    let trashTargets = UndoTargets<ShowID>()
     /// The autosave timing gig details use (the same policy as the song editor, B-13).
     let autosave: AutosaveTiming
     /// Called after a change that alters play history (delete), so "last played" and
@@ -57,14 +62,55 @@ public final class GigLogViewModel {
         await reload()
     }
 
-    /// Deletes a gig (its show file and its plays).
+    /// Moves a gig's show file to the Trash (its songs no longer count as played); Edit >
+    /// Undo puts it back with its plays.
     public func delete(_ id: ShowID) async {
+        let pending = Task { await trash(id) }
+        guard await pending.value != nil else { return }
+        TrashUndo(
+            manager: undoManager,
+            target: trashTargets.target(for: id),
+            actionName: "Move Gig to Trash",
+            trash: { [weak self] in await self?.trash(id) },
+            restore: { [weak self] receipt in await self?.restore(receipt) ?? false },
+        ).register(pending: pending)
+    }
+
+    /// The show file of gig `id`, for Show in Finder.
+    public func fileURL(for id: ShowID) async -> URL? {
+        await shows.fileURL(for: id)
+    }
+
+    private func trash(_ id: ShowID) async -> TrashReceipt? {
         do {
-            try await shows.delete(id)
+            let receipt = try await shows.delete(id)
+            if selection == id {
+                selection = nil
+            }
+            await reload()
+            await onPlaysChanged()
+            return receipt
         } catch {
             errorMessage = UserMessage.describe(error)
+            await reload()
+            return nil
         }
-        await reload()
-        await onPlaysChanged()
+    }
+
+    private func restore(_ receipt: TrashReceipt) async -> Bool {
+        do {
+            let restored = try await shows.restore(receipt)
+            await reload()
+            await onPlaysChanged()
+            guard let restored else {
+                errorMessage = "Could not undo Move Gig to Trash: the file could not be read."
+                return false
+            }
+            selection = restored.id
+            return true
+        } catch {
+            errorMessage = "Could not undo Move Gig to Trash. " + UserMessage.describe(error)
+            return false
+        }
     }
 }

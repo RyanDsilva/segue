@@ -373,6 +373,8 @@ enum SetlistAXID {
     static let gigPlayedRow = "segue.gig.played"
     static let gigSkippedRow = "segue.gig.skipped"
     static let gigDelete = "segue.gig.delete"
+    static let gigMoreMenu = "segue.gig.more"
+    static let gigReveal = "segue.gig.reveal"
     static let reorderSheet = "segue.reorder"
     static let reorderPlannedRow = "segue.reorder.planned"
     static let reorderPerformedRow = "segue.reorder.performed"
@@ -409,6 +411,10 @@ class SetlistE2ETestCase: XCTestCase {
         var arguments = [
             "-SegueLibraryPath", root.path(percentEncoded: false),
             "-SegueResetState", "YES",
+            // Deletes go to a folder inside the test library, never the user's Trash.
+            "-SegueTrashPath", Self.trashFolder(root).path(percentEncoded: false),
+            // Show in Finder is recorded, never performed.
+            "-SegueWorkspaceLog", Self.workspaceLog(root).path(percentEncoded: false),
         ]
         if light {
             arguments += ["-NSRequiresAquaSystemAppearance", "YES"]
@@ -420,6 +426,22 @@ class SetlistE2ETestCase: XCTestCase {
             }
         }
         return app
+    }
+
+    /// The stand-in Trash for `root` (`-SegueTrashPath`), removed with the library.
+    static func trashFolder(_ root: URL) -> URL {
+        root.appending(path: ".e2e-trash", directoryHint: .isDirectory)
+    }
+
+    /// What the app revealed or opened (`-SegueWorkspaceLog`), one JSON line per call.
+    static func workspaceLog(_ root: URL) -> URL {
+        root.appending(path: ".e2e-workspace.log", directoryHint: .notDirectory)
+    }
+
+    /// File names in the stand-in Trash.
+    static func trashed(_ root: URL) -> [String] {
+        let path = trashFolder(root).path(percentEncoded: false)
+        return ((try? FileManager.default.contentsOfDirectory(atPath: path)) ?? []).sorted()
     }
 
     /// Attaches the main window as `builder-<name>` (exported to .build/screenshots/builder).

@@ -57,6 +57,19 @@
         /// Held for the session's lifetime so no other copy of Segue opens this library
         /// (B-2); nil under `LibraryLockPolicy.unlocked`.
         let lock: LibraryLock?
+        /// Reveals files in Finder (Show in Finder) and opens links.
+        let workspace: any WorkspaceActions
+        /// A song waiting on "Move to Trash?" because setlists use it (A23).
+        public internal(set) var songTrashConfirmation: SongTrashConfirmation?
+
+        /// The main window's undo manager, handed to the view models (Edit > Undo).
+        @ObservationIgnored public weak var undoManager: UndoManager? {
+            didSet {
+                library.undoManager = undoManager
+                setlists.undoManager = undoManager
+                gigLog.undoManager = undoManager
+            }
+        }
 
         init(
             root: LibraryRoot,
@@ -65,9 +78,11 @@
             stores: LibraryStores,
             lock: LibraryLock?,
             autosave: AutosaveTiming = .standard,
+            workspace: any WorkspaceActions,
         ) {
             self.root = root
             self.lock = lock
+            self.workspace = workspace
             self.library = library
             self.setlists = setlists
             self.stores = stores
@@ -167,6 +182,7 @@
                 stores: stores,
                 lock: lock,
                 autosave: autosave,
+                workspace: dependencies.workspace,
             )
         }
     }

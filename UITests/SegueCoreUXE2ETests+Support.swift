@@ -69,6 +69,65 @@ extension SegueCoreUXE2ETests {
         try Data(source.utf8).write(to: url)
     }
 
+    /// Writes a song with a sidecar carrying `id` (so setlists can reference it).
+    func seedSong(_ slug: String, _ source: String, id: String) throws {
+        try seedSong(slug, source)
+        let paths = try XCTUnwrap(paths)
+        let sidecar = #"{"schemaVersion": 3, "id": "\#(id)", "createdAt": "2026-10-01T10:00:00Z", "#
+            + #""updatedAt": "2026-10-01T10:00:00Z"}"#
+        try Data(sidecar.utf8).write(to: paths.library.appending(path: "songs/\(slug).segue.json"))
+    }
+
+    /// Writes `setlists/<slug>.setlist.json` holding `songIDs` in order.
+    func seedSetlist(_ slug: String, id: String, name: String, songIDs: [String]) throws {
+        let paths = try XCTUnwrap(paths)
+        let entries = songIDs.enumerated().map { offset, song in
+            #"{"itemId": "01JC0000000000000000000T0\#(offset)", "songId": "\#(song)"}"#
+        }
+        let json = #"{"schemaVersion": 2, "id": "\#(id)", "name": "\#(name)", "#
+            + #""createdAt": "2026-10-10T10:00:00Z", "updatedAt": "2026-10-10T10:00:00Z", "#
+            + #""entries": [\#(entries.joined(separator: ", "))]}"#
+        let url = paths.library.appending(path: "setlists/\(slug).setlist.json")
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true,
+        )
+        try Data(json.utf8).write(to: url)
+    }
+
+    /// The workspace log's lines as (action, paths or URLs).
+    func workspaceCalls() -> [(String, [String])] {
+        let paths = paths
+        guard let paths else { return [] }
+        return read(paths.workspaceLog).split(separator: "\n").compactMap { line in
+            guard let object = try? JSONSerialization.jsonObject(with: Data(line.utf8))
+                as? [String: Any],
+                let action = object["action"] as? String,
+                let urls = object["urls"] as? [String]
+            else { return nil }
+            return (action, urls)
+        }
+    }
+
+    /// Waits for the workspace log to record `action` with exactly `urls`. Paths compare
+    /// without the `/private` prefix (the app logs `/tmp/...`, the runner sees `/private/tmp`)
+    /// and without a trailing slash.
+    func waitForWorkspace(_ action: String, _ urls: [String]) -> Bool {
+        let expected = urls.map(Self.normalized)
+        return wait {
+            self.workspaceCalls()
+                .contains { $0.0 == action && $0.1.map(Self.normalized) == expected }
+        }
+    }
+
+    private static func normalized(_ path: String) -> String {
+        var path = path.hasPrefix("/private/") ? String(path.dropFirst("/private".count)) : path
+        while path.count > 1, path.hasSuffix("/") {
+            path.removeLast()
+        }
+        return path
+    }
+
     func read(_ url: URL) -> String {
         (try? String(contentsOf: url, encoding: .utf8)) ?? ""
     }
@@ -134,6 +193,16 @@ extension SegueCoreUXE2ETests {
         return editor
     }
 
+    /// Right-clicks `element` and chooses the context menu item `identifier`.
+    @MainActor
+    func contextMenu(_ app: XCUIApplication, _ element: XCUIElement, _ identifier: String) {
+        E2E.bringToFront(app)
+        element.rightClick()
+        let item = app.menuItems[identifier].firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 5), "No context menu item \(identifier)")
+        item.click(in: app)
+    }
+
     @MainActor
     func saveStatus(_ app: XCUIApplication) -> XCUIElement {
         element(app, CoreAXID.editorSaveStatus)
@@ -191,6 +260,9 @@ extension SegueCoreUXE2ETests {
 enum CoreFixture {
     static let harbour = "{title: Harbour Lights}\n[G]Lanterns on the [C]water\n"
     static let river = "{title: River Song}\n[D]Down by the [A]river\n"
+    static let harbourID = "01JC0000000000000000000H01"
+    static let riverID = "01JC0000000000000000000R01"
+    static let fridayID = "01JC0000000000000000000F01"
 }
 
 /// Accessibility identifiers (mirrors `AccessibilityID` in SegueUI).
@@ -209,4 +281,14 @@ enum CoreAXID {
     static let editorConflictOverwrite = "segue.editor.conflict.overwrite"
     static let editorConflictCopy = "segue.editor.conflict.copy"
     static let transientMessage = "segue.main.transient"
+    static let songList = "segue.library.list"
+    static let librarySearch = "segue.library.search"
+    static let songMoreMenu = "segue.song.more"
+    static let songMoveToTrash = "segue.song.moveToTrash"
+    static let songShowInFinder = "segue.song.showInFinder"
+    static let songDeleteConfirm = "segue.song.moveToTrash.confirm"
+    static let setlistRow = "segue.setlists.row"
+    static let setlistRevealAction = "segue.setlist.action.reveal"
+    static let setlistEntry = "segue.setlist.entry"
+    static let sidebarLibrary = "segue.sidebar.library"
 }

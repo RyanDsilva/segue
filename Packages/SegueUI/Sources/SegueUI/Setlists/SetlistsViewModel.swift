@@ -2,6 +2,7 @@ import Foundation
 import Library
 import Observation
 import Setlists
+import Support
 
 /// Setlists as the main window sees them: the list, the selection and the edit actions.
 /// Every mutation goes through `SetlistStore` (which writes to disk) and adopts the returned
@@ -16,7 +17,11 @@ public final class SetlistsViewModel {
     /// Setlist files that could not be loaded (reported, never deleted).
     public private(set) var loadIssues: [SetlistLoadIssue]
 
-    private let store: SetlistStore
+    let store: SetlistStore
+    /// The main window's undo manager (Edit > Undo).
+    @ObservationIgnored weak var undoManager: UndoManager?
+    /// Undo targets of Move Setlist to Trash, one per setlist.
+    let trashTargets = UndoTargets<SetlistID>()
 
     public init(store: SetlistStore, loadIssues: [SetlistLoadIssue] = []) {
         self.store = store
@@ -94,14 +99,51 @@ public final class SetlistsViewModel {
         }
     }
 
-    /// Deletes setlist `id`'s file (shows that ran it keep their snapshot).
+    /// Moves setlist `id`'s file to the Trash (shows that ran it keep their snapshot);
+    /// Edit > Undo puts it back.
     public func delete(_ id: SetlistID) async {
+        let pending = Task { await trash(id) }
+        guard await pending.value != nil else { return }
+        TrashUndo(
+            manager: undoManager,
+            target: trashTargets.target(for: id),
+            actionName: "Move Setlist to Trash",
+            trash: { [weak self] in await self?.trash(id) },
+            restore: { [weak self] receipt in await self?.restore(receipt) ?? false },
+        ).register(pending: pending)
+    }
+
+    /// The file of setlist `id`, for Show in Finder.
+    public func fileURL(for id: SetlistID) async -> URL? {
+        await store.fileURL(for: id)
+    }
+
+    private func trash(_ id: SetlistID) async -> TrashReceipt? {
         do {
-            try await store.delete(id)
+            let receipt = try await store.delete(id)
+            await reload()
+            return receipt
         } catch {
             errorMessage = UserMessage.describe(error)
+            await reload()
+            return nil
         }
-        await reload()
+    }
+
+    private func restore(_ receipt: TrashReceipt) async -> Bool {
+        do {
+            let restored = try await store.restore(receipt)
+            await reload()
+            guard let restored else {
+                errorMessage = "Could not undo Move Setlist to Trash: the file could not be read."
+                return false
+            }
+            selection = restored.id
+            return true
+        } catch {
+            errorMessage = "Could not undo Move Setlist to Trash. " + UserMessage.describe(error)
+            return false
+        }
     }
 
     /// Inserts `songIDs` into setlist `id` at `offset` (nil appends): drag from the
