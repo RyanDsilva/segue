@@ -50,6 +50,9 @@
             }
             isStartingShow = true
             defer { isStartingShow = false }
+            // The stage reads the files: save the open editor first. If that fails the
+            // show still starts with the last saved version; the editor keeps its bar.
+            await session.library.flushEditor()
             await session.library.refresh()
             let missing = setlist.entries.enumerated().filter { _, entry in
                 session.library.song(id: entry.songId) == nil

@@ -9,8 +9,8 @@
     /// bar. Both modes edit one source with one undo stack.
     struct SongEditorView: View {
         @Bindable var model: SongEditorViewModel
-        var onSave: () -> Void
-        var onCancel: () -> Void
+        /// "Done": save now and close the editor.
+        var onDone: () -> Void
         @State private var customizing: ShapeCustomization?
 
         var body: some View {
@@ -28,7 +28,21 @@
             }
             .background(Theme.color.ground)
             .navigationTitle(model.title)
-            .navigationSubtitle(subtitle)
+            .navigationSubtitle(model.saveState.text)
+            // The window's edited dot shows a change still waiting for its autosave.
+            .background(WindowDocumentEdited(isEdited: model.hasUnsavedChanges))
+            .overlay(alignment: .topLeading) {
+                if UITesting.isActive {
+                    // The subtitle for the E2E suite only (VoiceOver reads the window's own
+                    // subtitle). SwiftUI drops the value of an empty element; the label
+                    // carries it.
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .accessibilityElement()
+                        .accessibilityLabel(model.saveState.text)
+                        .accessibilityIdentifier(AccessibilityID.editorSaveStatus)
+                }
+            }
             .toolbar { toolbar }
             .sheet(item: $customizing) { target in
                 ShapeEditorView(
@@ -46,13 +60,6 @@
             }
         }
 
-        private var subtitle: String {
-            if model.hasUnsavedChanges {
-                return "Edited"
-            }
-            return model.mode == .create ? "New song" : "Saved"
-        }
-
         @ToolbarContentBuilder private var toolbar: some ToolbarContent {
             ToolbarItem(placement: .principal) {
                 EditorModePicker(model: model)
@@ -62,21 +69,16 @@
             // spacer pushes the actions to the trailing end, where macOS puts them.
             ToolbarSpacer(.flexible)
             ToolbarItem(placement: .automatic) {
-                HStack(spacing: 8) {
-                    // No Esc shortcut: Esc belongs to the editor (completion, chord
-                    // selection, palette) and must never discard the edit.
-                    Button("Cancel", role: .cancel, action: onCancel)
-                        .buttonStyle(.segueSecondary)
-                        .accessibilityIdentifier(AccessibilityID.editorCancel)
-                    Button("Save", action: onSave)
-                        .keyboardShortcut("s", modifiers: .command)
-                        .buttonStyle(.seguePrimary)
-                        .disabled(!model.canSave)
-                        .accessibilityIdentifier(AccessibilityID.editorSave)
-                }
-                .controlSize(.regular)
-                // Without the shared glass capsule the toolbar gives no trailing inset.
-                .padding(.trailing, 6)
+                // Edits save themselves (R17); Done only closes the editor after a last
+                // save. No Esc shortcut: Esc belongs to the editor (completion, chord
+                // selection, palette).
+                Button("Done", action: onDone)
+                    .buttonStyle(.seguePrimary)
+                    .controlSize(.regular)
+                    .help("Save and close the editor")
+                    .accessibilityIdentifier(AccessibilityID.editorDone)
+                    // Without the shared glass capsule the toolbar gives no trailing inset.
+                    .padding(.trailing, 6)
             }
             .sharedBackgroundVisibility(.hidden)
         }

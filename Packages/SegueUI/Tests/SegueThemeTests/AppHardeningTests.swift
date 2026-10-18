@@ -216,7 +216,7 @@ extension StageWindowSuites {
             #expect(library.loadIssues.map(\.relativePath) == ["songs/locked.cho"])
         }
 
-        // MARK: #1 saving over an external edit asks first
+        // MARK: #1 autosaving over an external edit raises the conflict bar
 
         @Test
         func `an external edit while editing raises a conflict and save as copy keeps both`(
@@ -230,10 +230,15 @@ extension StageWindowSuites {
             try env.write(external, to: song.relativePath)
 
             editor.sourceTextDidChange("{title: Shared}\nMy edit\n")
-            await library.saveEditor()
+            #expect(await !library.flushEditor())
 
             #expect(library.saveConflict?.kind == .sourceChanged)
+            #expect(editor.saveState == .notSaved)
             #expect(library.editor === editor)
+            #expect(try env.read(song.relativePath) == external)
+            // Autosave waits for the user: more typing writes nothing.
+            editor.sourceTextDidChange("{title: Shared}\nMy edit, more\n")
+            #expect(await !library.flushEditor())
             #expect(try env.read(song.relativePath) == external)
 
             await library.resolveSaveConflict(.saveAsCopy)
@@ -242,7 +247,7 @@ extension StageWindowSuites {
             #expect(library.editor == nil)
             #expect(try env.read(song.relativePath) == external)
             let copy = try #require(library.catalog.first { $0.id != song.id })
-            #expect(copy.source == "{title: Shared}\nMy edit\n")
+            #expect(copy.source == "{title: Shared}\nMy edit, more\n")
             #expect(library.selection == copy.id)
         }
 
@@ -255,16 +260,22 @@ extension StageWindowSuites {
             library.beginEditing(song)
             try env.write("{title: Shared}\nTheirs\n", to: song.relativePath)
             library.editor?.sourceTextDidChange("{title: Shared}\nMine\n")
-            await library.saveEditor()
+            await library.flushEditor()
             await library.resolveSaveConflict(.overwrite)
-            #expect(library.editor == nil)
+            // The editor stays open, saved, with autosave running again.
+            #expect(library.saveConflict == nil)
+            #expect(library.editor?.hasUnsavedChanges == false)
             #expect(try env.read(song.relativePath) == "{title: Shared}\nMine\n")
+            library.editor?.sourceTextDidChange("{title: Shared}\nMine, then more\n")
+            #expect(await library.flushEditor())
+            #expect(try env.read(song.relativePath) == "{title: Shared}\nMine, then more\n")
+            await library.finishEditing()
 
             let current = try #require(library.song(id: song.id))
             library.beginEditing(current)
             try env.write("{title: Shared}\nTheirs again\n", to: song.relativePath)
             library.editor?.sourceTextDidChange("{title: Shared}\nMine again\n")
-            await library.saveEditor()
+            await library.flushEditor()
             #expect(library.saveConflict?.kind == .sourceChanged)
             await library.resolveSaveConflict(.reload)
             #expect(library.editor?.source == "{title: Shared}\nTheirs again\n")
@@ -290,7 +301,7 @@ extension StageWindowSuites {
 
             #expect(library.editor === editor)
             #expect(library.isEditingDeletedSong)
-            await library.saveEditor()
+            await library.flushEditor()
             #expect(library.saveConflict?.kind == .deleted)
             await library.resolveSaveConflict(.saveAsCopy)
             let saved = try #require(library.catalog.first)
@@ -307,7 +318,7 @@ extension StageWindowSuites {
             let editor = try #require(library.editor)
             editor.sourceTextDidChange("{title: Racing}\nFirst line\n")
 
-            let save = Task { await library.saveEditor() }
+            let save = Task { await editor.commit() }
             // Once `isSaving` is up the save has taken its text and is waiting on the store.
             let deadline = ContinuousClock.now + .seconds(10)
             while !editor.isSaving, ContinuousClock.now < deadline {
@@ -315,7 +326,7 @@ extension StageWindowSuites {
             }
             #expect(editor.isSaving, "the save never started")
             editor.sourceTextDidChange("{title: Racing}\nFirst line\nTyped during the save\n")
-            await save.value
+            _ = await save.value
 
             let record = try #require(library.catalog.first)
             #expect(record.source == "{title: Racing}\nFirst line\n")
@@ -325,7 +336,7 @@ extension StageWindowSuites {
             #expect(open.hasUnsavedChanges)
 
             // And the follow-up save goes through (no false conflict with its own first save).
-            await library.saveEditor()
+            await library.finishEditing()
             #expect(library.saveConflict == nil)
             #expect(library.editor == nil)
             #expect(try env.read(record.relativePath).contains("Typed during the save"))
@@ -350,133 +361,6 @@ extension StageWindowSuites {
             #expect(!library.isSearching, "the search never landed")
             #expect(library.results.map(\.document.metadata.title) == ["Needle"])
         }
-    }
-}
-
-/// A temp library folder plus an isolated defaults suite, removed afterwards.
-@MainActor
-final class TestEnvironment {
-    let scratch: URL
-    let libraryURL: URL
-    let suiteName: String
-    let defaults: UserDefaults
-    let clock = ManualClock()
-    let ids: ULIDGenerator
-    /// The file system apps made by this environment use (a failing one in some tests).
-    var fileSystem: any FileSystem = LiveFileSystem()
-    /// `bindings.json` for live mode; nil uses the default keys.
-    var bindingsURL: URL?
-    /// The real library lock by default; `.unlocked` for tests that run several in-process
-    /// app instances on this library on purpose.
-    var libraryLock: LibraryLockPolicy = .exclusive
-
-    init() throws {
-        scratch = FileManager.default.temporaryDirectory
-            .appending(path: "SegueUITests-\(UUID().uuidString)", directoryHint: .isDirectory)
-        libraryURL = scratch.appending(path: "Library", directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: libraryURL, withIntermediateDirectories: true)
-        suiteName = "dev.ryandsilva.segue.tests.\(UUID().uuidString)"
-        defaults = try #require(UserDefaults(suiteName: suiteName))
-        ids = ULIDGenerator(clock: clock, seed: 7)
-    }
-
-    deinit {
-        UserDefaults().removePersistentDomain(forName: suiteName)
-        try? FileManager.default.removeItem(at: scratch)
-    }
-
-    func location() -> LibraryLocation {
-        LibraryLocation(defaults: defaults)
-    }
-
-    func dependencies(location: LibraryLocation, override: URL?, remember: Bool)
-        -> AppDependencies
-    {
-        AppDependencies(
-            fileSystem: fileSystem,
-            clock: clock,
-            ids: ids,
-            location: location,
-            libraryOverride: override,
-            rememberLibraryOverride: remember,
-            live: liveDependencies(),
-            libraryLock: libraryLock,
-        )
-    }
-
-    /// Live mode with this environment's defaults, the manual clock, a charger that is
-    /// connected and a Shortcut runner that only records. The Gig Mode Shortcuts are set up
-    /// as a configured user would have them (they are off by default, R18).
-    func liveDependencies() -> LiveDependencies {
-        let settings = LiveSettingsStore(defaults: defaults)
-        if settings.settings.startShortcut == nil, settings.settings.endShortcut == nil {
-            settings.settings.startShortcut = LiveSettings.suggestedStartShortcut
-            settings.settings.endShortcut = LiveSettings.suggestedEndShortcut
-        }
-        return LiveDependencies(
-            settings: settings,
-            shortcuts: RecordingShortcutRunner(log: shortcutLog),
-            power: FixedPowerSource(onCharger: true),
-            scrollClock: clock,
-            bindingsURL: bindingsURL,
-        )
-    }
-
-    /// Where `RecordingShortcutRunner` writes.
-    var shortcutLog: URL {
-        scratch.appending(path: "shortcuts.log", directoryHint: .notDirectory)
-    }
-
-    /// The Shortcuts live mode ran, in order.
-    func shortcutsRun() throws -> [String] {
-        guard FileManager.default.fileExists(atPath: shortcutLog.path) else { return [] }
-        return try String(contentsOf: shortcutLog, encoding: .utf8)
-            .split(separator: "\n").map(String.init)
-    }
-
-    /// Polls `value` on the main actor until it is non-nil (5 s at most).
-    @discardableResult
-    func waitFor<T>(_ value: () -> T?) async throws -> T {
-        let deadline = ContinuousClock.now + .seconds(5)
-        while ContinuousClock.now < deadline {
-            if let found = value() {
-                return found
-            }
-            try await Task.sleep(for: .milliseconds(10))
-        }
-        return try #require(value(), "timed out waiting")
-    }
-
-    func app(override: URL? = nil, remember: Bool = false) -> AppModel {
-        AppModel(dependencies: dependencies(
-            location: location(),
-            override: override,
-            remember: remember,
-        ))
-    }
-
-    /// An app started on the temp library (as the E2E `-SegueLibraryPath` does).
-    func openApp() async throws -> AppModel {
-        let app = app(override: libraryURL)
-        await app.start()
-        _ = try #require(app.session)
-        return app
-    }
-
-    func openLibrary(debounce: Duration = .milliseconds(200)) async throws -> LibraryViewModel {
-        let store = LibraryStore(fileSystem: LiveFileSystem(), clock: clock, ids: ids)
-        try await store.open(root: LibraryRoot(url: libraryURL))
-        let library = LibraryViewModel(store: store, debounce: debounce)
-        await library.reload()
-        return library
-    }
-
-    func write(_ text: String, to relativePath: String) throws {
-        try Data(text.utf8).write(to: libraryURL.appending(path: relativePath))
-    }
-
-    func read(_ relativePath: String) throws -> String {
-        try String(contentsOf: libraryURL.appending(path: relativePath), encoding: .utf8)
     }
 }
 

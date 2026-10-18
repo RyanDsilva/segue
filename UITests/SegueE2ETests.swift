@@ -41,13 +41,13 @@ final class SegueE2ETests: XCTestCase {
         XCTAssertTrue(element(app, AXID.libraryEmpty).waitForExistence(timeout: 15))
 
         // Create two songs by typing raw ChordPro (one romanized Hindi). The second is saved
-        // from the unsaved-changes prompt by navigating away mid-edit.
+        // by autosave when navigating away mid-edit, with no prompt.
         createSong(app, source: Fixture.english, title: "Harbour Lights")
-        createSongSavingFromPrompt(app, source: Fixture.hindi, title: "Pyaar Ki Raah")
+        createSongSavingBySwitching(app, source: Fixture.hindi, title: "Pyaar Ki Raah")
         XCTAssertEqual(songRows(app).count, 2)
         attachScreenshot(app, name: "library-with-songs")
 
-        discardEditFromPrompt(app)
+        try editSavingBySwitching(app, root: root)
         searchLibrary(app)
         buildSetlist(app)
         perform(app)
@@ -193,11 +193,11 @@ final class SegueE2ETests: XCTestCase {
         // The preview renders the typed title before saving.
         let preview = element(app, AXID.editorPreview)
         XCTAssertTrue(waitForValue(preview.staticTexts[AXID.songTitle], title))
-        // Search lives in the song list column, never beside the editor's Cancel/Save.
+        // Search lives in the song list column, never beside the editor's Done.
         let search = app.searchFields[AXID.librarySearch]
         XCTAssertTrue(search.exists)
         XCTAssertLessThanOrEqual(search.frame.maxX, editor.frame.minX)
-        XCTAssertLessThan(search.frame.maxX, app.buttons[AXID.editorCancel].frame.minX)
+        XCTAssertLessThan(search.frame.maxX, app.buttons[AXID.editorDone].frame.minX)
         return editor
     }
 
@@ -205,36 +205,34 @@ final class SegueE2ETests: XCTestCase {
     private func createSong(_ app: XCUIApplication, source: String, title: String) {
         let editor = typeNewSong(app, source: source, title: title)
         attachScreenshot(app, name: "editor-new-song")
-        app.buttons[AXID.editorSave].click(in: app)
+        app.buttons[AXID.editorDone].click(in: app)
         // Saved: the detail pane shows the rendered song and the list has its row.
         XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], title))
         XCTAssertTrue(row(app, title).waitForExistence(timeout: 10))
     }
 
-    /// Types a new song, then clicks another song: the unsaved-changes prompt appears and
-    /// "Save" creates the song before navigating.
+    /// Types a new song, then clicks another song at once: no prompt, the song is saved
+    /// (autosave flushes on navigation) and the other song is shown.
     @MainActor
-    private func createSongSavingFromPrompt(
+    private func createSongSavingBySwitching(
         _ app: XCUIApplication,
         source: String,
         title: String,
     ) {
         let editor = typeNewSong(app, source: source, title: title)
         row(app, "Harbour Lights").click(in: app)
-        let save = unsavedPromptButton(app, "Save")
-        XCTAssertTrue(save.waitForExistence(timeout: 5), "No unsaved-changes prompt")
-        attachScreenshot(app, name: "unsaved-changes-prompt")
-        save.click(in: app)
         XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
+        XCTAssertFalse(app.sheets.firstMatch.exists, "Navigating must not ask")
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], "Harbour Lights"))
         XCTAssertTrue(row(app, title).waitForExistence(timeout: 10))
     }
 
-    /// Edits a saved song, then navigates away: "Cancel" keeps the editor and its text,
-    /// "Discard Changes" drops the edit (the file on disk is checked later).
+    /// Edits a saved song, then switches songs: the edit is on disk with no prompt. The
+    /// file is then put back as it was, from outside the app (the later checks expect the
+    /// typed fixture).
     @MainActor
-    private func discardEditFromPrompt(_ app: XCUIApplication) {
+    private func editSavingBySwitching(_ app: XCUIApplication, root: URL) throws {
         row(app, "Harbour Lights").click(in: app)
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], "Harbour Lights"))
         element(app, AXID.editSong).click(in: app)
@@ -242,28 +240,15 @@ final class SegueE2ETests: XCTestCase {
         let editor = app.textViews[AXID.editorText]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         editor.click(in: app)
-        editor.typeText("Unsaved line\n", in: app)
+        editor.typeText("Saved by switching\n", in: app)
 
         row(app, "Pyaar Ki Raah").click(in: app)
-        let cancel = unsavedPromptButton(app, "Cancel")
-        XCTAssertTrue(cancel.waitForExistence(timeout: 5), "No unsaved-changes prompt")
-        cancel.click(in: app)
-        XCTAssertTrue(cancel.waitForNonExistence(timeout: 5))
-        XCTAssertTrue(editor.exists, "Cancel must keep the editor open")
-        XCTAssertTrue((editor.value as? String ?? "").contains("Unsaved line"))
-
-        row(app, "Pyaar Ki Raah").click(in: app)
-        let discard = unsavedPromptButton(app, "Discard Changes")
-        XCTAssertTrue(discard.waitForExistence(timeout: 5), "No unsaved-changes prompt")
-        discard.click(in: app)
         XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
+        XCTAssertFalse(app.sheets.firstMatch.exists, "Navigating must not ask")
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], "Pyaar Ki Raah"))
-    }
-
-    /// A button of the unsaved-changes alert (a sheet on the main window).
-    @MainActor
-    private func unsavedPromptButton(_ app: XCUIApplication, _ title: String) -> XCUIElement {
-        app.sheets.buttons[title].firstMatch
+        let file = root.appending(path: "songs/harbour-lights.cho")
+        XCTAssertTrue(try String(contentsOf: file, encoding: .utf8).contains("Saved by switching"))
+        try Data(Fixture.english.utf8).write(to: file, options: .atomic)
     }
 
     @MainActor
@@ -424,10 +409,9 @@ private enum AXID {
     static let libraryEmpty = "segue.library.empty"
     static let songTitle = "segue.song.title"
     static let editorText = "segue.editor.text"
-    static let editorCancel = "segue.editor.cancel"
     static let editSong = "segue.song.edit"
     static let librarySearch = "segue.library.search"
-    static let editorSave = "segue.editor.save"
+    static let editorDone = "segue.editor.done"
     static let editorPreview = "segue.editor.preview"
     static let sheetChord = "segue.sheet.chord"
     static let newSetlist = "segue.setlists.new"

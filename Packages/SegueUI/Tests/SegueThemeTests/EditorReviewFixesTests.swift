@@ -111,13 +111,13 @@ struct EditorReviewFixesTests {
         let editor = try #require(library.editor)
         editor.sourceTextDidChange("{title: Baseline}\nTwo\n")
 
-        let save = Task { await library.saveEditor() }
+        let save = Task { await editor.commit() }
         let deadline = ContinuousClock.now + .seconds(10)
         while !editor.isSaving, ContinuousClock.now < deadline {
             await Task.yield()
         }
         editor.sourceTextDidChange("{title: Baseline}\nTwo, typed during the save\n")
-        await save.value
+        _ = await save.value
         #expect(library.editor === editor)
         #expect(editor.hasUnsavedChanges)
         // Typing back exactly what was saved leaves nothing unsaved (not the old original).

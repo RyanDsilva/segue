@@ -33,12 +33,19 @@ public enum AccessibilityID {
     public static let songTitle = "segue.song.title"
     public static let editSong = "segue.song.edit"
     public static let editorText = "segue.editor.text"
-    public static let editorSave = "segue.editor.save"
-    public static let editorCancel = "segue.editor.cancel"
+    /// "Done": closes the editor after a last save.
+    public static let editorDone = "segue.editor.done"
+    /// The save status ("Saved", "Saving…", "Not saved", "All changes saved").
+    public static let editorSaveStatus = "segue.editor.saveStatus"
+    /// The inline bar shown when an autosave hit a change made in another app.
+    public static let editorConflictBar = "segue.editor.conflict"
+    public static let editorConflictReload = "segue.editor.conflict.reload"
+    public static let editorConflictOverwrite = "segue.editor.conflict.overwrite"
+    public static let editorConflictCopy = "segue.editor.conflict.copy"
+    /// The 1.5 s confirmation in the bottom bar ("All changes saved", "Added … to …").
+    public static let transientMessage = "segue.main.transient"
     public static let editorPreview = "segue.editor.preview"
     public static let editorError = "segue.editor.error"
-    /// "This song's file was deleted outside Segue" above an open editor.
-    public static let editorDeletedBanner = "segue.editor.deletedBanner"
 
     // MARK: Editor (phase 1, unit D)
 

@@ -181,11 +181,11 @@
         }
 
         /// Replaces the whole text (one undo step).
-        func replaceAll(with text: String) {
+        func replaceAll(with text: String, actionName: String = "Replace Text") {
             let length = (textView.string as NSString).length
             apply(SourceChange(
                 edits: [TextEdit(range: 0 ..< length, replacement: text)],
-                actionName: "Replace Text",
+                actionName: actionName,
             ))
             restyleAll()
         }

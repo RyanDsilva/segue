@@ -1,4 +1,5 @@
 #if os(macOS)
+    import AppKit
     import Library
     import SwiftUI
 
@@ -28,8 +29,8 @@
                 }
             }
             .task { await app.start() }
-            // Quit / close with unsaved edits asks first.
-            .background(UnsavedChangesWindowGuard(app: app))
+            // Quit / close save pending edits first (and ask only if that fails).
+            .background(PendingEditsWindowGuard(app: app))
         }
     }
 
@@ -129,7 +130,12 @@
             } detail: {
                 detail
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) { errorBanner }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    errorBanner
+                    transientBar
+                }
+            }
             .liveModePresentations(app)
             .onChange(of: session.setlists.selection) { session.followSetlistSelection() }
             .onChange(of: session.setlists.setlists) { session.followSetlistSelection() }
@@ -138,86 +144,20 @@
                 isPresented: isPromptingUnsaved,
                 presenting: session.library.pendingNavigation,
             ) { _ in
-                Button("Save") { resolve(.save) }
+                // The only unsaved-edits prompt left (autosave, WS2a 3.4): the save failed.
+                Button("Save as Copy") { resolve(.saveAsCopy) }
                     .keyboardShortcut(.defaultAction)
-                Button("Discard Changes", role: .destructive) { resolve(.discard) }
+                Button("Discard Edits", role: .destructive) { resolve(.discard) }
                 Button("Cancel", role: .cancel) { resolve(.cancel) }
             } message: { _ in
-                Text("Your edits will be lost if you don’t save them.")
+                Text("Segue could not save them to the song’s file. Save them as a new song, "
+                    + "or discard them.")
             }
-            .alert(
-                conflictTitle,
-                isPresented: isShowingConflict,
-                presenting: session.library.saveConflict,
-            ) { conflict in
-                conflictButtons(conflict.kind)
-            } message: { conflict in
-                Text(conflictMessage(conflict.kind))
-            }
-        }
-
-        // MARK: Save conflict
-
-        private var conflictTitle: String {
-            let title = session.library.saveConflict?.songTitle ?? "Untitled"
-            return switch session.library.saveConflict?.kind {
-            case .deleted: "“\(title)” was deleted in another app"
-            case .metadataChanged: "The metadata of “\(title)” changed in another app"
-            case nil, .sourceChanged: "“\(title)” was changed in another app"
-            }
-        }
-
-        private func conflictMessage(_ kind: SongConflict) -> String {
-            switch kind {
-            case .sourceChanged:
-                "Nothing was saved. Reload shows the file as it is now (your edits are "
-                    + "discarded), Overwrite replaces the other app’s changes with yours, and "
-                    + "Save as Copy keeps both."
-            case .deleted:
-                "Nothing was saved. Save your edits as a new song, or keep editing."
-            case .metadataChanged:
-                "Nothing was saved. Reload shows the song as it is now (your edits are "
-                    + "discarded); Save as Copy keeps your edits as a new song."
-            }
-        }
-
-        @ViewBuilder
-        private func conflictButtons(_ kind: SongConflict) -> some View {
-            switch kind {
-            case .sourceChanged:
-                Button("Reload") { resolveConflict(.reload) }
-                Button("Overwrite", role: .destructive) { resolveConflict(.overwrite) }
-                Button("Save as Copy") { resolveConflict(.saveAsCopy) }
-                    .keyboardShortcut(.defaultAction)
-            case .deleted:
-                Button("Save as New Song") { resolveConflict(.saveAsCopy) }
-                    .keyboardShortcut(.defaultAction)
-            case .metadataChanged:
-                Button("Reload") { resolveConflict(.reload) }
-                Button("Save as Copy") { resolveConflict(.saveAsCopy) }
-                    .keyboardShortcut(.defaultAction)
-            }
-            Button("Keep Editing", role: .cancel) { resolveConflict(.cancel) }
-        }
-
-        private var isShowingConflict: Binding<Bool> {
-            Binding(
-                get: { session.library.saveConflict != nil },
-                set: { isPresented in
-                    if !isPresented, session.library.saveConflict != nil {
-                        resolveConflict(.cancel)
-                    }
-                },
-            )
-        }
-
-        private func resolveConflict(_ choice: LibraryViewModel.SaveConflictChoice) {
-            Task { await session.library.resolveSaveConflict(choice) }
         }
 
         private var unsavedTitle: String {
             let title = session.library.pendingNavigation?.songTitle ?? "Untitled"
-            return "Save changes to “\(title)”?"
+            return "Your edits to “\(title)” aren’t saved"
         }
 
         private var isPromptingUnsaved: Binding<Bool> {
@@ -288,6 +228,29 @@
         }
     }
 
+    extension MainView {
+        /// A short neutral confirmation in the bottom bar (File > Save outside the editor,
+        /// Add to Setlist), gone after 1.5 s.
+        @ViewBuilder var transientBar: some View {
+            if let message = session.library.transientMessage {
+                HStack(spacing: 10) {
+                    Image(systemName: "checkmark.circle")
+                        .foregroundStyle(Theme.color.muted)
+                        .accessibilityHidden(true)
+                    Text(message)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .font(.callout)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(.bar)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier(AccessibilityID.transientMessage)
+            }
+        }
+    }
+
     /// Menu bar commands for the main window.
     public struct SegueCommands: Commands {
         let app: AppModel
@@ -319,10 +282,24 @@
                 // Nothing in the main window may change while the stage is up.
                 .disabled(app.session == nil || app.isPerforming)
             }
+            CommandGroup(replacing: .saveItem) {
+                // Replacing the save group drops the system Close, so it is restated here.
+                Button("Close") {
+                    NSApp.keyWindow?.performClose(nil)
+                }
+                .keyboardShortcut("w")
+                // Edits save themselves (R17): Save only confirms, and never opens a panel.
+                Button("Save") {
+                    guard let session = app.session else { return }
+                    Task { await session.library.confirmSave() }
+                }
+                .keyboardShortcut("s")
+                .disabled(app.session == nil || app.isPerforming)
+            }
             CommandMenu("Library") {
                 Button("Refresh") {
                     guard let session = app.session else { return }
-                    Task { await session.library.refresh() }
+                    Task { await session.refreshFromDisk() }
                 }
                 .keyboardShortcut("r")
                 .disabled(app.session == nil || app.isPerforming)

@@ -14,12 +14,19 @@ public final class GigLogViewModel {
     public var errorMessage: String?
 
     private let shows: ShowStore
+    /// The autosave timing gig details use (the same policy as the song editor, B-13).
+    let autosave: AutosaveTiming
     /// Called after a change that alters play history (delete), so "last played" and
     /// "times played" refresh.
     private let onPlaysChanged: @MainActor () async -> Void
 
-    public init(shows: ShowStore, onPlaysChanged: @escaping @MainActor () async -> Void) {
+    public init(
+        shows: ShowStore,
+        autosave: AutosaveTiming = .standard,
+        onPlaysChanged: @escaping @MainActor () async -> Void,
+    ) {
         self.shows = shows
+        self.autosave = autosave
         self.onPlaysChanged = onPlaysChanged
     }
 

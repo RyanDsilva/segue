@@ -2,14 +2,18 @@
     import AppKit
     import SwiftUI
 
-    /// Quitting or closing the main window with unsaved edits asks first, with the same
-    /// Save / Discard / Cancel prompt as navigating away (`LibraryViewModel.navigate`).
+    /// Quitting or closing the main window saves pending edits first (autosave, WS2a 3.4);
+    /// only a save that fails asks, with the same "aren't saved" prompt as navigating away
+    /// (`LibraryViewModel.navigate`).
     @MainActor
-    final class UnsavedChangesGuard {
-        static let shared = UnsavedChangesGuard()
+    final class PendingEditsGuard {
+        static let shared = PendingEditsGuard()
 
         /// The running app (registered by the main window).
         weak var app: AppModel?
+        /// Opens (or brings back) the main window; set by the app's commands, which hold
+        /// SwiftUI's `openWindow`.
+        var reopenMainWindow: (@MainActor () -> Void)?
 
         private var library: LibraryViewModel? {
             guard let library = app?.session?.library, library.hasUnsavedEdits else { return nil }
@@ -17,8 +21,8 @@
         }
 
         /// `applicationShouldTerminate`: on stage, quitting goes through the end-show
-        /// confirmation (and quits once the run ended); otherwise prompts and answers later
-        /// when edits are unsaved.
+        /// confirmation (and quits once the run ended); otherwise quits at once when nothing
+        /// is pending, or saves first and answers later (asking only if the save fails).
         func shouldTerminate() -> NSApplication.TerminateReply {
             if let live = app?.live, !live.isEnding {
                 live.requestEnd(quitting: true)
@@ -27,17 +31,22 @@
                 return .terminateCancel
             }
             guard let library else { return .terminateNow }
-            revealMainWindow()
-            library.navigate {
-                NSApp.reply(toApplicationShouldTerminate: true)
-            }
-            onCancel: {
-                NSApp.reply(toApplicationShouldTerminate: false)
+            Task {
+                if await library.flushEditor() {
+                    NSApp.reply(toApplicationShouldTerminate: true)
+                    return
+                }
+                revealMainWindow()
+                library.navigate {
+                    NSApp.reply(toApplicationShouldTerminate: true)
+                } onCancel: {
+                    NSApp.reply(toApplicationShouldTerminate: false)
+                }
             }
             return .terminateLater
         }
 
-        /// `windowShouldClose` for the main window.
+        /// `windowShouldClose` for the main window: saves pending edits, then closes.
         func shouldClose(_ window: NSWindow) -> Bool {
             guard let library else { return true }
             library.navigate { [weak window] in
@@ -73,8 +82,21 @@
 
         public func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
             MainActor.assumeIsolated {
-                UnsavedChangesGuard.shared.shouldTerminate()
+                PendingEditsGuard.shared.shouldTerminate()
             }
+        }
+
+        /// A Dock click (or Finder open) with no window up brings the main window back
+        /// (review risk F2): never a running app with no way to its library.
+        public func applicationShouldHandleReopen(
+            _: NSApplication,
+            hasVisibleWindows: Bool,
+        ) -> Bool {
+            guard !hasVisibleWindows else { return true }
+            MainActor.assumeIsolated {
+                PendingEditsGuard.shared.reopenMainWindow?()
+            }
+            return true
         }
     }
 
@@ -101,23 +123,23 @@
                 return false
             }
             return MainActor.assumeIsolated {
-                UnsavedChangesGuard.shared.shouldClose(sender)
+                PendingEditsGuard.shared.shouldClose(sender)
             }
         }
     }
 
     /// Registers the app with the guard and wraps the hosting window's delegate. Put it in
     /// the main window's background.
-    struct UnsavedChangesWindowGuard: NSViewRepresentable {
+    struct PendingEditsWindowGuard: NSViewRepresentable {
         let app: AppModel
 
         func makeNSView(context _: Context) -> GuardView {
-            UnsavedChangesGuard.shared.app = app
+            PendingEditsGuard.shared.app = app
             return GuardView()
         }
 
         func updateNSView(_ view: GuardView, context _: Context) {
-            UnsavedChangesGuard.shared.app = app
+            PendingEditsGuard.shared.app = app
             view.install()
         }
 

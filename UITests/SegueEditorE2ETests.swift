@@ -12,7 +12,7 @@ import XCTest
 ///   takes chord input as numbers;
 /// - a custom shape lands as `{define}` in the file on disk;
 /// - "Apply transposition to source" flags the custom shape;
-/// - quitting / closing with unsaved edits prompts;
+/// - closing and quitting right after typing save without asking (autosave, R17);
 /// - typing stays under 16 ms per keystroke on a 200-line song.
 final class SegueEditorE2ETests: XCTestCase {
     var libraryRoot: URL?
@@ -44,10 +44,10 @@ final class SegueEditorE2ETests: XCTestCase {
         editInVisualMode(app)
         toggleDisplayOptions(app)
         addCustomShape(app)
-        saveEditor(app)
+        finishEditing(app)
         try assertFileContains(["{define: G ", "[Em]hai"])
         applyTranspositionToSource(app)
-        saveEditor(app)
+        finishEditing(app)
         try assertFileContains(["{key: A}", "{capo: 2}", "[D]Dil", "{define: G "])
     }
 
@@ -127,7 +127,7 @@ final class SegueEditorE2ETests: XCTestCase {
     }
 
     @MainActor
-    func testUnsavedEditsPromptOnCloseAndQuit() throws {
+    func testCloseAndQuitSaveWithoutAsking() throws {
         let app = try launch()
         element(app, EditorAXID.newSong).click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
@@ -135,31 +135,16 @@ final class SegueEditorE2ETests: XCTestCase {
         editor.click(in: app)
         editor.typeText("{title: Unsaved}\n", in: app)
 
-        // Close the window: prompt, Cancel keeps everything.
+        // Close the window right after typing: no prompt, the edit is saved (autosave, R17).
         app.typeKey("w", modifierFlags: .command, in: app)
-        let cancel = promptButton(app, "Cancel")
-        XCTAssertTrue(cancel.waitForExistence(timeout: 5), "No prompt on window close")
-        attachScreenshot(app, name: "close-prompt")
-        cancel.click(in: app)
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        XCTAssertEqual(editor.value as? String, "{title: Unsaved}\n")
-
-        // Quit: prompt, Cancel keeps the app running.
-        app.typeKey("q", modifierFlags: .command, in: app)
-        let cancelQuit = promptButton(app, "Cancel")
-        XCTAssertTrue(cancelQuit.waitForExistence(timeout: 5), "No prompt on quit")
-        attachScreenshot(app, name: "quit-prompt")
-        cancelQuit.click(in: app)
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 10), "The window did not close")
+        XCTAssertFalse(app.sheets.firstMatch.exists, "Closing must not ask")
+        try assertFileContains(["{title: Unsaved}"])
         XCTAssertEqual(app.state, .runningForeground)
 
-        // Quit again and save: the song is written, then the app quits.
+        // Quit: no prompt, the app quits.
         app.typeKey("q", modifierFlags: .command, in: app)
-        let save = promptButton(app, "Save")
-        XCTAssertTrue(save.waitForExistence(timeout: 5))
-        save.click(in: app)
-        XCTAssertTrue(app.wait(for: .notRunning, timeout: 15), "App did not quit after Save")
-        try assertFileContains(["{title: Unsaved}"])
+        XCTAssertTrue(app.wait(for: .notRunning, timeout: 15), "App did not quit")
     }
 
     @MainActor

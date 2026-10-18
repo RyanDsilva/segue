@@ -2,7 +2,8 @@ import Foundation
 import Library
 
 public extension LibraryViewModel {
-    /// A save that found the song's files changed on disk since the editor opened them.
+    /// An autosave that found the song's files changed on disk since the editor opened
+    /// them. Autosave waits until the user picks in the conflict bar.
     struct SaveConflict: Equatable {
         public let songID: SongID
         public let kind: SongConflict
@@ -10,7 +11,7 @@ public extension LibraryViewModel {
         public let songTitle: String
     }
 
-    /// How the user answered the save-conflict prompt.
+    /// How the user answered the conflict bar.
     enum SaveConflictChoice {
         /// Drop the edits and edit the file as it is on disk now.
         case reload
@@ -18,8 +19,6 @@ public extension LibraryViewModel {
         case overwrite
         /// Keep the file on disk and save the edits as a new song.
         case saveAsCopy
-        /// Keep editing.
-        case cancel
     }
 }
 

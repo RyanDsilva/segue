@@ -10,6 +10,8 @@
         let entry: GigLogEntry
         let model: GigLogViewModel
         @State private var draft = Draft()
+        /// Saves the draft after a pause (`AutosavePolicy`, shared with the song editor).
+        @State private var autosave: AutosaveScheduler?
         @State private var isConfirmingDelete = false
 
         /// The editable fields as typed (dates as `Date` for the picker).
@@ -53,17 +55,19 @@
                 .frame(maxWidth: 860, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .onAppear { draft = Draft(entry.details, fallbackDay: fallbackDay) }
-            .task(id: draft) {
-                // Save after a short pause in typing; a newer edit cancels this one.
-                do {
-                    try await Task.sleep(for: .milliseconds(600))
-                } catch {
-                    return
+            .onAppear {
+                draft = Draft(entry.details, fallbackDay: fallbackDay)
+                let save = save
+                autosave = model.autosave.scheduler {
+                    await save()
+                    return true
                 }
-                await save()
             }
-            .onDisappear { Task { await save() } }
+            .onChange(of: draft) { autosave?.noteChange() }
+            .onDisappear {
+                let autosave = autosave
+                Task { await autosave?.flush() }
+            }
             .confirmationDialog("Delete this gig?", isPresented: $isConfirmingDelete) {
                 Button("Delete Gig", role: .destructive) {
                     Task { await model.delete(entry.id) }

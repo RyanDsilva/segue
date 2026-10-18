@@ -38,7 +38,8 @@ public final class SongEditorViewModel {
         public var column: Int
     }
 
-    public let mode: Mode
+    /// `.create` until a new song's first autosave writes its file, then `.edit`.
+    public internal(set) var mode: Mode
     public internal(set) var editorMode: EditorMode
     /// The per-song view toggles (persisted to the sidecar as `DisplayPrefs`).
     public internal(set) var options: DisplayOptions
@@ -51,19 +52,35 @@ public final class SongEditorViewModel {
     public private(set) var cursor = Cursor(line: 1, column: 1)
     /// Custom shapes flagged by the last "Apply transposition to source".
     public internal(set) var flaggedDefines: [DefineFlag] = []
-    public private(set) var hasUnsavedChanges = false
+    /// Edits not on disk yet. While true the window shows its edited dot and macOS may not
+    /// terminate the app suddenly.
+    public internal(set) var hasUnsavedChanges = false {
+        didSet {
+            if hasUnsavedChanges != oldValue {
+                SuddenTermination.hold(self, hasUnsavedChanges)
+            }
+        }
+    }
+
     /// Whether the source is empty (shows the placeholder).
     public private(set) var isEmpty: Bool
     /// The song's `{capo}` (0 when none).
     public private(set) var capo = 0
     public private(set) var isSaving = false
+    /// The last save failed for a reason other than a conflict (disk full, permission).
+    public internal(set) var lastSaveFailed = false
+    /// Why autosave is paused: the song's files changed on disk under the edit. Nothing is
+    /// written until the user picks in the conflict bar.
+    public internal(set) var conflict: SongConflict?
+    /// "All changes saved" is showing (File > Save, 1.5 s).
+    public internal(set) var isConfirmingSave = false
     public var errorMessage: String?
     /// "n=40 max=3.1ms mean=1.2ms": keystroke processing times (acceptance criterion 9).
     public private(set) var keystrokeSummary = ""
     /// A palette chord "in hand" (display text): clicking a chord slot drops it there.
     public var armedChord: String?
-    /// The library file name, for the status bar.
-    public let fileName: String?
+    /// The library file name, for the status bar (follows a new song's renames).
+    public internal(set) var fileName: String?
 
     /// The source text as of the last change (mirrors the text view).
     @ObservationIgnored public private(set) var source: String
@@ -91,6 +108,9 @@ public final class SongEditorViewModel {
     @ObservationIgnored var prefsTask: Task<Void, Never>?
     @ObservationIgnored var revision = 0
     @ObservationIgnored var keystrokes = KeystrokeStats()
+    /// Saves edits on its own (WS2a 3.4); `flush()` saves now.
+    @ObservationIgnored let autosave: AutosaveScheduler
+    @ObservationIgnored var confirmationTask: Task<Void, Never>?
 
     #if os(macOS)
         @ObservationIgnored var sourceController: SourceEditorController?
@@ -116,8 +136,10 @@ public final class SongEditorViewModel {
         userShapes: UserShapeLibrary = .empty,
         persistPrefs: ((SongID, DisplayPrefs) async throws -> SongRecord)? = nil,
         persistLivePrefs: ((SongID, LivePrefs) async throws -> SongRecord)? = nil,
+        autosave timing: AutosaveTiming = .standard,
         save: @escaping (String) async throws -> SongRecord,
     ) {
+        autosave = timing.scheduler()
         self.mode = mode
         self.userShapes = userShapes
         self.source = source
@@ -144,6 +166,7 @@ public final class SongEditorViewModel {
         renderModel = initial
         diagnostics = snapshot.diagnostics
         updateDerived(from: initial)
+        autosave.save = { [weak self] in await self?.saveNow() ?? true }
     }
 
     // MARK: State
@@ -151,11 +174,6 @@ public final class SongEditorViewModel {
     /// The parsed song, for titles and prompts.
     public var document: SongDocument {
         snapshot.document
-    }
-
-    /// Whether Save is allowed: a new song needs some text; an edit needs a change.
-    public var canSave: Bool {
-        !isSaving && hasUnsavedChanges
     }
 
     // Values derived from the render, stored and only assigned when they change, so a
@@ -198,12 +216,14 @@ public final class SongEditorViewModel {
 
     // MARK: Saving
 
-    /// Saves; returns the saved record, or nil (with `errorMessage` set) on failure. One save
-    /// runs at a time (`canSave` is false meanwhile); the text stays editable, and edits
-    /// made during the save stay unsaved.
+    /// One save of the current text (the autosave step); returns the saved record, or nil
+    /// when there was nothing to save or the save failed. A conflict pauses autosave and
+    /// sets `conflict`; another failure sets `lastSaveFailed` and `errorMessage` (retried
+    /// on the next change or flush). The text stays editable; edits made during the save
+    /// stay unsaved and are saved next.
     @discardableResult
-    public func commit() async -> SongRecord? {
-        guard canSave else { return nil }
+    func commit() async -> SongRecord? {
+        guard hasUnsavedChanges, !isSaving, conflict == nil else { return nil }
         // Let a pending display-prefs write land first (it moves the sidecar revision).
         await prefsTask?.value
         isSaving = true
@@ -211,11 +231,12 @@ public final class SongEditorViewModel {
         do {
             let record = try await save(source)
             errorMessage = nil
-            // The editor stays open when the text changed while saving (typing is never
-            // blocked by a save): from now on, unsaved means unlike what was just saved.
+            lastSaveFailed = false
             originalSource = record.source
+            fileName = record.relativePath
             updateDirty()
             if case .create = mode {
+                mode = .edit(record.id)
                 let prefs = DisplayPrefs(options)
                 if prefs != record.sidecar.displayPrefs, let persistPrefs {
                     _ = try await persistPrefs(record.id, prefs)
@@ -226,20 +247,8 @@ public final class SongEditorViewModel {
             }
             return record
         } catch {
-            errorMessage = UserMessage.describe(error)
+            noteSaveFailure(error)
             return nil
-        }
-    }
-
-    func updateDirty() {
-        let dirty = switch mode {
-        case .create:
-            !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        case .edit:
-            source != originalSource
-        }
-        if dirty != hasUnsavedChanges {
-            hasUnsavedChanges = dirty
         }
     }
 

@@ -53,8 +53,8 @@ extension StageWindowSuites {
             #expect(!live.quitsAfterEnding)
 
             // A quit from the menu or Dock: cancelled, the confirmation shows instead.
-            UnsavedChangesGuard.shared.app = app
-            #expect(UnsavedChangesGuard.shared.shouldTerminate() == .terminateCancel)
+            PendingEditsGuard.shared.app = app
+            #expect(PendingEditsGuard.shared.shouldTerminate() == .terminateCancel)
             #expect(live.overlay == .endConfirm)
             #expect(live.quitsAfterEnding)
             live.cancelEnd()

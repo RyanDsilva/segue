@@ -229,6 +229,20 @@ struct SongFiles: Sendable {
         return song
     }
 
+    /// Moves `song`'s `.cho` then its sidecar (if on disk) to `slug`, and returns it with its
+    /// new path. Callers check `slug` is free.
+    func moveSong(_ song: LoadedSong, to slug: String) throws -> LoadedSong {
+        var moved = song
+        try fileSystem.moveItem(from: choURL(slug: song.slug), to: choURL(slug: slug))
+        let sidecar = sidecarURL(slug: song.slug)
+        if fileSystem.fileExists(at: sidecar) {
+            try fileSystem.moveItem(from: sidecar, to: sidecarURL(slug: slug))
+        }
+        moved.slug = slug
+        moved.record.relativePath = Self.relativePath(slug: slug)
+        return moved
+    }
+
     // MARK: Conflict checks
 
     /// The `.cho` bytes on disk now, or nil when the file is gone.

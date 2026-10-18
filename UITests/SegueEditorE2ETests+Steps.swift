@@ -169,11 +169,12 @@ extension SegueEditorE2ETests {
         attachScreenshot(app, name: "flagged-defines")
     }
 
-    func saveEditor(_ app: XCUIApplication) {
-        let save = app.buttons[EditorAXID.editorSave]
-        XCTAssertTrue(save.isEnabled)
-        save.click(in: app)
-        XCTAssertTrue(save.waitForNonExistence(timeout: 10))
+    /// Clicks Done: the last edits are saved and the editor closes on the rendered song.
+    func finishEditing(_ app: XCUIApplication) {
+        let done = app.buttons[EditorAXID.editorDone]
+        XCTAssertTrue(done.isEnabled)
+        done.click(in: app)
+        XCTAssertTrue(done.waitForNonExistence(timeout: 10))
         XCTAssertTrue(element(app, EditorAXID.editSong).waitForExistence(timeout: 10))
     }
 }

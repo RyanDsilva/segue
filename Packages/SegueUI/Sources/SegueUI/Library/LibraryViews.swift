@@ -236,48 +236,28 @@
         let setlists: SetlistsViewModel
 
         var body: some View {
-            switch model.detail {
-            case .newSong:
-                if let editor = model.editor {
-                    editorView(editor)
-                } else {
-                    noSelection
-                }
-            case let .song(id):
-                if let editor = model.editor, editor.mode == .edit(id) {
-                    editorView(editor)
-                } else if let record = model.song(id: id) {
-                    SongDetailPane(model: model, setlists: setlists, record: record)
-                        .id(id)
-                } else {
-                    noSelection
-                }
-            case .empty:
+            // One branch for the editor whatever `detail` says, so a new song's first
+            // autosave (which makes it the selection) never rebuilds the editor mid-typing.
+            if let editor = model.editor {
+                editorView(editor)
+            } else if case let .song(id) = model.detail, let record = model.song(id: id) {
+                SongDetailPane(model: model, setlists: setlists, record: record)
+                    .id(id)
+            } else {
                 noSelection
             }
         }
 
         private func editorView(_ editor: SongEditorViewModel) -> some View {
-            SongEditorView(
-                model: editor,
-                onSave: { Task { await model.saveEditor() } },
-                onCancel: model.cancelEditing,
-            )
+            SongEditorView(model: editor) {
+                Task { await model.finishEditing() }
+            }
             .id(ObjectIdentifier(editor))
             .safeAreaInset(edge: .top, spacing: 0) {
-                if model.isEditingDeletedSong {
-                    Label(
-                        "This song's file was deleted outside Segue. "
-                            + "Save to keep your edits as a new song.",
-                        systemImage: "exclamationmark.triangle.fill",
-                    )
-                    .symbolRenderingMode(.multicolor)
-                    .font(.callout)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(.bar)
-                    .accessibilityIdentifier(AccessibilityID.editorDeletedBanner)
+                if let conflict = model.saveConflict {
+                    SaveConflictBar(conflict: conflict) { choice in
+                        Task { await model.resolveSaveConflict(choice) }
+                    }
                 }
             }
         }

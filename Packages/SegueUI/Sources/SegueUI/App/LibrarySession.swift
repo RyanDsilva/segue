@@ -64,15 +64,24 @@
             setlists: SetlistsViewModel,
             stores: LibraryStores,
             lock: LibraryLock?,
+            autosave: AutosaveTiming = .standard,
         ) {
             self.root = root
             self.lock = lock
             self.library = library
             self.setlists = setlists
             self.stores = stores
-            gigLog = GigLogViewModel(shows: stores.shows) { [library] in
+            gigLog = GigLogViewModel(shows: stores.shows, autosave: autosave) { [library] in
                 await library.reload()
             }
+        }
+
+        /// Picks up changes made in other apps: rescans the songs (a clean editor follows
+        /// its file) and reloads the setlists. Runs on Library > Refresh and when the app
+        /// becomes active (not while performing).
+        public func refreshFromDisk() async {
+            await library.refresh()
+            await setlists.reload()
         }
 
         /// Shows the builder of the setlist selected in `setlists` (after create or
@@ -84,6 +93,26 @@
                 }
             } else if case let .setlist(id) = section, setlists.setlist(id) == nil {
                 section = .library
+            }
+        }
+
+        /// Loads the user's chord shape library for every diagram the library draws; on
+        /// failure diagrams fall back to curated and generated shapes, and the banner says why.
+        private static func loadShapeLibrary(
+            into library: LibraryViewModel,
+            dependencies: AppDependencies,
+        ) {
+            if let url = dependencies.shapeLibraryURL {
+                do {
+                    library.userShapes = try UserShapeLibrary.load(
+                        from: url,
+                        fileSystem: dependencies.fileSystem,
+                    )
+                } catch {
+                    // Diagrams fall back to curated and generated shapes; say why.
+                    library.errorMessage = "Segue could not read your chord shape library "
+                        + "(\(UserMessage.describe(error))), so built-in shapes are shown."
+                }
             }
         }
 
@@ -108,19 +137,11 @@
                 ids: dependencies.ids,
             )
             let issues = try await setlistStore.load(root: root)
-            let library = LibraryViewModel(store: libraryStore)
-            if let url = dependencies.shapeLibraryURL {
-                do {
-                    library.userShapes = try UserShapeLibrary.load(
-                        from: url,
-                        fileSystem: dependencies.fileSystem,
-                    )
-                } catch {
-                    // Diagrams fall back to curated and generated shapes; say why.
-                    library.errorMessage = "Segue could not read your chord shape library "
-                        + "(\(UserMessage.describe(error))), so built-in shapes are shown."
-                }
-            }
+            let autosave = AutosaveTiming(policy: AutosavePolicy(
+                idle: dependencies.autosaveDelay ?? AutosavePolicy.idle,
+            ))
+            let library = LibraryViewModel(store: libraryStore, autosave: autosave)
+            loadShapeLibrary(into: library, dependencies: dependencies)
             await library.reload()
             let setlists = SetlistsViewModel(store: setlistStore, loadIssues: issues)
             await setlists.reload()
@@ -145,6 +166,7 @@
                 setlists: setlists,
                 stores: stores,
                 lock: lock,
+                autosave: autosave,
             )
         }
     }

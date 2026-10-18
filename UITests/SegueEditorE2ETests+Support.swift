@@ -79,11 +79,6 @@ extension SegueEditorE2ETests {
     }
 
     @MainActor
-    func promptButton(_ app: XCUIApplication, _ title: String) -> XCUIElement {
-        app.sheets.buttons[title].firstMatch
-    }
-
-    @MainActor
     static func text(_ element: XCUIElement) -> String {
         element.label.isEmpty ? (element.value as? String ?? "") : element.label
     }
@@ -163,7 +158,7 @@ enum EditorAXID {
     static let songTitle = "segue.song.title"
     static let editSong = "segue.song.edit"
     static let editorText = "segue.editor.text"
-    static let editorSave = "segue.editor.save"
+    static let editorDone = "segue.editor.done"
     static let editorPreview = "segue.editor.preview"
     static let editorModeText = "segue.editor.mode.text"
     static let editorModeVisual = "segue.editor.mode.visual"

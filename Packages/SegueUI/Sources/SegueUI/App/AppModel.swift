@@ -1,4 +1,5 @@
 #if os(macOS)
+    import AppKit
     import Diagrams
     import Foundation
     import Library
@@ -108,9 +109,43 @@
         public var live: LiveSession?
 
         let dependencies: AppDependencies
+        @ObservationIgnored private var activationObservers: [any NSObjectProtocol] = []
 
         public init(dependencies: AppDependencies) {
             self.dependencies = dependencies
+        }
+
+        /// Activation picks up edits made in other apps (A19, B-16); leaving the app saves the
+        /// open editor (WS2a 3.4). Neither runs while performing.
+        private func observeActivation() {
+            guard activationObservers.isEmpty else { return }
+            let center = NotificationCenter.default
+            activationObservers = [
+                center.addObserver(
+                    forName: NSApplication.didBecomeActiveNotification,
+                    object: nil,
+                    queue: .main,
+                ) { [weak self] _ in
+                    MainActor.assumeIsolated { self?.appDidBecomeActive() }
+                },
+                center.addObserver(
+                    forName: NSApplication.didResignActiveNotification,
+                    object: nil,
+                    queue: .main,
+                ) { [weak self] _ in
+                    MainActor.assumeIsolated { self?.appDidResignActive() }
+                },
+            ]
+        }
+
+        func appDidBecomeActive() {
+            guard let session, !isPerforming, !isStartingShow else { return }
+            Task { await session.refreshFromDisk() }
+        }
+
+        func appDidResignActive() {
+            guard let session, !isPerforming else { return }
+            Task { await session.library.flushEditor() }
         }
 
         /// The open library session, if any.
@@ -125,6 +160,7 @@
         /// Opens the test override, the stored library, or shows the chooser.
         public func start() async {
             guard case .starting = state else { return }
+            observeActivation()
             if let override = dependencies.libraryOverride {
                 await open(override, remember: dependencies.rememberLibraryOverride)
                 return

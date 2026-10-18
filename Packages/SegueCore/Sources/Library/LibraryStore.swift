@@ -190,6 +190,26 @@ public actor LibraryStore {
         return try write(source: source, sidecar: sidecar, over: existing, in: library)
     }
 
+    /// Renames song `id`'s files to the slug for `title` (the next free one), moving the
+    /// `.cho` then its sidecar and updating the index path. The ID is unchanged, so setlists
+    /// are unaffected. A no-op when the song already has that slug. Only the editor session
+    /// that created the song renames it (A18); file names are otherwise stable.
+    @discardableResult
+    public func renameSong(id: SongID, toSlugFor title: String) throws -> SongRecord {
+        let library = try openLibrary()
+        let existing = try editableSong(id, in: library)
+        let others = Set(library.songs.values.filter { $0.record.id != id }.map(\.slug))
+        let slug = Slug.unique(Slug.make(from: title)) { candidate in
+            candidate != existing.slug
+                && (others.contains(candidate) || library.files.isTaken(slug: candidate))
+        }
+        guard slug != existing.slug else { return existing.record }
+        let song = try library.files.moveSong(existing, to: slug)
+        try library.index.upsert(song.indexed)
+        self.library?.songs[id] = song
+        return song.record
+    }
+
     /// Replaces the display preferences of song `id` in its sidecar (the `.cho` is not
     /// touched) and returns the updated record. Throws `LibraryError.readOnly` for
     /// read-only songs. Owner: unit C (phase 1).
