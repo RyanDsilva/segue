@@ -13,7 +13,7 @@ UI_DIR      := Packages/SegueUI
 XCODEBUILD  := scripts/xcodebuild.sh
 
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test e2e lint format \
-	verify-appstore check
+	verify-appstore check site-fonts
 
 bootstrap: ## Install pinned tools, fetch dependencies, generate the workspace
 	mise install
@@ -23,11 +23,14 @@ bootstrap: ## Install pinned tools, fetch dependencies, generate the workspace
 generate: ## Regenerate the workspace after editing manifests
 	$(MISE) tuist generate --no-open
 
-tokens: ## Regenerate colour tokens (asset catalog + Swift) from design/tokens.json
+tokens: ## Regenerate colour tokens (asset catalog, Swift, website tokens.css) from design/tokens.json
 	scripts/gen-tokens.swift
 
 tokens-check: ## Fail if the generated colour tokens are stale
 	scripts/gen-tokens.swift --check
+
+site-fonts: ## Rebuild the subset WOFF2 web fonts from the bundled TTFs
+	scripts/gen-webfonts.sh
 
 icon: ## Regenerate the app icon layers, .icon bundle and previews from design/icon geometry
 	scripts/gen-icon.swift

@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "fonttools": "4.67.0",
+  "unicodes": "U+0000-00FF,U+0131,U+0152-0153,U+02C6,U+02DA,U+02DC,U+2013-2014,U+2018-201E,U+2020-2022,U+2026,U+2030,U+2039-203A,U+20AC,U+2122,U+2190-2193,U+2212",
+  "fonts": [
+    { "weight": 400, "source": "Packages/SegueUI/Sources/SegueUI/Theme/Fonts/SchibstedGrotesk-Regular.ttf", "sourceSha256": "e2cc0926fd159816bd934df5875000077e5ec8b1f9cd18154fe4d3e482b03b42", "output": "website/assets/fonts/schibsted-grotesk-400.woff2", "outputSha256": "6e9548e42dcc4dc802362a81aa33e36fbc01201b5730d8e17a05f4d1b5e3bf4f" },
+    { "weight": 600, "source": "Packages/SegueUI/Sources/SegueUI/Theme/Fonts/SchibstedGrotesk-SemiBold.ttf", "sourceSha256": "b9d93d5f737a3afdc9ec47ce97968ca41450413f741900927c382b8707798854", "output": "website/assets/fonts/schibsted-grotesk-600.woff2", "outputSha256": "cf274ba872b26aa06a97549143a7180cc0c9e25bdadfc36852f0adaf246f98b1" },
+    { "weight": 700, "source": "Packages/SegueUI/Sources/SegueUI/Theme/Fonts/SchibstedGrotesk-Bold.ttf", "sourceSha256": "d1d1ed9301f19a994161b0b763db11cce356204477e81bf3434d2f5dd85905e0", "output": "website/assets/fonts/schibsted-grotesk-700.woff2", "outputSha256": "147c9c2d25368852a6b2b06bb8d8d7fd67fb84b698789f1dea392a78dd0599ec" },
+    { "weight": 800, "source": "Packages/SegueUI/Sources/SegueUI/Theme/Fonts/SchibstedGrotesk-ExtraBold.ttf", "sourceSha256": "2a00896fe6bf6507323f4028e157858c7ba3cb82b9ba009bbc058d5b10230b96", "output": "website/assets/fonts/schibsted-grotesk-800.woff2", "outputSha256": "07e041dc5a05fac82ae5a586905c2e9212fc1ad394e5a064391541ada4339b8c" }
+  ]
+}
