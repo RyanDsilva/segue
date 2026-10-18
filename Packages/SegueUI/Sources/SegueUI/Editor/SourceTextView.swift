@@ -13,8 +13,11 @@
 
         /// UTF-16 offsets where each source line starts (line 1 at index 0).
         var lineStarts = [0]
-        /// Called after every key event with its processing time in seconds.
-        var onKeystrokeTimed: ((TimeInterval, Bool) -> Void)?
+        #if DEBUG
+            /// Called after every key event with its processing time in seconds (Debug only:
+            /// the E2E typing-latency instrumentation).
+            var onKeystrokeTimed: ((TimeInterval, Bool) -> Void)?
+        #endif
         /// Lets the controller see Esc / arrows / Return before the text view does.
         weak var keyHandler: (any SourceKeyHandling)?
 
@@ -26,18 +29,22 @@
         }
 
         override func keyDown(with event: NSEvent) {
-            let start = CACurrentMediaTime()
+            #if DEBUG
+                let start = CACurrentMediaTime()
+            #endif
             super.keyDown(with: event)
             // Lay out the viewport now (it would happen before the next frame anyway), so
             // the measurement covers parse + highlight + layout of the edit.
             textLayoutManager?.textViewportLayoutController.layoutViewport()
-            let elapsed = CACurrentMediaTime() - start
-            if elapsed > 0.008 {
-                EditorPerformance.log.notice(
-                    "slow key \(event.charactersIgnoringModifiers ?? "?", privacy: .public)",
-                )
-            }
-            onKeystrokeTimed?(elapsed, event.modifierFlags.contains(.command))
+            // Timing is Debug only, and the typed character is never logged.
+            #if DEBUG
+                let elapsed = CACurrentMediaTime() - start
+                if elapsed > 0.008 {
+                    EditorPerformance.log
+                        .notice("slow key \(elapsed * 1000, format: .fixed(precision: 1)) ms")
+                }
+                onKeystrokeTimed?(elapsed, event.modifierFlags.contains(.command))
+            #endif
         }
 
         override func doCommand(by selector: Selector) {

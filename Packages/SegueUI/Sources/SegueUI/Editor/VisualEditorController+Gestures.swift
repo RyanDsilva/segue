@@ -126,9 +126,11 @@
             redrawOverlay()
         }
 
-        func canvasKeystrokeTimed(_ seconds: TimeInterval, isShortcut: Bool) {
-            model.recordKeystroke(seconds, isShortcut: isShortcut)
-        }
+        #if DEBUG
+            func canvasKeystrokeTimed(_ seconds: TimeInterval, isShortcut: Bool) {
+                model.recordKeystroke(seconds, isShortcut: isShortcut)
+            }
+        #endif
 
         // MARK: Keys on a selected pill
 

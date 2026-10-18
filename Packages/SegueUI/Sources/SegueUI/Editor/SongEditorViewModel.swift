@@ -95,6 +95,8 @@ public final class SongEditorViewModel {
     #if os(macOS)
         @ObservationIgnored var sourceController: SourceEditorController?
         @ObservationIgnored var visualController: VisualEditorController?
+    #endif
+    #if os(macOS) && DEBUG
         /// Main run loop busy time from the first keystroke on (the full cost of typing).
         @ObservationIgnored let hitches = MainThreadHitchMonitor()
     #endif
@@ -347,30 +349,33 @@ public final class SongEditorViewModel {
         #endif
     }
 
-    /// Records one key event's processing time. Shortcuts (⌘V, ⌘Z, ⌘↑) are not typing:
-    /// they restart the measurement, so the stats describe the typing that follows.
-    func recordKeystroke(_ seconds: TimeInterval, isShortcut: Bool = false) {
-        #if os(macOS)
-            hitches.start()
-            if isShortcut {
-                keystrokes = KeystrokeStats()
-                hitches.reset()
-                return
+    #if DEBUG
+        /// Records one key event's processing time (Debug only; the E2E suite reads the
+        /// summary). Shortcuts (⌘V, ⌘Z, ⌘↑) are not typing: they restart the measurement,
+        /// so the stats describe the typing that follows.
+        func recordKeystroke(_ seconds: TimeInterval, isShortcut: Bool = false) {
+            #if os(macOS)
+                hitches.start()
+                if isShortcut {
+                    keystrokes = KeystrokeStats()
+                    hitches.reset()
+                    return
+                }
+                keystrokes.busyMaximum = hitches.maximum
+            #endif
+            if seconds > 0.008 {
+                EditorPerformance.log
+                    .notice("slow keystroke \(seconds * 1000, format: .fixed(precision: 1)) ms")
             }
-            keystrokes.busyMaximum = hitches.maximum
-        #endif
-        if seconds > 0.008 {
-            EditorPerformance.log
-                .notice("slow keystroke \(seconds * 1000, format: .fixed(precision: 1)) ms")
+            keystrokes.record(seconds)
         }
-        keystrokes.record(seconds)
-    }
+    #endif
 
     /// Clears the keystroke statistics (E2E measures a fresh run).
     func resetKeystrokeStats() {
         keystrokes = KeystrokeStats()
         keystrokeSummary = ""
-        #if os(macOS)
+        #if os(macOS) && DEBUG
             hitches.reset()
         #endif
     }

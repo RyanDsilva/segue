@@ -12,7 +12,9 @@
         func sourceSelectionDidChange(_ range: NSRange)
         /// `[` completions for `prefix` (what follows the `[`), most relevant first.
         func chordCompletions(prefix: String) -> [ChordCompletion]
-        func keystrokeTimed(_ seconds: TimeInterval, isShortcut: Bool)
+        #if DEBUG
+            func keystrokeTimed(_ seconds: TimeInterval, isShortcut: Bool)
+        #endif
     }
 
     /// Owns the ChordPro source text view: the single undoable store of the song (phase 1
@@ -80,15 +82,15 @@
             ]
             textView.font = EditorStyle.sourceFont
             textView.typingAttributes = Self.baseAttributes
-            textView.setAccessibilityIdentifier(AccessibilityID.editorText)
-            textView.setAccessibilityLabel("ChordPro source")
-            textView.setAccessibilityHelp(EditorTextInput.report(textView))
+            configureAccessibility()
             textView.delegate = self
             textView.textStorage?.delegate = self
             textView.keyHandler = self
-            textView.onKeystrokeTimed = { [weak self] seconds, isShortcut in
-                self?.host?.keystrokeTimed(seconds, isShortcut: isShortcut)
-            }
+            #if DEBUG
+                textView.onKeystrokeTimed = { [weak self] seconds, isShortcut in
+                    self?.host?.keystrokeTimed(seconds, isShortcut: isShortcut)
+                }
+            #endif
             scrollView.documentView = textView
 
             textView.string = text
@@ -113,6 +115,14 @@
             Task { @MainActor [completion] in
                 completion.prepare()
             }
+        }
+
+        private func configureAccessibility() {
+            textView.setAccessibilityIdentifier(AccessibilityID.editorText)
+            textView.setAccessibilityLabel("ChordPro source")
+            // Exposed explicitly: without any accessibility help set, AppKit no longer
+            // surfaces the text view as its own element to XCUITest.
+            textView.setAccessibilityElement(true)
         }
 
         /// Colours the whole text (on load and when the snapshot was replaced wholesale).

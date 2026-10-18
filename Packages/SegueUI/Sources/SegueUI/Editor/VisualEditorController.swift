@@ -62,7 +62,9 @@
             ]
             textView.setAccessibilityIdentifier(AccessibilityID.editorVisual)
             textView.setAccessibilityLabel("Lyrics")
-            textView.setAccessibilityHelp(EditorTextInput.report(textView))
+            // Exposed explicitly: without any accessibility help set, AppKit no longer
+            // surfaces the text view as its own element to XCUITest.
+            textView.setAccessibilityElement(true)
             textView.delegate = self
             textView.gestures = self
             scrollView.documentView = textView

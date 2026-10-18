@@ -135,8 +135,10 @@ extension SongEditorViewModel {
             ).map { ChordCompletion(title: $0, insertion: $0) }
         }
 
-        func keystrokeTimed(_ seconds: TimeInterval, isShortcut: Bool) {
-            recordKeystroke(seconds, isShortcut: isShortcut)
-        }
+        #if DEBUG
+            func keystrokeTimed(_ seconds: TimeInterval, isShortcut: Bool) {
+                recordKeystroke(seconds, isShortcut: isShortcut)
+            }
+        #endif
     }
 #endif

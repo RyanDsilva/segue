@@ -4,6 +4,9 @@ import os
     import QuartzCore
 #endif
 
+// KeystrokeStats is a plain value type and stays in every build (the editor keeps an empty
+// one in Release). The hitch monitor and the perf log are Debug only.
+
 /// Keystroke processing times.
 struct KeystrokeStats: Sendable {
     private(set) var samples: [TimeInterval] = []
@@ -38,7 +41,7 @@ struct KeystrokeStats: Sendable {
     }
 }
 
-#if os(macOS)
+#if os(macOS) && DEBUG
     /// Measures how long the main run loop stays busy per turn (everything a keystroke
     /// costs: our handlers, SwiftUI updates, layout and drawing), while the editor is open.
     @MainActor
@@ -94,7 +97,10 @@ struct KeystrokeStats: Sendable {
     }
 #endif
 
-/// Editor performance diagnostics (`log stream --predicate 'category == "editor-perf"'`).
-enum EditorPerformance {
-    static let log = Logger(subsystem: "dev.ryandsilva.segue", category: "editor-perf")
-}
+#if DEBUG
+    /// Editor performance diagnostics (`log stream --predicate 'category == "editor-perf"'`),
+    /// Debug builds only: Release never logs editor timing.
+    enum EditorPerformance {
+        static let log = Logger(subsystem: "dev.ryandsilva.segue", category: "editor-perf")
+    }
+#endif

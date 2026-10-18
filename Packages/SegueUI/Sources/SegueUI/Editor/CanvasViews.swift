@@ -13,7 +13,9 @@
         func canvasMouseExited()
         func canvasKeyDown(_ event: NSEvent) -> Bool
         func canvasDidResize()
-        func canvasKeystrokeTimed(_ seconds: TimeInterval, isShortcut: Bool)
+        #if DEBUG
+            func canvasKeystrokeTimed(_ seconds: TimeInterval, isShortcut: Bool)
+        #endif
     }
 
     /// The visual canvas text (TextKit 2): section labels and lyric lines, with every
@@ -55,15 +57,20 @@
         }
 
         override func keyDown(with event: NSEvent) {
-            let start = CACurrentMediaTime()
+            #if DEBUG
+                let start = CACurrentMediaTime()
+            #endif
             if gestures?.canvasKeyDown(event) != true {
                 super.keyDown(with: event)
             }
             textLayoutManager?.textViewportLayoutController.layoutViewport()
-            gestures?.canvasKeystrokeTimed(
-                CACurrentMediaTime() - start,
-                isShortcut: event.modifierFlags.contains(.command),
-            )
+            // Timing is Debug only (the E2E typing-latency instrumentation).
+            #if DEBUG
+                gestures?.canvasKeystrokeTimed(
+                    CACurrentMediaTime() - start,
+                    isShortcut: event.modifierFlags.contains(.command),
+                )
+            #endif
         }
 
         override func updateTrackingAreas() {
