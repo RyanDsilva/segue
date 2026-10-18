@@ -20,10 +20,15 @@ enum E2E {
     /// to close) is gone by then: it reports "Lost connection to the application". That is
     /// the expected outcome here, so `record` drops it (`isExpectedExit`); the caller
     /// asserts the exit itself with `reaches(.notRunning)`.
-    static func quitting(_ quit: () -> Void) {
+    ///
+    /// The flag stays set until the app is gone (up to `timeout`): reading `app.state` of a
+    /// quitting app takes a snapshot too, and that one fails with the same "Lost connection"
+    /// when it lands after the keystroke call has returned.
+    static func quitting(_ app: XCUIApplication, timeout: TimeInterval = 20, _ quit: () -> Void) {
         isQuitting = true
         defer { isQuitting = false }
         quit()
+        _ = waitUntil(timeout: timeout) { app.state == .notRunning }
     }
 
     /// Whether `issue` is the post-event snapshot failing because the app quit on purpose.

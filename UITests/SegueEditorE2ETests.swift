@@ -152,7 +152,7 @@ final class SegueEditorE2ETests: XCTestCase {
         XCTAssertEqual(app.state, .runningForeground)
 
         // Quit: no prompt, the app quits.
-        E2E.quitting { app.typeKey("q", modifierFlags: .command, in: app) }
+        E2E.quitting(app) { app.typeKey("q", modifierFlags: .command, in: app) }
         XCTAssertTrue(app.reaches(.notRunning, timeout: 15), "App did not quit")
     }
 
