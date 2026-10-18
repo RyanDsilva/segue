@@ -39,3 +39,12 @@ design/icon/previews/
 
 # Python bytecode (research spikes)
 __pycache__/
+
+# Phase 3 spike harness outputs: downloaded models, xcodebuild DerivedData,
+# SwiftPM build dir and compiled binaries (the sources stay tracked)
+research/phase3-spikes/models/
+research/phase3-spikes/dd/
+research/phase3-spikes/Spike/.build/
+research/phase3-spikes/avail
+research/phase3-spikes/bench
+research/phase3-spikes/fgapp/*.app/
