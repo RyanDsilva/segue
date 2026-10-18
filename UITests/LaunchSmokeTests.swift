@@ -22,9 +22,10 @@ final class LaunchSmokeTests: XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
 
-        // Segue > Acknowledgements credits the bundled font and dependencies.
-        app.menuBars.menuBarItems["Segue"].click(in: app)
-        app.menuItems["Acknowledgements"].click(in: app)
+        // Help > Acknowledgements (moved from the app menu, A34) credits the bundled font
+        // and dependencies.
+        app.menuBars.menuBarItems["Help"].click(in: app)
+        app.menuBars.menuBarItems["Help"].menuItems["Acknowledgements"].click(in: app)
         let acknowledgements = app.descendants(matching: .any)
             .matching(identifier: "segue.acknowledgements").firstMatch
         XCTAssertTrue(acknowledgements.waitForExistence(timeout: 5))
