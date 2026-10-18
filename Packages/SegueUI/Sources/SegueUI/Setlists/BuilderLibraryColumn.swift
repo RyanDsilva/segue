@@ -145,9 +145,11 @@
                     .foregroundStyle(Theme.color.muted.opacity(0.45))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
+                    // A song already in the set reads quieter through its colour and the
+                    // "In set" label, never by fading the row (text keeps 4.5:1, WS2b 4.9).
                     Text(SongSummary.title(record))
                         .font(SchibstedGrotesk.semiBold.font(size: 15))
-                        .foregroundStyle(Theme.color.ink)
+                        .foregroundStyle(inSetCount > 0 ? Theme.color.muted : Theme.color.ink)
                         .lineLimit(1)
                     if !meta.isEmpty {
                         Text(meta)
@@ -181,7 +183,6 @@
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
-            .opacity(inSetCount > 0 ? 0.55 : 1)
             .background(isHovered ? Theme.color.ground.opacity(0.7) : Color.clear)
             .overlay(alignment: .bottom) { Rule() }
             .contentShape(Rectangle())

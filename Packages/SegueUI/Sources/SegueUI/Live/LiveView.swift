@@ -112,12 +112,15 @@
                         .mask { Self.edgeMask(moreBelow: fraction < 0.999 && plan.needsScroll) }
                         .accessibilityElement(children: .contain)
                         .overlay(alignment: .topLeading) {
-                            // The layout state as one element (VoiceOver, the E2E suite).
-                            Color.clear
-                                .frame(width: 1, height: 1)
-                                .accessibilityElement()
-                                .accessibilityLabel(Self.bodyValue(plan, fraction: fraction))
-                                .accessibilityIdentifier(AccessibilityID.liveBody)
+                            // The layout state for the E2E suite only: VoiceOver users never
+                            // hear this machine report (WS2b 4.9.2).
+                            if UITesting.isActive {
+                                Color.clear
+                                    .frame(width: 1, height: 1)
+                                    .accessibilityElement()
+                                    .accessibilityLabel(Self.bodyValue(plan, fraction: fraction))
+                                    .accessibilityIdentifier(AccessibilityID.liveBody)
+                            }
                         }
                 }
                 .id(session.state.current?.item.itemId)

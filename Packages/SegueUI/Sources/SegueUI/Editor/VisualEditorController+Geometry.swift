@@ -326,6 +326,8 @@
                         original: pill.chord.original,
                     )
                     element.setAccessibilitySelected(selection == selectedChord)
+                    // Everything a drag does, without a drag (VoiceOver, Voice Control).
+                    element.setAccessibilityCustomActions(chordActions(for: selection))
                     elements.append(element)
                 }
                 return true

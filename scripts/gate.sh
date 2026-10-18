@@ -37,7 +37,7 @@ changed=$(
 verify_globs=(
     'Project.swift' 'Tuist/*' 'App/*.entitlements' 'App/Sources/LaunchOptions.swift'
     'Packages/*/Package.swift' 'Packages/SeguePersonalModules/*' 'scripts/verify-*.sh'
-    'scripts/lib/verify-common.sh'
+    'scripts/lib/verify-common.sh' 'Extensions/*'
 )
 
 all=false

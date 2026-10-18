@@ -186,6 +186,59 @@
             }
         }
 
+        // MARK: Accessibility actions on a pill
+
+        /// "Move left one syllable", "Move right one syllable", "Edit chord", "Delete chord":
+        /// each slot above a word is a syllable in the editor's words, so a move goes to the
+        /// start of the previous or next word slot.
+        func chordActions(for selection: ChordSelection) -> [NSAccessibilityCustomAction] {
+            [
+                NSAccessibilityCustomAction(name: "Move left one syllable") { [weak self] in
+                    self?.moveChord(selection, bySlots: -1) ?? false
+                },
+                NSAccessibilityCustomAction(name: "Move right one syllable") { [weak self] in
+                    self?.moveChord(selection, bySlots: 1) ?? false
+                },
+                NSAccessibilityCustomAction(name: "Edit chord") { [weak self] in
+                    guard let self, let pill = layout(of: selection) else { return false }
+                    selectedChord = selection
+                    showEditPopover(pill)
+                    return true
+                },
+                NSAccessibilityCustomAction(name: "Delete chord") { [weak self] in
+                    guard let self, let target = chord(for: selection) else { return false }
+                    selectedChord = nil
+                    let deleted = model.perform(.deleteChord(target.chord.ref))
+                    redrawOverlay()
+                    return deleted
+                },
+            ]
+        }
+
+        /// Moves the chord to the start of the word slot `delta` slots away.
+        func moveChord(_ selection: ChordSelection, bySlots delta: Int) -> Bool {
+            guard let target = chord(for: selection) else { return false }
+            let words = LyricOffsets.words(in: target.line)
+            let current = words.lastIndex { $0.offsets.lowerBound <= target.chord.offset } ?? 0
+            let next = current + delta
+            guard words.indices.contains(next) else {
+                NSSound.beep()
+                return false
+            }
+            let offset = words[next].offsets.lowerBound
+            let position = LyricPosition(line: target.line.path, offset: offset)
+            selectedChord = selection
+            selectedChord?.offset = offset
+            let moved = model.perform(.moveChord(target.chord.ref, to: position))
+            if moved {
+                SegueTips.chordMoved()
+            } else {
+                selectedChord = selection
+            }
+            redrawOverlay()
+            return moved
+        }
+
         // MARK: Adding and editing chords
 
         /// Inserts a chord typed in the display key at a slot.

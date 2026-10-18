@@ -37,6 +37,7 @@ scripts/stamp-resource-bundle.sh	ALL
 scripts/gen-tokens.swift	SegueEditorE2ETests SegueLiveE2ETests
 scripts/gen-icon.swift	NONE
 design/icon/*	NONE
+design/directions/*	NONE
 design/tokens.json	SegueEditorE2ETests SegueLiveE2ETests
 
 # The build and the app shell.
@@ -47,6 +48,8 @@ Config/Version.xcconfig	ALL
 App/*	ALL
 Packages/*/Package.swift	ALL
 Packages/*/Package.resolved	ALL
+# The Quick Look extension: no E2E; verify-appstore checks the App Store product.
+Extensions/*	NONE
 
 # Package tests run in every gate; services and personal modules have no E2E of their own.
 Packages/*/Tests/*	NONE
@@ -80,7 +83,8 @@ Packages/SegueUI/Sources/SegueUI/Library/*	SegueCoreUXE2ETests SegueSetlistLibra
 Packages/SegueUI/Sources/SegueUI/Setlists/*	SegueSetlistBuilderE2ETests SegueCoreUXE2ETests
 Packages/SegueUI/Sources/SegueUI/GigLog/*	SegueSetlistGigLogE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/*	SegueLiveE2ETests SegueGigModeE2ETests
-Packages/SegueUI/Sources/SegueUI/Settings/*	SegueLiveE2ETests SegueGigModeE2ETests SegueServicesE2ETests
+Packages/SegueUI/Sources/SegueUI/Settings/*	SegueLiveE2ETests SegueGigModeE2ETests SegueServicesE2ETests SegueSettingsE2ETests
+Packages/SegueUI/Sources/SegueUI/Onboarding/*	SegueWelcomeE2ETests SegueWhatsNewE2ETests SegueSettingsE2ETests SegueServicesE2ETests
 Packages/SegueUI/Sources/SegueUI/Services/*	SegueServicesE2ETests SegueReportProblemE2ETests
 
 # The UI tests themselves: a class's own files run that class.
@@ -90,7 +94,7 @@ UITests/LaunchSmokeTests.swift	LaunchSmokeTests
 UITests/SegueE2ETests.swift	SegueE2ETests
 UITests/SegueCoreUXE2ETests*.swift	SegueCoreUXE2ETests
 UITests/SegueEditorE2ETests*.swift	SegueEditorE2ETests
-UITests/SegueLiveE2ETests+Support.swift	SegueLiveE2ETests SegueGigModeE2ETests
+UITests/SegueLiveE2ETests+Support.swift	SegueLiveE2ETests SegueGigModeE2ETests SegueReviewPromptE2ETests SegueTipsE2ETests AccessibilityAuditE2ETests
 UITests/SegueLiveE2ETests*.swift	SegueLiveE2ETests
 UITests/SegueGigModeE2ETests.swift	SegueGigModeE2ETests
 UITests/SegueSetlistE2ESupport.swift	SegueSetlistBuilderE2ETests SegueSetlistLibraryE2ETests SegueSetlistGigLogE2ETests
@@ -100,3 +104,11 @@ UITests/SegueSetlistGigLogE2ETests.swift	SegueSetlistGigLogE2ETests
 UITests/SegueServicesE2ETests+Support.swift	SegueServicesE2ETests SegueReportProblemE2ETests
 UITests/SegueServicesE2ETests.swift	SegueServicesE2ETests
 UITests/SegueReportProblemE2ETests.swift	SegueReportProblemE2ETests
+# WS2b. SegueWelcomeE2ETests.swift also holds the shared WelcomeLibrary fixture.
+UITests/SegueWelcomeE2ETests.swift	SegueWelcomeE2ETests SegueSettingsE2ETests SegueFinderE2ETests SegueWhatsNewE2ETests
+UITests/SegueSettingsE2ETests.swift	SegueSettingsE2ETests
+UITests/SegueWhatsNewE2ETests.swift	SegueWhatsNewE2ETests
+UITests/SegueReviewPromptE2ETests.swift	SegueReviewPromptE2ETests
+UITests/SegueTipsE2ETests.swift	SegueTipsE2ETests
+UITests/SegueFinderE2ETests.swift	SegueFinderE2ETests
+UITests/AccessibilityAuditE2ETests.swift	AccessibilityAuditE2ETests

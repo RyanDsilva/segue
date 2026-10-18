@@ -168,6 +168,8 @@
                     )
                 }
                 .help("Rename, duplicate, show in Finder or move this setlist to the Trash")
+                // Icon-only in the toolbar: name it for VoiceOver and Voice Control.
+                .accessibilityLabel("Setlist")
                 .accessibilityIdentifier(AccessibilityID.setlistMenu)
             }
         }

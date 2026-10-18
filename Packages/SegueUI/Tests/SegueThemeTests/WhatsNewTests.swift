@@ -28,7 +28,7 @@ struct WhatsNewTests {
             #expect((1 ... 8).contains(release.highlights.count))
             for item in release.highlights {
                 #expect((1 ... 120).contains(item.text.count), "\(item.text)")
-                #expect(!item.text.contains("—"), "no em dashes")
+                #expect(!item.text.contains("\u{2014}"), "no em dashes")
                 if let help = item.help {
                     #expect(help.hasPrefix("/"), "help is site-relative: \(help)")
                 }

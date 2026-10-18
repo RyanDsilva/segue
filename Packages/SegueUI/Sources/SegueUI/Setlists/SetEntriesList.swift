@@ -42,6 +42,8 @@
                     Task { await model.updateEntry(updated, in: setlist.id) }
                 },
                 onRemove: { remove(IndexSet(integer: offset)) },
+                onMove: isReadOnly ? nil : { delta in move(offset, by: delta) },
+                isLast: offset == setlist.entries.count - 1,
             )
             .overlay(alignment: .top) {
                 if dropTarget == entry.itemId {
@@ -119,6 +121,20 @@
                 .accessibilityIdentifier(AccessibilityID.setlistDropZone)
         }
 
+        /// "Move up" / "Move down" (accessibility actions): one place, no drag needed.
+        private func move(_ offset: Int, by delta: Int) {
+            let target = offset + delta
+            guard setlist.entries.indices.contains(target) else { return }
+            let destination = delta < 0 ? target : target + 1
+            Task {
+                await model.move(
+                    in: setlist.id,
+                    fromOffsets: IndexSet(integer: offset),
+                    toOffset: destination,
+                )
+            }
+        }
+
         private func remove(_ offsets: IndexSet) {
             guard !offsets.isEmpty, !isReadOnly else { return }
             Task { await model.remove(in: setlist.id, atOffsets: offsets) }
@@ -134,6 +150,9 @@
         let isReadOnly: Bool
         let onChange: (SetlistEntry) -> Void
         let onRemove: () -> Void
+        /// Moves the slot one place (-1 up, +1 down); nil when the setlist is read-only.
+        var onMove: ((Int) -> Void)?
+        var isLast = false
         @State private var isHovered = false
         @State private var isEditing = false
 
@@ -181,6 +200,16 @@
             .accessibilityLabel("\(position). \(title)")
             .accessibilityIdentifier(AccessibilityID.setlistEntry)
             .accessibilityAction(named: "Edit") { isEditing = true }
+            .accessibilityActions {
+                if let onMove {
+                    if position > 1 {
+                        Button("Move up") { onMove(-1) }
+                    }
+                    if !isLast {
+                        Button("Move down") { onMove(1) }
+                    }
+                }
+            }
         }
 
         private var title: String {

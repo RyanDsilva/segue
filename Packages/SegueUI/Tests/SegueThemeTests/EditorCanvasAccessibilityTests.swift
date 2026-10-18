@@ -7,7 +7,7 @@ import Testing
 @MainActor
 struct EditorCanvasAccessibilityTests {
     @Test
-    func `pills and chord slots are accessibility elements`() {
+    func `pills and chord slots are accessibility elements`() throws {
         #expect(Theme.registerFonts())
         let model = SongEditorViewModel(
             mode: .create,
@@ -34,6 +34,30 @@ struct EditorCanvasAccessibilityTests {
         #expect(pills.compactMap { $0.accessibilityLabel() } == ["C", "G"])
         #expect(lanes.compactMap { $0.accessibilityLabel() } == ["Dil", "ki", "baat"])
         #expect(pills.allSatisfy { $0.accessibilityFrame().width > 20 })
+        // Everything a drag does, without one (WS2b 4.9.2).
+        for pill in pills {
+            #expect(pill.accessibilityCustomActions()?.map(\.name) == [
+                "Move left one syllable", "Move right one syllable", "Edit chord", "Delete chord",
+            ])
+        }
+
+        // Move right one syllable: C goes from "Dil" to "ki".
+        let moveRight = try #require(pills.first?.accessibilityCustomActions()?[1])
+        #expect(moveRight.handler?() == true)
+        #expect(model.source.contains("Dil [C]ki [G]baat"), "\(model.source)")
+    }
+
+    @Test
+    func `a sheet line reads its chords then its lyric`() {
+        let tokens = [
+            LyricToken(id: 0, chord: "G", text: "Van door slides and the "),
+            LyricToken(id: 1, chord: "D", text: "street lamps hum,"),
+        ]
+        #expect(LyricLineView.spokenText(tokens)
+            == "G, D: Van door slides and the street lamps hum,")
+        #expect(LyricLineView.spokenText([LyricToken(id: 0, chord: nil, text: "No chords ")])
+            == "No chords")
+        #expect(LyricLineView.spokenText([LyricToken(id: 0, chord: "Am", text: "")]) == "Am")
     }
 }
 

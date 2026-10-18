@@ -71,10 +71,15 @@ extension SegueEditorE2ETests {
         return lane
     }
 
+    /// The preview's chords in order, read from its lines ("G, D: lyric", WS2b 4.9.2).
     @MainActor
     func previewChords(_ app: XCUIApplication) -> [String] {
-        E2E.snapshots(element(app, EditorAXID.editorPreview), identifier: EditorAXID.sheetChord)
-            .compactMap { $0.value as? String }
+        E2E.snapshots(element(app, EditorAXID.editorPreview), identifier: EditorAXID.sheetLine)
+            .flatMap { line -> [String] in
+                let text = line.label.isEmpty ? (line.value as? String ?? "") : line.label
+                guard let colon = text.range(of: ": ") else { return [] }
+                return text[..<colon.lowerBound].components(separatedBy: ", ")
+            }
     }
 
     @MainActor
@@ -177,7 +182,7 @@ enum EditorAXID {
     static let editorCursor = "segue.editor.status.cursor"
     static let editorKeystrokeStats = "segue.editor.status.keystrokes"
     static let editorInputSettings = "segue.editor.status.inputSettings"
-    static let sheetChord = "segue.sheet.chord"
+    static let sheetLine = "segue.sheet.line"
     static let guitarDiagram = "segue.diagrams.guitar"
     static let shapeEditorSave = "segue.diagrams.shapeEditor.save"
 }

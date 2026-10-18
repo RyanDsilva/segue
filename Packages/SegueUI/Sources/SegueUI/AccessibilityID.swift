@@ -113,8 +113,10 @@ public enum AccessibilityID {
 
     // MARK: Song sheet (rendered song, preview and stage)
 
+    /// A chord on the stage (the stage body places chords and lyric runs separately).
     public static let sheetChord = "segue.sheet.chord"
-    public static let sheetLyric = "segue.sheet.lyric"
+    /// One lyric line of a rendered song, labelled "<chords>: <lyric>".
+    public static let sheetLine = "segue.sheet.line"
     public static let sheetSectionLabel = "segue.sheet.sectionLabel"
 
     // MARK: Chord diagrams (phase 1, unit B)

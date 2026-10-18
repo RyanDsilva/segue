@@ -186,7 +186,7 @@ private struct ItemView: View {
 /// One lyric line. Each chord sits above its character; the line wraps between words
 /// when it is wider than the column. Only a row that carries chords has a chord band: a
 /// wrapped row without chords sits right under the row above, with no empty band between.
-private struct LyricLineView: View {
+struct LyricLineView: View {
     let line: RenderLine
     let style: SongSheetStyle
 
@@ -200,7 +200,22 @@ private struct LyricLineView: View {
                     TokenView(token: token, showsChordRow: token.chord != nil, style: style)
                 }
             }
+            // One element per line, read chords first (WS2b 4.9.2): "G, D: Van door slides
+            // and the street lamps hum".
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Self.spokenText(tokens))
+            .accessibilityAddTraits(.isStaticText)
+            .accessibilityIdentifier(AccessibilityID.sheetLine)
         }
+    }
+
+    /// "<chords>: <lyric>", or the lyric alone when the line has no chords.
+    static func spokenText(_ tokens: [LyricToken]) -> String {
+        let lyric = tokens.map(\.text).joined().trimmingCharacters(in: .whitespaces)
+        let chords = tokens.compactMap(\.chord)
+        guard !chords.isEmpty else { return lyric }
+        let spokenChords = chords.joined(separator: ", ")
+        return lyric.isEmpty ? spokenChords : "\(spokenChords): \(lyric)"
     }
 }
 
@@ -216,13 +231,10 @@ private struct TokenView: View {
                     .font(Theme.font.liveChord(size: style.lyricSize))
                     .foregroundStyle(token.isUnknown ? Theme.color.muted : Theme.color.cueText)
                     .padding(.trailing, token.chord == nil ? 0 : style.chordSize * 0.35)
-                    .accessibilityIdentifier(token.chord == nil ? "" : AccessibilityID.sheetChord)
-                    .accessibilityHidden(token.chord == nil)
             }
             Text(token.text)
                 .font(Theme.font.liveLyric(size: style.lyricSize))
                 .foregroundStyle(Theme.color.ink)
-                .accessibilityIdentifier(AccessibilityID.sheetLyric)
         }
         .fixedSize()
     }
