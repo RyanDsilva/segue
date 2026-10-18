@@ -18,7 +18,7 @@ WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test e2e lint format \
 	verify-appstore check bump site-fonts site-html docs-check shellcheck actionlint repo-check \
-	release-notes labels-sync
+	release-notes labels-sync clean-local
 
 bootstrap: ## Install pinned tools, fetch dependencies, generate the workspace
 	mise install
@@ -123,3 +123,6 @@ release-notes: ## Preview the GitHub Release notes for a tag: make release-notes
 
 labels-sync: ## Sync GitHub labels to .github/labels.yml (changes GitHub; DRY_RUN=1 to preview)
 	$(MISE) scripts/sync-labels.sh
+
+clean-local: ## Move throwaway local build clutter to the Trash (keeps the live DerivedData and caches)
+	scripts/clean-local.sh

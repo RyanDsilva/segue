@@ -5,11 +5,17 @@
 #
 # Signing: automatic signing needs -allowProvisioningUpdates so Xcode can create or refresh
 # the certificate and provisioning profiles from the command line.
+#
+# Result bundles: each run writes one to .build/results; only the newest $keep_results are
+# kept (older ones go to the Trash, see scripts/lib/discard.sh), so they do not pile up.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# shellcheck source=lib/discard.sh
+source scripts/lib/discard.sh
 
 derived="${SEGUE_DERIVED_DATA:-.build/DerivedData}"
 results=".build/results"
+keep_results=10
 mkdir -p "$results"
 bundle="$results/$(date +%Y%m%d-%H%M%S)-$$.xcresult"
 
@@ -38,5 +44,8 @@ elif [[ $status -eq 0 ]]; then
     echo "error: xcodebuild produced no result bundle at $bundle" >&2
     status=1
 fi
+
+# Housekeeping never changes the build verdict.
+prune_results "$results" "$keep_results" || true
 
 exit $status
