@@ -86,4 +86,5 @@ Overrides and specifics:
 - R47. The GitHub repo stays **private but polished**: README, LICENSE (all rights reserved), third-party notices, SECURITY, CONTRIBUTING, issue forms, PR template, CODEOWNERS.
 - R48. CI is **lightweight Linux only** (lint, site check, docs checks, actionlint). Builds and tests stay local under `make check`.
 - R49. GitHub Issues are Ryan's dev tracker. Users go to Report a Problem (Sentry) and Featurebase.
-- R50. Extras: Dependabot, branch protection on main (CI checks + signed commits, no PR required), and release automation (a `v*` tag creates a GitHub Release from changelog.json). GitHub settings changes and pushes need Ryan's explicit go-ahead.
+- R50. Extras: Dependabot, and release automation (a `v*` tag creates a GitHub Release from changelog.json). GitHub settings changes and pushes need Ryan's explicit go-ahead.
+- R51. Branch protection is NOT available: GitHub Free blocks protection and rulesets on private repos, and paying is out. The pre-push hook (`.githooks/pre-push`) enforces it instead: signed commits only, `make repo-check`, and the site strict check. `SEGUE_ALLOW_SITE_PLACEHOLDERS=1` skips only the site check, and only while the site is still "Coming soon" (first pushes before launch). The protection command stays ready in docs/github-setup.md in case the repo goes public.
