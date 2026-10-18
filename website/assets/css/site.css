@@ -641,6 +641,8 @@ h3 {
 
 /* ---------- Workflow tiles ---------- */
 
+/* Each tile spans two rows of the grid and shares them through subgrid, so the copy
+   rows line up across a row and every screen sits the same distance under its copy. */
 .tiles {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -649,8 +651,10 @@ h3 {
 }
 
 .tile {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  row-gap: 0;
   overflow: hidden;
   border-radius: 28px;
   background: var(--surface-alt);
@@ -675,45 +679,54 @@ h3 {
 }
 
 .tile-text > p:last-child {
-  max-width: 38ch;
+  max-width: 46ch;
   color: var(--muted);
 }
 
-/* The art sits at the tile's foot: the window starts inset and runs off the edges.
-   --x and --y are the app point (of 1440) shown at the inset corner; --w is the window
-   width in shot widths. */
+/* One rule for every tile: the screen is a panel inset 40 px from the tile's sides,
+   bleeding off the bottom only. The panel shows one whole region of the window, from
+   app point --x0, --rw points wide (a column boundary on each side, so no word is cut). */
 .shot-tile {
-  --w: 176;
-  --x: 0;
-  --y: 0;
-  --ix: 40px;
-  margin-top: auto;
-  aspect-ratio: 16 / 10;
+  --x0: 0;
+  --rw: 640;
+  align-self: end;
+  aspect-ratio: 16 / 10.5;
+  margin: 0 40px;
   overflow: hidden;
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 9%, transparent);
 }
 
 .shot-tile > .ui {
   position: absolute;
-  top: calc(40px - var(--y) * var(--w) * 1cqw / 1440);
-  left: calc(var(--ix) - var(--x) * var(--w) * 1cqw / 1440);
-  width: calc(var(--w) * 1cqw);
+  top: 0;
+  left: calc(-100cqw * var(--x0) / var(--rw));
+  width: calc(100cqw * 1440 / var(--rw));
   max-width: none;
-  border-radius: 10px;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-/* Crops inside a window start flush with the tile's left edge. */
+/* Library: sidebar and song list. */
+.crop-library {
+  --rw: 640;
+}
+
+/* Editor: the editor pane, which replaces the detail column. */
 .crop-editor {
-  --x: 640;
-  --ix: 0px;
+  --x0: 640;
+  --rw: 800;
 }
 
+/* Setlists: the set column. */
 .crop-setlist {
-  --x: 659;
-  --ix: 0px;
+  --x0: 659;
+  --rw: 781;
 }
 
+/* Stage: the first lyric column. */
 .crop-stage {
-  --w: 150;
+  --rw: 720;
 }
 
 /* ---------- Stage band (always dark) ---------- */
@@ -960,12 +973,11 @@ h3 {
   .tile-text {
     padding: 28px 24px 24px;
   }
-  .shot-tile {
-    --w: 230;
+  .tile-text {
+    padding-bottom: 24px;
   }
-  .shot-tile > .ui {
-    top: calc(24px - var(--y) * var(--w) * 1cqw / 1440);
-    left: calc(min(var(--ix), 24px) - var(--x) * var(--w) * 1cqw / 1440);
+  .shot-tile {
+    margin: 0 24px;
   }
   .stage-band {
     margin-top: 96px;
