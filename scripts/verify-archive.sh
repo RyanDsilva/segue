@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Release gate for the Mac App Store build (docs/release/specs/WS1-release-pipeline.md 4.7,
-# checks 1-13; check 14 is reserved for WS3). Checks the archive and the exact .pkg that
+# checks 1-13; check 14 is WS3's vendor check). Checks the archive and the exact .pkg that
 # scripts/release.sh uploads.
 #
 #   scripts/verify-archive.sh <xcarchive> <pkg>
@@ -424,10 +424,66 @@ check_13() {
     done
 }
 
-for check in 1 2 3 4 5 6 7 8 9 10 11 12 13; do
+# MARK: 14. Hosted services (WS3 spec 3.7)
+
+# The App Store TelemetryDeck App ID, read from its one source (Project.swift).
+expected_telemetry_app_id() {
+    sed -n -E 's/^let telemetryDeckAppIDAppStore = "([0-9A-Fa-f-]+)"$/\1/p' Project.swift
+}
+
+check_14() {
+    local plist="$app/Contents/Info.plist" dsn host app_id expected binary ok=1
+    dsn=$(plist_get "$plist" SegueSentryDSN)
+    if [[ ! "$dsn" =~ ^https://[0-9a-f]+@([a-z0-9.-]+)/[0-9]+$ ]]; then
+        fail "14: SegueSentryDSN '$dsn' is not a Sentry DSN"
+        ok=0
+    else
+        host="${BASH_REMATCH[1]}"
+        if [[ "$host" != *.sentry.io || "$host" == *.de.* ]]; then
+            fail "14: Sentry host '$host' is not the US region (R33)"
+            ok=0
+        fi
+    fi
+    app_id=$(plist_get "$plist" SegueTelemetryDeckAppID)
+    expected=$(expected_telemetry_app_id)
+    if [[ -z "$expected" ]]; then
+        fail "14: cannot read telemetryDeckAppIDAppStore from Project.swift"
+        ok=0
+    elif [[ ! "$app_id" =~ ^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$ \
+        || "$app_id" != "$expected" ]]; then
+        fail "14: SegueTelemetryDeckAppID '$app_id' is not the App Store app's ($expected)"
+        ok=0
+    fi
+    if ! binary=$(main_binary "$app"); then
+        fail "14: no app executable"
+        return
+    fi
+    # A stripped Release binary keeps Swift type names in its metadata and ObjC class names
+    # as strings, so read both the symbol table and the raw bytes.
+    if ! nm -a "$binary" >"$scratch/nm14" 2>/dev/null; then
+        fail "14: cannot read the symbols of $(short "$binary")"
+        return
+    fi
+    local name
+    for name in SentrySDK TelemetryDeckIngestSink; do
+        if ! grep -q -F "$name" "$scratch/nm14" && ! grep -q -a -F "$name" "$binary"; then
+            fail "14: $name is not in the app binary (vendor services not linked)"
+            ok=0
+        fi
+    done
+    # Our own ingest client only (R34): no TelemetryDeck SDK module (mangled `13TelemetryDeck`)
+    # and no TelemetryClient.
+    if grep -q -E '13TelemetryDeck|TelemetryClient' "$scratch/nm14" \
+        || grep -q -a -E '13TelemetryDeck[A-Z0-9_]|TelemetryClient' "$binary"; then
+        fail "14: the TelemetryDeck SDK is linked (R34 forbids it)"
+        ok=0
+    fi
+    ((ok)) && pass "14: US Sentry DSN, App Store TelemetryDeck app, Sentry and our ingest client linked, no TelemetryDeck SDK"
+}
+
+for check in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
     "check_$check"
 done
-# Check 14 (vendor keys and symbols) is reserved for WS3.
 
 if ((failures > 0)); then
     echo "verify-archive: $failures check(s) failed" >&2
