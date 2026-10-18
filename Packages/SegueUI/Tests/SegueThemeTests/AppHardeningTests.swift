@@ -123,7 +123,7 @@ extension StageWindowSuites {
             let cancelled = Task { await app.startShow(saved, kind: .gig) }
             let checklist = try await env.waitFor { app.preShow }
             #expect(checklist.missingPositions == [2])
-            #expect(checklist.focus == .ran(LiveSettings.defaultStartShortcut))
+            #expect(checklist.focus == .ran(LiveSettings.suggestedStartShortcut))
             checklist.answer(false)
             #expect(await cancelled.value == false)
             #expect(app.live == nil)
@@ -399,10 +399,16 @@ final class TestEnvironment {
     }
 
     /// Live mode with this environment's defaults, the manual clock, a charger that is
-    /// connected and a Shortcut runner that only records.
+    /// connected and a Shortcut runner that only records. The Gig Mode Shortcuts are set up
+    /// as a configured user would have them (they are off by default, R18).
     func liveDependencies() -> LiveDependencies {
-        LiveDependencies(
-            settings: LiveSettingsStore(defaults: defaults),
+        let settings = LiveSettingsStore(defaults: defaults)
+        if settings.settings.startShortcut == nil, settings.settings.endShortcut == nil {
+            settings.settings.startShortcut = LiveSettings.suggestedStartShortcut
+            settings.settings.endShortcut = LiveSettings.suggestedEndShortcut
+        }
+        return LiveDependencies(
+            settings: settings,
             shortcuts: RecordingShortcutRunner(log: shortcutLog),
             power: FixedPowerSource(onCharger: true),
             scrollClock: clock,

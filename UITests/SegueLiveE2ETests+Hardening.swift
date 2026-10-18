@@ -9,7 +9,7 @@ extension SegueLiveE2ETests {
 
     @objc func testCloseAndQuitOnStageAskFirstThenEndAndQuit() throws {
         let library = try XCTUnwrap(library)
-        let app = launch(library)
+        let app = launch(library, extra: LiveLibrary.gigModeShortcuts)
         startShow(app, rehearse: false)
         let dialog = element(app, LiveAXID.liveEndDialog)
         key(app, "w", [.command])

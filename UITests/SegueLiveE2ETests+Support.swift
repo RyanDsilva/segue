@@ -47,6 +47,12 @@ struct LiveLibrary {
         root.appending(path: "setlists/friday-the-anchor.setlist.json")
     }
 
+    /// Sets the Gig Mode Shortcuts as if the user had entered them in Settings > Live (they
+    /// are off by default, R18).
+    static let gigModeShortcuts = [
+        "-SegueStartShortcut", "Gig Mode On", "-SegueEndShortcut", "Gig Mode Off",
+    ]
+
     /// The launch arguments of a test run on this library.
     func arguments(reset: Bool = true, extra: [String] = []) -> [String] {
         [

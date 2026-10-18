@@ -61,11 +61,13 @@
                     shortcutRow(
                         "On show start",
                         text: shortcutBinding(\.startShortcut),
+                        prompt: LiveSettings.suggestedStartShortcut,
                         id: AccessibilityID.settingsStartShortcut,
                     )
                     shortcutRow(
                         "On show end",
                         text: shortcutBinding(\.endShortcut),
+                        prompt: LiveSettings.suggestedEndShortcut,
                         id: AccessibilityID.settingsEndShortcut,
                     )
                     Toggle("Also run them for rehearsals", isOn: $store.runsShortcutsForRehearsals)
@@ -94,15 +96,23 @@
             + "columns. A song's own choice (C on stage, or Stage in the song editor) wins over "
             + "this default."
 
-        static let guide = "Segue cannot switch Focus on by itself, so it runs a Shortcut you own. "
-            + "In the Shortcuts app, create a Shortcut named “Gig Mode On” with the action "
-            + "“Set Focus” (Do Not Disturb, On), and “Gig Mode Off” turning it off. Segue runs "
-            + "them when a show starts and ends, then brings the stage back to the front."
+        static let guide = "Gig Mode Shortcuts are off until you set them up. Segue cannot switch "
+            + "Focus on by itself, so it can run a Shortcut you own when a show starts and ends. "
+            + "Create a Shortcut named “\(LiveSettings.suggestedStartShortcut)” that turns on "
+            + "your Performing Focus, then enter its name here. Do the same with "
+            + "“\(LiveSettings.suggestedEndShortcut)” turning it off. Segue brings the stage "
+            + "back to the front afterwards."
 
-        private func shortcutRow(_ label: String, text: Binding<String>, id: String) -> some View {
+        private func shortcutRow(
+            _ label: String,
+            text: Binding<String>,
+            prompt: String,
+            id: String,
+        ) -> some View {
             LabeledContent(label) {
                 HStack(spacing: 8) {
-                    TextField("Shortcut name", text: text, prompt: Text("None"))
+                    // The suggested name is a placeholder only, never a stored value (R18).
+                    TextField("Shortcut name", text: text, prompt: Text(prompt))
                         .textFieldStyle(.roundedBorder)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier(id)
@@ -112,14 +122,15 @@
             }
         }
 
+        /// Runs the Shortcut through the app's runner and shows what was really observed.
         private func test(_ name: String) {
             guard let name = LiveSettingsStore.shortcutName(name) else { return }
             Task {
-                do {
-                    try await shortcuts.run(name)
-                    testResult = "Asked Shortcuts to run “\(name)”."
-                } catch {
-                    testResult = "“\(name)” did not run: \(UserMessage.describe(error))"
+                testResult = switch await shortcuts.run(name) {
+                case .completed: "“\(name)” ran."
+                case .handedOver:
+                    "Asked Shortcuts to run “\(name)”; Segue can’t confirm it finished."
+                case let .failed(message): "“\(name)” failed: \(message)."
                 }
             }
         }

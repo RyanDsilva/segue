@@ -5,7 +5,8 @@ import Library
 
 /// A pre-show checklist row.
 public enum ChecklistItem: String, Sendable, Hashable, Codable, CaseIterable {
-    /// "Focus on": ticked automatically only when the start Shortcut ran without error.
+    /// "Focus on": ticks only when the start Shortcut was observed to finish, or when the
+    /// performer pressed Done (R18, R35). Hidden while no start Shortcut is set.
     case focus
     /// "Charger connected": read from the IOKit power source.
     case charger
@@ -20,8 +21,10 @@ public struct LiveSettings: Sendable, Hashable, Codable {
     public static let defaultMinLyricSize: Double = 22
     /// The range Settings offers for `minLyricSize`.
     public static let minLyricSizeRange: ClosedRange<Double> = 16 ... 48
-    public static let defaultStartShortcut = "Gig Mode On"
-    public static let defaultEndShortcut = "Gig Mode Off"
+    /// Suggested Shortcut names, shown by the Settings guide and as text field prompts only.
+    /// The Shortcuts are off until the user sets them up (R18): nothing is stored by default.
+    public static let suggestedStartShortcut = "Gig Mode On"
+    public static let suggestedEndShortcut = "Gig Mode Off"
 
     /// `live.minLyricFont`: auto-fit never goes below this; the song scrolls instead.
     public var minLyricSize: Double
@@ -40,8 +43,8 @@ public struct LiveSettings: Sendable, Hashable, Codable {
 
     public init(
         minLyricSize: Double = Self.defaultMinLyricSize,
-        startShortcut: String? = Self.defaultStartShortcut,
-        endShortcut: String? = Self.defaultEndShortcut,
+        startShortcut: String? = nil,
+        endShortcut: String? = nil,
         hiddenChecklistItems: Set<ChecklistItem> = [],
         defaultColumns: Int? = nil,
     ) {

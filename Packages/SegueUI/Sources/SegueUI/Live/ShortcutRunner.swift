@@ -7,10 +7,26 @@
     /// (decisions.md, phase 2).
     @MainActor
     public protocol ShortcutRunner: AnyObject {
-        /// Asks Shortcuts to run `name`. Throws when the request could not be handed over
-        /// (no Shortcuts app, the URL was refused). Success means the request was delivered,
-        /// not that the Shortcut finished.
-        func run(_ name: String) async throws
+        /// Asks Shortcuts to run `name` and reports what was observed. Hand-over is not
+        /// completion: only `.completed` means the Shortcut was seen to finish (R18).
+        func run(_ name: String) async -> ShortcutOutcome
+    }
+
+    /// What a runner observed about one Shortcut run.
+    public enum ShortcutOutcome: Equatable, Sendable {
+        /// The Shortcut was observed to finish without error.
+        case completed
+        /// The request was delivered to Shortcuts; whether it finished is unknown.
+        case handedOver
+        /// Observed failure (not found, not permitted, the Shortcut's own error, or the
+        /// request could not be delivered), with a message for the performer.
+        case failed(String)
+    }
+
+    /// How long a handed-over start Shortcut may stay unconfirmed before the checklist says
+    /// it could not confirm it (measured on the live clock).
+    public enum ShortcutTiming {
+        public static let confirmTimeout: TimeInterval = 30
     }
 
     /// Why a Shortcut did not run.
@@ -26,22 +42,29 @@
         }
     }
 
-    /// The real runner: opens `shortcuts://run-shortcut?name=...` without activating
-    /// Shortcuts. The caller re-asserts its own window as key afterwards (`LiveFocus`), since
-    /// some macOS versions still bring Shortcuts forward.
+    /// The URL runner: opens `shortcuts://run-shortcut?name=...` without activating
+    /// Shortcuts. It can only hand the request over, never observe completion, so it returns
+    /// `.handedOver` (or `.failed` when the URL could not be opened). The caller re-asserts
+    /// its own window as key afterwards (`LiveFocus`), since some macOS versions still bring
+    /// Shortcuts forward.
     @MainActor
     public final class WorkspaceShortcutRunner: ShortcutRunner {
         public init() {}
 
-        public func run(_ name: String) async throws {
-            guard let url = Self.url(for: name) else { throw ShortcutRunError.invalidName(name) }
+        public func run(_ name: String) async -> ShortcutOutcome {
+            guard let url = Self.url(for: name) else {
+                return .failed(ShortcutRunError.invalidName(name).localizedDescription)
+            }
             let configuration = NSWorkspace.OpenConfiguration()
             configuration.activates = false
             configuration.addsToRecentItems = false
             do {
                 _ = try await NSWorkspace.shared.open(url, configuration: configuration)
+                return .handedOver
             } catch {
-                throw ShortcutRunError.openFailed(error.localizedDescription)
+                return .failed(
+                    ShortcutRunError.openFailed(error.localizedDescription).localizedDescription,
+                )
             }
         }
 
@@ -58,8 +81,9 @@
     #if DEBUG
         /// Test-only runner (`-SegueShortcutLog <file>`, Debug builds): never opens Shortcuts;
         /// appends each name it was asked to run as one line to `log`, so the E2E suite can
-        /// assert both hooks fired. A name starting with "fail" throws, to exercise the
-        /// unticked "Focus on" row.
+        /// assert both hooks fired. A name starting with "fail" fails, one starting with
+        /// "hang" is only handed over (exercising the confirmation timeout), and any other
+        /// name completes.
         @MainActor
         public final class RecordingShortcutRunner: ShortcutRunner {
             public let log: URL
@@ -69,8 +93,24 @@
                 self.log = log
             }
 
-            public func run(_ name: String) async throws {
+            public func run(_ name: String) async -> ShortcutOutcome {
                 names.append(name)
+                do {
+                    try append(name)
+                } catch {
+                    return .failed("could not write the Shortcut log (\(error))")
+                }
+                let lowered = name.lowercased()
+                if lowered.hasPrefix("fail") {
+                    return .failed("simulated failure")
+                }
+                if lowered.hasPrefix("hang") {
+                    return .handedOver
+                }
+                return .completed
+            }
+
+            private func append(_ name: String) throws {
                 let line = Data((name + "\n").utf8)
                 if let handle = try? FileHandle(forWritingTo: log) {
                     defer { try? handle.close() }
@@ -78,9 +118,6 @@
                     try handle.write(contentsOf: line)
                 } else {
                     try line.write(to: log, options: .atomic)
-                }
-                if name.lowercased().hasPrefix("fail") {
-                    throw ShortcutRunError.openFailed("test failure")
                 }
             }
         }

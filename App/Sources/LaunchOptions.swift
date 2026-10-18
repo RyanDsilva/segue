@@ -21,6 +21,9 @@ import Support
     /// - `-SegueLiveTimeScale <n>`: auto-scroll runs `n` times faster than real time (E2E #3).
     /// - `-SegueBindingsPath <file>`: read key bindings from `<file>` instead of Application
     ///   Support. Test runs without it use the default keys only.
+    /// - `-SegueStartShortcut <name>` / `-SegueEndShortcut <name>`: store these Gig Mode
+    ///   Shortcut names in the test suite's Live settings at launch, as if the user had set
+    ///   them in Settings > Live (the Shortcuts are off by default, R18).
     struct LaunchOptions: Sendable, Equatable {
         static let libraryPathFlag = "-SegueLibraryPath"
         static let resetStateFlag = "-SegueResetState"
@@ -30,6 +33,8 @@ import Support
         static let shortcutLogFlag = "-SegueShortcutLog"
         static let liveTimeScaleFlag = "-SegueLiveTimeScale"
         static let bindingsPathFlag = "-SegueBindingsPath"
+        static let startShortcutFlag = "-SegueStartShortcut"
+        static let endShortcutFlag = "-SegueEndShortcut"
 
         var libraryPath: URL?
         var resetState = false
@@ -39,6 +44,8 @@ import Support
         var shortcutLog: URL?
         var liveTimeScale: Double?
         var bindingsPath: URL?
+        var startShortcut: String?
+        var endShortcut: String?
 
         init(
             libraryPath: URL? = nil,
@@ -49,6 +56,8 @@ import Support
             shortcutLog: URL? = nil,
             liveTimeScale: Double? = nil,
             bindingsPath: URL? = nil,
+            startShortcut: String? = nil,
+            endShortcut: String? = nil,
         ) {
             self.libraryPath = libraryPath
             self.resetState = resetState
@@ -58,6 +67,8 @@ import Support
             self.shortcutLog = shortcutLog
             self.liveTimeScale = liveTimeScale
             self.bindingsPath = bindingsPath
+            self.startShortcut = startShortcut
+            self.endShortcut = endShortcut
         }
 
         /// Parses `arguments` (as in `ProcessInfo.arguments`; the first element is the
@@ -80,6 +91,8 @@ import Support
             testDefaults = values[Self.testDefaultsFlag].map(Self.isTruthy) ?? false
             shortcutLog = Self.path(values[Self.shortcutLogFlag], directoryHint: .notDirectory)
             bindingsPath = Self.path(values[Self.bindingsPathFlag], directoryHint: .notDirectory)
+            startShortcut = Self.name(values[Self.startShortcutFlag])
+            endShortcut = Self.name(values[Self.endShortcutFlag])
             liveTimeScale = values[Self.liveTimeScaleFlag].flatMap(Double.init).flatMap { scale in
                 scale > 0 ? scale : nil
             }
@@ -88,7 +101,16 @@ import Support
         private static let flags: Set = [
             libraryPathFlag, resetStateFlag, rememberLibraryFlag, testDefaultsFlag,
             shapeLibraryPathFlag, shortcutLogFlag, liveTimeScaleFlag, bindingsPathFlag,
+            startShortcutFlag, endShortcutFlag,
         ]
+
+        /// A Shortcut name with surrounding blanks removed; nil when blank.
+        private static func name(_ value: String?) -> String? {
+            guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !trimmed.isEmpty
+            else { return nil }
+            return trimmed
+        }
 
         private static func path(_ value: String?, directoryHint: URL.DirectoryHint) -> URL? {
             guard let value, !value.isEmpty else { return nil }
@@ -99,7 +121,7 @@ import Support
         var isTestRun: Bool {
             libraryPath != nil || resetState || rememberLibrary || testDefaults
                 || shapeLibraryPath != nil || shortcutLog != nil || liveTimeScale != nil
-                || bindingsPath != nil
+                || bindingsPath != nil || startShortcut != nil || endShortcut != nil
         }
 
         private static func isTruthy(_ value: String) -> Bool {
@@ -165,8 +187,15 @@ import Support
                 ?? WorkspaceShortcutRunner()
             let scrollClock: any Support.Clock = liveTimeScale.map { ScaledClock(scale: $0) }
                 ?? MonotonicClock()
+            let settings = LiveSettingsStore(defaults: defaults)
+            if let startShortcut {
+                settings.settings.startShortcut = startShortcut
+            }
+            if let endShortcut {
+                settings.settings.endShortcut = endShortcut
+            }
             return LiveDependencies(
-                settings: LiveSettingsStore(defaults: defaults),
+                settings: settings,
                 shortcuts: shortcuts,
                 scrollClock: scrollClock,
                 bindingsURL: bindingsPath,

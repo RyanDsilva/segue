@@ -116,10 +116,7 @@
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
-                if item == .brightness {
-                    Button(done ? "Undo" : "Done") { checklist.brightnessConfirmed.toggle() }
-                        .buttonStyle(.segueSecondary)
-                }
+                rowButtons(item, done: done)
                 Menu {
                     Button("Hide for This \(noun)") { checklist.dismissed.insert(item) }
                     Button("Don’t Show Again") { checklist.hideForGood(item) }
@@ -140,6 +137,37 @@
             .accessibilityIdentifier(AccessibilityID.checklistRow)
             .accessibilityValue(done ? "done" : "not done")
             .accessibilityLabel(title(item))
+        }
+
+        /// The row's own buttons: Done / Undo on the brightness reminder, and the Focus
+        /// row's Retry and Done.
+        @ViewBuilder private func rowButtons(_ item: ChecklistItem, done: Bool) -> some View {
+            switch item {
+            case .brightness:
+                Button(done ? "Undo" : "Done") { checklist.brightnessConfirmed.toggle() }
+                    .buttonStyle(.segueSecondary)
+            case .focus:
+                focusButtons
+            case .charger:
+                EmptyView()
+            }
+        }
+
+        /// Retry on an observed failure; Done (Undo once pressed) when the result is unknown
+        /// or a failure, the manual fallback of R35.
+        @ViewBuilder private var focusButtons: some View {
+            if checklist.offersFocusRetry {
+                Button("Retry") { checklist.retryFocusShortcut() }
+                    .buttonStyle(.segueSecondary)
+                    .accessibilityIdentifier(AccessibilityID.checklistFocusRetry)
+            }
+            if checklist.offersFocusDone {
+                Button(checklist.focusConfirmedByPerformer ? "Undo" : "Done") {
+                    checklist.focusConfirmedByPerformer.toggle()
+                }
+                .buttonStyle(.segueSecondary)
+                .accessibilityIdentifier(AccessibilityID.checklistFocusDone)
+            }
         }
 
         private func title(_ item: ChecklistItem) -> String {
@@ -169,7 +197,9 @@
             case .notRun: "Shortcuts are off for rehearsals (Settings > Live)."
             case let .running(name): "Running “\(name)”…"
             case let .ran(name): "“\(name)” ran."
-            case let .failed(name, message): "“\(name)” did not run: \(message)"
+            case let .unknown(name):
+                "Asked Shortcuts to run “\(name)”; couldn’t confirm it finished."
+            case let .failed(name, message): "“\(name)” failed: \(message)."
             }
         }
     }

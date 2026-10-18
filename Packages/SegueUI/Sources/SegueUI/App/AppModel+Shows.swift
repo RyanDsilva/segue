@@ -68,7 +68,11 @@
                 focus: runStartShortcut(kind: kind),
                 settings: liveSettings,
                 power: dependencies.live.power,
+                clock: dependencies.live.scrollClock,
             )
+            checklist.retryFocus = { [weak self] in
+                await self?.runStartShortcut(kind: kind) ?? .notRun
+            }
             guard await confirm(checklist) else { return false }
             let omitting = Set(missing.map(\.element.itemId))
             do {
@@ -342,16 +346,18 @@
         }
 
         /// Shows the checklist (when it has anything to show) and waits for the answer. A
-        /// cancelled start undoes Gig Mode.
+        /// cancelled start undoes Gig Mode whenever a start request was sent, since Focus
+        /// may be on even when its completion was never observed.
         private func confirm(_ checklist: PreShowChecklist) async -> Bool {
             guard checklist.hasContent else { return true }
             preShow = checklist
             checklist.watchPower()
+            checklist.watchFocus()
             let start = await withCheckedContinuation { continuation in
                 checklist.continuation = continuation
             }
             preShow = nil
-            if !start, case .ran = checklist.focus {
+            if !start, checklist.focus.requestedName != nil {
                 await runEndShortcut(kind: checklist.kind)
             }
             return start
@@ -371,16 +377,14 @@
             _ = await runShortcut(liveSettings.settings.endShortcut)
         }
 
-        /// Runs a Shortcut, then keeps Segue frontmost (the stage if it is up).
+        /// Runs a Shortcut, then keeps Segue frontmost (the stage if it is up). Observed
+        /// completion maps to `.ran`, a failure to `.failed`, and a hand-over to `.running`
+        /// (which becomes `.unknown` after `ShortcutTiming.confirmTimeout` unless a
+        /// confirmation arrives first). A hand-over is never completion (R18).
         func runShortcut(_ name: String?) async -> PreShowChecklist.FocusStatus {
             guard let name = LiveSettingsStore.shortcutName(name) else { return .notConfigured }
-            let status: PreShowChecklist.FocusStatus
-            do {
-                try await dependencies.live.shortcuts.run(name)
-                status = .ran(name)
-            } catch {
-                status = .failed(name, message: UserMessage.describe(error))
-            }
+            let outcome = await dependencies.live.shortcuts.run(name)
+            let status = PreShowChecklist.FocusStatus(outcome, name: name)
             LiveFocus
                 .reassert { StageWindowController.shared.stageWindow ?? LiveFocus.mainWindow() }
             return status

@@ -23,7 +23,7 @@ final class SegueLiveE2ETests: XCTestCase {
     @MainActor
     func testFridayGig() throws {
         let library = try XCTUnwrap(library)
-        let app = launch(library)
+        let app = launch(library, extra: LiveLibrary.gigModeShortcuts)
         startShow(app, rehearse: false)
         XCTAssertEqual(library.shortcutsRun(), ["Gig Mode On"])
         let title = app.staticTexts[LiveAXID.liveTitle]
@@ -164,7 +164,11 @@ final class SegueLiveE2ETests: XCTestCase {
     func testRehearsalTimesSongsAndAutoScrollReachesTheEnd() throws {
         let library = try XCTUnwrap(library)
         // Auto-scroll runs 30x faster: a 3:00 song scrolls in about 6 s.
-        let app = launch(library, extra: ["-SegueLiveTimeScale", "30"])
+        // The Shortcuts are set, so this proves the rehearsal rule, not the empty default.
+        let app = launch(
+            library,
+            extra: ["-SegueLiveTimeScale", "30"] + LiveLibrary.gigModeShortcuts,
+        )
         startShow(app, rehearse: true)
         XCTAssertTrue(element(app, LiveAXID.liveRehearsal).waitForExistence(timeout: 5))
         XCTAssertEqual(library.shortcutsRun(), [], "rehearsals skip the Shortcuts by default")

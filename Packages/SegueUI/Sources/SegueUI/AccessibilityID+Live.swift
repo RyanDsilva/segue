@@ -45,6 +45,8 @@ public extension AccessibilityID {
     static let checklistCancel = "segue.live.checklist.cancel"
     static let checklistRow = "segue.live.checklist.row"
     static let checklistMissing = "segue.live.checklist.missing"
+    static let checklistFocusDone = "segue.live.checklist.focus.done"
+    static let checklistFocusRetry = "segue.live.checklist.focus.retry"
     static let resumeShow = "segue.live.resume"
     static let resumeShowResume = "segue.live.resume.resume"
     static let resumeShowEnd = "segue.live.resume.end"
