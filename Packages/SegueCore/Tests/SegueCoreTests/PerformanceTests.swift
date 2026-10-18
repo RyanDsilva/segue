@@ -66,11 +66,12 @@ struct PerformanceTests {
 
         print("""
         [perf] \(songCount) songs: first open (orphans + full index) \(firstOpen), \
-        no-change refresh (best of 3) \(refresh), relaunch (best of 3) \(relaunch), rebuild index \(rebuild)
+        no-change refresh (best of 3) \(refresh), relaunch (best of 3) \(relaunch), \
+        rebuild index \(rebuild)
         """)
         // Before the short-circuit (2026-10-17, debug build): refresh 4.5 s, relaunch 4.6 s.
-        // After: about 0.25 s and 0.5 s (0.45 s and 1.2 s with the rest of the suite running; a single run failed under heavy
-        // CPU load, hence the best of 3).
+        // After: about 0.25 s and 0.5 s (0.45 s and 1.2 s with the rest of the suite running;
+        // a single run failed under heavy CPU load, hence the best of 3).
         #expect(refresh < .seconds(2), "no-change refresh: \(refresh)")
         #expect(relaunch < .milliseconds(2500), "relaunch: \(relaunch)")
     }
