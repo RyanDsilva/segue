@@ -99,6 +99,8 @@ final class SegueCoreUXE2ETests: XCTestCase {
         let editor = openEditor(app, "Harbour Lights")
         editor.typeText("\nMine", in: app)
         XCTAssertTrue(waitForFile(file, contains: "Mine"))
+        // The save is complete (the editor is clean), not just its bytes on disk.
+        XCTAssertTrue(waitForStatus(app, "Saved"))
 
         // Clean (saved) editor: another app's rewrite replaces its text on activation.
         let rewritten = "{title: Harbour Lights}\nRewritten elsewhere\n"
@@ -124,6 +126,8 @@ final class SegueCoreUXE2ETests: XCTestCase {
         editor.typeKey(.downArrow, modifierFlags: .command, in: app)
         editor.typeText("\nMine", in: app)
         XCTAssertTrue(waitForFile(file, contains: "Mine"))
+        // The save is complete (the editor is clean), not just its bytes on disk.
+        XCTAssertTrue(waitForStatus(app, "Saved"))
 
         let external = "{title: Harbour Lights}\nEdited in another app\n"
         try Data(external.utf8).write(to: file, options: .atomic)
