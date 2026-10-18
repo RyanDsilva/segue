@@ -4,6 +4,7 @@ import Editing
 import Foundation
 import Library
 import MusicTheory
+import Services
 #if os(macOS)
     import AppKit
 #endif
@@ -68,6 +69,7 @@ extension SongEditorViewModel {
         /// Switches modes, carrying the caret across (same lyric line and character).
         public func setEditorMode(_ newMode: EditorMode) {
             guard newMode != editorMode else { return }
+            recordFeature(.editorModeSwitch)
             // Each mode's typing is measured on its own.
             resetKeystrokeStats()
             let source = sourceEditor

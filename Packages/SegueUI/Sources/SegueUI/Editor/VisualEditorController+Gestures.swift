@@ -41,6 +41,7 @@
                 selectedChord = nil
                 if let armed = model.armedChord {
                     insert(armed, at: target)
+                    model.armedChordPlaced()
                 } else {
                     showAddPopover(at: target)
                 }

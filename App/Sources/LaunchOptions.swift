@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import SegueUI
 import Services
@@ -40,10 +41,13 @@ import VendorServices
     /// - `-SegueFeedbackResult <ok|offline|rejected>`: how the recording report sender answers.
     /// - `-SegueServicesLive YES`: the real vendors from Info.plist (Sentry environment
     ///   `debug`, TelemetryDeck test mode), for manual live checks only. Not a test run.
-    /// - `-SegueConsent <undecided|granted|declined|analyticsOnly|crashOnly>`: set both
-    ///   consent decisions at launch, as if answered in the prompt (nothing is recorded).
-    ///   Test runs without it decline any decision still undecided, so the consent prompt
-    ///   only appears in the tests that ask for it (`undecided`).
+    /// - `-SegueConsent <undecided|granted|declined|analyticsOnly|crashOnly|asStored>`: set
+    ///   both consent decisions at launch, as if answered in the prompt (nothing is
+    ///   recorded); `asStored` keeps what an earlier launch stored. Test runs without it
+    ///   decline any decision still undecided, so the consent prompt only appears in the
+    ///   tests that ask for it (`undecided`, or `asStored` after an unanswered prompt).
+    /// - `-SegueAppearance <light|dark>`: force the app's appearance whatever the system
+    ///   uses (the screenshot pass needs both).
     struct LaunchOptions: Sendable, Equatable {
         static let libraryPathFlag = "-SegueLibraryPath"
         static let resetStateFlag = "-SegueResetState"
@@ -63,6 +67,7 @@ import VendorServices
         static let feedbackResultFlag = "-SegueFeedbackResult"
         static let servicesLiveFlag = "-SegueServicesLive"
         static let consentFlag = "-SegueConsent"
+        static let appearanceFlag = "-SegueAppearance"
 
         /// `-SegueConsent` values.
         enum ConsentPreset: String, Sendable, CaseIterable {
@@ -71,6 +76,7 @@ import VendorServices
             case declined
             case analyticsOnly
             case crashOnly
+            case asStored
         }
 
         var libraryPath: URL?
@@ -91,6 +97,8 @@ import VendorServices
         var feedbackResult: RecordingFeedbackSender.Outcome?
         var servicesLive = false
         var consentPreset: ConsentPreset?
+        /// `-SegueAppearance`: `light` or `dark`; nil follows the system.
+        var appearance: String?
 
         init(
             libraryPath: URL? = nil,
@@ -172,6 +180,8 @@ import VendorServices
                 .flatMap(RecordingFeedbackSender.Outcome.init(rawValue:))
             servicesLive = values[Self.servicesLiveFlag].map(Self.isTruthy) ?? false
             consentPreset = values[Self.consentFlag].flatMap(ConsentPreset.init(rawValue:))
+            appearance = values[Self.appearanceFlag]
+                .flatMap { ["light", "dark"].contains($0) ? $0 : nil }
         }
 
         private static let flags: Set = [
@@ -179,7 +189,7 @@ import VendorServices
             shapeLibraryPathFlag, shortcutLogFlag, liveTimeScaleFlag, bindingsPathFlag,
             startShortcutFlag, endShortcutFlag, workspaceLogFlag, trashPathFlag,
             importPanelPathsFlag, autosaveDelayFlag, servicesLogFlag, feedbackResultFlag,
-            servicesLiveFlag, consentFlag,
+            servicesLiveFlag, consentFlag, appearanceFlag,
         ]
 
         /// A Shortcut name with surrounding blanks removed; nil when blank.
@@ -250,6 +260,11 @@ import VendorServices
                 AppStateReset.wipeTestState(defaults, bundleID: bundleID)
             }
             let services = servicesWiring(defaults: defaults, bundleID: bundleID)
+            if let appearance {
+                NSApplication.shared.appearance = NSAppearance(
+                    named: appearance == "dark" ? .darkAqua : .aqua,
+                )
+            }
             return AppDependencies(
                 fileSystem: fileSystem,
                 clock: clock,
@@ -266,6 +281,7 @@ import VendorServices
                 services: services.services,
                 consent: services.consent,
                 diagnosticLog: services.log,
+                flavor: SegueApp.flavor,
             )
         }
 
@@ -299,6 +315,8 @@ import VendorServices
             switch preset {
             case .undecided:
                 store.resetToUndecided()
+            case .asStored:
+                return
             case .analyticsOnly, .crashOnly, .declined, .granted:
                 let analytics = preset == .granted || preset == .analyticsOnly
                 let crash = preset == .granted || preset == .crashOnly

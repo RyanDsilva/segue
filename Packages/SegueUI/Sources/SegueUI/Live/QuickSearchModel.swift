@@ -2,6 +2,7 @@
     import Foundation
     import Library
     import Observation
+    import Services
 
     /// The mid-show search overlay's state: the query, the results from the index (romanized
     /// Hindi tolerant through the normalized columns) and the selected row. Searches run off
@@ -38,6 +39,13 @@
         @ObservationIgnored private var pendingSubmit: (@MainActor (SongRecord) -> Void)?
 
         @ObservationIgnored private let library: LibraryStore
+        /// Row 17 in the stage context.
+        @ObservationIgnored private let recorder = SearchRecorder()
+        @ObservationIgnored var services: ServicesHub {
+            get { recorder.services }
+            set { recorder.services = newValue }
+        }
+
         @ObservationIgnored private var task: Task<Void, Never>?
 
         /// The query as searched.
@@ -70,6 +78,7 @@
 
         func reset() {
             task?.cancel()
+            recorder.cancel()
             pendingSubmit = nil
             query = ""
             resultsQuery = ""
@@ -111,6 +120,7 @@
             task?.cancel()
             let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else {
+                recorder.cancel()
                 results = []
                 resultsQuery = ""
                 selection = 0
@@ -120,9 +130,14 @@
             let library = library
             task = Task { [weak self] in
                 do {
-                    let found = try await library.search(query: text)
+                    let found = try await library.searchWithTier(query: text)
                     guard !Task.isCancelled else { return }
-                    self?.land(Array(found.prefix(Self.limit)), for: text)
+                    self?.land(Array(found.records.prefix(Self.limit)), for: text)
+                    self?.recorder.resultsShown(
+                        .stage,
+                        tier: found.firstTier,
+                        count: found.records.count,
+                    )
                 } catch {
                     guard !Task.isCancelled else { return }
                     self?.errorMessage = UserMessage.describe(error)

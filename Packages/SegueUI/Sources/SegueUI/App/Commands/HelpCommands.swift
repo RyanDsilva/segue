@@ -1,4 +1,5 @@
 #if os(macOS)
+    import Services
     import SwiftUI
 
     /// The Help menu (WS2a 3.5.6, I-5): the canonical list, in order, with exact names. WS2b
@@ -17,9 +18,14 @@
                     if item.dividerBefore {
                         Divider()
                     }
-                    Button(item.title) { perform(item.action) }
-                        .keyboardShortcut(item.shortcut?.shortcut)
-                        .disabled(item.disabledWhilePerforming && app.isPerforming)
+                    Button(item.title) {
+                        if let help = item.analytics {
+                            app.dependencies.services.record(.helpOpened(help))
+                        }
+                        perform(item.action)
+                    }
+                    .keyboardShortcut(item.shortcut?.shortcut)
+                    .disabled(item.disabledWhilePerforming && app.isPerforming)
                 }
             }
         }
@@ -48,6 +54,8 @@
         var disabledWhilePerforming = false
         /// A separator goes above this item.
         var dividerBefore = false
+        /// `Segue.Help.opened`'s `segue.item` (WS3 spec 5 row 14); nil: not counted.
+        var analytics: HelpItem?
         let action: Action
 
         var id: String {
@@ -71,11 +79,13 @@
                 HelpMenuItem(
                     title: MenuShortcuts.help.title,
                     shortcut: MenuShortcuts.help,
+                    analytics: .help,
                     action: .workspace { $0.open(SegueLinks.help) },
                 ),
                 HelpMenuItem(
                     title: MenuShortcuts.keyboardShortcuts.title,
                     shortcut: MenuShortcuts.keyboardShortcuts,
+                    analytics: .keyboardShortcuts,
                     action: .window(KeyboardShortcutsWindow.id),
                 ),
             ]
@@ -89,6 +99,7 @@
             items.append(HelpMenuItem(
                 title: "What's New in Segue",
                 disabledWhilePerforming: true,
+                analytics: .whatsNew,
                 action: .workspace(hooks.showWhatsNew),
             ))
             return items
@@ -100,9 +111,14 @@
                 HelpMenuItem(
                     title: "Report a Problem…",
                     dividerBefore: true,
+                    analytics: .reportProblem,
                     action: .workspace(hooks.reportProblem),
                 ),
-                HelpMenuItem(title: "Request a Feature…", action: .workspace(hooks.requestFeature)),
+                HelpMenuItem(
+                    title: "Request a Feature…",
+                    analytics: .requestFeature,
+                    action: .workspace(hooks.requestFeature),
+                ),
             ]
             if let writeReview {
                 items.append(HelpMenuItem(
@@ -119,10 +135,12 @@
                 HelpMenuItem(
                     title: "Privacy Policy",
                     dividerBefore: true,
+                    analytics: .privacyPolicy,
                     action: .workspace { $0.open(SegueLinks.privacy) },
                 ),
                 HelpMenuItem(
                     title: "Terms of Use",
+                    analytics: .terms,
                     action: .workspace { $0.open(SegueLinks.terms) },
                 ),
                 HelpMenuItem(

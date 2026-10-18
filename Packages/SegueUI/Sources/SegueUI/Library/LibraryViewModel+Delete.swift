@@ -1,5 +1,6 @@
 import Foundation
 import Library
+import Services
 import Support
 
 // Delete Song (WS2a 3.3): songs go to the Trash, with Edit > Undo. Whether to ask first
@@ -21,6 +22,7 @@ public extension LibraryViewModel {
         let next = neighbour(of: id)
         let pending = Task { await trashSong(id) }
         guard await pending.value != nil else { return }
+        services.record(.songDeleted(count: SmallBucket(1)))
         if wasShown, editor == nil {
             selection = next
             detail = next.map(Detail.song) ?? .empty

@@ -2,6 +2,7 @@ import Diagrams
 import Foundation
 import Library
 import Observation
+import Services
 
 /// The song library as the main window sees it: the full catalog, the (debounced) search
 /// results, the selection, and the open song editor (new or existing song).
@@ -85,7 +86,30 @@ public final class LibraryViewModel {
 
     /// The open editor: the new-song editor (`detail == .newSong`) or an edit of the
     /// selected song. Nil when the detail pane shows a rendered song or nothing.
-    public internal(set) var editor: SongEditorViewModel?
+    public internal(set) var editor: SongEditorViewModel? {
+        didSet {
+            if let editor, editor !== oldValue {
+                editor.services = services
+                services.record(.editorOpened(editor.editorMode == .visual ? .visual : .text))
+            }
+        }
+    }
+
+    /// Records analytics events (WS3 spec 5); the session hands over the app's hub.
+    @ObservationIgnored public var services: ServicesHub = .disabled {
+        didSet {
+            searchRecorder.services = services
+            builderSearchRecorder.services = services
+        }
+    }
+
+    /// Days since the first launch, set by the session when the library opens (rows 13).
+    @ObservationIgnored var daysSinceFirstLaunch: DaysBucket = .zero
+
+    /// Row 17 for the library's search field.
+    @ObservationIgnored let searchRecorder = SearchRecorder()
+    /// Row 17 for the setlist builder's library column.
+    @ObservationIgnored let builderSearchRecorder = SearchRecorder()
 
     /// A navigation held because the editor's edits could not be saved (a conflict or a
     /// failed write). Non-nil while the "aren't saved" prompt is shown.
@@ -198,6 +222,7 @@ public final class LibraryViewModel {
     public func createSong(source: String) async throws -> SongRecord {
         let record = try await store.createSong(source: source)
         await reload()
+        recordSongsCreated(.newSong)
         selection = record.id
         detail = .song(record.id)
         return record
@@ -226,9 +251,21 @@ public final class LibraryViewModel {
     /// Songs matching `state`: the free text through the index, then the typed tokens and
     /// chips (tags, proficiency, key) through `SongFilter`.
     public func search(_ state: SongFilterState) async throws -> [SongRecord] {
+        try await searchWithTier(state).records
+    }
+
+    /// `search(_:)` plus the index tier of the first result (nil when the free text is
+    /// blank or nothing matched), for `Segue.Search.performed`.
+    func searchWithTier(_ state: SongFilterState) async throws -> SearchOutcome {
         let filter = state.filter(knownTags: tags.map(\.tag))
-        let found = try await search(filter.text)
-        return filter.hasConstraints ? found.filter(filter.matches) : found
+        let text = filter.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let outcome = text.isEmpty
+            ? SearchOutcome(records: catalog, firstTier: nil)
+            : try await store.searchWithTier(query: text)
+        let records = filter.hasConstraints
+            ? outcome.records.filter(filter.matches)
+            : outcome.records
+        return SearchOutcome(records: records, firstTier: records.isEmpty ? nil : outcome.firstTier)
     }
 
     func scheduleSearch() {
@@ -255,11 +292,12 @@ public final class LibraryViewModel {
     }
 
     func runSearch(_ state: SongFilterState) async throws {
-        let found = try await search(state)
+        let found = try await searchWithTier(state)
         try Task.checkCancellation()
         // A newer keystroke may have changed the query while the index was busy.
         guard state == filterState else { return }
-        results = found
+        results = found.records
         isSearching = false
+        recordSearch(state, found)
     }
 }

@@ -180,7 +180,7 @@ enum VocabularySample {
         }
         events += EditorMode.allCases.map(AnalyticsEvent.editorOpened)
         events += SetlistSource.allCases.map(AnalyticsEvent.setlistCreated)
-        events += ShowKind.allCases.map {
+        events += AnalyticsShowKind.allCases.map {
             .showStarted(kind: $0, songs: .zero, resumed: true, shortcutsOn: false)
         }
         events += DurationBucket.allCases.flatMap { duration in

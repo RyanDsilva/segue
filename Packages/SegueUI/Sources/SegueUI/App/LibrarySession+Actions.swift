@@ -1,6 +1,7 @@
 #if os(macOS)
     import Foundation
     import Library
+    import Services
     import Setlists
     import Shows
 
@@ -82,7 +83,7 @@
         func chooseAndImport() async {
             guard library.canImport else { return }
             let urls = await importPanel.chooseFiles()
-            await library.importSongs(urls)
+            await library.importSongs(urls, method: .fileMenu)
         }
 
         /// Add to Setlist: saves the song's pending edits, appends it to the setlist and
@@ -105,6 +106,7 @@
 
         /// Reveals `url`; a file gone since the last refresh shows its folder instead.
         private func reveal(_ url: URL) {
+            library.services.record(.featureUsed(.showInFinder, .library))
             if stores.fileSystem.fileExists(at: url) {
                 workspace.reveal([url])
             } else {

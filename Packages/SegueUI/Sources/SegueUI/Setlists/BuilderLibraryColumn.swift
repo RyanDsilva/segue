@@ -120,7 +120,7 @@
                 }
             }
             do {
-                let found = try await library.search(state)
+                let found = try await library.builderSearch(state)
                 guard !Task.isCancelled else { return }
                 matches = found
             } catch {

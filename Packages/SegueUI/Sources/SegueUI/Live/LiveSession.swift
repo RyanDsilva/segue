@@ -4,6 +4,7 @@
     import Library
     import LiveLayout
     import Observation
+    import Services
     import Shows
     import Support
 
@@ -95,6 +96,13 @@
         @ObservationIgnored var prefsWriter: Task<Void, Never>?
 
         @ObservationIgnored let context: Context
+        /// Records analytics events (WS3 spec 5); the app hands over its hub on stage.
+        @ObservationIgnored public var services: ServicesHub = .disabled {
+            didSet { search.services = services }
+        }
+
+        /// Auto-scroll was switched on during this run (`Segue.Show.ended`).
+        @ObservationIgnored var autoScrollUsed = false
         @ObservationIgnored private var queue: Task<Void, Never>?
         @ObservationIgnored private var flushTask: Task<Void, Never>?
         @ObservationIgnored private var keepAwake: DisplaySleepAssertion?

@@ -6,6 +6,7 @@ import Library
 import MusicTheory
 import Observation
 import os
+import Services
 #if os(macOS)
     import AppKit
     import QuartzCore
@@ -78,7 +79,14 @@ public final class SongEditorViewModel {
     /// "n=40 max=3.1ms mean=1.2ms": keystroke processing times (acceptance criterion 9).
     public private(set) var keystrokeSummary = ""
     /// A palette chord "in hand" (display text): clicking a chord slot drops it there.
-    public var armedChord: String?
+    public var armedChord: String? {
+        didSet {
+            if let armedChord, armedChord != oldValue {
+                recordPalette(.armed)
+            }
+        }
+    }
+
     /// The library file name, for the status bar (follows a new song's renames).
     public internal(set) var fileName: String?
 
@@ -97,6 +105,8 @@ public final class SongEditorViewModel {
     @ObservationIgnored var originalSource: String
     /// The user's shape library, for diagram lookup after the song's `{define}`s.
     @ObservationIgnored let userShapes: UserShapeLibrary
+    /// Records analytics events (WS3 spec 5); the library hands over the app's hub.
+    @ObservationIgnored public var services: ServicesHub = .disabled
     @ObservationIgnored let save: (String) async throws -> SongRecord
     @ObservationIgnored let persistPrefs: ((SongID, DisplayPrefs) async throws
         -> SongRecord)?

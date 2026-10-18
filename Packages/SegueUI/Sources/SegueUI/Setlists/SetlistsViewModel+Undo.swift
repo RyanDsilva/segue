@@ -1,5 +1,6 @@
 import Foundation
 import Library
+import Services
 import Setlists
 import Support
 
@@ -48,6 +49,9 @@ extension SetlistsViewModel {
         manager.registerUndo(withTarget: target) { [weak self] target in
             MainActor.assumeIsolated {
                 guard let self else { return }
+                if manager.isUndoing {
+                    self.services.record(.featureUsed(.undoInBuilder, .builder))
+                }
                 // Registered while undoing (or redoing), so it lands on the other stack.
                 self.registerSnapshotUndo(id, actionName: actionName, before: after, after: before)
                 self.chain {

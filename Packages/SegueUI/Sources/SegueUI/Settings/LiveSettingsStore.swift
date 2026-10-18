@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import Services
 import Shows
 import Support
 
@@ -16,9 +17,13 @@ public final class LiveSettingsStore {
         didSet {
             if settings != oldValue {
                 save()
+                services.record(.featureUsed(.liveSettings, .settings))
             }
         }
     }
+
+    /// Records analytics events (WS3 spec 5); the app hands over its hub.
+    @ObservationIgnored public var services: ServicesHub = .disabled
 
     /// The UserDefaults key of `runsShortcutsForRehearsals`.
     public static let rehearsalShortcutsKey = "live.rehearsalShortcuts"

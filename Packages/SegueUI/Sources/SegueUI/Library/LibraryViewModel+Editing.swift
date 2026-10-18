@@ -259,6 +259,7 @@ extension LibraryViewModel {
             created.id = record.id
             base.revision = record.revision
             await applySaved(record)
+            recordSongsCreated(.newSong)
             // The new song is the selection from now on (the editor stays the same).
             detail = .song(record.id)
             selection = record.id

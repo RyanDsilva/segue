@@ -4,6 +4,7 @@ import Editing
 import Foundation
 import Library
 import MusicTheory
+import Services
 #if os(macOS)
     import AppKit
 #endif
@@ -20,28 +21,36 @@ public extension SongEditorViewModel {
             value += 12
         }
         updateOptions { $0.transpose = value }
+        recordFeature(.transpose)
     }
 
     func setCapoMode(_ mode: CapoMode) {
         updateOptions { $0.capoMode = mode }
+        recordFeature(.capo)
     }
 
     func setNashville(_ on: Bool) {
         updateOptions { $0.nashville = on }
+        recordFeature(.nashville)
     }
 
     func setShowDiagrams(_ on: Bool) {
         updateOptions { $0.showDiagrams = on }
+        recordFeature(.diagrams)
     }
 
     func setInstrument(_ instrument: Instrument) {
         updateOptions { $0.instrument = instrument }
+        if instrument == .piano {
+            recordFeature(.instrumentPiano)
+        }
     }
 
     /// Sets the song's tuning in both places (open question 5): the sidecar, and
     /// `{meta: tuning}` in the source (removed again for standard tuning).
     func setTuning(_ tuning: Tuning) {
         updateOptions { $0.tuning = tuning }
+        recordFeature(.tuningChange)
         let current = snapshot.document.metadata.extra["tuning"]?.first
         if tuning == .standard {
             if current != nil {
@@ -107,5 +116,27 @@ public extension SongEditorViewModel {
                 self?.errorMessage = UserMessage.describe(error)
             }
         }
+    }
+}
+
+// MARK: - Analytics (WS3 spec 5 rows 8 and 18)
+
+extension SongEditorViewModel {
+    /// Row 8: a feature used in the editor.
+    func recordFeature(_ feature: FeatureKey) {
+        services.record(.featureUsed(feature, .editor))
+    }
+
+    /// Row 18: a palette chip armed, or an armed chord placed into the song.
+    func recordPalette(_ action: PaletteAction) {
+        services.record(.editorChordPalette(
+            action: action,
+            chords: SmallBucket(paletteChords.count),
+        ))
+    }
+
+    /// The canvas dropped the armed chord into the song.
+    func armedChordPlaced() {
+        recordPalette(.placed)
     }
 }

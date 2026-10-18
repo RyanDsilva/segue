@@ -240,41 +240,6 @@ public actor LibraryStore {
             .map(\.record)
     }
 
-    /// Full-text search over title, artist, lyrics and tags (FTS5), including romanized-Hindi
-    /// spelling variants via the normalized index columns. Best matches first.
-    ///
-    /// Tiers, each appended without duplicates: (1) FTS on the original text, every query
-    /// word as a prefix; (2) FTS on the `RomanNormalizer` forms, whole words except a last
-    /// word of 4+ letters (prefix, for as-you-type); (3) the same over the loose forms
-    /// (`RomanNormalizer.loose`: `dewana` = `deewana` = `diwana`), ranked after the exact
-    /// spellings. Only when all three find nothing, (4) an edit-distance fallback (<= 1 per query
-    /// word of 4+ letters) over normalized titles and
-    /// first lines. Within a tier: bm25 (title > artist = tags > lyrics), then title, then ID.
-    /// An empty query returns `allSongs()`.
-    public func search(query: String) throws -> [SongRecord] {
-        let library = try openLibrary()
-        let words = RomanNormalizer.words(query)
-        guard !words.isEmpty else { return try allSongs() }
-        let normalized = words.map(RomanNormalizer.normalizeWord)
-
-        var ordered: [String] = []
-        var seen: Set<String> = []
-        func append(_ matches: [String]) {
-            for id in matches where seen.insert(id).inserted {
-                ordered.append(id)
-            }
-        }
-        try append(library.index.matchOriginals(tokens: words))
-        try append(library.index.matchNormalized(tokens: normalized))
-        try append(library.index.matchLoose(tokens: normalized.map(RomanNormalizer.looseWord)))
-        if ordered.isEmpty {
-            try append(Self.fuzzyMatches(normalized, in: library.index.fuzzyCandidates()))
-        }
-        return ordered.compactMap { idString in
-            ULID(string: idString).flatMap { library.songs[SongID($0)]?.record }
-        }
-    }
-
     /// Rescans the library folder: upserts changed files, deletes missing ones. Files whose
     /// modification time and size are unchanged are not read again; the index is updated in
     /// one transaction. A file that can't be read is reported in `loadIssues` (keeping what
@@ -445,5 +410,84 @@ public actor LibraryStore {
             }
         }
         .map(\.id)
+    }
+}
+
+// MARK: - Search
+
+public extension LibraryStore {
+    /// Full-text search over title, artist, lyrics and tags (FTS5), including romanized-Hindi
+    /// spelling variants via the normalized index columns. Best matches first.
+    ///
+    /// Tiers, each appended without duplicates: (1) FTS on the original text, every query
+    /// word as a prefix; (2) FTS on the `RomanNormalizer` forms, whole words except a last
+    /// word of 4+ letters (prefix, for as-you-type); (3) the same over the loose forms
+    /// (`RomanNormalizer.loose`: `dewana` = `deewana` = `diwana`), ranked after the exact
+    /// spellings. Only when all three find nothing, (4) an edit-distance fallback (<= 1 per query
+    /// word of 4+ letters) over normalized titles and
+    /// first lines. Within a tier: bm25 (title > artist = tags > lyrics), then title, then ID.
+    /// An empty query returns `allSongs()`.
+    func search(query: String) throws -> [SongRecord] {
+        try searchWithTier(query: query).records
+    }
+
+    /// `search(query:)` plus which tier produced the first result (WS3 spec 5 row 17: how
+    /// often romanized-Hindi spelling variants find a song). The query itself is never
+    /// reported anywhere.
+    func searchWithTier(query: String) throws -> SearchOutcome {
+        let library = try openLibrary()
+        let words = RomanNormalizer.words(query)
+        guard !words.isEmpty else { return try SearchOutcome(records: allSongs(), firstTier: nil) }
+        let normalized = words.map(RomanNormalizer.normalizeWord)
+
+        var ordered: [String] = []
+        var seen: Set<String> = []
+        var firstTier: SearchTier?
+        func append(_ matches: [String], tier: SearchTier) {
+            for id in matches where seen.insert(id).inserted {
+                ordered.append(id)
+                firstTier = firstTier ?? tier
+            }
+        }
+        try append(library.index.matchOriginals(tokens: words), tier: .exact)
+        try append(library.index.matchNormalized(tokens: normalized), tier: .spellingVariant)
+        try append(
+            library.index.matchLoose(tokens: normalized.map(RomanNormalizer.looseWord)),
+            tier: .looseVariant,
+        )
+        if ordered.isEmpty {
+            try append(
+                Self.fuzzyMatches(normalized, in: library.index.fuzzyCandidates()),
+                tier: .fuzzy,
+            )
+        }
+        let records = ordered.compactMap { idString in
+            ULID(string: idString).flatMap { library.songs[SongID($0)]?.record }
+        }
+        return SearchOutcome(records: records, firstTier: records.isEmpty ? nil : firstTier)
+    }
+}
+
+/// Which `LibraryStore.search` tier found a song.
+public enum SearchTier: Sendable, Hashable, CaseIterable {
+    /// Tier 1: full-text match on the original text.
+    case exact
+    /// Tier 2: `RomanNormalizer` spelling-variant forms.
+    case spellingVariant
+    /// Tier 3: loose forms (`dewana` = `deewana` = `diwana`).
+    case looseVariant
+    /// Tier 4: the edit-distance fallback (only when tiers 1-3 find nothing).
+    case fuzzy
+}
+
+/// A search's results and the tier that produced the first of them (nil: no results, or no
+/// query).
+public struct SearchOutcome: Sendable {
+    public var records: [SongRecord]
+    public var firstTier: SearchTier?
+
+    public init(records: [SongRecord], firstTier: SearchTier?) {
+        self.records = records
+        self.firstTier = firstTier
     }
 }

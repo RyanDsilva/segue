@@ -109,7 +109,16 @@ extension ServicesE2E {
         XCTAssertTrue(element(app, ServicesAXID.consentSheet).disappears(timeout: 10))
     }
 
-    /// Opens the first song of the library list.
+    /// Opens `title` in the editor (the visual canvas).
+    func openEditor(_ app: XCUIApplication, titled title: String) {
+        openSong(app, titled: title)
+        let edit = element(app, ServicesAXID.editSong)
+        XCTAssertTrue(edit.appears(timeout: 10))
+        edit.click(in: app)
+        XCTAssertTrue(element(app, ServicesAXID.editorDone).appears(timeout: 10))
+    }
+
+    /// Selects `title` in the library list.
     func openSong(_ app: XCUIApplication, titled title: String) {
         let row = app.descendants(matching: .any)
             .matching(NSPredicate(
@@ -154,6 +163,12 @@ enum ServicesAXID {
         "segue.privacy.\(toggle).caption"
     }
 
+    static let librarySearch = "segue.library.search"
+    static let editSong = "segue.song.edit"
+    static let editorDone = "segue.editor.done"
+    static let editorTransposeUp = "segue.editor.transpose.up"
+    static let editorNashville = "segue.editor.display.nashville"
+    static let editorPaletteChord = "segue.editor.palette.chord"
     static let privacyDiagnosticsID = "segue.privacy.diagnosticsID"
     static let privacyCopyID = "segue.privacy.diagnosticsID.copy"
     static let privacyRestartCaption = "segue.privacy.crashReports.restart"

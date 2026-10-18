@@ -100,7 +100,7 @@ enum VocabularySample {
         }
         events += EditorMode.allCases.map(AnalyticsEvent.editorOpened)
         events += SetlistSource.allCases.map(AnalyticsEvent.setlistCreated)
-        for kind in ShowKind.allCases {
+        for kind in AnalyticsShowKind.allCases {
             for songs in SmallBucket.allCases {
                 for flags in [(false, false), (true, false), (false, true), (true, true)] {
                     events.append(.showStarted(
@@ -192,7 +192,7 @@ enum VocabularySample {
 
     private static var showSummaries: [ShowSummary] {
         var result: [ShowSummary] = []
-        result += ShowKind.allCases.map { var value = baseSummary
+        result += AnalyticsShowKind.allCases.map { var value = baseSummary
             value.kind = $0
             return value
         }

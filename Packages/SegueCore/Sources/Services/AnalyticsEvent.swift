@@ -42,7 +42,7 @@ public enum AnalyticsEvent: Sendable, Hashable {
     /// Row 10: a setlist was created (daily per source).
     case setlistCreated(SetlistSource)
     /// Row 11: the stage was entered.
-    case showStarted(kind: ShowKind, songs: SmallBucket, resumed: Bool, shortcutsOn: Bool)
+    case showStarted(kind: AnalyticsShowKind, songs: SmallBucket, resumed: Bool, shortcutsOn: Bool)
     /// Row 12: a show finished.
     case showEnded(ShowSummary)
     /// Row 13: an activation milestone, once per install.
@@ -86,7 +86,7 @@ public struct LibrarySnapshot: Sendable, Hashable {
 
 /// Row 12 parameters.
 public struct ShowSummary: Sendable, Hashable {
-    public var kind: ShowKind
+    public var kind: AnalyticsShowKind
     public var duration: DurationBucket
     public var played: SmallBucket
     public var skipped: SmallBucket
@@ -96,7 +96,7 @@ public struct ShowSummary: Sendable, Hashable {
     public var endedBy: ShowEndReason
 
     public init(
-        kind: ShowKind,
+        kind: AnalyticsShowKind,
         duration: DurationBucket,
         played: SmallBucket,
         skipped: SmallBucket,
@@ -236,7 +236,7 @@ public enum SetlistSource: String, Sendable, CaseIterable {
     case welcome
 }
 
-public enum ShowKind: String, Sendable, CaseIterable {
+public enum AnalyticsShowKind: String, Sendable, CaseIterable {
     case gig
     case rehearsal
 }

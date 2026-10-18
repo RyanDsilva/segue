@@ -2,6 +2,7 @@
     import AppKit
     import Foundation
     import Library
+    import Services
     import Setlists
     import Shows
     import Support
@@ -24,6 +25,13 @@
                         + "“\(first.relativePath)” (\(first.message))."
                 }
                 let check = try await shows.launchCheck()
+                for ending in check.autoClosed {
+                    recordShowEnded(
+                        ending.record,
+                        autoScrollUsed: false,
+                        endedBy: .closedOnRelaunch,
+                    )
+                }
                 await reloadPendingReviews()
                 pendingResume = check.resumable
                 if !check.autoClosed.isEmpty {
@@ -90,9 +98,10 @@
                         setlistName: setlist.name,
                     ),
                 )
-                await presentStage(controller, kind: kind, session: session)
+                await presentStage(controller, kind: kind, session: session, resumed: false)
                 return true
             } catch {
+                recordError(.showStartFailed, error)
                 startFailure = "The show could not start (\(UserMessage.describe(error)))."
                 return false
             }
@@ -119,9 +128,10 @@
                 )
                 // Gig Mode may have ended with the crash; the start Shortcut is idempotent.
                 _ = await runStartShortcut(kind: record.kind)
-                await presentStage(controller, kind: record.kind, session: session)
+                await presentStage(controller, kind: record.kind, session: session, resumed: true)
                 return true
             } catch {
+                recordError(.showResumeFailed, error)
                 startFailure = "The show could not be resumed (\(UserMessage.describe(error))). "
                     + "It stays in the shows folder and closes into the gig log after 12 hours."
                 return false
@@ -143,7 +153,8 @@
                         setlistName: record.setlistName,
                     ),
                 )
-                _ = try await controller.end()
+                let ending = try await controller.end()
+                recordShowEnded(ending.record, autoScrollUsed: false, endedBy: .closedOnRelaunch)
                 await reloadPendingReviews()
                 await session.library.reload()
             } catch {
@@ -285,10 +296,12 @@
             _ controller: ShowController,
             kind: ShowKind,
             session: LibrarySession,
+            resumed: Bool,
         )
             async
         {
             let state = await controller.state
+            recordShowStarted(state, kind: kind, resumed: resumed)
             let live = LiveSession(state: state, kind: kind, context: LiveSession.Context(
                 controller: controller,
                 library: session.stores.library,
@@ -298,6 +311,7 @@
                 clock: session.stores.clock,
                 onEnd: { [weak self] live in await self?.finishRun(live) },
             ))
+            live.services = services
             self.live = live
             StageWindowController.shared.present(self)
         }
@@ -329,13 +343,19 @@
         func finishRun(_ live: LiveSession) async {
             await live.prefsSaved()
             do {
-                _ = try await live.context.controller.end()
+                let ending = try await live.context.controller.end()
+                recordShowEnded(
+                    ending.record,
+                    autoScrollUsed: live.autoScrollUsed,
+                    endedBy: live.quitsAfterEnding ? .quit : .endShow,
+                )
             } catch {
                 session?.library.errorMessage = "The show could not be closed "
                     + "(\(UserMessage.describe(error))). It will be offered again at next launch."
                 await live.context.controller.relinquish()
             }
             StageWindowController.shared.close()
+            services.record(LifecycleCrumb.stageExited)
             if self.live === live {
                 live.stop()
                 self.live = nil

@@ -1,5 +1,6 @@
 import Plugins
 import SegueUI
+import Services
 import Support
 import SwiftUI
 #if SEGUE_PERSONAL
@@ -46,6 +47,7 @@ struct SegueApp: App {
                 services: services.services,
                 consent: services.consent,
                 diagnosticLog: services.log,
+                flavor: Self.flavor,
             )
         #endif
         _app = State(initialValue: AppModel(dependencies: dependencies))
@@ -73,6 +75,15 @@ struct SegueApp: App {
     @MainActor
     static var hooks: AppHooks {
         AppHooks()
+    }
+
+    /// `Segue.App.launched`'s flavour (Personal also reports to its own TelemetryDeck app).
+    static var flavor: AppFlavor {
+        #if SEGUE_PERSONAL
+            .personal
+        #else
+            .appStore
+        #endif
     }
 
     /// Plugin modules for this flavor. Only the Personal build sees the personal package.

@@ -45,6 +45,8 @@
         public var consent: ConsentStore
         /// The privacy-safe diagnostic log (WS3 spec 7); nil in in-process tests.
         public var diagnosticLog: DiagnosticLog?
+        /// Which app this is (`Segue.App.launched`'s `segue.flavor`).
+        public var flavor: AppFlavor
 
         public init(
             fileSystem: any FileSystem,
@@ -63,7 +65,9 @@
             services: ServicesHub? = nil,
             consent: ConsentStore? = nil,
             diagnosticLog: DiagnosticLog? = nil,
+            flavor: AppFlavor = .appStore,
         ) {
+            self.flavor = flavor
             self.live = live ?? LiveDependencies(settings: LiveSettingsStore(defaults: .standard))
             self.services = services ?? .inert()
             self.consent = consent ?? .inert()
@@ -186,16 +190,17 @@
             observeActivation()
             if let override = dependencies.libraryOverride {
                 await open(override, remember: dependencies.rememberLibraryOverride)
-                return
+            } else {
+                switch dependencies.location.resolveStored() {
+                case .notChosen:
+                    state = .needsLibrary(.firstLaunch)
+                case let .lost(url):
+                    state = .needsLibrary(.accessLost(url))
+                case let .resolved(url):
+                    await open(url, remember: false)
+                }
             }
-            switch dependencies.location.resolveStored() {
-            case .notChosen:
-                state = .needsLibrary(.firstLaunch)
-            case let .lost(url):
-                state = .needsLibrary(.accessLost(url))
-            case let .resolved(url):
-                await open(url, remember: false)
-            }
+            recordLaunch()
         }
 
         /// Switching libraries is blocked while a show is on stage or starting: the run, its
@@ -209,7 +214,7 @@
             guard canSwitchLibrary else { return }
             do {
                 guard let url = try await dependencies.location.createFolder() else { return }
-                await adopt(url)
+                await adopt(url, created: true)
             } catch {
                 state = .needsLibrary(.openFailed(UserMessage.describe(error)))
             }
@@ -225,20 +230,23 @@
             }
             guard let url = await dependencies.location.chooseExistingFolder(startingAt: hint)
             else { return }
-            await adopt(url)
+            await adopt(url, created: false)
         }
 
         /// Opens a folder the user just picked. The previous library's security scope is
         /// released only once the new library has opened; if opening fails, the previous
         /// library stays open and keeps its access.
-        private func adopt(_ url: URL) async {
+        private func adopt(_ url: URL, created: Bool) async {
             let location = dependencies.location
             guard let access = location.startAccess(url) else {
-                await open(url, remember: true)
+                if await open(url, remember: true) {
+                    recordLibraryChosen(url, created: created)
+                }
                 return
             }
             if await open(url, remember: true) {
                 location.commit(access)
+                recordLibraryChosen(url, created: created)
             } else {
                 location.abandon(access)
             }
@@ -256,6 +264,7 @@
                 nil
             }
             state = .opening(url)
+            let started = ContinuousClock.now
             do {
                 let session = try await LibrarySession.open(
                     root: root,
@@ -282,9 +291,11 @@
                 state = .ready(session)
                 session.restoreState()
                 await runShowLaunchCheck()
+                await libraryOpened(session, elapsed: ContinuousClock.now - started)
                 return true
             } catch {
                 let inUse = (error as? LibraryLock.Failure) == .inUse
+                recordError(.libraryOpenFailed, error)
                 let message = inUse ? Self.inUseMessage : UserMessage.describe(error)
                 if case let .ready(session) = previous {
                     // Keep the working library; surface the failure in it.

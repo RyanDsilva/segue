@@ -1,5 +1,6 @@
 import Foundation
 import Library
+import Services
 import Support
 
 // In-app import (WS2a 3.2, R15): File > Import Songs… and drag and drop on the library.
@@ -14,7 +15,7 @@ public extension LibraryViewModel {
     /// sandbox extension only for now). Pending edits are saved first. The first imported
     /// song is selected; the summary bar says what happened. Edit > Undo Import moves the
     /// imported songs to the Trash; Redo puts them back.
-    func importSongs(_ urls: [URL]) async {
+    func importSongs(_ urls: [URL], method: ImportMethod = .dragDrop) async {
         guard canImport, !urls.isEmpty else { return }
         await flushEditor()
         let summary: ImportSummary
@@ -22,10 +23,12 @@ public extension LibraryViewModel {
             summary = try await store.importSongs(urls)
         } catch {
             errorMessage = UserMessage.describe(error)
+            services.record(.errorOccurred(.importFailed))
             return
         }
         await reload()
         importSummary = summary
+        recordImport(summary, files: urls.count, method: method)
         guard let first = summary.imported.first else { return }
         navigate { [weak self] in
             self?.selection = first.id

@@ -1,6 +1,7 @@
 import Foundation
 import Library
 import Observation
+import Services
 import Shows
 import Support
 
@@ -19,6 +20,8 @@ public final class GigLogViewModel {
     private let shows: ShowStore
     /// The main window's undo manager (Edit > Undo).
     @ObservationIgnored weak var undoManager: UndoManager?
+    /// Records analytics events (WS3 spec 5); the session hands over the app's hub.
+    @ObservationIgnored public var services: ServicesHub = .disabled
     /// Undo targets of Move Gig to Trash, one per gig.
     let trashTargets = UndoTargets<ShowID>()
     /// The autosave timing gig details use (the same policy as the song editor, B-13).
@@ -64,6 +67,7 @@ public final class GigLogViewModel {
         guard entries.first(where: { $0.id == id })?.details != details else { return }
         do {
             try await shows.updateGigDetails(details, of: id)
+            services.record(.featureUsed(.gigLogEdit, .library))
         } catch {
             errorMessage = UserMessage.describe(error)
         }

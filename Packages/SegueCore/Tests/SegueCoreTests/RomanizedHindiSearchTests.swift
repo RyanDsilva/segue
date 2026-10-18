@@ -125,6 +125,24 @@ struct RomanizedHindiSearchTests {
         #expect(try await store.search(query: query).titles == expected)
     }
 
+    /// The tier that found the first result (WS3 row 17, `Segue.Search.performed`).
+    @Test(arguments: [
+        ("Pyaar", SearchTier?.some(.exact)),
+        ("pyar", .spellingVariant),
+        ("dewana", .looseVariant),
+        ("safer", .fuzzy),
+        ("zzqx", nil),
+    ])
+    func `search reports the tier of its first result`(query: String, tier: SearchTier?)
+        async throws
+    {
+        let (lib, store) = try await Self.fixtureLibrary()
+        _ = lib
+        let outcome = try await store.searchWithTier(query: query)
+        #expect(outcome.firstTier == tier)
+        #expect(try await outcome.records.titles == store.search(query: query).titles)
+    }
+
     @Test(arguments: [
         ("river", ["River Song"]),
         ("the", ["River Song", "Morning Light"]),

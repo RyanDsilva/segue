@@ -1,6 +1,7 @@
 #if os(macOS)
     import Foundation
     import Library
+    import Services
     import Shows
 
     /// The single dispatcher of live commands (keys now, pedals and MIDI in phase 6).
@@ -31,7 +32,28 @@
             case .chrome:
                 dispatchChrome(command)
             }
+            recordStageFeature(command)
             return true
+        }
+
+        /// Row 8 for the stage aids (WS3 spec 5); auto-scroll also counts toward
+        /// `Segue.Show.ended`'s `segue.autoScrollUsed`.
+        private func recordStageFeature(_ command: LiveCommand) {
+            let feature: FeatureKey? = switch command {
+            case .toggleAutoScroll: .autoScroll
+            case .openSearch: .stageSearch
+            case .playNextRequest, .toggleRequests: .requests
+            case .cycleColumns: .columnsCycle
+            case .resetZoom, .zoomIn, .zoomOut: .stageZoom
+            case .toggleCollapseRepeats: .collapseRepeats
+            default: nil
+            }
+            if command == .toggleAutoScroll {
+                autoScrollUsed = true
+            }
+            if let feature {
+                services.record(.featureUsed(feature, .stage))
+            }
         }
 
         private func dispatchViewport(_ command: LiveCommand) {
@@ -152,6 +174,7 @@
                 return
             }
             overlay = nil
+            services.record(.featureUsed(action == .playNow ? .playNow : .requests, .stage))
             switch action {
             case .playNow: perform(.playNow(song))
             case .addRequest: perform(.addRequest(song, note: nil))

@@ -4,6 +4,7 @@ import Editing
 import Foundation
 import Library
 import MusicTheory
+import Services
 #if os(macOS)
     import AppKit
 #endif
@@ -41,6 +42,7 @@ extension SongEditorViewModel {
         apply(plan.change)
         flaggedDefines = plan.flaggedDefines
         updateOptions { $0.transpose = 0 }
+        recordFeature(.applyTransposeToSource)
     }
 
     public func dismissFlaggedDefines() {
@@ -50,6 +52,7 @@ extension SongEditorViewModel {
     /// Writes a custom shape into the song as a `{define}`.
     func saveDefine(_ definition: ChordDefinition) {
         perform(.setDefine(definition))
+        recordFeature(.shapeEditor)
     }
 
     /// The source chord name a displayed diagram stands for, when the display shows chords

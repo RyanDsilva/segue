@@ -1,6 +1,7 @@
 import Foundation
 import Library
 import Observation
+import Services
 import Setlists
 import Support
 
@@ -30,6 +31,10 @@ public final class SetlistsViewModel {
     var known: [SetlistID: Setlist] = [:]
     /// Undo and redo file work, run in order.
     var undoWork: Task<Void, Never>?
+    /// Records analytics events (WS3 spec 5); the session hands over the app's hub.
+    @ObservationIgnored public var services: ServicesHub = .disabled
+    /// Days since the first launch, set by the session (milestones).
+    @ObservationIgnored var daysSinceFirstLaunch: DaysBucket = .zero
 
     public init(store: SetlistStore, loadIssues: [SetlistLoadIssue] = []) {
         self.store = store
@@ -62,6 +67,7 @@ public final class SetlistsViewModel {
         }
         if let created {
             registerCreationUndo(created.id, actionName: "New Setlist")
+            recordCreated(.new)
         }
         return created
     }
@@ -85,6 +91,7 @@ public final class SetlistsViewModel {
         await mutate(undo: (id, "Move Song")) { store in
             try await store.move(in: id, fromOffsets: source, toOffset: destination)
         }
+        services.record(.featureUsed(.setlistEdit, .builder))
     }
 
     /// Removes entries (`onDelete`, context menu).
@@ -92,6 +99,7 @@ public final class SetlistsViewModel {
         await mutate(undo: (id, offsets.count == 1 ? "Remove Song" : "Remove Songs")) { store in
             try await store.remove(in: id, atOffsets: offsets)
         }
+        services.record(.featureUsed(.setlistEdit, .builder))
     }
 
     /// Renames setlist `id` (blank names are refused).
@@ -113,6 +121,7 @@ public final class SetlistsViewModel {
         }
         if let copy {
             registerCreationUndo(copy.id, actionName: "Duplicate Setlist")
+            recordCreated(.duplicate)
         }
         return copy
     }
@@ -171,6 +180,7 @@ public final class SetlistsViewModel {
         await mutate(undo: (id, songIDs.count == 1 ? "Add Song" : "Add Songs")) { store in
             try await store.insertSongs(songIDs, into: id, at: offset)
         }
+        services.record(.featureUsed(.setlistEdit, .builder))
     }
 
     /// Saves one entry's overrides and note.
@@ -184,6 +194,9 @@ public final class SetlistsViewModel {
     public func updateDetails(_ details: SetlistDetails, of id: SetlistID) async {
         await mutate(undo: (id, "Edit Details")) { store in
             try await store.updateDetails(details, of: id)
+        }
+        if details.targetDuration != nil {
+            services.record(.featureUsed(.setlistTarget, .builder))
         }
     }
 
@@ -219,5 +232,17 @@ public final class SetlistsViewModel {
             await reload()
             return nil
         }
+    }
+}
+
+// MARK: - Analytics (WS3 spec 5 rows 10 and 13)
+
+extension SetlistsViewModel {
+    func recordCreated(_ source: SetlistSource) {
+        services.record(.setlistCreated(source))
+        services.record(.milestoneReached(
+            .firstSetlist,
+            daysSinceFirstLaunch: daysSinceFirstLaunch,
+        ))
     }
 }
