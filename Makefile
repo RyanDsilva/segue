@@ -18,7 +18,7 @@ WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test e2e lint format \
 	verify-appstore check bump site-fonts site-html docs-check shellcheck actionlint repo-check \
-	release-notes labels-sync clean-local
+	release-notes labels-sync clean-local archive validate upload upload-dsyms
 
 bootstrap: ## Install pinned tools, fetch dependencies, generate the workspace
 	mise install
@@ -88,6 +88,7 @@ quick: lint build test ## Fast inner loop: lint, build, unit/integration tests (
 lint: ## Lint + format check (no changes)
 	$(MISE) swiftlint lint --strict --quiet
 	$(MISE) swiftformat --lint .
+	plutil -lint Config/ExportOptions-AppStore.plist App/PrivacyInfo.xcprivacy App/*.entitlements
 
 format: ## Auto-format and auto-fix lint where possible
 	$(MISE) swiftformat .
@@ -95,6 +96,22 @@ format: ## Auto-format and auto-fix lint where possible
 
 bump: ## Bump + commit the build number; `make bump VERSION=0.6` sets the marketing version
 	scripts/bump-version.sh $(if $(VERSION),marketing $(VERSION),build)
+
+# Release (docs/release/specs/WS1-release-pipeline.md 4.7). Not part of `check`. validate,
+# upload and upload-dsyms read credentials with 1Password's `op`, so Ryan runs them in
+# Terminal.app (R46); DRY_RUN=1 does everything except the credentialed steps.
+archive: ## Archive + export the App Store .pkg and run verify-archive (no upload)
+	scripts/release.sh archive
+
+validate: ## archive (or reuse it), then App Store Connect validation (API key from 1Password; DRY_RUN=1)
+	scripts/release.sh validate $(if $(DRY_RUN),--dry-run)
+
+upload: ## validate, upload the verified .pkg, signed local tag, dSYMs to Sentry (never pushes; DRY_RUN=1)
+	scripts/release.sh upload $(if $(DRY_RUN),--dry-run)
+
+upload-dsyms: ## Upload an archive's dSYMs to Sentry (ARCHIVE=path or DSYMS=dir; DRY_RUN=1)
+	@test -n "$(ARCHIVE)$(DSYMS)" || (echo "usage: make upload-dsyms ARCHIVE=<xcarchive> | DSYMS=<dir>" >&2; exit 2)
+	scripts/upload-dsyms.sh $(if $(DRY_RUN),--dry-run) $(ARCHIVE)
 
 verify-appstore: ## Build the App Store flavor and assert no personal-module symbols
 	scripts/verify-appstore.sh

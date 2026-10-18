@@ -27,6 +27,14 @@ xcuserdata/
 # Local signing overrides (not used yet; see Project.swift)
 Tuist/Signing.xcconfig
 
+# Signing and upload credentials never enter the repo (they live in 1Password; WS1 4.6).
+*.p8
+AuthKey_*.p8
+*.p12
+*.cer
+*.certSigningRequest
+*.provisionprofile
+
 # Per-agent SwiftPM scratch paths
 .build-*/
 .claude/settings.local.json

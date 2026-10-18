@@ -1,0 +1,6 @@
+# sentry-cli defaults for the dSYM upload (scripts/upload-dsyms.sh). No secrets: the auth
+# token is read from 1Password at run time into SENTRY_AUTH_TOKEN only. US region (R33).
+[defaults]
+url=https://sentry.io
+org=ryandsilva
+project=segue-macos

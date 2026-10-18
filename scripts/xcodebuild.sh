@@ -3,6 +3,9 @@
 # (compiler warnings are already errors; this also catches linker, asset and
 # project-settings warnings). Usage: scripts/xcodebuild.sh <xcodebuild args...>
 #
+# Destination: SEGUE_DESTINATION overrides the default `platform=macOS,arch=arm64` (the
+# release archive passes `generic/platform=macOS`; ARCHS = arm64 keeps it one slice).
+#
 # Signing: automatic signing needs -allowProvisioningUpdates so Xcode can create or refresh
 # the certificate and provisioning profiles from the command line.
 #
@@ -14,6 +17,7 @@ cd "$(dirname "$0")/.."
 source scripts/lib/discard.sh
 
 derived="${SEGUE_DERIVED_DATA:-.build/DerivedData}"
+destination="${SEGUE_DESTINATION:-platform=macOS,arch=arm64}"
 results=".build/results"
 keep_results=10
 mkdir -p "$results"
@@ -22,7 +26,7 @@ bundle="$results/$(date +%Y%m%d-%H%M%S)-$$.xcresult"
 status=0
 xcodebuild \
     -workspace Segue.xcworkspace \
-    -destination 'platform=macOS,arch=arm64' \
+    -destination "$destination" \
     -derivedDataPath "$derived" \
     -resultBundlePath "$bundle" \
     -allowProvisioningUpdates \

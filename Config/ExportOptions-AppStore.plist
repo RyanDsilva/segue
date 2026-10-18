@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Mac App Store export (docs/release/specs/WS1-release-pipeline.md 4.5, R12). The archive is
+     signed automatically with Apple Development (B-1); this export re-signs it manually with
+     Apple Distribution, Mac Installer Distribution and the named profiles. Keys checked
+     against `xcodebuild -help` under Xcode 27.1. scripts/release.sh drops a
+     provisioningProfiles entry whose bundle is not in the archive (the Quick Look extension
+     until WS2b adds it), in a temp copy; this file stays as is. -->
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>destination</key>
+	<string>export</string>
+	<key>teamID</key>
+	<string>V6BM673U35</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>signingCertificate</key>
+	<string>Apple Distribution</string>
+	<!-- The Mac Installer Distribution certificate's common name is still the legacy
+	     "3rd Party Mac Developer Installer: ..."; Xcode matches by that name. -->
+	<key>installerSigningCertificate</key>
+	<string>3rd Party Mac Developer Installer</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>dev.ryandsilva.segue</key>
+		<string>Segue Mac App Store</string>
+		<key>dev.ryandsilva.segue.quicklook</key>
+		<string>Segue Mac App Store QuickLook</string>
+	</dict>
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+	<key>uploadSymbols</key>
+	<true/>
+	<key>testFlightInternalTestingOnly</key>
+	<false/>
+</dict>
+</plist>
