@@ -6,10 +6,13 @@
 <title>Editing songs - Segue</title>
 <meta name="description" content="Edit songs in Segue as ChordPro text or visually, transpose, add a capo, and use Nashville numbers and chord diagrams.">
 <link rel="canonical" href="https://segue.ryandsilva.dev/help/editor">
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/site.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/css/tokens.css">
 <!--slot:meta:og-->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Segue">
@@ -50,6 +53,7 @@
 </header>
 <!--/slot-->
 <main id="main">
+<div class="doc help-layout">
 <!--slot:partial:help-nav-->
 <nav class="help-nav" aria-label="Help topics">
 <ul>
@@ -64,28 +68,49 @@
 </ul>
 </nav>
 <!--/slot-->
+<div class="help-main">
 <h1>Editing songs</h1>
+<p class="lede">Edit a chart as text, or place chords right on the words.</p>
+<div class="prose">
 <section id="modes">
 <h2>Text and Visual modes</h2>
+<p>The editor has two modes. <strong>Text</strong> edits the ChordPro source directly. <strong>Visual</strong> shows the lyrics with chords above them, so you can place each chord where it belongs.</p>
 </section>
 <section id="chordpro">
 <h2>ChordPro basics</h2>
+<p>ChordPro is plain text. Chords go in square brackets right before the syllable they belong to, and directives in curly braces set things like the title, key and sections:</p>
+<pre><code>{title: Lanterns}
+{key: G}
+
+{start_of_verse}
+[G]Lanterns on the [D]water, the [Em]boats come [C]in
+[G]Ropes along the [D]railing, the [C]night begins
+{end_of_verse}</code></pre>
 </section>
 <section id="visual">
 <h2>Placing chords on syllables</h2>
+<p>In Visual mode, put each chord over the syllable where it changes. Segue writes the ChordPro for you.</p>
 </section>
 <section id="transpose">
 <h2>Transpose, capo and Nashville numbers</h2>
+<p>The editor's top bar has <strong>Transpose</strong>, <strong>Capo</strong> (0 to 11) and <strong>Nashville</strong>. With a capo set, choose <strong>Shapes</strong> to see the chord shapes you play, or <strong>Concert</strong> to see the pitch that sounds.</p>
 </section>
 <section id="diagrams">
 <h2>Guitar and piano diagrams</h2>
+<p>Turn on <strong>Diagrams</strong> to show chord diagrams, and choose <strong>Guitar</strong> or <strong>Piano</strong>, with a tuning for guitar. Shapes you draw yourself are saved in the song as a ChordPro <code>{define}</code>, so they travel with the file.</p>
 </section>
 <section id="autosave">
-<h2>Autosave</h2>
+<h2>Saving</h2>
+
 </section>
 <section id="spelling">
 <h2>Spell-check and autocorrect</h2>
+<p>Spell-check, autocorrect, smart quotes and text replacement are off in the editor. Lyrics are often in other languages or in romanized Hindi with casual spellings, and a chart has to stay exactly as you typed it.</p>
 </section>
+
+</div>
+</div>
+</div>
 </main>
 <!--slot:partial:footer-->
 <footer class="site-footer">

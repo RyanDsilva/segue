@@ -6,10 +6,13 @@
 <title>Stage mode - Segue</title>
 <meta name="description" content="Play a show with Segue&#x27;s stage mode: auto-fit, minimum lyric size, auto-scroll, requests, and picking up after a restart.">
 <link rel="canonical" href="https://segue.ryandsilva.dev/help/live">
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/site.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/css/tokens.css">
 <!--slot:meta:og-->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Segue">
@@ -50,6 +53,7 @@
 </header>
 <!--/slot-->
 <main id="main">
+<div class="doc help-layout">
 <!--slot:partial:help-nav-->
 <nav class="help-nav" aria-label="Help topics">
 <ul>
@@ -64,34 +68,50 @@
 </ul>
 </nav>
 <!--/slot-->
+<div class="help-main">
 <h1>Stage mode</h1>
+<p class="lede">Stage mode is dark, full screen, and built to be read from a stool.</p>
+<div class="prose">
 <section id="start">
 <h2>Starting a show</h2>
+<p>Before a show starts, Segue shows a short checklist, <strong>Before you start</strong>: whether the charger is connected, a reminder to turn the screen brightness up, and whether your Focus is on. You can hide a row for this show or for good.</p>
 </section>
 <section id="navigate">
 <h2>Moving through the set</h2>
+<p><kbd>Right Arrow</kbd> or <kbd>Space</kbd> goes to the next song and <kbd>Left Arrow</kbd> to the previous one. <kbd>Down Arrow</kbd> or <kbd>Page Down</kbd> and <kbd>Up Arrow</kbd> or <kbd>Page Up</kbd> scroll within the song, and <kbd>Home</kbd> goes back to the top. A page-turner pedal that sends these keys works without any setup.</p>
 </section>
 <section id="minimum-size">
 <h2>Auto-fit and the minimum lyric size</h2>
+<p>Segue fits each song to the screen. Set the smallest size you can read in <span class="nowrap">Settings &gt; Live</span>, under <strong>Minimum lyric size</strong>. Songs that don't fit at that size scroll instead of shrinking.</p>
 </section>
 <section id="auto-scroll">
 <h2>Auto-scroll</h2>
+<p>Press <kbd>A</kbd> to start or pause auto-scroll, <kbd>[</kbd> to slow it down and <kbd>]</kbd> to speed it up.</p>
 </section>
 <section id="requests">
 <h2>Requests and quick search</h2>
+<p>Press <kbd>Cmd-K</kbd> or <kbd>/</kbd> and type a few letters of a title or a line you remember. Then press <kbd>Return</kbd> to play it now, <kbd>Option-Return</kbd> to play it next, or <kbd>Cmd-Return</kbd> to add it to your requests, with an optional note such as "table 4". Press <kbd>Q</kbd> to see your requests and <kbd>R</kbd> to play the oldest one.</p>
 </section>
 <section id="skip">
 <h2>Skipping and reordering</h2>
+<p>Press <kbd>X</kbd> to skip a song and <kbd>S</kbd> to see the set order. After the show, if the order changed, Segue asks whether to save the played order to the setlist.</p>
 </section>
 <section id="resume">
 <h2>If Segue quits mid-show</h2>
+<p>If your Mac restarts or Segue quits during a show, Segue offers to resume it the next time it opens, at the same song and scroll position.</p>
 </section>
 <section id="end">
 <h2>Ending a show</h2>
+<p>Press <kbd>Cmd-.</kbd> to end the show, then <kbd>Return</kbd> to confirm or <kbd>Esc</kbd> to keep playing. The set is saved to your gig log.</p>
 </section>
 <section id="zoom">
 <h2>Zoom</h2>
+<p><kbd>Cmd-+</kbd> zooms in, <kbd>Cmd--</kbd> zooms out and <kbd>Cmd-0</kbd> returns to the actual size.</p>
 </section>
+
+</div>
+</div>
+</div>
 </main>
 <!--slot:partial:footer-->
 <footer class="site-footer">

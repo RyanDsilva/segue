@@ -6,10 +6,13 @@
 <title>Keyboard shortcuts - Segue</title>
 <meta name="description" content="Every keyboard shortcut in Segue, for the library window, the menus and stage mode.">
 <link rel="canonical" href="https://segue.ryandsilva.dev/help/keyboard">
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/site.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/css/tokens.css">
 <!--slot:meta:og-->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Segue">
@@ -50,6 +53,7 @@
 </header>
 <!--/slot-->
 <main id="main">
+<div class="doc help-layout">
 <!--slot:partial:help-nav-->
 <nav class="help-nav" aria-label="Help topics">
 <ul>
@@ -64,13 +68,52 @@
 </ul>
 </nav>
 <!--/slot-->
+<div class="help-main">
 <h1>Keyboard shortcuts</h1>
+<p class="lede">Segue is built to be played from the keyboard.</p>
+<div class="prose">
 <section id="library">
 <h2>Main window and menus</h2>
+<div class="table-scroll"><table class="keys">
+<thead><tr><th scope="col">Key</th><th scope="col">Does</th></tr></thead>
+<tbody>
+<tr><td><kbd>Cmd-N</kbd></td><td>New Song</td></tr>
+<tr><td><kbd>Cmd-R</kbd></td><td>Refresh the library</td></tr>
+<tr><td><kbd>Cmd-S</kbd></td><td>Save the song you're editing</td></tr>
+<tr><td><kbd>Cmd-,</kbd></td><td>Settings</td></tr>
+</tbody>
+</table></div>
 </section>
 <section id="stage">
 <h2>Stage mode</h2>
+<div class="table-scroll"><table class="keys">
+<thead><tr><th scope="col">Key</th><th scope="col">Does</th></tr></thead>
+<tbody>
+<tr><td><kbd>Right Arrow</kbd> or <kbd>Space</kbd></td><td>Next song</td></tr>
+<tr><td><kbd>Left Arrow</kbd></td><td>Previous song</td></tr>
+<tr><td><kbd>Down Arrow</kbd> or <kbd>Page Down</kbd></td><td>Scroll down</td></tr>
+<tr><td><kbd>Up Arrow</kbd> or <kbd>Page Up</kbd></td><td>Scroll up</td></tr>
+<tr><td><kbd>Home</kbd></td><td>Back to the top</td></tr>
+<tr><td><kbd>A</kbd></td><td>Start or pause auto-scroll</td></tr>
+<tr><td><kbd>[</kbd> and <kbd>]</kbd></td><td>Slower and faster auto-scroll</td></tr>
+<tr><td><kbd>Cmd-K</kbd> or <kbd>/</kbd></td><td>Search the library</td></tr>
+<tr><td><kbd>R</kbd></td><td>Play the next request</td></tr>
+<tr><td><kbd>Q</kbd></td><td>Show requests</td></tr>
+<tr><td><kbd>X</kbd></td><td>Skip the song</td></tr>
+<tr><td><kbd>S</kbd></td><td>Show the set order</td></tr>
+<tr><td><kbd>C</kbd></td><td>Change the number of columns</td></tr>
+<tr><td><kbd>O</kbd></td><td>Collapse repeated sections</td></tr>
+<tr><td><kbd>Cmd-+</kbd> and <kbd>Cmd--</kbd></td><td>Zoom in and out</td></tr>
+<tr><td><kbd>Cmd-0</kbd></td><td>Actual size</td></tr>
+<tr><td><kbd>Cmd-.</kbd></td><td>End the show</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Close the open panel</td></tr>
+</tbody>
+</table></div>
 </section>
+
+</div>
+</div>
+</div>
 </main>
 <!--slot:partial:footer-->
 <footer class="site-footer">

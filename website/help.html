@@ -6,10 +6,13 @@
 <title>Segue Help - Segue</title>
 <meta name="description" content="How to use Segue for Mac: your library, importing songs, editing charts, building setlists and playing a show in stage mode.">
 <link rel="canonical" href="https://segue.ryandsilva.dev/help">
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/site.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/css/tokens.css">
 <!--slot:meta:og-->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Segue">
@@ -50,6 +53,7 @@
 </header>
 <!--/slot-->
 <main id="main">
+<div class="doc help-layout">
 <!--slot:partial:help-nav-->
 <nav class="help-nav" aria-label="Help topics">
 <ul>
@@ -64,13 +68,38 @@
 </ul>
 </nav>
 <!--/slot-->
+<div class="help-main">
 <h1>Segue Help</h1>
+<p class="lede">Segue keeps your songs, charts and setlists as plain files in a folder you choose, and runs your show from a dark, full-screen stage view. New here? Start with the Welcome library.</p>
+<div class="prose">
 <section id="getting-started">
 <h2>Getting started</h2>
+<p>The first time you open Segue, choose a folder for your library. Segue keeps every song, setlist and gig log there as ordinary files. You can switch to another folder later with <span class="nowrap">Library &gt; Choose Library Folder</span>.</p>
 </section>
 <section id="trash">
 <h2>Deleted something by mistake?</h2>
+<p>See <a href="/help/library#trash">Deleting songs, setlists and gigs</a>.</p>
 </section>
+<section id="topics">
+<h2>Topics</h2>
+<ul class="cards">
+<li><a href="/help/library"><strong>Your library</strong><span>Where songs live, search, tags and backups.</span></a></li>
+<li><a href="/help/import"><strong>Importing songs</strong><span>Bring in ChordPro and text files.</span></a></li>
+<li><a href="/help/editor"><strong>Editing songs</strong><span>Text and visual editing, transpose, capo, diagrams.</span></a></li>
+<li><a href="/help/setlists"><strong>Setlists</strong><span>Build tonight's set, with per-show key and capo.</span></a></li>
+<li><a href="/help/live"><strong>Stage mode</strong><span>Play the show: fit, scroll, requests, resume.</span></a></li>
+<li><a href="/help/shortcuts"><strong>Shortcuts</strong><span>Gig Mode Shortcuts for a quiet Mac.</span></a></li>
+<li><a href="/help/keyboard"><strong>Keyboard shortcuts</strong><span>Every key, in the library and on stage.</span></a></li>
+</ul>
+</section>
+<section id="still-stuck">
+<h2>Still stuck?</h2>
+<p>Write to us from the <a href="/support">Support</a> page. A real person answers, usually within a few days.</p>
+</section>
+
+</div>
+</div>
+</div>
 </main>
 <!--slot:partial:footer-->
 <footer class="site-footer">

@@ -6,10 +6,13 @@
 <title>Setlists - Segue</title>
 <meta name="description" content="Build setlists in Segue: add and reorder songs, set a key and capo per show, and see the running time add up.">
 <link rel="canonical" href="https://segue.ryandsilva.dev/help/setlists">
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/site.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/css/tokens.css">
 <!--slot:meta:og-->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Segue">
@@ -50,6 +53,7 @@
 </header>
 <!--/slot-->
 <main id="main">
+<div class="doc help-layout">
 <!--slot:partial:help-nav-->
 <nav class="help-nav" aria-label="Help topics">
 <ul>
@@ -64,22 +68,34 @@
 </ul>
 </nav>
 <!--/slot-->
+<div class="help-main">
 <h1>Setlists</h1>
+<p class="lede">Put tonight's songs in order, and adjust them for this show only.</p>
+<div class="prose">
 <section id="new">
 <h2>Making a setlist</h2>
+
 </section>
 <section id="overrides">
 <h2>Per-show key and capo</h2>
+<p>To change a song's key or capo for one setlist only, choose <strong>Edit Key, Capo and Note...</strong> on its row. The song itself doesn't change. <strong>Use Song's Key and Capo</strong> goes back to the song's own values.</p>
 </section>
 <section id="running-time">
 <h2>Running time</h2>
+<p>The builder adds up the songs' lengths into a running time, next to the setlist's target if it has one. A song with no known length shows <code>--:--</code> and adds nothing, and the total says how many songs are unknown, for example "38:20 + 2 unknown", so it never looks more precise than it is.</p>
 </section>
 <section id="undo">
 <h2>Undo in the builder</h2>
+
 </section>
 <section id="start">
 <h2>Start Show and Rehearse</h2>
+
 </section>
+
+</div>
+</div>
+</div>
 </main>
 <!--slot:partial:footer-->
 <footer class="site-footer">

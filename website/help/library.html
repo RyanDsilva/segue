@@ -6,10 +6,13 @@
 <title>Your library - Segue</title>
 <meta name="description" content="Where Segue keeps your songs, how to search, tag and delete them, and how to back up or export your library.">
 <link rel="canonical" href="https://segue.ryandsilva.dev/help/library">
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/schibsted-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/site.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/css/tokens.css">
 <!--slot:meta:og-->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Segue">
@@ -50,6 +53,7 @@
 </header>
 <!--/slot-->
 <main id="main">
+<div class="doc help-layout">
 <!--slot:partial:help-nav-->
 <nav class="help-nav" aria-label="Help topics">
 <ul>
@@ -64,28 +68,48 @@
 </ul>
 </nav>
 <!--/slot-->
+<div class="help-main">
 <h1>Your library</h1>
+<p class="lede">Your library is a folder of plain files. Segue reads it, indexes it for search, and never locks it away.</p>
+<div class="prose">
 <section id="folder">
 <h2>Where songs live</h2>
+<p>Inside your library folder, Segue keeps:</p>
+<ul>
+<li><code>songs/</code>: one ChordPro file (<code>.cho</code>) per song, with a small <code>.segue.json</code> file beside it for Segue's extras such as tags, proficiency and notes;</li>
+<li><code>setlists/</code>: one file per setlist;</li>
+<li><code>shows/</code>: your gig log, one file per show.</li>
+</ul>
+<p>To use a different folder, choose <span class="nowrap">Library &gt; Choose Library Folder</span>. You can't switch libraries while a show is running.</p>
 </section>
 <section id="search">
 <h2>Searching</h2>
+
 </section>
 <section id="tags">
 <h2>Tags and proficiency</h2>
+<p>Each song has a proficiency mark, Learning, Ready or Pro, and any tags you add. The marks differ by fill, not by colour alone.</p>
 </section>
 <section id="trash">
 <h2>Deleting songs, setlists and gigs</h2>
+
 </section>
 <section id="finder">
 <h2>Finder integration</h2>
+
 </section>
 <section id="backup">
 <h2>Backing up and exporting</h2>
+<p>Your library is a normal folder, so Time Machine and any other backup tool already cover it. To move it to another Mac, copy the folder and choose it there.</p>
 </section>
 <section id="rebuild">
 <h2>Rebuild Index</h2>
+<p>If search results look wrong, choose <span class="nowrap">Library &gt; Rebuild Index</span>. Segue rebuilds its search index from your files. It never changes the files themselves.</p>
 </section>
+
+</div>
+</div>
+</div>
 </main>
 <!--slot:partial:footer-->
 <footer class="site-footer">
