@@ -187,7 +187,8 @@ let stampResourceBundle: TargetScript = .post(
     // write to declared outputs, and it exits 0 when the sandbox denies the write.
     outputPaths: [
         "$(DERIVED_FILE_DIR)/stamp-resource-bundle.stamp",
-        "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SegueUI_SegueUI.bundle/Contents/Info.plist",
+        "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)"
+            + "/SegueUI_SegueUI.bundle/Contents/Info.plist",
     ],
     basedOnDependencyAnalysis: false,
 )
