@@ -119,6 +119,13 @@ public actor LibraryStore {
     /// Creates a new song from ChordPro `source`: writes `songs/<slug>.cho` and its sidecar
     /// (slug from the title, de-duplicated with `-2`, `-3`, ...) and indexes it.
     public func createSong(source: String) throws -> SongRecord {
+        try createSong(source: source) { _ in }
+    }
+
+    /// `createSong(source:)` with sidecar fields set before the first write, so the song's
+    /// metadata lands in the same write as its files (the seeder relies on this: a seeded
+    /// song never exists without its seed tag).
+    func createSong(source: String, configure: (inout Sidecar) -> Void) throws -> SongRecord {
         let library = try openLibrary()
         let (document, _) = ChordProParser.parse(source)
         let usedSlugs = Set(library.songs.values.map(\.slug))
@@ -126,7 +133,8 @@ public actor LibraryStore {
             usedSlugs.contains(candidate) || library.files.isTaken(slug: candidate)
         }
         let now = SegueJSON.stamp(clock.now())
-        let sidecar = Sidecar(id: SongID(ids.next()), createdAt: now, updatedAt: now)
+        var sidecar = Sidecar(id: SongID(ids.next()), createdAt: now, updatedAt: now)
+        configure(&sidecar)
         let song = try library.files.write(source: source, sidecar: sidecar, slug: slug)
         try library.index.upsert(song.indexed)
         self.library?.songs[song.record.id] = song

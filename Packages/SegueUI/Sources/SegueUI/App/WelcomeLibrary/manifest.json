@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "tag": "Welcome",
+  "songs": [
+    { "file": "soundcheck-at-seven.cho", "tags": ["Welcome", "folk"], "proficiency": "pro",
+      "notes": "Count in 1-2-3-4. Brushes on the snare until the first chorus.",
+      "cues": [ { "section": "Chorus", "occurrence": 3, "text": "Big stop on the last line" } ] },
+    { "file": "kitaabon-wali-gali.cho", "tags": ["Welcome", "hindi"], "proficiency": "ready" },
+    { "file": "kettle-on-lights-low.cho", "tags": ["Welcome", "waltz"], "proficiency": "ready" },
+    { "file": "ferry-lights-over-calder-bay.cho", "tags": ["Welcome", "upbeat"], "proficiency": "learning",
+      "live": { "columns": 2 } }
+  ],
+  "setlist": {
+    "name": "Welcome Set",
+    "targetDuration": 1200,
+    "entries": [
+      { "song": "soundcheck-at-seven.cho" },
+      { "song": "kitaabon-wali-gali.cho", "overrides": { "transpose": -2 } },
+      { "song": "kettle-on-lights-low.cho", "note": "Brushes, start soft" },
+      { "song": "ferry-lights-over-calder-bay.cho", "note": "Closer: big finish" }
+    ]
+  }
+}

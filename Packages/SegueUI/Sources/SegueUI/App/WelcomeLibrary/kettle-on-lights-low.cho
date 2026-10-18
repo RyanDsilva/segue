@@ -1,0 +1,42 @@
+{title: Kettle On, Lights Low}
+{artist: Segue Originals}
+{key: G}
+{capo: 3}
+{time: 3/4}
+{tempo: 72}
+{duration: 3:05}
+{define: Cadd9 base-fret 1 frets x 3 2 0 3 3}
+
+{start_of_intro: Intro}
+[G]  [Cadd9]  [G]  [D/F#]
+{end_of_intro}
+
+{start_of_verse: Verse 1}
+[G]Kettle on, [Cadd9]lights low,
+[G]Rain on the [D/F#]window glass,
+[Em7]Nowhere we [Cadd9]need to go,
+[G]Let the [D]evening [G]pass.
+{end_of_verse}
+
+{start_of_verse: Verse 2}
+[G]Two old [Cadd9]chairs that creak,
+[G]One old [D/F#]song we know,
+[Em7]Half of it [Cadd9]hummed, not sung,
+[G]Kettle [D]on, lights [G]low.
+{end_of_verse}
+
+{start_of_chorus}
+[Cadd9]Turn, turn, [G]round the room,
+[Cadd9]Slow as the [D]clock can go,
+[Em7]One more [Cadd9]waltz for the [G]afternoon,
+[Am7]Kettle [D]on, lights [G]low.
+{end_of_chorus}
+
+{start_of_verse: Verse 3}
+[G]Cups gone [Cadd9]cold again,
+[G]Records [D/F#]spinning slow,
+[Em7]Stay till the [Cadd9]morning, then,
+[G]Kettle [D]on, lights [G]low.
+{end_of_verse}
+
+{chorus}

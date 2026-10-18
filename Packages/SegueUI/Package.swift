@@ -32,6 +32,8 @@ let package = Package(
                 .copy("Theme/Fonts"),
                 // Licence texts shown in Segue > Acknowledgements (MIT dependencies).
                 .copy("App/Licenses"),
+                // The Welcome library: original songs and the demo setlist (WS2b 4.2).
+                .copy("App/WelcomeLibrary"),
             ],
             swiftSettings: strictSettings,
         ),
