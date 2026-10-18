@@ -161,7 +161,7 @@
                         .foregroundStyle(Theme.color.muted)
                         .fixedSize(horizontal: false, vertical: true)
                     Button("Have an idea instead? Request a Feature", action: onRequestFeature)
-                        .buttonStyle(.link)
+                        .buttonStyle(.appLink)
                         .font(.callout)
                         .accessibilityIdentifier(AccessibilityID.reportRequestFeature)
                 }

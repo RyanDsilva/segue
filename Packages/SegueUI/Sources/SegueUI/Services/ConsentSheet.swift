@@ -73,10 +73,8 @@
 
         var body: some View {
             Button(title) { workspace.open(url) }
-                .buttonStyle(.link)
+                .buttonStyle(.appLink)
                 .font(.callout)
-                // A parent's ink foreground must not turn the link into plain text.
-                .foregroundStyle(.link)
                 .accessibilityIdentifier(AccessibilityID.privacyPolicyLink(title))
         }
     }
