@@ -169,7 +169,9 @@
 
         /// Fills WS2a's slots, keeping everything else in `hooks` (I-5, B-17).
         public func filling(_ hooks: AppHooks) -> AppHooks {
-            hooks
+            var hooks = hooks
+            hooks.showWelcome = { [weak self] _ in self?.app?.showWelcomeRevisit() }
+            return hooks
         }
     }
 #endif

@@ -38,6 +38,12 @@ public final class LiveSettingsStore {
 
     @ObservationIgnored private let defaults: UserDefaults
 
+    /// Reset All Settings (WS2b 4.6): the Live settings back to their defaults.
+    func resetToDefaults() {
+        settings = LiveSettings()
+        runsShortcutsForRehearsals = false
+    }
+
     public init(defaults: UserDefaults) {
         self.defaults = defaults
         settings = Self.load(from: defaults)

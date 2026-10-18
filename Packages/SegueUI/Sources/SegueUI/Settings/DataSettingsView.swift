@@ -1,0 +1,131 @@
+#if os(macOS)
+    import SwiftUI
+
+    /// Settings > Data: Rebuild Index, the Welcome songs and the resets. Every control that
+    /// changes the library waits for an open library and no show.
+    struct DataSettingsView: View {
+        let app: AppModel
+        @State private var status: String?
+        @State private var removal: SeedRemovalPlan?
+        @State private var confirmingReset = false
+        @State private var working = false
+
+        var body: some View {
+            Form {
+                Section("Library") {
+                    LabeledContent("Index") {
+                        Button("Rebuild Index") {
+                            guard let session = app.session else { return }
+                            Task { await session.library.rebuildIndex() }
+                        }
+                        .disabled(!app.canChangeLibraryData)
+                        .accessibilityIdentifier(AccessibilityID.settingsRebuildIndex)
+                    }
+                    SettingsNote(text: "Rebuilds Segue's search index from the song files. "
+                        + "Your songs are not changed.")
+                }
+                Section("Welcome songs") {
+                    HStack {
+                        Button("Add Welcome Songs") { addWelcomeSongs() }
+                            .accessibilityIdentifier(AccessibilityID.settingsAddWelcome)
+                        Button("Remove Welcome Songs…") { askToRemove() }
+                            .accessibilityIdentifier(AccessibilityID.settingsRemoveWelcome)
+                    }
+                    .disabled(!app.canChangeLibraryData || working)
+                    SettingsNote(text: "Four songs and a setlist written for Segue. Removing "
+                        + "them moves them to the Trash and keeps any you edited.")
+                }
+                Section("Reset") {
+                    HStack {
+                        Button("Reset Tips") {
+                            app.resetTips()
+                            status = "Tips will show again after you restart Segue."
+                        }
+                        .accessibilityIdentifier(AccessibilityID.settingsResetTips)
+                        Button("Reset All Settings…") { confirmingReset = true }
+                            .accessibilityIdentifier(AccessibilityID.settingsResetAll)
+                    }
+                    SettingsNote(text: "Reset All Settings keeps your library and your Privacy "
+                        + "choices.")
+                }
+                if let status {
+                    Text(status)
+                        .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier(AccessibilityID.settingsDataStatus)
+                }
+            }
+            .formStyle(.grouped)
+            .frame(minHeight: 420)
+            .confirmationDialog(
+                removal?.headline ?? "",
+                isPresented: Binding(
+                    get: { removal != nil },
+                    set: {
+                        if !$0 {
+                            removal = nil
+                        }
+                    },
+                ),
+                titleVisibility: .visible,
+                presenting: removal,
+            ) { plan in
+                Button("Move to Trash", role: .destructive) { remove(plan) }
+                    .accessibilityIdentifier(AccessibilityID.settingsRemoveWelcomeConfirm)
+                Button("Cancel", role: .cancel) {}
+            } message: { plan in
+                Text(plan.keptNote ?? "You can put them back from the Trash.")
+            }
+            .confirmationDialog(
+                "Reset all settings?",
+                isPresented: $confirmingReset,
+                titleVisibility: .visible,
+            ) {
+                Button("Reset All Settings", role: .destructive) {
+                    app.resetAllSettings()
+                    status = "Settings are back to their defaults. Tips will show again after "
+                        + "you restart Segue."
+                }
+                .accessibilityIdentifier(AccessibilityID.settingsResetAllConfirm)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(Self.resetMessage)
+            }
+        }
+
+        static let resetMessage = "Resets: Live settings, Appearance, the last Settings pane "
+            + "and the tips.\nKeeps: your Privacy choices, the library folder and its songs, "
+            + "the Welcome songs, What's New and review history, your chord shapes and key "
+            + "bindings."
+
+        private func addWelcomeSongs() {
+            working = true
+            Task {
+                status = await app.addWelcomeSongsFromSettings()
+                working = false
+            }
+        }
+
+        private func askToRemove() {
+            working = true
+            Task {
+                let plan = await app.welcomeRemovalPlan()
+                working = false
+                if let plan, !plan.isEmpty {
+                    removal = plan
+                } else {
+                    status = plan?.keptNote.map { "Nothing to remove. \($0)" }
+                        ?? "There are no Welcome songs in this library."
+                }
+            }
+        }
+
+        private func remove(_ plan: SeedRemovalPlan) {
+            working = true
+            Task {
+                status = await app.removeWelcomeSongs(plan)
+                working = false
+            }
+        }
+    }
+#endif

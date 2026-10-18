@@ -2,34 +2,6 @@
     import Shows
     import SwiftUI
 
-    /// The app's Settings window (Segue > Settings…).
-    public struct SegueSettingsView: View {
-        let app: AppModel
-
-        public init(app: AppModel) {
-            self.app = app
-        }
-
-        public var body: some View {
-            TabView {
-                Tab("Live", systemImage: "music.mic") {
-                    LiveSettingsView(
-                        store: app.liveSettings,
-                        shortcuts: app.dependencies.live.shortcuts,
-                        workspace: app.dependencies.workspace,
-                    )
-                }
-                Tab("Privacy", systemImage: "hand.raised") {
-                    PrivacySettingsView(
-                        store: app.dependencies.consent,
-                        workspace: app.dependencies.workspace,
-                    )
-                }
-            }
-            .frame(width: 560)
-        }
-    }
-
     /// Settings > Live: minimum lyric size, the Gig Mode Shortcuts (with Test buttons and a
     /// short guide) and the pre-show checklist rows.
     struct LiveSettingsView: View {

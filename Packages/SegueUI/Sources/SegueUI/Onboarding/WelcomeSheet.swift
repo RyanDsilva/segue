@@ -23,7 +23,7 @@
             }
             .animation(reduceMotion ? nil : .linear(duration: 0.15), value: model.page)
             .frame(width: Self.width)
-            .frame(minHeight: Self.minHeight, alignment: .top)
+            .frame(minHeight: model.mode == .flow ? Self.minHeight : nil, alignment: .top)
             .background(Theme.color.ground)
             .interactiveDismissDisabled(model.mode == .flow)
             // Esc never answers for the user; in revisit mode it closes.
@@ -62,6 +62,8 @@
     /// Step label, title, content, then the footer pinned to the bottom.
     private struct WelcomePage<Content: View, Footer: View>: View {
         let step: String?
+        /// The flow's fixed page height; revisit mode fits its content.
+        var minHeight: CGFloat? = WelcomeSheet.minHeight
         let title: String
         @ViewBuilder let content: Content
         @ViewBuilder let footer: Footer
@@ -94,7 +96,7 @@
             .padding(.horizontal, 32)
             .padding(.top, 30)
             .padding(.bottom, 24)
-            .frame(maxWidth: .infinity, minHeight: WelcomeSheet.minHeight, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .topLeading)
         }
     }
 
@@ -221,7 +223,11 @@
         @Bindable var model: OnboardingModel
 
         var body: some View {
-            WelcomePage(step: model.stepLabel, title: "Welcome to Segue") {
+            WelcomePage(
+                step: model.stepLabel,
+                minHeight: model.mode == .revisit ? nil : WelcomeSheet.minHeight,
+                title: "Welcome to Segue",
+            ) {
                 WelcomeCards()
                     .padding(.top, 12)
                 if model.mode == .revisit {
@@ -260,12 +266,21 @@
 
         @ViewBuilder private var footerButtons: some View {
             if model.mode == .revisit {
-                Button("Done") { app.closeWelcomeRevisit() }
-                    .buttonStyle(.seguePrimary)
-                    .keyboardShortcut(.defaultAction)
-                    .frame(minWidth: 76)
-                    .disabled(model.seedState == .seeding)
-                    .accessibilityIdentifier(AccessibilityID.welcomeDone)
+                // Esc closes revisit mode (it answers nothing).
+                Button("Close") { app.closeWelcomeRevisit() }
+                    .keyboardShortcut(.cancelAction)
+                    .frame(width: 0, height: 0)
+                    .opacity(0)
+                    .accessibilityHidden(true)
+                Button {
+                    app.closeWelcomeRevisit()
+                } label: {
+                    Text("Done").frame(minWidth: 76)
+                }
+                .buttonStyle(.seguePrimary)
+                .keyboardShortcut(.defaultAction)
+                .disabled(model.seedState == .seeding)
+                .accessibilityIdentifier(AccessibilityID.welcomeDone)
             } else if case .failed = model.seedState {
                 Button("Skip") { app.onboardingSkipWelcomeSongs() }
                     .buttonStyle(.segueSecondary)
