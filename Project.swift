@@ -107,6 +107,9 @@ func appTarget(name: String, personal: Bool) -> Target {
         "ENABLE_OUTGOING_NETWORK_CONNECTIONS": "YES",
         // Matches the `.icon` document name (design/icon/Segue.icon).
         "ASSETCATALOG_COMPILER_APPICON_NAME": "Segue",
+        // Every icon size from the .icon document, so the App Store build's icon checks
+        // pass (WS1 check 10).
+        "ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR": "all",
         // No app accent colour: controls keep the system accent, because coral is reserved
         // for the cue and is never a control fill (docs/brand.md section 7).
         "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "",
