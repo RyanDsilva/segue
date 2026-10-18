@@ -32,7 +32,7 @@ enum E2E {
         app.launch()
         bringToFront(app, file: file, line: line)
         XCTAssertTrue(
-            app.windows.firstMatch.waitForExistence(timeout: 15),
+            app.windows.firstMatch.appears(timeout: 15),
             "Segue launched without a window on screen",
             file: file,
             line: line,
@@ -61,17 +61,111 @@ enum E2E {
         }
         app.activate()
         XCTAssertTrue(
-            app.wait(for: .runningForeground, timeout: 15),
+            app.reaches(.runningForeground, timeout: 15),
             "Segue did not become the frontmost app (state \(app.state.rawValue))",
             file: file,
             line: line,
         )
         XCTAssertTrue(
-            app.windows.firstMatch.waitForExistence(timeout: 15),
+            app.windows.firstMatch.appears(timeout: 15),
             "Segue is frontmost but has no window on screen",
             file: file,
             line: line,
         )
+    }
+}
+
+// MARK: - Waiting
+
+/// The suite's one way to wait (docs/test-performance.md A1). XCTest's own waits
+/// (`waitForExistence`, `XCTNSPredicateExpectation`, `XCUIApplication.wait(for:)`) re-check
+/// about once a second, so a UI that is ready 100 ms later still costs a whole second; these
+/// poll every `pollInterval` instead.
+extension E2E {
+    /// How often a wait re-checks its condition.
+    nonisolated static let pollInterval: TimeInterval = 0.05
+
+    /// Polls `condition` until it holds or `timeout` passes; true when it held. The run loop
+    /// keeps turning between checks (workspace callbacks and the like still arrive).
+    @discardableResult
+    nonisolated static func waitUntil(
+        timeout: TimeInterval = 10,
+        _ condition: () throws -> Bool,
+    ) rethrows -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while true {
+            if try condition() {
+                return true
+            }
+            if Date() >= deadline {
+                return false
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(pollInterval))
+        }
+    }
+
+    /// `waitUntil` that records a failure with `message` when the condition never held.
+    @discardableResult
+    nonisolated static func expect(
+        _ message: @autoclosure () -> String,
+        timeout: TimeInterval = 10,
+        file: StaticString = #filePath,
+        line: UInt = #line,
+        _ condition: () throws -> Bool,
+    ) -> Bool {
+        let held = waitUntil(timeout: timeout) { (try? condition()) ?? false }
+        if !held {
+            XCTFail(message(), file: file, line: line)
+        }
+        return held
+    }
+}
+
+extension E2E {
+    /// Every element with `identifier` under `root`, in tree order, from one consistent
+    /// snapshot. Reading `allElementsBoundByIndex` while a list re-renders (search
+    /// filtering, a re-layout) can lose an element between the count and the read, which
+    /// XCUITest reports as a failure; a snapshot cannot. An unavailable tree reads as empty.
+    static func snapshots(
+        _ root: XCUIElement,
+        identifier: String,
+    ) -> [any XCUIElementSnapshot] {
+        guard let top = try? root.snapshot() else { return [] }
+        var found: [any XCUIElementSnapshot] = []
+        var stack: [any XCUIElementSnapshot] = [top]
+        while let node = stack.popLast() {
+            if node.identifier == identifier {
+                found.append(node)
+            }
+            stack.append(contentsOf: node.children.reversed())
+        }
+        return found
+    }
+}
+
+@MainActor
+extension XCUIElement {
+    /// Waits until the element exists (`waitForExistence`, polled fast).
+    func appears(timeout: TimeInterval = 10) -> Bool {
+        E2E.waitUntil(timeout: timeout) { exists }
+    }
+
+    /// Waits until the element is gone (`waitForNonExistence`, polled fast).
+    func disappears(timeout: TimeInterval = 10) -> Bool {
+        E2E.waitUntil(timeout: timeout) { !exists }
+    }
+
+    /// Waits until the element exists with `value` as its accessibility value.
+    func hasValue(_ value: String, timeout: TimeInterval = 10) -> Bool {
+        E2E.waitUntil(timeout: timeout) { exists && self.value as? String == value }
+    }
+}
+
+@MainActor
+extension XCUIApplication {
+    /// Waits for a process state (`wait(for:timeout:)`, polled fast).
+    func reaches(_ state: XCUIApplication.State, timeout: TimeInterval = 10) -> Bool {
+        E2E.waitUntil(timeout: timeout) { self.state == state }
     }
 }
 

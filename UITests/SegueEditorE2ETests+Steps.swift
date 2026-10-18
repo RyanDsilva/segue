@@ -9,13 +9,13 @@ extension SegueEditorE2ETests {
     func createSongWithAutocomplete(_ app: XCUIApplication) {
         element(app, EditorAXID.newSong).click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
-        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        XCTAssertTrue(editor.appears(timeout: 10))
         XCTAssertTrue(element(app, EditorAXID.editorModeText).isSelected)
         editor.click(in: app)
 
         // Every automatic substitution is off on both editor views.
         let settings = element(app, EditorAXID.editorInputSettings)
-        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        XCTAssertTrue(settings.appears(timeout: 5))
         let report = settings.label
         XCTAssertTrue(report.contains("spelling=off"), report)
         XCTAssertFalse(report.contains("=on"), report)
@@ -23,7 +23,7 @@ extension SegueEditorE2ETests {
         // `{` directive completion.
         editor.typeText("{ti", in: app)
         let chips = completionChips(app)
-        XCTAssertTrue(chips.firstMatch.waitForExistence(timeout: 5), "No directive completion")
+        XCTAssertTrue(chips.firstMatch.appears(timeout: 5), "No directive completion")
         XCTAssertEqual(chips.firstMatch.label, "title")
         attachScreenshot(app, name: "directive-completion")
         app.typeKey(.return, modifierFlags: [], in: app)
@@ -34,7 +34,7 @@ extension SegueEditorE2ETests {
 
         // `[` chord completion: diatonic chords of G, filtered by typing; Return inserts.
         editor.typeText("[", in: app)
-        XCTAssertTrue(chips.firstMatch.waitForExistence(timeout: 5), "No chord completion")
+        XCTAssertTrue(chips.firstMatch.appears(timeout: 5), "No chord completion")
         XCTAssertEqual(chips.firstMatch.label, "G")
         add(XCTAttachment(string: "after [: \(editor.value as? String ?? "")"))
         editor.typeText("C", in: app)
@@ -42,7 +42,7 @@ extension SegueEditorE2ETests {
         XCTAssertTrue(wait { chips.firstMatch.label == "C" })
         attachScreenshot(app, name: "chord-completion")
         app.typeKey(.return, modifierFlags: [], in: app)
-        XCTAssertTrue(chips.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(chips.firstMatch.disappears(timeout: 5))
 
         // Romanized Hindi with autocorrect bait: nothing is changed.
         editor.typeText("Dil ki baat. hai \"sach\" -- [G]teh\n{end_of_verse}\n", in: app)
@@ -56,14 +56,14 @@ extension SegueEditorE2ETests {
     func editInVisualMode(_ app: XCUIApplication) {
         element(app, EditorAXID.editorModeVisual).click(in: app)
         let canvas = app.textViews[EditorAXID.editorVisual]
-        XCTAssertTrue(canvas.waitForExistence(timeout: 10))
+        XCTAssertTrue(canvas.appears(timeout: 10))
         XCTAssertTrue(wait { self.pillLabels(app) == ["C", "G"] }, "\(pillLabels(app))")
         attachScreenshot(app, name: "visual-mode")
 
         // Click the syllable "hai": popover, type a chord, Return.
         lane(app, "hai").coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).click(in: app)
         let field = app.textFields[EditorAXID.editorChordField]
-        XCTAssertTrue(field.waitForExistence(timeout: 5), "No chord popover")
+        XCTAssertTrue(field.appears(timeout: 5), "No chord popover")
         field.typeText("Em", in: app)
         attachScreenshot(app, name: "chord-popover")
         app.typeKey(.return, modifierFlags: [], in: app)
@@ -143,10 +143,10 @@ extension SegueEditorE2ETests {
         XCTAssertFalse(diagrams.firstMatch.exists, "Diagram strip shown by default")
         element(app, EditorAXID.editorDiagramsToggle).click(in: app)
         let diagram = diagrams.matching(NSPredicate(format: "label BEGINSWITH 'G'")).firstMatch
-        XCTAssertTrue(diagram.waitForExistence(timeout: 10), "No G diagram in the strip")
+        XCTAssertTrue(diagram.appears(timeout: 10), "No G diagram in the strip")
         diagram.click(in: app)
         let save = element(app, EditorAXID.shapeEditorSave)
-        XCTAssertTrue(save.waitForExistence(timeout: 5), "No shape editor")
+        XCTAssertTrue(save.appears(timeout: 5), "No shape editor")
         attachScreenshot(app, name: "shape-editor")
         save.click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
@@ -156,14 +156,14 @@ extension SegueEditorE2ETests {
     func applyTranspositionToSource(_ app: XCUIApplication) {
         element(app, EditorAXID.editSong).click(in: app)
         // Existing songs open on the visual canvas.
-        XCTAssertTrue(app.textViews[EditorAXID.editorVisual].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.textViews[EditorAXID.editorVisual].appears(timeout: 10))
         element(app, EditorAXID.editorTransposeUp).click(in: app)
         element(app, EditorAXID.editorTransposeUp).click(in: app)
         let apply = element(app, EditorAXID.editorApplyTransposition)
-        XCTAssertTrue(apply.waitForExistence(timeout: 5))
+        XCTAssertTrue(apply.appears(timeout: 5))
         apply.click(in: app)
         let banner = element(app, EditorAXID.editorFlaggedDefines)
-        XCTAssertTrue(banner.waitForExistence(timeout: 5), "No flagged-shape warning")
+        XCTAssertTrue(banner.appears(timeout: 5), "No flagged-shape warning")
         XCTAssertTrue(Self.text(banner).contains("G"), Self.text(banner))
         XCTAssertTrue(waitForValue(element(app, EditorAXID.editorTransposeValue), "A, +0"))
         attachScreenshot(app, name: "flagged-defines")
@@ -174,7 +174,7 @@ extension SegueEditorE2ETests {
         let done = app.buttons[EditorAXID.editorDone]
         XCTAssertTrue(done.isEnabled)
         done.click(in: app)
-        XCTAssertTrue(done.waitForNonExistence(timeout: 10))
-        XCTAssertTrue(element(app, EditorAXID.editSong).waitForExistence(timeout: 10))
+        XCTAssertTrue(done.disappears(timeout: 10))
+        XCTAssertTrue(element(app, EditorAXID.editSong).appears(timeout: 10))
     }
 }

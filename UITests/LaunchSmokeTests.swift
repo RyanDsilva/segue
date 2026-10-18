@@ -12,7 +12,7 @@ final class LaunchSmokeTests: XCTestCase {
         E2E.launch(app, arguments: ["-SegueResetState", "YES"])
 
         let title = app.staticTexts["segue.root.title"]
-        XCTAssertTrue(title.waitForExistence(timeout: 10))
+        XCTAssertTrue(title.appears(timeout: 10))
         XCTAssertEqual(title.value as? String, "Segue")
         // Reset state + no library path: the first-launch library chooser.
         XCTAssertTrue(app.buttons["segue.chooser.create"].exists)
@@ -28,7 +28,7 @@ final class LaunchSmokeTests: XCTestCase {
         app.menuBars.menuBarItems["Help"].menuItems["Acknowledgements"].click(in: app)
         let acknowledgements = app.descendants(matching: .any)
             .matching(identifier: "segue.acknowledgements").firstMatch
-        XCTAssertTrue(acknowledgements.waitForExistence(timeout: 5))
+        XCTAssertTrue(acknowledgements.appears(timeout: 5))
         for name in ["Schibsted Grotesk", "GRDB", "Tonic"] {
             XCTAssertTrue(acknowledgements.staticTexts[name].exists, "\(name) not credited")
         }

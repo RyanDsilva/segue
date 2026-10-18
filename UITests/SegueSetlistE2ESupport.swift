@@ -240,15 +240,9 @@ enum SetlistE2E {
         timeout: TimeInterval = 10,
         file: StaticString = #filePath,
         line: UInt = #line,
-        _ condition: @escaping () -> Bool,
+        _ condition: () -> Bool,
     ) -> Bool {
-        let predicate = NSPredicate { _, _ in condition() }
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
-        let ok = XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
-        if !ok {
-            XCTFail(message(), file: file, line: line)
-        }
-        return ok
+        E2E.expect(message(), timeout: timeout, file: file, line: line, condition)
     }
 
     /// Waits until a file-backed condition holds; failures inside count as "not yet".
@@ -257,9 +251,9 @@ enum SetlistE2E {
         _ message: @autoclosure () -> String,
         file: StaticString = #filePath,
         line: UInt = #line,
-        _ condition: @escaping () throws -> Bool,
+        _ condition: () throws -> Bool,
     ) -> Bool {
-        waitUntil(message(), file: file, line: line) { (try? condition()) ?? false }
+        E2E.expect(message(), file: file, line: line, condition)
     }
 
     /// Texts of all elements with `identifier`, in order, from one consistent snapshot (so
@@ -282,7 +276,7 @@ enum SetlistE2E {
     /// Replaces the text of a search field.
     static func search(_ app: XCUIApplication, _ identifier: String, _ query: String) {
         let field = app.searchFields[identifier]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(field.appears(timeout: 5))
         field.click(in: app)
         field.typeKey("a", modifierFlags: .command, in: app)
         if query.isEmpty {

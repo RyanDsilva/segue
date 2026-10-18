@@ -17,7 +17,7 @@ extension SegueEditorE2ETests {
             "-SegueLibraryPath", root.path(percentEncoded: false),
             "-SegueResetState", "YES",
         ] + extraArguments)
-        XCTAssertTrue(element(app, EditorAXID.libraryEmpty).waitForExistence(timeout: 15))
+        XCTAssertTrue(element(app, EditorAXID.libraryEmpty).appears(timeout: 15))
         return app
     }
 
@@ -31,10 +31,10 @@ extension SegueEditorE2ETests {
         switch mode {
         case .text:
             element(app, EditorAXID.editorModeText).click(in: app)
-            XCTAssertTrue(app.textViews[EditorAXID.editorText].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.textViews[EditorAXID.editorText].appears(timeout: 5))
         case .visual:
             element(app, EditorAXID.editorModeVisual).click(in: app)
-            XCTAssertTrue(app.textViews[EditorAXID.editorVisual].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.textViews[EditorAXID.editorVisual].appears(timeout: 5))
         }
     }
 
@@ -55,7 +55,7 @@ extension SegueEditorE2ETests {
 
     @MainActor
     func pillLabels(_ app: XCUIApplication) -> [String] {
-        pills(app).allElementsBoundByIndex.map(\.label)
+        E2E.snapshots(app, identifier: EditorAXID.editorPill).map(\.label)
     }
 
     @MainActor
@@ -67,15 +67,14 @@ extension SegueEditorE2ETests {
     func lane(_ app: XCUIApplication, _ word: String) -> XCUIElement {
         let lane = app.descendants(matching: .any).matching(identifier: EditorAXID.editorLane)
             .matching(NSPredicate(format: "label == %@", word)).firstMatch
-        XCTAssertTrue(lane.waitForExistence(timeout: 5), "No chord slot over \(word)")
+        XCTAssertTrue(lane.appears(timeout: 5), "No chord slot over \(word)")
         return lane
     }
 
     @MainActor
     func previewChords(_ app: XCUIApplication) -> [String] {
-        element(app, EditorAXID.editorPreview).staticTexts
-            .matching(identifier: EditorAXID.sheetChord)
-            .allElementsBoundByIndex.compactMap { $0.value as? String }
+        E2E.snapshots(element(app, EditorAXID.editorPreview), identifier: EditorAXID.sheetChord)
+            .compactMap { $0.value as? String }
     }
 
     @MainActor
@@ -115,16 +114,13 @@ extension SegueEditorE2ETests {
         add(attachment)
     }
 
-    func wait(timeout: TimeInterval = 10, _ condition: @escaping () -> Bool) -> Bool {
-        let predicate = NSPredicate { _, _ in condition() }
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
-        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
+    func wait(timeout: TimeInterval = 10, _ condition: () -> Bool) -> Bool {
+        E2E.waitUntil(timeout: timeout, condition)
     }
 
+    @MainActor
     func waitForValue(_ element: XCUIElement, _ value: String) -> Bool {
-        let predicate = NSPredicate(format: "value == %@", value)
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
-        return XCTWaiter().wait(for: [expectation], timeout: 10) == .completed
+        element.hasValue(value)
     }
 
     /// The one `.cho` in the library contains every snippet.

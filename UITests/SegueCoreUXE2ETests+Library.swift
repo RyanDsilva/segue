@@ -20,16 +20,16 @@ extension SegueCoreUXE2ETests {
 
         // In no setlist: File > Move to Trash (Cmd-Delete on the focused list), no dialog.
         let harbour = row(app, "Harbour Lights")
-        XCTAssertTrue(harbour.waitForExistence(timeout: 15))
+        XCTAssertTrue(harbour.appears(timeout: 15))
         harbour.click(in: app)
         app.typeKey(.delete, modifierFlags: .command, in: app)
-        XCTAssertTrue(harbour.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(harbour.disappears(timeout: 10))
         XCTAssertFalse(app.sheets.firstMatch.exists, "No dialog for a song in no setlist")
         XCTAssertEqual(names(in: paths.trash), ["harbour-lights.cho", "harbour-lights.segue.json"])
         XCTAssertFalse(exists(paths.song("harbour-lights")))
         app.typeKey("z", modifierFlags: .command, in: app)
         XCTAssertTrue(
-            row(app, "Harbour Lights").waitForExistence(timeout: 10),
+            row(app, "Harbour Lights").appears(timeout: 10),
             "Undo did not restore",
         )
         XCTAssertTrue(exists(paths.song("harbour-lights")))
@@ -44,7 +44,7 @@ extension SegueCoreUXE2ETests {
         let river = row(app, "River Song")
         contextMenu(app, river, CoreAXID.songMoveToTrash)
         let confirm = element(app, CoreAXID.songDeleteConfirm)
-        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "No confirmation")
+        XCTAssertTrue(confirm.appears(timeout: 5), "No confirmation")
         let sheet = app.sheets.firstMatch
         XCTAssertTrue(sheet.staticTexts["Move “River Song” to the Trash?"].exists)
         XCTAssertTrue(sheet.staticTexts.containing(
@@ -52,7 +52,7 @@ extension SegueCoreUXE2ETests {
         ).firstMatch.exists)
         attachScreenshot(app, name: "song-trash-confirmation")
         confirm.click(in: app)
-        XCTAssertTrue(river.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(river.disappears(timeout: 10))
         XCTAssertEqual(names(in: paths.trash), ["river-song.cho", "river-song.segue.json"])
 
         // The builder shows the missing song; Undo resolves it again; Redo trashes again.
@@ -83,7 +83,7 @@ extension SegueCoreUXE2ETests {
         XCTAssertTrue(wait { !((editor.value as? String) ?? "").contains("keep this") })
         XCTAssertTrue(exists(paths.song("harbour-lights")))
         element(app, CoreAXID.editorDone).click(in: app)
-        XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(editor.disappears(timeout: 10))
 
         // In the search field too.
         let search = app.searchFields[CoreAXID.librarySearch]
@@ -116,7 +116,7 @@ extension SegueCoreUXE2ETests {
 
         // Song: the row's context menu.
         let harbour = row(app, "Harbour Lights")
-        XCTAssertTrue(harbour.waitForExistence(timeout: 15))
+        XCTAssertTrue(harbour.appears(timeout: 15))
         contextMenu(app, harbour, CoreAXID.songShowInFinder)
         XCTAssertTrue(waitForWorkspace("reveal", [songPath]), "\(workspaceCalls())")
 
@@ -158,12 +158,12 @@ extension SegueCoreUXE2ETests {
             "-SegueImportPanelPaths",
             list.joined(separator: ":"),
         ])
-        XCTAssertTrue(row(app, "Harbour Lights").waitForExistence(timeout: 15))
+        XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 15))
 
         app.typeKey("i", modifierFlags: [.command, .shift], in: app)
 
         let summary = element(app, CoreAXID.importSummary)
-        XCTAssertTrue(summary.waitForExistence(timeout: 10), "No import summary")
+        XCTAssertTrue(summary.appears(timeout: 10), "No import summary")
         XCTAssertTrue(wait {
             summary.label == "Imported 2 songs. 2 skipped." || summary
                 .value as? String == "Imported 2 songs. 2 skipped."
@@ -171,7 +171,7 @@ extension SegueCoreUXE2ETests {
         attachScreenshot(app, name: "import-summary")
         element(app, CoreAXID.importSummaryDetails).click(in: app)
         XCTAssertTrue(app.staticTexts["Already in your library as “Harbour Lights”"]
-            .waitForExistence(timeout: 5))
+            .appears(timeout: 5))
         XCTAssertTrue(app.staticTexts["Not a ChordPro or text file"].exists)
         attachScreenshot(app, name: "import-summary-details")
         app.typeKey(.escape, modifierFlags: [], in: app)
@@ -189,6 +189,6 @@ extension SegueCoreUXE2ETests {
         app.typeKey("z", modifierFlags: .command, in: app)
         XCTAssertTrue(wait { self.names(in: paths.trash).count == 4 }, "\(names(in: paths.trash))")
         XCTAssertFalse(exists(paths.song("river-song")))
-        XCTAssertTrue(row(app, "River Song").waitForNonExistence(timeout: 10))
+        XCTAssertTrue(row(app, "River Song").disappears(timeout: 10))
     }
 }

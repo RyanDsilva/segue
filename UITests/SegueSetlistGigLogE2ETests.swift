@@ -26,7 +26,7 @@ final class SegueSetlistGigLogE2ETests: SetlistE2ETestCase {
     @MainActor
     private func reviewReorder(_ app: XCUIApplication, _ root: URL) throws {
         let sheet = SetlistE2E.element(app, SetlistAXID.reorderSheet)
-        XCTAssertTrue(sheet.waitForExistence(timeout: 15), "No reorder review at launch")
+        XCTAssertTrue(sheet.appears(timeout: 15), "No reorder review at launch")
         XCTAssertEqual(
             SetlistE2E.texts(app, SetlistAXID.reorderPlannedRow).count, 3,
         )
@@ -37,7 +37,7 @@ final class SegueSetlistGigLogE2ETests: SetlistE2ETestCase {
         XCTAssertEqual(include.value as? Int, 1, "Inserted songs must be ticked by default")
         screenshot(app, "reorder-review")
         SetlistE2E.element(app, SetlistAXID.reorderSave).click(in: app)
-        XCTAssertTrue(sheet.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(sheet.disappears(timeout: 10))
 
         // Saved: performed order, the request included as a new entry.
         let song = { (title: String) in SetlistFixture.song(title).id }
@@ -115,7 +115,7 @@ final class SegueSetlistGigLogE2ETests: SetlistE2ETestCase {
         // Move to Trash from the gig's "…" menu: no confirmation (A23).
         SetlistE2E.element(app, SetlistAXID.gigMoreMenu).click(in: app)
         SetlistE2E.element(app, SetlistAXID.gigDelete).click(in: app)
-        XCTAssertFalse(app.sheets.firstMatch.waitForExistence(timeout: 1), "No dialog expected")
+        XCTAssertFalse(app.sheets.firstMatch.appears(timeout: 1), "No dialog expected")
         SetlistE2E.waitUntil("The gig was never deleted") { rows.count == 1 }
         let showURL = root.appending(path: "shows/\(finishedShow).show.json")
         XCTAssertFalse(FileManager.default.fileExists(atPath: showURL.path))
@@ -139,7 +139,7 @@ final class SegueSetlistGigLogE2ETests: SetlistE2ETestCase {
     private func showHarbor(_ app: XCUIApplication) {
         SetlistE2E.element(app, SetlistAXID.sidebarLibrary).click(in: app)
         let harbor = SetlistE2E.row(app, SetlistAXID.songRow, "Harbor Lights")
-        XCTAssertTrue(harbor.waitForExistence(timeout: 5))
+        XCTAssertTrue(harbor.appears(timeout: 5))
         harbor.click(in: app)
     }
 

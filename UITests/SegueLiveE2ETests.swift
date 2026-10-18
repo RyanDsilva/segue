@@ -50,10 +50,10 @@ final class SegueLiveE2ETests: XCTestCase {
         // The request was inserted, so the review appears; Discard keeps the setlist as is.
         let before = try Data(contentsOf: library.setlistFile)
         let discard = element(app, LiveAXID.reorderDiscard)
-        XCTAssertTrue(discard.waitForExistence(timeout: 10))
+        XCTAssertTrue(discard.appears(timeout: 10))
         screenshot(app, "07-reorder-review")
         discard.click(in: app)
-        XCTAssertTrue(discard.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(discard.disappears(timeout: 5))
         XCTAssertEqual(try Data(contentsOf: library.setlistFile), before)
 
         // The show file: 10 played in order (the request after song 4's skip), 1 skipped.
@@ -85,8 +85,11 @@ final class SegueLiveE2ETests: XCTestCase {
         XCTAssertTrue(waitFor(body) { (self.scrollPosition($0) ?? 0) > 0 })
         let scrolled = try XCTUnwrap(scrollPosition(body))
         XCTAssertGreaterThan(scrolled, 0.05)
-        // Past the 1 s scroll debounce, then kill.
-        Thread.sleep(forTimeInterval: 2)
+        // Kill only once the 1 s scroll debounce has written the position to the show file.
+        XCTAssertTrue(E2E.waitUntil(timeout: 5) {
+            let saved = (try? library.shows().first?["scrollPosition"]) as? Double
+            return saved.map { abs($0 - scrolled) < 0.01 } ?? false
+        }, "the scroll position never reached the show file")
         screenshot(app, "10-before-crash")
         app.terminate()
 
@@ -95,14 +98,14 @@ final class SegueLiveE2ETests: XCTestCase {
         E2E.launch(relaunched, arguments: library.arguments(reset: false))
         // The alert is a sheet on the main window (not the Touch Bar's "Resume").
         let resumeButton = relaunched.sheets.buttons["Resume"].firstMatch
-        XCTAssertTrue(resumeButton.waitForExistence(timeout: 15))
+        XCTAssertTrue(resumeButton.appears(timeout: 15))
         screenshot(relaunched, "11-resume-prompt")
         resumeButton.click(in: relaunched)
         let resumedTitle = relaunched.staticTexts[LiveAXID.liveTitle]
-        XCTAssertTrue(resumedTitle.waitForExistence(timeout: 10))
+        XCTAssertTrue(resumedTitle.appears(timeout: 10))
         XCTAssertEqual(resumedTitle.value as? String, "Long Way Home")
         let resumedBody = element(relaunched, LiveAXID.liveBody)
-        XCTAssertTrue(resumedBody.waitForExistence(timeout: 5))
+        XCTAssertTrue(resumedBody.appears(timeout: 5))
         XCTAssertEqual(try XCTUnwrap(scrollPosition(resumedBody)), scrolled, accuracy: 0.01)
         screenshot(relaunched, "12-resumed")
         endShow(relaunched)
@@ -123,15 +126,15 @@ final class SegueLiveE2ETests: XCTestCase {
         // Mid-song 3, Cmd-K "Play now" on song 7: it becomes current, song 3 stays pending.
         key(app, "/")
         let field = app.textFields[LiveAXID.liveSearchField]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(field.appears(timeout: 5))
         field.typeText("lantern", in: app)
-        XCTAssertTrue(element(app, LiveAXID.liveSearchResult).waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, LiveAXID.liveSearchResult).appears(timeout: 5))
         key(app, .return)
         XCTAssertTrue(waitForValue(title, "Lantern Song"))
 
         // S: the set order shows song 3 pending; "Next" on song 9 makes it up next.
         key(app, "s")
-        XCTAssertTrue(element(app, LiveAXID.liveDrawer).waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, LiveAXID.liveDrawer).appears(timeout: 5))
         let rows = app.descendants(matching: .any).matching(identifier: LiveAXID.liveDrawerRow)
         XCTAssertTrue(rows.element(boundBy: 2).label.contains("Salt Road, pending"))
         let nightBus = rows.element(boundBy: 8)
@@ -146,10 +149,10 @@ final class SegueLiveE2ETests: XCTestCase {
 
         endShow(app)
         let save = element(app, LiveAXID.reorderSave)
-        XCTAssertTrue(save.waitForExistence(timeout: 10))
+        XCTAssertTrue(save.appears(timeout: 10))
         screenshot(app, "21-reorder-review")
         save.click(in: app)
-        XCTAssertTrue(save.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(save.disappears(timeout: 5))
         let order = try library.setlistTitles()
         XCTAssertEqual(order.count, 10)
         XCTAssertLessThan(
@@ -170,7 +173,7 @@ final class SegueLiveE2ETests: XCTestCase {
             extra: ["-SegueLiveTimeScale", "30"] + LiveLibrary.gigModeShortcuts,
         )
         startShow(app, rehearse: true)
-        XCTAssertTrue(element(app, LiveAXID.liveRehearsal).waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, LiveAXID.liveRehearsal).appears(timeout: 5))
         XCTAssertEqual(library.shortcutsRun(), [], "rehearsals skip the Shortcuts by default")
         let title = app.staticTexts[LiveAXID.liveTitle]
         for _ in 0 ..< 4 {
@@ -178,17 +181,19 @@ final class SegueLiveE2ETests: XCTestCase {
         }
         XCTAssertTrue(waitForValue(title, "Long Way Home"))
         let body = element(app, LiveAXID.liveBody)
-        XCTAssertTrue(body.waitForExistence(timeout: 5))
-        Thread.sleep(forTimeInterval: 1)
+        XCTAssertTrue(body.appears(timeout: 5))
+        let status = app.staticTexts[LiveAXID.liveScrollStatus]
+        XCTAssertTrue(waitForValue(status, "Scroll ready (A)"))
+        // Held for 15 s of song time (0.5 s at 30x): a running scroll would show by then.
+        hold(0.5)
         XCTAssertEqual(scrollPosition(body), 0, "auto-scroll never moves before it is started")
         key(app, "a")
-        Thread.sleep(forTimeInterval: 3)
-        let mid = try XCTUnwrap(scrollPosition(body))
-        XCTAssertGreaterThan(mid, 0)
+        XCTAssertTrue(waitForValue(status, "Scrolling"))
+        XCTAssertTrue(waitFor(body) { (self.scrollPosition($0) ?? 0) > 0 })
         key(app, "a")
-        Thread.sleep(forTimeInterval: 1)
+        XCTAssertTrue(waitForValue(status, "Scroll paused"))
         let paused = try XCTUnwrap(scrollPosition(body))
-        Thread.sleep(forTimeInterval: 1.5)
+        hold(0.5)
         XCTAssertEqual(try XCTUnwrap(scrollPosition(body)), paused, accuracy: 0.001)
         screenshot(app, "30-rehearsal-paused")
         key(app, "a")
@@ -199,7 +204,7 @@ final class SegueLiveE2ETests: XCTestCase {
         endShow(app)
 
         // No gig log entry and no review; the timings file exists.
-        XCTAssertFalse(element(app, LiveAXID.reorderSheet).waitForExistence(timeout: 2))
+        XCTAssertFalse(element(app, LiveAXID.reorderSheet).appears(timeout: 2))
         XCTAssertTrue(try library.shows().allSatisfy { $0["kind"] as? String != "gig" })
         let timings = library.root.appending(path: "timings", directoryHint: .isDirectory)
         let files = try FileManager.default.contentsOfDirectory(atPath: timings.path)
@@ -216,7 +221,7 @@ final class SegueLiveE2ETests: XCTestCase {
         startShow(app, rehearse: false)
         let title = app.staticTexts[LiveAXID.liveTitle]
         let body = element(app, LiveAXID.liveBody)
-        XCTAssertTrue(body.waitForExistence(timeout: 5))
+        XCTAssertTrue(body.appears(timeout: 5))
         let fitted = try XCTUnwrap(lyricSize(body))
         XCTAssertGreaterThanOrEqual(fitted, 30)
 
@@ -246,7 +251,7 @@ final class SegueLiveE2ETests: XCTestCase {
         key(app, .leftArrow)
         XCTAssertTrue(waitForValue(title, "Harbor Lights"))
         XCTAssertTrue(waitFor(body) { $0.label.hasSuffix("columns 2") })
-        XCTAssertTrue(indicator.waitForNonExistence(timeout: 5), "the indicator goes away")
+        XCTAssertTrue(indicator.disappears(timeout: 5), "the indicator goes away")
 
         // The 56-line song does not fit at 30pt: it renders at 30 and scrolls.
         for _ in 0 ..< 4 {
@@ -269,20 +274,20 @@ extension SegueLiveE2ETests {
     private func requestPyaar(_ app: XCUIApplication) {
         key(app, "k", [.command])
         let field = app.textFields[LiveAXID.liveSearchField]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(field.appears(timeout: 5))
         field.typeText("pyar", in: app)
         let result = element(app, LiveAXID.liveSearchResult)
-        XCTAssertTrue(result.waitForExistence(timeout: 5))
+        XCTAssertTrue(result.appears(timeout: 5))
         XCTAssertTrue(result.label.contains("Pyaar Ki Raah"), result.label)
         screenshot(app, "03-search-pyar")
         // Cmd-Return asks for an optional note; Return adds the request with it.
         key(app, .return, [.command])
         let note = app.textFields[LiveAXID.liveSearchNote]
-        XCTAssertTrue(note.waitForExistence(timeout: 5))
+        XCTAssertTrue(note.appears(timeout: 5))
         note.typeText("table 4", in: app)
         screenshot(app, "03b-request-note")
         key(app, .return)
-        XCTAssertTrue(element(app, LiveAXID.liveSearch).waitForNonExistence(timeout: 5))
+        XCTAssertTrue(element(app, LiveAXID.liveSearch).disappears(timeout: 5))
         XCTAssertTrue(waitForValue(app.staticTexts[LiveAXID.liveUpNext], "Pyaar Ki Raah"))
         XCTAssertEqual(app.staticTexts[LiveAXID.liveUpNextLabel].value as? String, "Request")
         XCTAssertTrue(element(app, LiveAXID.liveRequestCount).exists)
@@ -295,7 +300,7 @@ extension SegueLiveE2ETests {
         let title = app.staticTexts[LiveAXID.liveTitle]
         key(app, "q")
         let row = element(app, LiveAXID.liveRequestRow)
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.appears(timeout: 5))
         let note = NSPredicate(
             format: "label CONTAINS %@ OR value CONTAINS %@",
             "table 4",
@@ -335,26 +340,26 @@ extension SegueLiveE2ETests {
     func startShow(_ app: XCUIApplication, rehearse: Bool) {
         element(app, LiveAXID.sidebarSetlists).click(in: app)
         let row = element(app, LiveAXID.setlistRow)
-        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertTrue(row.appears(timeout: 10))
         row.click(in: app)
         let button = element(app, rehearse ? LiveAXID.setlistRehearse : LiveAXID.setlistStartShow)
-        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        XCTAssertTrue(button.appears(timeout: 10))
         button.click(in: app)
         let start = element(app, LiveAXID.checklistStart)
-        XCTAssertTrue(start.waitForExistence(timeout: 10))
+        XCTAssertTrue(start.appears(timeout: 10))
         screenshot(app, rehearse ? "00-checklist-rehearsal" : "00-checklist")
         start.click(in: app)
-        XCTAssertTrue(app.staticTexts[LiveAXID.liveTitle].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts[LiveAXID.liveTitle].appears(timeout: 10))
     }
 
     /// Cmd-. then Return in the confirmation; the stage goes away.
     @MainActor
     private func endShow(_ app: XCUIApplication) {
         key(app, ".", [.command])
-        XCTAssertTrue(element(app, LiveAXID.liveEndDialog).waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, LiveAXID.liveEndDialog).appears(timeout: 5))
         screenshot(app, "end-confirm")
         key(app, .return)
-        XCTAssertTrue(app.staticTexts[LiveAXID.liveTitle].waitForNonExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts[LiveAXID.liveTitle].disappears(timeout: 10))
     }
 
     /// Settings (Cmd-,) > Live > minimum lyric size.
@@ -362,12 +367,12 @@ extension SegueLiveE2ETests {
     private func setMinimumLyricSize(_ app: XCUIApplication, to size: Int) {
         app.typeKey(",", modifierFlags: .command, in: app)
         let stepper = app.steppers[LiveAXID.settingsMinLyricSize].firstMatch
-        XCTAssertTrue(stepper.waitForExistence(timeout: 10))
+        XCTAssertTrue(stepper.appears(timeout: 10))
         let increment = stepper.incrementArrows.firstMatch
         for _ in 0 ..< max(0, size - 22) {
             increment.click(in: app)
         }
-        XCTAssertTrue(app.staticTexts["\(size) pt"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["\(size) pt"].appears(timeout: 5))
         app.typeKey("w", modifierFlags: .command, in: app)
     }
 
@@ -376,10 +381,10 @@ extension SegueLiveE2ETests {
     private func assertGigLog(_ app: XCUIApplication) {
         element(app, LiveAXID.sidebarGigLog).click(in: app)
         let entry = element(app, LiveAXID.gigLogRow)
-        XCTAssertTrue(entry.waitForExistence(timeout: 10))
+        XCTAssertTrue(entry.appears(timeout: 10))
         entry.click(in: app)
         let played = app.descendants(matching: .any).matching(identifier: LiveAXID.gigPlayedRow)
-        XCTAssertTrue(played.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(played.firstMatch.appears(timeout: 5))
         XCTAssertEqual(played.count, 10)
         XCTAssertEqual(
             app.descendants(matching: .any).matching(identifier: LiveAXID.gigSkippedRow).count,
@@ -437,6 +442,12 @@ extension SegueLiveE2ETests {
         waitFor(element) { $0.value as? String == value }
     }
 
+    /// Lets `seconds` of real time pass with the run loop turning: only for checks that
+    /// something does NOT happen (there is no state to wait for).
+    func hold(_ seconds: TimeInterval) {
+        RunLoop.current.run(until: Date().addingTimeInterval(seconds))
+    }
+
     /// Polls `condition` on `element` (a predicate over a computed value is not
     /// re-evaluated reliably for SwiftUI elements).
     @MainActor
@@ -445,14 +456,7 @@ extension SegueLiveE2ETests {
         timeout: TimeInterval = 10,
         _ condition: (XCUIElement) -> Bool,
     ) -> Bool {
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            if element.exists, condition(element) {
-                return true
-            }
-            Thread.sleep(forTimeInterval: 0.1)
-        }
-        return false
+        E2E.waitUntil(timeout: timeout) { element.exists && condition(element) }
     }
 
     @MainActor

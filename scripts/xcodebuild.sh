@@ -9,6 +9,10 @@
 # Signing: automatic signing needs -allowProvisioningUpdates so Xcode can create or refresh
 # the certificate and provisioning profiles from the command line.
 #
+# Indexing: command-line builds write no index store (COMPILER_INDEX_STORE_ENABLE=NO).
+# Nothing reads it (Xcode the IDE indexes into its own DerivedData) and it costs compile
+# time on every non-trivial build (docs/test-performance.md A5).
+#
 # Result bundles: each run writes one to .build/results; only the newest $keep_results are
 # kept (older ones go to the Trash, see scripts/lib/discard.sh), so they do not pile up.
 set -euo pipefail
@@ -30,6 +34,7 @@ xcodebuild \
     -derivedDataPath "$derived" \
     -resultBundlePath "$bundle" \
     -allowProvisioningUpdates \
+    COMPILER_INDEX_STORE_ENABLE=NO \
     "$@" || status=$?
 
 if [[ -d "$bundle" ]]; then

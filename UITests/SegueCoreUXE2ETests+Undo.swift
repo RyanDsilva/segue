@@ -19,16 +19,16 @@ extension SegueCoreUXE2ETests {
 
         // Add (Setlist menu), then in the builder: rename and remove.
         let river = row(app, "River Song")
-        XCTAssertTrue(river.waitForExistence(timeout: 15))
+        XCTAssertTrue(river.appears(timeout: 15))
         river.click(in: app)
         menu(app, "Setlist", "Add Selected Song to Setlist", "Friday")
         XCTAssertTrue(wait { self.entryCount(file) == 2 })
         element(app, CoreAXID.setlistRow).click(in: app)
-        XCTAssertTrue(element(app, CoreAXID.setlistEntry).waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, CoreAXID.setlistEntry).appears(timeout: 10))
         element(app, CoreAXID.setlistMenu).click(in: app)
         app.menuItems[CoreAXID.setlistRenameAction].firstMatch.click(in: app)
         let field = element(app, CoreAXID.renameField)
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(field.appears(timeout: 5))
         field.typeKey("a", modifierFlags: .command, in: app)
         field.typeText("Friday Late\n", in: app)
         XCTAssertTrue(wait { self.setlistName(file) == "Friday Late" })
@@ -59,7 +59,7 @@ extension SegueCoreUXE2ETests {
         let external = read(file).replacingOccurrences(of: "Friday Late", with: "Edited Elsewhere")
         try Data(external.utf8).write(to: file, options: .atomic)
         reactivate(app)
-        XCTAssertTrue(app.staticTexts["Edited Elsewhere"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Edited Elsewhere"].firstMatch.appears(timeout: 10))
         app.menuBars.menuBarItems["Edit"].click(in: app)
         let undo = app.menuBars.menuItems.matching(NSPredicate(
             format: "title BEGINSWITH %@",
@@ -78,7 +78,7 @@ extension SegueCoreUXE2ETests {
         let paths = try XCTUnwrap(paths)
         let sidecar = paths.library.appending(path: "songs/harbour-lights.segue.json")
         let harbour = row(app, "Harbour Lights")
-        XCTAssertTrue(harbour.waitForExistence(timeout: 15))
+        XCTAssertTrue(harbour.appears(timeout: 15))
         harbour.click(in: app)
 
         let tagField = element(app, CoreAXID.songTagField)
@@ -123,12 +123,12 @@ extension SegueCoreUXE2ETests {
         let paths = try XCTUnwrap(paths)
         var app = try launch()
         element(app, CoreAXID.setlistRow).click(in: app)
-        XCTAssertTrue(element(app, CoreAXID.setlistEntry).waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, CoreAXID.setlistEntry).appears(timeout: 10))
         Thread.sleep(forTimeInterval: 1.5) // past the 0.5 s write debounce
         app.terminate()
 
         app = try launch(reset: false)
-        XCTAssertTrue(element(app, CoreAXID.setlistEntry).waitForExistence(timeout: 15), "builder")
+        XCTAssertTrue(element(app, CoreAXID.setlistEntry).appears(timeout: 15), "builder")
 
         element(app, CoreAXID.sidebarLibrary).click(in: app)
         openEditor(app, "Harbour Lights")
@@ -143,7 +143,7 @@ extension SegueCoreUXE2ETests {
         // The song is gone from disk: no selection, no crash.
         try FileManager.default.removeItem(at: paths.song("harbour-lights"))
         app = try launch(reset: false)
-        XCTAssertTrue(element(app, CoreAXID.libraryEmpty).waitForExistence(timeout: 15))
+        XCTAssertTrue(element(app, CoreAXID.libraryEmpty).appears(timeout: 15))
         XCTAssertFalse(element(app, CoreAXID.songTitle).exists)
     }
 
@@ -165,11 +165,11 @@ extension SegueCoreUXE2ETests {
             "-SegueImportPanelPaths", [river, picture].map { $0.path(percentEncoded: false) }
                 .joined(separator: ":"),
         ])
-        XCTAssertTrue(element(app, CoreAXID.libraryEmpty).waitForExistence(timeout: 15))
+        XCTAssertTrue(element(app, CoreAXID.libraryEmpty).appears(timeout: 15))
         attachScreenshot(app, name: "light-empty-library")
 
         app.typeKey("i", modifierFlags: [.command, .shift], in: app)
-        XCTAssertTrue(element(app, CoreAXID.importSummary).waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, CoreAXID.importSummary).appears(timeout: 10))
         attachScreenshot(app, name: "light-import-summary")
         element(app, CoreAXID.songMoreMenu).click(in: app)
         attachScreen(name: "light-song-more-menu")
@@ -183,12 +183,12 @@ extension SegueCoreUXE2ETests {
             options: .atomic,
         )
         editor.typeText(" and more", in: app)
-        XCTAssertTrue(element(app, CoreAXID.editorConflictBar).waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, CoreAXID.editorConflictBar).appears(timeout: 10))
         attachScreenshot(app, name: "light-conflict-bar")
         element(app, CoreAXID.editorConflictReload).click(in: app)
 
         app.typeKey("/", modifierFlags: .command, in: app)
-        XCTAssertTrue(element(app, CoreAXID.shortcutsWindow).waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, CoreAXID.shortcutsWindow).appears(timeout: 10))
         attachScreen(name: "light-keyboard-shortcuts")
     }
 

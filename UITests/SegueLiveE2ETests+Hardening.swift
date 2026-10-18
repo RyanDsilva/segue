@@ -13,18 +13,18 @@ extension SegueLiveE2ETests {
         startShow(app, rehearse: false)
         let dialog = element(app, LiveAXID.liveEndDialog)
         key(app, "w", [.command])
-        XCTAssertTrue(dialog.waitForExistence(timeout: 5))
+        XCTAssertTrue(dialog.appears(timeout: 5))
         key(app, .escape)
-        XCTAssertTrue(dialog.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(dialog.disappears(timeout: 5))
         XCTAssertTrue(app.staticTexts[LiveAXID.liveTitle].exists, "Cmd-W closed the stage")
 
         key(app, "q", [.command])
-        XCTAssertTrue(dialog.waitForExistence(timeout: 5))
+        XCTAssertTrue(dialog.appears(timeout: 5))
         XCTAssertTrue(app.buttons["End and Quit (Return)"].exists)
         screenshot(app, "13-quit-confirm")
         XCTAssertEqual(app.state, .runningForeground)
         key(app, .return)
-        XCTAssertTrue(app.wait(for: .notRunning, timeout: 20), "Segue did not quit")
+        XCTAssertTrue(app.reaches(.notRunning, timeout: 20), "Segue did not quit")
         // Ended properly: in the gig log, with the end Shortcut run.
         let show = try XCTUnwrap(library.shows().first)
         XCTAssertNotNil(show["endedAt"] as? String)
@@ -36,7 +36,7 @@ extension SegueLiveE2ETests {
     @objc func testSecondLaunchHandsOverToTheRunningInstance() throws {
         let library = try XCTUnwrap(library)
         let app = launch(library)
-        XCTAssertTrue(element(app, LiveAXID.sidebarSetlists).waitForExistence(timeout: 15))
+        XCTAssertTrue(element(app, LiveAXID.sidebarSetlists).appears(timeout: 15))
         let bundleID = "dev.ryandsilva.segue.personal"
         let first = try XCTUnwrap(
             NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first,

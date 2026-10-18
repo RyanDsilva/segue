@@ -12,12 +12,30 @@ UI_DIR      := Packages/SegueUI
 # xcodebuild on the generated workspace; fails on any warning Xcode records.
 XCODEBUILD  := scripts/xcodebuild.sh
 
+# Package tests (Swift Testing). No index store: nothing reads it from the command line
+# (Xcode the IDE keeps its own), and writing it costs compile time.
+SWIFT_TEST  := swift test --disable-index-store
+# SegueUI's theme tests need Swift Build (the native build system copies asset catalogs
+# uncompiled). Swift Build suppresses warnings in the non-root SegueCore package, which
+# conflicts with its warnings-as-errors setting, so warnings are failed by grep instead.
+UI_TEST     := $(SWIFT_TEST) --build-system swiftbuild -Xswiftc -no-warnings-as-errors
+# Timing-budget tests (the *PerformanceTests suites and the 2,000-song quick search): they
+# run alone in `test-perf`, never beside another build or test run.
+PERF_TESTS  := PerformanceTests|over 2000 tagged songs
+# Long property tests `make quick` skips (`make test`, gate and check run them).
+SLOW_TESTS  := random command sequences
+# Swift Testing regexes: what test-packages leaves out and what test-perf runs (quick
+# leaves out the long property tests and the 2,000-song search, which take 10-14 s each).
+PKG_SKIP    := $(PERF_TESTS)
+PERF_RUN    := $(PERF_TESTS)
+
 # Website tooling (dev-only, fetched at run time at exact versions; nothing ships).
 HTMLVALIDATE := pnpm dlx html-validate@11.16.4
 WRANGLER     := pnpm dlx wrangler@4.151.1
 
-.PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test e2e lint format \
-	verify-appstore check bump site-fonts site-html docs-check shellcheck actionlint repo-check \
+.PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
+	test-perf e2e e2e-one quick lint format verify-appstore check bump \
+	site-fonts site-html docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
 bootstrap: ## Install pinned tools, fetch dependencies, generate the workspace
@@ -66,25 +84,30 @@ build: ## Build the Personal flavor
 build-appstore: ## Build the App Store flavor
 	$(XCODEBUILD) -scheme Segue-AppStore -configuration Debug-AppStore build
 
-test: ## Core integration suite + parser corpus + theme tokens (Swift Testing)
-	cd $(CORE_DIR) && swift test
-	cd Packages/SegueVendorServices && swift test
-	# SegueUI theme tests need Swift Build (the native build system copies asset catalogs
-	# uncompiled). Swift Build suppresses warnings in the non-root SegueCore package, which
-	# conflicts with its warnings-as-errors setting, so warnings are failed by grep instead.
+test: test-packages test-perf ## All package tests: the three packages side by side, then the timing budgets alone
+
+test-packages: ## Package tests of SegueCore, SegueVendorServices and SegueUI side by side (no timing budgets)
 	mkdir -p .build
-	cd $(UI_DIR) && swift test --build-system swiftbuild -Xswiftc -no-warnings-as-errors \
-		2>&1 | tee ../../.build/ui-test.log
+	scripts/parallel.sh \
+		core "cd $(CORE_DIR) && $(SWIFT_TEST) --skip '$(PKG_SKIP)'" \
+		vendor "cd Packages/SegueVendorServices && $(SWIFT_TEST) --skip '$(PKG_SKIP)'" \
+		ui "cd $(UI_DIR) && $(UI_TEST) --skip '$(PKG_SKIP)' 2>&1 | tee ../../.build/ui-test.log"
 	! grep -E 'Packages/[^:]+\.swift:[0-9]+:[0-9]+: warning:' .build/ui-test.log
 
-e2e: ## XCUITest suite against the Personal flavor
+test-perf: ## The timing-budget package tests, one package at a time with nothing else running
+	cd $(CORE_DIR) && $(SWIFT_TEST) --filter '$(PERF_RUN)'
+	cd $(UI_DIR) && $(UI_TEST) --filter '$(PERF_RUN)'
+
+e2e: ## XCUITest suite against the Personal flavor (all classes)
 	$(XCODEBUILD) -scheme Segue-Personal -configuration Debug-Personal test
 
 e2e-one: ## Run selected UI tests only: make e2e-one TEST=SegueLiveE2ETests[/testName]
 	@test -n "$(TEST)" || (echo "usage: make e2e-one TEST=Class[/test]" >&2; exit 2)
 	$(XCODEBUILD) -scheme Segue-Personal -configuration Debug-Personal test -only-testing:SegueUITests/$(TEST)
 
-quick: lint build test ## Fast inner loop: lint, build, unit/integration tests (no UI tests)
+quick: PKG_SKIP := $(PERF_TESTS)|$(SLOW_TESTS)
+quick: PERF_RUN := PerformanceTests
+quick: lint build test-packages test-perf ## Inner loop: lint, build, package tests (no UI tests, no long property tests)
 
 lint: ## Lint + format check (no changes)
 	$(MISE) swiftlint lint --strict --quiet
@@ -120,7 +143,13 @@ probe-shortcuts: ## R35 probe: build the sandboxed Shortcuts Events probe app (r
 verify-appstore: ## Build the App Store flavor and assert no personal-module symbols
 	scripts/verify-appstore.sh
 
-check: generate lint repo-check tokens-check icon-check site-check build build-appstore test e2e verify-appstore ## Everything: the CI checks plus builds and tests
+check: generate lint repo-check tokens-check icon-check site-check build ## Everything: CI checks, builds, all package tests, verify-appstore, the full E2E suite
+	# verify-appstore (which builds Debug- and Release-AppStore) runs beside the package
+	# tests; the timing budgets run after both, and E2E (keystroke latency) last, alone.
+	scripts/parallel.sh tests "make --no-print-directory test-packages" \
+		verify "make --no-print-directory verify-appstore"
+	$(MAKE) --no-print-directory test-perf
+	$(MAKE) --no-print-directory e2e
 
 # Repo hygiene. repo-check is exactly what the Linux CI runs (.github/workflows), offline apart
 # from the first fetch of pinned tools, so run it before pushing. gen-site.swift needs AppKit,

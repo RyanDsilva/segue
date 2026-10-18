@@ -38,7 +38,7 @@ final class SegueE2ETests: XCTestCase {
         ])
 
         // Clean baseline: an empty library.
-        XCTAssertTrue(element(app, AXID.libraryEmpty).waitForExistence(timeout: 15))
+        XCTAssertTrue(element(app, AXID.libraryEmpty).appears(timeout: 15))
 
         // Create two songs by typing raw ChordPro (one romanized Hindi). The second is saved
         // by autosave when navigating away mid-edit, with no prompt.
@@ -101,11 +101,11 @@ final class SegueE2ETests: XCTestCase {
         // Create a setlist from the sidebar; the builder opens on it, empty.
         element(app, AXID.newSetlist).click(in: app)
         let name = app.textFields[AXID.newSetlistName]
-        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        XCTAssertTrue(name.appears(timeout: 5))
         name.click(in: app)
         name.typeText("Friday Set", in: app)
         app.buttons[AXID.newSetlistCreate].click(in: app)
-        XCTAssertTrue(app.staticTexts[AXID.setlistTitle].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts[AXID.setlistTitle].appears(timeout: 5))
         XCTAssertEqual(app.staticTexts[AXID.setlistTitle].value as? String, "Friday Set")
         XCTAssertTrue(element(app, AXID.setlistDropZone).exists)
 
@@ -126,16 +126,16 @@ final class SegueE2ETests: XCTestCase {
         // Start show: the stage shows the first song, then the next, then ends.
         element(app, AXID.setlistStartShow).click(in: app)
         let start = element(app, AXID.checklistStart)
-        if start.waitForExistence(timeout: 5) {
+        if start.appears(timeout: 5) {
             start.click(in: app)
         }
         let liveTitle = app.staticTexts[AXID.liveTitle]
-        XCTAssertTrue(liveTitle.waitForExistence(timeout: 10))
+        XCTAssertTrue(liveTitle.appears(timeout: 10))
         XCTAssertTrue(waitForValue(liveTitle, "Harbour Lights"))
         let liveView = element(app, AXID.liveView)
         let chords = liveView.descendants(matching: .staticText)
             .matching(identifier: AXID.sheetChord)
-        XCTAssertTrue(chords.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(chords.firstMatch.appears(timeout: 5))
         attachScreenshot(app, name: "live-view-song-1")
 
         app.typeKey(.rightArrow, modifierFlags: [], in: app)
@@ -143,10 +143,10 @@ final class SegueE2ETests: XCTestCase {
         attachScreenshot(app, name: "live-view-song-2")
         app.typeKey(".", modifierFlags: .command, in: app)
         let confirm = element(app, AXID.liveEndConfirm)
-        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        XCTAssertTrue(confirm.appears(timeout: 5))
         confirm.click(in: app)
-        XCTAssertTrue(liveTitle.waitForNonExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts[AXID.setlistTitle].waitForExistence(timeout: 5))
+        XCTAssertTrue(liveTitle.disappears(timeout: 10))
+        XCTAssertTrue(app.staticTexts[AXID.setlistTitle].appears(timeout: 5))
     }
 
     /// Second launch without `-SegueLibraryPath`: the app resolves the security-scoped
@@ -157,7 +157,7 @@ final class SegueE2ETests: XCTestCase {
         app = relaunched
         E2E.launch(relaunched, arguments: ["-SegueTestDefaults", "YES"])
         XCTAssertFalse(
-            element(relaunched, AXID.chooserMessage).waitForExistence(timeout: 3),
+            element(relaunched, AXID.chooserMessage).appears(timeout: 3),
             "The library chooser appeared: the stored bookmark did not reopen the library",
         )
         waitForRows(relaunched, titles: titles)
@@ -187,7 +187,7 @@ final class SegueE2ETests: XCTestCase {
     {
         element(app, AXID.newSong).click(in: app)
         let editor = app.textViews[AXID.editorText]
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        XCTAssertTrue(editor.appears(timeout: 5))
         editor.click(in: app)
         editor.typeText(source, in: app)
         // The preview renders the typed title before saving.
@@ -207,9 +207,9 @@ final class SegueE2ETests: XCTestCase {
         attachScreenshot(app, name: "editor-new-song")
         app.buttons[AXID.editorDone].click(in: app)
         // Saved: the detail pane shows the rendered song and the list has its row.
-        XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(editor.disappears(timeout: 10))
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], title))
-        XCTAssertTrue(row(app, title).waitForExistence(timeout: 10))
+        XCTAssertTrue(row(app, title).appears(timeout: 10))
     }
 
     /// Types a new song, then clicks another song at once: no prompt, the song is saved
@@ -222,10 +222,10 @@ final class SegueE2ETests: XCTestCase {
     ) {
         let editor = typeNewSong(app, source: source, title: title)
         row(app, "Harbour Lights").click(in: app)
-        XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(editor.disappears(timeout: 10))
         XCTAssertFalse(app.sheets.firstMatch.exists, "Navigating must not ask")
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], "Harbour Lights"))
-        XCTAssertTrue(row(app, title).waitForExistence(timeout: 10))
+        XCTAssertTrue(row(app, title).appears(timeout: 10))
     }
 
     /// Edits a saved song, then switches songs: the edit is on disk with no prompt. The
@@ -238,12 +238,12 @@ final class SegueE2ETests: XCTestCase {
         element(app, AXID.editSong).click(in: app)
         element(app, "segue.editor.mode.text").click(in: app) // Songs open on the visual canvas.
         let editor = app.textViews[AXID.editorText]
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        XCTAssertTrue(editor.appears(timeout: 5))
         editor.click(in: app)
         editor.typeText("Saved by switching\n", in: app)
 
         row(app, "Pyaar Ki Raah").click(in: app)
-        XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(editor.disappears(timeout: 10))
         XCTAssertFalse(app.sheets.firstMatch.exists, "Navigating must not ask")
         XCTAssertTrue(waitForValue(app.staticTexts[AXID.songTitle], "Pyaar Ki Raah"))
         let file = root.appending(path: "songs/harbour-lights.cho")
@@ -254,18 +254,13 @@ final class SegueE2ETests: XCTestCase {
     @MainActor
     private func filterBuilder(_ app: XCUIApplication, _ query: String, expect title: String) {
         let field = app.searchFields[AXID.builderSearch]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(field.appears(timeout: 5))
         field.click(in: app)
         field.typeKey("a", modifierFlags: .command, in: app)
         field.typeText(query, in: app)
         let rows = app.descendants(matching: .any).matching(identifier: AXID.builderLibraryRow)
-        let onlyMatch = NSPredicate { _, _ in
-            rows.count == 1 && rows.firstMatch.label == title
-        }
-        let expectation = XCTNSPredicateExpectation(predicate: onlyMatch, object: nil)
-        XCTAssertEqual(
-            XCTWaiter().wait(for: [expectation], timeout: 10),
-            .completed,
+        XCTAssertTrue(
+            E2E.waitUntil { rows.count == 1 && rows.firstMatch.label == title },
             "Builder search \"\(query)\" should list only \(title)",
         )
     }
@@ -273,7 +268,7 @@ final class SegueE2ETests: XCTestCase {
     @MainActor
     private func search(_ app: XCUIApplication, _ query: String) {
         let field = app.searchFields[AXID.librarySearch]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(field.appears(timeout: 5))
         field.click(in: app)
         field.typeKey("a", modifierFlags: .command, in: app)
         if query.isEmpty {
@@ -288,7 +283,7 @@ final class SegueE2ETests: XCTestCase {
         let row = app.descendants(matching: .any).matching(identifier: AXID.builderLibraryRow)
             .matching(NSPredicate(format: "label == %@", title))
             .firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 5), "No library row for \(title)")
+        XCTAssertTrue(row.appears(timeout: 5), "No library row for \(title)")
         row.buttons[AXID.builderAdd].click(in: app)
     }
 
@@ -351,6 +346,10 @@ extension SegueE2ETests {
         element.label.isEmpty ? (element.value as? String ?? "") : element.label
     }
 
+    private static func text(_ element: any XCUIElementSnapshot) -> String {
+        element.label.isEmpty ? (element.value as? String ?? "") : element.label
+    }
+
     private func songRows(_ app: XCUIApplication) -> XCUIElementQuery {
         app.descendants(matching: .any).matching(identifier: AXID.songRow)
     }
@@ -366,27 +365,22 @@ extension SegueE2ETests {
     }
 
     private func waitForRows(_ app: XCUIApplication, titles: [String]) {
-        let matched = NSPredicate { _, _ in
-            let labels = self.songRows(app).allElementsBoundByIndex.map(Self.text)
+        let rows = { E2E.snapshots(app, identifier: AXID.songRow).map(Self.text) }
+        let matched = E2E.waitUntil {
+            let labels = rows()
             return labels.count == titles.count
                 && zip(labels, titles).allSatisfy { $0.hasPrefix($1) }
         }
-        let expectation = XCTNSPredicateExpectation(predicate: matched, object: nil)
-        let result = XCTWaiter().wait(for: [expectation], timeout: 10)
-        let found = songRows(app).allElementsBoundByIndex.map(Self.text)
-        XCTAssertEqual(result, .completed, "Expected rows \(titles), got \(found)")
+        let found = rows()
+        XCTAssertTrue(matched, "Expected rows \(titles), got \(found)")
     }
 
     private func wait(for query: XCUIElementQuery, count: Int) -> Bool {
-        let predicate = NSPredicate { _, _ in query.count == count }
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
-        return XCTWaiter().wait(for: [expectation], timeout: 10) == .completed
+        E2E.waitUntil { query.count == count }
     }
 
     private func waitForValue(_ element: XCUIElement, _ value: String) -> Bool {
-        let predicate = NSPredicate(format: "value == %@", value)
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
-        return XCTWaiter().wait(for: [expectation], timeout: 10) == .completed
+        element.hasValue(value)
     }
 
     private func attachScreenshot(_ app: XCUIApplication, name: String) {

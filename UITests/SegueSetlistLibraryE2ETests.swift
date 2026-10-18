@@ -49,25 +49,25 @@ final class SegueSetlistLibraryE2ETests: SetlistE2ETestCase {
         select(app, "Harbor Lights")
         click(app, SetlistAXID.songEditNotes)
         let notes = app.textViews[SetlistAXID.notesEditorText]
-        XCTAssertTrue(notes.waitForExistence(timeout: 5))
+        XCTAssertTrue(notes.appears(timeout: 5))
         notes.click(in: app)
         notes.typeText("Start soft, build into the last chorus", in: app)
         click(app, SetlistAXID.notesEditorAddCue)
         let cue = app.textFields[SetlistAXID.notesEditorCueText]
-        XCTAssertTrue(cue.waitForExistence(timeout: 5))
+        XCTAssertTrue(cue.appears(timeout: 5))
         cue.click(in: app)
         cue.typeText("Watch Ravi for the stop", in: app)
         screenshot(app, "notes-editor")
         click(app, SetlistAXID.notesEditorSave)
 
         let shown = SetlistE2E.element(app, SetlistAXID.songNotes)
-        XCTAssertTrue(shown.waitForExistence(timeout: 5))
+        XCTAssertTrue(shown.appears(timeout: 5))
         XCTAssertEqual(
             SetlistE2E.text(shown),
             "Start soft, build into the last chorus",
         )
         let shownCue = SetlistE2E.element(app, SetlistAXID.songCue)
-        XCTAssertTrue(shownCue.waitForExistence(timeout: 5))
+        XCTAssertTrue(shownCue.appears(timeout: 5))
         XCTAssertTrue(SetlistE2E.text(shownCue).contains("Watch Ravi for the stop"))
         SetlistE2E.waitForDisk("Notes and cues never reached the sidecar") {
             let sidecar = try SetlistFixture.sidecarJSON(root, "Harbor Lights")
@@ -108,14 +108,14 @@ final class SegueSetlistLibraryE2ETests: SetlistE2ETestCase {
         // Tag chip in the chip row, then the sidebar's Tags section.
         let upbeat = SetlistE2E.all(app, SetlistAXID.filterTag)
             .matching(NSPredicate(format: "label ==[c] %@", "upbeat")).firstMatch
-        XCTAssertTrue(upbeat.waitForExistence(timeout: 5))
+        XCTAssertTrue(upbeat.appears(timeout: 5))
         upbeat.click(in: app)
         waitForRows(app, ["Harbor Lights", "Paper Boats"])
         upbeat.click(in: app)
         waitForRows(app, SetlistFixture.sortedTitles)
         let sidebarTag = SetlistE2E.all(app, SetlistAXID.sidebarTag)
             .matching(NSPredicate(format: "label BEGINSWITH[c] %@", "crowd pleaser")).firstMatch
-        XCTAssertTrue(sidebarTag.waitForExistence(timeout: 5))
+        XCTAssertTrue(sidebarTag.appears(timeout: 5))
         sidebarTag.click(in: app)
         waitForRows(app, ["Harbor Lights"])
         screenshot(app, "library-filter-sidebar-tag")
@@ -130,7 +130,7 @@ final class SegueSetlistLibraryE2ETests: SetlistE2ETestCase {
     @MainActor
     private func select(_ app: XCUIApplication, _ title: String) {
         let row = SetlistE2E.row(app, SetlistAXID.songRow, title)
-        XCTAssertTrue(row.waitForExistence(timeout: 10), "No row \(title)")
+        XCTAssertTrue(row.appears(timeout: 10), "No row \(title)")
         row.click(in: app)
         let heading = app.staticTexts[SetlistAXID.songTitle]
         SetlistE2E.waitUntil("\(title) never showed in the preview") {
@@ -142,14 +142,14 @@ final class SegueSetlistLibraryE2ETests: SetlistE2ETestCase {
     private func click(_ app: XCUIApplication, _ identifier: String) {
         E2E.bringToFront(app)
         let element = SetlistE2E.element(app, identifier)
-        XCTAssertTrue(element.waitForExistence(timeout: 5), "No \(identifier)")
+        XCTAssertTrue(element.appears(timeout: 5), "No \(identifier)")
         element.click(in: app)
     }
 
     @MainActor
     private func addTag(_ app: XCUIApplication, _ tag: String) {
         let field = app.textFields[SetlistAXID.songTagField]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(field.appears(timeout: 5))
         field.click(in: app)
         field.typeText(tag + "\n", in: app)
         SetlistE2E.waitUntil("Tag \(tag) never showed") {

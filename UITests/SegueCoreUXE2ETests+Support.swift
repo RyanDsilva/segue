@@ -171,7 +171,7 @@ extension SegueCoreUXE2ETests {
     @discardableResult
     func openEditor(_ app: XCUIApplication, _ title: String) -> XCUIElement {
         let row = row(app, title)
-        XCTAssertTrue(row.waitForExistence(timeout: 15), "No row \(title)")
+        XCTAssertTrue(row.appears(timeout: 15), "No row \(title)")
         row.click(in: app)
         return openSelectedEditor(app)
     }
@@ -181,13 +181,13 @@ extension SegueCoreUXE2ETests {
     @discardableResult
     func openSelectedEditor(_ app: XCUIApplication) -> XCUIElement {
         let edit = element(app, CoreAXID.editSong)
-        XCTAssertTrue(edit.waitForExistence(timeout: 10))
+        XCTAssertTrue(edit.appears(timeout: 10))
         edit.click(in: app)
         let textMode = element(app, CoreAXID.editorModeText)
-        XCTAssertTrue(textMode.waitForExistence(timeout: 10))
+        XCTAssertTrue(textMode.appears(timeout: 10))
         textMode.click(in: app)
         let editor = app.textViews[CoreAXID.editorText]
-        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)
         editor.typeKey(.downArrow, modifierFlags: .command, in: app)
         return editor
@@ -199,7 +199,7 @@ extension SegueCoreUXE2ETests {
         E2E.bringToFront(app)
         element.rightClick()
         let item = app.menuItems[identifier].firstMatch
-        XCTAssertTrue(item.waitForExistence(timeout: 5), "No context menu item \(identifier)")
+        XCTAssertTrue(item.appears(timeout: 5), "No context menu item \(identifier)")
         item.click(in: app)
     }
 
@@ -210,24 +210,20 @@ extension SegueCoreUXE2ETests {
 
     // MARK: Waits
 
-    func wait(timeout: TimeInterval = 10, _ condition: @escaping () -> Bool) -> Bool {
-        let predicate = NSPredicate { _, _ in condition() }
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
-        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
+    func wait(timeout: TimeInterval = 10, _ condition: () -> Bool) -> Bool {
+        E2E.waitUntil(timeout: timeout, condition)
     }
 
     /// Waits until the editor's save status reads `text`.
     @MainActor
     func waitForStatus(_ app: XCUIApplication, _ text: String, timeout: TimeInterval = 10) -> Bool {
-        let predicate = NSPredicate(format: "label == %@", text)
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: saveStatus(app))
-        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
+        let status = saveStatus(app)
+        return E2E.waitUntil(timeout: timeout) { status.exists && status.label == text }
     }
 
+    @MainActor
     func waitForValue(_ element: XCUIElement, _ value: String, timeout: TimeInterval = 10) -> Bool {
-        let predicate = NSPredicate(format: "value == %@", value)
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
-        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
+        element.hasValue(value, timeout: timeout)
     }
 
     /// Waits until the file at `url` contains `snippet`.
@@ -240,9 +236,9 @@ extension SegueCoreUXE2ETests {
     func reactivate(_ app: XCUIApplication) {
         let finder = XCUIApplication(bundleIdentifier: "com.apple.finder")
         finder.activate()
-        _ = finder.wait(for: .runningForeground, timeout: 5)
+        _ = finder.reaches(.runningForeground, timeout: 5)
         app.activate()
-        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
+        XCTAssertTrue(app.reaches(.runningForeground, timeout: 10))
     }
 
     @MainActor

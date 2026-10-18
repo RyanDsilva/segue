@@ -8,7 +8,7 @@ extension SegueCoreUXE2ETests {
     func testMainWindowFrameRestoredOnRelaunch() throws {
         try seedSong("harbour-lights", CoreFixture.harbour)
         let app = try launch()
-        XCTAssertTrue(row(app, "Harbour Lights").waitForExistence(timeout: 15))
+        XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 15))
         let before = app.windows.firstMatch.frame
 
         // Move the window by its title bar towards the middle of the usable screen (AppKit
@@ -37,7 +37,7 @@ extension SegueCoreUXE2ETests {
             resize: CGVector(dx: -shrink.dx, dy: -shrink.dy),
         )
         app.typeKey("q", modifierFlags: .command, in: app)
-        XCTAssertTrue(app.wait(for: .notRunning, timeout: 15))
+        XCTAssertTrue(app.reaches(.notRunning, timeout: 15))
         XCTAssertEqual(restored, moved, "before \(before), moved \(moved), restored \(restored)")
     }
 
@@ -57,7 +57,7 @@ extension SegueCoreUXE2ETests {
     /// `-ApplePersistenceIgnoreState`.
     private func quitAndRelaunchKeepingState(_ app: XCUIApplication) throws {
         app.typeKey("q", modifierFlags: .command, in: app)
-        XCTAssertTrue(app.wait(for: .notRunning, timeout: 15))
+        XCTAssertTrue(app.reaches(.notRunning, timeout: 15))
         let paths = try XCTUnwrap(paths)
         app.launchArguments = [
             "-SegueLibraryPath", paths.library.path(percentEncoded: false),
@@ -68,7 +68,7 @@ extension SegueCoreUXE2ETests {
         ]
         app.launch()
         E2E.bringToFront(app)
-        XCTAssertTrue(row(app, "Harbour Lights").waitForExistence(timeout: 15))
+        XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 15))
     }
 
     /// The main screen minus the menu bar and Dock, in XCUITest's top-left coordinates.
@@ -95,13 +95,13 @@ extension SegueCoreUXE2ETests {
             .write(to: folder.appending(path: "paper-moon.cho"))
 
         let app = try launch()
-        XCTAssertTrue(row(app, "Harbour Lights").waitForExistence(timeout: 15))
+        XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 15))
 
         // A file, then a folder, each dragged from a real Finder window onto the list.
         try dragFromFinder(file, onto: app)
-        XCTAssertTrue(row(app, "River Song").waitForExistence(timeout: 10), "the file drop")
+        XCTAssertTrue(row(app, "River Song").appears(timeout: 10), "the file drop")
         try dragFromFinder(folder, onto: app)
-        XCTAssertTrue(row(app, "Paper Moon").waitForExistence(timeout: 10), "the folder drop")
+        XCTAssertTrue(row(app, "Paper Moon").appears(timeout: 10), "the folder drop")
         attachScreenshot(app, name: "finder-drop")
         // Import copies: the dragged originals stay where they were.
         XCTAssertTrue(FileManager.default.fileExists(atPath: file.path(percentEncoded: false)))
@@ -114,10 +114,10 @@ extension SegueCoreUXE2ETests {
     /// point the Finder window does not cover; closes that Finder window afterwards.
     private func dragFromFinder(_ url: URL, onto app: XCUIApplication) throws {
         let list = element(app, CoreAXID.songList)
-        XCTAssertTrue(list.waitForExistence(timeout: 5))
+        XCTAssertTrue(list.appears(timeout: 5))
         let finder = XCUIApplication(bundleIdentifier: "com.apple.finder")
         NSWorkspace.shared.activateFileViewerSelecting([url])
-        XCTAssertTrue(finder.wait(for: .runningForeground, timeout: 10))
+        XCTAssertTrue(finder.reaches(.runningForeground, timeout: 10))
         let name = url.lastPathComponent
         // The topmost match is the item itself: the path bar at the bottom names it too.
         let matches = finder.windows.firstMatch.descendants(matching: .any)
@@ -127,7 +127,7 @@ extension SegueCoreUXE2ETests {
                 name,
                 name,
             ))
-        XCTAssertTrue(matches.firstMatch.waitForExistence(timeout: 10), "Finder shows no \(name)")
+        XCTAssertTrue(matches.firstMatch.appears(timeout: 10), "Finder shows no \(name)")
         let item = try XCTUnwrap(
             matches.allElementsBoundByIndex.filter { $0.frame.height > 0 }
                 .min { $0.frame.minY < $1.frame.minY },

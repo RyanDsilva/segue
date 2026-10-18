@@ -53,7 +53,7 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
     private func createSetlist(_ app: XCUIApplication, _ name: String) {
         click(app, SetlistAXID.newSetlist)
         let field = app.textFields[SetlistAXID.newSetlistName]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(field.appears(timeout: 5))
         field.click(in: app)
         field.typeText(name, in: app)
         app.buttons[SetlistAXID.newSetlistCreate].click(in: app)
@@ -65,7 +65,7 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
     @MainActor
     private func addWithPlus(_ app: XCUIApplication, _ title: String) {
         let row = SetlistE2E.row(app, SetlistAXID.builderLibraryRow, title)
-        XCTAssertTrue(row.waitForExistence(timeout: 5), "No library row \(title)")
+        XCTAssertTrue(row.appears(timeout: 5), "No library row \(title)")
         let count = SetlistE2E.all(app, SetlistAXID.setlistEntry).count
         row.buttons[SetlistAXID.builderAdd].click(in: app)
         SetlistE2E.waitUntil("+ did not add \(title)") {
@@ -83,8 +83,8 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
         SetlistE2E.waitUntil("Builder search never narrowed to Dil Ki Raah") {
             SetlistE2E.texts(app, SetlistAXID.builderLibraryRow) == ["Dil Ki Raah"]
         }
-        XCTAssertTrue(source.waitForExistence(timeout: 5))
-        XCTAssertTrue(target.waitForExistence(timeout: 5))
+        XCTAssertTrue(source.appears(timeout: 5))
+        XCTAssertTrue(target.appears(timeout: 5))
         drag(
             app,
             from: source.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)),
@@ -118,7 +118,7 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
     private func editDetails(_ app: XCUIApplication, _ root: URL) throws {
         click(app, SetlistAXID.setlistDetailsLine)
         let venue = app.textFields[SetlistAXID.detailsVenue]
-        XCTAssertTrue(venue.waitForExistence(timeout: 5))
+        XCTAssertTrue(venue.appears(timeout: 5))
         venue.click(in: app)
         venue.typeText("Dockside", in: app)
         click(app, SetlistAXID.detailsHasDate)
@@ -148,11 +148,11 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
     @MainActor
     private func editEntry(_ app: XCUIApplication, _ root: URL) throws {
         let row = SetlistE2E.row(app, SetlistAXID.setlistEntry, "5. Harbor Lights")
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.appears(timeout: 5))
         XCTAssertEqual(SetlistE2E.text(row.staticTexts[SetlistAXID.entryCapo]), "Capo 2")
         row.staticTexts[SetlistAXID.entryTitle].click(in: app)
         let capoUp = SetlistE2E.element(app, SetlistAXID.entryCapoUp)
-        XCTAssertTrue(capoUp.waitForExistence(timeout: 5))
+        XCTAssertTrue(capoUp.appears(timeout: 5))
         capoUp.click(in: app)
         SetlistE2E.waitUntil("Capo override never applied") {
             SetlistE2E.text(SetlistE2E.element(app, SetlistAXID.entryCapoValue)) == "Capo 3"
@@ -187,7 +187,7 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
     private func renameDuplicateDelete(_ app: XCUIApplication, _ root: URL) throws {
         menuAction(app, SetlistAXID.setlistRenameAction)
         let field = app.textFields[SetlistAXID.setlistNameField]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(field.appears(timeout: 5))
         field.click(in: app)
         field.typeKey("a", modifierFlags: .command, in: app)
         field.typeText("Friday - Dockside Late", in: app)
@@ -210,7 +210,7 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
         // Move to Trash: no confirmation (A23), the file lands in the trash, Undo brings
         // it back and Redo trashes it again.
         menuAction(app, SetlistAXID.setlistDeleteAction)
-        XCTAssertFalse(app.sheets.firstMatch.waitForExistence(timeout: 1), "No dialog expected")
+        XCTAssertFalse(app.sheets.firstMatch.appears(timeout: 1), "No dialog expected")
         SetlistE2E.waitUntil("The copy was never moved to the Trash") {
             SetlistE2E.all(app, SetlistAXID.setlistRow).count == 1
         }
@@ -241,7 +241,7 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
         sidebarRow.click(in: app)
         waitForTitle(app, "Friday - Dockside Late")
         let row = SetlistE2E.row(app, SetlistAXID.setlistEntry, "1. Saawan Ki Shaam")
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.appears(timeout: 5))
         row.hover()
         row.buttons[SetlistAXID.entryRemove].click(in: app)
         waitForEntries(app, Array(reordered.dropFirst()) + ["Dil Ki Raah"])
@@ -274,7 +274,7 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
     private func click(_ app: XCUIApplication, _ identifier: String) {
         E2E.bringToFront(app)
         let element = SetlistE2E.element(app, identifier)
-        XCTAssertTrue(element.waitForExistence(timeout: 5), "No \(identifier)")
+        XCTAssertTrue(element.appears(timeout: 5), "No \(identifier)")
         element.click(in: app)
     }
 
@@ -282,7 +282,7 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
     private func menuAction(_ app: XCUIApplication, _ identifier: String) {
         click(app, SetlistAXID.setlistMenu)
         let item = app.menuItems[identifier].firstMatch
-        XCTAssertTrue(item.waitForExistence(timeout: 5), "No menu item \(identifier)")
+        XCTAssertTrue(item.appears(timeout: 5), "No menu item \(identifier)")
         item.click(in: app)
     }
 

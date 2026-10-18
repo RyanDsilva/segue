@@ -58,7 +58,7 @@ final class SegueEditorE2ETests: XCTestCase {
         let app = try launch(extraArguments: ["-NSRequiresAquaSystemAppearance", "YES"])
         element(app, EditorAXID.newSong).click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
-        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)
         editor.typeText(EditorFixture.gestures, in: app)
         app.typeKey(.escape, modifierFlags: [], in: app)
@@ -103,7 +103,7 @@ final class SegueEditorE2ETests: XCTestCase {
         let app = try launch(extraArguments: ["-NSRequiresAquaSystemAppearance", "YES"])
         element(app, EditorAXID.newSong).click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
-        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)
         editor.typeText(EditorFixture.gestures, in: app)
         app.typeKey(.escape, modifierFlags: [], in: app)
@@ -114,7 +114,7 @@ final class SegueEditorE2ETests: XCTestCase {
         lane(app, "raah").coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
             .click(in: app)
         let field = app.textFields[EditorAXID.editorChordField]
-        XCTAssertTrue(field.waitForExistence(timeout: 5), "No chord popover")
+        XCTAssertTrue(field.appears(timeout: 5), "No chord popover")
         field.typeText("5", in: app)
         attachScreenshot(app, name: "nashville-number-entry")
         app.typeKey(.return, modifierFlags: [], in: app)
@@ -131,20 +131,20 @@ final class SegueEditorE2ETests: XCTestCase {
         let app = try launch()
         element(app, EditorAXID.newSong).click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
-        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)
         editor.typeText("{title: Unsaved}\n", in: app)
 
         // Close the window right after typing: no prompt, the edit is saved (autosave, R17).
         app.typeKey("w", modifierFlags: .command, in: app)
-        XCTAssertTrue(editor.waitForNonExistence(timeout: 10), "The window did not close")
+        XCTAssertTrue(editor.disappears(timeout: 10), "The window did not close")
         XCTAssertFalse(app.sheets.firstMatch.exists, "Closing must not ask")
         try assertFileContains(["{title: Unsaved}"])
         XCTAssertEqual(app.state, .runningForeground)
 
         // Quit: no prompt, the app quits.
         app.typeKey("q", modifierFlags: .command, in: app)
-        XCTAssertTrue(app.wait(for: .notRunning, timeout: 15), "App did not quit")
+        XCTAssertTrue(app.reaches(.notRunning, timeout: 15), "App did not quit")
     }
 
     @MainActor
@@ -152,7 +152,7 @@ final class SegueEditorE2ETests: XCTestCase {
         let app = try launch()
         element(app, EditorAXID.newSong).click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
-        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
@@ -177,7 +177,7 @@ final class SegueEditorE2ETests: XCTestCase {
         // (about 10 ms), which the two-frame `max` bound covers but must not set p95 alone.
         element(app, EditorAXID.editorModeVisual).click(in: app)
         let canvas = app.textViews[EditorAXID.editorVisual]
-        XCTAssertTrue(canvas.waitForExistence(timeout: 10))
+        XCTAssertTrue(canvas.appears(timeout: 10))
         let visualBefore = Self.keystrokeCount(stats)
         canvas.typeText("dil se dil tak, tum hi ho pyaar ki raah pe chalte ", in: app)
         XCTAssertTrue(wait { Self.keystrokeCount(stats) >= visualBefore + 45 })
@@ -190,15 +190,15 @@ final class SegueEditorE2ETests: XCTestCase {
         let app = try launch(extraArguments: ["-AppleInterfaceStyle", "Dark"])
         element(app, EditorAXID.newSong).click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
-        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)
         editor.typeText(EditorFixture.darkSong, in: app)
         app.typeKey(.escape, modifierFlags: [], in: app)
         attachScreenshot(app, name: "dark-text")
         element(app, EditorAXID.editorModeVisual).click(in: app)
-        XCTAssertTrue(app.textViews[EditorAXID.editorVisual].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.textViews[EditorAXID.editorVisual].appears(timeout: 10))
         let pill = pills(app).firstMatch
-        XCTAssertTrue(pill.waitForExistence(timeout: 5))
+        XCTAssertTrue(pill.appears(timeout: 5))
         pill.click(in: app)
         attachScreenshot(app, name: "dark-visual")
     }

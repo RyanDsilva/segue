@@ -48,12 +48,12 @@ final class SegueCoreUXE2ETests: XCTestCase {
 
         // Outside the editor, Cmd-S confirms in the bottom bar.
         element(app, CoreAXID.editorDone).click(in: app)
-        XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(editor.disappears(timeout: 10))
         app.typeKey("s", modifierFlags: .command, in: app)
         let transient = element(app, CoreAXID.transientMessage)
-        XCTAssertTrue(transient.waitForExistence(timeout: 3))
+        XCTAssertTrue(transient.appears(timeout: 3))
         attachScreenshot(app, name: "transient-all-changes-saved")
-        XCTAssertTrue(transient.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(transient.disappears(timeout: 5))
     }
 
     @MainActor
@@ -86,7 +86,7 @@ final class SegueCoreUXE2ETests: XCTestCase {
         editor.typeText("\nFlushed on switch", in: app)
         row(app, "River Song").click(in: app)
 
-        XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(editor.disappears(timeout: 10))
         XCTAssertFalse(app.sheets.firstMatch.exists, "Switching songs must not ask")
         XCTAssertTrue(read(paths.song("harbour-lights")).contains("Flushed on switch"))
         XCTAssertTrue(waitForValue(element(app, CoreAXID.songTitle), "River Song"))
@@ -102,7 +102,7 @@ final class SegueCoreUXE2ETests: XCTestCase {
         editor.typeText("\nSaved on quit", in: app)
         app.typeKey("q", modifierFlags: .command, in: app)
 
-        XCTAssertTrue(app.wait(for: .notRunning, timeout: 15), "The app did not quit")
+        XCTAssertTrue(app.reaches(.notRunning, timeout: 15), "The app did not quit")
         XCTAssertTrue(read(paths.song("harbour-lights")).contains("Saved on quit"))
     }
 
@@ -122,7 +122,7 @@ final class SegueCoreUXE2ETests: XCTestCase {
         editor.typeText(" and more", in: app)
 
         let bar = element(app, CoreAXID.editorConflictBar)
-        XCTAssertTrue(bar.waitForExistence(timeout: 10), "No conflict bar")
+        XCTAssertTrue(bar.appears(timeout: 10), "No conflict bar")
         XCTAssertTrue(waitForStatus(app, "Not saved"))
         XCTAssertEqual(read(file), external)
         attachScreenshot(app, name: "conflict-bar")
@@ -131,7 +131,7 @@ final class SegueCoreUXE2ETests: XCTestCase {
         XCTAssertEqual(read(file), external)
 
         element(app, CoreAXID.editorConflictCopy).click(in: app)
-        XCTAssertTrue(bar.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(bar.disappears(timeout: 10))
         XCTAssertTrue(wait { self.names(in: paths.library.appending(path: "songs"))
                 .filter { $0.hasSuffix(".cho") }.count == 2
         })
@@ -146,12 +146,12 @@ final class SegueCoreUXE2ETests: XCTestCase {
         try FileManager.default.removeItem(at: copyFile)
         try? FileManager.default.removeItem(at: sidecar)
         copy.typeText("\nAfter the delete", in: app)
-        XCTAssertTrue(bar.waitForExistence(timeout: 10), "No conflict bar for a deleted file")
+        XCTAssertTrue(bar.appears(timeout: 10), "No conflict bar for a deleted file")
         let saveAsNew = element(app, CoreAXID.editorConflictCopy)
         XCTAssertEqual(saveAsNew.label, "Save as New Song")
         attachScreenshot(app, name: "conflict-bar-deleted")
         saveAsNew.click(in: app)
-        XCTAssertTrue(bar.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(bar.disappears(timeout: 10))
         XCTAssertTrue(wait {
             self.names(in: paths.library.appending(path: "songs")).contains { name in
                 name.hasSuffix(".cho")
@@ -185,10 +185,10 @@ final class SegueCoreUXE2ETests: XCTestCase {
     func testNewSongFileFollowsTitleUntilDone() throws {
         let app = try launch()
         let paths = try XCTUnwrap(paths)
-        XCTAssertTrue(element(app, CoreAXID.libraryEmpty).waitForExistence(timeout: 15))
+        XCTAssertTrue(element(app, CoreAXID.libraryEmpty).appears(timeout: 15))
         element(app, CoreAXID.newSong).click(in: app)
         let editor = app.textViews[CoreAXID.editorText]
-        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)
 
         editor.typeText("{title: Ha}\n", in: app)
@@ -198,7 +198,7 @@ final class SegueCoreUXE2ETests: XCTestCase {
         XCTAssertTrue(waitForFile(paths.song("harbour"), contains: "Lanterns"))
         element(app, CoreAXID.editorDone).click(in: app)
 
-        XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(editor.disappears(timeout: 10))
         let songs = names(in: paths.library.appending(path: "songs"))
             .filter { $0.hasSuffix(".cho") }
         XCTAssertEqual(songs, ["harbour.cho"])
