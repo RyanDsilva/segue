@@ -288,7 +288,7 @@ R43 picked "Stage" from the first spread. R55 supersedes it with a mix of the se
 Layout, top to bottom (copy in 9.2):
 
 - **Hero, always dark in both schemes.** The header and hero share the `.scheme-stage` ground (section 5.2), so in light mode the page opens on a dark stage and turns to paper at the tiles. One soft spotlight cone falls from above the header onto the stage screenshot, with a faint pool of light under it (CSS gradients only). The beam fades in over 1.4 s, only under `prefers-reduced-motion: no-preference`.
-- **Workflow tiles:** a 2 x 2 grid of rounded tiles (radius 28 px, 24 px on phones; `surface-alt` fill), one column under 860 px. Each tile: small label, 600-weight headline, one or two sentences, then a crop of one screen that starts inset and runs off the tile's edges.
+- **Workflow tiles:** a 2 x 2 grid of rounded tiles (radius 28 px, 24 px on phones; `surface-alt` fill), one column under 860 px. Each tile: small label, 600-weight headline, one or two sentences, then one screen. The tiles share their rows through CSS subgrid, so copy and screens line up across a row. One crop rule for all four: the screen is a panel inset 40 px (24 px on phones) from the tile's sides, bleeding off the bottom only, and it shows one whole region of the window between two column boundaries, so no word is cut.
 - **Stage band, always dark:** a full-bleed `.scheme-stage` band with a centred headline, one large screen and six features with line icons in three columns.
 - **Details:** a 4 x 2 hairline grid (2 columns under 1000 px, 1 on phones).
 - **Privacy:** centred headline and three short columns.
@@ -577,7 +577,7 @@ Meta description: "Segue keeps your songs as ChordPro files, builds tonight's se
 | Tile label | Headline | Body | Screen |
 |---|---|---|---|
 | Library | Bring your songs in. | Drag in ChordPro or text files, or start a new song. Each one stays a plain file in a folder you choose. | `library` |
-| Editor | Make each chart yours. | Type ChordPro, or place chords right on the syllable. Transpose, add a capo, or switch to Nashville numbers. | `editor` |
+| Editor | Make each chart yours. | Type ChordPro or place chords on the syllable. Transpose, add a capo, or switch to Nashville. | `editor` |
 | Setlists | Build the set. | Drag songs into order and watch the running time add up. Change a key or capo for one show only. | `setlist` |
 | Stage | Play the show. | Segue goes dark and full screen. Every song fits at a size you can read from a stool. | `stage-hindi` |
 
@@ -651,11 +651,15 @@ Also check while auditing: the shapes saved in the song (`{define}`), the piano 
 | NAME | Frame | Shows | Crop |
 |---|---|---|---|
 | `stage` | hero (`.shot-hero`) | Stage view, Soundcheck at Seven, song 1 of the Welcome Set, Kitaabon Wali Gali up next | whole window; phones: left 50% |
-| `library` | tile 1 (`.crop-library`) | Main window: sidebar, song list, Soundcheck at Seven's detail pane | from the window's top-left corner |
-| `editor` | tile 2 (`.crop-editor`) | Editor (Text mode) on Kettle On, Lights Low, autosaved | from x = 640 pt (the editor's left edge) |
-| `setlist` | tile 3 (`.crop-setlist`) | Setlist builder, Welcome Set (Kitaabon down a tone, notes on 3 and 4) | from x = 659 pt (the set column) |
-| `stage-hindi` | tile 4 (`.crop-stage`) | Stage view, Kitaabon Wali Gali transposed to Gm | from the window's top-left corner |
-| `stage-search` | stage band (`.shot-band`) | Stage view with quick search open ("lights") | whole window; phones: centred on the panel |
+| `library` | tile 1 (`.crop-library`) | Main window: sidebar, song list, Soundcheck at Seven selected | x 0-640 pt (sidebar and list) |
+| `editor` | tile 2 (`.crop-editor`) | Editor (Text mode) on Kettle On, Lights Low, autosaved | x 640-1440 pt (the editor pane) |
+| `setlist` | tile 3 (`.crop-setlist`) | Setlist builder, Welcome Set (Kitaabon down a tone, notes on 3 and 4) | x 659-1440 pt (the set column) |
+| `stage-hindi` | tile 4 (`.crop-stage`) | Stage view, Kitaabon Wali Gali transposed to Gm | x 0-720 pt (the first lyric column) |
+| `stage-search` | stage band (`.shot-band`) | Stage view with quick search open ("lights"), under a 70% `ground` scrim | whole window; phones: centred on the panel |
+
+The scrim under quick search is art direction, not app UI (the app draws quick search with no scrim; it borrows the 70% `ground` scrim the app uses for "End the show?"). A real capture has no scrim, so WS5 either dims the lyrics in post (same 70% ground) or ships the capture as is; Ryan picks when the screenshot lands.
+
+**Weight:** until every screen is swapped, the home page is over the 40 KB HTML+CSS budget (about 50 KB of interim re-creations in `index.html` plus `screens.css`). Accepted by the coordinator for the interim; the swap brings it back under.
 
 Rules for the swap: set `sizes` to the frame's rendered width (tiles show the window at 176% of a ~520 px tile, so they want the 2560 file on desktop); the hero image keeps `fetchpriority="high"` instead of `loading="lazy"`; the captures are 2880 x 1800 (16:10) and the frames assume 1440 x 900 pt windows, so crops line up; when the last screen is swapped, delete `screens.css` and its `<link>`, and the claims comment's art note.
 
