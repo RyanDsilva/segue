@@ -115,6 +115,47 @@ check_personal_free() {
     fi
 }
 
+# check_quicklook <configuration>: the App Store app embeds exactly SegueQuickLook.appex (WS2b
+# 4.7, I-14) with the App Store extension ID, signed with the sandbox entitlement, with no
+# personal-package symbols, and its SegueUI resource bundle stamped like the app's.
+check_quicklook() {
+    local config="$1" app="$products/$1/Segue.app" plugins appex id ent
+    plugins=$(cd "$app/Contents/PlugIns" 2>/dev/null && find . -maxdepth 1 -name '*.appex' \
+        | sed 's|^\./||' | sort | tr '\n' ' ')
+    if [[ "$plugins" != "SegueQuickLook.appex " ]]; then
+        fail "$config: PlugIns must hold exactly SegueQuickLook.appex (found: ${plugins:-none})"
+        return
+    fi
+    appex="$app/Contents/PlugIns/SegueQuickLook.appex"
+    id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$appex/Contents/Info.plist" \
+        2>/dev/null || true)
+    if [[ "$id" == "dev.ryandsilva.segue.quicklook" ]]; then
+        pass "$config: Quick Look extension is $id"
+    else
+        fail "$config: Quick Look extension identifier is '${id:-unreadable}'"
+    fi
+    if ent=$(codesign -d --entitlements - --xml "$appex" 2>/dev/null | plutil -convert json -o - - \
+        2>/dev/null) && [[ $(jq -r '."com.apple.security.app-sandbox"' <<<"$ent") == "true" ]] \
+        && [[ $(jq -r 'del(."com.apple.security.app-sandbox", ."com.apple.security.get-task-allow")
+            | keys | length' <<<"$ent") == "0" ]]; then
+        pass "$config: Quick Look extension is sandboxed with nothing else"
+    else
+        fail "$config: Quick Look extension entitlements are not exactly the sandbox: ${ent:-unreadable}"
+    fi
+    local binary hits=""
+    for binary in "$appex"/Contents/MacOS/*; do
+        if nm -a "$binary" 2>/dev/null | grep -E -q "$forbidden"; then
+            hits+="$binary"$'\n'
+        fi
+    done
+    if [[ -n "$hits" ]]; then
+        fail "$config: personal-package symbols in the Quick Look extension:"$'\n'"$hits"
+    else
+        pass "$config: no personal-package symbols in the Quick Look extension"
+    fi
+    check_resource_bundle "$config Quick Look" "$appex"
+}
+
 # check_entitlements <configuration>: the signed entitlements must be exactly
 # `app_entitlements`, ignoring only get-task-allow (local development signing adds it; the
 # exported store build is checked without it by verify-archive check 4). Fails closed when
@@ -153,6 +194,7 @@ for config in Release-AppStore Debug-AppStore; do
     check_entitlements "$config"
 done
 check_apple_events_usage Release-AppStore
+check_quicklook Release-AppStore
 check_no_test_hooks Release-AppStore "$products/Release-AppStore/Segue.app/Contents/MacOS/Segue"
 check_resource_bundle Release-AppStore "$products/Release-AppStore/Segue.app"
 

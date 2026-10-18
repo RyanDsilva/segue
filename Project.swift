@@ -165,6 +165,8 @@ let appInfoPlist: [String: Plist.Value] = [
 func appTarget(name: String, personal: Bool) -> Target {
     let entitlementsPath = personal ? "App/Segue.entitlements" : "App/SegueAppStore.entitlements"
     var dependencies: [TargetDependency] = [
+        // The Quick Look preview, embedded in Contents/PlugIns (WS2b 4.7).
+        .target(name: quickLookName(personal: personal)),
         .external(name: "SegueUI"),
         .external(name: "SegueCore"),
         // Hosted services (WS3): our TelemetryDeck ingest client and the Sentry SDK.
@@ -260,8 +262,56 @@ let stampResourceBundle: TargetScript = .post(
     basedOnDependencyAnalysis: false,
 )
 
+/// The Quick Look extension's target name per flavor.
+func quickLookName(personal: Bool) -> String {
+    personal ? "SegueQuickLookPersonal" : "SegueQuickLook"
+}
+
+/// The Quick Look preview extension for one app flavor (WS2b 4.7, B-20). An extension's
+/// bundle ID must extend its host's, and the flavors' IDs differ (R11), so there is one per
+/// flavor: `dev.ryandsilva.segue.quicklook` in the App Store app (its App ID and the profile
+/// "Segue Mac App Store QuickLook" are WS1's, I-14) and `<personal>.quicklook` in Personal.
+/// Sandboxed with nothing else; it links SegueUI to draw the song with the app's renderer.
+func quickLookTarget(hostName: String, hostBundleID: String) -> Target {
+    .target(
+        name: quickLookName(personal: hostName == "Segue"),
+        destinations: [.mac],
+        product: .appExtension,
+        bundleId: "\(hostBundleID).quicklook",
+        deploymentTargets: deploymentTargets,
+        infoPlist: .extendingDefault(with: [
+            "CFBundleDisplayName": "Segue",
+            "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+            "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
+            "NSHumanReadableCopyright": "© 2026 Ryan Rony Dsilva",
+            "NSExtension": [
+                "NSExtensionPointIdentifier": "com.apple.quicklook.preview",
+                "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).PreviewViewController",
+                "NSExtensionAttributes": [
+                    "QLSupportedContentTypes": [.string(chordProTypeID)],
+                    "QLSupportsSearchableItems": false,
+                ],
+            ],
+        ]),
+        sources: ["Extensions/QuickLook/Sources/**"],
+        entitlements: .file(path: .relativeToRoot("Extensions/QuickLook/QuickLook.entitlements")),
+        // Its own copy of the SegueUI resource bundle gets the same real identifier (B-6).
+        scripts: [stampResourceBundle],
+        dependencies: [
+            .external(name: "SegueUI"),
+            .external(name: "SegueCore"),
+        ],
+        settings: .settings(base: [
+            "ENABLE_APP_SANDBOX": "YES",
+            "SKIP_INSTALL": "YES",
+        ].merging(signingSettings) { _, new in new }),
+    )
+}
+
 let personalApp = appTarget(name: "Segue", personal: true)
 let appStoreApp = appTarget(name: "SegueAppStore", personal: false)
+let personalQuickLook = quickLookTarget(hostName: "Segue", hostBundleID: personalBundleID)
+let appStoreQuickLook = quickLookTarget(hostName: "SegueAppStore", hostBundleID: appStoreBundleID)
 
 let uiTests: Target = .target(
     name: "SegueUITests",
@@ -315,6 +365,6 @@ let project = Project(
         developmentRegion: "en",
     ),
     settings: projectSettings,
-    targets: [personalApp, appStoreApp, uiTests],
+    targets: [personalApp, appStoreApp, personalQuickLook, appStoreQuickLook, uiTests],
     schemes: [personalScheme, appStoreScheme],
 )

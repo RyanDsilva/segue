@@ -37,8 +37,18 @@ import PackageDescription
         "OTHER_LIBTOOLFLAGS": "$(inherited) -no_warning_for_no_symbols",
     ]
 
+    /// Static libraries, not Tuist's default static frameworks: the Quick Look extension
+    /// (WS2b 4.7) links SegueUI and everything under it, and Tuist allows a macOS app
+    /// extension to link static libraries only. The app links them the same way.
+    private let staticLibraries = [
+        "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists", "Shows",
+        "LiveLayout", "Plugins", "Support", "Services", "SegueCore", "SegueUI", "Tonic",
+    ]
+
     let packageSettings = PackageSettings(
-        productTypes: [:],
+        productTypes: Dictionary(
+            uniqueKeysWithValues: staticLibraries.map { ($0, .staticLibrary) },
+        ),
         baseSettings: .settings(
             // arm64 only, like the app targets (docs/release/decisions.md R41, A59).
             base: ["MACOSX_DEPLOYMENT_TARGET": "26.0", "ARCHS": "arm64"],
