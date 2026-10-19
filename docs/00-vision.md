@@ -42,7 +42,7 @@ Rehearsal at home is a secondary use of the same views. iPhone/iPad is a later p
 | Live view (v1) | Auto-fit to one screen (columns/scale), auto-scroll (duration/tempo-based, pausable), next-song footer, dark stage theme, per-song font/zoom memory, section highlighting (collapsed chorus repeats), keep awake + suppress notifications. |
 | Setlist live ops | Quick library search mid-show, reorder/skip/mark played, request queue. (Multiple sets with timing: not requested.) |
 | Gig extras | Per-song notes/cues, gig log/history, PDF export/print. Backing tracks: not requested. |
-| Library | Tags (free-form + suggested starters) + smart filters, proficiency (Learning / Ready / Pro), energy rating 1-5, learned real durations. *(v0.5: energy deferred - R71; durations learned plus flagged estimates - R70.)* |
+| Library | Tags (free-form + suggested starters) + smart filters, proficiency (Learning / Ready / Pro), energy rating 1-5, learned real durations. *(v0.5: energy deferred - R71; R70's learned/estimated durations superseded by R91: manual length + "Time it", unknown stays unknown.)* |
 | Set assistant | Build a set to a target length; natural-language song picks. |
 | Sharing | PDF only for now. Partner live sync ships with phase 7 (iOS). |
 | Control | Bluetooth pedals + MIDI in phase 6 (not critical). |
