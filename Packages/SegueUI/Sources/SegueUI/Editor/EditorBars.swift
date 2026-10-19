@@ -124,7 +124,9 @@
                     problems
                 }
                 // No tabular figures: Schibsted Grotesk's would open a gap before the comma.
+                // Never wraps in a narrow window: the file name truncates instead.
                 Text("Line \(model.cursor.line), column \(model.cursor.column)")
+                    .fixedSize()
                     .accessibilityIdentifier(AccessibilityID.editorCursor)
                 Spacer(minLength: 12)
                 Text(fileText)
@@ -163,6 +165,7 @@
             let diagnostics = model.diagnostics
             if diagnostics.isEmpty {
                 Text("No problems")
+                    .fixedSize()
                     .accessibilityIdentifier(AccessibilityID.editorProblems)
             } else {
                 Menu {

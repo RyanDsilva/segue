@@ -34,6 +34,12 @@
             return widths.reduce(0, +) + stackSpacing * CGFloat(max(widths.count - 1, 0))
         }
 
+        /// Room a lyric row leaves at its end for a pill group that starts on its last
+        /// character: the widest group of the line.
+        static func trailingRoom(_ line: RenderLine) -> CGFloat {
+            groups(of: line.chords).map { groupWidth($0.chords) }.max() ?? 0
+        }
+
         /// The attributed text of one paragraph, terminated by `separator` ("\n" or "").
         static func attributed(
             _ paragraph: CanvasParagraph,
@@ -63,6 +69,10 @@
                 style.minimumLineHeight = laneHeight + lyricLineHeight
                 style.maximumLineHeight = laneHeight + lyricLineHeight
                 style.paragraphSpacing = lineSpacing
+                // A pill starts at its character and may be wider than the rest of the row:
+                // the row ends early enough that the widest pill group still ends inside
+                // the column, never past the section rule or the window edge.
+                style.tailIndent = -(paragraph.lyricLine.map(trailingRoom) ?? 0)
                 attributes[.font] = EditorStyle.canvasLyricFont
                 attributes[.foregroundColor] = EditorStyle.ink
             case .label:

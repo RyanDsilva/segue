@@ -184,8 +184,9 @@ private struct ItemView: View {
 }
 
 /// One lyric line. Each chord sits above its character; the line wraps between words
-/// when it is wider than the column. Only a row that carries chords has a chord band: a
-/// wrapped row without chords sits right under the row above, with no empty band between.
+/// when it is wider than the column (`LyricLineLayout`). Only a row that carries chords has
+/// a chord band: a wrapped row without chords sits right under the row above, with no empty
+/// band between.
 struct LyricLineView: View {
     let line: RenderLine
     let style: SongSheetStyle
@@ -195,10 +196,31 @@ struct LyricLineView: View {
         if tokens.isEmpty {
             Color.clear.frame(height: style.lyricSize * 0.6)
         } else {
-            LyricFlowLayout(rowSpacing: style.rowSpacing, alignsBottoms: true) {
+            LyricLineLayout(
+                tokens: tokens,
+                chordGap: style.chordSize * 0.35,
+                chordLyricGap: style.chordGap,
+                rowSpacing: style.rowSpacing,
+            ) {
                 ForEach(tokens) { token in
-                    TokenView(token: token, showsChordRow: token.chord != nil, style: style)
+                    if let chord = token.chord {
+                        Text(chord)
+                            .font(Theme.font.liveChord(size: style.lyricSize))
+                            .foregroundStyle(
+                                token.isUnknown ? Theme.color.muted : Theme.color.cueText,
+                            )
+                            .fixedSize()
+                    }
+                    Text(token.text)
+                        .font(Theme.font.liveLyric(size: style.lyricSize))
+                        .foregroundStyle(Theme.color.ink)
+                        .fixedSize()
                 }
+                // The lyric face's space and line height, measured once per line.
+                Text(" ")
+                    .font(Theme.font.liveLyric(size: style.lyricSize))
+                    .fixedSize()
+                    .hidden()
             }
             // One element per line, read chords first (WS2b 4.9.2): "G, D: Van door slides
             // and the street lamps hum".
@@ -219,38 +241,42 @@ struct LyricLineView: View {
     }
 }
 
-private struct TokenView: View {
-    let token: LyricToken
-    let showsChordRow: Bool
-    let style: SongSheetStyle
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: style.chordGap) {
-            if showsChordRow {
-                Text(token.chord ?? " ")
-                    .font(Theme.font.liveChord(size: style.lyricSize))
-                    .foregroundStyle(token.isUnknown ? Theme.color.muted : Theme.color.cueText)
-                    .padding(.trailing, token.chord == nil ? 0 : style.chordSize * 0.35)
-            }
-            Text(token.text)
-                .font(Theme.font.liveLyric(size: style.lyricSize))
-                .foregroundStyle(Theme.color.ink)
-        }
-        .fixedSize()
-    }
-}
-
-/// A wrap unit: one word (with its trailing spaces) and the chord above its start, if any.
+/// A piece of a lyric line: a run of lyric text (at most one word, with its trailing
+/// spaces) and the chord above its start, if any. A chord inside a word splits the word into
+/// pieces that only `endsWord` tells apart: the line wraps between words, never between the
+/// pieces of one word.
 struct LyricToken: Identifiable, Equatable {
     let id: Int
     let chord: String?
     let text: String
     var isUnknown = false
+    /// The line may wrap after this piece: its text ends in whitespace, or it is the last
+    /// piece of the line.
+    var endsWord = true
 
-    /// Splits `line` into words, keeping each chord on the word it starts. A chord inside a
-    /// word splits it there. Whitespace stays attached to the preceding word, so the spacing
-    /// of the lyric is preserved.
+    /// Trailing whitespace characters (drawn as space, never counted as ink at a row end).
+    var trailingSpaces: Int {
+        text.reversed().prefix(while: \.isWhitespace).count
+    }
+
+    /// The text has something to draw besides whitespace.
+    var hasInk: Bool {
+        text.contains { !$0.isWhitespace }
+    }
+
+    /// Splits `line` into pieces, keeping each chord on the piece it starts. A chord inside a
+    /// word splits it there (the pieces stay one wrap unit). Whitespace stays attached to the
+    /// preceding word, so the spacing of the lyric is preserved.
     static func tokens(for line: RenderLine) -> [Self] {
+        var tokens = pieces(of: line)
+        for index in tokens.indices {
+            tokens[index].endsWord = index == tokens.count - 1
+                || tokens[index].text.last?.isWhitespace == true
+        }
+        return tokens
+    }
+
+    private static func pieces(of line: RenderLine) -> [Self] {
         var tokens: [Self] = []
         for segment in segments(of: line) {
             let words = words(in: segment.text)
@@ -286,22 +312,33 @@ struct LyricToken: Identifiable, Equatable {
 
     /// The lyric cut at each chord's offset: text before the first chord, then each chord
     /// with the text up to the next one (stacked chords get empty text).
+    /// Lyric offsets go through `RenderLine.utf16Offset`, never `Character` indices of the
+    /// joined lyric: a chord between a consonant and its combining sign (`प[G]्यार`) merges
+    /// two lyric characters into one there, which would shift every later chord.
     private static func segments(of line: RenderLine) -> [Segment] {
-        let characters = Array(line.lyrics)
+        let utf16 = line.lyrics.utf16
+        func text(_ from: Int, _ to: Int) -> String {
+            let start = utf16.index(utf16.startIndex, offsetBy: from)
+            let end = utf16.index(utf16.startIndex, offsetBy: max(to, from))
+            // Decoded from the UTF-16 slice: a String range would round to whole
+            // Characters and lose a split inside a merged character.
+            return String(decoding: utf16[start ..< end], as: UTF16.self)
+        }
+        let end = line.utf16Offset(ofLyricOffset: line.lyricCount)
         var segments: [Segment] = []
-        let firstOffset = line.chords.first.map { min($0.offset, characters.count) } ?? characters
-            .count
-        if firstOffset > 0 {
-            segments.append(Segment(chord: nil, text: String(characters[0 ..< firstOffset])))
+        let firstStart = line.chords.first.map { line.utf16Offset(ofLyricOffset: $0.offset) }
+            ?? end
+        if firstStart > 0 {
+            segments.append(Segment(chord: nil, text: text(0, firstStart)))
         }
         for (index, chord) in line.chords.enumerated() {
-            let start = min(max(chord.offset, 0), characters.count)
-            let end = index + 1 < line.chords.count
-                ? min(max(line.chords[index + 1].offset, start), characters.count)
-                : characters.count
+            let start = line.utf16Offset(ofLyricOffset: chord.offset)
+            let next = index + 1 < line.chords.count
+                ? line.utf16Offset(ofLyricOffset: line.chords[index + 1].offset)
+                : end
             segments.append(Segment(
                 chord: chord.text,
-                text: String(characters[start ..< end]),
+                text: text(start, next),
                 isUnknown: chord.kind == .unknown,
             ))
         }
@@ -333,15 +370,10 @@ struct LyricToken: Identifiable, Equatable {
 }
 
 /// Lays children out left to right, wrapping to a new row when the next child would
-/// overflow the proposed width.
-///
-/// With `alignsBottoms`, children of a row share their bottom edge (lyric tokens: the lyric
-/// is the last line of every token, chord or not), so a row is only as tall as its tallest
-/// token, and the layout's first text baseline is its first row's last text baseline (the
-/// lyric under any chord).
+/// overflow the proposed width (chips in the editor bars; lyric lines use
+/// `LyricLineLayout`).
 struct LyricFlowLayout: Layout {
     var rowSpacing: CGFloat
-    var alignsBottoms = false
 
     /// Child sizes, measured once per layout pass (children are fixed-size tokens).
     struct Cache {
@@ -379,9 +411,8 @@ struct LyricFlowLayout: Layout {
             var x = bounds.minX
             for index in row.indices {
                 let size = cache.sizes[index]
-                let top = alignsBottoms ? y + row.height - size.height : y
                 subviews[index].place(
-                    at: CGPoint(x: x, y: top),
+                    at: CGPoint(x: x, y: y),
                     anchor: .topLeading,
                     proposal: ProposedViewSize(size),
                 )
@@ -389,24 +420,6 @@ struct LyricFlowLayout: Layout {
             }
             y += row.height + rowSpacing
         }
-    }
-
-    func explicitAlignment(
-        of guide: VerticalAlignment,
-        in bounds: CGRect,
-        proposal _: ProposedViewSize,
-        subviews: Subviews,
-        cache: inout Cache,
-    ) -> CGFloat? {
-        guard alignsBottoms, guide == .firstTextBaseline,
-              let row = rows(for: cache.sizes, width: bounds.width).first,
-              let first = row.indices.first
-        else {
-            return nil
-        }
-        let size = cache.sizes[first]
-        let baseline = subviews[first].dimensions(in: ProposedViewSize(size))[.lastTextBaseline]
-        return bounds.minY + row.height - size.height + baseline
     }
 
     private struct Row {
