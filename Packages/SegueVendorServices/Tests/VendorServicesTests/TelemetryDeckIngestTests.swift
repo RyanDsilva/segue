@@ -113,7 +113,7 @@ struct TelemetryDeckIngestTests {
     func `offline signals survive termination and go out in batches of 100`() async throws {
         let harness = try IngestHarness()
         defer { harness.cleanUp() }
-        let route = harness.route(fallback: .offline)
+        _ = harness.route(fallback: .offline)
         let offline = harness.sink()
         let event = AnalyticsEvent.featureUsed(.transpose, .editor).render()
         for _ in 0 ..< 149 {
@@ -126,12 +126,13 @@ struct TelemetryDeckIngestTests {
         #expect(stored.count == 150)
         #expect(harness.defaults.string(forKey: TelemetryDeckIngest.installIDKey) != nil)
 
-        // Next launch, back online: the stored 150 plus the new session signal.
-        let before = route.captured.count
-        route.setFallback(.status(200))
-        let online = harness.sink()
+        // Next launch, back online: the stored 150 plus the new session signal. The relaunch
+        // posts to a route of its own, because the offline sink's last attempt can still
+        // reach the stub after shut-down (it was already on the wire when cancelled).
+        let (endpoint, route) = try harness.relaunchRoute()
+        let online = harness.sink(endpoint: endpoint)
         try await eventually { await online.pendingSignals.isEmpty }
-        let sent = Array(route.captured.dropFirst(before))
+        let sent = route.captured
         #expect(sent.map(\.signals.count) == [100, 51])
         let types = sent.flatMap(\.signals).compactMap { $0["type"] as? String }
         #expect(types.filter { $0 == event.name }.count == 149)

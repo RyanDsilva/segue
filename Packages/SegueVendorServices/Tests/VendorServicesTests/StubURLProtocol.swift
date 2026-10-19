@@ -96,6 +96,13 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
 
     override func startLoading() {
         guard let url = request.url else { return }
+        // The loading system can start a protocol for a task that was cancelled (and already
+        // completed with `cancelled`) before it got here. A real HTTP stack sends nothing for
+        // such a task, so it is not a request: recording it would count a send the client
+        // never made.
+        if let task, task.state != .running {
+            return
+        }
         let route = Self.routes.withLock { routes in
             routes.first { url.path.hasPrefix($0.key) }?.value
         }

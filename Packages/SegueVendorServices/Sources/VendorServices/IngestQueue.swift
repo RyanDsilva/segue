@@ -75,19 +75,26 @@ actor IngestQueue {
     /// Stops for good. Discarding: the in-flight request is cancelled and the on-disk queue
     /// deleted, with no final flush. Otherwise the pending signals stay on disk for the next
     /// sink.
-    func shutDown(discardingQueue: Bool) {
+    ///
+    /// Returns only once the send loop has wound down: cancelling a `URLSession` task is
+    /// asynchronous, so without this wait a request this queue had already handed to the
+    /// loading system could still start after shut-down (and, on a relaunch, go out next to
+    /// the next sink's resend of the same signals).
+    func shutDown(discardingQueue: Bool) async {
         guard !isShutDown else { return }
         if !discardingQueue {
             persist()
         }
         isShutDown = true
-        loop?.cancel()
+        let running = loop
         loop = nil
+        running?.cancel()
         session.invalidateAndCancel()
         pending = []
         if discardingQueue {
             try? FileManager.default.removeItem(at: queueFile)
         }
+        await running?.value
     }
 
     /// Test observation: the signals not yet accepted by the server.
@@ -125,9 +132,7 @@ actor IngestQueue {
                 break
             }
         }
-        if !isShutDown {
-            loop = nil
-        }
+        loop = nil
     }
 
     private func sendBatch() async -> Disposition {

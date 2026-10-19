@@ -64,12 +64,24 @@ struct IngestHarness {
         StubURLProtocol.route(endpoint.path, replies: replies, fallback: fallback)
     }
 
+    /// A stub route of its own (a fresh namespace) for a sink that shares this harness's
+    /// install ID and queue file, such as the next launch of the app.
+    func relaunchRoute(
+        fallback: StubURLProtocol.Reply = .status(200),
+    ) throws -> (endpoint: URL, route: StubURLProtocol.Route) {
+        let endpoint = try #require(
+            TelemetryDeckIngest.endpoint(namespace: "test-\(UUID().uuidString.lowercased())"),
+        )
+        return (endpoint, StubURLProtocol.route(endpoint.path, fallback: fallback))
+    }
+
     func sink(
         isTestMode: Bool = false,
         clock: any Clock = SystemClock(),
+        endpoint: URL? = nil,
     ) -> TelemetryDeckIngestSink {
         TelemetryDeckIngestSink(
-            endpoint: endpoint,
+            endpoint: endpoint ?? self.endpoint,
             appID: Self.appID,
             isTestMode: isTestMode,
             context: Self.context,
