@@ -299,6 +299,7 @@ check_8() {
         pass "8: Info.plist keys (encryption, category, copyright, minimum OS, display name, Apple events)"
     fi
     check_resource_bundle "8" "$app"
+    check_third_party_notices "8" "$app"
 }
 
 # MARK: 9. Privacy manifest

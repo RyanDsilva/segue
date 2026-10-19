@@ -30,7 +30,8 @@ let package = Package(
                 .process("Theme/Tokens.xcassets"),
                 // Schibsted Grotesk statics (SIL OFL 1.1, see Theme/Fonts/OFL.txt).
                 .copy("Theme/Fonts"),
-                // Licence texts shown in Segue > Acknowledgements (MIT dependencies).
+                // MIT licence texts of the bundled dependencies (THIRD_PARTY_NOTICES.md): not shown
+                // in the UI, shipped so the notices accompany the binary.
                 .copy("App/Licenses"),
                 // The Welcome library: original songs and the demo setlist (WS2b 4.2).
                 .copy("App/WelcomeLibrary"),

@@ -3,8 +3,8 @@
 
     /// Segue > About Segue (WS2a 3.6): the standard panel with the icon, "Version 0.5 (12)"
     /// and the copyright from Info.plist (WS1 sets them, R5, R30), plus credits: the site's
-    /// links and the open-source software Segue is built with. The credits link the web
-    /// Acknowledgements page; the in-app window is Help > Acknowledgements.
+    /// links. Third-party notices are not shown in the app: they ship in the bundle
+    /// (THIRD_PARTY_NOTICES.md, licence texts) and on the website, linked from its legal pages.
     enum AboutPanel {
         @MainActor
         static func show() {
@@ -60,14 +60,12 @@
             bundle.infoDictionary?["NSHumanReadableCopyright"] as? String
         }
 
-        /// Two centred paragraphs in the brand face, muted, each set as balanced lines: the
-        /// links, then the credits.
+        /// One centred paragraph of links in the brand face, muted, set as balanced lines.
         static func credits() -> NSAttributedString {
             let font = NSFont(name: SchibstedGrotesk.medium.rawValue, size: 11)
                 ?? NSFont.systemFont(ofSize: 11)
             let paragraph = NSMutableParagraphStyle()
             paragraph.alignment = .center
-            paragraph.paragraphSpacing = 6
             let base: [NSAttributedString.Key: Any] = [
                 .font: font,
                 .foregroundColor: NSColor.secondaryLabelColor,
@@ -81,7 +79,7 @@
                 }
                 text.append(NSAttributedString(string: string, attributes: attributes))
             }
-            // Set lines, not wrapping: the panel's width would otherwise break the lists
+            // Set lines, not wrapping: the panel's width would otherwise break the list
             // wherever it falls. U+2028 breaks a line inside the paragraph; no-break spaces
             // keep every name whole even if a line ever has to wrap.
             let lineBreak = "\u{2028}"
@@ -93,11 +91,6 @@
             append("Support", link: SegueLinks.support)
             append(separator)
             append("Privacy\u{00A0}Policy", link: SegueLinks.privacy)
-            append("\n")
-            append("Built with open-source software:" + lineBreak
-                + "Schibsted\u{00A0}Grotesk\u{00A0}(SIL\u{00A0}OFL\u{00A0}1.1), GRDB\u{00A0}(MIT),"
-                + lineBreak + "Tonic\u{00A0}(MIT), Sentry\u{00A0}(MIT). ")
-            append("Acknowledgements", link: SegueLinks.acknowledgements)
             return text
         }
     }

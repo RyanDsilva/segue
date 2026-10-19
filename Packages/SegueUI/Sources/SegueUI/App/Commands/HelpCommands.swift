@@ -129,7 +129,8 @@
             return items
         }
 
-        /// Privacy Policy, Terms of Use, Acknowledgements.
+        /// Privacy Policy, Terms of Use. Third-party notices live on the website (linked from
+        /// both pages) and in the bundle's THIRD_PARTY_NOTICES.md, not in the menu.
         private static var legal: [HelpMenuItem] {
             [
                 HelpMenuItem(
@@ -142,10 +143,6 @@
                     title: "Terms of Use",
                     analytics: .terms,
                     action: .workspace { $0.open(SegueLinks.terms) },
-                ),
-                HelpMenuItem(
-                    title: "Acknowledgements",
-                    action: .window(AcknowledgementsWindow.id),
                 ),
             ]
         }

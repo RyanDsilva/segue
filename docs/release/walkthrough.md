@@ -28,7 +28,7 @@ Items the agents could not verify headlessly:
 - [ ] The `?` overlay on stage; any stage key closes it.
 
 ## Menus and windows
-- [ ] Help menu items all open the right pages; About panel; Acknowledgements; Window > Segue Library (Cmd-0) reopens a closed main window.
+- [ ] Help menu items all open the right pages; About panel; Window > Segue Library (Cmd-0) reopens a closed main window. (Acknowledgements left the app 2026-10-18: no Help item or About credits; the notices are on the website, linked from Privacy and Terms.)
 - [ ] The window size and position are restored after relaunch.
 
 ## Services (WS3)

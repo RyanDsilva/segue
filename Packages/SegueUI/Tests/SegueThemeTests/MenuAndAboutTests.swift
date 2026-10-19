@@ -72,7 +72,7 @@ struct AboutPanelTests {
     }
 
     @Test
-    func `credits link the site pages and name the open-source software`() {
+    func `credits link the site pages and name no third-party software`() {
         let credits = AboutPanel.credits()
         let whole = NSRange(location: 0, length: credits.length)
         var links: [URL] = []
@@ -81,23 +81,25 @@ struct AboutPanelTests {
                 links.append(url)
             }
         }
-        #expect(links == [
-            SegueLinks.site, SegueLinks.help, SegueLinks.support, SegueLinks.privacy,
-            SegueLinks.acknowledgements,
-        ])
-        let plain = credits.string.replacingOccurrences(of: "\u{00A0}", with: " ")
-            .replacingOccurrences(of: "\u{2028}", with: " ")
-        #expect(plain.contains(
-            "Schibsted Grotesk (SIL OFL 1.1), GRDB (MIT), Tonic (MIT), Sentry (MIT).",
-        ))
+        #expect(links == [SegueLinks.site, SegueLinks.help, SegueLinks.support, SegueLinks.privacy])
+        for name in ["Schibsted", "GRDB", "Tonic", "Sentry", "open-source", "Acknowledgements"] {
+            #expect(!credits.string.contains(name), "About credits mention \(name)")
+        }
     }
 
-    @Test
-    func `every bundled licence text loads`() {
-        for credit in AcknowledgementsView.credits {
-            let text = AcknowledgementsView.licenceText(credit) ?? ""
-            #expect(text.count > 200, "\(credit.name) licence missing")
-        }
+    /// The notices are not shown in the app, but MIT and the OFL require them to accompany
+    /// the binary: the licence texts ship in the SegueUI resource bundle.
+    @Test(arguments: [
+        ("Licenses", "GRDB"),
+        ("Licenses", "Tonic"),
+        ("Licenses", "Sentry"),
+        ("Fonts", "OFL")
+    ])
+    func `every bundled licence text loads`(folder: String, name: String) {
+        let url = Theme.bundle.url(forResource: name, withExtension: "txt", subdirectory: folder)
+            ?? Theme.bundle.url(forResource: name, withExtension: "txt")
+        let text = url.flatMap { try? String(contentsOf: $0, encoding: .utf8) } ?? ""
+        #expect(text.count > 200, "\(name) licence missing")
     }
 
     private static func bundle(info: [String: String]) throws -> Bundle {

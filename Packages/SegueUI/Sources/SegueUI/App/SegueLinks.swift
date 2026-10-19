@@ -19,8 +19,6 @@ public enum SegueLinks {
     public static let changelog = url("https://segue.ryandsilva.dev/changelog")
     /// The feature board (redirects to the board vendor, R29).
     public static let feedback = url("https://segue.ryandsilva.dev/feedback")
-    /// Third-party licences on the web (About credits, A34).
-    public static let acknowledgements = url("https://segue.ryandsilva.dev/acknowledgements")
     /// The support address (R28): Report a Problem's fallback.
     public static let supportEmail = url("mailto:\(supportAddress)")
     /// The bare support address (R28), for copy and the bug report's email draft.

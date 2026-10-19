@@ -41,12 +41,12 @@ Date: 2026-10-17.
 | A3 | Controller contact by email only (`segue@ryandsilva.dev`); no postal address; no EU/UK representative (relying on GDPR Art. 27(2), not stated in the policy). | Policy "Who we are" |
 | R38 (A54) | Website analytics: **Cloudflare Web Analytics** (cookieless, no banner), enabled in the Pages dashboard. CSP allows its beacon. | 9.3 `_headers`, 9.4 "This website", R-3, tests |
 | A16, I-2, I-3, B-26 | `content/changelog.json` is the original; the generator writes `website/changelog.json`; the app **bundles that file only** (never fetches it) and shows the What's New sheet only for releases with `showInApp: true`. No separate bundled-copy output. | Section 6; policy and FAQ drop "fetch release notes" |
-| I-5 | Canonical Help menu: Segue Help, Keyboard Shortcuts, Welcome to Segue..., What's New in Segue, Report a Problem..., Request a Feature..., Rate Segue on the App Store, Privacy Policy, Terms of Use, Acknowledgements. "Release Notes" is gone. | Sitemap, `/changelog` intro, support copy |
+| I-5 | Canonical Help menu: Segue Help, Keyboard Shortcuts, Welcome to Segue..., What's New in Segue, Report a Problem..., Request a Feature..., Rate Segue on the App Store, Privacy Policy, Terms of Use, Acknowledgements (removed 2026-10-18; the notices live on the web). "Release Notes" is gone. | Sitemap, `/changelog` intro, support copy |
 | I-6 | Settings > Privacy links the Privacy Policy and `/privacy#usage-statistics`; no Terms link. | Goal 2, sitemap |
 | I-10, A24 | Import accepts `.cho`, `.chordpro`, `.chopro`, `.pro`, `.txt` (text imported as-is). | `/help/import#formats`, FAQ *Superseded (phase 3 ships in 0.5): R76: `.crd` is accepted and `.txt`/`.crd` that need conversion go through the review sheet. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
 | I-16, B-32 | Section 2's URL and anchor table is the contract; `/help#trash` and `/help/library#trash` added; no accessibility page. | Section 2 |
 | R41 (A59) | arm64 only: "Requires a Mac with Apple silicon and macOS 26 or later." | Home, support, press, JSON-LD |
-| A34 | About panel links the web `/acknowledgements`. | Sitemap |
+| A34 | About panel links the web `/acknowledgements`. *Superseded 2026-10-18: the app links it nowhere; /privacy and /terms do.* | Sitemap |
 | A52 | One badge, in the home hero; the final call to action is a text link. | 7.1, 9.2 |
 | A53 | Hero art: frameless window screenshot with the macOS shadow, stills only. | 7.2, 9.2 |
 | A55 | Go live before the app with "Coming soon to the Mac App Store." and no badge. | `appStore.status: "upcoming"`, section 10 |
@@ -95,7 +95,7 @@ Cloudflare Pages serves `foo.html` at `/foo` (and redirects `/foo.html` to `/foo
 | `/changelog` | `website/changelog.html` | **fully generated** | What's New sheet: "All Release Notes" and "and N more changes" |
 | `/changelog.json` | `website/changelog.json` | **fully generated** | not fetched; the same file is bundled into the app at build time |
 | `/press` | `website/press.html` | slots only | footer |
-| `/acknowledgements` | `website/acknowledgements.html` | slots only | About panel (A34), footer |
+| `/acknowledgements` | `website/acknowledgements.html` | slots only | /privacy#open-source-software, /terms#what-these-terms-cover, footer (the app no longer links it, 2026-10-18) |
 | any unknown path | `website/404.html` | slots only | - |
 | `/feedback` | `website/_redirects` | **fully generated** | Help > Request a Feature..., bug-report sheet link |
 | `/favicon.ico` | `website/_redirects` -> `/favicon-32.png` | generated | - |
@@ -268,7 +268,7 @@ Rules:
 - `appStore.status` is `"upcoming"` or `"live"`. While upcoming, every App Store slot renders "Coming soon to the Mac App Store." as plain text (no badge, no link), and `appStore.*` placeholders are allowed by `--strict`.
 - Campaign link, built by the generator: `https://apps.apple.com/app/apple-store/id{appleId}?pt={providerToken}&ct={campaign}&mt={mediaType}`. Copy `mt` from the link App Store Connect's campaign generator produces for this Mac app; do not hand-pick it (`05` shows the iOS value `8`; the Mac value differs).
 - Sentry covers two roles (crash reports and bug reports), so its values are repeated in both objects; the policy's processor table is rendered per role and de-duplicated by `name` (one Sentry row, "crash reports and bug reports"). Cloudflare likewise appears once, "website hosting and website analytics".
-- Any SDK that ships in the app must appear in `credits` and in the app's `AcknowledgementsView.swift`; `site-check` cross-checks names (section 8.1).
+- Any SDK that ships in the app must appear in `credits` and in `THIRD_PARTY_NOTICES.md` (the app's in-UI `AcknowledgementsView.swift` was removed 2026-10-18; the notices file ships in the bundle instead); `site-check` cross-checks names (section 8.1).
 
 ---
 
@@ -447,7 +447,7 @@ Same style as `gen-tokens.swift`: `#!/usr/bin/env swift`, Foundation (plus AppKi
 5. No hand-written stylesheet (everything in `assets/css/` except the generated `tokens.css`) contains a hex/rgb colour literal or loads a `url()` from another origin.
 6. Every `<img>` has `alt`, `width`, `height`; below-the-fold images have `loading="lazy"`.
 7. `content/fonts.lock.json` matches the SHA-256 of the source TTFs and the committed WOFF2 files.
-8. Each `credits[].name` appears in `Packages/SegueUI/Sources/SegueUI/App/AcknowledgementsView.swift` (drift guard between site and app).
+8. Each `credits[].name` appears in `THIRD_PARTY_NOTICES.md`, the notices the app bundle ships, and its `licenceFile` exists (drift guard between site and app; until 2026-10-18 this read the removed `AcknowledgementsView.swift`).
 9. `_headers` exists and contains exactly the CSP line from section 9.3.
 10. `content/changelog.json` follows schema 1 (6.2), including the 120-character highlight limit and the required `showInApp`.
 11. The word "anonymous" appears nowhere on the site (analytics carry a hashed install identifier, so the word would overstate it).

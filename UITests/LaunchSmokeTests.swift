@@ -2,7 +2,6 @@ import XCTest
 
 /// E2E smoke test: the app launches from a clean baseline and shows the Welcome sheet's
 /// library page (WS2b 4.1) over the wordmark.
-/// (Help > Acknowledgements and its credits are checked in `SegueCoreUXE2ETests.testMenus`.)
 final class LaunchSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false

@@ -277,7 +277,7 @@ enum CoreLinks {
     static let helpMenuTitles = [
         "Segue Help", "Keyboard Shortcuts", "Welcome to Segue…", "What's New in Segue",
         "Report a Problem…",
-        "Request a Feature…", "Privacy Policy", "Terms of Use", "Acknowledgements",
+        "Request a Feature…", "Privacy Policy", "Terms of Use",
     ]
 
     /// Help items that open a web page, with the URL each opens.
@@ -321,7 +321,6 @@ enum CoreAXID {
     static let shortcutsWindow = "segue.shortcuts"
     static let shortcutsMainSection = "segue.shortcuts.main"
     static let shortcutsStageSection = "segue.shortcuts.stage"
-    static let acknowledgements = "segue.acknowledgements"
     static let checklist = "segue.live.checklist"
     static let checklistCancel = "segue.live.checklist.cancel"
     static let setlistNameField = "segue.setlists.new.name"

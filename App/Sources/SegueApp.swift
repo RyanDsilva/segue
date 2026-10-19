@@ -120,15 +120,6 @@ struct SegueApp: App {
         .restorationBehavior(.disabled)
         .commandsRemoved()
 
-        Window("Acknowledgements", id: AcknowledgementsWindow.id) {
-            AcknowledgementsView()
-                .frame(minWidth: 480, idealWidth: 560, minHeight: 420, idealHeight: 640)
-        }
-        .defaultSize(width: 560, height: 640)
-        .windowResizability(.contentMinSize)
-        .restorationBehavior(.disabled)
-        .commandsRemoved()
-
         Settings {
             SegueSettingsView(app: app)
         }

@@ -157,8 +157,8 @@ enum Spec {
         ("emailRouting", "email forwarding"), ("inbox", "email inbox"),
     ]
     static let fontSources = "Packages/SegueUI/Sources/SegueUI/Theme/Fonts"
-    static let acknowledgementsView =
-        "Packages/SegueUI/Sources/SegueUI/App/AcknowledgementsView.swift"
+    /// The notices shipped in the app bundle; every site credit must be named in them.
+    static let thirdPartyNotices = "THIRD_PARTY_NOTICES.md"
     static let screenshotSource = ".build/screenshots/raw"
 }
 
@@ -1311,14 +1311,19 @@ struct Checker {
         }
     }
 
-    /// Check 8: every credit is also in the app's acknowledgements.
+    /// Check 8: every credit is also in the notices the app bundle ships, and its licence
+    /// text exists.
     mutating func checkCredits() {
-        let view = (try? String(contentsOf: repoURL(Spec.acknowledgementsView), encoding: .utf8)) ??
-            ""
+        let notices = (try? String(contentsOf: repoURL(Spec.thirdPartyNotices), encoding: .utf8))
+            ?? ""
         for credit in build.config.credits {
             let name = credit["name"] ?? ""
-            if !view.contains("\"\(name)\"") {
-                fail("content/site.json credit \"\(name)\" is not in \(Spec.acknowledgementsView)")
+            if !notices.contains(name) {
+                fail("content/site.json credit \"\(name)\" is not in \(Spec.thirdPartyNotices)")
+            }
+            let licence = credit["licenceFile"] ?? ""
+            if !FileManager.default.fileExists(atPath: repoURL(licence).path) {
+                fail("content/site.json credit \"\(name)\": licenceFile \(licence) is missing")
             }
         }
     }

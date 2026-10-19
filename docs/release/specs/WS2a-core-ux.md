@@ -75,7 +75,7 @@ New `Packages/SegueUI/Sources/SegueUI/App/SegueLinks.swift`, a caseless `public 
 | `support` | `https://segue.ryandsilva.dev/support` | About credits |
 | `changelog` | `https://segue.ryandsilva.dev/changelog` | What's New fallback hook (B-14); WS2b's "All Release Notes" link |
 | `feedback` | `https://segue.ryandsilva.dev/feedback` | Request a Feature fallback hook (redirects to the board, R29) |
-| `acknowledgements` | `https://segue.ryandsilva.dev/acknowledgements` | About credits (A34) |
+| `acknowledgements` | `https://segue.ryandsilva.dev/acknowledgements` | About credits (A34). *Removed 2026-10-18: no app UI links it; see 3.6.* |
 | `supportEmail` | `mailto:segue@ryandsilva.dev` (R28) | Report a Problem fallback hook |
 | `appStoreID` | `String?`, `nil` until WS5 creates the App Store Connect app record and fills in the numeric Apple ID | Gates Help > Rate Segue on the App Store (A35) |
 | `writeReview` | computed `URL?`: `macappstore://apps.apple.com/app/id<appStoreID>?action=write-review`, `nil` while `appStoreID` is `nil` | Help > Rate Segue on the App Store |
@@ -234,7 +234,7 @@ WS2a owns this canonical list (I-5); WS2b and WS3 never edit `HelpCommands` and 
 9. separator
 10. Privacy Policy - `SegueLinks.privacy` (Guideline 5.1.1(i)).
 11. Terms of Use - `SegueLinks.terms`. These are the site terms (website, board, bug reports); the app itself is under Apple's standard EULA, which `/terms` section 1 links (R7, WS4). No separate EULA item.
-12. Acknowledgements - opens the existing in-app Acknowledgements window *(A34)*.
+12. Acknowledgements - opens the existing in-app Acknowledgements window *(A34)*. *(Removed 2026-10-18; see 3.6.)*
 
 `AppHooks` (new, `App/AppHooks.swift`): a struct of `@MainActor` closures in `AppDependencies`: `showWhatsNew`, `reportProblem`, `requestFeature` (non-optional, defaults above), and `showWelcome`, `exportArchive` (optional, default `nil`; their menu items are hidden while `nil`). WS2b fills `showWelcome`, `showWhatsNew`, `exportArchive`; WS3 fills `reportProblem`, `requestFeature`; both from the app target, so core UI never knows which implementation runs. Hooks are never invoked while performing (menus are hidden on stage anyway); WS2b's What's New must also respect R20's "never during a show". The fallbacks are development-time only; WS2b and WS3 replace them before any release build (B-14).
 
@@ -244,6 +244,7 @@ Replace the About item (`CommandGroup(replacing: .appInfo)`) with one that calls
 - Version: `CFBundleShortVersionString` and `CFBundleVersion` from Info.plist, shown as "Version 0.5 (12)". WS1 sets the numbers (R5); WS2a only reads them and adds a test that the panel string matches Info.plist.
 - Copyright: `NSHumanReadableCopyright` from Info.plist, which WS1 sets to exactly `© 2026 Ryan Rony Dsilva` (R30; the same string is used on the App Store, the site and the policy). WS2a never hard-codes it; `AboutPanelTests` asserts the panel shows the Info.plist value and that it equals `© 2026 Ryan Rony Dsilva`.
 - Credits (`.credits`, an `NSAttributedString` built in `App/AboutPanel.swift`, brand font, muted colour, both appearances): "segue.ryandsilva.dev · Help · Support · Privacy Policy" as links from `SegueLinks`, then "Built with open-source software: Schibsted Grotesk (SIL OFL 1.1), GRDB (MIT), Tonic (MIT)." with "Acknowledgements" linking to the web page `SegueLinks.acknowledgements` *(A34; a credits link cannot open an in-app window without a custom URL scheme, and no `segue://` scheme is registered in 0.5)*.
+- *(Superseded 2026-10-18, walkthrough feedback: the app shows no third-party notices; no Acknowledgements window or Help item, no credits in About. THIRD_PARTY_NOTICES.md and the licence texts ship in the bundle's Resources, `make verify-appstore` checks them, and the web `/acknowledgements` is linked from /privacy, /terms and the footer.)*
 - The in-app Acknowledgements window (`AcknowledgementsView`, already bundles `OFL.txt`, `GRDB.txt`, `Tonic.txt`) stays the authoritative licence view, reached from Help > Acknowledgements. Add an AppHardening test that all three licence resources load in the App Store flavor bundle (no empty disclosure).
 
 ### 3.7 Keyboard shortcuts: `?` on stage and Help > Keyboard Shortcuts (R15)
@@ -508,7 +509,7 @@ None. Every question this spec raised is closed; the map below records where eac
 | Editor controls | A21: Done only, no Revert | 3.4 |
 | Autosave timing | B-13: one `AutosavePolicy` (1.0 s / 5 s), editor and gig details | 3.4 |
 | Dirty-state UI | A22: Saved / Saving… / Not saved + edited dot | 3.4 |
-| Acknowledgements | A34: in Help; About links the web page | 3.5.1, 3.5.6, 3.6 |
+| Acknowledgements | A34: in Help; About links the web page. *Superseded 2026-10-18: not in the app; notices ship in the bundle, the web page is linked from /privacy, /terms, footer* | 3.5.1, 3.5.6, 3.6 |
 | Hooks before WS2b/WS3 | B-14: fallbacks | 3.5.6 |
 | Rate Segue | A35: in Help, shown once the Apple ID is known | 3.1, 3.5.6 |
 | Terms vs EULA | R7: Terms of Use opens `/terms`, which links Apple's EULA | 3.1, 3.5.6 |

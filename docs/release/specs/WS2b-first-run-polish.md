@@ -378,7 +378,7 @@ Every library-affecting control is disabled while performing (`app.isPerforming`
 | Stage (live) | Header reads title and "G, capo 2, 96"; progress reads position text (exists); song body reachable line by line; panels (queue, notes, quick search) and pre-show checklist rows named; keyboard control does not depend on VoiceOver focus | Verify the body and panels |
 | Reorder review sheet, resume prompt, alerts | Buttons named; default announced | Verify |
 | What's New sheet | Badge words read ("New", "Improved", "Fixed"); links named | New UI |
-| Acknowledgements, About | Licence texts readable | - |
+| About | Links named (the Acknowledgements window was removed 2026-10-18; licences live on the web) | - |
 | Tips | Tip text and close button read | Verify on one tip |
 
 Full Keyboard Access: with FKA on, Tab reaches every control on every screen above, including sheets, and focus is visible.

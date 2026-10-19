@@ -5,7 +5,7 @@ import XCTest
 @MainActor
 extension SegueCoreUXE2ETests {
     /// One scenario over the menu bar (B2: these shared their setup): the Help menu, the
-    /// Keyboard Shortcuts and Acknowledgements windows, the About panel, the Setlist menu's
+    /// Keyboard Shortcuts window, the About panel, the Setlist menu's
     /// keys, then closing and reopening the main window. What each Help link opens is
     /// checked in process (`HelpMenuTests`); one link is clicked here to prove the wiring.
     func testMenus() throws {
@@ -20,7 +20,7 @@ extension SegueCoreUXE2ETests {
         XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 15))
 
         helpMenu(app)
-        shortcutsAndAcknowledgements(app)
+        keyboardShortcuts(app)
         fileMenuAndAbout(app)
         setlistMenuKeys(app)
         try reopenMainWindow(app)
@@ -42,8 +42,8 @@ extension SegueCoreUXE2ETests {
         XCTAssertTrue(waitForWorkspace("open", [url]), "\(title): \(workspaceCalls())")
     }
 
-    /// Help > Keyboard Shortcuts and Help > Acknowledgements, each closed again.
-    private func shortcutsAndAcknowledgements(_ app: XCUIApplication) {
+    /// Help > Keyboard Shortcuts, closed again.
+    private func keyboardShortcuts(_ app: XCUIApplication) {
         menu(app, "Help", "Keyboard Shortcuts")
         let window = element(app, CoreAXID.shortcutsWindow)
         XCTAssertTrue(window.appears(timeout: 10))
@@ -70,27 +70,11 @@ extension SegueCoreUXE2ETests {
         attachScreen(name: "keyboard-shortcuts-window")
         app.typeKey("w", modifierFlags: .command, in: app)
         XCTAssertTrue(window.disappears(timeout: 10))
-
-        // Acknowledgements (moved from the app menu, A34) credits the bundled font and
-        // dependencies.
-        menu(app, "Help", "Acknowledgements")
-        let acknowledgements = element(app, CoreAXID.acknowledgements)
-        XCTAssertTrue(acknowledgements.appears(timeout: 10))
-        for name in ["Schibsted Grotesk", "GRDB", "Tonic"] {
-            XCTAssertTrue(acknowledgements.staticTexts[name].exists, "\(name) not credited")
-        }
-        let ofl = NSPredicate(format: "value BEGINSWITH %@", "SIL Open Font License 1.1")
-        XCTAssertTrue(acknowledgements.staticTexts.matching(ofl).firstMatch.exists)
-        let credits = XCTAttachment(screenshot: app.windows["Acknowledgements"].screenshot())
-        credits.name = "acknowledgements"
-        credits.lifetime = .keepAlways
-        add(credits)
-        app.typeKey("w", modifierFlags: .command, in: app)
-        XCTAssertTrue(acknowledgements.disappears(timeout: 10))
     }
 
     /// File > Export Library Archive… is there once WS2b fills its hook (the export itself
-    /// is `SegueFinderE2ETests`); About shows the panel with the version and the credits.
+    /// is `SegueFinderE2ETests`); About shows the panel with the version and the site links,
+    /// and names no third-party software (their notices live on the website).
     private func fileMenuAndAbout(_ app: XCUIApplication) {
         app.menuBars.menuBarItems["File"].click(in: app)
         XCTAssertTrue(app.menuBars.menuItems["Export Library Archive…"].exists)
@@ -100,6 +84,15 @@ extension SegueCoreUXE2ETests {
         app.menuBars.menuItems["About Segue"].click(in: app)
         let copyright = app.staticTexts["© 2026 Ryan Rony Dsilva"]
         XCTAssertTrue(copyright.appears(timeout: 10))
+        let thirdParty = NSPredicate(
+            format: "value CONTAINS %@ OR value CONTAINS %@ OR value CONTAINS %@",
+            "GRDB",
+            "Sentry",
+            "Acknowledgements",
+        )
+        let links = NSPredicate(format: "value CONTAINS %@", "Privacy")
+        XCTAssertTrue(app.textViews.matching(links).firstMatch.exists, "no About links")
+        XCTAssertFalse(app.textViews.matching(thirdParty).firstMatch.exists)
         attachScreen(name: "about-panel")
         app.typeKey("w", modifierFlags: .command, in: app)
         XCTAssertTrue(copyright.disappears(timeout: 10))

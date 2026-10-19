@@ -13,7 +13,7 @@ struct HelpMenuTests {
         let titles = HelpMenu.items(hooks: AppHooks(), writeReview: nil).map(\.title)
         #expect(titles == [
             "Segue Help", "Keyboard Shortcuts", "What's New in Segue", "Report a Problem…",
-            "Request a Feature…", "Privacy Policy", "Terms of Use", "Acknowledgements",
+            "Request a Feature…", "Privacy Policy", "Terms of Use",
         ])
     }
 
@@ -44,17 +44,14 @@ struct HelpMenuTests {
     }
 
     @Test
-    func `keyboard shortcuts and acknowledgements open their windows`() {
+    func `keyboard shortcuts is the only window the menu opens`() {
         var windows: [String: String] = [:]
         for item in HelpMenu.items(hooks: AppHooks(), writeReview: nil) {
             if case let .window(id) = item.action {
                 windows[item.title] = id
             }
         }
-        #expect(windows == [
-            "Keyboard Shortcuts": KeyboardShortcutsWindow.id,
-            "Acknowledgements": AcknowledgementsWindow.id,
-        ])
+        #expect(windows == ["Keyboard Shortcuts": KeyboardShortcutsWindow.id])
     }
 
     @Test
@@ -64,7 +61,7 @@ struct HelpMenuTests {
         let titles = HelpMenu.items(hooks: hooks, writeReview: review).map(\.title)
         #expect(titles.firstIndex(of: "Welcome to Segue…") == 2)
         #expect(titles.firstIndex(of: "Rate Segue on the App Store") == 6)
-        #expect(titles.count == 10)
+        #expect(titles.count == 9)
     }
 
     /// The log's lines as "<action> <first url>".

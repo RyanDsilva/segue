@@ -1,6 +1,6 @@
 # Third-party notices
 
-Segue itself is proprietary (see [LICENSE](LICENSE)). It ships the open-source components below, each under its own licence. The same notices appear in the app (the Acknowledgements window, from `Packages/SegueUI/Sources/SegueUI/App/Licenses/` and the font's `OFL.txt`) and on the website's [acknowledgements page](https://segue.ryandsilva.dev/acknowledgements) (from `credits` in `content/site.json`).
+Segue itself is proprietary (see [LICENSE](LICENSE)). It ships the open-source components below, each under its own licence. The app shows no third-party notices in its UI. They accompany the binary instead: this file ships as `Segue.app/Contents/Resources/THIRD_PARTY_NOTICES.md`, and the full licence texts ship in the SegueUI resource bundle (`Licenses/` and the font's `Fonts/OFL.txt`). The website's [acknowledgements page](https://segue.ryandsilva.dev/acknowledgements) (from `credits` in `content/site.json`, linked from the privacy policy, the terms and every page's footer) carries the same notices; `make site-check` fails if a credit there is missing from this file.
 
 ## Shipped in the app (both flavours)
 

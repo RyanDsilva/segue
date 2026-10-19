@@ -290,6 +290,7 @@ Defaults: no `{title}` -> title from the file name, content untouched; byte-iden
 - c) Custom About window with an Acknowledgements button
 - **Recommend a** - standard panel, HIG placement. If A36 picks x-callback-url, a `segue` scheme exists anyway and b becomes free.
 - **Blocks**: WS2a step 7.
+- *(Superseded 2026-10-18, walkthrough feedback: the app shows no third-party notices; no Acknowledgements window or Help item, no credits in About. THIRD_PARTY_NOTICES.md and the licence texts ship in the bundle's Resources, `make verify-appstore` checks them, and the web `/acknowledgements` is linked from /privacy, /terms and the footer.)*
 
 **A35. "Rate Segue on the App Store" in Help** (WS2a-19)
 - a) Add it (`?action=write-review`), shown once the Apple ID is known

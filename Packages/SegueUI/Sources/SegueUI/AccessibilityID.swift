@@ -145,10 +145,6 @@ public enum AccessibilityID {
     public static let addSongsAdd = "segue.addSongs.add"
     public static let addSongsDone = "segue.addSongs.done"
 
-    // MARK: Acknowledgements
-
-    public static let acknowledgements = "segue.acknowledgements"
-
     // MARK: Live view
 
     public static let liveView = "segue.live"

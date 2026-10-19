@@ -2,8 +2,8 @@
 # Shared by scripts/verify-appstore.sh and scripts/verify-archive.sh so their checks cannot
 # drift. Source it from the repo root after defining `prefix` (the line prefix, e.g.
 # "verify-appstore"). Provides `forbidden`, `perf_strings`, `test_hook_strings`,
-# `app_entitlements`, `fail`, `pass`, `failures`, `check_no_test_hooks` and
-# `check_resource_bundle`.
+# `app_entitlements`, `fail`, `pass`, `failures`, `check_no_test_hooks`,
+# `check_resource_bundle` and `check_third_party_notices`.
 
 # Anything that can only come from the personal package or its compilation condition.
 forbidden='SeguePersonalModules|PersonalModules|SEGUE_PERSONAL'
@@ -105,5 +105,24 @@ check_resource_bundle() {
         fail "$label: SegueUI resource bundle plist is not stamped: $problems"
     else
         pass "$label: SegueUI resource bundle has the real identifier, copyright and version"
+    fi
+}
+
+# check_third_party_notices <label> <app>: the notices accompany the binary (MIT, OFL 1.1)
+# though the app shows none in its UI: THIRD_PARTY_NOTICES.md in Contents/Resources and the
+# full licence texts in the SegueUI resource bundle.
+check_third_party_notices() {
+    local label="$1" app="$2" file missing=""
+    local resources="$app/Contents/Resources"
+    for file in THIRD_PARTY_NOTICES.md SegueUI_SegueUI.bundle/Contents/Resources/Licenses/GRDB.txt \
+        SegueUI_SegueUI.bundle/Contents/Resources/Licenses/Tonic.txt \
+        SegueUI_SegueUI.bundle/Contents/Resources/Licenses/Sentry.txt \
+        SegueUI_SegueUI.bundle/Contents/Resources/Fonts/OFL.txt; do
+        [[ -s "$resources/$file" ]] || missing+="$file "
+    done
+    if [[ -n "$missing" ]]; then
+        fail "$label: third-party notices missing from the bundle: $missing"
+    else
+        pass "$label: third-party notices and licence texts ship in the bundle"
     fi
 }

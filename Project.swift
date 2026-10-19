@@ -214,9 +214,11 @@ func appTarget(name: String, personal: Bool) -> Target {
         // tokens and fonts ship in the SegueUI package's resource bundle, not here. The
         // privacy manifest lands at Contents/Resources/PrivacyInfo.xcprivacy. What's New reads
         // WS4's generated changelog from the bundle (WS2b 4.3, B-26); it is never fetched.
+        // The third-party notices ride along at Contents/Resources (not shown in the UI): MIT
+        // and the OFL need them to accompany the binary.
         resources: [
             "design/icon/Segue.icon", "App/PrivacyInfo.xcprivacy", "website/changelog.json",
-            "design/icon/document/Segue-Document.icns",
+            "design/icon/document/Segue-Document.icns", "THIRD_PARTY_NOTICES.md",
         ],
         entitlements: .file(path: .relativeToRoot(entitlementsPath)),
         scripts: [stampResourceBundle],

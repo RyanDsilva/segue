@@ -11,7 +11,6 @@ struct SegueLinksTests {
             (SegueLinks.site, ""), (SegueLinks.help, "/help"), (SegueLinks.privacy, "/privacy"),
             (SegueLinks.terms, "/terms"), (SegueLinks.support, "/support"),
             (SegueLinks.changelog, "/changelog"), (SegueLinks.feedback, "/feedback"),
-            (SegueLinks.acknowledgements, "/acknowledgements"),
         ]
         for (url, path) in pages {
             #expect(url.scheme == "https")
