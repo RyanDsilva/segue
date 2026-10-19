@@ -1,0 +1,34 @@
+# P3-9 - Release fold-in and the phase 3 gate
+
+Wave 4 (after every other P3 workstream). Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 2, 11, 12, 16.2). Rulings: `docs/release/decisions.md` R61-R79 (R61, R62, R66, R74, R79), R37 (keywords), R54, R56 (walkthrough); release guide `docs/release/README.md`; specs `docs/release/specs/WS4-website.md`, `WS5-store-listing.md`, `WS3-services.md` (App Privacy source of truth 10.2); `docs/release/accessibility-audit.md`; `docs/release/research/03-review-risk.md`.
+
+## Session rules (apply to every P3 workstream)
+
+- `cat` is aliased to eza and can hang: use `command cat` or the Read tool. Never `rm -rf`: use `trash`. Never an em dash in any file: use "-".
+- Sibling workstreams edit the same working tree concurrently: expect unrelated diffs, never revert or "fix" files you do not own, and stage only your own files.
+- Commits: local only, signed (`git commit -S`), conventional messages, no co-author lines, one commit per resolved step. If signing fails with "failed to fill whole buffer", 1Password is locked: leave the staging intact, tell the orchestrator, never commit unsigned. Never push.
+- Test budget: per step only targeted checks (`make site-check`, `make docs-check`, `store-check`, filtered suites); **`make check` once, as the phase gate**, at the end.
+- Stop and ask the orchestrator at any decision fork or spec-vs-code inconsistency.
+
+## Goal
+
+Everything outside the app that phase 3 makes untrue gets fixed, the new UI earns its accessibility claims, and the phase closes on a green `make check`. Section 16.2 items need Ryan's rulings first: run the research ticket (questions 19, 20) at the start and bring the evidence back.
+
+## Steps
+
+1. **Research ticket (questions 19, 20):** at source, Apple's current age-rating questionnaire wording on AI/generative features, the content-rights question with a downloadable model, whether a user-initiated Hugging Face download changes the App Privacy label (developer collection vs a third-party fetch), App Review 2.5.2 / 4.2.3(ii) on downloaded model weights, and Apple's trademark guidance for "Apple Intelligence". Write `docs/release/research/10-ai-in-store.md`; ask Ryan questions 17-20 with the evidence; wait.
+2. **Website** (`content/`, `website/` via `make site`, never hand-edit generated output): privacy policy - a model-download section (what is fetched, from whom, only on click, R54 headers, nothing about the user's songs sent) and a **Hugging Face** vendor row; the analytics example list gains the R74 AI events; support FAQ "goes online only for..." gains model downloads; help pages for paste/import, the review sheet, Settings > AI, the set assistant, smart filters, the timer and `~` estimates (WS4 help rules: write from the built App Store flavour); the running-time help note (WS4 `#running-time`) now describes flagged estimates (R70); changelog 0.5 entry; home page claims only if Ryan wants them (R57 trim pass still pending). Re-run the WS4 claims audit: AI features ARE now claimable when verified in the build (supersedes WS4's "no AI" rule). `make site-check STRICT=1` as far as placeholders allow.
+3. **WS5 copy** (`store/`): description and promo text claims (rewrite "Works offline. Nothing on stage depends on a network." to stay true: the stage still never needs a network; model download needs one once); review notes - an AI paragraph (what FM does, the curated model download on click with size, where to find it, that nothing leaves the Mac except the download) and the NETWORK USE paragraph gains the model download, staying under 4,000 bytes (currently 3,557: trim elsewhere); age rating and content rights per Ryan's rulings; keywords and screenshots per questions 17-18; recount every field with `store-check`.
+4. **App Privacy / manifest:** diff `App/PrivacyInfo.xcprivacy` against the required-reason APIs the new code and dependencies use (P3-A's list; Segue's own disk-space check before a download), update WS3 10.2 and WS5 section 6 together if Ryan's ruling changes the label.
+5. **Notices:** confirm `THIRD_PARTY_NOTICES.md`, the licence texts shipped in the bundle (checked by `make verify-appstore`) and the site's `/acknowledgements` (`credits` in `content/site.json`) list MLX, mlx-swift-lm, swift-transformers, XGrammar, every transitive pin, and the curated model's licence (`make docs-check`).
+6. **Accessibility re-walk (R79):** extend `docs/release/accessibility-audit.md` with the new surfaces (review sheet, Settings > AI, assistant chips + breakdown popover, smart filter editor, timer); prepare the VoiceOver and Voice Control checklist for Ryan; fix what he finds; only then may WS5 claim labels.
+7. **Walkthrough items:** add phase 3 items to `docs/release/walkthrough.md` for the R56 walkthrough that follows phase 3 (R79): paste from a real site, `.crd` import, model download on the App Store build, FM unavailable note, assistant request, timer, estimates, smart filter, Reset All Settings keeps models.
+8. **Phase gate:** `make check` green; `make archive` + `verify-archive` green with MLX inside; hand-off with the list of what Ryan must do next (walkthrough, then WS5).
+
+## Files owned
+
+`content/**`, `website/**` (generated by `make site`), `store/**`, `App/PrivacyInfo.xcprivacy`, `THIRD_PARTY_NOTICES.md`, `docs/release/accessibility-audit.md`, `docs/release/walkthrough.md`, `docs/release/research/10-ai-in-store.md`, the superseded lines in `docs/release/specs/WS4-website.md` and `WS5-store-listing.md` (rewrite them in place now, removing the "superseded" notes P3-0 left).
+
+## Acceptance
+
+No public text says Segue has no AI or never downloads anything; policy, label, manifest and notices agree; accessibility claims cover only walked surfaces; `make check` green.

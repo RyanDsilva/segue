@@ -34,7 +34,7 @@ Rehearsal at home is a secondary use of the same views. iPhone/iPad is a later p
 | Restricted (personal-only) set | All audio features (transcription, separation, key/BPM/sections, chord detection incl. GPL/NC models), LRCLIB lyrics search, URL import from chord sites. |
 | Storage | **Files are canonical.** Library folder (default `~/Music/Segue`, user can pick any, bookmarked): one clean `.cho` ChordPro file per song + JSON sidecar as the only home of app metadata (newer sidecar schema than the app knows: open read-only + warn) (tags, proficiency, notes, per-song display prefs, audio refs); setlists and gig log as JSON files. A SQLite index is a rebuildable projection (search, filters), never the source of truth. iOS sync later via iCloud Drive folder (conflicts via NSFileVersion). |
 | Format | ChordPro (chordpro.org, v6 directives subset) as the song format. Own parser (Chord Provider's is GPL-3.0 and not packaged; no permissive Swift ChordPro package found). |
-| AI engine | One `LanguageModelProvider`-style interface. Default: Apple Foundation Models (on-device, ~4,096-token context, `@Generable` guided generation). Fallback: MLX-Swift local model (downloaded on demand) for long/messy input and set building. All local, no cloud. |
+| AI engine | One `LanguageModelProvider`-style interface. Default: Apple Foundation Models (on-device, ~4,096-token context, `@Generable` guided generation). Fallback: MLX-Swift local model (downloaded on demand) for long/messy input and set building. All local, no cloud. *(v0.5: routing is curated MLX if installed, else FM, else deterministic - R63; see docs/release/decisions.md R61-R79.)* |
 | Song entry | Paste + AI cleanup, smart text editor, file import (ChordPro, plain text, chords-over-lyrics), URL import (restricted), LRCLIB search (restricted), audio-to-chart (restricted). No existing library to migrate. |
 | Language | English + romanized Hindi (Latin script). Romanization-tolerant search; lyrics never respelled or translated (AI output checked mechanically); autocorrect/spell-check off in lyrics; app-generated Hindi uses casual Bollywood romanization. No Devanagari display. |
 | Editor | Both modes, toggleable: text (ChordPro with syntax colors, chord autocomplete, live preview) and visual (click/drag chords onto syllables). |
@@ -42,7 +42,7 @@ Rehearsal at home is a secondary use of the same views. iPhone/iPad is a later p
 | Live view (v1) | Auto-fit to one screen (columns/scale), auto-scroll (duration/tempo-based, pausable), next-song footer, dark stage theme, per-song font/zoom memory, section highlighting (collapsed chorus repeats), keep awake + suppress notifications. |
 | Setlist live ops | Quick library search mid-show, reorder/skip/mark played, request queue. (Multiple sets with timing: not requested.) |
 | Gig extras | Per-song notes/cues, gig log/history, PDF export/print. Backing tracks: not requested. |
-| Library | Tags (free-form + suggested starters) + smart filters, proficiency (Learning / Ready / Pro), energy rating 1-5, learned real durations. |
+| Library | Tags (free-form + suggested starters) + smart filters, proficiency (Learning / Ready / Pro), energy rating 1-5, learned real durations. *(v0.5: energy deferred - R71; durations learned plus flagged estimates - R70.)* |
 | Set assistant | Build a set to a target length; natural-language song picks. |
 | Sharing | PDF only for now. Partner live sync ships with phase 7 (iOS). |
 | Control | Bluetooth pedals + MIDI in phase 6 (not critical). |

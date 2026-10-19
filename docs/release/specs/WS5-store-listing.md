@@ -1,5 +1,7 @@
 # WS5 - App Store listing, screenshots, preview video and submission
 
+> *Phase 3 (AI entry & assistant) now ships in 0.5 (R61-R79, `docs/release/decisions.md`). Lines below that assume no AI, no downloads or the R37 keyword set are marked as superseded; P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`) rewrites them, and section 16.2 of `docs/phases/3-ai-entry-and-assistant.md` lists the open choices (9th screenshot, keywords, age rating, content rights, "Apple Intelligence" wording).*
+
 Spec date: 2026-10-17 (finalised after the open-question round; all decisions through R41 applied). Target: Segue **0.5**, Mac App Store, App Store flavor only (`SegueAppStore`, bundle `dev.ryandsilva.segue`), arm64 only, built with Xcode 27.1 (R41).
 
 This is the brief for one focused session. It must be executable standalone. Read these before starting:
@@ -109,7 +111,7 @@ The final screenshots and videos are derived binaries. They live under `.build/`
 | Subtitle | `Lyrics & chords for live gigs` | 29 / 30 chars | R3 |
 | Promotional text | section 4.2 | 169 / 170 chars | |
 | Description | section 4.3 | 3,080 / 4,000 chars (before the claim pass; recount after) | |
-| Keywords | section 4.5 | 97 / 100 bytes | R37 |
+| Keywords | section 4.5 | 97 / 100 bytes | R37 *Superseded (phase 3 ships in 0.5): a keywords swap is open, phase 3 spec 16.2. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
 | Copyright | `2026 Ryan Rony Dsilva` | Apple renders the symbol; must match Info.plist `NSHumanReadableCopyright` (`© 2026 Ryan Rony Dsilva`) | R30 |
 | Support URL | `https://segue.ryandsilva.dev/support` | must show `segue@ryandsilva.dev` | R28, R29 |
 | Marketing URL | `https://segue.ryandsilva.dev` | | R27 |
@@ -124,7 +126,7 @@ The final screenshots and videos are derived binaries. They live under `.build/`
 | SKU | `segue-macos` (permanent, set at record creation) | | B-33 |
 | Accessibility URL | leave empty | | B-32 |
 | License agreement | Apple standard EULA | | R7 |
-| Content rights | "No, it does not contain, show, or access third-party content" | | Welcome songs are original (R19); no web content in this flavor |
+| Content rights | "No, it does not contain, show, or access third-party content" | | Welcome songs are original (R19); no web content in this flavor *Superseded (phase 3 ships in 0.5): R62/R66: answer with a downloadable model is open (phase 3 spec 16.2). Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
 | Regulated medical device | No | | 01 step 13 |
 | Made for Kids | No | | |
 | What's New | not shown for a first version | | |
@@ -201,6 +203,8 @@ Writing rules the text already follows. `store-check` enforces the mechanical on
 - **No "collects no data".** R25/R26 analytics and crash reports make that false.
 - **"free".** If review objects to it, delete the last line and keep "no subscription".
 
+> *Superseded (phase 3 ships in 0.5): R61/R62: the description gains the AI features; "Works offline. Nothing on stage depends on a network." must stay true with a one-time model download. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
+
 ### 4.4 Claim verification (do this against the built App Store flavor, not the plan)
 
 Run the claim pass in two passes:
@@ -229,7 +233,7 @@ If a row fails, **delete its line from the description**. Never ship a claim on 
 | Press ? to see every shortcut | R15 | In the library and on stage. If it works only on stage, reword to "Press ? on stage". |
 | Optional shortcuts from the Shortcuts app | R18 | Off on a fresh install; the checklist row ticks only after a successful run. |
 | Light and dark; follow the system or pick one in Settings | shipped, R36 | Toggle the system appearance; Settings > Appearance offers Match System / Light / Dark and each applies. |
-| Works offline | shipped | Wi-Fi off: the full show flow works, and no error banners appear. |
+| Works offline | shipped | Wi-Fi off: the full show flow works, and no error banners appear. *Superseded (phase 3 ships in 0.5): R66: true for writing and the stage; the model download needs the network once. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
 | Statistics and crash reports each opt-in; change in Settings | R25, R26, A10 | The last Welcome step asks two separate questions, each with equal-weight buttons; Settings > Privacy has both toggles. |
 | No ads, no IAP | R2 | Trivially true. |
 
@@ -245,6 +249,8 @@ chordpro,songbook,transpose,prompter,worship,hindi,guitar,piano,capo,nashville,s
 - **Excluded words:** words already in the name or subtitle (segue, setlists, chords, lyrics, live, gigs), "app", competitor names, and `band` (implies band sharing Segue does not have).
 - No other locale sets: en-US is the only listing (A46).
 
+> *Superseded (phase 3 ships in 0.5): a keywords swap for the AI features is open, phase 3 spec 16.2. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
+
 ### 4.6 App Review Information
 
 | Field | Value |
@@ -253,7 +259,7 @@ chordpro,songbook,transpose,prompter,worship,hindi,guitar,piano,capo,nashville,s
 | Contact first/last name | `Ryan` / `Dsilva` (R30 legal name) |
 | Contact email | `segue@ryandsilva.dev` |
 | Contact phone | Ryan's phone. **Not committed to git.** Enter by hand, or pass it to `deliver` through an environment variable. |
-| Notes | below (3,557 / 4,000 bytes as drafted, including the Apple-events paragraph for WS1 Path SE, R59; recount after the 14.2 pass) |
+| Notes | below (3,557 / 4,000 bytes as drafted, including the Apple-events paragraph for WS1 Path SE, R59; recount after the 14.2 pass) *Superseded (phase 3 ships in 0.5): R61/R66: the notes gain an AI paragraph and a model-download line in NETWORK USE, within 4,000 bytes. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
 | Attachment | the 60-90 s walkthrough video from section 9.5 (B-31) |
 
 Notes. The names below follow the resolved specs (WS2a, WS2b, WS3). Before pasting, check each against the built App Store flavor and correct the notes, never the other way round:
@@ -290,6 +296,8 @@ Settings > Live can run shortcuts the user creates in the Shortcuts app when a s
 Support: segue@ryandsilva.dev - https://segue.ryandsilva.dev/support
 ```
 
+> *Superseded (phase 3 ships in 0.5): R61/R66/R76: "Things to try" gains paste cleanup and `.crd` import; NETWORK USE gains the user-initiated model download from Hugging Face. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
+
 #### 4.6.1 Notes gate
 
 - `store-check` enforces the 4,000-byte limit on `review_information/notes.txt`; update the count in the table above after the 14.2 word-for-word pass.
@@ -321,7 +329,7 @@ Click path: App Store Connect > Apps > Segue > App Information > Age Rating > Ed
 | Guns or Other Weapons | None | |
 | Medical or Treatment Information | None | |
 | Health or Wellness Topics | No | |
-| Any AI/assistant question, if Apple shows one | No | no AI in 0.5 |
+| Any AI/assistant question, if Apple shows one | No | no AI in 0.5 *Superseded (phase 3 ships in 0.5): R61/R62: phase 3 AI ships in 0.5; the answer is open (phase 3 spec 16.2, research ticket). Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
 
 Apple rates the app's own content, not what a user types into a local editor (`03` section 6).
 
@@ -455,6 +463,8 @@ Each test:
 ### 8.4 Shot list and captions
 
 Eight shots; the first three show in search results. Both appearances are captured for every shot; which one ships per slot is set in `store/screenshots.json`. The mix is **5 dark, 3 light** (A49), as in the table. At least one must be dark (Apple guidance).
+
+> *Superseded (phase 3 ships in 0.5): a 9th screenshot vs replacing one is open, phase 3 spec 16.2. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
 
 Library content for every shot comes from `-SegueScreenshotLibrary YES` (8.2): the four Welcome songs, "Welcome Set", the screenshot-only songs and the screenshot-only setlist from 8.4.1.
 

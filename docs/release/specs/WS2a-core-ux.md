@@ -116,6 +116,8 @@ Failures are per file; one bad file never aborts the batch. A write failure mid-
 
 **Relation to phase 3**: phase 3 (Personal flavor first) will route import through the always-on review sheet ("nothing reaches the library without Accept"). Ruled *(A29)*: when phase 3 lands, direct import stays for files that are already ChordPro; only files that need conversion go through the review sheet. Build `importSongs` so that review step can sit between "decoded" and "written" (split into `prepareImport(urls) -> [ImportCandidate]` and `commitImport([ImportCandidate])`); phase 3 routes only conversion candidates through review.
 
+> *Superseded (phase 3 ships in 0.5): R61/R62/R76: phase 3 ships in both flavours; `.crd` and `.txt` that need conversion go through the review sheet (A29 still holds for files that are already ChordPro); handled in P3-4 (`docs/phases/3-workstreams/P3-4-paste-import-ui.md`).*
+
 ### 3.3 Delete Song and Trash for every delete (R15)
 
 **Core: `FileSystem.trashItem(at:) throws -> URL`** returns the item's new URL in the Trash. `LiveFileSystem` gets an init parameter `trash: TrashLocation = .system`:

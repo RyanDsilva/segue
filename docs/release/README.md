@@ -13,6 +13,7 @@ Legend: **-> paste to Claude** = not secret, give it to the session. **-> 1Passw
 - Done: Mac App Store profile installed for `V6BM673U35.dev.ryandsilva.segue` (expires 2027-10-18) as "Segue Mac App Store" (the name WS1 uses).
 - Pending: App Store Connect access (up to 48 h after renewal), 1Password CLI integration, vendor accounts (TelemetryDeck, Sentry, Featurebase, Cloudflare).
 - Next: the "Now" phase below, then WS1 steps 1-7 (they need nothing from Ryan).
+- **2026-10-18: phase 3 (AI entry & assistant) is pulled into 0.5 (R61-R79).** Release order (R79): phase 3 lands -> the R56 walkthrough (with phase 3 items) -> WS5 -> TestFlight -> real gig -> submit. Spec: `docs/phases/3-ai-entry-and-assistant.md`; workstreams: `docs/phases/3-workstreams/`. Your phase 3 items are in 2.3a.
 
 ---
 
@@ -71,6 +72,16 @@ Pasted by Ryan from the steps above. None is secret: the IDs and the DSN ship in
 - [ ] **Approve the preview video cut (WS5 step 7)** - `.build/preview/segue-preview-en-US.mp4`.
 - [ ] **VoiceOver and Voice Control walks (WS2b step 12).** The agent prepares the checklist in `docs/release/accessibility-audit.md` and fixes what you find. Labels you cannot walk stay unclaimed.
 - [ ] **Read the legal text (WS4 R-9)** - privacy policy and terms with vendor values filled in, before the site goes live.
+
+### 2.3a Phase 3 (R61-R79)
+
+- [ ] **Supply 10-20 real pastes (R64)** into `research/phase3-eval/pastes/` (gitignored; format in its `README.md`): mostly Ultimate Guitar plus other sites you use, at least 4-5 Hinglish, a few messy ones; optional expected `.cho` per paste. They contain copyrighted lyrics: never commit them (the `.gitignore` rule covers the folder; `git status` must not list them). P3-A re-runs the scorer on them; the curated model (Qwen3-4B-2507 4-bit) is locked only if it reaches >= 90%.
+- [ ] **Rule on the phase 3 open questions** (spec section 16.1, questions 1-16). Questions 17-20 (screenshots, keywords, age rating/content rights, "Apple Intelligence" wording) come with P3-9's research ticket before WS5.
+- [ ] **App-group profiles (P3-A, if needed).** If the spike finds the Mac App Store App ID needs the App Groups capability, the session hands you the exact portal steps (enable App Groups on `dev.ryandsilva.segue`, register the group, regenerate and install "Segue Mac App Store"). Manual signing (R12) means this is yours.
+- [ ] **Lock the curated model** after P3-A reports the scorer result (a new ruling).
+- [ ] **Pick design directions** for the review sheet's AI marking (P3-4 step 0) and the set assistant (P3-7 step 0).
+- [ ] **VoiceOver and Voice Control walk of the new UI (R79, P3-9 step 6)** before any accessibility label is claimed.
+- [ ] **R56 walkthrough again after phase 3** (P3-9 adds the phase 3 items to `walkthrough.md`), including a real model download on the App Store build.
 
 ### 2.4 Before TestFlight
 
@@ -146,6 +157,7 @@ WS2a, WS2b and WS3 all edit the app shell (`AppModel`, `SegueRootView`/`SegueCom
 | 3. Services | **WS3 steps 3-4 and 6-10** (consent store + UI, event emission, Report a Problem, Request a Feature, manifest + label + verify-archive check 14, dSYM upload, Personal flavour) | WS3 step 11: `make check` | Step 9: `Segue Sentry/token` in 1Password. Featurebase URL (for WS4) |
 | 4. First run and polish | **WS2b steps 4-12** (stores, Welcome sheet, Settings host, export, What's New, review prompt, TipKit, Finder + Quick Look, accessibility pass) | WS2b step 13: `make check` | Step 11: Quick Look profile `Segue Mac App Store QuickLook`. Step 12: VoiceOver/Voice Control walks |
 | 5. Release gating | **WS1 step 12** `make validate`, **step 13** `make check`, **step 14** `make upload` (build 1 may go early after phase 1 + signing to prove the pipeline, B-9; the TestFlight build that gets tested is the feature-complete one after phase 4). **WS4 step 8** + final legal text after WS3 vendor facts; site live with "Coming soon" | WS1: `make check`; WS4: `make site-check STRICT=1` | ASC record + API key (2.2); 1Password unlocked; push approval, Cloudflare, domain (2.4); maker note |
+| 5b. Phase 3 (R61) | **P3 waves** per `docs/phases/3-ai-entry-and-assistant.md` section 15: wave 1 P3-A (worktree spike), P3-1, P3-5; wave 2 P3-2, P3-6; wave 3 P3-3, P3-4, P3-7; wave 4 P3-9. Then the R56 walkthrough again (R79). `make upload` of the tested build waits for this | per workstream `make quick` + `make gate`; phase gate `make check` (P3-9) | Pastes (2.3a), open questions 1-16, app-group profile steps if needed, design picks, accessibility walk |
 | 6. Store | **WS5 steps 1-10**. Metadata, `store-check` and compositor can start any time after phase 1; screenshots and preview wait for WS2a + WS2b (UI frozen, pixel pass done); App Privacy waits for WS3; accessibility labels wait for WS2b step 12. Then the runbook (2.5) | WS5 step 10: `make check`; 14.1 gate before any upload | Step 4: screenshot titles. Steps 6-7: direction, Screen Recording, cut approval. Step 8: ASC live, DPLA, DSA, pricing, API key. Then all of 2.5 |
 
 Dependency summary: WS1 steps 1-5 come first (everyone builds on them). WS2a needs WS1. WS3 app integration needs WS1 + WS2a. WS2b's remainder needs WS1, WS2a and WS3 step 3 (`ConsentChoiceView`). WS5 needs all four plus WS4's live URLs.
@@ -156,7 +168,7 @@ Dependency summary: WS1 steps 1-5 come first (everyone builds on them). WS2a nee
 
 | Document | What it is |
 |---|---|
-| [decisions.md](decisions.md) | Canonical release rulings R1-R50 (kickoff, then repo health R47-R50); specs follow it. Product rulings for phases 0-7 are in [../decisions.md](../decisions.md) |
+| [decisions.md](decisions.md) | Canonical release rulings R1-R79 (kickoff, repo health R47-R51, build-out R52-R60, phase 3 in 0.5 R61-R79); specs follow it. Product rulings for phases 0-7 are in [../decisions.md](../decisions.md) |
 | [open-questions.md](open-questions.md) | The resolved question sheet: A items (Ryan), B defaults, I-1..I-17 cross-spec fixes, section 5 implementation order |
 | [specs/WS1-release-pipeline.md](specs/WS1-release-pipeline.md) | Signing, bundle-ID split, version, privacy manifest, readiness fixes, Gig Mode/R35, archive/validate/upload, verify-archive |
 | [specs/WS2a-core-ux.md](specs/WS2a-core-ux.md) | Import, Delete + Trash, autosave, menus (File/Setlist/Help/Window), About, `?` overlay, Show in Finder, undo, state restore |
@@ -173,6 +185,8 @@ Dependency summary: WS1 steps 1-5 come first (everyone builds on them). WS2a nee
 | [research/07-services.md](research/07-services.md) | Analytics, crash, board and bug-report vendor survey |
 | [research/08-polish-features.md](research/08-polish-features.md) | Polish features survey and HIG gap analysis |
 | [research/09-shortcut-confirmation.md](research/09-shortcut-confirmation.md) | How to confirm a Gig Mode Shortcut ran (R35); probe results land here |
+| [../phases/3-ai-entry-and-assistant.md](../phases/3-ai-entry-and-assistant.md) | Phase 3 spec (AI entry & assistant, in 0.5 per R61): scope per flavour, pipeline, routing, model download/store, durations, smart filters, set assistant, release impact, open questions |
+| [../phases/3-workstreams/](../phases/3-workstreams/) | P3-A, P3-1 to P3-7 and P3-9 workstream specs (one per session) |
 | [accessibility-audit.md](accessibility-audit.md) | Per-label pass/fail evidence that decides the accessibility claims (completed in WS2b step 12) |
 | [../github-setup.md](../github-setup.md) | GitHub repo settings runbook: labels, security toggles, the pre-push hook that stands in for branch protection |
 | [../cleanup-proposal.md](../cleanup-proposal.md) | Pre-push repo clean-up audit (approved items carried out 2026-10-17); kept until the first push |

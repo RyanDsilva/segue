@@ -56,3 +56,10 @@ research/phase3-spikes/Spike/.build/
 research/phase3-spikes/avail
 research/phase3-spikes/bench
 research/phase3-spikes/fgapp/*.app/
+
+# Phase 3 eval: Ryan's real pastes contain copyrighted lyrics and must never be
+# committed (R64); gold data and results derived from them name real songs.
+research/phase3-eval/pastes/*
+!research/phase3-eval/pastes/README.md
+research/phase3-eval/gold.local.json
+research/phase3-eval/results/

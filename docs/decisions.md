@@ -2,7 +2,7 @@
 
 Closed answers to the open questions raised by the phase specs (2026-10-16/17). Specs are updated to match; this log is the audit trail.
 
-Product rulings for phases 0-7 live here; the v0.5 App Store release rulings (R1-R50) live in [release/decisions.md](release/decisions.md).
+Product rulings for phases 0-7 live here; the v0.5 App Store release rulings (R1-R79; phase 3 in v0.5 is R61-R79) live in [release/decisions.md](release/decisions.md).
 
 ## Cross-cutting
 
@@ -41,8 +41,10 @@ Product rulings for phases 0-7 live here; the v0.5 App Store release rulings (R1
 ## Phase 3
 
 - MLX: **curated one-click model** (chosen by eval spike) **plus advanced setting for any mlx-community model**.
+  - *Narrowed by R62 (release/decisions.md): the custom mlx-community model setting is Personal-only; R64 names the curated candidate.*
 - Paste review sheet: **always shown**.
 - Set builder: **learn real durations** (time songs in shows/rehearsal), **energy 1-5 per song**, **suggested starter tags**. Repeat avoidance: not venue-aware. No polished batch import.
+  - *Energy 1-5 superseded by R71 (energy deferred out of 0.5). Durations extended by R70 (flagged estimates).*
 
 ## Phase 4
 
@@ -73,6 +75,7 @@ Product rulings for phases 0-7 live here; the v0.5 App Store release rulings (R1
 - **Phase 1:** chords Tonic cannot model use our own interval table - transposable, with generated diagrams. Nashville header in minor keys shows both, e.g. "Am (rel. C)".
 - **Phase 2:** unfinished show older than 12 hours is closed into the gig log on next launch and the reorder diff is offered then. Rehearse-setlist run added (no show or gig-log record).
 - **Phase 3:** rehearsal timing uses both a rehearse-setlist run and a per-song Start/Stop timer. Energy at import is optional in the review sheet, prefilled with an AI suggestion; the scorer falls back to tempo when blank.
+  - *The energy-at-import part is superseded by R71 (no energy field, no AI energy or tag guesses). The rehearsal-timing part stands.*
 - **Phase 5:** if no chord model reaches 70%, chord detection stays behind the experimental toggle and spike 5 evaluates training our own licence-clean model.
 - **Phase 7:** the follower's own transpose/instrument view persists per partner device.
 
@@ -128,7 +131,9 @@ See `docs/research/phase5-audio.md`. Conflicts with earlier research to re-verif
 ## Phase 3 research outcomes (2026-10-17)
 
 - **Minimum OS stays macOS 26.** Our own AI provider port abstracts Foundation Models vs MLX; the macOS 27 `LanguageModel` protocol is not required. Raise the floor later if useful.
+  - *Confirmed by R77: one code path on macOS 26; macOS 27 revisited in 0.6.*
 - **Romanized Hindi AI cleanup:** try Apple Foundation Models first; on unsupported-language/guardrail/refusal errors fall back to the local MLX model automatically. The spike measures how often this happens.
+  - *Superseded by R63 (release/decisions.md): curated MLX if installed, else FM, else deterministic, for every paste.*
 
 ## Phase 1 build rulings (2026-10-17)
 
@@ -149,6 +154,7 @@ Defaults from docs/phases/2-interfaces.md stand except:
 - **Next** always goes to the song after the current one in playing order; songs passed over by "Play now" are not revisited automatically (they stay pending and can be picked).
 - **Missing songs at show start are removed** from the show (listed in the pre-show warning), not marked skipped.
 - **Unknown song length:** row shows `--:--`; set total reads e.g. "≥38:20 + 2 unknown" and later start times are lower bounds ("≥13:50"); no made-up default.
+  - *Superseded by R70 (release/decisions.md): where nothing is known, lengths are estimated from tempo + line count and always marked "~"; songs with neither a learned length nor a tempo stay unknown as above.*
 - **Save reorder to setlist:** inserted songs / requests are **checked** by default.
 - **Rehearsal runs get the same safety as shows:** crash resume and the pre-show checklist (Shortcuts optional); still no gig-log entry.
 - **Auto-fit prefers no wrapping:** choose the largest layout with zero wrapped lyric lines; allow wrapping only if the best no-wrap layout is more than ~15% smaller or would go below the user minimum. Split-section continuations get a "(cont.)" label; gutter labels stay at least 12pt.
@@ -164,3 +170,7 @@ Hosted services follow docs/release/decisions.md R22-R26, R32-R34, R46, R53, R54
 - **Report a Problem:** Send always opens the preview first; the description is refused, never cut, over 4,096 characters; oversized logs are trimmed to their newest lines and the preview says so.
 - **Request a Feature** keeps opening `/feedback`; the site redirects it to the board (`content/site.json`), so the board can change without an app update.
 - Open questions 1 and 2 of the WS3 spec keep their defaults until Ryan rules (dSYM upload for Personal builds; a new analytics identity after revoke and re-grant).
+
+## Phase 3 in v0.5 (2026-10-18)
+
+Phase 3 ships in v0.5 in both flavours. Rulings R61-R79 live in [release/decisions.md](release/decisions.md); the canonical spec is [phases/3-ai-entry-and-assistant.md](phases/3-ai-entry-and-assistant.md). Walkthrough rule (Ryan, 2026-10-18): a song appears at most once per setlist.

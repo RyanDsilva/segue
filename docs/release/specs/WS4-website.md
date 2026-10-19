@@ -43,7 +43,7 @@ Date: 2026-10-17.
 | A16, I-2, I-3, B-26 | `content/changelog.json` is the original; the generator writes `website/changelog.json`; the app **bundles that file only** (never fetches it) and shows the What's New sheet only for releases with `showInApp: true`. No separate bundled-copy output. | Section 6; policy and FAQ drop "fetch release notes" |
 | I-5 | Canonical Help menu: Segue Help, Keyboard Shortcuts, Welcome to Segue..., What's New in Segue, Report a Problem..., Request a Feature..., Rate Segue on the App Store, Privacy Policy, Terms of Use, Acknowledgements. "Release Notes" is gone. | Sitemap, `/changelog` intro, support copy |
 | I-6 | Settings > Privacy links the Privacy Policy and `/privacy#usage-statistics`; no Terms link. | Goal 2, sitemap |
-| I-10, A24 | Import accepts `.cho`, `.chordpro`, `.chopro`, `.pro`, `.txt` (text imported as-is). | `/help/import#formats`, FAQ |
+| I-10, A24 | Import accepts `.cho`, `.chordpro`, `.chopro`, `.pro`, `.txt` (text imported as-is). | `/help/import#formats`, FAQ *Superseded (phase 3 ships in 0.5): R76: `.crd` is accepted and `.txt`/`.crd` that need conversion go through the review sheet. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
 | I-16, B-32 | Section 2's URL and anchor table is the contract; `/help#trash` and `/help/library#trash` added; no accessibility page. | Section 2 |
 | R41 (A59) | arm64 only: "Requires a Mac with Apple silicon and macOS 26 or later." | Home, support, press, JSON-LD |
 | A34 | About panel links the web `/acknowledgements`. | Sitemap |
@@ -1005,6 +1005,8 @@ Yes. Drag ChordPro or text files (.cho, .chordpro, .chopro, .pro or .txt) onto t
 **Does Segue need the internet?**
 No. Everything for writing and playing works offline, and the stage view never waits on the network. Segue goes online only for the things you turn on or ask for: usage statistics and crash reports if you said yes, sending a bug report, and opening web pages such as help or the feature board.
 
+> *Superseded (phase 3 ships in 0.5): R66: the curated AI model downloads from Hugging Face when the user asks. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
+
 **What does Segue collect, and how do I turn it off?**
 Nothing about your songs, ever. If you agreed to share usage statistics or send crash reports, you can turn each off in Settings > Privacy. Details are in the Privacy Policy (/privacy).
 
@@ -1030,6 +1032,8 @@ Also see: Help (/help), Changelog (/changelog), Privacy Policy (/privacy).
 ### 9.7 Help (`/help` and `/help/*`) - outline
 
 Each help page uses `partial:help-nav` (a left column on desktop, a top list on phones), one H1, short task-oriented sections with `id`s, and at most one screenshot per section. Write the body text from the **0.5 App Store build**, opening each feature as you document it; every step and menu name must match the build exactly. If the build is not feature-complete when you reach this step, write against the current `main` App Store flavor and re-check every page in the claims audit before `status: live`. Never document personal-only features (audio, LRCLIB, URL import), AI features, PDF export or MIDI, which are not in 0.5.
+
+> *Superseded (phase 3 ships in 0.5): R61/R62: the AI features (paste cleanup, Settings > AI, the set assistant) ship in the 0.5 App Store build and are documented. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
 
 - **`/help` Segue Help**
   - Intro: what Segue is in two sentences; "New here? Start with the Welcome library."
@@ -1063,6 +1067,7 @@ Each help page uses `partial:help-nav` (a left column on desktop, a top list on 
   - `#new` New Setlist (Shift-Cmd-N); adding (including Setlist > Add Selected Song to Setlist), reordering, removing songs.
   - `#overrides` Per-show key and capo.
   - `#running-time` Running time, and songs with unknown length (shown as unknown and flagged in the total, never guessed).
+    - *Superseded (phase 3 ships in 0.5): R70: lengths are estimated from tempo + line count where nothing is known, always marked "~". Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
   - `#undo` Undo in the builder.
   - `#start` Start Show (Cmd-Return) and Rehearse (Opt-Cmd-Return): the difference.
 - **`/help/live` Stage mode**
@@ -1251,6 +1256,7 @@ Run in this order. Before each run, reset to a clean baseline: `make site` from 
 8. The badge is Apple's unmodified artwork, at least 40 px tall with quarter-height clear space, only in the home hero, linked with a campaign token; while `status` is `upcoming` no badge appears anywhere.
 9. Favicon (SVG + 32 px PNG), apple-touch-icon and a 1200x630 Open Graph image exist and are referenced from every page's head.
 10. **Claims audit:** a table in the session's commit message or hand-off lists every product claim on home, support, press and help, each marked verified in the 0.5 App Store build or removed. No personal-only, AI, PDF-export or MIDI feature is claimed. The policy-label diff (test 12) passes.
+    - *Superseded (phase 3 ships in 0.5): R61/R62: AI features may be claimed once verified in the build. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
 11. Every quality target in section 11 is met locally; production Lighthouse and the request audit are run after the first deploy.
 12. Before production goes live: `make site-check STRICT=1` passes (no placeholders outside `appStore.*`, no maker-note markers).
 13. `/feedback` redirects with 302 and the destination comes from config.

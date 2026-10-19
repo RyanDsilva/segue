@@ -202,6 +202,7 @@ Shared rules:
 9. **Cue anchoring.** A section label (case-insensitive) plus an optional 1-based occurrence; nil means every occurrence. A cue whose label no longer exists is shown in the notes block.
 10. **"Smart filters" in the brief vs the spec.** The spec puts smart and saved filters in phase 3 (a non-goal here). D builds **simple** filtering only: typed tokens in the search field ("ready, upbeat, key G") plus chips. Nothing is saved.
 11. **Unknown song length in the builder.** Superseded by the build ruling: never estimated. The row shows `--:--`, later starts are lower bounds (`≥13:50`) and the total reads `≥38:20 + 2 unknown` (see unit D's `SetlistTiming` notation above).
+    - *Superseded in phase 3 by R70 (docs/release/decisions.md): estimates from tempo + line count, always marked "~"; songs with neither a learned length nor a tempo stay unknown.*
 12. **Minimum lyric size range** in Settings: 16-48pt (default 22).
 13. **`bindings.json` location.** Application Support (per device; pedals are per machine). There is no editor UI in phase 2; defaults apply when the file is missing or malformed (the error is reported).
 14. **Stage presentation.** The stage stays the phase 0 borderless window that hides the menu bar and Dock (the spec's "full screen" step reads as this). The "Shortcut from full screen" verification in `0-walking-skeleton.md` is **still open and needs one manual run by Ryan**. C re-asserts the stage window as key after `NSWorkspace.open(shortcuts://...)` regardless, and confirms with the real in-app call.
