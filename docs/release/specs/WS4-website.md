@@ -447,7 +447,7 @@ Same style as `gen-tokens.swift`: `#!/usr/bin/env swift`, Foundation (plus AppKi
 5. No hand-written stylesheet (everything in `assets/css/` except the generated `tokens.css`) contains a hex/rgb colour literal or loads a `url()` from another origin.
 6. Every `<img>` has `alt`, `width`, `height`; below-the-fold images have `loading="lazy"`.
 7. `content/fonts.lock.json` matches the SHA-256 of the source TTFs and the committed WOFF2 files.
-8. Each `credits[].name` appears in `THIRD_PARTY_NOTICES.md`, the notices the app bundle ships, and its `licenceFile` exists (drift guard between site and app; until 2026-10-18 this read the removed `AcknowledgementsView.swift`).
+8. Each `credits[].name` appears in `THIRD_PARTY_NOTICES.md`, the notices the app bundle ships, and its `licenceFile` exists (drift guard between site and app; until 2026-10-18 this read the removed `AcknowledgementsView.swift`). Check 1 also resolves every site URL in `SegueLinks.swift`, so an app link cannot 404.
 9. `_headers` exists and contains exactly the CSP line from section 9.3.
 10. `content/changelog.json` follows schema 1 (6.2), including the 120-character highlight limit and the required `showInApp`.
 11. The word "anonymous" appears nowhere on the site (analytics carry a hashed install identifier, so the word would overstate it).

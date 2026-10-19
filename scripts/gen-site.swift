@@ -159,6 +159,8 @@ enum Spec {
     static let fontSources = "Packages/SegueUI/Sources/SegueUI/Theme/Fonts"
     /// The notices shipped in the app bundle; every site credit must be named in them.
     static let thirdPartyNotices = "THIRD_PARTY_NOTICES.md"
+    /// The app's one URL table: every site URL in it must resolve (check 1).
+    static let appLinks = "Packages/SegueUI/Sources/SegueUI/App/SegueLinks.swift"
     static let screenshotSource = ".build/screenshots/raw"
 }
 
@@ -1143,6 +1145,19 @@ struct Checker {
         for link in Spec.contractLinks {
             if let problem = linkProblem(link, from: home) {
                 fail("app contract link \(link) does not resolve: \(problem)")
+            }
+        }
+        let appLinks = (try? String(contentsOf: repoURL(Spec.appLinks), encoding: .utf8)) ?? ""
+        let sitePattern = "\"(" + NSRegularExpression.escapedPattern(for: build.config.origin)
+            + "[^\"]*)\""
+        let siteLinks = captures(sitePattern, in: appLinks).map { $0[1] }
+        if siteLinks.isEmpty {
+            fail("\(Spec.appLinks) names no \(build.config.origin) URL")
+        }
+        for url in siteLinks {
+            let link = String(url.dropFirst(build.config.origin.count))
+            if let problem = linkProblem(link.isEmpty ? "/" : link, from: home) {
+                fail("\(Spec.appLinks) link \(url) does not resolve: \(problem)")
             }
         }
         for release in build.allReleases {
