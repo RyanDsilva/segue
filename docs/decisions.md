@@ -2,7 +2,7 @@
 
 Closed answers to the open questions raised by the phase specs (2026-10-16/17). Specs are updated to match; this log is the audit trail.
 
-Product rulings for phases 0-7 live here; the v0.5 App Store release rulings (R1-R79; phase 3 in v0.5 is R61-R79) live in [release/decisions.md](release/decisions.md).
+Product rulings for phases 0-7 live here; the v0.5 App Store release rulings (R1-R103; phase 3 in v0.5 is R61-R103) live in [release/decisions.md](release/decisions.md).
 
 ## Cross-cutting
 
@@ -44,7 +44,7 @@ Product rulings for phases 0-7 live here; the v0.5 App Store release rulings (R1
   - *Narrowed by R62 (release/decisions.md): the custom mlx-community model setting is Personal-only; R64 names the curated candidate.*
 - Paste review sheet: **always shown**.
 - Set builder: **learn real durations** (time songs in shows/rehearsal), **energy 1-5 per song**, **suggested starter tags**. Repeat avoidance: not venue-aware. No polished batch import.
-  - *Energy 1-5 superseded by R71 (energy deferred out of 0.5). Durations extended by R70 (flagged estimates).*
+  - *Energy 1-5 superseded by R71 (energy deferred out of 0.5). Durations: R70 (flagged estimates) was superseded by R91: manual length + "Time it", no learning, no estimates. Batch import: R96 lists every converted file in one review sheet with checkboxes (still no automatic batch acceptance).*
 
 ## Phase 4
 
@@ -154,7 +154,7 @@ Defaults from docs/phases/2-interfaces.md stand except:
 - **Next** always goes to the song after the current one in playing order; songs passed over by "Play now" are not revisited automatically (they stay pending and can be picked).
 - **Missing songs at show start are removed** from the show (listed in the pre-show warning), not marked skipped.
 - **Unknown song length:** row shows `--:--`; set total reads e.g. "≥38:20 + 2 unknown" and later start times are lower bounds ("≥13:50"); no made-up default.
-  - *Superseded by R70 (release/decisions.md): where nothing is known, lengths are estimated from tempo + line count and always marked "~"; songs with neither a learned length nor a tempo stay unknown as above.*
+  - *Stands again (R91, release/decisions.md, supersedes R70): no estimates and no learned lengths in 0.5; lengths come from the song card or "Time it", and the "N unknown" total lists the songs without one (R88).*
 - **Save reorder to setlist:** inserted songs / requests are **checked** by default.
 - **Rehearsal runs get the same safety as shows:** crash resume and the pre-show checklist (Shortcuts optional); still no gig-log entry.
 - **Auto-fit prefers no wrapping:** choose the largest layout with zero wrapped lyric lines; allow wrapping only if the best no-wrap layout is more than ~15% smaller or would go below the user minimum. Split-section continuations get a "(cont.)" label; gutter labels stay at least 12pt.

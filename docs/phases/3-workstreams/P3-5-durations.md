@@ -1,6 +1,6 @@
-# P3-5 - Durations: learned lengths, per-song timer, flagged estimates, Welcome lengths
+# P3-5 - Length entry: the "Time it" timer, the length field and Welcome lengths
 
-Wave 1. Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 8, 14, 16.1 questions 1, 2, 5, 6). Rulings: `docs/release/decisions.md` R70 (supersedes the phase 2 "unknown song length: never made up" ruling in `docs/decisions.md`), R78. Existing code (phase 2 hooks): `Shows/DurationSamples.swift` (`DurationSample.Source.timer` reserved, `RehearsalTimingStore`, `loadAll`), `Shows/ShowRecord.swift` (`playedSongs`), `Setlists/SetlistTiming.swift` (`SongLengthSource.directive/.learned`, `≥`/`+ N unknown` notation), `SegueUI/Setlists/SetlistEntryDisplay.swift` (directive lengths only today), `Support/LibraryRoot.swift`, `Library/SongIndex*.swift`.
+Wave 2. **Rescoped 2026-10-19 by R91** (supersedes R70): no learned lengths, no estimates, no timing samples. What is left is the small, reusable length-entry piece that the song card (P3-10) and the missing-lengths list (P3-12) embed. Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 8 and 16.0.1). Rulings: `docs/release/decisions.md` R91, R78, R80, R17 (autosave); the phase 2 rule "Unknown song length: ... no made-up default" in `docs/decisions.md` stands again. Existing code: `SongDocument+Derived.swift` (`{duration}` parsing: `ss`, `mm:ss`, `h:mm:ss`, and `valueProblem`), `Editing/DocumentEditor.swift` (`EditOperation.setDirective`), `Setlists/SetlistTiming.swift` (unchanged phase 2 notation), `Library/WelcomeSeed.swift`.
 
 ## Session rules (apply to every P3 workstream)
 
@@ -12,29 +12,29 @@ Wave 1. Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 8,
 
 ## Goal
 
-Every song's set length comes from the best source available - learned from real plays, else its `{duration}`, else an estimate from tempo and line count that is always visibly marked - and stays unknown when none exists.
-
-## Before you start
-
-Open question 1 (storage) and 2 (clearing samples) are for Ryan. Build to the R70 default (derived, no duplicate store) which is recommendation 1a. For clearing, build nothing until Ryan rules on question 2; leave the inspector without a Clear button. Questions 5 and 6: build to recommendations 5a and 6a.
+A song's length is typed once as `mm:ss` or timed with one click, and lands in the song's `{duration}` directive. Nothing else feeds a length.
 
 ## Deliverables
 
-1. **Timer samples:** `TimerTimingStore` writes `timings/<ulid>.timer.json` (versioned JSON, `schemaVersion: 1`, one run per file, `source: timer`); `LibraryRoot.timerSuffix` (`LibraryRoot.swift` is shared with P3-6: additive edits only). Samples under 30 s are discarded.
-2. **Learned-length derivation** (new SegueCore module `Durations`, depends on Shows, Setlists, Library): gathers show samples (`ShowRecord.playedSongs`, requests and "Play now" included), rehearsal and timer samples; outlier rule for shows (under 40% or over 200% of the current learned value); median of the last 10 retained once >= 2 samples. Results go into the **rebuildable index** (new columns: learned seconds, sample count; index rebuild path updated; incremental refresh when a show ends, a rehearsal sample lands or a timer stops).
-3. **Estimator:** `LengthEstimator` per recommendation 6a (2 bars per lyric line at `{time}`, 4/4 default, repeats counted, clamped 1:30-8:00), only when `{tempo}` exists; constants in one place.
-4. **Resolver:** `EffectiveLength` = learned -> directive -> estimate -> unknown; `SongLengthSource` gains `.estimated`; `SetlistTiming` gains an estimated count and notation: estimates render `~3:40`, totals `~41:20, incl. 3 estimated`, combined with the existing unknown notation (`≥38:20 + 2 unknown, incl. 3 estimated`). Update the phase 2 notation tests deliberately, and the comment in `SetlistEntryDisplay.swift`.
-5. **UI:** a Start/Stop run-through timer in the song view (one click to start, one to stop, visible elapsed time, Esc cancels; `featureUsed(.runThroughTimer)` from P3-4's vocabulary once it exists); the inspector shows learned length, sample count and source mix; the builder, stage footer and setlist rows show the `~` mark wherever an estimate is used.
-6. **Welcome lengths (R78):** the four Welcome songs already carry `{duration}` (4:40, 3:05, 4:05, 3:20): add a test that pins it, and note in the hand-off that WS5's screenshot-only songs need `{duration}` too when they land.
+1. **Length value type** (SegueCore, next to the existing `{duration}` parsing; extend, do not duplicate): parse `ss`, `mm:ss`, `h:mm:ss` and the forgiving inputs a person types (`4.05` and `4 05` -> 4:05; `245` stays 245 s, as today); format back as `m:ss` / `h:mm:ss`; reject zero and negative values with a reason string the field shows.
+2. **`TimeItModel`** (`Packages/SegueUI/Sources/SegueUI/SongCard/TimeItModel.swift`, new): one run at a time across the app, keyed to a song id; Start, elapsed time (an injectable clock), Stop -> returns the elapsed seconds rounded to the nearest second, Cancel. Switching the selected song keeps a run alive; the run ends only by Stop, Cancel (Esc) or the song being deleted. Nothing is written to disk by the model.
+3. **Length field + Time it control** (`SongCard/LengthField.swift`, new): an `mm:ss` text field with the value type's validation, and a "Time it" button that becomes Stop with a live elapsed time. Commit (Return, focus out, or Stop) calls a closure the host supplies (`(TimeInterval?) -> Void`; nil = clear). P3-10 wires it to `EditOperation.setDirective(.duration, ...)` as one undoable edit; P3-12 reuses it in the missing-lengths popover. Accessibility identifiers `segue.songCard.length` and `segue.songCard.timeIt`; VoiceOver announces start, stop and the written length.
+4. **Analytics:** call `featureUsed(.timeIt)` on Stop once P3-4 has defined it; if P3-4 has not landed, leave one call site marked for it and tell the orchestrator.
+5. **Welcome lengths (R78):** the four Welcome songs already carry `{duration}` (Ferry Lights 4:40, Kettle On 3:05, Kitaabon Wali Gali 4:05, Soundcheck at Seven 3:20): add a test that pins it, and note in the hand-off that WS5's screenshot-only songs need `{duration}` too when they land.
+6. **Nothing learned:** confirm `SetlistTiming` and `SetlistEntryDisplay` still use `{duration}` only and the phase 2 notation (`--:--`, `≥38:20 + 2 unknown`); make no change there except comments that mention estimates. Do not add `DurationSample.Source.timer` files, index columns or a `Durations` module.
+
+## Not yours
+
+The song card layout and its other fields (P3-10); the missing-lengths popover, changeover and break totals (P3-12).
 
 ## Tests
 
-Integration: recorded show/rehearsal/timer fixture files (with outliers) in a temp library -> real store + index -> learned medians; precedence; estimate only with tempo; unknown without; notation strings; index rebuild reproduces the same values; timer E2E `SegueTimerE2ETests` (start/stop twice -> inspector shows a learned length). Suites: `LearnedDurationTests`, `SetlistTimingTests`.
+In-process SegueUI integration test: the field commits through a real `DocumentEditor` on a temp library song and the reloaded `.cho` has the expected `{duration}`; Time it with a scripted clock writes 4:05; Esc writes nothing; clearing removes the directive. Unit tests only for the forgiving parser. Suites: `LengthEntryTests`, `WelcomeSeedTests` (extend). No new XCUITest here (P3-10's E2E covers the card).
 
 ## Files owned
 
-`Packages/SegueCore/Sources/Durations/**` + its target lines in `Package.swift`, `Shows/DurationSamples.swift` (timer store additions), `Setlists/SetlistTiming.swift`, `Library/SongIndex*.swift` length columns, `LibraryRoot.swift` (shared, additive), `SegueUI/Setlists/SetlistEntryDisplay.swift`, the song view timer and inspector length rows, `UITests/SegueTimerE2ETests.swift`.
+`Packages/SegueUI/Sources/SegueUI/SongCard/TimeItModel.swift`, `SongCard/LengthField.swift`, their tests, the length value type additions in SegueCore (`ChordPro/` or `Library/` next to the existing parser; additive only), the Welcome pin test.
 
 ## Acceptance
 
-Two timed plays make the learned value win; estimates are never shown without `~` and totals count them; songs with neither stay unknown; `make quick` + `make gate` green.
+Typing `4:05` or timing a run writes `{duration: 4:05}` through the editor path with one undo step; nothing else in the app produces a length; `make quick` + `make gate` green.

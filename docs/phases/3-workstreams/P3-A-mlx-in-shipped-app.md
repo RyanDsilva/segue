@@ -1,6 +1,6 @@
 # P3-A - MLX in the shipped app (spike) and curated-model re-validation
 
-Wave 1. Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 4, 5, 12). Rulings: `docs/release/decisions.md` R61-R79 (especially R64, R66, R67, R77). Prior spike: `docs/research/phase3-spikes.md` and the harness in `research/phase3-spikes/`.
+Wave 1. **Status (2026-10-19): Part 1 done** (all seven proof points pass; `docs/research/phase3-mlx-in-app.md`, branch `spike/p3a-mlx-in-app`); the app-group store is accepted as proven (R100, no profile regeneration; App Store Connect acceptance is checked at the first real `make validate`). Its learnings are written into P3-3 and spec section 4.3. **Part 2 waits on Ryan's 10-20 pastes.** Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 4, 5, 12). Rulings: `docs/release/decisions.md` R61-R79 (especially R64, R66, R67, R77). Prior spike: `docs/research/phase3-spikes.md` and the harness in `research/phase3-spikes/`.
 
 ## Session rules (apply to every P3 workstream)
 

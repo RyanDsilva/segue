@@ -1,6 +1,6 @@
 # P3-1 - Deterministic paste pipeline in Core
 
-Wave 1. Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 3, 6.1, 14). Rulings: `docs/release/decisions.md` R61-R79 (R63, R76); `docs/decisions.md` Language section (lyric preservation, no transliteration) and Phase 1 build rulings (strict chord parsing: "Do" is never a chord).
+Wave 1. **Status: landed 2026-10-19 (commit 55d8701, 33 golden fixtures).** Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 3, 6.1, 14). Rulings: `docs/release/decisions.md` R61-R79 (R63, R76); `docs/decisions.md` Language section (lyric preservation, no transliteration) and Phase 1 build rulings (strict chord parsing: "Do" is never a chord).
 
 ## Session rules (apply to every P3 workstream)
 
@@ -44,3 +44,14 @@ Integration: each fixture -> `IngestPipeline` -> `ChordProParser` round trip -> 
 ## Acceptance
 
 All fixtures pass with no provider; deterministic label accuracy on the gold set reported (spike baseline: 72% of all blocks, 100% of headed blocks); `make quick` + `make gate` green.
+
+## Rulings on the built converter and follow-ups (R101, 2026-10-19)
+
+Ryan ruled on the choices P3-1 reported:
+
+- **Accepted defaults** (keep as built): detected keys are **not written into the `.cho`** (the review sheet shows them as a suggestion only); chord-site credits map Singer -> `{artist}`, Music -> composer, Lyrics -> lyricist, Movie -> album; a chord over a space attaches to the next word.
+- **Follow-up code changes**, done as **P3-2 step 0** (P3-1's session has ended; P3-2 owns `Ingest` next):
+  1. An unheaded block whose lyrics repeat an earlier block (the Segmenter's "same lyrics as block N" hint): **label both blocks Chorus**. Measured on the gold set: deterministic label accuracy 92% -> 99%.
+  2. With a capo, `{key}` is the **shapes key** (the key of the chords as written); confirm the converter and `KeyInference` already do this and pin it with a fixture.
+  3. **Unknown pasted lines** (tuning lines, strumming patterns) become `{comment}`; confirm and pin with a fixture.
+  4. Update the affected expected `.cho` fixtures and `gold.json`, and report the new deterministic accuracy.

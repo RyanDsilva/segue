@@ -1067,7 +1067,7 @@ Each help page uses `partial:help-nav` (a left column on desktop, a top list on 
   - `#new` New Setlist (Shift-Cmd-N); adding (including Setlist > Add Selected Song to Setlist), reordering, removing songs.
   - `#overrides` Per-show key and capo.
   - `#running-time` Running time, and songs with unknown length (shown as unknown and flagged in the total, never guessed).
-    - *Superseded (phase 3 ships in 0.5): R70: lengths are estimated from tempo + line count where nothing is known, always marked "~". Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
+    - *Phase 3 (0.5): R70's estimates were superseded by R91: lengths are never estimated; a length comes from the song card or "Time it", unknown stays unknown and the total lists the songs without one (R88). Changeover time (R86) and break rows (R85) join the running-time help. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
   - `#undo` Undo in the builder.
   - `#start` Start Show (Cmd-Return) and Rehearse (Opt-Cmd-Return): the difference.
 - **`/help/live` Stage mode**
