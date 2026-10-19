@@ -98,7 +98,13 @@
             let songIDs = plan.entries.compactMap { songsByFile[$0.song] }
             var setlist = try await store.create(name: plan.name)
             setlist = try await store.insertSongs(songIDs, into: setlist.id)
-            for (entry, planned) in zip(setlist.entries, plan.entries) {
+            // Matched by song, not position: a manifest song missing from the library, or
+            // listed again (a song is in a setlist once), adds no entry.
+            var seen: Set<SongID> = []
+            for planned in plan.entries {
+                guard let song = songsByFile[planned.song], seen.insert(song).inserted,
+                      let entry = setlist.entries.first(where: { $0.songId == song })
+                else { continue }
                 var updated = entry
                 updated.overrides = SetlistOverrides(
                     transpose: planned.overrides?.transpose,

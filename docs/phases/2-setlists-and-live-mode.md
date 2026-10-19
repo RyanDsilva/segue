@@ -46,7 +46,7 @@ Files stay canonical (see vision section 2). The SQLite index projects setlists 
 }
 ```
 - `songId` is the song's stable id from its sidecar, not its filename, so renames don't break setlists.
-- `itemId` lets the same song appear twice.
+- `itemId` identifies a slot (and the matching show item). A song appears at most once per setlist: every add path skips a song already in it, and Save at show end leaves out a request that repeats one. A setlist saved with a repeat before that rule loads as saved, the repeat marked in the builder ("Also at #n") so it can be removed.
 - `overrides` holds per-setlist key and capo without editing the song.
 
 **Show** - `Shows/<ulid>.json`, written continuously during a gig.

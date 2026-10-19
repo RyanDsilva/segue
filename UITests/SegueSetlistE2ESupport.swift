@@ -326,6 +326,7 @@ enum SetlistAXID {
     static let builderSearch = "segue.builder.search"
     static let builderLibraryRow = "segue.builder.library.row"
     static let builderAdd = "segue.builder.add"
+    static let builderInSet = "segue.builder.inSet"
     static let setlistTotal = "segue.setlist.total"
     static let setlistTarget = "segue.setlist.target"
     static let setlistDetailsLine = "segue.setlist.detailsLine"

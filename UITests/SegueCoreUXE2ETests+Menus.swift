@@ -175,7 +175,7 @@ extension SegueCoreUXE2ETests {
         attachScreenshot(app, name: "added-to-setlist")
         XCTAssertTrue(wait { self.entryCount(setlistFile) == 1 }, read(setlistFile))
 
-        // The submenu now checks Friday; choosing it again adds another copy.
+        // The submenu now checks Friday and disables it: a song is in a setlist once.
         let setlistMenu = app.menuBars.menuBarItems["Setlist"]
         setlistMenu.click(in: app)
         let submenu = setlistMenu.menuItems["Add Selected Song to Setlist"]
@@ -184,22 +184,27 @@ extension SegueCoreUXE2ETests {
         XCTAssertTrue(friday.appears(timeout: 5))
         // XCUITest does not expose a menu item's checkmark; the screenshot shows it.
         attachScreen(name: "add-to-setlist-submenu")
-        friday.click()
-        XCTAssertTrue(wait { self.entryCount(setlistFile) == 2 })
+        XCTAssertFalse(friday.isEnabled, "Friday already holds the song")
+        app.typeKey(.escape, modifierFlags: [], in: app)
+        app.typeKey(.escape, modifierFlags: [], in: app)
 
-        // The same from the row's context menu.
+        // The same in the row's context menu.
         E2E.bringToFront(app)
         harbour.rightClick()
         let contextItem = app.menuItems[CoreAXID.addToSetlistMenu].firstMatch
         XCTAssertTrue(contextItem.appears(timeout: 5))
         contextItem.hover()
-        app.menuItems["Friday"].firstMatch.click()
-        XCTAssertTrue(wait { self.entryCount(setlistFile) == 3 })
+        let contextFriday = app.menuItems["Friday"].firstMatch
+        XCTAssertTrue(contextFriday.appears(timeout: 5))
+        XCTAssertFalse(contextFriday.isEnabled, "Friday already holds the song")
+        app.typeKey(.escape, modifierFlags: [], in: app)
+        app.typeKey(.escape, modifierFlags: [], in: app)
+        XCTAssertEqual(entryCount(setlistFile), 1, read(setlistFile))
 
-        // Edit > Undo ("Add Song") takes the last copy out again.
+        // Edit > Undo ("Add Song") takes it out again.
         harbour.click(in: app)
         app.typeKey("z", modifierFlags: .command, in: app)
-        XCTAssertTrue(wait { self.entryCount(setlistFile) == 2 }, "Undo Add Song")
+        XCTAssertTrue(wait { self.entryCount(setlistFile) == 0 }, "Undo Add Song")
     }
 }
 

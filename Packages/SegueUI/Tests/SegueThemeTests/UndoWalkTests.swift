@@ -57,6 +57,38 @@ struct UndoWalkTests {
         #expect(try Self.entryCount(env, file) == 2)
     }
 
+    /// A song is in a setlist once: adding it again (builder, drag, Add to Setlist) writes
+    /// nothing, leaves no undo step and is reported as not added.
+    @Test
+    func `adding a song already in the setlist writes nothing and leaves no undo`() async throws {
+        let env = try TestEnvironment()
+        try Self.seedSong(env, "harbour-lights", "Harbour Lights", id: Self.harbourID)
+        try Self.seedSetlist(env, songIDs: [Self.harbourID])
+        let app = try await env.openApp()
+        let session = try #require(app.session)
+        let manager = UndoManager()
+        manager.groupsByEvent = false
+        session.undoManager = manager
+        let friday = try SetlistID(#require(ULID(string: Self.fridayID)))
+        let harbour = try SongID(#require(ULID(string: Self.harbourID)))
+        let file = "setlists/friday.setlist.json"
+        let before = try env.read(file)
+
+        var added = true
+        try await step(manager) { added = await session.setlists.add(harbour, to: friday) }
+        try await step(manager) {
+            await session.setlists.insert([harbour, harbour], into: friday, at: 0)
+        }
+
+        #expect(!added)
+        // Each step leaves an empty group; neither holds an "Add Song" action.
+        #expect(manager.undoActionName.isEmpty)
+        manager.undo()
+        #expect(manager.undoActionName.isEmpty)
+        #expect(try env.read(file) == before)
+        #expect(session.setlists.setlist(friday)?.entries.count == 1)
+    }
+
     @Test
     func `song tag and proficiency undo one by one and redo in order`() async throws {
         let env = try TestEnvironment()

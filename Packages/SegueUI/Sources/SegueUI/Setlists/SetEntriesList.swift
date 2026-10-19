@@ -6,7 +6,8 @@
     /// The set column's rows (layout a): #, title (and slot note), key after overrides,
     /// capo, length and start time. Drag a row onto another to move it before that row;
     /// drop library songs on a row (inserted before it) or on the zone below (appended).
-    /// Click a row to edit its overrides and note.
+    /// Songs already in the set are never added again. Click a row to edit its overrides
+    /// and note.
     struct SetEntriesList: View {
         let setlist: Setlist
         let model: SetlistsViewModel
@@ -16,13 +17,20 @@
 
         var body: some View {
             let timing = SetlistTiming(setlist: setlist, songs: library.song(id:))
+            let repeated = setlist.repeatedEntries
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(
                         Array(setlist.entries.enumerated()),
                         id: \.element.itemId,
                     ) { offset, entry in
-                        row(offset: offset, entry: entry, timing: timing)
+                        row(
+                            offset: offset,
+                            entry: entry,
+                            timing: timing,
+                            firstPosition: repeated.contains(entry.itemId)
+                                ? firstPosition(of: entry.songId) : nil,
+                        )
                     }
                     dropZone
                 }
@@ -31,10 +39,21 @@
             .accessibilityIdentifier(AccessibilityID.setlistEntries)
         }
 
-        private func row(offset: Int, entry: SetlistEntry, timing: SetlistTiming) -> some View {
+        /// The 1-based position of the first entry holding `song`.
+        private func firstPosition(of song: SongID) -> Int? {
+            setlist.entries.firstIndex { $0.songId == song }.map { $0 + 1 }
+        }
+
+        private func row(
+            offset: Int,
+            entry: SetlistEntry,
+            timing: SetlistTiming,
+            firstPosition: Int?,
+        ) -> some View {
             SetEntryRow(
                 position: offset + 1,
                 entry: entry,
+                repeatOf: firstPosition,
                 record: library.song(id: entry.songId),
                 timing: timing.items.indices.contains(offset) ? timing.items[offset] : nil,
                 isReadOnly: isReadOnly,
@@ -72,8 +91,12 @@
         private func drop(_ items: [String], before offset: Int?) -> Bool {
             dropTarget = nil
             guard !isReadOnly else { return false }
-            let songs = items.compactMap(SongDragPayload.decode)
-            if !songs.isEmpty {
+            let dragged = items.compactMap(SongDragPayload.decode)
+            if !dragged.isEmpty {
+                // A song already in the set is never added again (its library row does not
+                // drag; this guards drags from elsewhere).
+                let songs = dragged.filter { !setlist.contains($0) }
+                guard !songs.isEmpty else { return false }
                 Task { await model.insert(songs, into: setlist.id, at: offset) }
                 return true
             }
@@ -145,6 +168,9 @@
     private struct SetEntryRow: View {
         let position: Int
         let entry: SetlistEntry
+        /// For a setlist saved with a song twice (before the one-song-once rule): the
+        /// position of the song's first entry, shown so the repeat can be removed.
+        var repeatOf: Int?
         let record: SongRecord?
         let timing: ItemTiming?
         let isReadOnly: Bool
@@ -197,7 +223,8 @@
                     .disabled(isReadOnly)
             }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("\(position). \(title)")
+            .accessibilityLabel(repeatOf.map { "\(position). \(title), also at \($0)" }
+                ?? "\(position). \(title)")
             .accessibilityIdentifier(AccessibilityID.setlistEntry)
             .accessibilityAction(named: "Edit") { isEditing = true }
             .accessibilityActions {
@@ -235,6 +262,13 @@
                     Text("No longer in the library folder")
                         .font(SchibstedGrotesk.medium.font(size: 13))
                         .foregroundStyle(Theme.color.muted)
+                } else if let repeatOf {
+                    Label("Also at #\(repeatOf)", systemImage: "exclamationmark.triangle.fill")
+                        .font(SchibstedGrotesk.medium.font(size: 13))
+                        .foregroundStyle(Theme.color.muted)
+                        .symbolRenderingMode(.multicolor)
+                        .help("This song is in the set twice. Remove one of them.")
+                        .accessibilityIdentifier(AccessibilityID.entryRepeat)
                 } else if let note = entry.note, !note.isEmpty {
                     Text(note)
                         .font(SchibstedGrotesk.medium.font(size: 13))

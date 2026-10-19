@@ -87,14 +87,19 @@
         }
 
         /// Add to Setlist: saves the song's pending edits, appends it to the setlist and
-        /// confirms in the bottom bar ("Added “Harbour Lights” to Friday."). Selection and
-        /// section stay as they are.
+        /// confirms in the bottom bar ("Added “Harbour Lights” to Friday."). A song already in
+        /// the setlist is not added again; the bar says so. Selection and section stay as
+        /// they are.
         func addSong(_ songID: SongID, to setlistID: SetlistID) {
             Task {
                 await library.flushEditor()
-                guard await setlists.add(songID, to: setlistID) else { return }
                 let song = library.song(id: songID).map(LibraryViewModel.sortTitle) ?? "the song"
                 let name = setlists.setlist(setlistID)?.name ?? "the setlist"
+                if setlists.setlist(setlistID)?.contains(songID) == true {
+                    library.flash("“\(song)” is already in \(name).")
+                    return
+                }
+                guard await setlists.add(songID, to: setlistID) else { return }
                 library.flash("Added “\(song)” to \(name).")
             }
         }

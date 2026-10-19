@@ -33,7 +33,7 @@ struct Phase2ModelTests {
         // Reloading derives the same IDs; saving writes them.
         let (again, _) = try await lib.loadSetlists()
         #expect(await again.setlist(id: id)?.entries == setlist.entries)
-        try await again.addSong(song, to: id)
+        try await again.addSong(SongID(lib.ids.next()), to: id)
         let saved = try lib.read("setlists/twice.setlist.json")
         #expect(saved.contains("\"itemId\" : \"\(setlist.entries[0].itemId)\""))
         #expect(saved.contains("\"schemaVersion\" : 2"))

@@ -8,7 +8,8 @@
 
     /// The show-end review: planned vs performed order side by side, moved rows and inserted
     /// songs (requests, play now, insert next) marked, each inserted row with an "Add to
-    /// setlist" checkbox (checked by default: decisions.md, phase 2 build rulings). Two
+    /// setlist" checkbox (checked by default: decisions.md, phase 2 build rulings), except a
+    /// song already in the set, which says so instead (a song is in a setlist once). Two
     /// buttons, **Save to Setlist** and **Discard**, neither preselected as the default
     /// action (decisions.md).
     public struct ReorderDiffSheet: View {
@@ -44,7 +45,7 @@
             self.saveFailure = saveFailure
             self.setlistChanged = setlistChanged
             self.available = available
-            _included = State(initialValue: Set(diff.insertedItemIds))
+            _included = State(initialValue: diff.defaultIncluded)
         }
 
         /// Room for the header and the buttons around the scrolling rows.
@@ -190,16 +191,26 @@
                 note("moved from #\(fromPosition + 1)")
             case let .inserted(origin):
                 KeyChip(key: origin == .request ? "Request" : "Added")
-                Toggle(isOn: includeBinding(row.item.itemId)) {
-                    Text("Add to setlist")
+                if diff.repeatedItemIds.contains(row.item.itemId) {
+                    note("already in set")
+                        .help("A song can be in a setlist only once, so Save leaves this out.")
+                        .accessibilityIdentifier(AccessibilityID.reorderAlreadyInSet)
+                } else {
+                    includeToggle(row)
                 }
-                .toggleStyle(.checkbox)
-                .font(SchibstedGrotesk.medium.font(size: 13))
-                .fixedSize()
-                .disabled(saveDisabledReason != nil)
-                .help("Add this song to the setlist at this position")
-                .accessibilityIdentifier(AccessibilityID.reorderInclude)
             }
+        }
+
+        private func includeToggle(_ row: ReorderDiff.Row) -> some View {
+            Toggle(isOn: includeBinding(row.item.itemId)) {
+                Text("Add to setlist")
+            }
+            .toggleStyle(.checkbox)
+            .font(SchibstedGrotesk.medium.font(size: 13))
+            .fixedSize()
+            .disabled(saveDisabledReason != nil)
+            .help("Add this song to the setlist at this position")
+            .accessibilityIdentifier(AccessibilityID.reorderInclude)
         }
 
         private func note(_ text: String) -> some View {

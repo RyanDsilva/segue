@@ -34,8 +34,9 @@
     }
 
     /// The builder's left column (layout a, "library to set"): search with typed filter
-    /// tokens and chips, then every matching song with key, tempo and length. Songs already
-    /// in the set are dimmed; `+` appends, or drag a row into the set.
+    /// tokens and chips, then every matching song with key, tempo and length. `+` appends,
+    /// or drag a row into the set. A song is in a set at most once: a song already in it
+    /// reads quieter, shows "In set" with a checkmark instead of `+`, and does not drag.
     struct BuilderLibraryColumn: View {
         let setlist: Setlist
         let library: LibraryViewModel
@@ -53,14 +54,7 @@
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(songs) { record in
-                            BuilderLibraryRow(
-                                record: record,
-                                inSetCount: setlist.entries.count { $0.songId == record.id },
-                                isReadOnly: setlist.readOnly != nil,
-                            ) { onAdd(record.id) }
-                                .draggable(SongDragPayload.encode(record.id)) {
-                                    DragPreview(title: SongSummary.title(record))
-                                }
+                            row(record)
                         }
                     }
                 }
@@ -71,6 +65,25 @@
             .background(Theme.color.surfaceAlt.opacity(0.45))
             .task(id: SearchKey(state: state, revision: library.catalogRevision)) {
                 await runSearch()
+            }
+        }
+
+        /// A song already in the set has no drag source, so dragging it never shows a drop
+        /// indicator in the set.
+        @ViewBuilder
+        private func row(_ record: SongRecord) -> some View {
+            let isInSet = setlist.contains(record.id)
+            let row = BuilderLibraryRow(
+                record: record,
+                isInSet: isInSet,
+                isReadOnly: setlist.readOnly != nil,
+            ) { onAdd(record.id) }
+            if isInSet {
+                row
+            } else {
+                row.draggable(SongDragPayload.encode(record.id)) {
+                    DragPreview(title: SongSummary.title(record))
+                }
             }
         }
 
@@ -130,10 +143,11 @@
         }
     }
 
-    /// One library song in the builder: grip, title, "G · 96 · 3:40", state, `+`.
+    /// One library song in the builder: grip, title, "G · 96 · 3:40", state, then `+`, or
+    /// "In set" with a checkmark when the song is already in the set.
     private struct BuilderLibraryRow: View {
         let record: SongRecord
-        let inSetCount: Int
+        let isInSet: Bool
         let isReadOnly: Bool
         let onAdd: () -> Void
         @State private var isHovered = false
@@ -142,14 +156,14 @@
             HStack(spacing: 12) {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Theme.color.muted.opacity(0.45))
+                    .foregroundStyle(Theme.color.muted.opacity(isInSet ? 0 : 0.45))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     // A song already in the set reads quieter through its colour and the
                     // "In set" label, never by fading the row (text keeps 4.5:1, WS2b 4.9).
                     Text(SongSummary.title(record))
                         .font(SchibstedGrotesk.semiBold.font(size: 15))
-                        .foregroundStyle(inSetCount > 0 ? Theme.color.muted : Theme.color.ink)
+                        .foregroundStyle(isInSet ? Theme.color.muted : Theme.color.ink)
                         .lineLimit(1)
                     if !meta.isEmpty {
                         Text(meta)
@@ -160,26 +174,11 @@
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 stateLabel
-                Button(action: onAdd) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(Theme.color.ink)
-                        .frame(width: 30, height: 30)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Theme.color.ground),
-                        )
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .strokeBorder(Theme.color.controlBorder, lineWidth: 1)
-                        }
-                        .contentShape(Rectangle())
+                if isInSet {
+                    inSetMark
+                } else {
+                    addButton
                 }
-                .buttonStyle(.plain)
-                .disabled(isReadOnly)
-                .help("Add to the end of the set")
-                .accessibilityLabel("Add \(SongSummary.title(record)) to setlist")
-                .accessibilityIdentifier(AccessibilityID.builderAdd)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
@@ -188,18 +187,53 @@
             .contentShape(Rectangle())
             .onHover { isHovered = $0 }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel(inSetCount > 0
-                ? "\(SongSummary.title(record)), in set"
+            .accessibilityLabel(isInSet
+                ? "\(SongSummary.title(record)), already in set"
                 : SongSummary.title(record))
             .accessibilityIdentifier(AccessibilityID.builderLibraryRow)
         }
 
-        @ViewBuilder private var stateLabel: some View {
-            if inSetCount > 0 {
-                Text(inSetCount == 1 ? "In set" : "In set ×\(inSetCount)")
+        private var addButton: some View {
+            Button(action: onAdd) {
+                Image(systemName: "plus")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Theme.color.ink)
+                    .frame(width: 30, height: 30)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(Theme.color.ground),
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(Theme.color.controlBorder, lineWidth: 1)
+                    }
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(isReadOnly)
+            .help("Add to the end of the set")
+            .accessibilityLabel("Add \(SongSummary.title(record)) to setlist")
+            .accessibilityIdentifier(AccessibilityID.builderAdd)
+        }
+
+        /// Where `+` was: a checkmark and "In set", not a control.
+        private var inSetMark: some View {
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .bold))
+                Text("In set")
                     .font(SchibstedGrotesk.medium.font(size: 13))
-                    .foregroundStyle(Theme.color.muted)
-            } else if let level = record.sidecar.proficiency, level == .learning {
+            }
+            .foregroundStyle(Theme.color.muted)
+            .frame(minWidth: 30, minHeight: 30, alignment: .trailing)
+            .help("Already in this setlist. A song can be in a setlist only once.")
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Already in set")
+            .accessibilityIdentifier(AccessibilityID.builderInSet)
+        }
+
+        @ViewBuilder private var stateLabel: some View {
+            if !isInSet, let level = record.sidecar.proficiency, level == .learning {
                 Text(ProficiencyMark.label(level))
                     .font(SchibstedGrotesk.medium.font(size: 13))
                     .foregroundStyle(Theme.color.muted)

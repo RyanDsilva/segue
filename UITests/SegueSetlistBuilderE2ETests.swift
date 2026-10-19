@@ -35,7 +35,7 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
         )
         // Songs already in the set are marked in the library column.
         let library = SetlistE2E.texts(app, SetlistAXID.builderLibraryRow)
-        XCTAssertTrue(library.contains("Paper Boats, in set"), "\(library)")
+        XCTAssertTrue(library.contains("Paper Boats, already in set"), "\(library)")
         XCTAssertTrue(library.contains("Dil Ki Raah"), "\(library)")
 
         try reorder(app)
@@ -45,6 +45,51 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
         screenshot(app, "builder-full")
         try renameDuplicateDelete(app, root)
         try removeEntry(app, root)
+    }
+
+    /// A song is in a set at most once: after `+`, its library row shows "In set" instead
+    /// of `+`, VoiceOver says it is already in the set, and dragging it into the set adds
+    /// nothing.
+    @MainActor
+    func testSongAppearsOnceInTheSet() throws {
+        let root = try XCTUnwrap(libraryRoot)
+        let app = try launch(light: true)
+        createSetlist(app, "Saturday")
+        addWithPlus(app, "Paper Boats")
+        SetlistE2E.search(app, SetlistAXID.builderSearch, "paper")
+        SetlistE2E.waitUntil("Builder search never narrowed to Paper Boats") {
+            let rows = SetlistE2E.texts(app, SetlistAXID.builderLibraryRow)
+            return rows.count == 1 && rows[0].hasPrefix("Paper Boats")
+        }
+
+        // Dragging the song in again adds nothing.
+        let source = SetlistE2E.row(app, SetlistAXID.builderLibraryRow, "Paper Boats")
+        drag(
+            app,
+            from: source.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)),
+            to: SetlistE2E.element(app, SetlistAXID.setlistDropZone)
+                .coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)),
+        )
+        XCTAssertFalse(
+            E2E.waitUntil(timeout: 2) {
+                SetlistE2E.all(app, SetlistAXID.setlistEntry).count > 1
+            },
+            "Dragging Paper Boats again added it twice",
+        )
+
+        // No `+` on the row; an "In set" mark instead, and VoiceOver says so.
+        XCTAssertEqual(
+            SetlistE2E.texts(app, SetlistAXID.builderLibraryRow),
+            ["Paper Boats, already in set"],
+        )
+        XCTAssertFalse(source.buttons[SetlistAXID.builderAdd].exists, "+ is still offered")
+        XCTAssertTrue(source.descendants(matching: .any)[SetlistAXID.builderInSet].exists)
+        screenshot(app, "in-set")
+        waitForEntries(app, ["Paper Boats"])
+        SetlistE2E.waitForDisk("The setlist file holds the song more than once") {
+            let file = try XCTUnwrap(SetlistFixture.setlistFiles(root).first)
+            return (file["entries"] as? [Any])?.count == 1
+        }
     }
 
     // MARK: - Steps

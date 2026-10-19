@@ -58,10 +58,10 @@
         }
     }
 
-    /// Add to Setlist ▸: one item per setlist in sidebar order, checked when the setlist
-    /// already holds the song (choosing it still adds another copy, like the builder's +).
-    /// Read-only setlists are listed but disabled. Shared by the Setlist menu, the song row's
-    /// context menu and the detail pane's "…" menu.
+    /// Add to Setlist ▸: one item per setlist in sidebar order. A setlist that already holds
+    /// the song is checked and disabled (a song appears at most once per setlist), and so is
+    /// a read-only one. Shared by the Setlist menu, the song row's context menu and the
+    /// detail pane's "…" menu.
     struct AddToSetlistMenu: View {
         var title = "Add to Setlist"
         let session: LibrarySession
@@ -74,13 +74,14 @@
                         .disabled(true)
                 }
                 ForEach(session.setlists.setlists) { setlist in
-                    // A checkmark (state on) when the setlist already holds the song;
-                    // choosing it still appends another copy.
+                    // A checkmark (state on), dimmed, when the setlist already holds the
+                    // song: VoiceOver reads it as checked and dimmed.
+                    let holdsSong = setlist.contains(songID)
                     Toggle(setlist.name, isOn: Binding(
-                        get: { setlist.entries.contains { $0.songId == songID } },
+                        get: { holdsSong },
                         set: { _ in session.addSong(songID, to: setlist.id) },
                     ))
-                    .disabled(setlist.readOnly != nil)
+                    .disabled(holdsSong || setlist.readOnly != nil)
                 }
             }
             .accessibilityIdentifier(AccessibilityID.addToSetlistMenu)

@@ -72,12 +72,15 @@ public final class SetlistsViewModel {
         return created
     }
 
-    /// Appends `songID` to setlist `id` (repeats allowed); returns whether it was saved.
+    /// Appends `songID` to setlist `id`; returns whether it was added. A song already in
+    /// the setlist is not added again (a song appears at most once per setlist).
     @discardableResult
     public func add(_ songID: SongID, to id: SetlistID) async -> Bool {
-        await mutate(undo: (id, "Add Song")) { store in
+        let alreadyIn = await store.setlist(id: id)?.contains(songID) ?? false
+        let updated = await mutate(undo: (id, "Add Song")) { store in
             try await store.addSong(songID, to: id)
-        } != nil
+        }
+        return updated != nil && !alreadyIn
     }
 
     /// Drag reorder (`onMove`).
@@ -174,11 +177,14 @@ public final class SetlistsViewModel {
     }
 
     /// Inserts `songIDs` into setlist `id` at `offset` (nil appends): drag from the
-    /// library column, or its `+` button.
+    /// library column, or its `+` button. Songs already in the setlist are skipped.
     public func insert(_ songIDs: [SongID], into id: SetlistID, at offset: Int?) async {
-        guard !songIDs.isEmpty else { return }
-        await mutate(undo: (id, songIDs.count == 1 ? "Add Song" : "Add Songs")) { store in
-            try await store.insertSongs(songIDs, into: id, at: offset)
+        let current = setlist(id)
+        var seen: Set<SongID> = []
+        let fresh = songIDs.filter { current?.contains($0) != true && seen.insert($0).inserted }
+        guard !fresh.isEmpty else { return }
+        await mutate(undo: (id, fresh.count == 1 ? "Add Song" : "Add Songs")) { store in
+            try await store.insertSongs(fresh, into: id, at: offset)
         }
         services.record(.featureUsed(.setlistEdit, .builder))
     }
@@ -207,7 +213,8 @@ public final class SetlistsViewModel {
 
     /// Runs `operation` through the store, then reloads. With `undo`, the setlist's value
     /// before (from the store, not any optimistic local change) and after are registered
-    /// as one undoable step named `undo.name`.
+    /// as one undoable step named `undo.name`, unless the operation changed nothing (an add
+    /// of songs already in the setlist).
     @discardableResult
     private func mutate(
         undo: (id: SetlistID, name: String)? = nil,
@@ -223,7 +230,7 @@ public final class SetlistsViewModel {
             let updated = try await operation(store)
             await reload()
             then(updated)
-            if let undo, let before {
+            if let undo, let before, before != updated {
                 registerSnapshotUndo(undo.id, actionName: undo.name, before: before, after: updated)
             }
             return updated

@@ -46,6 +46,7 @@ public extension AccessibilityID {
     static let builderSearch = "segue.builder.search"
     static let builderLibraryRow = "segue.builder.library.row"
     static let builderAdd = "segue.builder.add"
+    static let builderInSet = "segue.builder.inSet"
     static let setlistTotal = "segue.setlist.total"
     static let setlistTarget = "segue.setlist.target"
     static let setlistDetailsLine = "segue.setlist.detailsLine"
@@ -59,6 +60,7 @@ public extension AccessibilityID {
     static let entryLength = "segue.setlist.entry.length"
     static let entryStart = "segue.setlist.entry.start"
     static let entryNote = "segue.setlist.entry.note"
+    static let entryRepeat = "segue.setlist.entry.repeat"
     static let entryEdit = "segue.setlist.entry.edit"
     static let entryRemove = "segue.setlist.entry.remove"
     static let entryTransposeDown = "segue.entryEditor.transpose.down"
@@ -115,6 +117,7 @@ public extension AccessibilityID {
     static let reorderPlannedRow = "segue.reorder.planned"
     static let reorderPerformedRow = "segue.reorder.performed"
     static let reorderInclude = "segue.reorder.include"
+    static let reorderAlreadyInSet = "segue.reorder.alreadyInSet"
     static let reorderSave = "segue.reorder.save"
     static let reorderDiscard = "segue.reorder.discard"
 }

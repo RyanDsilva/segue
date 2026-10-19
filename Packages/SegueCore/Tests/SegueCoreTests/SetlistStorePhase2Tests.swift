@@ -112,23 +112,25 @@ struct SetlistStorePhase2Tests {
     }
 
     @Test
-    func `insert songs at an offset with new item IDs, the same song twice`() async throws {
+    func `insert songs at an offset with new item IDs`() async throws {
         let lib = try TestLibrary()
         let fix = try await Self.friday(lib)
         let (store, setlist, songs) = (fix.store, fix.setlist, fix.songs)
-        let updated = try await store.insertSongs([songs[2], songs[0]], into: setlist.id, at: 1)
+        let late = [SongID(lib.ids.next()), SongID(lib.ids.next())]
+        let updated = try await store.insertSongs(late, into: setlist.id, at: 1)
 
-        #expect(updated.entries.map(\.songId) == [songs[0], songs[2], songs[0], songs[1], songs[2]])
+        #expect(updated.entries.map(\.songId) == [songs[0], late[0], late[1], songs[1], songs[2]])
         #expect(Set(updated.entries.map(\.itemId)).count == 5)
         let kept = setlist.entries.map(\.itemId)
         #expect([updated.entries[0], updated.entries[3], updated.entries[4]].map(\.itemId) == kept)
         #expect(try await Self.reloaded(lib, setlist.id) == updated)
 
+        let other = SongID(lib.ids.next())
         await #expect(throws: SetlistError.invalidOffsets(setlist.id)) {
-            try await store.insertSongs([songs[0]], into: setlist.id, at: 6)
+            try await store.insertSongs([other], into: setlist.id, at: 6)
         }
         await #expect(throws: SetlistError.invalidOffsets(setlist.id)) {
-            try await store.insertSongs([songs[0]], into: setlist.id, at: -1)
+            try await store.insertSongs([other], into: setlist.id, at: -1)
         }
         #expect(try await Self.reloaded(lib, setlist.id) == updated)
     }
@@ -185,8 +187,11 @@ struct SetlistStorePhase2Tests {
     func `replace entries saves a new order and refuses duplicate item IDs`() async throws {
         let lib = try TestLibrary()
         let fix = try await Self.friday(lib)
-        let (store, setlist, songs) = (fix.store, fix.setlist, fix.songs)
-        let request = SetlistEntry(itemId: SetlistItemID(lib.ids.next()), songId: songs[1])
+        let (store, setlist) = (fix.store, fix.setlist)
+        let request = SetlistEntry(
+            itemId: SetlistItemID(lib.ids.next()),
+            songId: SongID(lib.ids.next()),
+        )
         let reordered = [setlist.entries[2], setlist.entries[0], request, setlist.entries[1]]
         let saved = try await store.replaceEntries(reordered, in: setlist.id)
         #expect(saved.entries == reordered)

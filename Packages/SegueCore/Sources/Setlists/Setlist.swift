@@ -30,8 +30,10 @@ public struct SetlistID: Sendable, Hashable, Comparable, Codable, CustomStringCo
     }
 }
 
-/// Stable identity of one slot in a setlist (and of the matching item in a show), so the same
-/// song can appear twice. Requests and songs inserted during a show get new item IDs.
+/// Stable identity of one slot in a setlist (and of the matching item in a show). A song
+/// appears at most once in a setlist, but a show may play it again (a request), and setlists
+/// saved before that rule may still repeat one. Requests and songs inserted during a show
+/// get new item IDs.
 public struct SetlistItemID: Sendable, Hashable, Comparable, Codable, CustomStringConvertible {
     public let ulid: ULID
 
@@ -226,5 +228,19 @@ public struct Setlist: Sendable, Equatable, Identifiable, Codable {
     /// The entry with `itemId`, if present.
     public func entry(_ itemId: SetlistItemID) -> SetlistEntry? {
         entries.first { $0.itemId == itemId }
+    }
+
+    /// Whether the setlist already holds `songID`. A song appears at most once in a
+    /// setlist: every `SetlistStore` path that adds songs skips one already in it.
+    public func contains(_ songID: SongID) -> Bool {
+        entries.contains { $0.songId == songID }
+    }
+
+    /// Entries whose song already appears earlier in the setlist. Only setlists saved before
+    /// the one-song-once rule (or edited in another app) have any: they load as saved, and
+    /// the builder marks these so they can be removed.
+    public var repeatedEntries: Set<SetlistItemID> {
+        var seen: Set<SongID> = []
+        return Set(entries.filter { !seen.insert($0.songId).inserted }.map(\.itemId))
     }
 }

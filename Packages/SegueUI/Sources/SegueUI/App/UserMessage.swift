@@ -56,6 +56,8 @@ enum UserMessage {
             readOnlyText(reason)
         case .invalidOffsets:
             "Those setlist entries have changed. Try again."
+        case .duplicateSong:
+            "That song is already in the setlist. A song can be in a setlist only once."
         }
     }
 

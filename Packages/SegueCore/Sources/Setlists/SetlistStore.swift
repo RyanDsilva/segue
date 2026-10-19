@@ -12,6 +12,9 @@ public enum SetlistError: Error, Equatable {
     case readOnly(SetlistID, ReadOnlyReason)
     /// A move/remove offset is outside the setlist's entries.
     case invalidOffsets(SetlistID)
+    /// A new entry would repeat a song the setlist already holds (a song appears at most
+    /// once per setlist).
+    case duplicateSong(SetlistID, SongID)
 }
 
 /// A setlist file that could not be loaded (e.g. corrupted JSON). Reported, never deleted.
@@ -28,6 +31,12 @@ public struct SetlistLoadIssue: Sendable, Equatable {
 
 /// Setlists stored as `setlists/<slug>.setlist.json`. Every mutation is written to disk
 /// atomically before it returns. Implementers may add methods (rename, delete, ...).
+///
+/// A song appears at most once per setlist: `addSong` and `insertSongs` skip songs already
+/// in it (writing nothing when none is left), `replaceEntries` refuses a new entry that
+/// repeats a song, and `duplicate` keeps the first of any repeats. A setlist saved with
+/// repeats before this rule loads as saved (it is not rewritten until edited) and is marked
+/// by `Setlist.repeatedEntries`.
 ///
 /// Versioning follows the sidecar rules: a file without `schemaVersion` (version 0) or at an
 /// older version migrates forward in memory and is written at the current version on its
@@ -152,12 +161,11 @@ public actor SetlistStore {
         return setlist
     }
 
-    /// Appends `songID` to setlist `setlistID` and saves it.
+    /// Appends `songID` to setlist `setlistID` and saves it. A song already in the setlist
+    /// stays where it is and nothing is written.
     @discardableResult
     public func addSong(_ songID: SongID, to setlistID: SetlistID) throws -> Setlist {
-        try mutate(setlistID) { entries in
-            entries.append(SetlistEntry(itemId: SetlistItemID(ids.next()), songId: songID))
-        }
+        try insertSongs([songID], into: setlistID)
     }
 
     /// Moves entries like `Array.move(fromOffsets:toOffset:)` (SwiftUI `onMove`) and saves.
@@ -218,11 +226,15 @@ public actor SetlistStore {
         let copy = Setlist(
             id: SetlistID(ids.next()),
             name: name,
-            entries: original.entries.map { entry in
-                var entry = entry
-                entry.itemId = SetlistItemID(ids.next())
-                return entry
-            },
+            // A copy never repeats a song: repeats saved before the one-song-once rule
+            // keep only their first slot.
+            entries: original.entries
+                .filter { !original.repeatedEntries.contains($0.itemId) }
+                .map { entry in
+                    var entry = entry
+                    entry.itemId = SetlistItemID(ids.next())
+                    return entry
+                },
             createdAt: now,
             updatedAt: now,
             venue: original.venue,
@@ -235,23 +247,26 @@ public actor SetlistStore {
         return copy
     }
 
-    /// Inserts `songIDs` (new item IDs each) at `offset` (nil = append) and saves. Throws
-    /// `invalidOffsets` when `offset` is outside `0 ... entries.count`.
+    /// Inserts `songIDs` (new item IDs each) at `offset` (nil = append) and saves. Songs
+    /// already in the setlist, and repeats within `songIDs`, are skipped; when none is left
+    /// nothing is written and the setlist is returned as it is. Throws `invalidOffsets` when
+    /// `offset` is outside `0 ... entries.count`.
     @discardableResult
     public func insertSongs(
         _ songIDs: [SongID],
         into id: SetlistID,
         at offset: Int? = nil,
     ) throws -> Setlist {
-        try mutate(id) { entries in
-            let position = offset ?? entries.count
-            guard (0 ... entries.count).contains(position) else {
+        try mutateSetlist(id, writesUnchanged: false) { setlist in
+            let position = offset ?? setlist.entries.count
+            guard (0 ... setlist.entries.count).contains(position) else {
                 throw SetlistError.invalidOffsets(id)
             }
-            let inserted = songIDs.map { song in
-                SetlistEntry(itemId: SetlistItemID(ids.next()), songId: song)
-            }
-            entries.insert(contentsOf: inserted, at: position)
+            var present = Set(setlist.entries.map(\.songId))
+            let inserted = songIDs
+                .filter { present.insert($0).inserted }
+                .map { song in SetlistEntry(itemId: SetlistItemID(ids.next()), songId: song) }
+            setlist.entries.insert(contentsOf: inserted, at: position)
         }
     }
 
@@ -280,12 +295,24 @@ public actor SetlistStore {
     }
 
     /// Replaces all entries at once ("Save to setlist" in the show-end reorder sheet) and
-    /// saves. Item IDs must be unique, else `invalidOffsets` is thrown and nothing changes.
+    /// saves. Item IDs must be unique, else `invalidOffsets` is thrown; an entry that is not
+    /// in the setlist now must not repeat a song of another entry, else `duplicateSong` is
+    /// thrown. Either way nothing changes. (Repeats already saved in the setlist may stay.)
     @discardableResult
     public func replaceEntries(_ entries: [SetlistEntry], in id: SetlistID) throws -> Setlist {
         try mutate(id) { current in
             guard Set(entries.map(\.itemId)).count == entries.count else {
                 throw SetlistError.invalidOffsets(id)
+            }
+            let existing = Set(current.map(\.itemId))
+            var counts: [SongID: Int] = [:]
+            for entry in entries {
+                counts[entry.songId, default: 0] += 1
+            }
+            if let repeated = entries.first(where: { entry in
+                !existing.contains(entry.itemId) && counts[entry.songId, default: 0] > 1
+            }) {
+                throw SetlistError.duplicateSong(id, repeated.songId)
             }
             current = entries
         }
@@ -303,9 +330,12 @@ public actor SetlistStore {
     }
 
     /// Applies `change` to an editable setlist, stamps it and saves it atomically; nothing
-    /// changes (in memory or on disk) when `change` or the write throws.
+    /// changes (in memory or on disk) when `change` or the write throws. With
+    /// `writesUnchanged` false, a `change` that leaves the setlist as it was writes nothing
+    /// (no new `updatedAt`, no migration to the current schema).
     func mutateSetlist(
         _ id: SetlistID,
+        writesUnchanged: Bool = true,
         _ change: (inout Setlist) throws -> Void,
     ) throws -> Setlist {
         guard let root else { throw SetlistError.notLoaded }
@@ -313,7 +343,11 @@ public actor SetlistStore {
         if let reason = stored.setlist.readOnly {
             throw SetlistError.readOnly(id, reason)
         }
+        let original = stored.setlist
         try change(&stored.setlist)
+        if !writesUnchanged, stored.setlist == original {
+            return original
+        }
         stored.setlist.schemaVersion = Setlist.currentSchemaVersion
         stored.setlist.updatedAt = SegueJSON.stamp(clock.now())
         try save(stored, root: root)

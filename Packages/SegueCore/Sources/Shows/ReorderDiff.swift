@@ -113,7 +113,9 @@ public struct ReorderDiff: Sendable, Hashable {
     /// - entries still in `current` that the show performed take their performed order,
     ///   with their current overrides and notes;
     /// - the inserted rows in `including` (`defaultIncluded` unless the performer unticks
-    ///   some) become new entries at their performed positions;
+    ///   some) become new entries at their performed positions, except a row whose song is
+    ///   already in `current` or in an earlier row (a song appears at most once per
+    ///   setlist);
     /// - entries removed from the setlist during the show stay removed;
     /// - entries the show never had (added to the setlist during the show, or left out at
     ///   start because the song was missing) keep their place after the entry before them
@@ -127,10 +129,12 @@ public struct ReorderDiff: Sendable, Hashable {
             current.map { ($0.itemId, $0) },
             uniquingKeysWith: { first, _ in first },
         )
+        var songs = Set(current.map(\.songId))
         var written: [SetlistEntry] = performed.compactMap { row in
             if case .inserted = row.change {
                 guard inserted.contains(row.item.itemId),
-                      currentByID[row.item.itemId] == nil
+                      currentByID[row.item.itemId] == nil,
+                      songs.insert(row.item.songId).inserted
                 else { return nil }
                 return SetlistEntry(
                     itemId: row.item.itemId,
@@ -166,9 +170,25 @@ public struct ReorderDiff: Sendable, Hashable {
     }
 
     /// What the sheet ticks before the performer touches it: every inserted song and played
-    /// request (decisions.md, phase 2 build rulings: inserted rows are checked by default).
+    /// request (decisions.md, phase 2 build rulings: inserted rows are checked by default),
+    /// except those in `repeatedItemIds`.
     public var defaultIncluded: Set<ShowItemID> {
-        Set(insertedItemIds)
+        Set(insertedItemIds).subtracting(repeatedItemIds)
+    }
+
+    /// Inserted rows whose song is already in the plan or in an earlier inserted row: Save
+    /// never adds them (a song appears at most once per setlist), so the sheet offers no
+    /// "Add to setlist" for them.
+    public var repeatedItemIds: Set<ShowItemID> {
+        var songs = Set(planned.map(\.songId))
+        var repeated: Set<ShowItemID> = []
+        for row in performed {
+            guard case .inserted = row.change else { continue }
+            if !songs.insert(row.item.songId).inserted {
+                repeated.insert(row.item.itemId)
+            }
+        }
+        return repeated
     }
 
     /// Rows of `pairs` (row, planned position, moved by the performer) that form the

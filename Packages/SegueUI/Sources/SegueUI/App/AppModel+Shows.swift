@@ -242,7 +242,8 @@
             let reason = switch blocker {
             case .readOnly:
                 "“\(name)” is read-only now (it was saved by a newer version of Segue)"
-            case .invalidOffsets, .notLoaded, .setlistNotFound:
+            // `saveBlocker` never reports `duplicateSong` (Save skips repeats itself).
+            case .duplicateSong, .invalidOffsets, .notLoaded, .setlistNotFound:
                 "“\(name)” was deleted during the show"
             }
             return reason + ", so the played order cannot be saved to it. The show is in the "
