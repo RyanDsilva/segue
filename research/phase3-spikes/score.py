@@ -3,7 +3,31 @@ from collections import defaultdict
 sys.path.insert(0, '.')
 from gold import PASTE, SET, DEFAULTS
 import os
-HINTS = json.load(open('hints.json')) if os.path.exists('hints.json') else {}
+
+def _flag(name):
+    """--name PATH from argv (removed from argv so the rest are result files)."""
+    if name in sys.argv:
+        i = sys.argv.index(name)
+        val = sys.argv[i + 1]
+        del sys.argv[i:i + 2]
+        return val
+    return None
+
+# P3-A: score Ryan's real pastes against a local gold file instead of the spike fixtures.
+#   python3 score.py --gold ../phase3-eval/gold.local.json --hints ../phase3-eval/results/hints.json run.jsonl
+# Gold JSON: {"<paste name>": {"labels": [label | [alternatives]], "title": str|null|[alts],
+#   "artist": str|null|[alts], "key": str|[alts], "keyStated": bool}}. Lists become tuples
+#   (the "any of" form used in gold.py).
+_gold_path = _flag('--gold')
+_hints_path = _flag('--hints') or 'hints.json'
+if _gold_path:
+    def _alts(v):
+        return tuple(v) if isinstance(v, list) else v
+    PASTE = {name: dict(labels=[_alts(l) for l in g['labels']], title=_alts(g.get('title')),
+                        artist=_alts(g.get('artist')), key=_alts(g.get('key', 'unknown')),
+                        keyStated=bool(g.get('keyStated')))
+             for name, g in json.load(open(_gold_path)).items()}
+HINTS = json.load(open(_hints_path)) if os.path.exists(_hints_path) else {}
 
 def norm(s):
     return re.sub(r'[^a-z0-9]', '', (s or '').lower()) or None
