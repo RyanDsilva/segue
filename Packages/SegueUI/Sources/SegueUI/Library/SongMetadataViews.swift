@@ -15,7 +15,12 @@
             Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 16, verticalSpacing: 12) {
                 GridRow {
                     label("Proficiency")
-                    proficiencyPicker
+                    ProficiencyPicker(
+                        selection: record.sidecar.proficiency,
+                        isDisabled: record.isReadOnly,
+                    ) { level in
+                        save { $0.proficiency = level }
+                    }
                 }
                 GridRow {
                     label("Tags")
@@ -62,27 +67,6 @@
                 .foregroundStyle(Theme.color.muted)
                 .gridColumnAlignment(.leading)
                 .frame(minWidth: 76, alignment: .leading)
-        }
-
-        private var proficiencyPicker: some View {
-            HStack(spacing: 6) {
-                ForEach(Proficiency.allCases, id: \.self) { level in
-                    let isOn = record.sidecar.proficiency == level
-                    let title = ProficiencyMark.label(level)
-                    FilterChip(isOn: isOn) {
-                        save { $0.proficiency = isOn ? nil : level }
-                    } label: {
-                        HStack(spacing: 6) {
-                            ProficiencyDot(level, inverted: isOn)
-                            Text(title)
-                        }
-                    }
-                    .accessibilityLabel(title)
-                    .accessibilityIdentifier(AccessibilityID.songProficiency(level))
-                    .help(isOn ? "Clear the proficiency" : "Mark as \(title)")
-                }
-            }
-            .disabled(record.isReadOnly)
         }
 
         private var playHistory: String {
@@ -151,84 +135,6 @@
         private func save(_ change: @escaping (inout SongMetadata) -> Void) {
             let id = record.id
             Task { await model.editMetadata(id: id, change) }
-        }
-    }
-
-    /// Tags as removable chips plus an "Add tag" field (Return adds; existing tags are
-    /// offered as completions). Case-insensitive duplicates are ignored.
-    struct TagEditor: View {
-        let tags: [String]
-        let suggestions: [String]
-        var isDisabled = false
-        let onChange: ([String]) -> Void
-        @State private var draft = ""
-
-        var body: some View {
-            FlowLayout(spacing: 6) {
-                ForEach(tags, id: \.self) { tag in
-                    HStack(spacing: 4) {
-                        Text(tag)
-                        Button {
-                            onChange(tags.filter { $0 != tag })
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(Theme.color.muted)
-                                .frame(width: 14, height: 14)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isDisabled)
-                        .accessibilityLabel("Remove \(tag)")
-                        .accessibilityIdentifier(AccessibilityID.songTagRemove)
-                    }
-                    .font(SchibstedGrotesk.semiBold.font(size: 13))
-                    .foregroundStyle(Theme.color.ink)
-                    .padding(.leading, 10)
-                    .padding(.trailing, 6)
-                    .padding(.vertical, 4)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(Theme.color.controlBorder, lineWidth: 1)
-                    }
-                    .accessibilityElement(children: .contain)
-                    .accessibilityLabel(tag)
-                    .accessibilityIdentifier(AccessibilityID.songTag)
-                }
-                TextField("Add tag", text: $draft)
-                    .textFieldStyle(.plain)
-                    .font(SchibstedGrotesk.medium.font(size: 13))
-                    .frame(width: 120)
-                    .padding(.vertical, 4)
-                    .textInputSuggestions {
-                        ForEach(completions, id: \.self) { tag in
-                            Text(tag).textInputCompletion(tag)
-                        }
-                    }
-                    .onSubmit(add)
-                    .disabled(isDisabled)
-                    .accessibilityIdentifier(AccessibilityID.songTagField)
-            }
-        }
-
-        private var completions: [String] {
-            let typed = draft.trimmingCharacters(in: .whitespaces).lowercased()
-            guard !typed.isEmpty else { return [] }
-            return suggestions.filter { tag in
-                tag.lowercased().hasPrefix(typed)
-                    && !tags.contains { $0.caseInsensitiveCompare(tag) == .orderedSame }
-            }
-            .prefix(6)
-            .map(\.self)
-        }
-
-        private func add() {
-            let tag = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-            draft = ""
-            guard !tag.isEmpty,
-                  !tags.contains(where: { $0.caseInsensitiveCompare(tag) == .orderedSame })
-            else { return }
-            onChange(tags + [tag])
         }
     }
 #endif
