@@ -1,8 +1,8 @@
 # Phase 3 - AI entry & set assistant
 
-**Status (2026-10-18):** canonical spec, rewritten after the phase 3 spikes and Ryan's rulings R61-R79 (`docs/release/decisions.md`). Phase 3 now ships **in v0.5, in both flavours, before the App Store upload** (R61). Where this doc and an earlier phase 3 ruling in `docs/decisions.md` disagree, R61-R79 win; the superseded entries carry pointer lines. Where this doc and `docs/00-vision.md` disagree on phase 3, R61-R79 win (the vision's AI and library rows carry pointers).
+**Status (2026-10-19):** canonical spec, rewritten after the phase 3 spikes and Ryan's rulings R61-R79 (2026-10-18), then updated with R80-R103 (2026-10-18/19: metadata entry and fast set building, lengths, the answers to the section 16.1 questions, converter rulings, live-mode repeats, About panel) in `docs/release/decisions.md`. Phase 3 ships **in v0.5, in both flavours, before the App Store upload** (R61). Where this doc and an earlier phase 3 ruling in `docs/decisions.md` disagree, R61-R103 win; the superseded entries carry pointer lines. Where this doc and `docs/00-vision.md` disagree on phase 3, R61-R103 win (the vision's AI and library rows carry pointers). P3-1 has landed (commit 55d8701) and P3-A Part 1 is done (`docs/research/phase3-mlx-in-app.md`).
 
-Depends on: phase 0 (Core package, ChordPro parser, library + index), phase 1 (MusicTheory, `KeyDetector`), phase 2 (setlists, shows, rehearsal timings, tags/proficiency basics), and the release build-out (WS1-WS5, `docs/release/`). Inputs: `docs/research/phase3-ai.md` (sources), `docs/research/phase3-spikes.md` (measured results, harness in `research/phase3-spikes/`).
+Depends on: phase 0 (Core package, ChordPro parser, library + index), phase 1 (MusicTheory, `KeyDetector`), phase 2 (setlists, shows, rehearsal timings, tags/proficiency basics), and the release build-out (WS1-WS5, `docs/release/`). Inputs: `docs/research/phase3-ai.md` (sources), `docs/research/phase3-spikes.md` (measured results, harness in `research/phase3-spikes/`), `docs/research/phase3-mlx-in-app.md` (P3-A: MLX inside the shipped app).
 
 Workstream specs, one per implementation session: `docs/phases/3-workstreams/P3-*.md` (section 15).
 
@@ -10,25 +10,35 @@ Workstream specs, one per implementation session: `docs/phases/3-workstreams/P3-
 
 ## 1. Goal
 
-Make adding a song take under a minute from any messy source, and make building a set a one-line request. On-device, free, and working offline once a model is present. AI is an enhancement, never a requirement: with no model at all, every feature still works.
+Make adding a song take under a minute from any messy source, make entering a song's metadata and sections a matter of controls rather than remembered syntax, and make building a set fast by picking (or by a one-line request). On-device, free, and working offline once a model is present. AI is an enhancement, never a requirement: with no model at all, every feature still works.
 
 ## 2. Scope per flavour
 
 | Feature | App Store flavour | Personal flavour | Ruling |
 |---|---|---|---|
-| Paste cleanup: deterministic converter + always-on review sheet | yes | yes | R63 |
-| File import incl. `.crd` through the converter and review sheet | yes | yes | R76 |
+| Paste cleanup: deterministic converter + always-on review sheet | yes | yes | R63, R101 |
+| File import incl. `.crd` through the converter; a batch lands in ONE review sheet | yes | yes | R76, R96 |
+| New song starts with the paste flow, with "Start blank" | yes | yes | R83 |
 | Apple Foundation Models (FM) refinement | yes | yes | R62 |
-| ONE curated MLX model, downloaded on user request | yes | yes | R62, R64 |
-| Any `mlx-community` model (Settings > AI > Advanced) + "Check this model" | **no** | yes | R62 |
-| Set assistant (lexicon + async model chips) and NL picks | yes | yes | R65 |
-| Learned durations, per-song timer, flagged estimates | yes | yes | R70 |
+| ONE curated MLX model, downloaded on user request, loaded per paste or request | yes | yes | R62, R64, R94 |
+| Any `mlx-community` model (Settings > AI > Advanced, in `SeguePersonalModules`) + "Check this model" | **no** | yes | R62, R97 |
+| Song card: metadata as controls that write the directives and sidecar; set essentials marked | yes | yes | R80 |
+| Text mode `/` slash menu + `{` completion fixes (incl. key validation) | yes | yes | R81 |
+| Visual-editor section band (select lines, V/C/B/I, drag edges) | yes | yes | R82 |
+| One section note (`{comment}` + cues merged) with "Show on stage only" | yes | yes | R87 |
+| Set builder Pick / Arrange, Library multi-select + Add to Setlist | yes | yes | R84 |
+| Break rows with per-part totals; changeover time in totals; missing-lengths list | yes | yes | R85, R86, R88 |
+| Song lengths: manual on the song card + per-song "Time it" (no learning, no estimates) | yes | yes | R91 |
+| Set assistant (lexicon + async model chips) and NL picks | yes | yes | R65, R92 |
 | Tags (starter suggestions) + smart filters | yes | yes | R71, R72 |
-| Settings > AI pane (sixth pane) | yes (no Advanced) | yes (with Advanced) | R73 |
-| AI analytics events (opt-in, closed vocabulary) | yes | yes | R74 |
+| Settings > AI pane (sixth pane), one AI toggle | yes (no Advanced) | yes (with Advanced) | R73, R93 |
+| AI analytics events (opt-in, closed vocabulary) | yes | yes | R74, R98 |
+| Visual metronome on stage (sound in rehearsal only) | yes | yes | R90 |
+| No repeats within a show (live mode) | yes | yes | R102 |
+| About panel, variant A (native, one row of links) | yes | yes | R103 |
 | URL import, LRCLIB, audio | no | phase 5 | R61 |
 
-Out of scope for 0.5: energy rating (deferred, R71), AI energy or AI tag guesses at import (R71), a local AI stats screen or metrics database (R74), PDF/photo import (phase 4), macOS 27 `LanguageModel` / `MLXFoundationModels` (revisited in 0.6, R77), Private Cloud Compute.
+Out of scope for 0.5: energy rating (deferred, R71), AI energy or AI tag guesses at import (R71), a local AI stats screen or metrics database (R74), learned lengths and length estimates (R91), a ⌘K add palette (R89), metronome sound during a show (R90), a "gap queue" or "Detect sections" on existing songs (brainstorm direction C), PDF/photo import (phase 4), macOS 27 `LanguageModel` / `MLXFoundationModels` (revisited in 0.6, R77), Private Cloud Compute.
 
 ## 3. Design principle: deterministic first, model last
 
@@ -43,19 +53,26 @@ raw text (paste, .txt, .crd)
                                directive / tab / blank / unknown
  -> Segmenter + hints (code)  blocks on blank lines, lone header merged into the next block; per-block
                                hints: header label, "same lyrics as block N", chords only, tab, no chords
- -> Converter         (code)  chords-over-lyrics -> ChordPro by column alignment; headers -> sections;
-                               unlabelled blocks -> {start_of_verse} placeholders
+ -> Converter         (code)  chords-over-lyrics -> ChordPro by column alignment (a chord over a space
+                               attaches to the next word); headers -> sections; an unheaded block whose
+                               lyrics repeat an earlier block -> both labelled Chorus (R101); other
+                               unlabelled blocks -> {start_of_verse} placeholders; unknown lines
+                               (tuning, strumming) -> {comment} (R101)
  -> Validator         (code)  every chord parses (MusicTheory, strict: "Do" is never a chord);
                                collect unknown lines and unparseable tokens
  -> Metadata          (code)  {title}/{artist}/{key}/{capo}/{tempo} directives, "Title - Artist" header
-                               lines, "Key: G", "Capo 2", "Scale: Am"
+                               lines, "Key: G", "Capo 2", "Scale: Am"; credits Singer -> artist,
+                               Music -> composer, Lyrics -> lyricist, Movie -> album (R101); with a
+                               capo, {key} is the shapes key (R101)
  == review sheet opens HERE with the deterministic result (instant, never behind a spinner) ==
  -> AI refinement     (model, async)  only: labels for unheaded blocks, title/artist when code found
                                none, unknown-line classes; results stream into the open sheet
  -> Lyric guard       (code)  the lyric token sequence of the assembled result must equal the
                                converter's; any difference rejects the AI result for that block
  -> Key inference     (code)  stated key wins; else KeyDetector; a model key is used only when
-                               KeyDetector.isAmbiguous and the model's key is in the top two
+                               KeyDetector.isAmbiguous and the model's key is in the top two. A
+                               detected key is shown in the review sheet's song card only and is
+                               never written into the .cho unless the user picks it (R101)
  -> Review sheet      (UI)    original vs result side by side (layout "a", decisions.md), AI decisions
                                marked apart from rule-based conversion; Accept / Edit / Cancel.
                                Nothing reaches the library without Accept.
@@ -85,7 +102,7 @@ enum ProviderError { case unsupportedLanguage, guardrail, refusal, decodingFailu
 - **Tasks** are typed values in Core: `SectionLabelTask` (blocks + hints -> exact-count `[label]`), `MetadataTask` (top/bottom chord-free blocks + chord list -> title, artist, key), `AmbiguousLineTask` (unknown lines -> class), `SetRequestTask` (unmapped words + the library's actual tags -> suggested chips). Outputs are plain Core structs with **no optionals** (`""`/0 sentinels, normalised in code: "Unknown" -> empty, artist equal to title -> empty).
 - **One `@Generable` wire type per task**, in SegueAI, mapped to the Core output. The MLX JSON Schema is **derived from that type's `GenerationSchema`** (it is `Codable`), plus the dynamic constraints the spike validated: exact array counts (`DynamicGenerationSchema` on FM, `minItems = maxItems = n` on MLX), bounded integers, `.anyOf` enums, `.maximumCount` on every unbounded array. No hand-written second schema, no parse-and-retry.
 - **FM adapter**: `SystemLanguageModel.default`, a fresh session per call, `.greedy`, never concurrent calls on one session. Budget from runtime values: `contextSize - tokenCount(instructions) - tokenCount(schema) - maxResponseTokens - margin`, with `tokenCount` behind `if #available(macOS 26.4, *)` and a chars/3 fallback (no fixed "~2,500 tokens"). Sheets over budget (more than about 35 blocks) chunk on block boundaries with the hints kept, only when MLX is absent (chunking costs about 18 points, spike 2.1 F).
-- **MLX adapter**: `mlx-swift-lm` with `MLXGuidedGeneration` (`GrammarConstraint(jsonSchema:)` + `GuidedGenerationLoop`, greedy). A no-free-whitespace grammar (compact JSON or EBNF), bounded ints and fixed counts; one retry with a whitespace bias on `incompleteOutput`. `Memory.cacheLimit` set (512 MB start; without it the footprint reached 11.6 GB). Residency per open question 11.
+- **MLX adapter**: `mlx-swift-lm` with `MLXGuidedGeneration` (`GrammarConstraint(jsonSchema:)` + `GuidedGenerationLoop`, greedy). A no-free-whitespace grammar (compact JSON or EBNF), bounded ints and fixed counts; one retry with a whitespace bias on `incompleteOutput`. `Memory.cacheLimit` set (512 MB start; without it the footprint reached 11.6 GB). **Residency (R94): loaded per paste or set request and unloaded right after**; never loaded during a show. Integration rules proven by P3-A in section 4.3.
 - **`ScriptedProvider`** replays **recorded real outputs** keyed by task + input hash (`Tests/Fixtures/paste/recorded/<provider>/`), recorded by the manual eval target (`make eval-ai RECORD=1`). All automated tests use it; a missing recording is a test failure, never a silent pass.
 
 ### 4.1 Routing (R63, supersedes the FM-first rule)
@@ -93,7 +110,9 @@ enum ProviderError { case unsupportedLanguage, guardrail, refusal, decodingFailu
 Per paste: **curated MLX if installed -> else FM if available -> else deterministic converter alone.** A provider failure on a call falls through to the next provider in the same order for that call (FM: `unsupportedLanguage`, `guardrail`, `refusal`, `decodingFailure`, `contextOverflow`; `rateLimited`/`busy` after one spaced retry). The review sheet is always shown, whichever path produced the result.
 
 - Hinglish needs no special route: on MLX it scored 100% on the songs it completed; on FM the language rejection is deterministic and costs about 3 ms (spike 2.2), so FM -> deterministic is cheap.
-- **No model is loaded during a show** (R65). A paste while a show is running gets the deterministic result; behaviour per open question 12.
+- **No model is loaded during a show** (R65), and **paste is disabled while a show is running** (R95; scope of "paste" per open question 26).
+- **AI toggle off** (R93, "Use AI to refine pastes and set requests"): the router returns the deterministic result without asking any provider.
+- **Set requests** (`SetRequestTask`) route the same way: curated MLX if installed, else FM (R92).
 - The router is config-driven (one order list per task in a bundled config file), with the R63 order as the default.
 
 ### 4.2 FM unavailable (R69)
@@ -108,6 +127,22 @@ Per `SystemLanguageModel.Availability.UnavailableReason`, a reason-specific inli
 | unknown future reason | "Apple Intelligence isn't available right now." | Open System Settings |
 
 Shown in Settings > AI, in the review sheet footer when the result came from code only, and in the set assistant's chip area. Copy is drafted here and finalised in P3-9 (Apple Intelligence trademark usage is a WS5-stage question, section 16.2).
+
+### 4.3 MLX inside the shipped app (P3-A, R100)
+
+Proven in an archived, sandboxed, hardened Release-AppStore build (`docs/research/phase3-mlx-in-app.md`): Metal kernels compile, the model loads from the app-group store (0.8-1.2 s), a guided label call takes about 3 s warm, no sandbox violation, no hardened-runtime exception. P3-3 must carry these over:
+
+- `make bootstrap` checks the Xcode **Metal Toolchain** component (`xcodebuild -showComponent MetalToolchain`) and installs it; the README toolchain line names it.
+- Zero-warning gate: `MTL_COMPILER_FLAGS = $(inherited) -Wno-c++17-extensions -Wno-c++20-extensions` in Tuist's `PackageSettings.baseSettings`; `_NumericsShims` in the quiet-libtool list; `SegueAI` in the first-party strict list.
+- Load models with **`LLMModelFactory.shared.loadContainer(from:using:)`** directly (the class-name registry lookup fails in a static, dead-stripped binary).
+- Segue's own tokenizer loader (`AutoTokenizer.from(modelFolder:)` + a bridge to `MLXLMCommon.Tokenizer`), **no `MLXHuggingFace`**.
+- The **no-free-whitespace grammar** is required (the guided output pretty-printed JSON in the app too).
+- Package tests stay **MLX-free** (SwiftPM cannot build the metallib); MLX runs only through xcodebuild or `make eval-ai`.
+- Every call runs at **`.userInitiated`**, holds a **`ProcessInfo` activity**, and has a **timeout** mapped to `ProviderError.timeout` (one call stalled 1,054 s under swap).
+- Privacy manifest: **`NSPrivacyAccessedAPICategoryDiskSpace`, reason E174.1** (MLX's checkpoint code and Segue's free-space check).
+- Cost: `.pkg` +8.5 MB, `.app` +21 MB, a Release archive about 2x slower.
+- Notices: a row per resolved pin (12, including swift-syntax) plus the vendored MLX C++, mlx-c, metal-cpp, {fmt}, nlohmann/json, XGrammar (+ NOTICE), DLPack, PicoJSON, and the Qwen (Apache-2.0) model licence.
+- Curated model pin: `mlx-community/Qwen3-4B-Instruct-2507-4bit` at revision **`50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b`**, per-file sizes and SHA256 in the P3-A doc section 7.
 
 ## 5. Curated model, download and store
 
@@ -124,8 +159,8 @@ Shown in Settings > AI, in the review sheet footer when the result came from cod
 
 ### 5.3 Store (R67)
 
-- **Shared between the two flavours** through an **app-group container** (new `com.apple.security.application-groups` entitlement in both flavours, team `V6BM673U35`), at `<group container>/Library/Application Support/Models/<repo>/<revision>/`. `scripts/verify-archive.sh` check 4 (exact entitlements) and the entitlements comments change in the same commit. **Needs proof in P3-A**: Mac App Store app-group rules for a manually signed MAS build plus an automatically signed Personal build, the provisioning-profile capability, and both flavours reading one store. Fallback if the proof fails: open question 8.
-- Excluded from backup (`isExcludedFromBackup`), never inside the library folder, never in `LibraryArchive`. Reset All Settings resets AI prefs but **keeps downloaded models** (R73).
+- **Shared between the two flavours** through an **app-group container**: entitlement `com.apple.security.application-groups` = `V6BM673U35.dev.ryandsilva.segue.models` in all three entitlements files, at `<group container>/Library/Application Support/Models/<repo>/<revision>/`. `scripts/lib/verify-common.sh` (`app_entitlements`, feeding `verify-archive` check 4 and `verify-appstore`) and the entitlements comments change in the same commit. **Proven by P3-A (R100):** both flavours read one store; the team-prefixed id needs no portal registration and the existing "Segue Mac App Store" profile needs no regeneration. Still open: App Store Connect acceptance, checked at the first real `make validate` (Ryan, R46); if it is ever rejected, add App Groups to the App ID and regenerate the profile.
+- Excluded from backup (`isExcludedFromBackup`), never inside the library folder, never in `LibraryArchive`. Reset All Settings resets AI prefs but **keeps downloaded models** (R73). **Delete** removes the model directly after a confirmation, not via the Trash (R99).
 - A download in progress is held by a file lock in the group container, so the two flavours never download at once.
 
 ## 6. Paste and import UX
@@ -135,50 +170,52 @@ Shown in Settings > AI, in the review sheet footer when the result came from cod
 - **File > New Song from Clipboard** (`⌥⌘V`). P3-4 verifies it is free: no clash in `MenuShortcuts.all` (the clash test), and no clash with the text system's Paste Style (`⌥⌘V` maps to `pasteFont:` only through a Format menu, which Segue does not have; P3-4 confirms in the editor).
 - A **"Paste a Song"** button in the empty-library state.
 - **`⌘V` while the song list has focus** (never when a text field or the editor has focus).
-- **File > Import Songs...** and drag and drop (existing, WS2a): `.cho/.chopro/.chordpro/.pro` that are already ChordPro import directly (A29); `.txt` and **`.crd`** (R76) that need conversion go through the converter and the review sheet. Multiple conversion files queue one review sheet at a time, with "Skip Remaining" (open question 13). `SongFileTypes.importExtensions` gains `crd`.
+- **File > New Song** (`⌘N`) and every other "New Song" control open the **paste flow** (R83): the review sheet in an input state ("Paste or type a song"; `⌘V` pastes, the clipboard is never read before that), with a **"Start blank"** link that creates an empty song and opens the editor with the song card focused on Title.
+- **File > Import Songs...** and drag and drop (existing, WS2a): `.cho/.chopro/.chordpro/.pro` that are already ChordPro import directly (A29); `.txt` and **`.crd`** (R76) that need conversion go through the converter and the review sheet. **Several conversion files open ONE review sheet** (R96): a list of every converted file, each with a checkbox (ticked by default) and its own preview and song card; **Import N Songs** imports the ticked ones together, unticked ones are not imported. `SongFileTypes.importExtensions` gains `crd`.
+- **During a show** (R95) the paste routes are disabled, with the reason in the menu item's tooltip and the button's help text (exact scope: open question 26).
 
 ### 6.2 Review sheet
 
 - Opens with the deterministic result immediately; AI decisions stream in as they arrive (MLX warm: about 4.4 s labels + 1.8 s metadata; FM: 5-30 s) with a quiet "Refining with <provider>..." line, never a blocking spinner. The user can edit or Accept before refinement finishes (refinement then stops).
 - Side by side (layout "a"): original left, result right; AI-decided labels and metadata marked apart from rule-based conversion; unknown lines and unparseable tokens flagged.
-- Metadata fields (title, artist, key, capo, tempo, tags with starter suggestions) are editable in the sheet. No energy field (R71), no AI tag guesses (R71).
+- The metadata block is **the song card** (R80, section 16.0.1, built by P3-10) in draft mode: it edits the pending result, not a file. A detected key shows as a suggestion and is written only if the user picks it (R101). Tags with starter suggestions. No energy field (R71), no AI tag guesses (R71).
 - Accept writes `.cho` + sidecar through `LibraryStore.commitImport` (the `prepareImport`/`commitImport` split already exists). Cancel leaves the library untouched.
-- The footer names what produced the result ("Labels by Qwen3-4B", "Labels by Apple Intelligence", "Converted without AI") and shows the R69 note when relevant.
+- The footer names what produced the result ("Labels by Qwen3-4B", "Labels by Apple Intelligence", "Converted without AI") and shows the R69 note when relevant, plus a **quiet one-line download link** to Settings > AI when the result came from FM or code and the curated model is not installed (R93). No popups or tips offer the download.
+- With the AI toggle off (R93) the sheet shows the deterministic result and the footer says "Converted without AI (AI is off in Settings)".
 
 ## 7. Set assistant (R65)
 
 Request -> instant code lexicon -> chips -> deterministic builder; an async model pass adds **suggested** chips.
 
-1. **Lexicon (code, instant):** numbers and durations ("45 min", "10 songs"), keys ("in G", "no Bb"), BPM, proficiency phrases ("know well" -> Ready+, "know cold" -> Pro), tag names as written in the library (fold-insensitive, romanization-tolerant via `RomanNormalizer`), slot phrases ("open strong", "finish big", per open question 4), smart filter names ("from Wedding set"). Fills the chips immediately.
-2. **Async model pass:** only when words remain unmapped, after the user stops typing (0.8 s) or presses Return. It maps the leftover words onto the library's **actual** tags and the fixed chip vocabulary; results appear as dashed "suggested" chips the user accepts or ignores. Provider per open question 14. Never blocks; cancelled when the request changes.
+1. **Lexicon (code, instant):** numbers and durations ("45 min", "10 songs"), keys ("in G", "no Bb"), BPM as an **explicit tempo filter** ("under 100 bpm", R92), proficiency phrases ("know well" -> Ready+, "know cold" -> Pro), tag names as written in the library (fold-insensitive, romanization-tolerant via `RomanNormalizer`), slot phrases ("open strong", "finish big") **only when the request says them** (R92), smart filter names ("from Wedding set"). Fills the chips immediately.
+2. **Async model pass:** only when words remain unmapped and the AI toggle is on (R93), after the user stops typing (0.8 s) or presses Return. It maps the leftover words onto the library's **actual** tags and the fixed chip vocabulary; results appear as dashed "suggested" chips the user accepts or ignores. Provider (R92): **curated MLX if installed, else FM**, loaded per request (R94). Never blocks; cancelled when the request changes.
 3. **Chips** are editable; with no AI, chips are filled by hand. "Songs I know well" maps to proficiency >= Ready; Learning is excluded by default.
-4. **Score (code):** weighted signals - proficiency, tag match, recently-played penalty (global across gigs, decaying with days since last played, not venue-aware), slot fit from tags (open question 4), key flow. Weights in config. Every candidate carries a **score breakdown** (signal -> weighted contribution, summing to the total), shown in a popover (hover and keyboard/VoiceOver reachable).
-5. **Pack (code):** greedy fill to the target duration (tolerance +/- 3 min default), then a local-swap pass for flow: penalise the same key back to back and adjacent capo/tuning changes, small bonus for closely related keys. **A song appears at most once per setlist** (a hard invariant enforced in the setlist model, from Ryan's walkthrough): the packer never proposes a duplicate and treats it as an invariant, not a score term. Lengths per section 8 (learned > `{duration}` > estimate); estimated lengths are flagged in the result and its total.
-6. **Result** opens as a draft setlist in the phase 2 builder; the user drags, locks songs, and hits **Rebuild** to re-pack around the locked ones.
+4. **Score (code):** weighted signals - proficiency, tag match, recently-played penalty (global across gigs, decaying with days since last played, not venue-aware), slot fit from tags (only when asked, R92: open with `upbeat`, close with `crowd pleaser`/`singalong` when those tags exist), key flow. Tempo never scores; it only filters (R92). Weights in config. Every candidate carries a **score breakdown** (signal -> weighted contribution, summing to the total), shown in a popover (hover and keyboard/VoiceOver reachable).
+5. **Pack (code):** greedy fill to the target duration (tolerance +/- 3 min default), then a local-swap pass for flow: penalise the same key back to back and adjacent capo/tuning changes, small bonus for closely related keys. **A song appears at most once per setlist** (a hard invariant enforced in the setlist model, from Ryan's walkthrough): the packer never proposes a duplicate and treats it as an invariant, not a score term. Lengths are each song's `{duration}` (section 8) plus the setlist's changeover (R86); songs with no length follow open question 24 and are always named in the missing-lengths list (R88).
+6. **Result** opens as a draft setlist in the builder's Arrange mode (R84); the user drags, locks songs, and hits **Rebuild** to re-pack around the locked ones. A draft has one part; in a setlist that already has break rows (R85), Rebuild keeps the break rows and locked songs where they are and re-packs the unlocked slots.
 7. **Deterministic:** the builder takes an injectable seed; same library + request + seed gives the same set.
 
-**NL picks.** In the library search field: lexicon chips instantly, model suggestions async as above. **On stage** (quick search during a show): lexicon + text search only; **no model is loaded during a show**. Request queueing on stage follows the same at-most-once rule: a song already in the show cannot be queued again as a new entry.
+**NL picks.** In the library search field: lexicon chips instantly, model suggestions async as above. **On stage** (quick search during a show): lexicon + text search only; **no model is loaded during a show**. Adding on stage follows R102 (no repeats within a show, built by P3-15): a song already played or still upcoming is refused with a message, and an upcoming one is offered "Move to Next" instead.
 
-Energy is deferred (R71): no energy field, signal or chip. Tempo's role is open question 3.
+Energy is deferred (R71): no energy field, signal or chip. Tempo is an explicit filter only (R92).
 
-## 8. Durations (R70, supersedes the phase 2 "never made up" ruling)
+## 8. Song lengths (R91, supersedes R70)
 
-Learned lengths from real plays, and where nothing is known, **visibly flagged estimates**.
+Manual lengths only; nothing is learned and nothing is estimated. The phase 2 rule stands again: an unknown length is never made up.
 
-- **Sources:** finished shows (`shows/<ulid>.show.json`, `ShowRecord.playedSongs`), rehearse-setlist runs (`timings/<ulid>.rehearsal.json`), and a new **per-song Start/Stop timer** in the song view writing `timings/<ulid>.timer.json` (`DurationSample.Source.timer`, already reserved). **No duplicate store**: no sidecar `timings` block; learned values are derived from these canonical files into the rebuildable index (storage choice listed for Ryan's confirmation, open question 1).
-- **Filtering:** show samples under 40% or over 200% of the current learned value are outliers; samples under 30 s are discarded; requests and "Play now" songs count.
-- **Learned value:** median of the last 10 retained samples once there are at least 2.
-- **Precedence:** learned -> `{duration}` directive -> **estimate** -> unknown. `SongLengthSource` gains `.estimated`.
-- **Estimate:** from `{tempo}` and the lyric line count (formula and calibration, open question 6). Songs with neither a learned length, a directive nor a tempo **stay unknown** (`--:--`, as phase 2).
-- **Display:** an estimate always carries a `~` ("~3:40"); totals say what they include ("~41:20, incl. 3 estimated"; with unknowns as well: "≥38:20 + 2 unknown, incl. 3 estimated"). Estimates are never shown without the mark, in the builder, the stage footer, the inspector, smart filters or the assistant.
-- **Inspector:** learned length, sample count, source mix; clearing samples per open question 2.
-- **Welcome songs** carry `{duration}` lengths (R78). The four shipped Welcome songs already have them (Ferry Lights 4:40, Kettle On 3:05, Kitaabon Wali Gali 4:05, Soundcheck at Seven 3:20); P3-5 adds a test that pins this and adds `{duration}` to WS5's screenshot-only songs when they land.
+- **Source:** the song's `{duration}` directive, and nothing else. It is entered on the **song card** (R80) as an `mm:ss` field (also `ss` or `h:mm:ss`, as `SongDocument+Derived` parses today), or filled by **"Time it"**: a per-song Start/Stop timer on the card; Stop writes the elapsed time into the Length field (one undoable edit), Esc cancels. Timer runs are not stored as samples; no `timings/<ulid>.timer.json`, no index columns for learned values.
+- **Unknown stays unknown:** `--:--` on the row, totals `≥38:20 + 2 unknown` (phase 2 notation, unchanged). The "N unknown" part of every total is a **button** that lists exactly which songs lack a length (R88, section 16.0.5).
+- **Changeover** (R86): a per-setlist value with a global default (Settings > General, default 0 s) is added after every song but the last of each part; totals include it and say so in their help text.
+- **Shows and rehearsals** keep recording what was played and when (phase 2 files, gig log), but nothing feeds back into a song's length.
+- **Welcome songs** carry `{duration}` lengths (R78). The four shipped Welcome songs already have them (Ferry Lights 4:40, Kettle On 3:05, Kitaabon Wali Gali 4:05, Soundcheck at Seven 3:20); P3-5 adds a test that pins this, and WS5's screenshot-only songs need `{duration}` when they land.
+
+The questions this section used to carry (16.1 questions 1, 2, 5, 6) are moot.
 
 ## 9. Tags and smart filters (R71, R72)
 
 - Tags stay free-form in the sidecar (existing field); autocomplete from tags in use; rename/merge across the library.
 - **Starter tags:** an empty tag vocabulary suggests `upbeat`, `ballad`, `crowd pleaser`, `singalong`, `original`, `cover` in the tag picker (manual pick only; nothing pre-applied; they disappear once the user has their own tags; the seed tag "Welcome" does not count as the user's own).
-- **Smart filter** = a saved predicate over tags (all/any/none), proficiency, key, tempo range, length range (open question 5 for estimates), last played before/after, never played. Stored as library files **`filters/<slug>.filter.json`** (versioned JSON, `schemaVersion: 1`, ULID id). `LibraryRoot` gains `filtersDirectory`; `LibraryArchive.includedFolders` gains `filters`. Deleting a filter moves it to the Trash (R15). Evaluated against the index.
+- **Smart filter** = a saved predicate over tags (all/any/none), proficiency, key, tempo range, length range (on `{duration}`; a song with no length never matches a length condition), last played before/after, never played. Stored as library files **`filters/<slug>.filter.json`** (versioned JSON, `schemaVersion: 1`, ULID id). `LibraryRoot` gains `filtersDirectory`; `LibraryArchive.includedFolders` gains `filters`. Deleting a filter moves it to the Trash (R15). Evaluated against the index.
 - Sidebar section **Smart Filters**; a filter is usable as a set-assistant input chip. `SongFilter` (phase 2 simple filtering) stays the in-memory matcher the smart filter compiles to.
 
 ## 10. Settings > AI (R73)
@@ -186,9 +223,9 @@ Learned lengths from real plays, and where nothing is known, **visibly flagged e
 A **sixth pane**, "AI", after Live (General, Appearance, Live, AI, Privacy, Data):
 
 - Apple Intelligence status with the R69 note and Open System Settings.
-- The curated model card: name, licence with link, download size, RAM need, free disk, Download / progress / Cancel / Delete, low-RAM warning (R68), "candidate" wording until R64 locks it.
-- AI preferences (open question 9).
-- **Advanced** (Personal flavour only, R62): enter an `mlx-community/...` repo id; the app fetches the model card, shows size and the **upstream** licence (`base_model` card, not only the mlx-community card), downloads only on click; "Check this model" runs the bundled original fixtures through it and shows its score next to the curated model's (not blocked if lower). One active MLX model at a time. Code placement per open question 7.
+- The curated model card: name, licence with link, download size, RAM need, free disk, Download / progress / Cancel / Delete (direct removal after a confirmation, R99), low-RAM warning (R68), "candidate" wording until R64 locks it. The download is offered as a quiet link, never a popup (R93).
+- **One toggle, "Use AI to refine pastes and set requests", default on** (R93). Off: no provider is called for pastes or set requests.
+- **Advanced** (Personal flavour only, R62): enter an `mlx-community/...` repo id; the app fetches the model card, shows size and the **upstream** licence (`base_model` card, not only the mlx-community card), downloads only on click; "Check this model" runs the bundled original fixtures through it and shows its score next to the curated model's (not blocked if lower). One active MLX model at a time. The code lives in **`SeguePersonalModules`** (R97), mechanically excluded from the App Store flavour (`make verify-appstore` symbol check extended).
 - Reset All Settings resets AI prefs, keeps models (R73).
 
 ## 11. Analytics (R74, analytics only)
@@ -197,41 +234,49 @@ No local stats screen and no local metrics database. Opt-in (existing consent), 
 
 | Signal | Parameters (all enums/buckets/Bool) |
 |---|---|
-| `Segue.AI.pasteFinished` | source (`clipboard`/`emptyState`/`listPaste`/`fileTxt`/`fileCrd`), provider (`mlx`/`fm`/`none`), fallback (`none`/`notInstalled`/`fmOff`/`fmNotReady`/`fmIneligible`/`unsupportedLang`/`guardrail`/`decoding`/`overBudget`/`busy`/`timeout`/`duringShow`/`other`), latency bucket, outcome (`accepted`/`cancelled`), correction bucket (`none`/`small`/`medium`/`large`: edit distance of AI-touched labels and metadata between proposal and Accept) |
+| `Segue.AI.pasteFinished` | source (`clipboard`/`newSong`/`emptyState`/`listPaste`/`fileTxt`/`fileCrd`), provider (`mlx`/`fm`/`none`), fallback (`none`/`aiOff`/`notInstalled`/`fmOff`/`fmNotReady`/`fmIneligible`/`unsupportedLang`/`guardrail`/`decoding`/`overBudget`/`busy`/`timeout`/`other`), latency bucket, outcome (`accepted`/`cancelled`/`unticked` for a batch file left out), correction bucket (`none`/`small`/`medium`/`large`: edit distance of AI-touched labels and metadata between proposal and Accept), **`romanHindi` (Bool, R98)**: the converter's romanized-Hindi detection fired |
 | `Segue.AI.modelDownload` | result (`completed`/`cancelled`/`network`/`checksum`/`disk`/`other`), kind (`curated`/`custom`), duration bucket, ramUnder16 (Bool) |
 | `Segue.AI.assistantUsed` | context (`builder`/`library`/`stage`), chips by lexicon bucket, suggested chips shown / accepted buckets, provider, rebuilt (Bool) |
 | `Segue.AI.smartFilterUsed` | action (`created`/`applied`/`assistantInput`), conditions bucket |
 
-Never song text, titles, artists, tags, queries or model names typed by the user. `featureUsed` gains `runThroughTimer`. The privacy policy's example list is updated in P3-9. Exact names and buckets are fixed in P3-4 with the allowlist test.
+Never song text, titles, artists, tags, queries or model names typed by the user. `duringShow` is not a fallback value: paste is disabled during a show (R95). `featureUsed` gains `timeIt` (the song card timer, R91). The privacy policy's example list is updated in P3-9. Exact names and buckets are fixed in P3-4 with the allowlist test.
 
 ## 12. Release impact (owned by P3-A and P3-9)
 
 - **App Review 2.5.2 / 4.2.3(ii):** model weights are data, not code; the download is user-initiated with size shown first (`docs/release/research/03-review-risk.md`). Custom models raise risk, hence Personal-only (R62). Review notes get an AI paragraph (P3-9).
-- **MLX in the sandbox + hardened runtime: UNVERIFIED.** P3-A proves Metal kernel compile, model load from the group container and inference in a sandboxed, hardened, archived Release-AppStore build.
-- **Tuist and static linking:** the MLX metallib must land in `Contents/Resources` (SwiftPM on the CLI does not build it; the spike used xcodebuild). P3-A measures app size and build-time deltas and keeps `verify-archive` green.
-- **Model storage** in the app group (R67), verify-archive check 4.
+- **MLX in the sandbox + hardened runtime: VERIFIED by P3-A** (section 4.3): kernels compile, the model loads from the group container, no exception needed.
+- **Tuist and static linking:** the metallib lands in `Contents/Resources/mlx-swift_Cmlx.bundle` (all MLX code static); `.pkg` +8.5 MB, `.app` +21 MB, archive about 2x slower; `verify-archive` green with the new allowed set.
+- **Model storage** in the app group (R67, R100), `verify-common.sh` `app_entitlements`; App Store Connect acceptance pending at the first real `make validate`.
 - **Privacy:** R54 header stripping on downloads; the privacy policy gets a model-download section and a Hugging Face vendor row; the support FAQ ("goes online only for...") gains model downloads; the privacy manifest is diffed for required-reason APIs pulled in by the new dependencies (and Segue's own disk-space check before download). App Privacy label impact of the HF download is part of the WS5-stage research ticket (section 16.2).
 - **Third-party notices:** MLX / mlx-swift-lm (MIT), swift-transformers (Apache-2.0), XGrammar (Apache-2.0), every transitive pin `make docs-check` finds, and the curated model's licence (Apache-2.0, Qwen) shown in Settings > AI, in the bundled `THIRD_PARTY_NOTICES.md` and on the web `/acknowledgements` page (the in-app Acknowledgements window was removed 2026-10-18).
-- **Memory:** about 3 GB per paste while MLX is active; the live view must never block; no model during a show.
+- **Memory:** about 3 GB per paste or request while MLX is loaded, released right after (R94); the live view must never block; no model during a show.
 - **Store copy:** review notes are at 3,557 / 4,000 bytes; keywords 97 / 100 bytes; 8 screenshots. WS5 lines that say "no AI in 0.5", "Works offline" and NETWORK USE are superseded and rewritten in P3-9 (open items in section 16.2).
-- **Accessibility:** every new surface (review sheet, AI pane, assistant chips, smart filters, timer) gets its own VoiceOver / Voice Control walk before any accessibility label is claimed (R79).
+- **Accessibility:** every new surface (review sheet, AI pane, assistant chips, smart filters, song card and Time it, slash menu, section band, Pick/Arrange and break rows, missing-lengths list, section notes, metronome overlay, the live repeat message) gets its own VoiceOver / Voice Control walk before any accessibility label is claimed (R79).
+- **About panel** (R103): variant A; dark-mode legibility of the link row is verified by its implementer (P3-15).
 
 ## 13. Code placement and file map
 
 | Where | What | Workstream |
 |---|---|---|
-| `Packages/SegueCore/Sources/Ingest/` (new module) | Normalizer, FormatDetector, stop list, Segmenter + hints, Converter, Validator, MetadataExtractor, LyricGuard, KeyInference, `.crd` reader, `IngestPipeline` (deterministic result + refinement merge) | P3-1 (refinement merge P3-2) |
+| `Packages/SegueCore/Sources/Ingest/` (landed, 55d8701) | Normalizer, FormatDetector, stop list, Segmenter + hints, Converter, Validator, MetadataExtractor, LyricGuard, KeyInference, `.crd` reader, `IngestPipeline` (deterministic result + refinement merge) | P3-1 (R101 follow-ups and the refinement merge: P3-2) |
 | `Packages/SegueCore/Sources/ModelPort/` (new) | `LanguageModelProvider`, tasks and outputs, `ProviderError`, `Router`, `CallMetrics`, `ScriptedProvider` | P3-2 |
-| `Packages/SegueCore/Sources/Durations/` (new) | learned-length derivation, `TimerTimingStore`, `LengthEstimator`, effective-length resolver | P3-5 |
-| `Packages/SegueCore/Sources/Library/` | `SmartFilter`, `SmartFilterStore`; `SongFileTypes` (+crd, P3-4); index columns for lengths (P3-5) | P3-6, P3-5, P3-4 |
+| `Packages/SegueCore/Sources/Library/` | `SmartFilter`, `SmartFilterStore`; `SongFileTypes` (+crd, P3-4) | P3-6, P3-4 |
+| `Packages/SegueUI/Sources/SegueUI/SongCard/` (new) | `TimeItModel` + Time it control, length field (P3-5); the song card, its fields and essentials dots (P3-10) | P3-5, P3-10 |
+| `Packages/SegueUI/Sources/SegueUI/Editor/` | `{` completion fixes, slash menu, vertical `CompletionPopup` (P3-10); section band in `VisualEditorController+*` (P3-11) | P3-10, P3-11 |
+| `Packages/SegueCore/Sources/Editing/` + `ChordPro` diagnostics | section operations (wrap, relabel, resize, unwrap, split, merge) (P3-11); `{key}`/`{time}` value validation with fixes (P3-10) | P3-11, P3-10 |
+| `Packages/SegueCore/Sources/Setlists/` + `SegueUI/Setlists/` + `Components/SelectableList.swift` | break entries, changeover, per-part timing, unknown-length list; Pick/Arrange, multi-select | P3-12 |
+| `Library/Sidecar.swift` cues + `{comment}` handling, notes sheet, `LiveLayout` | section notes (R87) | P3-13 |
+| `Packages/SegueUI/Sources/SegueUI/Live/` metronome overlay, `LiveCommand`/`InputBindings` | visual metronome (R90) | P3-14 |
+| `Shows/ShowController.swift` add paths, `App/AboutPanel.swift` | no repeats in a show (R102), About variant A (R103) | P3-15 |
 | `Packages/SegueCore/Sources/SetAssistant/` (new) | `SetRequest`, `SetRequestLexicon`, `Scorer` (+breakdown), `Packer`, `SetBuilder` | P3-7 |
 | `Packages/SegueCore/Sources/Services/AnalyticsEvent.swift` + `Packages/SegueVendorServices/.../IngestBody.swift` | new rows and allowlist | P3-4 |
 | `Packages/SegueAI/` (new package, both flavours) | `FoundationModelsAdapter`, `MLXAdapter`, `GenerableTasks` (wire types, schema export), `ModelStore` (manifest, downloader, app-group paths, lock), `segue-eval` executable | P3-2 (FM), P3-3 (MLX, store, eval) |
-| `Packages/SegueUI/Sources/SegueUI/Paste/` (new) | review sheet, import queue, empty-state button, Welcome card / TipKit tip | P3-4 |
+| `Packages/SeguePersonalModules/` | Advanced custom models (R97) | P3-3 |
+| `Packages/SegueUI/Sources/SegueUI/Paste/` (new) | review sheet (input state for New Song, batch list for several files), empty-state button, Welcome card / TipKit tip | P3-4 |
 | `Packages/SegueUI/Sources/SegueUI/Settings/AISettingsView.swift` + `SegueSettingsView.swift` | sixth pane | P3-3 |
 | `Packages/SegueUI/Sources/SegueUI/Assistant/` (new) | chips, request field, breakdown popover | P3-7 |
 | `Packages/SegueUI/Sources/SegueUI/SmartFilters/` (new), `Library/MainSidebar.swift` | sidebar section, editor | P3-6 |
-| `Project.swift`, `App/*.entitlements`, `scripts/verify-archive.sh`, `Makefile` | SegueAI dependency, app group, check 4, `make eval-ai` | P3-2, P3-3 (proven in P3-A) |
+| `Project.swift`, `Tuist/Package.swift`, `App/*.entitlements`, `scripts/lib/verify-common.sh`, `App/PrivacyInfo.xcprivacy`, `Makefile` | SegueAI dependency, app group, allowed entitlements, DiskSpace reason, `make eval-ai`, Metal Toolchain in `make bootstrap` | P3-2, P3-3 (proven in P3-A) |
 | `research/phase3-eval/` | Ryan's pastes (gitignored), local gold and results (gitignored) | P3-A |
 
 ## 14. Test strategy and budget
@@ -239,10 +284,12 @@ Never song text, titles, artists, tags, queries or model names typed by the user
 Integration-first: real parser, real file store on a fresh temp library, real GRDB index, real set builder. The only substitute is `ScriptedProvider` replaying recorded real model outputs. Unit tests only for tricky pure logic (chord-line classification, column alignment, packer swap scoring, lexicon).
 
 - **Paste pipeline golden fixtures** (`Tests/Fixtures/paste/`): **30+** original pastes (no copyrighted lyrics), **8+ romanized Hindi**, including the 20 spike fixtures and permanent regression cases E07 (no title block) and H07 (Hindi-dominant), plus `.crd` samples. Each goes raw text -> pipeline (no provider; and ScriptedProvider for FM and MLX recordings) -> Accept -> `.cho` + sidecar in a temp library -> reloaded via the real store and index; asserts byte equality with the expected `.cho`, zero chord loss, zero lyric change. A scripted output that would change a lyric is rejected by the guard.
-- **Durations:** recorded show, rehearsal and timer files (with outliers) -> real store -> learned medians, estimates flagged, the builder uses learned over `{duration}` over estimate.
-- **Set assistant:** seeded 300-song fixture library -> lexicon + scripted chips -> real scorer and packer -> draft setlist written and reloaded. Property checks over many seeds: duration within tolerance, filters respected, Learning excluded by default, **no song twice**, locks kept, same seed same output, breakdown sums to total.
+- **Lengths:** Time it start/stop writes `{duration}` through the real editor path and reloads; songs without one stay `--:--`; totals with changeover, break parts and unknowns match the phase 2 notation; the missing-lengths list names exactly the unknown songs.
+- **Song card and text helpers:** every card field writes exactly its directive or sidecar field (and removes it when cleared) through the real `DocumentEditor`, reloaded via the real parser; slash-menu wrap and `{` completions produce valid ChordPro; `{key: Hm}` yields a diagnostic with a fix.
+- **Section band:** each section operation on real documents round-trips through the parser with zero lyric or chord change and one undo step per gesture.
+- **Set assistant:** seeded 300-song fixture library -> lexicon + scripted chips -> real scorer and packer -> draft setlist written and reloaded. Property checks over many seeds: duration within tolerance, filters respected, Learning excluded by default, **no song twice**, locks and break rows kept, same seed same output, breakdown sums to total.
 - **Eval target** (`make eval-ai`, manual, never in `make check`): real FM and MLX over the fixtures and Ryan's local pastes, scored with the spike metrics (labels split headed/unheaded, title/artist/key, failure kinds, latency p50/p90, tokens), stored baseline for regression; `RECORD=1` refreshes `ScriptedProvider` recordings. **Real FM/MLX calls never run in `make check` or `make gate`.**
-- **E2E (XCUITest)**, fresh library each run: paste -> sheet -> Accept -> song with correct sections, Cancel changes nothing; three files -> three sheets; `.crd` import; assistant request -> chips -> set within tolerance, breakdown reachable; timer twice -> learned length; Settings > AI with no model: size and licence shown, nothing downloads without a click (download stubbed).
+- **E2E (XCUITest)**, fresh library each run: paste -> sheet -> Accept -> song with correct sections, Cancel changes nothing; New Song -> paste flow and Start blank; three files -> one sheet with three ticked rows, untick one -> two imported; `.crd` import; song card fields and Time it; slash menu wraps a selection; section band V on selected lines; Pick mode Space/⌘A then Arrange ⌥↑; Library ⌘-click multi-select -> Add to Setlist; break row + per-part totals; missing-lengths button; metronome toggle on stage; Insert Next of an already-played song refused; assistant request -> chips -> set within tolerance, breakdown reachable; Settings > AI with no model: size and licence shown, nothing downloads without a click (download stubbed).
 
 **Test budget (R58, written into every workstream):** per step, only the targeted `swift test --filter <Suite>` suites for what changed; per workstream, `make quick` + `make gate` once at the end; `make check` only at the phase gate (P3-9). Never re-run the slow suite after small fixes.
 
@@ -253,58 +300,153 @@ Integration-first: real parser, real file store on a fresh temp library, real GR
 - AI off, unavailable or failing: paste and import still work, nothing crashes, blocks or waits on a spinner; the deterministic result shows instantly.
 - No FM call exceeds its runtime budget; long sheets succeed via MLX or chunking.
 - No model downloads without a click; size, licence and RAM need shown first; SHA256 verified; no `Accept-Language` or device User-Agent sent (asserted against a local test server).
-- Both flavours read one model store (or the open question 8 fallback), excluded from backup, never in the library or its archive.
+- Both flavours read one model store (proven by P3-A, R100), excluded from backup, never in the library or its archive.
 - Every paste and conversion import goes through the review sheet; nothing reaches the library without Accept.
-- After two timed plays, a song's set length comes from its learned value; songs with only a tempo show a `~` estimate and every total says how many are estimated; songs with neither stay unknown.
+- A song's length comes only from its `{duration}` (song card or Time it); nothing is learned or estimated; unknown lengths show `--:--`, totals say `+ N unknown`, and "N unknown" lists exactly those songs.
+- Every song card field and slash-menu item writes valid ChordPro or sidecar data with no typing of directive syntax; Text mode shows the result.
+- A 20-song set can be built in Pick mode with the keyboard alone (filter, ↓/Space or ⌘A, then ⌥↑/⌥↓ in Arrange), never adding a song twice.
+- During a show: no model loads, paste is disabled, no song is added twice, the metronome never makes a sound.
 - The set assistant builds a set within tolerance in < 2 s for 300 songs, never repeats a song, and every pick shows its breakdown. Lexicon chips appear in < 100 ms; model chips are async and optional.
 - No model is loaded while a show is running; the live view never stalls.
-- MLX footprint stays bounded (`Memory.cacheLimit`; peak about 3 GB on Qwen3-4B) and the model unloads per open question 11.
+- MLX footprint stays bounded (`Memory.cacheLimit`; peak about 3 GB on Qwen3-4B) and the model unloads right after each paste or request (R94).
 - The archived Release-AppStore build passes `verify-archive` (updated check 4) with MLX inside, and `make check` is green at the phase gate.
 
 ## 15. Workstreams and waves
 
-| Id | Workstream | Depends on | Wave |
-|---|---|---|---|
-| P3-A | MLX in the shipped app: spike (Tuist, sandboxed Release-AppStore archive, app-group store proof, metallib, size/build deltas, verify-archive green) + re-run scorer on Ryan's pastes (R64 lock gate) | Ryan's pastes for part 2 | 1 |
-| P3-1 | Deterministic pipeline in Core + 30+ golden fixtures | - | 1 |
-| P3-5 | Durations: learned + timer + flagged estimates + Welcome lengths | - | 1 |
-| P3-2 | Provider port + FM adapter + tasks + routing + SegueAI package | P3-1 | 2 |
-| P3-6 | Tags + smart filters | P3-5 (length predicate) | 2 |
-| P3-3 | MLX adapter + model manager + AI Settings pane + eval target | P3-A, P3-2 | 3 |
-| P3-4 | Paste/import UI, menus, Welcome card/tip, analytics events | P3-1, P3-2 | 3 |
-| P3-7 | Set assistant | P3-2, P3-5, P3-6 | 3 |
-| P3-9 | Release fold-in + accessibility re-walk + phase gate `make check` | all | 4 |
+| Id | Workstream | Depends on | Wave | Status (2026-10-19) |
+|---|---|---|---|---|
+| P3-A | MLX in the shipped app: spike + re-run scorer on Ryan's pastes (R64 lock gate) | Ryan's pastes for Part 2 | 1 | Part 1 done (`docs/research/phase3-mlx-in-app.md`, branch `spike/p3a-mlx-in-app`); Part 2 waits on the pastes |
+| P3-1 | Deterministic pipeline in Core + golden fixtures | - | 1 | done (55d8701, 33 fixtures); R101 follow-ups go to P3-2 step 0 |
+| P3-2 | Converter follow-ups (R101) + provider port + FM adapter + tasks + routing + SegueAI package | P3-1 | 2 | |
+| P3-5 | Length entry: Time it timer + length field + Welcome length pin (R91) | - | 2 | rescoped |
+| P3-10 | Song card + `{` completion fixes + slash menu (R80, R81) | P3-5 (only its Length row step) | 2 | new |
+| P3-11 | Visual-editor section band + section operations (R82) | - | 2 | new |
+| P3-12 | Set builder Pick/Arrange, Library multi-select, break rows, changeover, missing-lengths list (R84-R86, R88) | P3-10 (only its last step: open the card on Length) | 2 | new |
+| P3-6 | Tags + smart filters | P3-10 step 1 (only the tag field step) | 2 | |
+| P3-3 | MLX adapter + model manager + AI Settings pane + eval target | P3-A, P3-2 | 3 | |
+| P3-4 | Paste/import UI, New Song via paste, batch sheet, menus, Welcome card, analytics | P3-1, P3-2, P3-10 (song card) | 3 | |
+| P3-7 | Set assistant | P3-2, P3-6, P3-12 | 3 | |
+| P3-13 | Section notes: `{comment}` + cues merged (R87) | P3-10, P3-11 | 3 | new |
+| P3-14 | Visual metronome (R90) | P3-12 (live-side break rows) | 3 | new |
+| P3-15 | No repeats in a show (R102) + About panel A (R103) | P3-12 (live-side break rows) | 3 | new |
+| P3-9 | Release fold-in + accessibility re-walk + phase gate `make check` | all | 4 | |
 
-(P3-8, the stats screen, was dropped by R74.) Shell files (`AppModel`, `SegueRootView`, commands, `SegueApp.swift`, `Project.swift`, the Settings host) are owned per workstream as listed in each spec; within wave 3 only P3-3 edits `Project.swift`, only P3-4 edits the commands, only P3-3 edits the Settings host. Sibling workstreams share a working tree: expect unrelated diffs and stage only your own files.
+(P3-8, the stats screen, was dropped by R74.) Shell files (`AppModel`, `SegueRootView`, commands, `SegueApp.swift`, `Project.swift`, the Settings host, `MenuShortcuts.swift`) are owned per workstream as listed in each spec:
 
-**Release order after phase 3 (R79):** phase 3 lands -> Ryan's R56 walkthrough (with phase 3 items) -> WS5 screenshots, preview and metadata -> TestFlight -> real gig -> submit.
+- **Wave 2:** only P3-2 edits `Project.swift`, `Tuist/Package.swift`, the `Makefile` and the `AppModel` property; only P3-12 edits `MenuShortcuts.swift`, `SetlistCommands.swift` and a Settings pane (General); P3-10 owns `SongMetadataViews.swift`/`SongDetailPane.swift` and the source-editor files; P3-11 owns the visual-editor files and the new `EditOperation` cases; P3-5 only adds new files under `SongCard/`.
+- **Wave 3:** only P3-3 edits `Project.swift` and the Settings host; only P3-4 edits `MenuShortcuts.swift` and `FileCommands.swift` (P3-14 and P3-15 ask P3-4 for any menu item); P3-14 owns `LiveCommand`/`InputBindings` defaults; P3-15 owns `ShowController` add paths; P3-7 owns `QuickSearchModel`'s lexicon hook.
 
-## 16. Placeholders and open questions
+Sibling workstreams share a working tree: expect unrelated diffs and stage only your own files. Questions 21-29 (section 16.1) are resolved by R104-R112.
 
-### 16.0 Metadata entry and fast set building (pending brainstorm)
+**Release order after phase 3 (R79):** phase 3 lands -> Ryan's R56 walkthrough -> WS5 screenshots, preview and metadata -> TestFlight -> real gig -> submit.
 
-**Placeholder - do not design or build yet.** A separate brainstorm (from Ryan's walkthrough) is exploring how to make song markers/metadata entry and setlist building much faster and easier. Its outcome will be folded into phase 3 as a ruling plus edits to this section and to P3-4 / P3-6 / P3-7. Until then those workstreams build what this spec says and keep their UI seams simple (no speculative fast-entry UI).
+## 16. Metadata entry, fast set building and open questions
 
-### 16.1 Open questions for Ryan
+### 16.0 Metadata entry and fast set building (R80-R90)
 
-Each has a recommendation; nothing here is decided. Workstreams build to the recommendation only where their spec says so, and flag it in the hand-off.
+**Problem (Ryan's R56 walkthrough):** "The song markers and metadata need to be thought out well, it is hard to type in and remember everything and insert everything correctly, it should be very easy and quick to build a setlist." A read-only audit (2026-10-18) found: key, tempo, length and time are editable only by typing directives in Text mode; the inspector shows key, tempo and length as read-only subtitle text; the visual editor can relabel but not create a section; the `{` completion is a flat list of raw names where `{cho` offers only the chorus-*repeat* directive, `{verse` matches nothing, short and labelled forms are never offered and values get no help; `{key}` is never validated (`{key: Hm}` gets in silently); building a 20-song set with 6 missing lengths takes about 110-130 actions and 6 context switches, with no multi-select, no keyboard path from search to add, drag-only reordering and nothing listing the songs without a length.
 
-1. **Learned-length storage (confirm R70's default).** (a) Derive from `shows/` + `timings/` (`.rehearsal.json`, new `.timer.json` per timer run), computed into the rebuildable index; (b) a sidecar `timings` block (duplicates shows/timings, needs schema v4); (c) derived, plus a per-song cache file under `.segue/`. **Recommend a.**
-2. **Clearing a song's learned samples** (derived storage cannot delete show files). (a) A sidecar `lengthSamplesSince` date; samples before it are ignored (sidecar schema v4; older builds open read-only); (b) no clearing in 0.5, outlier filtering only; (c) a per-sample exclusion list in the sidecar. **Recommend a.**
-3. **Tempo in the set assistant** (R71 names tags, length, key flow, repeat avoidance). (a) Not used; (b) as an explicit filter only ("under 100 bpm" via the lexicon and smart filters); (c) filter plus a flow penalty for big tempo jumps. **Recommend b.**
-4. **Opener/closer shaping without energy.** (a) Only when asked: slot phrases map to tag preferences (open with `upbeat`, close with `crowd pleaser`/`singalong`) when those tags exist; (b) those tag preferences by default whenever the tags exist; (c) no slot shaping; locks only. **Recommend a.**
-5. **Estimated lengths in smart filters and the assistant.** (a) Count everywhere, always shown with `~`; (b) the packer uses them, length filters ignore them; (c) only learned/directive lengths count anywhere. **Recommend a.**
-6. **Estimate formula.** (a) Fixed rule: 2 bars per lyric line at the song's `{time}` (4/4 default), repeats counted, clamped 1:30-8:00; (b) (a) plus a per-library calibration of bars-per-line from songs that have both a learned length and a tempo (once 5+ exist). **Recommend a for 0.5**, with the Welcome songs (directive + tempo) as a test oracle; b in 0.6.
-7. **Where the Personal-only custom-model code lives.** (a) `SeguePersonalModules` (mechanically excluded; `verify-appstore` symbol check extended); (b) `SegueAI` behind a runtime flavour flag. **Recommend a.**
-8. **Fallback if P3-A cannot prove the shared app-group store.** (a) Per-flavour stores in each container (a Personal user downloads twice, 4.6 GB total); (b) the Personal flavour opens the App Store flavour's store through a user-granted folder bookmark; (c) ship the App Store flavour only with MLX and the Personal flavour FM-only until fixed. **Recommend a.**
-9. **AI preferences in Settings > AI.** (a) None (AI used whenever available); (b) one toggle "Use AI to refine pastes and set requests", default on; (c) per-provider toggles (Apple Intelligence / downloaded model). **Recommend b.**
-10. **Offering the curated download outside Settings** (R69 bans nag prompts). (a) Only Settings > AI and the Welcome card's link to it; (b) also a quiet one-line link in the review sheet footer when the result came from FM or code; (c) also a one-time TipKit tip after the third paste. **Recommend b.**
-11. **MLX model residency.** (a) Load when the paste sheet or assistant opens, unload 2 min after last use and immediately when a show starts; (b) load per request, unload right after (adds about 2.3 s cold per paste); (c) keep loaded while Segue is frontmost. **Recommend a.**
-12. **Paste while a show is running.** (a) Deterministic result, with "AI cleanup is paused during a show" and a Refine button that works after the show ends; (b) deterministic only, no refine later; (c) refuse paste during a show. **Recommend a.**
-13. **Importing many files that need conversion.** (a) One review sheet per file with "Skip Remaining" (skipped files listed in the import summary); (b) also "Accept All Remaining (converted without AI)"; (c) cap conversions per import (e.g. 20). **Recommend a.**
-14. **Model for the set assistant's async pass.** (a) Curated MLX if installed, else FM (FM scored 65% of fields, inventing values); (b) curated MLX only, no FM for set requests; (c) lexicon only in 0.5. **Recommend b.**
-15. **A "romanized Hindi detected" flag in `pasteFinished`.** (a) Include (useful for routing quality); (b) exclude (content language can be a proxy for origin). **Recommend b.**
-16. **Deleting a downloaded model** (R15 sends every delete to the Trash). (a) Move it to the Trash like any delete (2.3 GB lands there); (b) remove it directly after a confirmation, since it is re-downloadable app data, not a user document. **Recommend b.**
+**Ruling:** direction B (song card + checklist) with A's text helpers and C's missing-lengths list (R80-R88); no ⌘K palette (R89); a visual metronome (R90). Every control writes standard ChordPro or the sidecar through the existing edit path (`EditOperation.setDirective` / `.setMeta` in `DocumentEditor`), so Text mode stays the escape hatch and files stay portable. Autosave (R17) and undo apply as everywhere else.
+
+#### 16.0.1 Song card (R80, P3-10; Time it P3-5)
+
+Shown in the library detail pane (replacing the read-only subtitle "Segue Originals · Am, 84 · 4:05" and holding the proficiency, tags and notes controls), in the editor's inspector, and, in draft mode, as the paste review sheet's metadata block (P3-4; edits the pending result, not a file). A compact read state expands on focus so the inspector does not grow by default.
+
+| Field | Control | Writes |
+|---|---|---|
+| Title | text field | `{title}` |
+| Artist | text field, completion from artists in the library | `{artist}` |
+| Key ● | picker of major and minor keys; a detected key (`KeyDetector`) is offered as a suggestion ("Am - from chords") and written only when picked | `{key}` (with a capo: the shapes key, R101) |
+| Tempo ● | number field (BPM); Tap per open question 28 | `{tempo}` |
+| Length ● | `mm:ss` field (also accepts `ss` and `h:mm:ss`) + **Time it** (Start / elapsed / Stop fills the field; Esc cancels) | `{duration}` |
+| Capo | stepper 0-11 (the same binding as the editor top bar's stepper) | `{capo}` |
+| Time | segmented 4/4, 3/4, 6/8 + Other... | `{time}` |
+| Proficiency | the existing Learning / Ready / Pro chips | sidecar |
+| Tags | the existing tag field (P3-6 adds completion and starter suggestions) | sidecar |
+
+- ● = **set essential** (R80): key, length and tempo show a dot when missing; nothing blocks. Whether the marker also appears outside the card is open question 27.
+- Clearing a field removes its directive. Each committed field is one undoable edit. An invalid value never reaches the file (the field shows why).
+- Time it: one run at a time across the app, keyed to its song (switching songs keeps it running, and the card shows it on return); Stop writes the elapsed time rounded to the second; there is no minimum and nothing is stored apart from the `{duration}`.
+- Accessibility identifiers `segue.songCard.*`; every field reachable by keyboard and VoiceOver.
+
+#### 16.0.2 Text mode helpers (R81, P3-10)
+
+- **Slash menu:** `/` typed at the start of a line (only whitespace before it) opens a vertical, filterable menu with plain names: Verse, Chorus, Bridge, Intro, Outro, Tab, Chorus (repeat), Note, Key..., Tempo..., Length..., Capo..., Time.... Matching is fuzzy over words and aliases (`cho`, `ch`, `c`, `soc` -> Chorus; `v`, `sov` -> Verse). A section item **wraps the selected lines** in `{start_of_<kind>: <Label>}` ... `{end_of_<kind>}`, or inserts the pair with the caret inside when nothing is selected, and proposes the next number ("Verse 2" when "Verse 1" exists). Value items open the same pickers as the song card and write the directive at the top of the file (replacing an existing one). Esc closes the menu and leaves the `/` as typed; `/` mid-line is plain text. "Note" inserts a section note (R87, P3-13 decides its storage).
+- **`{` completion fixes** (bugs from the audit): items show a plain name beside the directive; typing a section word (`{cho`, `{verse`, `{bri`) offers `start_of_<kind>` and its labelled form first and labels the `chorus` directive "Chorus (repeat)"; short forms (`soc`, `eoc`, `sov`, `eov`, `sob`, `eob`, `c`) are offered as aliases; after `key:`, `tempo:`, `duration:`, `time:` and `capo:` the value pickers appear; inside an open section its `end_of_` stays first (existing).
+- **Value validation:** `valueProblem` gains `{key}` (must parse as a key in MusicTheory) and `{time}`; the diagnostic offers a one-click fix where one is clear (`Hm` -> `Bm`, `G major` -> `G`, `A minor` -> `Am`).
+- `CompletionPopup` gains a vertical list variant with descriptions, shared by both menus.
+
+#### 16.0.3 Section band (R82, P3-11)
+
+- The visual editor gets a left gutter band per section (colour per kind, label at the top). Lines outside any section show an empty slot.
+- Select lines (drag in the gutter, or a text selection), then press **V / C / B / I** (Verse, Chorus, Bridge, Intro) or click a chip in a small floating bar (also Outro, Tab, Custom...) to **create** a section around them, or to **relabel** when the selection is exactly one section. Numbers follow the slash-menu rule.
+- **Drag** a band's top or bottom edge to resize it, snapping to line boundaries and clamped at the neighbouring section.
+- Context menu: Rename, Change Kind, Unwrap (keeps the lines), Split Here, Merge with Next.
+- New `EditOperation` cases in SegueCore `Editing`: wrap lines in a section, set kind/label, move an edge, unwrap, split, merge. Each gesture is one undo step and produces standard ChordPro; the slash menu's wrap (16.0.2) uses the same operation.
+- The letter keys act only while the visual editor has a line selection, never in Text mode.
+
+#### 16.0.4 New song (R83, P3-4)
+
+New Song (`⌘N`, the sidebar and empty-state buttons) opens the paste flow (section 6.1) with a **"Start blank"** link: a blank song in the editor with the song card focused on Title. With paste disabled during a show (R95), New Song goes straight to Start blank (open question 26).
+
+#### 16.0.5 Set building (R84-R86, R88, P3-12)
+
+- **Pick | Arrange** segmented control in the builder header.
+- **Pick:** the builder's library column becomes a checklist. Click or **Space** ticks the focused row; ↑/↓ move focus; Return in the filter field moves focus to the first result; **⌘A ticks every row the current filter shows**. **Tick order = set order** (each tick appends); unticking removes that song's entry. A ticked row simply is in the set, which is the at-most-once rule made visible. A live total bar shows target, total and the "N unknown" button.
+- **Arrange:** the set alone, full width: **⌥↑ / ⌥↓** move the selected rows, drag still works, the per-row popover (`SetEntryEditor`) stays, plus Insert Break.
+- **Library multi-select:** the main Library list (`SelectableList`) gains real multi-selection: ⌘-click toggles, ⇧-click selects a range, ⇧↑/⇧↓ extend. **Add to Setlist** (menu, context menu, existing shortcut) adds every selected song in list order, skipping songs already in that setlist, and reports it ("Added 7 songs, 2 were already in the set"). With several songs selected the detail pane shows "N songs selected" and Add to Setlist.
+- **Break rows (R85):** a new setlist entry kind with a label ("Set 2", numbered automatically, editable). The rows between breaks form a **part**; each part shows its own total (song lengths + changeovers + its unknown count) on its break row or header, and the setlist header shows the whole. The setlist schema version bumps; a newer file opens read-only in older builds (the `VersionedJSON` rule). Break-row behaviour on stage and break lengths: open questions 21 and 22.
+- **Changeover (R86):** `Setlist` gains an optional changeover in seconds (nil = the global default in Settings > General, default 0 s). It is added after every song but the last of each part (`SetlistTiming` already takes a `changeover` argument); the totals' help text says "incl. 30 s changeovers".
+- **Missing-lengths list (R88):** every "N unknown" in a total (setlist header, part totals) is a button. Its popover lists exactly the songs without a length, in set order, each with an inline `mm:ss` field (writes `{duration}` through the song card's length binding) and Open Song (selects it and focuses the card's Length field).
+
+#### 16.0.6 Section notes (R87, P3-13)
+
+One concept replaces `{comment}` vs live cues: a **section note** attached to a section (label + optional occurrence, as `SongCue` anchors today) with a **"Show on stage only"** toggle. Chart notes print and show in every view; stage-only notes appear only in live mode. Storage is open question 23 (recommendation: chart notes stay `{comment}` lines in the `.cho`, stage-only notes stay sidecar cues, and the toggle moves a note between them in one undoable edit). Existing `{comment}` lines and existing cues both appear as section notes; the "Add Notes & Cues..." sheet becomes "Section Notes..."; the section band (16.0.3) shows a note badge per section; the slash menu's Note item creates one.
+
+#### 16.0.7 Visual metronome (R90, P3-14)
+
+- A small overlay in a stage corner (clear of the stage chrome, footer and sidebar) pulsing on every beat at the current song's `{tempo}`, with beat 1 accented per `{time}` (4/4 when absent). The phase restarts when the song changes. With Reduce Motion it shows a stepping beat counter instead of a pulse.
+- **Toggle per show** (in the start-show / pre-show checklist) **and by a key** (new `LiveCommand.toggleMetronome`, default key `M`, free in `InputBindings.defaults` today; rebindable; listed in the `?` overlay).
+- **Sound only in rehearsal mode** (`session.kind == .rehearsal`): a click on each beat, behind its own toggle. In a gig the audio path does not exist at all (no audio engine is created), so it cannot sound by mistake.
+- Driven by an injectable clock (deterministic tests); never on the main thread's critical path; songs without a tempo per open question 25.
+
+#### 16.0.8 Not in 0.5
+
+⌘K add palette (R89); direction C's gap queue and "Detect sections and key" on existing songs; learned or estimated lengths (R91); energy (R71); metronome sound during a show (R90).
+
+### 16.1 Open questions
+
+Questions 1-16 were ruled on 2026-10-18/19 (R91-R100):
+
+1. Learned-length storage: **moot** (R91, no learning).
+2. Clearing learned samples: **moot** (R91).
+3. Tempo in the set assistant: **(b) an explicit filter only** (R92).
+4. Opener/closer shaping: **(a) only when asked, via tags** (R92).
+5. Estimates in smart filters and the assistant: **moot** (R91, no estimates).
+6. Estimate formula: **moot** (R91).
+7. Personal-only custom-model code: **(a) `SeguePersonalModules`** (R97).
+8. Fallback if the shared store fails: **moot**; P3-A proved the store (R100). App Store Connect validation is still pending at the first real `make validate`.
+9. AI preferences: **(b) one toggle, "Use AI to refine pastes and set requests", default on** (R93).
+10. Offering the download outside Settings: **(b) a quiet link in Settings > AI, the Welcome card and the review sheet footer; no popups** (R93).
+11. Model residency: **(b) load per paste or request, unload right after** (R94; P3-A measured a 0.8-1.2 s load).
+12. Paste during a show: **(c) paste is disabled** (R95); scope in question 26.
+13. Importing many conversion files: **one review sheet listing every converted file, per-file preview and checkbox, import the ticked ones together** (R96, a new option).
+14. Model for the set assistant's async pass: **(a) curated MLX if installed, else FM**; output stays suggested chips (R92).
+15. "Romanized Hindi detected" flag: **(a) include** (R98).
+16. Deleting a downloaded model: **(b) directly after a confirmation** (R99).
+
+New questions raised by R80-R103. Each blocks only the step named; nothing here is decided.
+
+21. **[Resolved: R104] Break rows on stage** (blocks P3-12's live step). (a) A break is a stage interstitial ("Break - Set 2 starts with <song>"); Next continues; the show clock keeps running and the gig log records the break; (b) breaks are builder-only grouping and the stage skips them silently; (c) as (a), but the show pauses (elapsed time stops) until Next. **Recommend a.**
+22. **[Resolved: R105] Break length** (blocks P3-12's timing step). (a) A break row may carry an optional length (an intermission), counted in the whole-setlist total but not in either part; (b) no length: breaks only separate parts. **Recommend a.**
+23. **[Resolved: R106] Section-note storage** (blocks P3-13). (a) Chart notes stay `{comment}` in the `.cho` (portable, printed), stage-only notes stay sidecar cues; the toggle moves a note between them; (b) every note in the sidecar with a flag (existing `{comment}` lines stay in the file and are shown as read-only chart notes); (c) every note in the `.cho`, stage-only ones as a Segue-specific directive (`{x_stage_note: ...}`, non-standard ChordPro that other apps ignore). **Recommend a.**
+24. **[Resolved: R107] Set assistant with a duration target and songs that have no length** (blocks P3-7's packer step). (a) Leave them out of packing and say "N songs left out: no length", a button opening the missing-lengths list; (b) include them at zero length, flagging the total "≥ ... + N unknown"; (c) ask before building ("5 songs have no length: set them now / build without them"). **Recommend a.**
+25. **[Resolved: R108] Metronome details** (blocks P3-14 step 1). (a) A song without `{tempo}` hides the overlay; the per-show toggle remembers the last choice as the next show's default; rehearsal sound is off by default; (b) as (a), but the per-show toggle always starts off; (c) as (a), but a song without a tempo shows a dimmed "no tempo" overlay. **Recommend a.**
+26. **[Resolved: R109] What "paste disabled during a show" covers** (blocks P3-4's show-state step). (a) Every route into the review sheet: New Song from Clipboard, `⌘V` on the list, the empty-state button, `.txt`/`.crd` conversion imports and New Song's paste flow (which goes straight to Start blank); already-ChordPro imports stay allowed; (b) only clipboard paste; file conversions still open the sheet without AI; (c) all imports and new songs are disabled during a show. **Recommend a.**
+27. **[Resolved: R110 (c)] Set-essentials marker outside the card** (blocks P3-10's essentials step). (a) Only the card's dots and the missing-lengths list; (b) also a quiet dot on library rows and the builder's library column for songs missing an essential; (c) (b) plus a built-in "Missing essentials" filter chip. **Recommend b.**
+28. **[Resolved: R111] Tap tempo on the song card** (blocks P3-10's tempo step). (a) A Tap button next to Tempo (average of the last four taps, rounded); (b) no tap, type the number. **Recommend a.**
+
+29. **[Resolved: R112] What "already played" means for R102** (blocks P3-15 Part 1's classification). (a) Only songs actually played are refused, in gigs and rehearsals alike; a skipped song may be added back; (b) skipped songs count as played too; (c) as (a), but the rule applies to gigs only and rehearsals allow repeats. **Recommend a.**
 
 ### 16.2 Deferred to the P3-9 / WS5-stage fold-in (Ryan rules then)
 
@@ -315,4 +457,5 @@ Each has a recommendation; nothing here is decided. Workstreams build to the rec
 
 ## 17. Resolved decisions
 
-`docs/release/decisions.md` R61-R79 (2026-10-18) and, still valid, `docs/decisions.md` Phase 3: review sheet always shown; no polished batch import; recently-played penalty global, not venue-aware; free-form tags with starter suggestions; rehearsal timing from both rehearse-setlist runs and a per-song timer; minimum OS stays macOS 26. Superseded there: FM-first Hindi routing (by R63), energy 1-5 and AI energy at import (by R71), any mlx-community model in both flavours (narrowed by R62), and the phase 2 "unknown length never made up" rule (by R70). A song appears at most once per setlist (walkthrough rule, enforced in code).
+`docs/release/decisions.md` R61-R79 (2026-10-18) and R80-R103 (2026-10-18/19) and, still valid, `docs/decisions.md` Phase 3: review sheet always shown; no polished batch import (R96's one-sheet batch with checkboxes is not automatic acceptance); recently-played penalty global, not venue-aware; free-form tags with starter suggestions; minimum OS stays macOS 26. Superseded there: FM-first Hindi routing (by R63), energy 1-5 and AI energy at import (by R71), any mlx-community model in both flavours (narrowed by R62), "learn real durations" (by R91), and rehearsal-timing samples as a length source (by R91). R70 (learned + estimated lengths) is itself superseded by R91, so the phase 2 "unknown length never made up" rule stands. A song appears at most once per setlist (walkthrough rule, enforced in code, 1d027df) and at most once per show (R102).
+
