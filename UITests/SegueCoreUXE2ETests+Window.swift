@@ -23,7 +23,10 @@ extension SegueCoreUXE2ETests {
         reshape(app, move: move, resize: shrink)
         let moved = app.windows.firstMatch.frame
         XCTAssertNotEqual(moved, before, "the drags did not change the frame")
-        XCTAssertTrue(visible.contains(moved), "moved \(moved) outside \(visible)")
+        XCTAssertTrue(
+            visible.contains(moved),
+            "moved \(moved) outside \(visible) (before \(before))",
+        )
 
         // Quit (Cmd-Q, so AppKit saves the frame), then relaunch without ignoring state.
         try quitAndRelaunchKeepingState(app)
