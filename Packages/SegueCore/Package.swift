@@ -108,11 +108,18 @@ let package = Package(
             dependencies: ["Support"],
             swiftSettings: strictSettings,
         ),
+        // Phase 3 P3-1: deterministic paste pipeline (normalize, detect, segment, convert,
+        // validate, metadata, lyric guard, key inference). Pure; no model.
+        .target(
+            name: "Ingest",
+            dependencies: ["ChordPro", "MusicTheory"],
+            swiftSettings: strictSettings,
+        ),
         .testTarget(
             name: "SegueCoreTests",
             dependencies: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
-                "Shows", "LiveLayout", "Plugins", "Support", "Services",
+                "Shows", "LiveLayout", "Plugins", "Support", "Services", "Ingest",
                 .product(name: "Tonic", package: "Tonic"),
             ],
             path: "Tests",

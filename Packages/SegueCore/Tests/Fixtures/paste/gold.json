@@ -1,0 +1,532 @@
+{
+ "E01-ug-headers": {
+  "labels": [
+   "other",
+   "intro",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus",
+   "bridge",
+   "outro"
+  ],
+  "title": "Paper Lanterns",
+  "artist": "The Hollow Pines",
+  "key": "G",
+  "keyStated": false
+ },
+ "E02-bare-no-headers": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Gravel Road Home",
+  "artist": null,
+  "key": "G",
+  "keyStated": false
+ },
+ "E03-inline-chordpro": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Saltwater Letters",
+  "artist": "June & the Lighthouse",
+  "key": "D",
+  "keyStated": false
+ },
+ "E04-tabs-mixed": {
+  "labels": [
+   "other",
+   [
+    "intro",
+    "instrumental"
+   ],
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus"
+  ],
+  "title": "Iron Kettle",
+  "artist": "Westbrook Lane",
+  "key": "Am",
+  "keyStated": false
+ },
+ "E05-colon-headers-repeats": {
+  "labels": [
+   "other",
+   "verse",
+   "prechorus",
+   "chorus",
+   "verse",
+   "prechorus",
+   "chorus"
+  ],
+  "title": "Summer in the Attic",
+  "artist": null,
+  "key": "D",
+  "keyStated": true
+ },
+ "E06-crlf-smartquotes": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Lighthouse Keeper",
+  "artist": "Arlo Fenn",
+  "key": [
+   "Em",
+   "G"
+  ],
+  "keyStated": false
+ },
+ "E07-short-unlabelled": {
+  "labels": [
+   "verse",
+   "chorus"
+  ],
+  "title": null,
+  "artist": null,
+  "key": "A",
+  "keyStated": false
+ },
+ "E08-long": {
+  "labels": [
+   "other",
+   "intro",
+   "verse",
+   "verse",
+   "prechorus",
+   "chorus",
+   "verse",
+   "prechorus",
+   "chorus",
+   "instrumental",
+   "bridge",
+   "verse",
+   "chorus",
+   "chorus",
+   "outro"
+  ],
+  "title": "Long Way Through Winter",
+  "artist": "The Cedar Line",
+  "key": "E",
+  "keyStated": true
+ },
+ "E09-web-junk": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Glass Houses",
+  "artist": "Penny Marlowe",
+  "key": [
+   "Dm",
+   "F"
+  ],
+  "keyStated": false
+ },
+ "E10-edgy-lyrics": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Whiskey and Gunpowder",
+  "artist": "Red Mesa Drifters",
+  "key": "A",
+  "keyStated": false
+ },
+ "E11-abbrev-headers": {
+  "labels": [
+   "other",
+   "intro",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus",
+   "bridge",
+   "chorus"
+  ],
+  "title": "Neon Saints",
+  "artist": "Tess Calder",
+  "key": "C",
+  "keyStated": false
+ },
+ "E12-bare-lyrics": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus",
+   "bridge",
+   "chorus"
+  ],
+  "title": "Northbound",
+  "artist": "Mara Quinn",
+  "key": "unknown",
+  "keyStated": false
+ },
+ "E13-crlf-bom": {
+  "labels": [
+   "other",
+   "intro",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Porch Swing Summer",
+  "artist": "Delia Brooks",
+  "key": "D",
+  "keyStated": false
+ },
+ "E14-cp1252-quotes": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Copper Kettle Blues",
+  "artist": "Hollis Grey",
+  "key": "Em",
+  "keyStated": true
+ },
+ "E15-crd-chordpro": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Lantern Hill",
+  "artist": [
+   null,
+   "Fen Harrow"
+  ],
+  "key": "G",
+  "keyStated": true
+ },
+ "E16-crd-chords-over": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Dry Creek Bed",
+  "artist": "Ozark Lanterns",
+  "key": "A",
+  "keyStated": false
+ },
+ "E17-capo-notes": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Harbor Bells",
+  "artist": "The Tidewater Few",
+  "key": "C",
+  "keyStated": false
+ },
+ "E18-repeat-marks": {
+  "labels": [
+   "other",
+   "intro",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus",
+   "chorus"
+  ],
+  "title": "Round the Bonfire",
+  "artist": "Ember Kids",
+  "key": "G",
+  "keyStated": false
+ },
+ "E19-mixed-inline": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Velvet Static",
+  "artist": "Juno Park",
+  "key": [
+   "Em",
+   "G"
+  ],
+  "keyStated": false
+ },
+ "E20-forty-blocks": {
+  "labels": [
+   "other",
+   "intro",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "verse",
+   "chorus",
+   "instrumental",
+   "outro"
+  ],
+  "title": "Forty Stops",
+  "artist": "Highway Choir",
+  "key": "A",
+  "keyStated": true
+ },
+ "E21-tab-only": {
+  "labels": [
+   "other",
+   [
+    "instrumental",
+    "intro"
+   ],
+   [
+    "instrumental",
+    "intro"
+   ]
+  ],
+  "title": "Morning Riff in D",
+  "artist": null,
+  "key": [
+   "D",
+   "unknown"
+  ],
+  "keyStated": false
+ },
+ "E22-title-directive-junk": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus"
+  ],
+  "title": "Paper Boats",
+  "artist": "Linnea Vale",
+  "key": "D",
+  "keyStated": false
+ },
+ "E23-html-residue": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus"
+  ],
+  "title": "Midnight Ferry & the Gulls",
+  "artist": null,
+  "key": "Bb",
+  "keyStated": true
+ },
+ "H01-ug-hinglish": {
+  "labels": [
+   "other",
+   "intro",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus",
+   "outro"
+  ],
+  "title": "Dil Ki Baatein",
+  "artist": "Raahi Band",
+  "key": "Am",
+  "keyStated": false
+ },
+ "H02-bare-hinglish": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Barish Wali Shaam",
+  "artist": null,
+  "key": "G",
+  "keyStated": false
+ },
+ "H03-mukhda-antara-inline": {
+  "labels": [
+   "other",
+   "chorus",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Safar",
+  "artist": "Kabir Sehgal",
+  "key": "D",
+  "keyStated": false
+ },
+ "H04-long-hinglish": {
+  "labels": [
+   "other",
+   "intro",
+   "verse",
+   "verse",
+   "prechorus",
+   "chorus",
+   "verse",
+   "prechorus",
+   "chorus",
+   "instrumental",
+   "bridge",
+   "verse",
+   "chorus",
+   "chorus",
+   "outro"
+  ],
+  "title": "Jugnu",
+  "artist": "Mehfil Collective",
+  "key": "Em",
+  "keyStated": true
+ },
+ "H05-indian-site-junk": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Pehli Mohabbat",
+  "artist": "Ananya Rao",
+  "key": "C",
+  "keyStated": false
+ },
+ "H06-scale-capo-tab": {
+  "labels": [
+   "other",
+   [
+    "intro",
+    "instrumental"
+   ],
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Mitti Ki Khushboo",
+  "artist": "Zoya & The Village Band",
+  "key": "Am",
+  "keyStated": true
+ },
+ "H07-bare-hinglish-lyrics": {
+  "labels": [
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": null,
+  "artist": null,
+  "key": "unknown",
+  "keyStated": false
+ },
+ "H08-codemixed": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Late Night Dilli",
+  "artist": [
+   "DJ Saahil ft. Rhea",
+   "DJ Saahil"
+  ],
+  "key": "Em",
+  "keyStated": false
+ },
+ "H09-chord-like-words": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   [
+    "bridge",
+    "verse"
+   ],
+   "verse",
+   "chorus"
+  ],
+  "title": "Do Pal",
+  "artist": "Meera Sood",
+  "key": "Am",
+  "keyStated": false
+ },
+ "H10-hinglish-crd": {
+  "labels": [
+   "other",
+   "chorus",
+   "verse",
+   "chorus",
+   "bridge",
+   "chorus"
+  ],
+  "title": "Chandni Raat",
+  "artist": "Sufi Lanterns",
+  "key": "G",
+  "keyStated": false
+ }
+}
