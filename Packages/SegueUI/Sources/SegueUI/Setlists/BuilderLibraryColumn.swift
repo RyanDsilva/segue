@@ -228,6 +228,8 @@
             .frame(minWidth: 30, minHeight: 30, alignment: .trailing)
             .help("Already in this setlist. A song can be in a setlist only once.")
             .accessibilityElement(children: .ignore)
+            // Without a trait the combined element has no role ("Unknown role" in the audit).
+            .accessibilityAddTraits(.isStaticText)
             .accessibilityLabel("Already in set")
             .accessibilityIdentifier(AccessibilityID.builderInSet)
         }
