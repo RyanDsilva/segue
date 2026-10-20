@@ -3,7 +3,8 @@
 // External dependencies for the Tuist-generated workspace. Local packages under
 // `Packages/` are integrated as Xcode targets through here, alongside GRDB and Tonic.
 // GRDB and Tonic are pinned to the SAME exact versions as `Packages/SegueCore/Package.swift`,
-// sentry-cocoa to the same exact version as `Packages/SegueVendorServices/Package.swift`.
+// sentry-cocoa to the same exact version as `Packages/SegueVendorServices/Package.swift`,
+// mlx-swift-lm and swift-transformers to the same exact versions as `Packages/SegueAI`.
 
 import PackageDescription
 
@@ -45,6 +46,10 @@ import PackageDescription
         "LiveLayout", "Plugins", "Support", "Services", "SegueCore", "SegueUI", "Tonic",
         // Phase 3 (P3-2): the paste pipeline, the AI port and the FM adapter.
         "Ingest", "ModelPort", "GenerableTasks", "FoundationModelsAdapter",
+        // Phase 3 (P3-3): the model store, the MLX provider and its MLX binding.
+        "ModelStore", "MLXAdapter", "MLXEngine",
+        // Phase 3 (P3-7): the set assistant.
+        "SetAssistant",
     ]
 
     let packageSettings = PackageSettings(
@@ -52,8 +57,16 @@ import PackageDescription
             uniqueKeysWithValues: staticLibraries.map { ($0, .staticLibrary) },
         ),
         baseSettings: .settings(
-            // arm64 only, like the app targets (docs/release/decisions.md R41, A59).
-            base: ["MACOSX_DEPLOYMENT_TARGET": "26.0", "ARCHS": "arm64"],
+            base: [
+                // arm64 only, like the app targets (docs/release/decisions.md R41, A59).
+                "MACOSX_DEPLOYMENT_TARGET": "26.0", "ARCHS": "arm64",
+                // MLX's Metal kernels (the only Metal sources in any package) use C++17/20
+                // features; upstream builds them with these flags (mlx/backend/metal/kernels/
+                // CMakeLists.txt). Tuist's warning suppression does not reach the Metal
+                // compiler, and a per-target setting does not reach the synthesized
+                // mlx-swift_Cmlx resource-bundle target that compiles them (P3-A 5.2).
+                "MTL_COMPILER_FLAGS": "$(inherited) -Wno-c++17-extensions -Wno-c++20-extensions",
+            ],
             configurations: configurationNames.map { name in
                 name.hasPrefix("Debug")
                     ? .debug(name: ConfigurationName(stringLiteral: name))
@@ -66,7 +79,11 @@ import PackageDescription
                 "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
                 "SegueUI", "SeguePersonalModules", "VendorServices",
                 "GenerableTasks", "FoundationModelsAdapter", "segue-ai-record",
-            ].map { ($0, firstPartyStrict) } + sentryStaticTargets.map { ($0, quietLibtool) },
+                "ModelStore", "MLXAdapter", "MLXEngine", "SetAssistant",
+            ].map { ($0, firstPartyStrict) } + (sentryStaticTargets + ["_NumericsShims"]).map {
+                // swift-numerics' shim target compiles to no symbols, like sentry's iOS files.
+                ($0, quietLibtool)
+            },
         ),
     )
 #endif
@@ -84,5 +101,8 @@ let package = Package(
         .package(path: "../Packages/SegueVendorServices"),
         // Phase 3 (P3-2): the AI adapters, in both flavours (R62, R77).
         .package(path: "../Packages/SegueAI"),
+        // Phase 3 (P3-3): MLX + tokenizer, pinned like Packages/SegueAI/Package.swift.
+        .package(url: "https://github.com/ml-explore/mlx-swift-lm", exact: "3.32.3"),
+        .package(url: "https://github.com/huggingface/swift-transformers", exact: "1.3.5"),
     ],
 )

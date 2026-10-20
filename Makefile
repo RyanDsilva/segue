@@ -45,9 +45,12 @@ WRANGLER     := pnpm dlx wrangler@4.151.1
 	site-fonts site-html docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
-bootstrap: ## Install pinned tools, fetch dependencies, generate the workspace
+bootstrap: ## Install pinned tools and Xcode's Metal Toolchain, fetch dependencies, generate the workspace
 	mise install
 	git config core.hooksPath .githooks
+	# MLX's Metal kernels need Xcode's downloadable Metal Toolchain (P3-A section 5.1).
+	xcodebuild -showComponent MetalToolchain 2>/dev/null | grep 'Status: installed' >/dev/null \
+		|| xcodebuild -downloadComponent MetalToolchain
 	$(MISE) tuist install
 	$(MISE) tuist generate --no-open
 

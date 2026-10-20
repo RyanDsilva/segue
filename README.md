@@ -15,7 +15,7 @@ This is a private, proprietary repository ([LICENSE](LICENSE)); third-party comp
 
 - A Mac with **Apple silicon** (the app is arm64 only).
 - **macOS 26** or later.
-- **Xcode 27.1** (Swift 6.4), the release toolchain.
+- **Xcode 27.1** (Swift 6.4), the release toolchain, with its **Metal Toolchain** component (MLX compiles Metal kernels; `make bootstrap` installs it with `xcodebuild -downloadComponent MetalToolchain`).
 - **[mise](https://mise.jdx.dev)**. Every other tool (Tuist, SwiftLint, SwiftFormat, Node, pnpm, uv, actionlint, ShellCheck, jq, yq) is pinned in [`.mise.toml`](.mise.toml) and run through `mise exec`; nothing is installed globally.
 
 ## Quick start

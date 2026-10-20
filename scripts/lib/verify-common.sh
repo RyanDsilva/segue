@@ -30,7 +30,9 @@ test_hook_strings() {
 # identifiers on top (verify-archive) or get-task-allow for local development builds
 # (verify-appstore); anything else is a failure. The Apple-events pair is Path SE
 # (docs/release/decisions.md R59): Gig Mode Shortcuts run through Shortcuts Events, limited
-# to its one Apple-published access group.
+# to its one Apple-published access group. The app group is the downloaded-model store shared
+# by both flavors (docs/release/decisions.md R67, R100): team-prefixed, so macOS needs no portal
+# registration and no profile entry for it.
 app_entitlements() {
     jq -n -S '{
         "com.apple.security.app-sandbox": true,
@@ -40,7 +42,8 @@ app_entitlements() {
         "com.apple.security.automation.apple-events": true,
         "com.apple.security.scripting-targets": {
             "com.apple.shortcuts.events": ["com.apple.shortcuts.run"]
-        }
+        },
+        "com.apple.security.application-groups": ["V6BM673U35.dev.ryandsilva.segue.models"]
     }'
 }
 

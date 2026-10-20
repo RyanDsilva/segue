@@ -24,5 +24,11 @@
 			<string>com.apple.shortcuts.run</string>
 		</array>
 	</dict>
+	<!-- Phase 3 (R67, R100): the downloaded-model store shared by both flavours. A
+	     team-prefixed group needs no portal registration and no profile entry on macOS. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>V6BM673U35.dev.ryandsilva.segue.models</string>
+	</array>
 </dict>
 </plist>

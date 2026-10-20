@@ -135,6 +135,14 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array><string>3B52.1</string></array>
 		</dict>
+		<!-- Phase 3 (P3-A, P3-3): free-space checks before writing model files, by Segue's
+		     model downloader and by mlx-swift-lm (MLXLMCommon PreparedCheckpoint), E174.1. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array><string>E174.1</string></array>
+		</dict>
 	</array>
 </dict>
 </plist>
