@@ -82,10 +82,10 @@ extension SegueEditorE2ETests {
         let editor = app.textViews[EditorAXID.editorText]
         XCTAssertTrue(waitForValue(editor, EditorFixture.withEm))
 
-        // Visual -> text cursor mapping: lyric line 1, before "ki".
+        // Visual -> text cursor mapping: lyric line 1, before "ki". The section label sits
+        // in the band beside the lines (P3-11), not on a row, so Cmd-Up lands on the lyric.
         switchMode(app, to: .visual)
         app.typeKey(.upArrow, modifierFlags: .command, in: app)
-        app.typeKey(.downArrow, modifierFlags: [], in: app)
         for _ in 0 ..< 4 {
             app.typeKey(.rightArrow, modifierFlags: [], in: app)
         }
