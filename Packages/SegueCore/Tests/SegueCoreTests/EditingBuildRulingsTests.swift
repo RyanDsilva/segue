@@ -195,3 +195,27 @@ struct EditingBuildRulingsTests {
         #expect(shown.diagrams.map(\.name) == ["G", "C"])
     }
 }
+
+// MARK: - `{duration}` is the song's length in undo names (R80)
+
+extension EditingBuildRulingsTests {
+    @Test
+    func `setting and clearing duration names the undo step Set and Clear Length`() throws {
+        let snapshot = SourceSnapshot(text: "{title: Harbour}\n{duration: 4:05}\nLine\n")
+        let set = try DocumentEditor.change(
+            for: .setDirective(name: "duration", value: "3:30"),
+            in: snapshot,
+        )
+        #expect(set.actionName == "Set Length")
+        let clear = try DocumentEditor.change(
+            for: .setDirective(name: "duration", value: nil),
+            in: snapshot,
+        )
+        #expect(clear.actionName == "Clear Length")
+        let tempo = try DocumentEditor.change(
+            for: .setDirective(name: "tempo", value: "90"),
+            in: snapshot,
+        )
+        #expect(tempo.actionName == "Set Tempo")
+    }
+}

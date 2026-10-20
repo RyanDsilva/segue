@@ -31,7 +31,7 @@ extension LibraryViewModel {
         guard await writeSource(id: id, after, basedOn: record.revision) else { return }
         registerSourceUndo(
             id,
-            actionName: Self.actionName(operation, change),
+            actionName: change.actionName,
             before: before,
             after: after,
         )
@@ -83,14 +83,6 @@ extension LibraryViewModel {
             }
         }
         manager.setActionName(actionName)
-    }
-
-    /// The undo name: the card calls `{duration}` the song's length.
-    static func actionName(_ operation: EditOperation, _ change: SourceChange) -> String {
-        if case let .setDirective("duration", value) = operation {
-            return value == nil ? "Clear Length" : "Set Length"
-        }
-        return change.actionName
     }
 
     /// Distinct artists in the catalog, most songs first (the Artist field's completion).

@@ -163,7 +163,12 @@ public enum DocumentEditor {
             try planner.setSectionLabel(path, label: label)
             return "Rename Section"
         case let .setDirective(directive, value):
-            planner.setDirective(name: DirectiveLine.canonicalName(directive), value: value)
+            let name = DirectiveLine.canonicalName(directive)
+            planner.setDirective(name: name, value: value)
+            // `{duration}` is the song's length everywhere the UI names it (R80).
+            if name == "duration" {
+                return value == nil ? "Clear Length" : "Set Length"
+            }
             return "Set \(directive.capitalized)"
         case let .setMeta(meta, value):
             planner.setMeta(name: meta, value: value)

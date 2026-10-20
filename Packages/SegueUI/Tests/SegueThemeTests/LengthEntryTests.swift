@@ -62,7 +62,7 @@ struct LengthEntryTests {
         #expect(harness.current == 245)
 
         let undo = harness.editor.sourceEditor.undoManager
-        #expect(undo.undoActionName == "Set Duration")
+        #expect(undo.undoActionName == "Set Length")
         undo.undo()
         #expect(harness.editor.source == Self.source)
     }
