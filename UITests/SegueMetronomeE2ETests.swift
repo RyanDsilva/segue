@@ -46,7 +46,9 @@ final class SegueMetronomeE2ETests: XCTestCase {
         let pulse = app.descendants(matching: .any).matching(identifier: MetronomeAXID.pulse)
             .firstMatch
         XCTAssertTrue(pulse.appears(timeout: 5), "no metronome on stage")
-        XCTAssertEqual(pulse.label, "Metronome, 96 beats per minute")
+        // Static text: XCUITest reports its words as the value (WS2b's sheet lines do the same).
+        let spoken = pulse.label.isEmpty ? (pulse.value as? String ?? "") : pulse.label
+        XCTAssertEqual(spoken, "Metronome, 96 beats per minute")
         attach(app, "metronome-stage")
 
         app.typeKey("m", modifierFlags: [], in: app)
@@ -63,6 +65,7 @@ final class SegueMetronomeE2ETests: XCTestCase {
     // MARK: - Helpers
 
     /// A switch's state: its value is 1 or 0 (as a number or a string).
+    @MainActor
     private static func isOn(_ element: XCUIElement) -> Bool? {
         switch element.value {
         case let number as Int: number == 1

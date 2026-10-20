@@ -298,8 +298,9 @@
                             }
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(label)
-                        .accessibilityValue(isAI ? "AI" : "")
+                        // Static text exposes its words as the value, so the AI mark is
+                        // part of the one spoken label rather than a separate value.
+                        .accessibilityLabel(isAI ? "\(label), labelled by AI" : label)
                         .accessibilityAddTraits(.isStaticText)
                         .accessibilityIdentifier(AccessibilityID.pasteSectionLabel)
                         .help(isAI ? "\(label): labelled by AI" : label)

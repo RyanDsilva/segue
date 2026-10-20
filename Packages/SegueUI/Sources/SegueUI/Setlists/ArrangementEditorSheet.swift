@@ -475,8 +475,10 @@
             .padding(14)
             .background(Theme.color.surfaceAlt)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Stage preview")
-            .accessibilityValue(order.isEmpty ? "Nothing plays" : "\(order.count) sections")
+            // One spoken label: static text exposes its words as the value.
+            .accessibilityLabel(
+                "Stage preview, " + (order.isEmpty ? "nothing plays" : "\(order.count) sections"),
+            )
             .accessibilityAddTraits(.isStaticText)
             .accessibilityIdentifier(AccessibilityID.arrangementPreview)
         }

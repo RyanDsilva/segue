@@ -75,7 +75,9 @@ final class SegueSectionNotesE2ETests: XCTestCase {
         }
         XCTAssertTrue(E2E.waitUntil { (title.value as? String) == "Kettle On, Lights Low" })
         let callout = app.descendants(matching: .any).matching(identifier: NotesAXID.liveCue)
-            .matching(NSPredicate(format: "label == %@", Self.note)).firstMatch
+            // Static text: its words are the label or, as XCUITest reports it, the value.
+            .matching(NSPredicate(format: "label == %@ OR value == %@", Self.note, Self.note))
+            .firstMatch
         XCTAssertTrue(callout.appears(timeout: 5), "no stage callout")
         attach(app, "section-notes-stage-callout")
         app.typeKey(".", modifierFlags: .command, in: app)

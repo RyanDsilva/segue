@@ -112,7 +112,7 @@ Fixed (Segue's to fix, enforced by the test):
 |---|---|---|
 | Label not human-readable | Settings > AI, the licence link read "Apache-2.0" | Spoken as "Apache 2.0 license" (`AISettingsView.licenseLabel`, in-process test in `AISettingsTests`); the visible text is unchanged, so Voice Control still matches it |
 | Element has no description | the song card's "Add tag" field (seen in the paste review sheet's metadata block) | `accessibilityLabel("Add tag")` |
-| Unknown role | paste review section labels, the Arrange Sections stage preview, the stage metronome, the stage section-note callout | each is one combined element; they now carry the static-text trait (AXStaticText), so VoiceOver reads them as text |
+| Unknown role | paste review section labels, the Arrange Sections stage preview, the stage metronome, the stage section-note callout | each is one combined element; they now carry the static-text trait (AXStaticText), so VoiceOver reads them as text. Static text exposes its words as the value, so a label's extra value moved into the one label ("Chorus, labelled by AI", "Stage preview, 5 sections"), and the metronome and section-notes E2E tests read the value when the label is empty, as the WS2b sheet-line checks do |
 
 Triaged as before (section 6 rules), counts from the first run: 115 "no description" on anonymous SwiftUI groups, the Touch Bar and the system "emoji & symbols" item; 57 "action is missing" (SwiftUI `Menu` buttons such as More, Setlist, the editor's instrument and stage-columns menus, and anonymous containers); 16 parent/child mismatches (sidebar icon images); 107 contrast findings sampled from screenshots (the token test is the gate; the Increase Contrast pass decides the claim); 7 unknown roles on UI-test instrumentation.
 
