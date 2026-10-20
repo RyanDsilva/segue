@@ -1,10 +1,24 @@
 {
   "clips" : {
-
+    "build-a-set" : {
+      "height" : 800,
+      "seconds" : 12.699999999999999,
+      "width" : 1280
+    },
+    "go-on-stage" : {
+      "height" : 800,
+      "seconds" : 16.300000000000001,
+      "width" : 1280
+    },
+    "paste-a-song" : {
+      "height" : 800,
+      "seconds" : 9.5999999999999996,
+      "width" : 1280
+    }
   },
   "schema" : 1,
   "shots" : {
-    "assistant-bar" : {
+    "arrange-sheet" : {
       "appearances" : [
         "dark",
         "light"
@@ -12,7 +26,70 @@
       "callouts" : {
 
       },
-      "height" : 134,
+      "height" : 1224,
+      "stage" : false,
+      "width" : 1760
+    },
+    "assistant-bar" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "chips" : {
+          "h" : 0.26000000000000001,
+          "w" : 0.26467611336032387,
+          "x" : 0,
+          "y" : 0.48999999999999999
+        },
+        "request" : {
+          "h" : 0.20999999999999999,
+          "w" : 0.72773279352226716,
+          "x" : 0.036943319838056682,
+          "y" : 0.089999999999999997
+        },
+        "total" : {
+          "h" : 0.14999999999999999,
+          "w" : 0.22722672064777327,
+          "x" : 0,
+          "y" : 0.84999999999999998
+        }
+      },
+      "height" : 178,
+      "stage" : false,
+      "width" : 1760
+    },
+    "assistant-why" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "why" : {
+          "h" : 0.26624999999999999,
+          "w" : 0.265625,
+          "x" : 0.63359374999999996,
+          "y" : 0.35749999999999998
+        }
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "band" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "verse" : {
+          "h" : 0.34250000000000003,
+          "w" : 0.074999999999999997,
+          "x" : 0.46132812499999998,
+          "y" : 0.46250000000000002
+        }
+      },
+      "height" : 1100,
       "stage" : false,
       "width" : 1760
     },
@@ -46,7 +123,41 @@
         "light"
       ],
       "callouts" : {
-
+        "key" : {
+          "h" : 0.029999999999999999,
+          "w" : 0.023046875000000001,
+          "x" : 0.466796875,
+          "y" : 0.20250000000000001
+        },
+        "length" : {
+          "h" : 0.029999999999999999,
+          "w" : 0.037499999999999999,
+          "x" : 0.55312499999999998,
+          "y" : 0.20250000000000001
+        },
+        "tempo" : {
+          "h" : 0.029999999999999999,
+          "w" : 0.052343750000000001,
+          "x" : 0.49531249999999999,
+          "y" : 0.20250000000000001
+        }
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "card-time-it" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "stop" : {
+          "h" : 0.037499999999999999,
+          "w" : 0.063671875000000003,
+          "x" : 0.54609375000000004,
+          "y" : 0.29375000000000001
+        }
       },
       "height" : 1100,
       "stage" : false,
@@ -64,6 +175,23 @@
       "stage" : false,
       "width" : 1080
     },
+    "diagrams" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "strip" : {
+          "h" : 0.14249999999999999,
+          "w" : 0.50156250000000002,
+          "x" : 0.46054687500000002,
+          "y" : 0.80249999999999999
+        }
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
     "editor-visual" : {
       "appearances" : [
         "dark",
@@ -73,6 +201,42 @@
 
       },
       "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "filter-editor" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 596,
+      "stage" : false,
+      "width" : 1560
+    },
+    "gig-log" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "import-batch" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1044,
       "stage" : false,
       "width" : 1760
     },
@@ -95,8 +259,25 @@
       "callouts" : {
 
       },
-      "height" : 1144,
+      "height" : 1100,
       "stage" : true,
+      "width" : 1760
+    },
+    "missing-lengths" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "list" : {
+          "h" : 0.1128125,
+          "w" : 0.390625,
+          "x" : 0.091406249999999994,
+          "y" : 0.27421875000000001
+        }
+      },
+      "height" : 1100,
+      "stage" : false,
       "width" : 1760
     },
     "new-song" : {
@@ -111,7 +292,7 @@
       "stage" : false,
       "width" : 1280
     },
-    "paste-review" : {
+    "notes-sheet" : {
       "appearances" : [
         "dark",
         "light"
@@ -119,11 +300,85 @@
       "callouts" : {
 
       },
+      "height" : 1080,
+      "stage" : false,
+      "width" : 1120
+    },
+    "notes-stage" : {
+      "appearances" : [
+        "dark"
+      ],
+      "callouts" : {
+        "note" : {
+          "h" : 0.034375000000000003,
+          "w" : 0.14335937500000001,
+          "x" : 0.578125,
+          "y" : 0.6925
+        }
+      },
+      "height" : 1100,
+      "stage" : true,
+      "width" : 1760
+    },
+    "paste-review" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "footer" : {
+          "h" : 0.021428571428571429,
+          "w" : 0.17659574468085107,
+          "x" : 0.055319148936170209,
+          "y" : 0.95214285714285718
+        },
+        "original" : {
+          "h" : 0.7985714285714286,
+          "w" : 0.42127659574468085,
+          "x" : 0.019148936170212766,
+          "y" : 0.12571428571428572
+        },
+        "result" : {
+          "h" : 1.1457142857142857,
+          "w" : 0.33936170212765959,
+          "x" : 0.46063829787234045,
+          "y" : 0.44428571428571428
+        }
+      },
       "height" : 1311,
       "stage" : false,
       "width" : 1760
     },
+    "paste-review-labels" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "label" : {
+          "h" : 0.043923865300146414,
+          "w" : 0.14890282131661442,
+          "x" : 0,
+          "y" : 0.052708638360175697
+        }
+      },
+      "height" : 683,
+      "stage" : false,
+      "width" : 638
+    },
     "settings-ai" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1216,
+      "stage" : false,
+      "width" : 1120
+    },
+    "settings-ai-installed" : {
       "appearances" : [
         "dark",
         "light"
@@ -159,6 +414,23 @@
       "stage" : false,
       "width" : 1120
     },
+    "slash-menu" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "menu" : {
+          "h" : 0.44500000000000001,
+          "w" : 0.25,
+          "x" : 0.47499999999999998,
+          "y" : 0.49875000000000003
+        }
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
     "stage" : {
       "appearances" : [
         "dark"
@@ -166,7 +438,18 @@
       "callouts" : {
 
       },
-      "height" : 1144,
+      "height" : 1100,
+      "stage" : true,
+      "width" : 1760
+    },
+    "stage-break" : {
+      "appearances" : [
+        "dark"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
       "stage" : true,
       "width" : 1760
     },
@@ -177,7 +460,7 @@
       "callouts" : {
 
       },
-      "height" : 1144,
+      "height" : 1100,
       "stage" : true,
       "width" : 1760
     },
@@ -188,6 +471,23 @@
       ],
       "callouts" : {
 
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "timeline" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "timeline" : {
+          "h" : 0.042500000000000003,
+          "w" : 0.77265625000000004,
+          "x" : 0.203125,
+          "y" : 0.24437500000000001
+        }
       },
       "height" : 1100,
       "stage" : false,
@@ -204,6 +504,18 @@
       "height" : 1100,
       "stage" : false,
       "width" : 1760
+    },
+    "welcome-cards" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1080,
+      "stage" : false,
+      "width" : 1120
     }
   }
 }

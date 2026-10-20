@@ -13,9 +13,17 @@ import XCTest
 class GuideShotCase: XCTestCase {
     /// The main window frame in points, top-left origin at the screen's visible area (clear
     /// of the menu bar and Dock), WS6 5.3: 2560x1600 px on Retina.
-    static let windowFrame = "0,0,1280,800"
+    class var windowSize: CGSize {
+        CGSize(width: 1280, height: 800)
+    }
+
+    var windowFrame: String {
+        "0,0,\(Int(Self.windowSize.width)),\(Int(Self.windowSize.height))"
+    }
+
     /// Dates in the gig log and cards stay the same between runs.
-    static let fixedClock = "2026-11-20T20:00:00Z"
+    /// Friday 20 November 2026, 7:30 PM in California: a gig night.
+    static let fixedClock = "2026-11-21T03:30:00Z"
 
     var app: XCUIApplication?
 
@@ -45,21 +53,20 @@ class GuideShotCase: XCTestCase {
             "-SegueScreenshotLibrary", "YES",
             "-SegueResetState", "YES",
             "-SegueAppearance", appearance,
-            "-SegueWindowFrame", Self.windowFrame,
+            "-SegueWindowFrame", windowFrame,
             "-SegueStageWindowed", "YES",
             "-SegueFixedClock", Self.fixedClock,
+            "-SegueGuideFixtures", "YES",
         ] + extra)
         // The frame is applied once the window exists: wait for it before driving the UI.
         let window = mainWindow(app)
+        let size = Self.windowSize
         XCTAssertTrue(
             E2E.waitUntil(timeout: 10) {
-                window
-                    .exists && abs(window.frame.width - 1280) < 2 && abs(
-                        window.frame.height - 800,
-                    ) <
-                    2
+                window.exists && abs(window.frame.width - size.width) < 2
+                    && abs(window.frame.height - size.height) < 2
             },
-            "the main window did not move to \(Self.windowFrame)",
+            "the main window did not move to \(windowFrame)",
         )
         return app
     }
@@ -85,6 +92,7 @@ class GuideShotCase: XCTestCase {
         _ element: XCUIElement,
         callouts: [String: XCUIElement] = [:],
         stage: Bool = false,
+        clip: CGRect? = nil,
         file: StaticString = #filePath,
         line: UInt = #line,
     ) {
@@ -96,10 +104,19 @@ class GuideShotCase: XCTestCase {
             mainWindow(app).coordinate(withNormalizedOffset: .zero)
                 .withOffset(CGVector(dx: -12, dy: -12)).hover()
         }
+        if stage, let app {
+            // The status line fades in on any mouse move and out 3 s later.
+            let status = app.descendants(matching: .any)[GuideAXID.liveStatus]
+            XCTAssertTrue(status.disappears(timeout: 6), "the stage status line stayed up")
+        }
         _ = element.settles(timeout: 3)
-        let frame = element.frame
-        let screenshot = element.screenshot()
-        let png = screenshot.pngRepresentation
+        var frame = element.frame
+        var png = element.screenshot().pngRepresentation
+        if let clip {
+            // Only this part of the element (a scroll view's frame can run past its sheet).
+            frame = frame.intersection(clip)
+            png = Self.screenCrop(frame) ?? png
+        }
         let pixels = NSBitmapImageRep(data: png).map { ($0.pixelsWide, $0.pixelsHigh) } ?? (0, 0)
         XCTAssertEqual(
             Double(pixels.0),
@@ -131,6 +148,25 @@ class GuideShotCase: XCTestCase {
             attachment.lifetime = .keepAlways
             add(attachment)
         }
+    }
+
+    /// `rect` (screen points) cut from a screenshot of the main screen, as PNG.
+    @MainActor
+    static func screenCrop(_ rect: CGRect) -> Data? {
+        let shot = XCUIScreen.main.screenshot()
+        guard let image = shot.image.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        else { return nil }
+        // The screenshot is in pixels of the main screen; frames are in its points.
+        let points = NSScreen.screens.first?.frame.width ?? shot.image.size.width
+        let scale = Double(image.width) / points
+        let pixels = CGRect(
+            x: rect.minX * scale,
+            y: rect.minY * scale,
+            width: rect.width * scale,
+            height: rect.height * scale,
+        ).integral
+        guard let cropped = image.cropping(to: pixels) else { return nil }
+        return NSBitmapImageRep(cgImage: cropped).representation(using: .png, properties: [:])
     }
 
     /// The main window.
@@ -170,9 +206,7 @@ enum GuideAXID {
     static let librarySearch = "segue.library.search"
     static let newSong = "segue.library.newSong"
     static let songCard = "segue.songCard"
-    static let songCardTempo = "segue.songCard.tempo"
     static let songCardLength = "segue.songCard.length"
-    static let songCardKeyMode = "segue.songCard.keyMode"
     static let editSong = "segue.song.edit"
     static let editorVisual = "segue.editor.visual"
     static let editorTransposeUp = "segue.editor.transpose.up"
@@ -188,4 +222,66 @@ enum GuideAXID {
     static let assistantBar = "segue.assistant.bar"
     static let assistantField = "segue.assistant.field"
     static let assistantBuild = "segue.assistant.build"
+    static let assistantChip = "segue.assistant.chip"
+    static let assistantChips = "segue.assistant.chips"
+    static let assistantStatus = "segue.assistant.status"
+    static let assistantBreakdown = "segue.assistant.breakdown"
+    static let songCardTimeIt = "segue.songCard.timeIt"
+    static let welcomeAddSongs = "segue.welcome.addSongs"
+    static let editorTransposeDown = "segue.editor.transpose.down"
+    static let editorDiagramsToggle = "segue.editor.diagrams"
+    static let diagramStrip = "segue.diagrams.strip"
+    static let sectionBand = "segue.editor.sectionBand"
+    static let editorModeText = "segue.editor.mode.text"
+    static let editorText = "segue.editor.text"
+    static let slashMenu = "segue.editor.slashMenu"
+    static let sectionNotesOpen = "segue.sectionNotes.open"
+    static let sectionNotesAddChorus = "segue.sectionNotes.add.chorus"
+    static let sectionNotesText = "segue.sectionNotes.note.text"
+    static let sectionNotesDone = "segue.sectionNotes.done"
+    static let liveCue = "segue.live.cue"
+    static let liveView = "segue.live"
+    static let liveBreak = "segue.live.break"
+    static let liveStatus = "segue.live.status"
+    static let liveSearchField = "segue.live.search.field"
+    static let liveSearchResult = "segue.live.search.result"
+    static let liveSearchNote = "segue.live.search.note"
+    static let liveUpNext = "segue.live.upNext"
+    static let liveRequestCount = "segue.live.requestCount"
+    static let reorderDiscard = "segue.reorder.discard"
+    static let pasteOriginal = "segue.paste.original"
+    static let pasteResult = "segue.paste.result"
+    static let pasteProvider = "segue.paste.provider"
+    static let pasteRefining = "segue.paste.refining"
+    static let pasteSectionLabel = "segue.paste.sectionLabel"
+    static let pasteBatchRow = "segue.paste.batchRow"
+    static let entryTitle = "segue.setlist.entry.title"
+    static let builderLibraryRow = "segue.builder.library.row"
+    static let setlistBreak = "segue.setlist.break"
+    static let setlistTimeline = "segue.setlist.timeline"
+    static let setlistUnknown = "segue.setlist.unknown"
+    static let setlistTotal = "segue.setlist.total"
+    static let missingLengths = "segue.setlist.missingLengths"
+    static let arrangementOpen = "segue.setlist.arrangement.open"
+    static let arrangementSheet = "segue.setlist.arrangement.sheet"
+    static let arrangementDone = "segue.setlist.arrangement.done"
+    static let newSmartFilter = "segue.sidebar.newSmartFilter"
+    static let smartFilterName = "segue.smartFilter.name"
+    static let smartFilterAddRow = "segue.smartFilter.addRow"
+    static let smartFilterField = "segue.smartFilter.field"
+    static let smartFilterAddKey = "segue.smartFilter.addKey"
+    static let tagField = "segue.song.tag.field"
+    static let sidebarGigLog = "segue.sidebar.gigLog"
+    static let gigLogRow = "segue.gigLog.row"
+    static let gigSummary = "segue.gig.summary"
+    static let modelDownload = "segue.settings.ai.model.download"
+    static let modelState = "segue.settings.ai.model.state"
+    static let editorPill = "segue.editor.pill"
+    static let editorNashville = "segue.editor.display.nashville"
+    static let settingsMinLyricSize = "segue.settings.live.minLyricSize"
+
+    /// A song card token chip (`key`, `tempo`, `length`, `capo`, `time`).
+    static func cardToken(_ field: String) -> String {
+        "segue.songCard.token.\(field)"
+    }
 }
