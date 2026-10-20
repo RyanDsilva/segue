@@ -165,6 +165,8 @@
             didSet {
                 session?.library.isPerforming = live != nil
                 SegueTips.isPerforming = live != nil
+                // No model loads while a show runs (R65, R95).
+                dependencies.ai.gate.isShowRunning = live != nil
             }
         }
 
