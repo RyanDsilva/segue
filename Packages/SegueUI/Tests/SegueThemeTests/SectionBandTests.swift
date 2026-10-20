@@ -210,7 +210,8 @@ struct SectionBandTests {
         ))
         let menu = try #require(canvas.bandMenu(for: event))
         #expect(menu.items.map(\.title) == [
-            "Rename...", "Change Kind", "Unwrap", "Split Here", "Merge with Next",
+            "Rename...", "Change Kind", "Unwrap", "Split Here", "Merge with Next", "",
+            "Section Notes...",
         ])
         // The pointer is on the verse's second line: Split Here applies; nothing follows.
         #expect(menu.items[3].isEnabled)

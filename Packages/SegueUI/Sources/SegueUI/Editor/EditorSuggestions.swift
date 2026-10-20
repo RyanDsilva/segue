@@ -290,7 +290,7 @@ enum SlashMenu {
         case section(SectionKind)
         /// `{chorus}`.
         case chorusRepeat
-        /// A `{comment: }` with the caret in it (P3-13 later routes it to section notes).
+        /// A `{comment: }` with the caret in it: a chart note on the current section (P3-13).
         case note
         /// Writes this metadata directive at the top (replacing one already there) and opens
         /// its value choices: `key`, `tempo`, `duration`, `capo`, `time`.
