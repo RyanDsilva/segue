@@ -117,6 +117,9 @@
                 strip
                     .frame(height: 22)
                     .accessibilityElement(children: .ignore)
+                    // A drawn summary, so VoiceOver reads it as an image with its label
+                    // (without a role the accessibility audit reports "Unknown role").
+                    .accessibilityAddTraits(.isImage)
                     .accessibilityLabel(stripSummary)
                     .accessibilityIdentifier(AccessibilityID.setlistTimeline)
             }
