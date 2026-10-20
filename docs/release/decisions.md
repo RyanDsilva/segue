@@ -215,3 +215,9 @@ Paste review and metronome (Ryan, 2026-10-19):
 
 - R117. Paste review sheet: design D1 (a small sparkle marks AI-decided labels and fields; quiet "Refining with..." status; one-line footer). During a show, already-ChordPro imports stay allowed and New Song opens blank (R109); a mixed import is one undo step.
 - R118. Visual metronome: design A (one pulsing dot plus BPM, bottom right; beat 1 red). Compound meters count the dotted-quarter pulse (6/8 = 2 pulses per bar). M toggles it for the current show only. The rehearsal click starts off in every rehearsal and is toggled with K (rehearsal only).
+
+Curated model (Ryan, 2026-10-19, after the 51-paste bake-off, docs/research/phase3-model-bakeoff.md):
+
+- R119. The curated local model is locked: Qwen3-4B-Instruct-2507 4-bit (revision 50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b), with a small MLX cache (about 64 MB; same output, about 0.8 GB less memory). No smaller model and no second "quality" tier: every model under about 2 GB scored at or below the converter alone.
+- R120. On Macs with less than 16 GB of memory (e.g. the 8 GB MacBook Neo), Apple Foundation Models is the default; the Qwen3-4B download stays available as an opt-in with a clear speed and memory note. Refines R68 and the routing in R63 for low-memory Macs.
+- R121. Title and artist: the converter wins. Skip the model's metadata call when the converter found both; never take a model artist when the converter found the title or a site heading.
