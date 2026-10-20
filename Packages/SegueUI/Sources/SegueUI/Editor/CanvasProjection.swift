@@ -94,7 +94,9 @@
                     continue
                 }
                 let labelText = section.label.flatMap { $0.isEmpty ? nil : $0 } ?? fallback
-                if section.path != nil || !labelText.isEmpty {
+                // The section band (P3-11) shows a section's label in the lane beside its
+                // lines; only a section with no lines keeps a label row to hang its band on.
+                if section.path != nil, section.items.isEmpty, section.isEditable {
                     let editable = section.path != nil && section.isEditable
                     paragraphs.append(CanvasParagraph(
                         text: labelText,

@@ -162,22 +162,20 @@ struct EditorCanvasEditingTests {
     }
 
     @Test
-    func `editing a section label sets the label`() throws {
+    func `renaming a section from its band sets the label`() throws {
         let hosted = canvas()
         let (model, canvas) = (hosted.model, hosted.canvas)
         defer { hosted.window.close() }
-        let label = try paragraph(canvas) {
-            if case .label(_, _, true) = $0.role {
+        // The label lives in the band's cap now (P3-11), not in a text row.
+        #expect(!canvas.projection.paragraphs.contains {
+            if case .label = $0.role {
                 true
             } else {
                 false
             }
-        }
-        let range = canvas.projection.range(of: label)
-        canvas.textView.insertText(
-            " 1",
-            replacementRange: NSRange(location: NSMaxRange(range), length: 0),
-        )
+        })
+        let band = try #require(canvas.bands.bands.first { $0.title == "Verse" })
+        #expect(try canvas.rename(#require(band.sectionPath), to: "Verse 1"))
         #expect(model.source.contains("{start_of_verse: Verse 1}"), "\(model.source)")
     }
 }

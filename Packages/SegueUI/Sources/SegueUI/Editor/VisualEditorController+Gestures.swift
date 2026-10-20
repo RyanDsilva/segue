@@ -14,6 +14,9 @@
         }
 
         func canvasMouseDown(_ event: NSEvent) -> Bool {
+            if bandMouseDown(event) {
+                return true
+            }
             let location = point(of: event)
             if let pill = pill(at: location) {
                 textView.window?.makeFirstResponder(textView)
@@ -56,6 +59,9 @@
         }
 
         func canvasMouseDragged(_ event: NSEvent) -> Bool {
+            if bandMouseDragged(event) {
+                return true
+            }
             guard var current = drag else { return false }
             let location = point(of: event)
             current.current = location
@@ -76,7 +82,10 @@
             return true
         }
 
-        func canvasMouseUp(_: NSEvent) -> Bool {
+        func canvasMouseUp(_ event: NSEvent) -> Bool {
+            if bandMouseUp(event) {
+                return true
+            }
             guard let finished = drag else { return false }
             drag = nil
             defer { redrawOverlay() }
@@ -103,7 +112,14 @@
         }
 
         func canvasMouseMoved(_ event: NSEvent) {
-            guard drag == nil else { return }
+            guard drag == nil, bandGesture == nil else { return }
+            if bandMouseMoved(event) {
+                if hover != nil {
+                    hover = nil
+                    redrawOverlay()
+                }
+                return
+            }
             let location = point(of: event)
             let overPill = pill(at: location) != nil
             let target = overPill ? nil : laneTarget(at: location, laneOnly: true)
@@ -119,10 +135,15 @@
         }
 
         func canvasMouseExited() {
-            if hover != nil {
+            if hover != nil || hoveredEdge != nil {
                 hover = nil
+                hoveredEdge = nil
                 redrawOverlay()
             }
+        }
+
+        func canvasMenu(for event: NSEvent) -> NSMenu? {
+            bandMenu(for: event)
         }
 
         func canvasDidResize() {
@@ -138,6 +159,9 @@
         // MARK: Keys on a selected pill
 
         func canvasKeyDown(_ event: NSEvent) -> Bool {
+            if bandKeyDown(event) {
+                return true
+            }
             if model.armedChord != nil, event.keyCode == KeyCode.escape {
                 model.armedChord = nil
                 redrawOverlay()

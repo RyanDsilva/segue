@@ -31,6 +31,21 @@
         /// The slot the open popover adds a chord to (drawn as a ghost).
         var popoverTarget: LaneTarget?
 
+        // MARK: Section band (P3-11)
+
+        /// The bands of the current projection.
+        var bands = SectionBandModel()
+        /// Lines picked in the band lane (canvas paragraph indices).
+        var lineSelection: ClosedRange<Int>?
+        /// A selection drag or edge drag in the lane.
+        var bandGesture: BandGesture?
+        /// The band edge under the pointer (drawn with its grip).
+        var hoveredEdge: BandEdgeHit?
+        /// The floating chip bar shown while lines are selected.
+        lazy var chipBar = SectionChipBarHost(controller: self)
+        /// Section notes per section (P3-13 fills this; the band leaves a badge slot).
+        var sectionNoteCount: (BlockPath) -> Int = { _ in 0 }
+
         init(model: SongEditorViewModel) {
             self.model = model
             textView = CanvasTextView(usingTextLayoutManager: true)
@@ -81,11 +96,12 @@
         }
 
         @objc private func clipViewDidScroll(_: Notification) {
-            container.overlay.needsDisplay = true
+            redrawOverlay()
         }
 
         func redrawOverlay() {
             container.overlay.needsDisplay = true
+            updateChipBar()
         }
 
         func focus() {
@@ -100,7 +116,15 @@
             let caretBefore = currentParagraphCaret()
             let next = CanvasProjection(model: renderModel)
             applyDiff(from: projection, to: next)
+            let structureChanged = next.paragraphs.count != projection.paragraphs.count
+                || bands.bands.isEmpty
             projection = next
+            bands = SectionBandModel(projection: next, document: model.snapshot.document)
+            if structureChanged || lineSelection.map({ $0.upperBound >= next.paragraphs.count })
+                == true
+            {
+                lineSelection = nil
+            }
             restoreCaret(fallback: caretBefore)
             resolveSelection()
             redrawOverlay()
@@ -292,6 +316,11 @@
             if let offset = caretSourceOffset() {
                 model.sourceCaretDidMove(to: offset)
             }
+            // A text selection across lines is a line selection for the section band.
+            if textLineSelection != nil, lineSelection != nil {
+                lineSelection = nil
+            }
+            redrawOverlay()
         }
 
         func textView(_: NSTextView, clickedOnLink link: Any, at index: Int) -> Bool {

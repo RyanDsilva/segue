@@ -22,6 +22,13 @@
         static let lyricLineHeight: CGFloat = 30
         /// Space between lyric lines and after a section label (mockup gap 10).
         static let lineSpacing: CGFloat = 10
+        /// The section band lane left of every paragraph (P3-11, direction B), and the gap
+        /// between it and the text.
+        static let bandLaneWidth: CGFloat = 96
+        static let bandLaneGap: CGFloat = 16
+        static var bandIndent: CGFloat {
+            bandLaneWidth + bandLaneGap
+        }
 
         static func pillWidth(_ text: String) -> CGFloat {
             let width = (text as NSString).size(withAttributes: [.font: EditorStyle.pillFont]).width
@@ -61,6 +68,8 @@
         {
             let style = NSMutableParagraphStyle()
             style.paragraphSpacingBefore = paragraph.spaceBefore
+            style.firstLineHeadIndent = bandIndent
+            style.headIndent = bandIndent
             var attributes: [NSAttributedString.Key: Any] = [:]
             switch paragraph.role {
             case .lyrics:

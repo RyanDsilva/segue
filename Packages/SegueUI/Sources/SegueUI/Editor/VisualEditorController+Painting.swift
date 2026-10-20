@@ -20,6 +20,7 @@
             let clip = overlay.convert(container.scrollView.contentView.frame, from: container)
             NSBezierPath(rect: clip).setClip()
             let visible = textView.visibleRect
+            drawBands(in: dirtyRect, overlay: overlay)
             let dragged = drag?.isDragging == true ? drag?.pill : nil
             forEachRow(in: visible) { row in
                 switch projection.paragraphs[row.paragraph].role {

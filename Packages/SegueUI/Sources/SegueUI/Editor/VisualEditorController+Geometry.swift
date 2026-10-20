@@ -332,6 +332,7 @@
                 }
                 return true
             }
+            elements += bandAccessibilityElements(parent: overlay, screenFrame: screenFrame)
             return elements
         }
 

@@ -12,6 +12,8 @@
         func canvasMouseMoved(_ event: NSEvent)
         func canvasMouseExited()
         func canvasKeyDown(_ event: NSEvent) -> Bool
+        /// The section band's menu when the click is in the band lane.
+        func canvasMenu(for event: NSEvent) -> NSMenu?
         func canvasDidResize()
         #if DEBUG
             func canvasKeystrokeTimed(_ seconds: TimeInterval, isShortcut: Bool)
@@ -56,6 +58,10 @@
             gestures?.canvasMouseExited()
         }
 
+        override func menu(for event: NSEvent) -> NSMenu? {
+            gestures?.canvasMenu(for: event) ?? super.menu(for: event)
+        }
+
         override func keyDown(with event: NSEvent) {
             #if DEBUG
                 let start = CACurrentMediaTime()
@@ -98,8 +104,9 @@
             let widthChanged = newSize.width != frame.width
             super.setFrameSize(newSize)
             if widthChanged {
-                // Mockup padding is 120 at 1440; narrower windows keep at least 40.
-                let inset = min(max((newSize.width - 860) / 2, 40), 120)
+                // Mockup padding is 120 at 1440; narrower windows keep at least 20 (the
+                // section band lane, P3-11, already sets the lyrics in from the edge).
+                let inset = min(max((newSize.width - 972) / 2, 20), 120)
                 if abs(textContainerInset.width - inset) > 0.5 {
                     textContainerInset = NSSize(width: inset, height: 32)
                 }
