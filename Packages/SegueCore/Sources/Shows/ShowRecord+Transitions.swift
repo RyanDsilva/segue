@@ -24,6 +24,8 @@ extension ShowRecord {
     /// Applies `action` and returns the items it marked played (for duration samples). An
     /// action that changes nothing leaves the record equal to before (no event appended).
     mutating func apply(_ action: ShowAction, _ context: TransitionContext) throws -> [ShowItemID] {
+        // R102: a refused add changes nothing (not even a break showing).
+        try checkNoRepeat(action)
         // On a break (R104), Next only ends it; anything else ends it and then acts.
         if breakId != nil {
             if case .next = action {
@@ -33,6 +35,9 @@ extension ShowRecord {
             if Self.leavesBreak(action) {
                 endBreak(at: context.now)
             }
+        }
+        if try applyMoveToNext(action, at: context.now) {
+            return []
         }
         if let played = try applyNavigation(action, at: context.now) {
             return played
@@ -117,7 +122,13 @@ extension ShowRecord {
         return []
     }
 
+    /// Insert Next: a new pending `.inserted` item right after current. A skipped song comes
+    /// back as its skipped item, moved to next (R112), so the show never holds it twice.
     private mutating func insertNext(_ songId: SongID, _ context: TransitionContext) throws {
+        if case let .skipped(itemId) = standing(of: songId) {
+            try moveToNext(itemId, at: context.now)
+            return
+        }
         guard let title = context.songTitle else { throw ShowError.songNotFound(songId) }
         let item = ShowItem(
             itemId: ShowItemID(context.newID()),
@@ -252,7 +263,7 @@ extension ShowRecord {
     /// Where a song added during the show goes: before current (play now, requests) or right
     /// after it (insert next). Without a current item, right after the last one that was
     /// current, so `next` reaches it.
-    private func insertionIndex(afterCurrent: Bool) -> Int {
+    func insertionIndex(afterCurrent: Bool) -> Int {
         if let current = currentIndex {
             return afterCurrent ? current + 1 : current
         }
@@ -325,13 +336,29 @@ extension ShowRecord {
 
     /// Play now: a no-op when the song is already current (so a double press never duplicates
     /// it); else the first pending item of the song is jumped to without moving it (open
-    /// question 16); otherwise a new inserted item goes before current and becomes current.
+    /// question 16); a queued request for it is played; a skipped item of it goes back to
+    /// pending and is jumped to (R112); otherwise a new inserted item goes before current
+    /// and becomes current. A played song never gets here (R102, `checkNoRepeat`).
     private mutating func playNow(_ songId: SongID, _ context: TransitionContext) throws {
         if currentItem?.songId == songId {
             return
         }
         if let pending = items.first(where: { $0.songId == songId && $0.state == .pending }) {
             jump(to: pending.itemId, at: context.now)
+            return
+        }
+        if let request = queuedRequests.first(where: { $0.songId == songId }) {
+            try playRequest(request.requestId, context)
+            return
+        }
+        if let skipped = items.firstIndex(where: { $0.songId == songId && $0.state == .skipped }) {
+            items[skipped].state = .pending
+            events.append(ShowEvent(
+                at: context.now,
+                kind: .unskipped,
+                itemId: items[skipped].itemId,
+            ))
+            jump(to: items[skipped].itemId, at: context.now)
             return
         }
         guard let title = context.songTitle else { throw ShowError.songNotFound(songId) }

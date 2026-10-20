@@ -68,6 +68,8 @@
                 return true
             }
             switch (session.overlay, stroke.key) {
+            case (.search, _) where session.search.refusal != nil:
+                return handleRefusal(stroke, isRepeat: isRepeat, session: session)
             case (.search, _):
                 return handleSearch(stroke, isRepeat: isRepeat, session: session)
             case (.endConfirm, KeyStroke.returnKey):
@@ -117,6 +119,24 @@
                 session.submitSearch(action)
             default:
                 return false
+            }
+            return true
+        }
+
+        /// The R102 refusal: Return moves the song to next (or goes back when there is
+        /// nothing to move), Esc goes back to the results; other keys are swallowed.
+        private static func handleRefusal(
+            _ stroke: KeyStroke,
+            isRepeat: Bool,
+            session: LiveSession,
+        ) -> Bool {
+            switch stroke.key {
+            case KeyStroke.returnKey where !isRepeat:
+                session.confirmRefusal()
+            case KeyStroke.escape:
+                session.cancelRefusal()
+            default:
+                break
             }
             return true
         }

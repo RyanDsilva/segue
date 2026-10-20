@@ -27,6 +27,10 @@ public extension AccessibilityID {
     static let liveSearchNote = "segue.live.search.note"
     static let liveSearchAddRequestConfirm = "segue.live.search.addRequestConfirm"
     static let liveSearchInsertNext = "segue.live.search.insertNext"
+    /// R102: the "already in the show" message and its buttons.
+    static let liveSearchRefusal = "segue.live.search.refusal"
+    static let liveSearchMoveToNext = "segue.live.search.moveToNext"
+    static let liveSearchRefusalBack = "segue.live.search.refusalBack"
 
     // Request queue and set order drawer
     static let liveRequests = "segue.live.requests"

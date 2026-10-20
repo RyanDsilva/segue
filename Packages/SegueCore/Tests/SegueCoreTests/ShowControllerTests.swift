@@ -31,6 +31,10 @@ struct ShowControllerTests {
                 try await Self.checkInvariants(state, planned: setlist.entries, harness)
             } catch ShowError.invalidOffsets {
                 Issue.record("step \(step): generated offsets must be valid")
+            } catch let ShowError.repeatRefused(_, refusal) {
+                // R102: refused exactly when the record says so, and nothing changed.
+                #expect(record.repeatRefusal(for: action) == refusal)
+                #expect(await show.state.record == record)
             }
             if Bool.random(using: &random) {
                 try await show.updateScrollPosition(Double.random(in: 0 ... 1, using: &random))
@@ -85,6 +89,10 @@ struct ShowControllerTests {
         let record = state.record
         let ids = record.items.map(\.itemId)
         #expect(Set(ids).count == ids.count)
+        // R102: a song is played, current, pending or queued at most once.
+        let live = record.items.filter { $0.state != .skipped }.map(\.songId)
+            + record.queuedRequests.map(\.songId)
+        #expect(Set(live).count == live.count)
         let fromSetlist = record.items.filter { $0.origin == .setlist }.map(\.itemId)
         #expect(Set(fromSetlist) == Set(planned.map(\.itemId)))
         #expect(fromSetlist.count == planned.count)
@@ -198,7 +206,9 @@ struct ShowControllerTests {
         #expect(state.currentTitle == "Song 3")
         #expect(state.titles(.skipped) == ["Song 2"])
 
-        state = try await show.perform(.addRequest(extra.id, note: "   "))
+        // Extra was played, so the request is for a song not in the show yet (R102).
+        let requested = try await harness.song("Requested")
+        state = try await show.perform(.addRequest(requested.id, note: "   "))
         let request = try #require(state.record.requests.first)
         #expect(request.note == nil)
         state = try await show.perform(.dropRequest(request.requestId))

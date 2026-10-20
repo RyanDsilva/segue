@@ -15,7 +15,9 @@
 
         var body: some View {
             Group {
-                if let song = session.search.requesting {
+                if let refusal = session.search.refusal {
+                    QuickSearchRefusalView(session: session, refusal: refusal)
+                } else if let song = session.search.requesting {
                     noteStep(song)
                 } else {
                     searchStep
@@ -139,7 +141,7 @@
                         SearchResultRow(
                             song: song,
                             isSelected: index == search.selection,
-                            inSet: isPendingInSet(song.id),
+                            standing: session.standing(of: song.id),
                         )
                         .contentShape(Rectangle())
                         .onTapGesture(count: 2) { session.searchAction(.playNow, song: song.id) }
@@ -193,17 +195,14 @@
             }
             .disabled(song == nil)
         }
-
-        private func isPendingInSet(_ id: SongID) -> Bool {
-            session.state.record.items.contains { $0.songId == id && $0.state == .pending }
-        }
     }
 
     /// One search result: title and artist, then key, capo and proficiency.
     private struct SearchResultRow: View {
         let song: SongRecord
         let isSelected: Bool
-        let inSet: Bool
+        /// Where the song stands in the show (R102): played, in the set, requested...
+        let standing: SongStanding
 
         var body: some View {
             let metadata = song.document.metadata
@@ -221,8 +220,9 @@
                     }
                 }
                 Spacer(minLength: 12)
-                if inSet {
-                    StageChip(text: "In set")
+                if let badge = StandingBadge.text(standing) {
+                    StageChip(text: badge)
+                        .accessibilityHidden(true)
                 }
                 if let key = metadata.key, !key.isEmpty {
                     StageChip(text: key)
@@ -241,6 +241,7 @@
                     .fill(isSelected ? Theme.color.ink.opacity(0.08) : .clear)
             }
             .accessibilityElement(children: .combine)
+            .accessibilityValue(StandingBadge.spoken(standing) ?? "")
             .accessibilityIdentifier(AccessibilityID.liveSearchResult)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
         }

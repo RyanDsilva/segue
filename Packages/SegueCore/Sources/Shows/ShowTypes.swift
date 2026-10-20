@@ -40,6 +40,12 @@ public enum ShowAction: Sendable, Equatable {
     case dropRequest(ShowRequestID)
     /// Drawer drag, as `Array.move(fromOffsets:toOffset:)` over `items`.
     case move(fromOffsets: IndexSet, toOffset: Int)
+    /// "Move to Next" (R102): a pending (or skipped) item moves right after current, so
+    /// `next` reaches it. The answer to adding a song that is already upcoming.
+    case moveToNext(ShowItemID)
+    /// "Move to Next" for a queued request (R102): it moves to the front of the queue, so it
+    /// is the footer's next request and `R` plays it.
+    case moveRequestToFront(ShowRequestID)
 }
 
 /// An item with the song snapshot the stage draws.
@@ -125,6 +131,8 @@ public enum ShowError: Error, Equatable {
     /// The show is open in another Segue window or process (its claim is held), so it
     /// cannot be started, resumed or closed here.
     case claimedElsewhere(ShowID)
+    /// R102: the action would play or queue a song a second time in this show.
+    case repeatRefused(SongID, RepeatRefusal)
 }
 
 /// Injected dependencies of a show run.

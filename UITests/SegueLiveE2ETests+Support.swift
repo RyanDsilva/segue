@@ -233,6 +233,8 @@ enum LiveAXID {
     static let liveSearchField = "segue.live.search.field"
     static let liveSearchResult = "segue.live.search.result"
     static let liveSearchNote = "segue.live.search.note"
+    static let liveSearchRefusal = "segue.live.search.refusal"
+    static let liveSearchMoveToNext = "segue.live.search.moveToNext"
     static let liveDrawer = "segue.live.drawer"
     static let liveDrawerRow = "segue.live.drawer.row"
     static let liveDrawerPlayNext = "segue.live.drawer.playNext"

@@ -161,19 +161,23 @@ extension StageWindowSuites {
             let extra = try await session.library.createSong(
                 source: LiveFixture.source(title: "Zulu Request", lines: 4, duration: nil),
             )
+            // R102: a song is requested once per show, so the blank note goes on another.
+            let other = try await session.library.createSong(
+                source: LiveFixture.source(title: "Yankee Request", lines: 4, duration: nil),
+            )
             app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
             #expect(await app.startShow(fixture.setlist, kind: .gig))
             let live = try #require(app.live)
             defer { StageWindowController.shared.close() }
 
-            for note in ["  table 4 ", "   "] {
+            for (note, song) in [("  table 4 ", extra), ("   ", other)] {
                 live.dispatch(.openSearch)
-                live.search.query = "zulu"
-                _ = try await env.waitFor { live.search.results.first?.id == extra.id ? true : nil }
-                live.searchAction(.addRequest, song: extra.id)
+                live.search.query = song.document.metadata.title ?? ""
+                _ = try await env.waitFor { live.search.results.first?.id == song.id ? true : nil }
+                live.searchAction(.addRequest, song: song.id)
                 // Not added yet: the overlay now asks for the note.
                 #expect(live.overlay == .search)
-                #expect(live.search.requesting?.id == extra.id)
+                #expect(live.search.requesting?.id == song.id)
                 live.search.note = note
                 live.commitRequest()
                 #expect(live.overlay == nil)
@@ -183,10 +187,13 @@ extension StageWindowSuites {
             #expect(live.queuedRequests.map(\.note) == ["table 4", nil])
 
             // Esc on the note goes back to the results without adding anything.
+            let third = try await session.library.createSong(
+                source: LiveFixture.source(title: "Xray Request", lines: 4, duration: nil),
+            )
             live.dispatch(.openSearch)
-            live.search.query = "zulu"
+            live.search.query = "xray"
             _ = try await env.waitFor { live.search.results.isEmpty ? nil : true }
-            live.searchAction(.addRequest, song: extra.id)
+            live.searchAction(.addRequest, song: third.id)
             live.search.cancelRequest()
             #expect(live.overlay == .search)
             #expect(live.search.requesting == nil)

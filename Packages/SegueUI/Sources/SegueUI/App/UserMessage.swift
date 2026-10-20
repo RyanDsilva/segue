@@ -79,6 +79,22 @@ enum UserMessage {
             "The set changed meanwhile. Try again."
         case .invalidRating, .notFinished, .notLoaded, .showNotFound:
             "The show could not be updated (\(String(describing: error)))."
+        case let .repeatRefused(_, refusal):
+            repeatText(refusal)
+        }
+    }
+
+    /// Why a song cannot be added again in this show (R102).
+    static func repeatText(_ refusal: RepeatRefusal) -> String {
+        switch refusal {
+        case .alreadyPlayed:
+            "Already played in this show."
+        case .playingNow:
+            "That song is playing now."
+        case .upcoming:
+            "Already in the set."
+        case .requested:
+            "Already in the requests."
         }
     }
 

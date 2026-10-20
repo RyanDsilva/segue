@@ -165,8 +165,12 @@
 
         /// Applies `action` to `song` and closes the overlay (back at the same scroll
         /// position: the scroller is untouched unless the current song changes).
-        /// "Add to Requests" first asks for an optional note (`commitRequest()`).
+        /// "Add to Requests" first asks for an optional note (`commitRequest()`). A song
+        /// already in the show is refused first, in the overlay (R102).
         func searchAction(_ action: SearchAction, song: SongID) {
+            if refuseRepeat(action, song: song) {
+                return
+            }
             if action == .addRequest,
                let record = search.results.first(where: { $0.id == song })
             {

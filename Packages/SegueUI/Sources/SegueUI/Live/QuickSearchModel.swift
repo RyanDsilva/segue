@@ -29,6 +29,9 @@
         public private(set) var requesting: SongRecord?
         /// The request note ("table 4"); blank adds the request without one.
         public var note = ""
+        /// The song just refused because it is already in the show (R102), shown in place
+        /// of the results until Return or Esc; nil otherwise (LiveSession+Repeats.swift).
+        public internal(set) var refusal: SearchRefusal?
         /// The last search error, shown in place of results.
         public private(set) var errorMessage: String?
         /// The (trimmed) query `results` belong to; differs from `query` while a search for
@@ -87,6 +90,7 @@
             errorMessage = nil
             requesting = nil
             note = ""
+            refusal = nil
         }
 
         /// Starts adding `song` to the requests: the overlay asks for an optional note.
