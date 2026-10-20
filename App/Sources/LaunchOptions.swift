@@ -315,6 +315,18 @@ import VendorServices
             guard let bundleID else { return }
             defaults.removePersistentDomain(forName: bundleID + testSuiteSuffix)
         }
+
+        /// AppKit autosaves window frames (`NSWindow Frame <name>`) into the app's standard
+        /// defaults, never into the test suite, so a test launch would start from whatever frame
+        /// the same bundle ID last saved (a real Personal session's 1440x900, a previous run's
+        /// moved window). `-SegueResetState` forgets them so every reset launch opens at the
+        /// scene's default size. Relaunches without a reset keep them: that is the restore test.
+        static func forgetWindowFrames(in defaults: UserDefaults = .standard) {
+            for key in defaults.dictionaryRepresentation().keys
+            where key.hasPrefix("NSWindow Frame ") {
+                defaults.removeObject(forKey: key)
+            }
+        }
     }
 
     // MARK: - Dependencies for a Debug launch
@@ -333,6 +345,7 @@ import VendorServices
             let defaults = AppStateReset.defaults(for: self, bundleID: bundleID)
             if resetState {
                 AppStateReset.wipeTestState(defaults, bundleID: bundleID)
+                AppStateReset.forgetWindowFrames()
             }
             let services = servicesWiring(defaults: defaults, bundleID: bundleID)
             let polish = polishDependencies(defaults: defaults)
