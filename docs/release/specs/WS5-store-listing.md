@@ -1,6 +1,6 @@
 # WS5 - App Store listing, screenshots, preview video and submission
 
-> *Phase 3 (AI entry & assistant) now ships in 0.5 (R61-R79, `docs/release/decisions.md`). Lines below that assume no AI, no downloads or the R37 keyword set are marked as superseded; P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`) rewrites them, and section 16.2 of `docs/phases/3-ai-entry-and-assistant.md` lists the open choices (9th screenshot, keywords, age rating, content rights, "Apple Intelligence" wording).*
+> *Phase 3 (AI entry & assistant) ships in 0.5 (R61-R128, `docs/release/decisions.md`). P3-9 rewrote the lines that assumed no AI, no downloads, the R37 keyword set or the old screenshot songs in place (2026-10-20). Choices still open are marked **DECIDE** and listed in section 17; the evidence is in `docs/research/phase3-store-ai.md`.*
 
 Spec date: 2026-10-17 (finalised after the open-question round; all decisions through R41 applied). Target: Segue **0.5**, Mac App Store, App Store flavor only (`SegueAppStore`, bundle `dev.ryandsilva.segue`), arm64 only, built with Xcode 27.1 (R41).
 
@@ -20,9 +20,9 @@ Resolutions this spec builds on (so it reads standalone):
 |---|---|
 | Listing locales | English (U.S.) only (R8, A46) |
 | Territories | All storefronts except China mainland (A47; no ICP filing) |
-| Screenshot library | Welcome library plus 6-10 screenshot-only original songs, Debug-only, never shipped; Ryan approves the titles (A48, section 8.4.1) |
+| Screenshot library | Welcome library plus 5 approved screenshot-only original songs and the setlist "JamFest Opener", Debug-only, never shipped (A48, R128, section 8.4.1) |
 | Screenshot appearance | 5 dark, 3 light (A49) |
-| Keywords | R37 set, 97 bytes |
+| Keywords | R37 set, 97 bytes; a swap is a **DECIDE** item (section 17) |
 | Release mode | Manual release (A51) |
 | Copyright | `2026 Ryan Rony Dsilva` (R30; Apple renders the symbol) |
 | Vendors | TelemetryDeck (own minimal ingest client, R34), Sentry (US region, R33; crashes, hangs, bug reports), Featurebase (web board only) (R23-R25) |
@@ -38,7 +38,7 @@ Resolutions this spec builds on (so it reads standalone):
 | SKU | `segue-macos` (B-33) |
 | Preview capture | Scripted XCUITest + `screencapture`; manual QuickTime as fallback (B-33) |
 | Help menu names | "Report a Problem...", "Request a Feature..." (I-5) |
-| Import types | `.cho .chopro .chordpro .pro .txt` (A24, I-10) |
+| Import types | `.cho .chopro .chordpro .pro .txt .crd`; `.txt`/`.crd` that need conversion go through the review sheet (A24, I-10, R76, R96) |
 | Main window | Single window, Window > "Segue Library" Cmd-0 (A32) |
 | Pre-show checklist | Gig Mode Shortcut rows hidden until configured (A37) |
 
@@ -109,9 +109,9 @@ The final screenshots and videos are derived binaries. They live under `.build/`
 |---|---|---|---|
 | Name | `Segue - Setlists & Chords` | 25 / 30 chars | R3 |
 | Subtitle | `Lyrics & chords for live gigs` | 29 / 30 chars | R3 |
-| Promotional text | section 4.2 | 169 / 170 chars | |
-| Description | section 4.3 | 3,080 / 4,000 chars (before the claim pass; recount after) | |
-| Keywords | section 4.5 | 97 / 100 bytes | R37 *Superseded (phase 3 ships in 0.5): a keywords swap is open, phase 3 spec 16.2. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
+| Promotional text | section 4.2 | 162 / 170 chars | |
+| Description | section 4.3 | 3,954 / 4,000 chars (P3-9 draft, before the claim pass; recount after) | |
+| Keywords | section 4.5 | 97 / 100 bytes | R37; **DECIDE** a swap (section 17, question 6) |
 | Copyright | `2026 Ryan Rony Dsilva` | Apple renders the symbol; must match Info.plist `NSHumanReadableCopyright` (`© 2026 Ryan Rony Dsilva`) | R30 |
 | Support URL | `https://segue.ryandsilva.dev/support` | must show `segue@ryandsilva.dev` | R28, R29 |
 | Marketing URL | `https://segue.ryandsilva.dev` | | R27 |
@@ -126,76 +126,81 @@ The final screenshots and videos are derived binaries. They live under `.build/`
 | SKU | `segue-macos` (permanent, set at record creation) | | B-33 |
 | Accessibility URL | leave empty | | B-32 |
 | License agreement | Apple standard EULA | | R7 |
-| Content rights | "No, it does not contain, show, or access third-party content" | | Welcome songs are original (R19); no web content in this flavor *Superseded (phase 3 ships in 0.5): R62/R66: answer with a downloadable model is open (phase 3 spec 16.2). Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
+| Content rights | **DECIDE** (section 17, question 4): (a) "No, it does not contain, show, or access third-party content" or (b, recommended) "Yes, it contains, shows, or accesses third-party content, and I have the necessary rights" | | The app fetches the Qwen3 model weights (Apache-2.0, notices shipped) on request (R66); Welcome songs are original (R19); pasted text is the user's own action |
 | Regulated medical device | No | | 01 step 13 |
 | Made for Kids | No | | |
 | What's New | not shown for a first version | | |
 
-### 4.2 Promotional text (169 chars, editable without a new version)
+### 4.2 Promotional text (162 chars, editable without a new version)
 
 ```
-Your chart, your set, your cue. Keep songs as plain ChordPro files, build tonight's set, and play it from a stage view that fits every song. No account, no subscription.
+Your chart, your set, your cue. Paste a chord sheet from any site, build tonight's set in minutes, and play it from a stage view that fits every song. No account.
 ```
+
+The 0.5 promo before phase 3 (169 chars) was: "Your chart, your set, your cue. Keep songs as plain ChordPro files, build tonight's set, and play it from a stage view that fits every song. No account, no subscription." It stays true; the new line leads with paste. Ryan approves the copy.
 
 ### 4.3 Description (plain text)
 
 ```
-Segue is a chord chart and setlist app for performing musicians, made for the Mac. Keep your songs as plain ChordPro files, build tonight's set, and play it from a stage view that fits each song on one screen.
+Segue is a chord chart and setlist app for performing musicians, made for the Mac. Paste a song in from anywhere, build tonight's set in minutes, and play it from a stage view that fits each song on one screen.
 
 Made for the singer with a guitar, the keys player at an open mic, the duo on a three-hour bar gig, and the worship or cover band leader who wants the chart in front of them, not a binder.
 
 TRY IT IN A MINUTE
 Segue starts with a small Welcome library: a few original demo songs and a demo setlist. Press Start Show and you are in stage mode. Delete the demo songs whenever you like.
 
+PASTE A SONG, CHECK IT, DONE
+- Copy a chord sheet from a website or a note and choose File > New Song from Clipboard. Segue turns it into a ChordPro song with its sections and title, and shows you the result before it saves.
+- Text and .crd files convert the same way, several in one review.
+- Optional on-device AI double-checks section labels, title and artist. It works with Apple Intelligence, or with a free local model you can download in Settings. It never rewrites your lyrics or chords, and nothing you paste leaves your Mac.
+
 YOUR SONGS, AS FILES
 - One ChordPro file per song, in a folder you choose. No account, no sign-in.
-- Drag ChordPro files onto the window, or use File > Import.
 - Your songs stay readable by other ChordPro tools, so they are never locked in.
 - Everything saves as you type. Deleted songs go to the Trash.
 - Fast search across titles, artists, lyrics and tags, including romanized Hindi with loose, casual spelling.
-- Tags and proficiency marks (Learning, Ready, Pro) show what is gig-ready.
-- Export your whole library as one archive.
-- Quick Look previews and Open With for ChordPro files in the Finder.
+- Tags, proficiency marks and smart filters show what is gig-ready.
+- Export your whole library as one archive. Quick Look and Open With in the Finder.
 
 AN EDITOR THAT KEEPS UP
-- Edit the ChordPro text, or place chords on syllables in the visual editor.
-- Transpose in one step, with a capo setting that shows shapes or concert pitch.
-- Nashville number view for when the singer changes key at the last minute.
+- A song card for key, tempo (tap it in), length, capo, time signature and tags: controls, not syntax. Time it measures a song's length for you.
+- Edit the ChordPro text, or place chords on syllables in the visual editor. Select lines and press V, C or B to mark a verse, chorus or bridge.
+- Transpose in one step, with a capo that shows shapes or concert pitch, and Nashville numbers.
 - Guitar chord diagrams with alternate tunings and your own shapes, plus piano voicings.
 - Spell-check and autocorrect stay out of your lyrics.
 
 SETLISTS IN MINUTES
-- Drag songs into a set, reorder them, and see the running time against your target length.
-- Rehearse a set to learn how long each song really takes.
-- Undo any change while you build.
+- Tick songs in the order you want them, then fine-tune the order.
+- Or type a request like "45 min, songs I know well, upbeat start" and Segue fills the set. Lock the songs you want and rebuild the rest.
+- Breaks between sets, changeover time and a running total for each part. Songs without a length are listed, never guessed.
+- Arrange a song for one gig: skip, repeat or reorder its sections without changing the song.
 
 STAGE MODE
 - A dark stage view that fits each song to the screen, choosing columns and size for you.
 - Set a minimum lyric size. If a song cannot fit, Segue scrolls instead of shrinking it.
 - Auto-scroll that you can pause, speed up or slow down.
+- A visual metronome that pulses at the song's tempo, and a click when you rehearse.
 - An "Up next" footer with the next song's key and capo.
-- A request comes in? Search the library mid-show, queue it and play it next.
-- Skip and reorder songs without leaving the stage.
-- A pre-show checklist so nothing is forgotten before you go on.
-- Keeps the display awake while you play.
-- If Segue quits unexpectedly mid-gig, it reopens right where you were.
+- A request comes in? Search the library mid-show and play it next.
+- A pre-show checklist, a display that stays awake, and shows that reopen where you were if Segue quits mid-gig.
 - Every show is saved to your gig log.
 
 MADE FOR THE MAC
 - Native macOS design in light and dark. Follow the system, or pick one in Settings.
 - Full keyboard control. Press ? to see every shortcut.
 - Optional: run your own shortcuts from the Shortcuts app when a show starts and ends, for example to turn on a Focus.
-- Works offline. Nothing on stage depends on a network.
+- Works offline. Nothing on stage depends on a network; only the optional AI model download needs one, once.
 
 PRIVATE BY DESIGN
-Your songs stay on your Mac, in files you own. Segue has no account and no ads. Usage statistics and crash reports are each sent only if you say yes, and you can change your mind at any time in Settings.
+Your songs stay on your Mac, in files you own, and Segue's AI runs on your Mac too. Segue has no account and no ads. Usage statistics and crash reports are each sent only if you say yes, and you can change your mind at any time in Settings.
 
 Segue is free, with no subscription and no in-app purchases.
 ```
 
 Writing rules the text already follows. `store-check` enforces the mechanical ones.
 
-- **Nothing personal-only.** No audio, LRCLIB or URL import. These are personal modules and do not ship in this flavor.
+- **Nothing personal-only.** No audio, LRCLIB, URL import or custom models. These are personal modules and do not ship in this flavor.
+- **AI claims only as built (R61, R62).** On-device, re-checks a paste's sections, title and artist and reads set requests, never rewrites lyrics or chords, nothing pasted leaves the Mac, works without any model. "Apple Intelligence" only in a referential phrase ("works with"), spelled exactly, never in a feature name (section 17, question 5).
 - **No other platforms.** No "iPhone", "iPad", "Android" or "Windows" (2.3.10).
 - **No competitor names** (2.3.7).
 - **No "beta", "preview" or "test" wording.** Guideline 2.2 bars betas from the store. "0.5" appears only as the version number.
@@ -203,7 +208,6 @@ Writing rules the text already follows. `store-check` enforces the mechanical on
 - **No "collects no data".** R25/R26 analytics and crash reports make that false.
 - **"free".** If review objects to it, delete the last line and keep "no subscription".
 
-> *Superseded (phase 3 ships in 0.5): R61/R62: the description gains the AI features; "Works offline. Nothing on stage depends on a network." must stay true with a one-time model download. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
 
 ### 4.4 Claim verification (do this against the built App Store flavor, not the plan)
 
@@ -217,23 +221,30 @@ If a row fails, **delete its line from the description**. Never ship a claim on 
 | Claim (description line) | Decision | How to verify |
 |---|---|---|
 | Welcome library + demo setlist, deletable | R19 | Fresh state, create a library, keep the Welcome-songs box ticked, and see the four songs and "Welcome Set". Delete one song; it lands in the Trash. (T) |
+| Paste: File > New Song from Clipboard, review before save | R75, R83, R117 | Copy a chord sheet as text, press Option-Command-V: the review sheet shows the converted song, title filled, sections labelled; Accept saves it. |
+| Text and .crd files convert, several in one review | R76, R96 | Drag a `.txt` chord sheet and a `.crd` together: one review sheet lists both with checkboxes. |
+| Optional on-device AI; works with Apple Intelligence or a free local model; never rewrites lyrics; nothing pasted leaves the Mac | R62, R63, R66, R93 | Settings > AI shows Apple Intelligence status and the local model card (size, licence, Download). With Wi-Fi off a paste still converts. Sparkles mark AI-decided labels only; lyric lines are unchanged. |
 | Drag files in; File > Import | R15, A24 | Drag a `.cho` from Finder; use the menu item with a `.chordpro` and a `.txt`. |
 | Deletes go to the Trash | R15 | Delete a song and a setlist, then find both in the Trash. |
 | Everything saves as you type | R17 | Edit, wait, quit without a prompt, relaunch: the edit is still there. |
 | Romanized Hindi loose-spelling search | shipped (`RomanNormalizer.swift`) | Search "kitabon" and find "Kitaabon Wali Gali". |
-| Tags and proficiency marks | shipped | Visible in the library. |
+| Tags, proficiency marks and smart filters | shipped, R72 | Visible in the library; create a smart filter and apply it. |
 | Export library archive | R16 (nice) | File menu item produces an archive that reopens. |
 | Quick Look and Open With in Finder | R16 (nice) | Space on a `.cho` in Finder shows a preview; Open With lists Segue. (T) |
+| Song card: key, tempo with tap, length, capo, time signature, tags; Time it | R80, R91, R111 | Open a song's card; tap tempo; Time it fills Length. |
+| Select lines, V / C / B marks a section | R82 | Visual editor: select two lines, press C. |
 | Visual editor, transpose, capo, Nashville, diagrams with tunings, custom shapes, piano | shipped | Existing E2E suites; eyeball. |
 | Spell-check and autocorrect off in lyrics | shipped | Type a misspelling; it is not underlined or corrected. |
-| Running time against a target | shipped (`SetlistBuilderView`) | Builder header. |
-| Rehearse | shipped (R15 Setlist menu) | Setlist > Rehearse runs. |
-| Setlist builder undo | R16 (nice) | Cmd-Z after reorder and after remove. |
+| Tick songs in order (Pick), fine-tune (Arrange) | R84 | Pick: Space ticks in order; Arrange: Option-Down moves. |
+| Type a request, Segue fills the set; lock and rebuild | R65, R114, R115 | Arrange: type "45 min, songs I know well, upbeat start", Build; lock one, Rebuild keeps it. |
+| Breaks, changeover time, per-part totals; unknown lengths listed, never guessed | R85, R86, R88, R91 | Add a break row; set a changeover; a song with no length makes "N unknown", which lists it. |
+| Arrange a song for one gig | R122, R123 | Slot popover > Arrangement: untick a section; the stage skips it; the `.cho` is unchanged. |
+| Visual metronome; click in rehearsal | R90, R118 | On stage M shows the pulsing dot for a song with a tempo; in a rehearsal K toggles the click. |
 | Auto-fit, min lyric size, auto-scroll controls, Up next, request search and queue, skip, pre-show checklist, keep awake, crash resume, gig log | shipped (phase 2) | `SegueLiveE2ETests`; keep-awake was checked in the real gig (section 14.3). |
 | Press ? to see every shortcut | R15 | In the library and on stage. If it works only on stage, reword to "Press ? on stage". |
 | Optional shortcuts from the Shortcuts app | R18 | Off on a fresh install; the checklist row ticks only after a successful run. |
 | Light and dark; follow the system or pick one in Settings | shipped, R36 | Toggle the system appearance; Settings > Appearance offers Match System / Light / Dark and each applies. |
-| Works offline | shipped | Wi-Fi off: the full show flow works, and no error banners appear. *Superseded (phase 3 ships in 0.5): R66: true for writing and the stage; the model download needs the network once. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
+| Works offline; only the optional model download needs a network, once | shipped, R66 | Wi-Fi off: the full show flow and a paste work, with no error banners. The model card's Download needs the network (Settings > AI). |
 | Statistics and crash reports each opt-in; change in Settings | R25, R26, A10 | The last Welcome step asks two separate questions, each with equal-weight buttons; Settings > Privacy has both toggles. |
 | No ads, no IAP | R2 | Trivially true. |
 
@@ -249,7 +260,7 @@ chordpro,songbook,transpose,prompter,worship,hindi,guitar,piano,capo,nashville,s
 - **Excluded words:** words already in the name or subtitle (segue, setlists, chords, lyrics, live, gigs), "app", competitor names, and `band` (implies band sharing Segue does not have).
 - No other locale sets: en-US is the only listing (A46).
 
-> *Superseded (phase 3 ships in 0.5): a keywords swap for the AI features is open, phase 3 spec 16.2. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
+- **DECIDE (section 17, question 6).** `ai` cannot be used: Apple requires each keyword to be "greater than two characters". Options: swap `cover` for `paste` (97 bytes), swap `singer` for `metronome` (100 bytes), or keep R37 (recommended).
 
 ### 4.6 App Review Information
 
@@ -259,7 +270,7 @@ chordpro,songbook,transpose,prompter,worship,hindi,guitar,piano,capo,nashville,s
 | Contact first/last name | `Ryan` / `Dsilva` (R30 legal name) |
 | Contact email | `segue@ryandsilva.dev` |
 | Contact phone | Ryan's phone. **Not committed to git.** Enter by hand, or pass it to `deliver` through an environment variable. |
-| Notes | below (3,557 / 4,000 bytes as drafted, including the Apple-events paragraph for WS1 Path SE, R59; recount after the 14.2 pass) *Superseded (phase 3 ships in 0.5): R61/R66: the notes gain an AI paragraph and a model-download line in NETWORK USE, within 4,000 bytes. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
+| Notes | below (3,585 / 4,000 bytes as drafted by P3-9: the paste try-it, the ON-DEVICE AI paragraph and the model download in NETWORK USE, with the Welcome, stage and Apple-events paragraphs tightened; recount after the 14.2 pass) |
 | Attachment | the 60-90 s walkthrough video from section 9.5 (B-31) |
 
 Notes. The names below follow the resolved specs (WS2a, WS2b, WS3). Before pasting, check each against the built App Store flavor and correct the notes, never the other way round:
@@ -269,34 +280,38 @@ Notes. The names below follow the resolved specs (WS2a, WS2b, WS3). Before pasti
 - the Start Show menu path and shortcut (Setlist > Start Show, Cmd-Return, A33);
 - the quick-search and end-show keys (today `Cmd-K` and `Cmd-.`, from `InputBindings.defaults`);
 - the Help item "Report a Problem..." and whether its form has the optional email field (WS3 8.2; A9 keeps it);
-- the import file types (the single SegueCore list, A24).
+- the import file types (the single SegueCore list, A24);
+- the paste review sheet's Accept button, the shortcut Option-Command-V, Arrange's Command-2 and the request bar's Build;
+- the model's name, size and licence in Settings > AI (`curated-models.json`).
 
 ```
 Segue is a songbook and live-performance app for gigging musicians. Songs and setlists are plain ChordPro text files in a folder the user chooses. No account, no sign-in, no in-app purchases.
 
-FIRST LAUNCH (a three-step Welcome window)
-1. Library: Segue asks where to keep the song library. Click "Create Library in Music..." and accept the suggested folder.
-2. Welcome songs: leave "Add 4 songs and a setlist written for Segue" ticked and click Continue. Segue adds four original demo songs written by the developer for Segue (one in romanized Hindi, i.e. Hindi written in Latin letters) and a demo setlist named "Welcome Set". They can be deleted at any time.
-3. Privacy: Segue asks two separate questions, "Share usage analytics" and "Send crash reports", each with two equal buttons. Any answers are fine; nothing is sent for a question unless you choose Share or Send. Click Continue. Settings > Privacy changes either answer at any time.
+FIRST LAUNCH (three-step Welcome window)
+1. Click "Create Library in Music..." and accept the suggested folder.
+2. Leave "Add 4 songs and a setlist written for Segue" ticked and click Continue: four original demo songs by the developer (one in romanized Hindi, i.e. Hindi in Latin letters) and a setlist "Welcome Set".
+3. Two separate questions, "Share usage analytics" and "Send crash reports", each with two equal buttons. Any answer is fine; nothing is sent unless you choose Share or Send. Settings > Privacy changes them later.
 
 THINGS TO TRY
-1. Library: select a song to preview it. Use the transpose controls, the capo setting and the Nashville number toggle; open the chord diagram strip for guitar or piano shapes. Type "kitabon" in search to find the romanized Hindi song despite the different spelling.
-2. Editor: double-click a song. Switch between text and visual mode and drag a chord onto another syllable. Changes save automatically.
-3. Setlists: open "Welcome Set" and drag to reorder; the running time updates.
-4. Stage mode: choose Setlist > Start Show (Command-Return). A pre-show checklist appears; continue past it. Stage mode is full screen and dark, and hides the Dock and menu bar only while performing. Right Arrow or Space goes to the next song, Left Arrow goes back, A starts or pauses auto-scroll, Command-K searches the library to queue a request, and ? shows every key. Command-Period, then End Show, leaves stage mode and saves the show to the Gig Log.
-5. Import: drag a ChordPro file (.cho, .chopro, .chordpro, .pro or .txt) onto the window, or use File > Import. Deleting a song moves its file to the Trash.
-6. If the main window is closed, Window > Segue Library (Command-0) reopens it.
+1. Library: select a song; try transpose, capo and Nashville numbers. Search "kitabon" to find the romanized Hindi song despite the spelling.
+2. Paste: copy any chord sheet as text (e.g. from a chord website) and choose File > New Song from Clipboard (Option-Command-V). A review sheet shows the converted song before anything is saved; click Accept. Dragging a .txt or .crd file onto the window opens the same sheet.
+3. Editor: double-click a song; switch text and visual mode. Changes save automatically.
+4. Setlists: open "Welcome Set". Arrange (Command-2) has a request bar: type "15 min" and click Build (one Undo takes it back).
+5. Stage: Setlist > Start Show (Command-Return), continue past the checklist. Stage mode is full screen and hides the Dock and menu bar only while performing. Right Arrow next song, A auto-scroll, Command-K search for a request, ? every key, Command-Period then End Show to leave.
+6. Window > Segue Library (Command-0) reopens a closed main window.
+
+ON-DEVICE AI (optional)
+Segue converts pastes with its own rules first. A model only re-checks section labels, title and artist, and reads set requests; it runs entirely on the Mac and nothing pasted or typed is sent anywhere. Apple Intelligence (Foundation Models framework) is used when the Mac has it turned on; Settings > AI shows its status. A free local model (Qwen3 4B, Apache-2.0, 2.27 GB) is offered in Settings > AI and downloads only when the user clicks Download, with its size shown first. The download is model weights (data files) checked against SHA-256 hashes built into the app; it is run by the MLX framework bundled in the app and adds no code. Delete removes it. Everything works without either model, and Settings > AI has one switch to turn AI off.
 
 NETWORK USE
-Segue works fully offline. It uses the network only for: (a) usage statistics, only after the user chooses Share; (b) crash and hang reports, only after the user chooses Send; (c) Help > Report a Problem..., which the user sends explicitly after a preview of exactly what will be sent (attaching the current song is off by default, and the reply email field is optional). Help documentation, the privacy policy, the terms and the feature-request board (Help > Request a Feature...) open in the default web browser.
+Writing and performing work fully offline. Segue goes online only for: (a) usage statistics, after the user chooses Share; (b) crash and hang reports, after the user chooses Send; (c) Help > Report a Problem..., sent only after a preview of exactly what is sent; (d) the optional model download above, directly from huggingface.co, only on click. Help, the privacy policy and the feature board open in the default browser.
 
-OPTIONAL SHORTCUTS INTEGRATION (APPLE EVENTS)
-Settings > Live can run shortcuts the user creates in the Shortcuts app when a show starts and ends (for example, to turn on a Focus). It is off until the user sets it up and is not needed to use the app. Segue runs those shortcuts by sending the "run shortcut" Apple event to Shortcuts Events, through the com.apple.security.scripting-targets entitlement limited to the Apple-published access group com.apple.shortcuts.run (no temporary exception). The reply tells Segue whether the shortcut finished, so the pre-show checklist ticks "Focus on" only when it really ran. Segue sends no other Apple events and controls no other app. macOS asks for Automation permission once, when the user presses Test in Settings > Live; to see it, type the name of any shortcut and press Test.
+SHORTCUTS INTEGRATION (APPLE EVENTS, optional)
+Settings > Live can run shortcuts the user made in the Shortcuts app when a show starts and ends (e.g. to turn on a Focus). Off until set up. Segue sends only the "run shortcut" Apple event to Shortcuts Events, via com.apple.security.scripting-targets limited to the access group com.apple.shortcuts.run (no temporary exception); the reply tells Segue whether it ran, so the checklist ticks "Focus on" only then. macOS asks for Automation permission when the user presses Test in Settings > Live (type any shortcut name, press Test).
 
 Support: segue@ryandsilva.dev - https://segue.ryandsilva.dev/support
 ```
 
-> *Superseded (phase 3 ships in 0.5): R61/R66/R76: "Things to try" gains paste cleanup and `.crd` import; NETWORK USE gains the user-initiated model download from Hugging Face. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
 
 #### 4.6.1 Notes gate
 
@@ -313,8 +328,8 @@ Click path: App Store Connect > Apps > Segue > App Information > Age Rating > Ed
 |---|---|---|
 | Parental Controls | No | none in app |
 | Age Assurance | No | none |
-| Unrestricted Web Access | **No** | Help, privacy, terms and board open in the default browser (`NSWorkspace`/`openURL`), with no in-app web view. **If any `WKWebView` ships, stop: this becomes a question for Ryan.** |
-| User-Generated Content | **No** | Songs are local files, never distributed to other users. The bug report is private to the developer (Sentry, R24). The Featurebase board is a website opened in the browser, never posted to from the app (R23). |
+| Unrestricted Web Access | **No** | Help, privacy, terms and board open in the default browser (`NSWorkspace`/`openURL`), with no in-app web view; the model download is one fixed URL, not browsing. **If any `WKWebView` ships, stop: this becomes a question for Ryan.** |
+| User-Generated Content | **No** | Apple's definition is "the broad distribution of content created by users". Songs and pastes are local files, never distributed to other users. The bug report is private to the developer (Sentry, R24). The Featurebase board is a website opened in the browser, never posted to from the app (R23). |
 | Social media | No | |
 | Messaging and Chat | No | |
 | Advertising | No | R2 |
@@ -329,7 +344,7 @@ Click path: App Store Connect > Apps > Segue > App Information > Age Rating > Ed
 | Guns or Other Weapons | None | |
 | Medical or Treatment Information | None | |
 | Health or Wellness Topics | No | |
-| Any AI/assistant question, if Apple shows one | No | no AI in 0.5 *Superseded (phase 3 ships in 0.5): R61/R62: phase 3 AI ships in 0.5; the answer is open (phase 3 spec 16.2, research ticket). Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
+| AI features | no item exists (checked at source 2026-10-20) | The questionnaire has no AI, chatbot or assistant item. Segue's models only label the user's own paste and read set requests; no chat, no generated content for others. If Apple adds an item on the day, answer by meaning and tell Ryan. **DECIDE** (section 17, question 3): answer as this table (recommended) or override to 9+. |
 
 Apple rates the app's own content, not what a user types into a local editor (`03` section 6).
 
@@ -348,6 +363,8 @@ Vendors behind the rows (fixed, R23-R25, R33, R34):
 - **TelemetryDeck** (usage analytics, opt-in), sent through Segue's own minimal ingest client, which sends only the WS3 section 5 fields plus OS/app version and region (R34). Region comes from the locale setting, not IP.
 - **Sentry**, US data region (R33): crashes, hangs and MetricKit (opt-in, separate toggle, R25), plus Report a Problem... envelopes (sent only after the preview, R22, R24). Sentry's per-install ID is kept (R25).
 - **Featurebase**: the board is a website opened in the browser; the app sends it nothing, so it adds no rows.
+- **Hugging Face** (the optional AI model download, R66): adds no rows. Segue's own request on the user's click; the developer receives nothing; Hugging Face is not a partner whose code makes the request; an IP address on a request the developer does not retain needs no disclosure (Apple's "collect" definition, `docs/research/phase3-store-ai.md` section 3). The privacy policy discloses it. **DECIDE** (section 17, question 4b): confirm no label change (recommended).
+- **Apple Intelligence** (Foundation Models) runs on the device: adds no rows.
 
 Every row is **Tracking: No** (no cross-app or cross-company linking, no data brokers, no ATT).
 
@@ -376,7 +393,7 @@ Rules:
 
 Click path: App Store Connect > Apps > Segue > App Accessibility (sidebar, under General) > Add Accessibility Support > macOS. Tick the features, then Publish. This path is from Apple's help as read in `03`; verify it on the day.
 
-A label is claimed **only** if the WS2b audit (`docs/release/accessibility-audit.md`) records a pass for **every common task** (R15): the full Welcome flow (library step, Welcome-songs step, the two-row consent step), library, editor (both modes), setlist builder (including Setlist > Add Selected Song to Setlist, A33), stage mode enter, play and exit, Settings (all panes, including Appearance per R36), Report a Problem..., import and delete. The audit decides; this section never overrides it.
+A label is claimed **only** if the WS2b audit (`docs/release/accessibility-audit.md`) records a pass for **every common task** (R15): the full Welcome flow (library step, Welcome-songs step, the two-row consent step), library, editor (both modes), setlist builder (including Setlist > Add Selected Song to Setlist, A33), stage mode enter, play and exit, Settings (all panes, including Appearance per R36 and AI per R73), Report a Problem..., import and delete, and the phase 3 surfaces (R79): paste review sheet (single and batch), song card and Time it, section band, section notes, set builder Pick / Arrange with break rows and the missing-lengths list, the set assistant bar and chips, smart filters, the Arrange Sections sheet, the metronome overlay and the live repeat message. The audit decides; this section never overrides it.
 
 | Label | Claim if | Default expectation (`03` section 7) |
 |---|---|---|
@@ -464,18 +481,18 @@ Each test:
 
 Eight shots; the first three show in search results. Both appearances are captured for every shot; which one ships per slot is set in `store/screenshots.json`. The mix is **5 dark, 3 light** (A49), as in the table. At least one must be dark (Apple guidance).
 
-> *Superseded (phase 3 ships in 0.5): a 9th screenshot vs replacing one is open, phase 3 spec 16.2. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
+> **DECIDE (section 17, question 2):** add a 9th shot, the paste review sheet (recommended: `paste`, Light, headline "Paste a song from anywhere.", subline "Segue converts it. You check it before it saves."), replace shot 7, add two, or keep eight.
 
 Library content for every shot comes from `-SegueScreenshotLibrary YES` (8.2): the four Welcome songs, "Welcome Set", the screenshot-only songs and the screenshot-only setlist from 8.4.1.
 
 | # | Slug | State to drive to | Appearance | Headline | Subline |
 |---|---|---|---|---|---|
-| 1 | `stage` | Stage mode from "Late Set" on "Ferry Lights Over Calder Bay" (the 2-column Welcome song): header with key/capo/tempo, two-column auto-fit, gutter labels, progress dots, Up next footer | Dark (stage is always dark) | Your chart, your set, your cue. | A stage view that fits every song on one screen. |
-| 2 | `builder` | Setlist builder on "Late Set": library column left (Welcome and screenshot-only songs), set right with start times, running total against its target | Dark | Build tonight's set in minutes. | Drag, reorder, and watch the running time. |
+| 1 | `stage` | Stage mode from "JamFest Opener" on "Ferry Lights Over Calder Bay" (the 2-column Welcome song): header with key/capo/tempo, two-column auto-fit, gutter labels, progress dots, Up next footer | Dark (stage is always dark) | Your chart, your set, your cue. | A stage view that fits every song on one screen. |
+| 2 | `builder` | Setlist builder on "JamFest Opener": library column left (Welcome and screenshot-only songs), set right with start times, running total against its target | Dark | Build tonight's set in minutes. | Drag, reorder, and watch the running time. |
 | 3 | `search` | Library search field holding `kitabon`, matching "Kitaabon Wali Gali" with the lyric hit visible | Light | Find the song from one line. | Search lyrics, even romanized Hindi with casual spelling. |
 | 4 | `editor` | Editor in visual mode on a Welcome song, chord pills over syllables, a chord mid-selection | Light | Put chords right on the syllable. | Or edit the ChordPro text directly. |
 | 5 | `theory` | Song preview of "Kettle On, Lights Low" transposed, capo on, Nashville toggle on, diagram strip showing guitar and piano | Light | Transpose, capo, Nashville numbers. | Guitar and piano diagrams in any tuning. |
-| 6 | `request` | Stage mode on "Late Set" with quick search open on `kitabon`, then "Kitaabon Wali Gali" queued: footer shows "Request" and the count dot | Dark | Take a request mid-set. | Search, queue, and play it next. |
+| 6 | `request` | Stage mode on "JamFest Opener" with quick search open on `kitabon`, then "Kitaabon Wali Gali" queued: footer shows "Request" and the count dot | Dark | Take a request mid-set. | Search, queue, and play it next. |
 | 7 | `minsize` | Stage mode on the longest Welcome song at a large minimum lyric size, scrolled partway (scroll position visible) | Dark | Readable from the mic stand. | Set a minimum size. Segue scrolls rather than shrinks. |
 | 8 | `checklist` | Pre-show checklist sheet over the setlist. No Gig Mode Shortcut rows (hidden until configured, A37, R18) | Dark | Ready before you walk on. | A pre-show checklist, and shows that survive a crash. |
 
@@ -489,30 +506,27 @@ Content rules:
 
 #### 8.4.1 Screenshot-only songs and setlist (A48)
 
-Original titles written for these screenshots, artist "Segue Originals", **titles and chords only** (`{title}`, `{artist}`, `{key}`, `{tempo}`, `{duration}`, section labels and chord-only lines; no lyrics). They exist only to make the library and builder look like a real repertoire. They are never shipped:
+Original titles written for these screenshots (R128), artist "Segue Originals", **titles and chords only** (`{title}`, `{artist}`, `{key}`, `{tempo}`, `{duration}`, section labels and chord-only lines; no lyrics). They exist only to make the library and builder look like a real repertoire. They are never shipped:
 
 - they live as string literals in `App/Sources/Debug/ScreenshotSongs.swift`, compiled only under `#if DEBUG`;
 - the composite flag writes them into the screenshot folder after the Welcome seeder runs;
 - `verify-appstore` greps the Release-AppStore binary for one of the titles and fails if found.
 
-Proposed titles for Ryan to approve (pick 6-10; each goes through the same title search as the Welcome songs - Apple Music, Spotify, Google "<title> song" - and any hit drops it):
+Approved titles (R128, 2026-10-20: five, deliberately fewer than the old 6-10 guideline). Each went through the title search (Apple Music, Spotify, Google "<title> song"); any hit drops the title unless Ryan keeps it. Log: `docs/research/phase3-store-ai.md` section 7.
 
-| # | Title | Key | Tempo | Duration | Why it helps the shot |
+| # | Title | Key | Tempo | Duration | Title search (2026-10-20) |
 |---|---|---|---|---|---|
-| 1 | Lanterns on Pier Nine | D | 92 | 3:48 | ballad pacing in the builder |
-| 2 | Second Set Shuffle | A | 128 | 3:05 | an up-tempo opener |
-| 3 | Tin Roof Weather | G | 104 | 4:12 | mid-tempo filler |
-| 4 | Chai at Platform Four | Em | 96 | 3:40 | bilingual-feeling title, matches the audience |
-| 5 | Neeli Cycle Ka Safar | C | 110 | 4:05 | a second romanized Hindi title in the list |
-| 6 | Copper Kettle Waltz | F | 84 (3/4) | 3:20 | a waltz next to the Welcome waltz |
-| 7 | Northbound Before Dawn | Bb | 76 | 4:30 | a long slow closer |
-| 8 | Open Mic at the Laundromat | E | 118 | 2:55 | the open-mic crowd |
-| 9 | Saltwater Telegraph | Am | 100 | 3:35 | minor-key variety |
-| 10 | Last Tram to Wexley | G | 132 | 3:10 | a fast finisher |
+| 1 | Lanterns on Pier Nine | D | 92 | 3:48 | clean |
+| 2 | Chai at Platform Four | Em | 96 | 3:40 | clean |
+| 3 | Northbound Before Dawn | Bb | 76 | 4:30 | **hit** on Apple Music ("Northbound Before Dawn (Delta Blues)", Cora Flood). **DECIDE** (section 17, question 1): drop, replace (recommended: "Northbound at First Light", same key, tempo and length, clean on Apple Music; Spotify and Google still to search) or keep |
+| 4 | Saltwater Telegraph | Am | 100 | 3:35 | clean |
+| 5 | Last Tram to Wexley | G | 132 | 3:10 | clean |
+
+Dropped (R128): Second Set Shuffle, Tin Roof Weather, Neeli Cycle Ka Safar, Copper Kettle Waltz, Open Mic at the Laundromat.
 
 Tags and proficiency marks are set so the library shows a realistic mix (some "Ready", a few "Learning", two "Pro").
 
-Screenshot-only setlist **"Late Set"** (also Debug-only, created by the composite flag): 10-12 entries mixing Welcome and approved screenshot-only songs, with "Ferry Lights Over Calder Bay" in position 3 (so shot 1 has an Up next song) and "Kitaabon Wali Gali" deliberately **not** in the set, so the request in shot 6 and in the preview (9.2) is a real request. Its target length is chosen so the running total sits a little under target (for example 41:30 of 45:00). Final order and target are fixed in `ScreenshotSongs.swift` once the titles are approved.
+Screenshot-only setlist **"JamFest Opener"** (R128; also Debug-only, created by the composite flag): every approved screenshot-only song plus the Welcome songs except "Kitaabon Wali Gali", so 8 entries with five approved titles, with "Ferry Lights Over Calder Bay" in position 3 (so shot 1 has an Up next song) and "Kitaabon Wali Gali" deliberately **not** in the set, so the request in shot 6 and in the preview (9.2) is a real request. Its target length is chosen so the running total sits a little under target. Example with the five R128 titles: Last Tram to Wexley (3:10), Lanterns on Pier Nine (3:48), Ferry Lights Over Calder Bay (4:40), Chai at Platform Four (3:40), Soundcheck at Seven (3:20), Saltwater Telegraph (3:35), Kettle On, Lights Low (3:05), Northbound Before Dawn or its replacement (4:30) = 29:48 against a 30:00 target. Final order and target are fixed in `ScreenshotSongs.swift`.
 
 ### 8.5 Export
 
@@ -637,7 +651,7 @@ Open the contact sheet and every final PNG at 100%. Fix each of these at the sou
 
 | t (s) | Action (keyboard-driven, no pointer) | Caption overlay |
 |---|---|---|
-| 0.0-3.5 | Setlist builder on "Late Set" (8.4.1); the running total is visible; Start Show with Cmd-Return | "Build tonight's set." |
+| 0.0-3.5 | Setlist builder on "JamFest Opener" (8.4.1); the running total is visible; Start Show with Cmd-Return | "Build tonight's set." |
 | 3.5-9.0 | Stage opens on song 1: auto-fit columns, header, progress dots; hold so the viewer can read | "Every song fits the screen." |
 | 9.0-13.0 | Right Arrow to song 2; A starts auto-scroll; it scrolls smoothly | "Auto-scroll, hands free." |
 | 13.0-19.0 | Cmd-K; type `kitabon` at a human pace (about 8 chars/s); "Kitaabon Wali Gali" appears; queue it; the footer shows "Request" | "Take a request mid-set." |
@@ -768,7 +782,7 @@ Verify `deliver` option names against `mise exec -- fastlane deliver --help` at 
 | `scripts/xcodebuild.sh` | honour `SEGUE_RESULT_BUNDLE` |
 | `scripts/verify-appstore.sh` | add WS5's own flag strings (`-SegueScreenshotLibrary`, `-SegueAppearance`, `-SegueWindowFrame`, `-SegueStageWindowed`, `-SegueFixedClock`) and one screenshot-only song title to WS1's absent-from-Release grep list (I-12) |
 | `App/Sources/LaunchOptions.swift`, `App/Sources/SegueApp.swift`, and the owning SegueUI types (window frame, stage presentation, `AppearanceStore`) | Debug-only flags from 8.2; the screenshot-folder constant shared with WS2b's `-SegueSeedWelcome` |
-| `App/Sources/Debug/ScreenshotSongs.swift` | new, `#if DEBUG` only: approved screenshot-only songs and the "Late Set" setlist (8.4.1) |
+| `App/Sources/Debug/ScreenshotSongs.swift` | new, `#if DEBUG` only: approved screenshot-only songs and the "JamFest Opener" setlist (8.4.1) |
 | `UITests/AppStore/AppStoreScreenshotTests.swift`, `AppStorePreviewTests.swift`, `ScreenshotSupport.swift`, `ScreenshotTests.xctestplan`, `PreviewTests.xctestplan` | new |
 | `Project.swift` | `SegueAppStoreUITests` target; `appStoreScheme` test action with both plans |
 | `Makefile` | `store-check` (added to `check`), `screenshots`, `preview`, `preview-edit`, `review-video`, `store-upload`; `.PHONY` |
@@ -809,7 +823,7 @@ Do not touch `CHANGELOG.md` or any generated file by hand.
 
 | # | When | Step | Click path |
 |---|---|---|---|
-| R1 | before the session | Answer section 17, including approving 6-10 screenshot-only titles (8.4.1) after a title search | - |
+| R1 | before the session | Answer section 17 (the screenshot-only titles are approved by R128; question 1 settles the one title-search hit) | - |
 | R2 | before step 8 | Confirm App Store Connect access is live, the 2026-10-13 DPLA is accepted, and DSA non-trader is declared (R4) | appstoreconnect.apple.com > Business > Agreements; Business > Agreements > Compliance > Digital Services Act |
 | R3 | before step 8 | Create the app record if the signing/upload workstream has not: macOS, name `Segue - Setlists & Chords`, English (U.S.), bundle `dev.ryandsilva.segue`, SKU `segue-macos` (B-33), User Access Full. Then note the numeric Apple ID (App Information) and hand it to WS2a for Help > Rate Segue on the App Store (A35) and to WS4 for the badge link | Apps > + > New App |
 | R4 | before step 8 | Set the price to Free; availability all countries or regions **except China mainland** (A47) | Apps > Segue > Pricing and Availability > Price Schedule > Free; Availability > select all, then untick China mainland |
@@ -975,13 +989,13 @@ After release:
 
 ## 17. Open questions for Ryan
 
-All earlier WS5 questions are closed (A46-A51, B-30 to B-33, R30, R37; see the table at the top). Only these remain:
+All earlier WS5 questions are closed (A46-A51, B-30 to B-33, R30, R37, R128; see the table at the top). The review walkthrough is captured by Ryan with QuickTime on the clean-account TestFlight pass (former question 2, default a, section 9.5). P3-9 opened these (evidence: `docs/research/phase3-store-ai.md`, which carries the same questions as Q8, Q5, Q1, Q2/Q3, Q4, Q6 and Q7):
 
-1. **Screenshot-only titles (A48 asks you to approve them).** Pick 6-10 of the ten titles in 8.4.1, edit any, and confirm the screenshot setlist name "Late Set". Each picked title still goes through the title search before step 4.
-   - (a) All ten as listed.
-   - (b) Your subset or edits (name them).
-   - **Recommend a**, minus any title the search hits.
-2. **How the review walkthrough is captured (9.5).** B-31 says "a cut from the preview pipeline" but not how the raw footage is made.
-   - (a) You record it with QuickTime on the clean-account TestFlight pass; `make review-video` edits it. Shows the true first run (real folder panel, empty container, consent).
-   - (b) Scripted XCUITest on `Debug-AppStore` with `-SegueOnboarding fresh` + `screencapture`. Repeatable, but WS2b's fresh flow starts at step 2, so the library step is never shown, and it is not the shipped binary.
-   - **Recommend a** - the video exists to show the reviewer their exact path, and you are on that path in 14.2 anyway.
+1. **"Northbound Before Dawn" title-search hit (R128).** (a) Drop it (four screenshot-only songs); (b) replace it: "Northbound at First Light" (Bb, 76, 4:30), "Second Set Shuffle" (A, 128, 3:05) or "Open Mic at the Laundromat" (E, 118, 2:55), each clean on Apple Music; (c) keep it. **Recommend b, "Northbound at First Light".**
+2. **Screenshots (phase 3 spec 16.2 question 17).** (a) Add a 9th, the paste review sheet (Light); (b) replace shot 7 `minsize` with it; (c) add two (paste review + Arrange Sections or the set assistant bar); (d) no change. **Recommend a.**
+3. **Age rating with AI (question 19).** (a) Answer as section 5 (no AI item exists; 4+); (b) override to 9+. **Recommend a.**
+4. **Content rights and App Privacy with the model download (question 19).** Content rights: (a) "No"; (b) "Yes ... and I have the necessary rights" (the app fetches Apache-2.0 weights). **Recommend b.** App Privacy: no change (the developer receives nothing; section 6). **Recommend no change.**
+5. **"Apple Intelligence" wording (question 20).** (a) Referential use where true ("works with Apple Intelligence"), never in a feature name, no ™, plus "Apple Intelligence is a trademark of Apple Inc." on /acknowledgements; (b) "on-device AI" only in marketing, the term only in-app; (c) avoid it everywhere. **Recommend a.**
+6. **Keywords (question 18).** `ai` is not allowed (2 characters). (a) `cover` -> `paste` (97 bytes); (b) `singer` -> `metronome` (100 bytes); (c) keep R37. **Recommend c.**
+7. **Review notes byte budget.** (a) The 4.6 rewrite at 3,585 / 4,000 bytes; (b) keep the old notes and cut the Apple-events paragraph instead. **Recommend a.**
+8. **Promotional text.** (a) The paste-led line in 4.2 (162 chars); (b) keep the pre-phase-3 line (169 chars, still true). **Recommend a.**
