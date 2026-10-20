@@ -224,8 +224,10 @@
                 }
                 Spacer(minLength: 12)
                 if let badge = StandingBadge.text(standing) {
+                    // Spoken in full, as part of the row's combined label (an accessibility
+                    // value on the combined row never reached XCUITest).
                     StageChip(text: badge)
-                        .accessibilityHidden(true)
+                        .accessibilityLabel(StandingBadge.spoken(standing) ?? badge)
                 }
                 if let key = metadata.key, !key.isEmpty {
                     StageChip(text: key)
@@ -244,7 +246,6 @@
                     .fill(isSelected ? Theme.color.ink.opacity(0.08) : .clear)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityValue(StandingBadge.spoken(standing) ?? "")
             .accessibilityIdentifier(AccessibilityID.liveSearchResult)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
         }

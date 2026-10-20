@@ -20,7 +20,7 @@ extension SegueLiveE2ETests {
         let result = element(app, LiveAXID.liveSearchResult)
         XCTAssertTrue(result.appears(timeout: 5))
         XCTAssertTrue(
-            waitFor(result) { ($0.value as? String) == "Already played" },
+            waitFor(result) { $0.label.contains("Already played") },
             result.debugDescription,
         )
         key(app, .return, [.option])
