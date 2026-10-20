@@ -40,6 +40,25 @@ struct WelcomeSeedingTests {
             == "The Welcome songs are already in your library.")
     }
 
+    /// R78 / P3-5: every seeded Welcome song has a length, so set timing works out of the
+    /// box. Songs added for the WS5 screenshots need `{duration}` too.
+    @Test
+    func `seeded welcome songs carry their lengths`() async throws {
+        let env = try TestEnvironment()
+        let app = try await env.openApp()
+        let session = try #require(app.session)
+        #expect(await app.seedWelcomeLibrary())
+        var lengths: [String: TimeInterval] = [:]
+        for song in session.library.catalog {
+            let metadata = song.document.metadata
+            lengths[metadata.title ?? ""] = metadata.duration
+        }
+        #expect(lengths == [
+            "Ferry Lights Over Calder Bay": 280, "Kettle On, Lights Low": 185,
+            "Kitaabon Wali Gali": 245, "Soundcheck at Seven": 200,
+        ])
+    }
+
     @Test
     func `remove welcome songs trashes the originals and keeps edited ones`() async throws {
         let env = try TestEnvironment()
