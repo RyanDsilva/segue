@@ -5,6 +5,12 @@ import Synchronization
 /// real vendor. Each test registers a route under its own unique path prefix (the
 /// TelemetryDeck namespace), scripts the responses and reads back what was sent. A request
 /// matching no route fails and is recorded in `unrouted`.
+private extension Array {
+    func partitioned(by predicate: (Element) -> Bool) -> (matching: [Element], rest: [Element]) {
+        (filter(predicate), filter { !predicate($0) })
+    }
+}
+
 final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     enum Reply: Sendable {
         case status(Int)
@@ -32,6 +38,12 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
             var fallback: Reply
             var captured: [Captured] = []
             var cancelled = 0
+            var waiters: [Waiter] = []
+        }
+
+        private struct Waiter {
+            let isSatisfied: @Sendable (State) -> Bool
+            let continuation: CheckedContinuation<Void, Never>
         }
 
         private let state: Mutex<State>
@@ -48,19 +60,52 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
             state.withLock { $0.cancelled }
         }
 
+        /// Returns once `count` requests have arrived (event-driven: no polling, no timeout).
+        func waitForCaptured(_ count: Int) async {
+            await wait { $0.captured.count >= count }
+        }
+
+        /// Returns once `count` in-flight requests have been cancelled.
+        func waitForCancelled(_ count: Int) async {
+            await wait { $0.cancelled >= count }
+        }
+
+        private func wait(_ isSatisfied: @escaping @Sendable (State) -> Bool) async {
+            await withCheckedContinuation { continuation in
+                let ready = state.withLock { state in
+                    if isSatisfied(state) { return true }
+                    state.waiters.append(Waiter(isSatisfied: isSatisfied, continuation: continuation))
+                    return false
+                }
+                if ready { continuation.resume() }
+            }
+        }
+
+        private func resumeSatisfiedWaiters() {
+            let ready = state.withLock { state in
+                let (ready, waiting) = state.waiters.partitioned(by: { $0.isSatisfied(state) })
+                state.waiters = waiting
+                return ready
+            }
+            for waiter in ready { waiter.continuation.resume() }
+        }
+
         func setFallback(_ reply: Reply) {
             state.withLock { $0.fallback = reply }
         }
 
         fileprivate func take(_ request: Captured) -> Reply {
-            state.withLock { state in
+            let reply = state.withLock { state in
                 state.captured.append(request)
                 return state.replies.isEmpty ? state.fallback : state.replies.removeFirst()
             }
+            resumeSatisfiedWaiters()
+            return reply
         }
 
         fileprivate func noteCancelled() {
             state.withLock { $0.cancelled += 1 }
+            resumeSatisfiedWaiters()
         }
     }
 

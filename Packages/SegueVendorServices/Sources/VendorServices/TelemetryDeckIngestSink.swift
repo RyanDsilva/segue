@@ -9,11 +9,14 @@ import Support
 /// Constructed only by `ServicesHub` once analytics consent is granted. Construction creates
 /// the per-install ID (if needed), a new session ID, and queues one
 /// `TelemetryDeck.Session.started` signal; the first request goes out `transmitInterval`
-/// later. `send(_:)` is synchronous and never blocks: it hands the signal to the queue actor
-/// through an `AsyncStream`.
+/// later. `send(_:)` is synchronous and never blocks: it appends the signal to a buffer and
+/// wakes a consumer that hands everything buffered to the queue actor in one call, so a
+/// burst costs one rewrite of the on-disk queue.
 public final class TelemetryDeckIngestSink: AnalyticsSink {
     private let queue: IngestQueue
-    private let continuation: AsyncStream<IngestSignal>.Continuation
+    private let outbox: IngestOutbox
+    private let wake: AsyncStream<Void>.Continuation
+    private let consumer: Task<Void, Never>
     private let identity: IngestIdentity
     private let context: IngestContext
     private let suiteName: String?
@@ -54,6 +57,8 @@ public final class TelemetryDeckIngestSink: AnalyticsSink {
         configuration.httpAdditionalHeaders = [:]
         configureSession(configuration)
 
+        let outbox = IngestOutbox()
+        self.outbox = outbox
         let queue = IngestQueue(
             endpoint: endpoint,
             queueFile: queueFile,
@@ -61,15 +66,20 @@ public final class TelemetryDeckIngestSink: AnalyticsSink {
             clock: clock,
             log: log,
             session: URLSession(configuration: configuration),
+            outbox: outbox,
             first: IngestBody.sessionStarted(context: context, identity: identity),
         )
         self.queue = queue
-        let (stream, continuation) = AsyncStream.makeStream(of: IngestSignal.self)
-        self.continuation = continuation
-        Task {
+        // One pending wake-up is enough: the consumer takes the whole buffer each time.
+        let (stream, wake) = AsyncStream.makeStream(
+            of: Void.self,
+            bufferingPolicy: .bufferingNewest(1),
+        )
+        self.wake = wake
+        consumer = Task {
             await queue.start()
-            for await signal in stream {
-                await queue.enqueue(signal)
+            for await _ in stream {
+                await queue.absorb()
             }
         }
     }
@@ -80,21 +90,30 @@ public final class TelemetryDeckIngestSink: AnalyticsSink {
     }
 
     public func send(_ signal: AnalyticsSignal) {
-        continuation.yield(
-            IngestBody.make(
-                type: signal.name,
-                params: signal.params,
-                context: context,
-                identity: identity,
-            ),
+        let ingest = IngestBody.make(
+            type: signal.name,
+            params: signal.params,
+            context: context,
+            identity: identity,
         )
+        if outbox.append(ingest) {
+            wake.yield()
+        }
     }
 
     /// Revoke: cancels the in-flight request, clears the queue in memory and on disk and
     /// deletes `analytics.installID`, so a later grant starts a fresh, unlinkable identity.
     /// No final flush.
     public func shutDown(discardingQueue: Bool) async {
-        continuation.finish()
+        outbox.close()
+        wake.finish()
+        if discardingQueue {
+            consumer.cancel()
+        } else {
+            // Signals sent before shutdown still reach the queue (and so the disk).
+            await consumer.value
+            await queue.absorb()
+        }
         await queue.shutDown(discardingQueue: discardingQueue)
         if discardingQueue {
             Self.defaults(suiteName).removeObject(forKey: TelemetryDeckIngest.installIDKey)
@@ -123,8 +142,15 @@ public final class TelemetryDeckIngestSink: AnalyticsSink {
     /// Test observation: the signals not yet accepted by the server.
     var pendingSignals: [IngestSignal] {
         get async {
-            await queue.pendingSignals
+            await queue.absorb()
+            return await queue.pendingSignals
         }
+    }
+
+    /// Test observation: returns once every signal has been accepted by the server or dropped.
+    func drained() async {
+        await queue.absorb()
+        await queue.drained()
     }
 
     /// Test observation: the client hash this sink sends.

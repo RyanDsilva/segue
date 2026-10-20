@@ -6,6 +6,7 @@ import Testing
 
 /// Spec 14.2-9 and 14.2-10: the ingest client against a `URLProtocol` stub (real
 /// `URLSession`, real files on temp dirs). No request ever leaves the process.
+@Suite(.timeLimit(.minutes(1)))
 struct TelemetryDeckIngestTests {
     @Test
     func `every request carries only the allowlisted keys`() async throws {
@@ -18,8 +19,7 @@ struct TelemetryDeckIngestTests {
             sink.send(signal)
         }
 
-        let total = signals.count + 1
-        try await eventually { route.captured.flatMap(\.signals).count == total }
+        await sink.drained()
         let requests = route.captured
         #expect(requests.count >= 2)
         #expect(StubURLProtocol.unrouted.allSatisfy { !$0.path.contains(harness.namespace) })
@@ -84,8 +84,8 @@ struct TelemetryDeckIngestTests {
         let sink = harness.sink()
         sink.send(AnalyticsEvent.helpOpened(.help).render())
 
-        try await eventually { route.captured.count == 2 }
-        try await Task.sleep(for: .milliseconds(200))
+        // Drained means the retry was accepted; nothing is pending to send a third time.
+        await sink.drained()
         #expect(route.captured.count == 2)
         #expect(route.captured[0].body == route.captured[1].body)
         #expect(await sink.pendingSignals.isEmpty)
@@ -101,9 +101,8 @@ struct TelemetryDeckIngestTests {
         let sink = harness.sink()
         sink.send(AnalyticsEvent.helpOpened(.help).render())
 
-        try await eventually { route.captured.count == 1 }
-        try await eventually { await sink.pendingSignals.isEmpty }
-        try await Task.sleep(for: .milliseconds(200))
+        // Drained means the rejected batch was dropped; nothing is left to retry.
+        await sink.drained()
         #expect(route.captured.count == 1)
         #expect(!harness.queueFileExists)
         await sink.shutDown(discardingQueue: true)
@@ -119,8 +118,8 @@ struct TelemetryDeckIngestTests {
         for _ in 0 ..< 149 {
             offline.send(event)
         }
-        // 149 + the session signal.
-        try await eventually { await offline.pendingSignals.count == 150 }
+        // Shutting down keeps (and persists) every signal sent before it: 149 + the session
+        // signal.
         await offline.shutDown(discardingQueue: false)
         let stored = try #require(try harness.queuedSignals())
         #expect(stored.count == 150)
@@ -131,7 +130,7 @@ struct TelemetryDeckIngestTests {
         // reach the stub after shut-down (it was already on the wire when cancelled).
         let (endpoint, route) = try harness.relaunchRoute()
         let online = harness.sink(endpoint: endpoint)
-        try await eventually { await online.pendingSignals.isEmpty }
+        await online.drained()
         let sent = route.captured
         #expect(sent.map(\.signals.count) == [100, 51])
         let types = sent.flatMap(\.signals).compactMap { $0["type"] as? String }
@@ -152,7 +151,6 @@ struct TelemetryDeckIngestTests {
         for _ in 0 ..< 1100 {
             first.send(event)
         }
-        try await eventually { await first.pendingSignals.count == 1000 }
         await first.shutDown(discardingQueue: false)
         let stored = try harness.queuedSignals()
         #expect(stored?.count == 1000)
@@ -174,17 +172,18 @@ struct TelemetryDeckIngestTests {
         let sink = harness.sink()
         let firstUser = sink.clientUser
         sink.send(AnalyticsEvent.helpOpened(.help).render())
-        try await eventually { route.captured.count == 1 }
+        await route.waitForCaptured(1)
         #expect(harness.queueFileExists)
 
         await sink.shutDown(discardingQueue: true)
-        try await eventually { route.cancelled == 1 }
+        await route.waitForCancelled(1)
         #expect(!harness.queueFileExists)
         #expect(harness.defaults.string(forKey: TelemetryDeckIngest.installIDKey) == nil)
 
         // Sending after shutdown reaches nothing.
+        // The sink is closed, so the signal never reaches the queue, the disk or the wire.
         sink.send(AnalyticsEvent.helpOpened(.help).render())
-        try await Task.sleep(for: .milliseconds(150))
+        #expect(await sink.pendingSignals.isEmpty)
         #expect(route.captured.count == 1)
         #expect(!harness.queueFileExists)
 

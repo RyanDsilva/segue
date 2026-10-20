@@ -1,5 +1,6 @@
 import Foundation
 import Services
+import Synchronization
 import Support
 
 /// Batching, retry and the offline queue of the TelemetryDeck client (spec 3.9). All mutable
@@ -9,6 +10,38 @@ import Support
 /// per day), so it already holds everything unsent when the app terminates or crashes, and
 /// termination needs no last-second work. It exists only while signals are pending, and only
 /// while analytics consent is granted.
+/// Signals handed to the sink that the queue has not taken yet. The queue takes the whole
+/// buffer inside the actor (`IngestQueue.absorb()`), so order is preserved and a burst is one
+/// persist.
+final class IngestOutbox: Sendable {
+    private struct State {
+        var signals: [IngestSignal] = []
+        var isClosed = false
+    }
+
+    private let state = Mutex(State())
+
+    /// False once closed (the sink was shut down).
+    func append(_ signal: IngestSignal) -> Bool {
+        state.withLock { state in
+            guard !state.isClosed else { return false }
+            state.signals.append(signal)
+            return true
+        }
+    }
+
+    func close() {
+        state.withLock { $0.isClosed = true }
+    }
+
+    func take() -> [IngestSignal] {
+        state.withLock { state in
+            defer { state.signals = [] }
+            return state.signals
+        }
+    }
+}
+
 actor IngestQueue {
     /// One pending signal and when it was queued (for the 30-day cut-off on load).
     struct Entry: Codable, Equatable {
@@ -28,11 +61,13 @@ actor IngestQueue {
     private let clock: any Clock
     private let log: DiagnosticLog?
     private let session: URLSession
+    private let outbox: IngestOutbox
 
     private var pending: [Entry]
     private var failures = 0
     private var loop: Task<Void, Never>?
     private var isShutDown = false
+    private var drainWaiters: [CheckedContinuation<Void, Never>] = []
 
     init(
         endpoint: URL,
@@ -41,6 +76,7 @@ actor IngestQueue {
         clock: any Clock,
         log: DiagnosticLog?,
         session: URLSession,
+        outbox: IngestOutbox,
         first: IngestSignal,
     ) {
         self.endpoint = endpoint
@@ -49,6 +85,7 @@ actor IngestQueue {
         self.clock = clock
         self.log = log
         self.session = session
+        self.outbox = outbox
         let now = clock.now()
         let loaded = Self.load(queueFile, now: now, maxAge: timing.maxAge)
         pending = Self.capped(loaded + [Entry(signal: first, queuedAt: now)], timing.maxQueued)
@@ -62,10 +99,15 @@ actor IngestQueue {
         scheduleIfNeeded()
     }
 
-    func enqueue(_ signal: IngestSignal) {
-        guard !isShutDown else { return }
+    /// Queues everything the sink has buffered with one rewrite of the on-disk queue (it is
+    /// rewritten as a whole, so persisting per signal would make a burst of n signals O(n^2)
+    /// file I/O).
+    func absorb() {
+        let signals = outbox.take()
+        guard !isShutDown, !signals.isEmpty else { return }
+        let now = clock.now()
         pending = Self.capped(
-            pending + [Entry(signal: signal, queuedAt: clock.now())],
+            pending + signals.map { Entry(signal: $0, queuedAt: now) },
             timing.maxQueued,
         )
         persist()
@@ -91,6 +133,7 @@ actor IngestQueue {
         running?.cancel()
         session.invalidateAndCancel()
         pending = []
+        resumeDrainWaiters()
         if discardingQueue {
             try? FileManager.default.removeItem(at: queueFile)
         }
@@ -100,6 +143,21 @@ actor IngestQueue {
     /// Test observation: the signals not yet accepted by the server.
     var pendingSignals: [IngestSignal] {
         pending.map(\.signal)
+    }
+
+    /// Test observation: returns once no signal is pending (immediately if none is). Lets a
+    /// test wait for the queue to empty as an event instead of polling the wall clock.
+    func drained() async {
+        guard !pending.isEmpty else { return }
+        await withCheckedContinuation { drainWaiters.append($0) }
+    }
+
+    private func resumeDrainWaiters() {
+        let waiters = drainWaiters
+        drainWaiters = []
+        for waiter in waiters {
+            waiter.resume()
+        }
     }
 
     // MARK: - Sending
@@ -141,6 +199,7 @@ actor IngestQueue {
             // Cannot happen for string-only values; never retry what cannot be encoded.
             pending.removeFirst(batch.count)
             persist()
+            resumeDrainWaitersIfEmpty()
             return .dropped(status: 0)
         }
         var request = URLRequest(url: endpoint)
@@ -167,14 +226,22 @@ actor IngestQueue {
             log?.notice(.analytics, "dropped", ["status": .int(status)])
             pending.removeFirst(min(batch.count, pending.count))
             persist()
+            resumeDrainWaitersIfEmpty()
         case .sent:
             log?.info(.analytics, "sent", ["status": .int(status), "signals": .int(batch.count)])
             pending.removeFirst(min(batch.count, pending.count))
             persist()
+            resumeDrainWaitersIfEmpty()
         case .retry:
             break
         }
         return disposition
+    }
+
+    private func resumeDrainWaitersIfEmpty() {
+        if pending.isEmpty {
+            resumeDrainWaiters()
+        }
     }
 
     /// The SDK's response disposition (`SignalManager`): 2xx done; a request the server
