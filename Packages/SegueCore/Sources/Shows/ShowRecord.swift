@@ -200,6 +200,11 @@ public struct ShowEvent: Sendable, Hashable, Codable {
         /// show's last update. Like `ended`, `fromItemId` (the item then current) is marked
         /// played.
         case autoClosed
+        /// The stage showed the break row `itemId` (R104): the set reached the part it opens.
+        case breakStarted
+        /// The break `itemId` ended (Next, or any other move on stage); `fromItemId` = the
+        /// item current behind it, whose song starts now.
+        case breakEnded
     }
 
     public var at: Date
@@ -272,7 +277,9 @@ public enum ShowClosure: String, Sendable, Hashable, Codable {
 /// Played and skipped state lives here, never on the setlist, so a setlist stays reusable.
 /// Versioning follows the sidecar rules (older migrate forward, newer open read-only).
 public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
-    public static let currentSchemaVersion = 1
+    /// History: 1 = phase 2; 2 = phase 3 (`planned` may hold break rows, `breakId`, the
+    /// `breakStarted` / `breakEnded` events). A v1 build opens a v2 file read-only.
+    public static let currentSchemaVersion = 2
 
     public var id: ShowID
     public var schemaVersion: Int
@@ -287,6 +294,9 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
     public var items: [ShowItem]
     /// The item with state `current`; nil before start or after the last item.
     public var currentItemId: ShowItemID?
+    /// The break row (from `planned`) the stage shows before the current song (R104): the
+    /// set reached the part it opens. Next ends it; the show clock keeps running.
+    public var breakId: SetlistItemID?
     /// Scroll position in the current song: 0 = top, 1 = bottom of the overflow. Written at
     /// most once a second while scrolling (debounced), and with every action.
     public var scrollPosition: Double
@@ -314,6 +324,7 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
         case planned
         case items
         case currentItemId
+        case breakId
         case scrollPosition
         case requests
         case events
@@ -334,6 +345,7 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
         planned: [SetlistEntry],
         items: [ShowItem],
         currentItemId: ShowItemID?,
+        breakId: SetlistItemID? = nil,
         scrollPosition: Double = 0,
         requests: [ShowRequest] = [],
         events: [ShowEvent] = [],
@@ -353,6 +365,7 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
         self.planned = planned
         self.items = items
         self.currentItemId = currentItemId
+        self.breakId = breakId
         self.scrollPosition = scrollPosition
         self.requests = requests
         self.events = events
@@ -378,6 +391,11 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
     /// The current item.
     public var currentItem: ShowItem? {
         currentIndex.map { items[$0] }
+    }
+
+    /// The break the stage shows now, if any.
+    public var currentBreak: SetlistBreak? {
+        breakId.flatMap { id in planned.first { $0.itemId == id }?.breakInfo }
     }
 
     /// Requests still waiting, oldest first.

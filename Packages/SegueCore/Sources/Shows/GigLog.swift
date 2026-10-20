@@ -110,6 +110,11 @@ public extension ShowRecord {
                 if let current = event.itemId {
                     becameCurrent[current] = event.at
                 }
+            // The song behind a break (R104) starts when the break ends.
+            case .breakEnded:
+                if let current = event.fromItemId {
+                    becameCurrent[current] = event.at
+                }
             default:
                 break
             }

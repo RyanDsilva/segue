@@ -107,7 +107,7 @@ struct ShowStoreTests {
         let newerPath = harness.showPath(endings[1].record.id)
         let original = try harness.lib.read(newerPath)
         let newer = original.replacingOccurrences(
-            of: "\"schemaVersion\" : 1",
+            of: "\"schemaVersion\" : \(ShowRecord.currentSchemaVersion)",
             with: "\"schemaVersion\" : 9",
         )
         try harness.lib.write(newer, to: newerPath)
@@ -122,11 +122,14 @@ struct ShowStoreTests {
         let issues = try await store.load(root: harness.lib.root)
         #expect(issues.map(\.relativePath) == [harness.showPath(brokenID)])
         let readOnly = try #require(await store.show(id: endings[1].record.id))
-        #expect(readOnly.readOnly == .newerSchema(found: 9, supported: 1))
+        #expect(readOnly.readOnly == .newerSchema(
+            found: 9,
+            supported: ShowRecord.currentSchemaVersion,
+        ))
         #expect(await store.gigLog().count == 2)
         await #expect(throws: ShowError.readOnly(
             readOnly.id,
-            .newerSchema(found: 9, supported: 1),
+            .newerSchema(found: 9, supported: ShowRecord.currentSchemaVersion),
         )) {
             try await store.updateGigDetails(GigDetails(rating: 2), of: readOnly.id)
         }

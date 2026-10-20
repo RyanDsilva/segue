@@ -6,6 +6,7 @@
 
 import Foundation
 import Library
+import Setlists
 import Support
 
 /// Inputs a transition needs from outside the record.
@@ -23,6 +24,16 @@ extension ShowRecord {
     /// Applies `action` and returns the items it marked played (for duration samples). An
     /// action that changes nothing leaves the record equal to before (no event appended).
     mutating func apply(_ action: ShowAction, _ context: TransitionContext) throws -> [ShowItemID] {
+        // On a break (R104), Next only ends it; anything else ends it and then acts.
+        if breakId != nil {
+            if case .next = action {
+                endBreak(at: context.now)
+                return []
+            }
+            if Self.leavesBreak(action) {
+                endBreak(at: context.now)
+            }
+        }
         if let played = try applyNavigation(action, at: context.now) {
             return played
         }
@@ -139,10 +150,47 @@ extension ShowRecord {
         ))
     }
 
+    /// Whether `action` moves the stage on (so a break showing ends first). Adding a
+    /// request, dropping one, skipping or unskipping a later item and reordering keep it.
+    private static func leavesBreak(_ action: ShowAction) -> Bool {
+        switch action {
+        case .jump, .next, .playNextRequest, .playNow, .playRequest, .previous, .skipCurrent:
+            true
+        default:
+            false
+        }
+    }
+
+    /// Ends the break showing, if any.
+    private mutating func endBreak(at now: Date) {
+        guard let breakId else { return }
+        self.breakId = nil
+        events.append(ShowEvent(
+            at: now,
+            kind: .breakEnded,
+            itemId: breakId,
+            fromItemId: currentItemId,
+        ))
+    }
+
+    /// The break to show before `itemId` becomes current by Next or Skip: a planned item
+    /// whose planned predecessor is a break row (the first song of a part), shown once per
+    /// show. Songs added during the show never open a part.
+    private func dueBreak(before itemId: ShowItemID) -> SetlistItemID? {
+        guard let item = items.first(where: { $0.itemId == itemId }), item.origin == .setlist,
+              let position = planned.firstIndex(where: { $0.itemId == itemId }),
+              position > 0, planned[position - 1].isBreak
+        else { return nil }
+        let candidate = planned[position - 1].itemId
+        let shown = events.contains { $0.kind == .breakStarted && $0.itemId == candidate }
+        return shown ? nil : candidate
+    }
+
     /// Ends the run: current (if any) is marked played and `endedAt` set to `now`. A stale
     /// close passes the show's last update as `now` (open question 15).
     /// - Returns: the item marked played, if any.
     mutating func finish(at now: Date, closure: ShowClosure) -> ShowItemID? {
+        endBreak(at: now)
         let leaving = currentItemId
         if let index = currentIndex {
             items[index].state = .played
@@ -240,6 +288,7 @@ extension ShowRecord {
             items[index].state = mark
         }
         makeCurrent(next)
+        defer { startBreak(before: next, at: now) }
         if mark == .played {
             events.append(ShowEvent(at: now, kind: .advanced, itemId: next, fromItemId: leaving))
             return leaving.map { [$0] } ?? []
@@ -250,6 +299,14 @@ extension ShowRecord {
             events.append(ShowEvent(at: now, kind: .advanced, itemId: next))
         }
         return []
+    }
+
+    /// Shows the break before `next` when it opens a part (R104), after the advance's own
+    /// events.
+    private mutating func startBreak(before next: ShowItemID?, at now: Date) {
+        guard let next, let due = dueBreak(before: next) else { return }
+        breakId = due
+        events.append(ShowEvent(at: now, kind: .breakStarted, itemId: due))
     }
 
     private mutating func goBack(at now: Date) {

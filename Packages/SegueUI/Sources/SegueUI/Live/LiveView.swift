@@ -96,7 +96,10 @@
         }
 
         @ViewBuilder private var songContent: some View {
-            if let plan = session.plan {
+            if let info = session.state.record.currentBreak {
+                // Between parts (R104): the interstitial until Next.
+                StageBreakView(info: info, nextTitle: session.state.current?.item.title)
+            } else if let plan = session.plan {
                 TimelineView(.animation(paused: !session.isAutoScrolling)) { _ in
                     let now = session.context.scrollClock.now()
                     let fraction = session.scrollFraction(at: now)
