@@ -183,8 +183,23 @@ extension Metadata {
             "Duration '\(value)' is not seconds, mm:ss or h:mm:ss"
         case "tempo" where parseTempo(value) == nil:
             "Tempo '\(value)' is not a positive number"
+        case "time" where parseTime(value) == nil:
+            "Time '\(value)' is not a time signature like 4/4, 3/4 or 6/8"
         default:
             nil
         }
+    }
+
+    /// Beats and note value from `n/d` (spaces around the slash allowed): 1-32 beats,
+    /// a note value of 1, 2, 4, 8, 16, 32 or 64.
+    static func parseTime(_ value: String) -> (beats: Int, noteValue: Int)? {
+        let parts = value.split(separator: "/", omittingEmptySubsequences: false)
+        guard parts.count == 2,
+              let beats = Int(parts[0].trimmingCharacters(in: .whitespaces)),
+              let noteValue = Int(parts[1].trimmingCharacters(in: .whitespaces)),
+              (1 ... 32).contains(beats),
+              [1, 2, 4, 8, 16, 32, 64].contains(noteValue)
+        else { return nil }
+        return (beats, noteValue)
     }
 }

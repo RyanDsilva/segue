@@ -154,6 +154,7 @@ public struct SourceSnapshot: Sendable {
                 ))
             }
         }
+        result += keyDiagnostics
         return result.sorted {
             ($0.range.lowerBound, $0.line) < ($1.range.lowerBound, $1.line)
         }
@@ -223,12 +224,35 @@ public struct EditorDiagnostic: Sendable, Hashable {
     public var message: String
     /// 1-based line, for list display.
     public var line: Int
+    /// A one-click repair, when one is clear (`{key: Hm}` -> `{key: Bm}`).
+    public var fix: DiagnosticFix?
 
-    public init(range: Range<Int>, severity: Severity, kind: Kind, message: String, line: Int) {
+    public init(
+        range: Range<Int>,
+        severity: Severity,
+        kind: Kind,
+        message: String,
+        line: Int,
+        fix: DiagnosticFix? = nil,
+    ) {
         self.range = range
         self.severity = severity
         self.kind = kind
         self.message = message
         self.line = line
+        self.fix = fix
+    }
+}
+
+/// A repair for an `EditorDiagnostic`: a short title for the menu and the source change
+/// (planned against the snapshot that produced the diagnostic) that makes it.
+public struct DiagnosticFix: Sendable, Hashable {
+    /// "Change to Bm".
+    public var title: String
+    public var change: SourceChange
+
+    public init(title: String, change: SourceChange) {
+        self.title = title
+        self.change = change
     }
 }

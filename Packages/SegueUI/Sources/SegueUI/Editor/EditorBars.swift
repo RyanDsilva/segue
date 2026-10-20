@@ -173,6 +173,12 @@
                         Button("Line \(diagnostic.line): \(diagnostic.message)") {
                             model.reveal(diagnostic)
                         }
+                        if let fix = diagnostic.fix {
+                            Button("Fix: \(fix.title)") {
+                                model.applyFix(of: diagnostic)
+                            }
+                            .accessibilityIdentifier(AccessibilityID.editorProblemFix)
+                        }
                     }
                 } label: {
                     Label(
