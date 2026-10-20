@@ -20,6 +20,7 @@ public struct SongFilterState: Equatable, Sendable {
     /// case-insensitively, so typing a tag whose chip is on adds nothing.
     public func filter(knownTags: [String]) -> SongFilter {
         var filter = SongFilter.parse(query, knownTags: knownTags)
+        LibraryLexicon.apply(to: &filter, knownTags: knownTags)
         let typed = Set(filter.tags.map { $0.lowercased() })
         filter.tags.formUnion(tags.filter { !typed.contains($0.lowercased()) })
         filter.proficiencies.formUnion(proficiencies)

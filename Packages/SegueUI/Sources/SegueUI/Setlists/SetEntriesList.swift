@@ -1,6 +1,7 @@
 #if os(macOS)
     import AppKit
     import Library
+    import SetAssistant
     import Setlists
     import SwiftUI
 
@@ -21,6 +22,9 @@
         let setlist: Setlist
         let model: SetlistsViewModel
         let library: LibraryViewModel
+        /// The set assistant's scores per song slot (P3-7); empty before a build.
+        var breakdowns: [SetlistItemID: ScoreBreakdown] = [:]
+        @State private var shownBreakdown: SetlistItemID?
         /// The row a drag hovers over (an insertion line is drawn above it).
         @State private var dropTarget: SetlistItemID?
         @AppStorage(ChangeoverSetting.defaultsKey) private var defaultChangeover = 0
@@ -62,6 +66,7 @@
                 .onKeyPress(keys: [.upArrow, .downArrow]) { press in
                     keyMove(press, proxy: proxy)
                 }
+                .onKeyPress(.space) { toggleFocusedBreakdown($shownBreakdown) }
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.setlistEntries)
@@ -167,6 +172,7 @@
                         onRemove: { remove(IndexSet(integer: offset)) },
                         onMove: isReadOnly ? nil : { delta in move(offset, by: delta) },
                         isLast: offset == setlist.entries.count - 1,
+                        assistant: assistantCells(for: entry, shown: $shownBreakdown),
                     ),
                     offset: offset,
                     entry: entry,
@@ -339,6 +345,8 @@
         /// Moves the slot one place (-1 up, +1 down); nil when the setlist is read-only.
         var onMove: ((Int) -> Void)?
         var isLast = false
+        /// The set assistant's score and Rebuild lock (P3-7, R115).
+        var assistant = EntryAssistant()
         @State private var isHovered = false
         @State private var isEditing = false
 
@@ -359,6 +367,7 @@
                     .accessibilityIdentifier(AccessibilityID.entryLength)
                 cell(startText, width: 60, alignment: .trailing)
                     .accessibilityIdentifier(AccessibilityID.entryStart)
+                EntryAssistantCells(assistant: assistant, title: title, isHovered: isHovered)
                 removeButton
             }
             .padding(.leading, 32)
@@ -394,6 +403,7 @@
             .accessibilityAddTraits(isSelected ? .isSelected : [])
             .accessibilityIdentifier(AccessibilityID.setlistEntry)
             .accessibilityAction(named: "Edit") { isEditing = true }
+            .entryAssistantActions(assistant)
             .accessibilityActions {
                 if let onMove {
                     if position > 1 {

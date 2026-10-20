@@ -23,6 +23,9 @@
         }
 
         public private(set) var results: [SongRecord] = []
+        /// The lexicon's chips for the query ("upbeat", "in G", "Ready+"): on stage a
+        /// request is read by the lexicon and text search only, no model (R65, P3-7).
+        public private(set) var lexiconChips: [String] = []
         public var selection = 0
         /// The song being added to the requests while its optional note is typed (Cmd-Return
         /// or "Add to Requests"); nil while choosing a song.
@@ -126,6 +129,7 @@
             guard !text.isEmpty else {
                 recorder.cancel()
                 results = []
+                lexiconChips = []
                 resultsQuery = ""
                 selection = 0
                 pendingSubmit = nil
@@ -134,8 +138,9 @@
             let library = library
             task = Task { [weak self] in
                 do {
-                    let found = try await library.searchWithTier(query: text)
+                    let (found, chips) = try await Self.lexiconSearch(text, in: library)
                     guard !Task.isCancelled else { return }
+                    self?.lexiconChips = chips
                     self?.land(Array(found.records.prefix(Self.limit)), for: text)
                     self?.recorder.resultsShown(
                         .stage,

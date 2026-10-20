@@ -1,0 +1,28 @@
+{
+  "fallbackSongCount" : 10,
+  "flow" : {
+    "capoChange" : -0.5,
+    "relatedKey" : 0.3,
+    "sameKey" : -1,
+    "tuningChange" : -1
+  },
+  "proficiencyValues" : {
+    "learning" : 0,
+    "pro" : 1,
+    "ready" : 0.7,
+    "unset" : 0.3
+  },
+  "recentHalfLifeDays" : 30,
+  "schemaVersion" : 1,
+  "swapPasses" : 3,
+  "toleranceSeconds" : 180,
+  "varietySpread" : 0.15,
+  "weights" : {
+    "keyFlow" : 0.5,
+    "proficiency" : 1,
+    "recent" : 0.8,
+    "slot" : 1.5,
+    "tags" : 1,
+    "variety" : 1
+  }
+}

@@ -274,6 +274,7 @@
                             openSettings()
                         },
                     )
+                    .environment(\.smartFilterList, session.smartFilters.filters)
                     .environment(\.openSongForLength, OpenSongAction { song in
                         // The missing-lengths list's Open Song: the song's card in the
                         // Library with its Length field focused (R88).

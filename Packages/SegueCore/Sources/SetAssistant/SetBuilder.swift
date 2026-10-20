@@ -219,6 +219,24 @@ public struct SetBuilder: Sendable {
         })
     }
 
+    /// Every song slot's breakdown where it stands in `entries` (after the user's moves),
+    /// scored as `build` scored it with the same request, library and seed.
+    public func breakdowns(
+        for entries: [SetlistEntry],
+        request: SetRequest,
+        library: AssistantLibrary,
+        seed: UInt64,
+    ) -> [SetlistItemID: ScoreBreakdown] {
+        let songs = Dictionary(library.songs.map { ($0.id, $0) }) { first, _ in first }
+        let scorer = Scorer(
+            config: config,
+            request: request,
+            now: library.now,
+            variety: variety(for: library.songs, seed: seed),
+        )
+        return breakdowns(entries, songs: songs, scorer: scorer)
+    }
+
     /// Every song slot's breakdown in its final place.
     private func breakdowns(
         _ entries: [SetlistEntry],

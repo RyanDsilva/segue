@@ -279,3 +279,63 @@ public extension [RequestChip] {
         }
     }
 }
+
+public extension SetChip {
+    /// The chip's text ("35 min", "Ready+", "no covers", "in G", "opens upbeat");
+    /// `filterName` names a smart filter chip.
+    func title(filterName: (SmartFilterID) -> String? = { _ in nil }) -> String {
+        switch self {
+        case let .length(seconds): Self.lengthTitle(seconds)
+        case let .songCount(count): count == 1 ? "1 song" : "\(count) songs"
+        case let .proficiency(level): level.title
+        case let .tempo(range): range.title
+        case let .smartFilter(id): filterName(id) ?? "Smart filter"
+        case let .avoidRecent(on): on ? "Avoid recent" : "Recent OK"
+        case .closer, .excludeKey, .excludeTag, .key, .opener, .tag: nameTitle
+        }
+    }
+
+    /// Tag, key and slot chips: "covers", "no covers", "in G", "opens upbeat".
+    private var nameTitle: String {
+        switch self {
+        case let .tag(tag): tag
+        case let .excludeTag(tag): "no \(tag)"
+        case let .key(key): "in \(key)"
+        case let .excludeKey(key): "not in \(key)"
+        case let .opener(tag): "opens \(tag)"
+        case let .closer(tag): "closes \(tag)"
+        default: ""
+        }
+    }
+
+    /// "35 min", "1 h", "1 h 30 min".
+    static func lengthTitle(_ seconds: TimeInterval) -> String {
+        let minutes = Int((seconds / 60).rounded())
+        guard minutes >= 60 else { return "\(minutes) min" }
+        let rest = minutes % 60
+        return rest == 0 ? "\(minutes / 60) h" : "\(minutes / 60) h \(rest) min"
+    }
+}
+
+public extension SetRequest {
+    /// The song conditions of the request as a library matcher (NL picks in the library
+    /// search and on stage): tags (any of), excluded tags, keys, the proficiency floor and
+    /// the tempo range. Lengths, counts, slots and smart filters do not apply to a search.
+    /// Nil when the request holds none of them.
+    var songFilter: SongFilter? {
+        var filter = SongFilter(
+            anyTags: Set(includeTags),
+            excludedTags: Set(excludeTags),
+            keys: Set(keys),
+        )
+        switch proficiency {
+        case .anything, .notLearning: break
+        case .ready: filter.proficiencies = [.ready, .pro]
+        case .pro: filter.proficiencies = [.pro]
+        }
+        if let tempo {
+            filter.tempo = SongFilter.Bounds(lower: tempo.min, upper: tempo.max)
+        }
+        return filter.hasConstraints ? filter : nil
+    }
+}

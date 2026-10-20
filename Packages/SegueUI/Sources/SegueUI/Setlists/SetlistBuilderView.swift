@@ -22,6 +22,9 @@
         @State private var naming: SetlistNameSheet.Purpose?
         @State private var isEditingDetails = false
         @AppStorage(ChangeoverSetting.defaultsKey) private var defaultChangeover = 0
+        /// The set assistant's command bar state (P3-7), made on first appearance.
+        @State private var assistant: SetAssistantModel?
+        @Environment(\.smartFilterList) private var smartFilters
 
         var body: some View {
             GeometryReader { proxy in
@@ -56,8 +59,21 @@
                             .padding(.top, 12)
                         }
                         header
+                        if model.builderMode == .arrange, let assistant {
+                            Rule()
+                            AssistantCommandBar(
+                                setlist: setlist,
+                                model: assistant,
+                                library: library,
+                            )
+                        }
                         Rule()
-                        SetEntriesList(setlist: setlist, model: model, library: library)
+                        SetEntriesList(
+                            setlist: setlist,
+                            model: model,
+                            library: library,
+                            breakdowns: assistant?.breakdowns(for: setlist) ?? [:],
+                        )
                     }
                     .frame(maxWidth: .infinity)
                     .background(Theme.color.ground)
@@ -67,6 +83,12 @@
             .toolbar {
                 ToolbarItem(placement: .principal) { modePicker }
                 menu
+            }
+            .onChange(of: smartFilters, initial: true) {
+                if assistant == nil {
+                    assistant = SetAssistantModel(setlists: model, library: library)
+                }
+                assistant?.smartFilters = smartFilters
             }
             .onChange(of: setlist.entries.isEmpty, initial: true) { _, isEmpty in
                 SegueTips.openSetlistHasEntries = !isEmpty

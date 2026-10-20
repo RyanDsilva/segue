@@ -148,6 +148,7 @@
                         .accessibilityIdentifier(AccessibilityID.newSong)
                 }
                 FilterChipsBar(state: $model.filterState, tags: model.tags)
+                LibrarySearchChips(model: model)
             }
             .padding(.horizontal, 16)
             .padding(.top, 14)

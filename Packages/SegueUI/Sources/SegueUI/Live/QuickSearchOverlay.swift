@@ -112,6 +112,9 @@
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
+                if !search.lexiconChips.isEmpty {
+                    QuickSearchLexiconChips(chips: search.lexiconChips)
+                }
                 Rectangle().fill(Theme.color.line).frame(height: 1)
                 results
                 Rectangle().fill(Theme.color.line).frame(height: 1)
