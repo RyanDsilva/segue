@@ -1,0 +1,13 @@
+{
+  "calls" : [
+    {
+      "error" : "unsupportedLanguage",
+      "input" : "f4243335b6f8836c",
+      "task" : "sectionLabels"
+    }
+  ],
+  "fixture" : "H07-bare-hinglish-lyrics",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

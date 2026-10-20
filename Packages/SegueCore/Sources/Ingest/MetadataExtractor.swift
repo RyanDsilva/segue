@@ -112,9 +112,7 @@ enum MetadataExtractor {
         guard isPlausibleName(text) else { return nil }
         return rawTitleFields(text, isFirst: isFirst)?.filter { field in
             switch field {
-            case let .artist(value), let .title(value):
-                isPlausibleName(value)
-                    && value.firstMatch(of: /(?i)\b(?:chords?|tabs?|lyrics|strumming)\b/) == nil
+            case let .artist(value), let .title(value): isPlausibleField(value)
             default: true
             }
         }
@@ -176,7 +174,7 @@ enum MetadataExtractor {
             }
             // `Film | Singer`: the last part that could be a name.
             artist = artist.split(separator: "|").map { clean($0) }.last { part in
-                isPlausibleName(part) && part.firstMatch(of: /(?i)\bstrumming\b/) == nil
+                isPlausibleField(part)
             } ?? ""
             artist = clean(artist)
             if !artist.isEmpty, isPlausibleName(artist) {
@@ -202,6 +200,13 @@ enum MetadataExtractor {
             .hasInlineChords(trimmed) && !ChordLines.isChordLine(trimmed)
             && !ChordLines.isChordLegend(trimmed) && !ChordLines.isTuningLine(trimmed)
             && !ChordLines.isTabLine(trimmed) && keyValueFields(trimmed) == nil
+    }
+
+    /// A title or artist value (not a whole line): plausible, and no site words such as
+    /// "Easy Guitar Chords" or "Strumming Pattern".
+    static func isPlausibleField(_ value: String) -> Bool {
+        isPlausibleName(value)
+            && value.firstMatch(of: /(?i)\b(?:chords?|tabs?|lyrics|strumming)\b/) == nil
     }
 
     /// A web address or a chord site's name (`youtube.com/watch?v=...`, `www.x.in`,

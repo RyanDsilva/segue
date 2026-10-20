@@ -1,0 +1,17 @@
+{
+  "calls" : [
+    {
+      "input" : "f95bbc09c9c98bf5",
+      "output" : {
+        "artist" : "Juno Park",
+        "key" : "G",
+        "title" : "Velvet Static"
+      },
+      "task" : "metadata"
+    }
+  ],
+  "fixture" : "E19-mixed-inline",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

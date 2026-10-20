@@ -278,6 +278,15 @@ public enum IngestDiagnostic: Sendable, Equatable, Hashable {
     case unlabelledBlock(index: Int)
     /// A problem the ChordPro parser reported on the result text.
     case parser(Diagnostic)
+    /// A model's refinement of this block would have changed a lyric word, so it was
+    /// rejected and the block keeps its deterministic result (LyricGuard, spec section 3).
+    case refinementRejected(block: Int)
+}
+
+/// Metadata a model filled in (marked apart from rule-based results in the review sheet).
+public enum RefinedField: String, Sendable, Equatable, Hashable, CaseIterable {
+    case title
+    case artist
 }
 
 /// Answers from a model, all by index (P3-2 fills it; `IngestResult.reassembled` renders it).

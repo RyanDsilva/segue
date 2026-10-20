@@ -1,0 +1,30 @@
+{
+  "calls" : [
+    {
+      "input" : "292e490f905aa3b1",
+      "output" : {
+        "labels" : [
+          "intro",
+          "verse",
+          "chorus",
+          "verse",
+          "chorus"
+        ]
+      },
+      "task" : "sectionLabels"
+    },
+    {
+      "input" : "36e2897efbefc828",
+      "output" : {
+        "artist" : "",
+        "key" : "G",
+        "title" : "Gravel Road Home"
+      },
+      "task" : "metadata"
+    }
+  ],
+  "fixture" : "E02-bare-no-headers",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

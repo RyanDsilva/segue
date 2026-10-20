@@ -1,0 +1,18 @@
+{
+  "calls" : [
+    {
+      "input" : "fe212b223a81799a",
+      "output" : {
+        "labels" : [
+          "intro",
+          "verse"
+        ]
+      },
+      "task" : "sectionLabels"
+    }
+  ],
+  "fixture" : "E07-short-unlabelled",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

@@ -1,0 +1,30 @@
+{
+  "calls" : [
+    {
+      "input" : "70c114c317e30899",
+      "output" : {
+        "labels" : [
+          "intro",
+          "verse",
+          "chorus",
+          "verse",
+          "chorus"
+        ]
+      },
+      "task" : "sectionLabels"
+    },
+    {
+      "input" : "217c477f4769dfb8",
+      "output" : {
+        "artist" : "John Denver",
+        "key" : "G",
+        "title" : "Lantern Road"
+      },
+      "task" : "metadata"
+    }
+  ],
+  "fixture" : "E28-inline-brackets-no-directives",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

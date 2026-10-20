@@ -1,0 +1,21 @@
+{
+  "calls" : [
+    {
+      "input" : "523edf19b18e50a9",
+      "output" : {
+        "labels" : [
+          "intro",
+          "verse",
+          "chorus",
+          "verse",
+          "chorus"
+        ]
+      },
+      "task" : "sectionLabels"
+    }
+  ],
+  "fixture" : "E09-web-junk",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

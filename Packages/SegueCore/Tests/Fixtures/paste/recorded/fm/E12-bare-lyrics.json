@@ -1,0 +1,23 @@
+{
+  "calls" : [
+    {
+      "input" : "5fc40bf2d7ea506b",
+      "output" : {
+        "labels" : [
+          "intro",
+          "verse",
+          "verse",
+          "verse",
+          "verse",
+          "verse",
+          "verse"
+        ]
+      },
+      "task" : "sectionLabels"
+    }
+  ],
+  "fixture" : "E12-bare-lyrics",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

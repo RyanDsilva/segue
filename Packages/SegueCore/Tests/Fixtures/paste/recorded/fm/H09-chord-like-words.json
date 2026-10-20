@@ -1,0 +1,22 @@
+{
+  "calls" : [
+    {
+      "input" : "a96ac51efb81eda4",
+      "output" : {
+        "labels" : [
+          "intro",
+          "verse",
+          "prechorus",
+          "other",
+          "verse",
+          "chorus"
+        ]
+      },
+      "task" : "sectionLabels"
+    }
+  ],
+  "fixture" : "H09-chord-like-words",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

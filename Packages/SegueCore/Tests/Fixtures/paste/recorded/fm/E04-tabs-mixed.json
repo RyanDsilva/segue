@@ -1,0 +1,23 @@
+{
+  "calls" : [
+    {
+      "input" : "37fe567661fa3e01",
+      "output" : {
+        "labels" : [
+          "intro",
+          "instrumental",
+          "verse",
+          "chorus",
+          "instrumental",
+          "verse",
+          "chorus"
+        ]
+      },
+      "task" : "sectionLabels"
+    }
+  ],
+  "fixture" : "E04-tabs-mixed",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

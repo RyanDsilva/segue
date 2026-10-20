@@ -1,0 +1,30 @@
+{
+  "calls" : [
+    {
+      "input" : "f5c8902ea458c008",
+      "output" : {
+        "labels" : [
+          "intro",
+          "verse",
+          "prechorus",
+          "verse",
+          "prechorus"
+        ]
+      },
+      "task" : "sectionLabels"
+    },
+    {
+      "input" : "bb62348e9f46650a",
+      "output" : {
+        "artist" : "",
+        "key" : "G",
+        "title" : "Barish Wali Shaam"
+      },
+      "task" : "metadata"
+    }
+  ],
+  "fixture" : "H02-bare-hinglish",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

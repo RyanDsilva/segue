@@ -1,0 +1,21 @@
+{
+  "calls" : [
+    {
+      "input" : "f5a9a634002cea6b",
+      "output" : {
+        "labels" : [
+          "intro",
+          "verse",
+          "chorus",
+          "verse",
+          "chorus"
+        ]
+      },
+      "task" : "sectionLabels"
+    }
+  ],
+  "fixture" : "H05-indian-site-junk",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

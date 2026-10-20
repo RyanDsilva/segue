@@ -85,9 +85,9 @@ public enum IngestPipeline {
     }
 
     /// Whether `text` could be a song title or artist (not chords, a chord legend, a tuning,
-    /// tab or a capo note). Model answers are checked with it too (P3-2).
+    /// tab, a capo note, a web address or site words). Model answers are checked with it too.
     public static func isPlausibleName(_ text: String) -> Bool {
-        MetadataExtractor.isPlausibleName(text)
+        MetadataExtractor.isPlausibleField(text)
     }
 
     // MARK: - Blocks

@@ -8,12 +8,16 @@ public struct KeyInference: Sendable, Equatable, Hashable {
         case stated
         /// Detected from the chords.
         case detected
+        /// A model chose between the two detected keys (`KeyDetector` was ambiguous).
+        case refined
         /// No stated key and no chords.
         case unknown
     }
 
     public var stated: SongKey?
     public var detection: KeyDetection?
+    /// A model's key, kept only when `accepts(modelKey:)` (set by `IngestPipeline.apply`).
+    public var refined: SongKey?
 
     public init(stated: SongKey?, detection: KeyDetection?) {
         self.stated = stated
@@ -27,12 +31,15 @@ public struct KeyInference: Sendable, Equatable, Hashable {
     }
 
     public var key: SongKey? {
-        stated ?? detection?.key
+        stated ?? refined ?? detection?.key
     }
 
     public var source: Source {
         if stated != nil {
             return .stated
+        }
+        if refined != nil {
+            return .refined
         }
         return detection == nil ? .unknown : .detected
     }

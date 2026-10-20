@@ -1,0 +1,17 @@
+{
+  "calls" : [
+    {
+      "input" : "d87524e17d5a2ab7",
+      "output" : {
+        "artist" : "",
+        "key" : "D",
+        "title" : "SUMMER IN THE ATTIC"
+      },
+      "task" : "metadata"
+    }
+  ],
+  "fixture" : "E05-colon-headers-repeats",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

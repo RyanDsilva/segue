@@ -20,6 +20,9 @@ public struct IngestResult: Sendable, Equatable {
     /// What a model may refine (empty for ChordPro passthrough).
     public var questions: RefinementQuestions
     public var diagnostics: [IngestDiagnostic]
+    /// Metadata fields a model filled in (`IngestPipeline.apply`); empty for the deterministic
+    /// result.
+    public var refinedFields: Set<RefinedField> = []
 
     /// Metadata fields the source already writes as directives (never written twice).
     var directiveFields: Set<MetadataKey>
