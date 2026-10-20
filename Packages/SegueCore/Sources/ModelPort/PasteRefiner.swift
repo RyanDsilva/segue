@@ -38,9 +38,9 @@ public enum PasteRefiner {
     public static func metadataTask(for result: IngestResult) -> MetadataTask? {
         guard !result.isAlreadyChordPro,
               let candidates = result.questions.metadataCandidates,
-              !candidates.topLines.isEmpty || !candidates.bottomLines.isEmpty
+              !candidates.topLines.isEmpty || !candidates.bottomLines.isEmpty,
+              result.metadata.title == nil || result.metadata.artists.isEmpty
         else { return nil }
-        guard result.metadata.title == nil || result.metadata.artists.isEmpty else { return nil }
         return MetadataTask(
             topLines: candidates.topLines,
             bottomLines: candidates.bottomLines,
