@@ -222,21 +222,15 @@ public actor SmartFilterStore {
         return filter
     }
 
-    /// The songs of `songs` (order kept) that filter `id` matches at the clock's now; nil
-    /// when no such filter is loaded. Pass `playStats` (`LibraryStore.playStats()`) when the
-    /// filter has play-history conditions.
+    /// The songs of `songs` (order kept) that filter `id` matches; nil when no such filter
+    /// is loaded. Pass `playStats` (`LibraryStore.playStats()`) when the filter uses "never
+    /// played".
     public func songs(
         matching id: SmartFilterID,
         in songs: [SongRecord],
         playStats: [SongID: PlayStats] = [:],
-        timeZone: TimeZone = .current,
     ) -> [SongRecord]? {
-        filters[id]?.filter.songs(
-            in: songs,
-            playStats: playStats,
-            now: clock.now(),
-            timeZone: timeZone,
-        )
+        filters[id]?.filter.songs(in: songs, playStats: playStats)
     }
 
     /// Follows a library tag rename or merge (`LibraryStore.mergeTags`): every editable

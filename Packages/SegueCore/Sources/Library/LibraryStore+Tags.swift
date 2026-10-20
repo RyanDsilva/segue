@@ -66,7 +66,32 @@ public extension LibraryStore {
         return rewrite
     }
 
-    /// Undoes a `renameTag` / `mergeTags`: puts each rewritten song's previous tags back
+    /// Removes tag `tag` (case-insensitive) from every editable song that carries it, with
+    /// the same all-or-nothing writes as `mergeTags`. Saved smart filters are not touched
+    /// (a filter naming the tag simply matches no song through it). Returns the receipt
+    /// that `restoreTags` undoes.
+    @discardableResult
+    func deleteTag(_ tag: String) throws -> TagRewrite {
+        let key = SongMetadata.tagKey(SongMetadata.normalizedTags([tag]).first ?? "")
+        guard !key.isEmpty else { return TagRewrite() }
+        let library = try openLibrary()
+        var rewrite = TagRewrite()
+        var plan: [SongID: [String]] = [:]
+        for song in library.songs.values.sorted(by: { $0.record.id < $1.record.id }) {
+            let tags = song.record.sidecar.tags
+            guard tags.contains(where: { SongMetadata.tagKey($0) == key }) else { continue }
+            if song.record.isReadOnly {
+                rewrite.skipped.append(song.record.id)
+            } else {
+                plan[song.record.id] = tags.filter { SongMetadata.tagKey($0) != key }
+            }
+        }
+        rewrite.previous = try writeTags(plan)
+        return rewrite
+    }
+
+    /// Undoes a `renameTag` / `mergeTags` / `deleteTag`: puts each rewritten song's previous tags
+    /// back
     /// (one action, rolled back as a whole on failure). Songs deleted since are skipped.
     /// Returns the receipt that redoes it.
     @discardableResult

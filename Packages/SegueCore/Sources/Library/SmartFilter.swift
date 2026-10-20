@@ -1,6 +1,7 @@
 // Phase 3 (P3-6, R71, R72): saved smart filters. A smart filter is a named predicate over
 // the library, stored as `filters/<slug>.filter.json` and compiled to the in-memory
-// `SongFilter` matcher. No energy (R71); lengths are `{duration}` only (R91).
+// `SongFilter` matcher. No energy (R71); lengths are `{duration}` only (R91); no
+// last-played date conditions in 0.5 (only "never played").
 
 import Foundation
 import Support
@@ -27,54 +28,6 @@ public struct SmartFilterID: Sendable, Hashable, Comparable, Codable, CustomStri
 
     public func encode(to encoder: any Encoder) throws {
         try ulid.encode(to: encoder)
-    }
-}
-
-/// One end of a "last played" condition: a calendar day, or a number of days before now
-/// (so "not played in the last 90 days" stays true to its name as time passes).
-public enum PlayedBound: Sendable, Hashable, Codable {
-    /// The start of this day in the current time zone.
-    case day(CalendarDay)
-    /// This many whole days (24 h each) before the moment the filter is evaluated.
-    case daysAgo(Int)
-
-    /// The instant this bound stands for when evaluated at `now`.
-    public func instant(now: Date, timeZone: TimeZone) -> Date {
-        switch self {
-        case let .day(day):
-            day.startOfDay(in: timeZone)
-        case let .daysAgo(days):
-            now.addingTimeInterval(-Double(max(0, days)) * 86400)
-        }
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case day
-        case daysAgo
-    }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        if let day = try container.decodeIfPresent(CalendarDay.self, forKey: .day) {
-            self = .day(day)
-        } else if let days = try container.decodeIfPresent(Int.self, forKey: .daysAgo) {
-            self = .daysAgo(days)
-        } else {
-            throw DecodingError.dataCorrupted(DecodingError.Context(
-                codingPath: decoder.codingPath,
-                debugDescription: "a played bound needs \"day\" or \"daysAgo\"",
-            ))
-        }
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        switch self {
-        case let .day(day):
-            try container.encode(day, forKey: .day)
-        case let .daysAgo(days):
-            try container.encode(days, forKey: .daysAgo)
-        }
     }
 }
 
@@ -112,10 +65,6 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
     public var tempo: SmartFilterRange?
     /// `{duration}` in seconds; a song without a length never matches (R91).
     public var length: SmartFilterRange?
-    /// Last played strictly before this bound; a never-played song never matches.
-    public var lastPlayedBefore: PlayedBound?
-    /// Last played on or after this bound; a never-played song never matches.
-    public var lastPlayedAfter: PlayedBound?
     /// Never played in a finished show.
     public var neverPlayed: Bool
 
@@ -127,8 +76,6 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         keys: [String] = [],
         tempo: SmartFilterRange? = nil,
         length: SmartFilterRange? = nil,
-        lastPlayedBefore: PlayedBound? = nil,
-        lastPlayedAfter: PlayedBound? = nil,
         neverPlayed: Bool = false,
     ) {
         self.allTags = allTags
@@ -138,8 +85,6 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         self.keys = keys
         self.tempo = tempo
         self.length = length
-        self.lastPlayedBefore = lastPlayedBefore
-        self.lastPlayedAfter = lastPlayedAfter
         self.neverPlayed = neverPlayed
     }
 
@@ -151,8 +96,6 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         case keys
         case tempo
         case length
-        case lastPlayedBefore
-        case lastPlayedAfter
         case neverPlayed
     }
 
@@ -168,10 +111,6 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         keys = try container.decodeIfPresent([String].self, forKey: .keys) ?? []
         tempo = try container.decodeIfPresent(SmartFilterRange.self, forKey: .tempo)
         length = try container.decodeIfPresent(SmartFilterRange.self, forKey: .length)
-        lastPlayedBefore = try container
-            .decodeIfPresent(PlayedBound.self, forKey: .lastPlayedBefore)
-        lastPlayedAfter = try container
-            .decodeIfPresent(PlayedBound.self, forKey: .lastPlayedAfter)
         neverPlayed = try container.decodeIfPresent(Bool.self, forKey: .neverPlayed) ?? false
     }
 
@@ -190,22 +129,18 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         [
             !allTags.isEmpty, !anyTags.isEmpty, !noneTags.isEmpty, !proficiencies.isEmpty,
             !keys.isEmpty, tempo.map { !$0.isOpen } ?? false, length.map { !$0.isOpen } ?? false,
-            lastPlayedBefore != nil, lastPlayedAfter != nil, neverPlayed,
+            neverPlayed,
         ]
     }
 
     /// Whether any condition refers to play history (callers then pass play stats).
     public var usesPlayHistory: Bool {
-        neverPlayed || lastPlayedBefore != nil || lastPlayedAfter != nil
+        neverPlayed
     }
 
-    /// The in-memory matcher for these conditions, evaluated at `now`: relative play bounds
-    /// resolve against `now`, and `playStats` is the play-history snapshot to check.
-    public func compiled(
-        playStats: [SongID: PlayStats] = [:],
-        now: Date,
-        timeZone: TimeZone = .current,
-    ) -> SongFilter {
+    /// The in-memory matcher for these conditions; `playStats` is the play-history
+    /// snapshot "never played" is checked against.
+    public func compiled(playStats: [SongID: PlayStats] = [:]) -> SongFilter {
         var filter = SongFilter(
             tags: Set(allTags),
             proficiencies: Set(proficiencies),
@@ -219,13 +154,8 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         if let length, !length.isOpen {
             filter.length = SongFilter.Bounds(lower: length.min, upper: length.max)
         }
-        if usesPlayHistory {
-            filter.played = SongFilter.PlayHistory(
-                lastPlayed: playStats.compactMapValues(\.lastPlayed),
-                before: lastPlayedBefore?.instant(now: now, timeZone: timeZone),
-                onOrAfter: lastPlayedAfter?.instant(now: now, timeZone: timeZone),
-                neverPlayed: neverPlayed,
-            )
+        if neverPlayed {
+            filter.playedSongs = Set(playStats.filter { $0.value.timesPlayed > 0 }.keys)
         }
         return filter
     }
@@ -273,24 +203,12 @@ public struct SmartFilter: Sendable, Equatable, Identifiable, Codable {
         case updatedAt
     }
 
-    /// The songs of `songs` (order kept) this filter matches at `now`.
+    /// The songs of `songs` (order kept) this filter matches.
     public func songs(
         in songs: [SongRecord],
         playStats: [SongID: PlayStats] = [:],
-        now: Date,
-        timeZone: TimeZone = .current,
     ) -> [SongRecord] {
-        let matcher = conditions.compiled(playStats: playStats, now: now, timeZone: timeZone)
+        let matcher = conditions.compiled(playStats: playStats)
         return songs.filter(matcher.matches)
-    }
-}
-
-extension CalendarDay {
-    /// Midnight at the start of this day in `timeZone`.
-    func startOfDay(in timeZone: TimeZone) -> Date {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        let components = DateComponents(year: year, month: month, day: day)
-        return calendar.date(from: components) ?? Date(timeIntervalSince1970: 0)
     }
 }

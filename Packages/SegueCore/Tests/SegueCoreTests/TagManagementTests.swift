@@ -105,6 +105,19 @@ struct TagManagementTests {
     }
 
     @Test
+    func `delete removes a tag everywhere and undoes in one step`() async throws {
+        let fix = try await Self.fixture()
+        let before = try await fix.store.allSongs().map(\.sidecar.tags)
+        let rewrite = try await fix.store.deleteTag("COVER")
+        #expect(rewrite.count == 2)
+        #expect(try await fix.tags("One") == ["Upbeat"])
+        #expect(try await fix.tags("Three") == ["upbeat", "UP-BEAT"])
+        #expect(try await !fix.store.allTags().map(\.tag).contains("cover"))
+        try await fix.store.restoreTags(rewrite)
+        #expect(try await fix.store.allSongs().map(\.sidecar.tags) == before)
+    }
+
+    @Test
     func `blank names and unknown tags change nothing`() async throws {
         let fix = try await Self.fixture()
         #expect(try await fix.store.renameTag("upbeat", to: "   ") == TagRewrite())

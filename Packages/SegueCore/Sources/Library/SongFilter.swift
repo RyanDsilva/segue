@@ -2,7 +2,8 @@
 //
 // Phase 2 simple filtering: tags, proficiency, key. Phase 3 (P3-6) extends it compatibly
 // with the conditions a saved `SmartFilter` compiles to (any / none tags, several keys,
-// tempo and length ranges, play history); their defaults constrain nothing, so phase 2
+// tempo and length ranges, never played, missing essentials); their defaults constrain nothing, so
+// phase 2
 // callers see no change.
 
 import ChordPro
@@ -35,8 +36,11 @@ public struct SongFilter: Sendable, Equatable {
     /// `{duration}` in seconds within these bounds; a song without a length never matches
     /// (R91: lengths are never estimated).
     public var length: Bounds?
-    /// Play-history constraints, resolved against a play-stats snapshot (`SmartFilter`).
-    public var played: PlayHistory?
+    /// "Never played": when set, the song must not be among these played songs (the play
+    /// snapshot a `SmartFilter` compiles in, so `matches(_:)` needs no other input).
+    public var playedSongs: Set<SongID>?
+    /// Only songs missing a set essential (key, length or tempo; `SongEssentials`, R110).
+    public var missingEssentials: Bool
 
     public init(
         text: String = "",
@@ -48,7 +52,8 @@ public struct SongFilter: Sendable, Equatable {
         keys: Set<String> = [],
         tempo: Bounds? = nil,
         length: Bounds? = nil,
-        played: PlayHistory? = nil,
+        playedSongs: Set<SongID>? = nil,
+        missingEssentials: Bool = false,
     ) {
         self.text = text
         self.tags = tags
@@ -59,7 +64,8 @@ public struct SongFilter: Sendable, Equatable {
         self.keys = keys
         self.tempo = tempo
         self.length = length
-        self.played = played
+        self.playedSongs = playedSongs
+        self.missingEssentials = missingEssentials
     }
 
     /// Inclusive numeric bounds; a nil side is open.
@@ -84,57 +90,11 @@ public struct SongFilter: Sendable, Equatable {
         }
     }
 
-    /// Play-history constraints with their instants already resolved, plus the "last
-    /// played" snapshot they are checked against (so `matches(_:)` needs no other input).
-    /// A song never played matches neither `before` nor `after`.
-    public struct PlayHistory: Sendable, Equatable {
-        /// The latest start per played song (`PlayStats.lastPlayed`).
-        public var lastPlayed: [SongID: Date]
-        /// Last played strictly before this instant.
-        public var before: Date?
-        /// Last played at or after this instant.
-        public var onOrAfter: Date?
-        /// Never played at all.
-        public var neverPlayed: Bool
-
-        public init(
-            lastPlayed: [SongID: Date],
-            before: Date? = nil,
-            onOrAfter: Date? = nil,
-            neverPlayed: Bool = false,
-        ) {
-            self.lastPlayed = lastPlayed
-            self.before = before
-            self.onOrAfter = onOrAfter
-            self.neverPlayed = neverPlayed
-        }
-
-        /// Whether song `id` satisfies every play-history constraint.
-        public func matches(_ id: SongID) -> Bool {
-            let last = lastPlayed[id]
-            if neverPlayed, last != nil {
-                return false
-            }
-            if let before {
-                guard let last, last < before else { return false }
-            }
-            if let onOrAfter {
-                guard let last, last >= onOrAfter else { return false }
-            }
-            return true
-        }
-
-        /// Whether any constraint is set.
-        var constrains: Bool {
-            neverPlayed || before != nil || onOrAfter != nil
-        }
-    }
-
     /// True when no constraint is set (the text may still be non-empty).
     public var hasConstraints: Bool {
         !tags.isEmpty || !proficiencies.isEmpty || key != nil || !anyTags.isEmpty
             || !excludedTags.isEmpty || !keys.isEmpty || tempo != nil || length != nil
-            || played?.constrains == true
+            || playedSongs != nil || missingEssentials
     }
 
     /// Whether `song` satisfies every constraint (not `text`).
@@ -143,7 +103,10 @@ public struct SongFilter: Sendable, Equatable {
             guard let level = song.sidecar.proficiency, proficiencies.contains(level)
             else { return false }
         }
-        if let played, !played.matches(song.id) {
+        if let playedSongs, playedSongs.contains(song.id) {
+            return false
+        }
+        if missingEssentials, !SongEssentials.isMissingAny(in: song.document) {
             return false
         }
         return matchesTags(song) && matchesKey(song) && matchesNumbers(song.document.metadata)

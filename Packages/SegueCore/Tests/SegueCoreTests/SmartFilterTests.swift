@@ -21,13 +21,14 @@ struct SmartFilterTests {
         let store = try await Self.store(lib)
         var conditions = SmartFilterConditions(anyTags: ["upbeat", "crowd pleaser"])
         conditions.length = SmartFilterRange(min: 120, max: 300)
-        conditions.lastPlayedBefore = .daysAgo(90)
+        conditions.neverPlayed = true
         let created = try await store.create(name: "Openers", conditions: conditions)
 
         #expect(lib.exists("filters/openers.filter.json"))
         let json = try lib.read("filters/openers.filter.json")
         #expect(json.contains(#""schemaVersion" : 1"#))
-        #expect(json.contains(#""daysAgo" : 90"#))
+        #expect(json.contains(#""neverPlayed" : true"#))
+        #expect(!json.contains("lastPlayed"))
         #expect(!json.lowercased().contains("energy"))
 
         lib.clock.advance(by: 60)
@@ -161,8 +162,6 @@ struct SmartFilterTests {
             return try await filter.songs(
                 in: store.allSongs(),
                 playStats: stats,
-                now: lib.clock.now(),
-                timeZone: .gmt,
             ).titles
         }
     }
@@ -189,7 +188,7 @@ struct SmartFilterTests {
                 SongMetadata(tags: spec.tags, proficiency: spec.level),
             )
         }
-        // The clock is 2026-01-01T00:00:00Z. Alpha last played 2025-12-30, Bravo 2025-06-01.
+        // Alpha and Bravo have been played.
         let alpha = try #require(songs["Alpha"]).id
         let bravo = try #require(songs["Bravo"]).id
         let show = lib.ids.next()
@@ -219,8 +218,6 @@ struct SmartFilterTests {
     func `every condition kind narrows the library`() async throws {
         let fix = try await Self.library()
         let all = ["Alpha", "Bravo", "Charlie", "Delta", "Unknown"]
-        let dec30 = try #require(CalendarDay("2025-12-30"))
-        let dec31 = try #require(CalendarDay("2025-12-31"))
         let cases: [(SmartFilterConditions, [String])] = [
             (SmartFilterConditions(), all),
             (SmartFilterConditions(allTags: ["UPBEAT", "cover"]), ["Alpha"]),
@@ -238,11 +235,6 @@ struct SmartFilterTests {
                 SmartFilterConditions(length: SmartFilterRange(max: 240)),
                 ["Alpha", "Charlie", "Delta"],
             ),
-            (SmartFilterConditions(lastPlayedBefore: .daysAgo(30)), ["Bravo"]),
-            (SmartFilterConditions(lastPlayedAfter: .daysAgo(30)), ["Alpha"]),
-            (SmartFilterConditions(lastPlayedBefore: .day(dec30)), ["Bravo"]),
-            (SmartFilterConditions(lastPlayedAfter: .day(dec30)), ["Alpha"]),
-            (SmartFilterConditions(lastPlayedAfter: .day(dec31)), []),
             (SmartFilterConditions(neverPlayed: true), ["Charlie", "Delta", "Unknown"]),
             (
                 SmartFilterConditions(anyTags: ["upbeat"], neverPlayed: true),
@@ -266,15 +258,6 @@ struct SmartFilterTests {
     }
 
     @Test
-    func `relative play bounds follow the clock`() async throws {
-        let fix = try await Self.library()
-        let recent = SmartFilterConditions(lastPlayedAfter: .daysAgo(7))
-        #expect(try await fix.titles(recent) == ["Alpha"])
-        fix.lib.clock.advance(by: 6 * 86400)
-        #expect(try await fix.titles(recent).isEmpty)
-    }
-
-    @Test
     func `the store evaluates a saved filter by id`() async throws {
         let fix = try await Self.library()
         let filters = try await Self.store(fix.lib)
@@ -295,7 +278,7 @@ struct SmartFilterTests {
         #expect(plain == SongFilter(text: "", proficiencies: [.ready], key: "Am"))
         #expect(try await fix.store.allSongs().filter(plain.matches).titles == ["Bravo"])
         #expect(!SongFilter().hasConstraints)
-        #expect(SmartFilterConditions().compiled(now: fix.lib.clock.now()) == SongFilter())
+        #expect(SmartFilterConditions().compiled() == SongFilter())
     }
 
     @Test
@@ -309,6 +292,38 @@ struct SmartFilterTests {
             neverPlayed: true,
         )
         #expect(conditions.count == 4)
+    }
+}
+
+extension SmartFilterTests {
+    @Test
+    func `essentials are a written key, a length and a tempo`() async throws {
+        let fix = try await Self.library()
+        let missing = try await fix.store.allSongs().map { song in
+            "\(song.document.metadata.title ?? ""): "
+                + SongEssentials.missing(in: song.document).map(\.rawValue).joined(separator: ",")
+        }
+        #expect(missing == [
+            "Alpha: ",
+            "Bravo: ",
+            "Charlie: ",
+            "Delta: ",
+            "Unknown: key,length,tempo",
+        ])
+        let partial = try await fix.store.createSong(source: """
+        {title: Partial}
+        {key: Hm}
+        {tempo: 90}
+        [G]La [C]la [D]la [G]la
+
+        """)
+        // A key detected from the chords, or an invalid {key}, does not count.
+        #expect(SongEssentials.missing(in: partial.document) == [.key, .length])
+        let builtIn = SongFilter(missingEssentials: true)
+        #expect(try await fix.store.allSongs().filter(builtIn.matches).titles == [
+            "Partial",
+            "Unknown",
+        ])
     }
 }
 
@@ -354,7 +369,7 @@ struct SmartFilterPerformanceTests {
                 keys: ["G", "Am", "C", "D"],
                 tempo: SmartFilterRange(min: 60, max: 200),
                 length: SmartFilterRange(min: 60, max: 600),
-                lastPlayedBefore: .daysAgo(10),
+                neverPlayed: true,
             ),
         )
         let clock = ContinuousClock()
@@ -362,7 +377,7 @@ struct SmartFilterPerformanceTests {
         var count = 0
         for _ in 0 ..< 5 {
             let elapsed = clock.measure {
-                count = filter.songs(in: songs, playStats: stats, now: lib.clock.now()).count
+                count = filter.songs(in: songs, playStats: stats).count
             }
             best = min(best, elapsed)
         }
