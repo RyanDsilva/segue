@@ -210,3 +210,8 @@ Set assistant (Ryan, 2026-10-19):
 - R114. Set assistant UI: design A, a command bar above the set in Arrange; Build fills the open setlist as one undo step (no draft setlist).
 - R115. Locked songs are saved in the setlist file and survive reopening; Rebuild honours them.
 - R116. Apple Foundation Models is NOT used for set requests (it invented tags and proficiencies in testing); suggestion chips come only from the downloaded local model, else the lexicon alone. "Start soft / end soft" phrases are dropped. Supersedes the FM fallback in R92.
+
+Paste review and metronome (Ryan, 2026-10-19):
+
+- R117. Paste review sheet: design D1 (a small sparkle marks AI-decided labels and fields; quiet "Refining with..." status; one-line footer). During a show, already-ChordPro imports stay allowed and New Song opens blank (R109); a mixed import is one undo step.
+- R118. Visual metronome: design A (one pulsing dot plus BPM, bottom right; beat 1 red). Compound meters count the dotted-quarter pulse (6/8 = 2 pulses per bar). M toggles it for the current show only. The rehearsal click starts off in every rehearsal and is toggled with K (rehearsal only).
