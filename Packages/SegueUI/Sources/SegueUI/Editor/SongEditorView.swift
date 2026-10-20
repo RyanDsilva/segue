@@ -9,6 +9,7 @@
     /// a live preview); a display bar for transpose / capo / Nashville / diagrams; a status
     /// bar. Both modes edit one source with one undo stack.
     struct SongEditorView: View {
+        @Environment(\.openGuide) private var openGuide
         @Bindable var model: SongEditorViewModel
         /// "Done": save now and close the editor.
         var onDone: () -> Void
@@ -23,9 +24,15 @@
                 }
                 if model.editorMode == .visual {
                     ChordPaletteBar(model: model)
-                    TipView(MoveChordTip())
-                        .padding(.horizontal, 24)
-                        .padding(.top, 8)
+                    TipView(MoveChordTip()) { action in
+                        GuideTipAction.handle(
+                            action,
+                            page: MoveChordTip.guidePage,
+                            openGuide: openGuide,
+                        )
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
                 }
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

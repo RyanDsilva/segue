@@ -243,6 +243,7 @@
 
         private var footer: some View {
             HStack(spacing: 10) {
+                GuideHelpButton(.arrangeSections)
                 Text("Length for this gig")
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
                     .foregroundStyle(Theme.color.muted)

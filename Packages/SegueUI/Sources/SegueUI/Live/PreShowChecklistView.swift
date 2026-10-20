@@ -42,6 +42,7 @@
                 }
                 metronomeSwitches
                 HStack(spacing: 10) {
+                    GuideHelpButton(.checklist)
                     Spacer()
                     Button("Cancel") { checklist.answer(false) }
                         .buttonStyle(.segueSecondary)

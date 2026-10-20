@@ -51,6 +51,7 @@
                 }
             }
             .formStyle(.grouped)
+            .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .privacySettings) }
             .frame(minHeight: 520)
         }
 

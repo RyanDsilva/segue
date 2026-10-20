@@ -59,6 +59,7 @@
                 }
             }
             .formStyle(.grouped)
+            .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .ai) }
             .frame(minHeight: 460)
             .task {
                 ai.models.onDownloadFinished = { services.record(.aiModelDownload($0)) }

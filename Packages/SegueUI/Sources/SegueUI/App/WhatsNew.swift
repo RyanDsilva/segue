@@ -119,7 +119,7 @@
 
             public var kind: Kind
             public var text: String
-            /// A site-relative help path from WS4's URL table ("/help/live").
+            /// A site-relative help path on the site, e.g. a guide page ("/guide/go-on-stage").
             public var help: String?
 
             /// `SegueLinks.site` + `help`, for "Learn More".

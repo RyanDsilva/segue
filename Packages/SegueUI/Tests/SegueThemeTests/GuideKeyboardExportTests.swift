@@ -19,7 +19,8 @@ struct GuideKeyboardExportTests {
         #expect(committed == rendered, "guide/src/data/keyboard.json is stale: run make guide-keys")
     }
 
-    /// `{"menus": [{menu, items: [{title, keys}]}], "stage": [{group, rows: [{title, keys}]}]}`,
+    /// `{"editor": [{title, keys}], "menus": [{menu, items: [{title, keys}]}],
+    /// "stage": [{group, rows: [{title, keys}]}]}`,
     /// pretty-printed with sorted keys so the output is byte-stable.
     static func render() throws -> String {
         struct Item: Encodable {
@@ -35,6 +36,7 @@ struct GuideKeyboardExportTests {
             var rows: [Item]
         }
         struct Reference: Encodable {
+            var editor: [Item]
             var menus: [Menu]
             var stage: [Group]
         }
@@ -52,8 +54,9 @@ struct GuideKeyboardExportTests {
         }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        let data = try encoder.encode(Reference(menus: menus, stage: stage))
-        return String(decoding: data, as: UTF8.self) + "\n"
+        let editor = EditorKeys.rows.map { Item(title: $0.title, keys: [$0.keys]) }
+        let data = try encoder.encode(Reference(editor: editor, menus: menus, stage: stage))
+        return try #require(String(bytes: data, encoding: .utf8)) + "\n"
     }
 
     /// `<repo>/guide/src/data/keyboard.json`.

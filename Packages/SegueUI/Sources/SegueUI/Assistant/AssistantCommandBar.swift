@@ -29,6 +29,7 @@
                         .disabled(!model.canBuild || isReadOnly || setlist.songCount == 0)
                         .help("Pack the unlocked slots again with a different pick")
                         .accessibilityIdentifier(AccessibilityID.assistantRebuild)
+                    GuideHelpButton(.setAssistant)
                 }
                 .controlSize(.large)
                 if !model.chips.isEmpty || model.isSuggesting {

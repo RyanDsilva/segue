@@ -62,6 +62,7 @@
                 }
             }
             .frame(width: 560)
+            .guideLinks(app.dependencies.workspace)
         }
     }
 

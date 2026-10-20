@@ -10,6 +10,7 @@
     /// details, Rehearse / Start show and the timeline strip (one coloured region per part,
     /// unknown lengths hatched, breaks as gaps, the target as a line).
     struct SetlistBuilderView: View {
+        @Environment(\.openGuide) private var openGuide
         let setlist: Setlist
         let model: SetlistsViewModel
         let library: LibraryViewModel
@@ -54,6 +55,9 @@
                                 if action.id == GigModeTip.openSettingsAction {
                                     onOpenLiveSettings()
                                 }
+                                GuideTipAction.handle(
+                                    action, page: GigModeTip.guidePage, openGuide: openGuide,
+                                )
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, 12)
@@ -196,7 +200,13 @@
                     .accessibilityIdentifier(AccessibilityID.setlistRehearse)
                 Button("Start show") { onStart(setlist, .gig) }
                     .buttonStyle(.seguePrimary)
-                    .popoverTip(StartShowTip())
+                    .popoverTip(StartShowTip()) { action in
+                        GuideTipAction.handle(
+                            action,
+                            page: StartShowTip.guidePage,
+                            openGuide: openGuide,
+                        )
+                    }
                     .help("Perform this setlist on stage (\(MenuShortcuts.startShow.displayText))")
                     .accessibilityIdentifier(AccessibilityID.setlistStartShow)
             }

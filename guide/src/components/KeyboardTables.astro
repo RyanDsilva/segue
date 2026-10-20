@@ -1,17 +1,20 @@
 ---
 // The keyboard reference, generated from the app's own tables (WS6 4.6): menu key
-// equivalents from MenuShortcuts and stage keys from KeyHelp + the default bindings.
+// equivalents from MenuShortcuts, editor keys from EditorKeys and stage keys from KeyHelp
+// with the default bindings.
 import keyboard from '../data/keyboard.json';
 
 interface Props {
-  part: 'menus' | 'stage';
+  part: 'menus' | 'stage' | 'editor';
 }
 
 const { part } = Astro.props;
 const groups =
   part === 'menus'
     ? keyboard.menus.map((menu) => ({ title: `${menu.menu} menu`, rows: menu.items }))
-    : keyboard.stage.map((group) => ({ title: group.group, rows: group.rows }));
+    : part === 'editor'
+      ? [{ title: 'Editor', rows: keyboard.editor }]
+      : keyboard.stage.map((group) => ({ title: group.group, rows: group.rows }));
 ---
 
 {

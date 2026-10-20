@@ -282,7 +282,7 @@ enum CoreLinks {
 
     /// Help items that open a web page, with the URL each opens.
     static let helpLinks: [(String, String)] = [
-        ("Segue Help", site + "/help"),
+        ("Segue Help", site + "/guide"),
         ("What's New in Segue", site + "/changelog"),
         ("Request a Feature…", site + "/feedback"),
         ("Privacy Policy", site + "/privacy"),

@@ -8,7 +8,7 @@ struct SegueLinksTests {
     @Test
     func `site links are https pages on the site and the support address is mail`() {
         let pages: [(URL, String)] = [
-            (SegueLinks.site, ""), (SegueLinks.help, "/help"), (SegueLinks.privacy, "/privacy"),
+            (SegueLinks.site, ""), (SegueLinks.help, "/guide"), (SegueLinks.privacy, "/privacy"),
             (SegueLinks.terms, "/terms"), (SegueLinks.support, "/support"),
             (SegueLinks.changelog, "/changelog"), (SegueLinks.feedback, "/feedback"),
         ]
@@ -18,8 +18,6 @@ struct SegueLinksTests {
             #expect(url.path() == path)
         }
         #expect(SegueLinks.supportEmail.scheme == "mailto")
-        #expect(SegueLinks.helpPage("keyboard") == SegueLinks.help.appending(path: "keyboard"))
-        #expect(SegueLinks.helpPage("keyboard").path() == "/help/keyboard")
     }
 
     @Test

@@ -73,6 +73,7 @@
                 }
             }
             .formStyle(.grouped)
+            .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .backUp) }
             .frame(minHeight: 420)
             .confirmationDialog(
                 removal?.headline ?? "",

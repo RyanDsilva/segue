@@ -7,8 +7,8 @@ import Foundation
 public enum SegueLinks {
     /// The website.
     public static let site = url("https://segue.ryandsilva.dev")
-    /// Help > Segue Help (R21).
-    public static let help = url("https://segue.ryandsilva.dev/help")
+    /// Help > Segue Help: the user guide (R126; `/help` redirects to it).
+    public static let help = url("https://segue.ryandsilva.dev/guide")
     /// Help > Privacy Policy (Guideline 5.1.1(i)); the Privacy pane links it too.
     public static let privacy = url("https://segue.ryandsilva.dev/privacy")
     /// Help > Terms of Use: the site terms, which link Apple's standard EULA (R7).
@@ -45,10 +45,61 @@ public enum SegueLinks {
         return URL(string: "macappstore://apps.apple.com/app/id\(appStoreID)?action=write-review")
     }
 
-    /// A help page, e.g. `helpPage("keyboard")` is `/help/keyboard`. Only paths in WS4's URL
-    /// table may be used; its link checker is the contract.
-    public static func helpPage(_ path: String) -> URL {
-        help.appending(path: path, directoryHint: .notDirectory)
+    /// The user guide pages the app opens from Help buttons, tips and menus (WS6 7.2). Each
+    /// raw value is the full URL, so `gen-site.swift --check` resolves every one against the
+    /// built guide (page and `#id`): a renamed page or heading fails the site check.
+    public enum Guide: String, CaseIterable, Sendable {
+        case home = "https://segue.ryandsilva.dev/guide"
+        case keyboard = "https://segue.ryandsilva.dev/guide/keyboard"
+        case pasteASong = "https://segue.ryandsilva.dev/guide/paste-a-song"
+        case pasteReview = "https://segue.ryandsilva.dev/guide/paste-a-song#review"
+        case importBatch = "https://segue.ryandsilva.dev/guide/import-files#batch"
+        case search = "https://segue.ryandsilva.dev/guide/library-folder#search"
+        case songCard = "https://segue.ryandsilva.dev/guide/song-card"
+        case moveChord = "https://segue.ryandsilva.dev/guide/edit-a-song#chords"
+        case sectionNotes = "https://segue.ryandsilva.dev/guide/section-notes"
+        case transpose = "https://segue.ryandsilva.dev/guide/transpose#transpose"
+        case setAssistant = "https://segue.ryandsilva.dev/guide/set-assistant"
+        case unknownLengths = "https://segue.ryandsilva.dev/guide/running-time#unknown"
+        case arrangeSections = "https://segue.ryandsilva.dev/guide/arrange-sections"
+        case smartFilters = "https://segue.ryandsilva.dev/guide/smart-filters#smart"
+        case goOnStage = "https://segue.ryandsilva.dev/guide/go-on-stage"
+        case checklist = "https://segue.ryandsilva.dev/guide/go-on-stage#checklist"
+        case minimumSize = "https://segue.ryandsilva.dev/guide/go-on-stage#minimum-size"
+        case gigMode = "https://segue.ryandsilva.dev/guide/gig-mode"
+        case ai = "https://segue.ryandsilva.dev/guide/ai"
+        case privacySettings = "https://segue.ryandsilva.dev/guide/privacy-settings"
+        case backUp = "https://segue.ryandsilva.dev/guide/back-up"
+
+        public var url: URL {
+            SegueLinks.url(rawValue)
+        }
+
+        /// The page's name, for the Help button's accessibility label ("Help: Song card").
+        public var title: String {
+            switch self {
+            case .home: "Segue Guide"
+            case .keyboard: "Keyboard shortcuts"
+            case .pasteASong, .pasteReview: "Paste a song"
+            case .importBatch: "Import files"
+            case .search: "Search"
+            case .songCard: "The song card"
+            case .moveChord: "Edit a song"
+            case .sectionNotes: "Section notes"
+            case .transpose: "Transpose and capo"
+            case .setAssistant: "Set assistant"
+            case .unknownLengths: "Running time"
+            case .arrangeSections: "Arrange sections"
+            case .smartFilters: "Smart filters"
+            case .goOnStage: "Go on stage"
+            case .checklist: "Pre-show checklist"
+            case .minimumSize: "Lyrics on stage"
+            case .gigMode: "Gig Mode Shortcuts"
+            case .ai: "AI in Segue"
+            case .privacySettings: "Privacy settings"
+            case .backUp: "Back up and restore"
+            }
+        }
     }
 
     private static func url(_ string: String) -> URL {

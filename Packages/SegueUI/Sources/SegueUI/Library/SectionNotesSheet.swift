@@ -106,6 +106,7 @@
                 }
                 Divider()
                 HStack {
+                    GuideHelpButton(.sectionNotes)
                     Spacer()
                     Button("Done", action: finish)
                         .keyboardShortcut(.defaultAction)

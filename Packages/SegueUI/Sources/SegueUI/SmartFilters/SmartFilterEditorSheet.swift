@@ -72,6 +72,7 @@
                 .accessibilityIdentifier(AccessibilityID.smartFilterConditions)
                 Rule()
                 HStack(spacing: 10) {
+                    GuideHelpButton(.smartFilters)
                     Text(footer)
                         .font(Theme.font.body)
                         .foregroundStyle(draft.problem == nil ? Theme.color.muted : Theme.color.cue)

@@ -9,13 +9,20 @@
     /// diagrams and instrument, and "Apply to source" while transposed. Toggles are view
     /// state saved to the song's sidecar; capo and "Apply to source" edit the ChordPro.
     struct EditorTopBar: View {
+        @Environment(\.openGuide) private var openGuide
         let model: SongEditorViewModel
 
         var body: some View {
             HStack(alignment: .center, spacing: 0) {
                 LyricFlowLayout(rowSpacing: 8) {
                     transposeGroup.frame(height: 30)
-                        .popoverTip(TransposeViewTip())
+                        .popoverTip(TransposeViewTip()) { action in
+                            GuideTipAction.handle(
+                                action,
+                                page: TransposeViewTip.guidePage,
+                                openGuide: openGuide,
+                            )
+                        }
                         .padding(.trailing, 28)
                     capoGroup.frame(height: 30).padding(.trailing, 28)
                     displayGroup.frame(height: 30).padding(.trailing, 28)

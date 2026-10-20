@@ -13,6 +13,7 @@
     public struct KeyboardShortcutsView: View {
         let stage: [KeyHelp.Group]
         let stageWarning: String?
+        @Environment(\.openGuide) private var openGuide
 
         public init(stage: [KeyHelp.Group] = [], stageWarning: String? = nil) {
             self.stage = stage
@@ -54,6 +55,11 @@
                                 .font(Theme.font.label)
                                 .foregroundStyle(Theme.color.muted)
                         }
+                    }
+                    if let openGuide {
+                        Button("All shortcuts in the Segue Guide") { openGuide(.keyboard) }
+                            .buttonStyle(.link)
+                            .accessibilityIdentifier(AccessibilityID.keyboardShortcutsGuide)
                     }
                 }
                 .padding(32)
@@ -127,6 +133,7 @@
         public var body: some View {
             let (table, warning) = loadBindings()
             KeyboardShortcutsView(stage: KeyHelp.groups(table), stageWarning: warning)
+                .guideLinks(app.dependencies.workspace)
         }
 
         private func loadBindings() -> (InputBindingTable, String?) {

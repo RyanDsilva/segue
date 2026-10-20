@@ -111,6 +111,7 @@ const commandCount = [...enumBody.matchAll(/^\s+case [a-zA-Z]+$/gm)].length;
 const stageRows = keyboard.stage.reduce((sum, group) => sum + group.rows.length, 0);
 if (stageRows !== commandCount) fail(`keyboard.json has ${stageRows} stage rows, LiveCommand has ${commandCount} cases (make guide-keys)`);
 if (!keyboard.menus.length) fail('keyboard.json has no menu shortcuts');
+if (!keyboard.editor?.length) fail('keyboard.json has no editor keys (make guide-keys)');
 
 // 6. Build output: same-origin assets only, no inline scripts or style attributes (CSP),
 //    no cookies, no em dash.

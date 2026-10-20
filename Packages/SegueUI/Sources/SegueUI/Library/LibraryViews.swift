@@ -90,6 +90,7 @@
     /// The song list column: search with typed filter tokens, filter chips, "New song",
     /// then one row per song (key chip, proficiency mark).
     struct SongListView: View {
+        @Environment(\.openGuide) private var openGuide
         @Bindable var model: LibraryViewModel
         let session: LibrarySession
         @State private var isShowingLoadIssues = false
@@ -139,12 +140,24 @@
                         prompt: "Search or filter",
                         accessibilityIdentifier: AccessibilityID.librarySearch,
                     )
-                    .popoverTip(SearchAnyLineTip())
+                    .popoverTip(SearchAnyLineTip()) { action in
+                        GuideTipAction.handle(
+                            action,
+                            page: SearchAnyLineTip.guidePage,
+                            openGuide: openGuide,
+                        )
+                    }
                     Button("New song") { model.beginNewSongFlow() }
                         .buttonStyle(.seguePrimary)
                         .help(model.isPerforming ? "New Song: starts blank during a show (⌘N)"
                             : "Paste or type a new song (⌘N)")
-                        .popoverTip(PasteSongTip())
+                        .popoverTip(PasteSongTip()) { action in
+                            GuideTipAction.handle(
+                                action,
+                                page: PasteSongTip.guidePage,
+                                openGuide: openGuide,
+                            )
+                        }
                         .accessibilityIdentifier(AccessibilityID.newSong)
                 }
                 FilterChipsBar(state: $model.filterState, tags: model.tags)
@@ -225,19 +238,26 @@
                     } description: {
                         Text("Paste a chord sheet, write a song, or drop song files here.")
                     } actions: {
-                        HStack(spacing: 8) {
-                            Button("Paste a Song") { pasteFromEmptyState() }
-                                .buttonStyle(.segueSecondary)
-                                .disabled(!model.canPaste)
-                                .help(model.pasteUnavailableReason
-                                    ?? "Review the clipboard's chord sheet as a new song (⌥⌘V)")
-                                .accessibilityIdentifier(AccessibilityID.pasteFromEmptyLibrary)
-                            Button("New Song") { model.beginNewSongFlow() }
-                                .buttonStyle(.segueSecondary)
-                            Button("Import Songs…") { Task { await session.chooseAndImport() } }
-                                .buttonStyle(.segueSecondary)
-                                .help("Import ChordPro, text or .crd files (⇧⌘I)")
-                                .accessibilityIdentifier(AccessibilityID.importSongs)
+                        VStack(spacing: 12) {
+                            HStack(spacing: 8) {
+                                Button("Paste a Song") { pasteFromEmptyState() }
+                                    .buttonStyle(.segueSecondary)
+                                    .disabled(!model.canPaste)
+                                    .help(model.pasteUnavailableReason
+                                        ?? "Review the clipboard's chord sheet as a new song (⌥⌘V)")
+                                    .accessibilityIdentifier(AccessibilityID.pasteFromEmptyLibrary)
+                                Button("New Song") { model.beginNewSongFlow() }
+                                    .buttonStyle(.segueSecondary)
+                                Button("Import Songs…") { Task { await session.chooseAndImport() } }
+                                    .buttonStyle(.segueSecondary)
+                                    .help("Import ChordPro, text or .crd files (⇧⌘I)")
+                                    .accessibilityIdentifier(AccessibilityID.importSongs)
+                            }
+                            if let openGuide {
+                                Button("How to bring songs in") { openGuide(.pasteASong) }
+                                    .buttonStyle(.link)
+                                    .accessibilityIdentifier(AccessibilityID.emptyLibraryGuide)
+                            }
                         }
                     }
                     .accessibilityIdentifier(AccessibilityID.libraryEmpty)

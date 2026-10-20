@@ -45,9 +45,13 @@
                         "\(rows.count) songs without a length")
                         .font(SchibstedGrotesk.bold.font(size: 14))
                         .foregroundStyle(Theme.color.ink)
-                    Text("In set order. Type a length (m:ss) or open the song to time it.")
-                        .font(SchibstedGrotesk.medium.font(size: 12))
-                        .foregroundStyle(Theme.color.muted)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("In set order. Type a length (m:ss) or open the song to time it.")
+                            .font(SchibstedGrotesk.medium.font(size: 12))
+                            .foregroundStyle(Theme.color.muted)
+                        GuideHelpButton(.unknownLengths)
+                            .controlSize(.mini)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 14)

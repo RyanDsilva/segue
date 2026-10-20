@@ -134,6 +134,7 @@
 
         private var footer: some View {
             HStack(spacing: 10) {
+                GuideHelpButton(review.isBatch ? .importBatch : .pasteReview)
                 if let content = footerContent {
                     footerLine(content)
                 }

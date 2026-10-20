@@ -1,4 +1,60 @@
 {
+  "editor" : [
+    {
+      "keys" : [
+        "["
+      ],
+      "title" : "Suggest chords (text mode)"
+    },
+    {
+      "keys" : [
+        "{"
+      ],
+      "title" : "Suggest directives (text mode)"
+    },
+    {
+      "keys" : [
+        "/"
+      ],
+      "title" : "Insert a section or note (text mode, at a line start)"
+    },
+    {
+      "keys" : [
+        "← →  ↑ ↓"
+      ],
+      "title" : "Choose a suggestion"
+    },
+    {
+      "keys" : [
+        "↩  ⇥"
+      ],
+      "title" : "Accept a suggestion"
+    },
+    {
+      "keys" : [
+        "⎋"
+      ],
+      "title" : "Close suggestions, drop a picked-up chord"
+    },
+    {
+      "keys" : [
+        "⌫"
+      ],
+      "title" : "Delete the selected chord pill"
+    },
+    {
+      "keys" : [
+        "← →"
+      ],
+      "title" : "Nudge the selected chord pill"
+    },
+    {
+      "keys" : [
+        "↩"
+      ],
+      "title" : "Edit the selected chord pill"
+    }
+  ],
   "menus" : [
     {
       "items" : [

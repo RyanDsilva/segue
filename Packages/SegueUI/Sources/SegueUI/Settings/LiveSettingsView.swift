@@ -67,10 +67,14 @@
                         Button("Open Automation Settings…") { workspace.open(url) }
                             .accessibilityIdentifier(AccessibilityID.settingsAutomationSettings)
                     }
-                    Text(Self.guide)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(Self.guide)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 8)
+                        GuideHelpButton(.gigMode)
+                    }
                 }
                 Section("Pre-show checklist") {
                     ForEach(ChecklistItem.allCases, id: \.self) { item in
@@ -87,6 +91,7 @@
                 }
             }
             .formStyle(.grouped)
+            .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .minimumSize) }
             .frame(minHeight: 520)
         }
 

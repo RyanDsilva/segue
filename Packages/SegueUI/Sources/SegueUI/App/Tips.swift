@@ -100,6 +100,9 @@
 
     /// Popover on the library search field.
     struct SearchAnyLineTip: Tip {
+        /// The guide page its Learn More opens (WS6 7.2).
+        static let guidePage: SegueLinks.Guide = .search
+
         var title: Text {
             Text("Search by any line")
         }
@@ -107,6 +110,10 @@
         var message: Text? {
             Text("Search by any line you remember. Spellings like pyar and pyaar find the "
                 + "same song.")
+        }
+
+        var actions: [Tips.Action] {
+            [GuideTipAction.action]
         }
 
         var rules: [Tips.Rule] {
@@ -119,6 +126,9 @@
 
     /// Popover on the song list's New Song button (P3-4): New Song from Clipboard.
     struct PasteSongTip: Tip {
+        /// The guide page its Learn More opens (WS6 7.2).
+        static let guidePage: SegueLinks.Guide = .pasteASong
+
         var title: Text {
             Text("Paste any chord sheet")
         }
@@ -128,6 +138,10 @@
                 + "a song for you to check, right here on your Mac.")
         }
 
+        var actions: [Tips.Action] {
+            [GuideTipAction.action]
+        }
+
         var rules: [Tips.Rule] {
             Self.globalRules + [#Rule(SegueTips.pasteReviewed) { $0.donations.count == 0 }]
         }
@@ -135,12 +149,19 @@
 
     /// Popover on the song view's transpose control.
     struct TransposeViewTip: Tip {
+        /// The guide page its Learn More opens (WS6 7.2).
+        static let guidePage: SegueLinks.Guide = .transpose
+
         var title: Text {
             Text("Change the key for this view")
         }
 
         var message: Text? {
             Text("Change the key or capo for this view without touching the file.")
+        }
+
+        var actions: [Tips.Action] {
+            [GuideTipAction.action]
         }
 
         var rules: [Tips.Rule] {
@@ -150,12 +171,19 @@
 
     /// Inline above the visual editor canvas.
     struct MoveChordTip: Tip {
+        /// The guide page its Learn More opens (WS6 7.2).
+        static let guidePage: SegueLinks.Guide = .moveChord
+
         var title: Text {
             Text("Move a chord")
         }
 
         var message: Text? {
             Text("Drag a chord onto another syllable to move it.")
+        }
+
+        var actions: [Tips.Action] {
+            [GuideTipAction.action]
         }
 
         var rules: [Tips.Rule] {
@@ -165,12 +193,19 @@
 
     /// Popover on the builder's Start Show button.
     struct StartShowTip: Tip {
+        /// The guide page its Learn More opens (WS6 7.2).
+        static let guidePage: SegueLinks.Guide = .goOnStage
+
         var title: Text {
             Text("Start the show")
         }
 
         var message: Text? {
             Text("Start Show goes full screen and dark. Press ? on stage to see every key.")
+        }
+
+        var actions: [Tips.Action] {
+            [GuideTipAction.action]
         }
 
         var rules: [Tips.Rule] {
@@ -185,6 +220,9 @@
     struct GigModeTip: Tip {
         static let openSettingsAction = "openSettings"
 
+        /// The guide page its Learn More opens (WS6 7.2).
+        static let guidePage: SegueLinks.Guide = .gigMode
+
         var title: Text {
             Text("Gig Mode")
         }
@@ -195,7 +233,10 @@
         }
 
         var actions: [Tips.Action] {
-            [Tips.Action(id: Self.openSettingsAction, title: "Open Settings")]
+            [
+                Tips.Action(id: Self.openSettingsAction, title: "Open Settings"),
+                GuideTipAction.action,
+            ]
         }
 
         var rules: [Tips.Rule] {
