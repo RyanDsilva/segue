@@ -251,7 +251,7 @@
 
         @ViewBuilder private var detail: some View {
             switch session.section {
-            case .library, nil:
+            case .library, .smartFilter, .missingEssentials, nil:
                 LibraryPane(session: session)
             case .gigLog:
                 GigLogPane(model: session.gigLog) { id in

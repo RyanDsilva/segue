@@ -4,11 +4,14 @@
     import SwiftUI
 
     /// The main window's sidebar (layout a): Library and Gig log, every setlist (with
-    /// "New Setlist"), then the most used tags (clicking one filters the library by it).
+    /// "New Setlist"), the smart filters (P3-6), then the most used tags (clicking one
+    /// filters the library by it; right-click to rename, merge or delete it).
     struct MainSidebar: View {
         @Bindable var session: LibrarySession
         @State private var naming: SetlistNameSheet.Purpose?
         @State private var renaming: Setlist?
+        @State private var renamingFilter: SmartFilter?
+        @State private var tagSheet: TagSheet.Purpose?
 
         var body: some View {
             List(selection: $session.sidebarSelection) {
@@ -34,6 +37,7 @@
                 } header: {
                     setlistsHeader
                 }
+                SmartFiltersSidebarSection(session: session, renaming: $renamingFilter)
                 if !session.library.tags.isEmpty {
                     Section("Tags") {
                         ForEach(session.library.tags.prefix(12), id: \.tag) { tag in
@@ -46,6 +50,17 @@
                 VStack(spacing: 0) {
                     loadIssuesFooter
                     newSetlistButton
+                }
+            }
+            .smartFilterSheets(session: session, renaming: $renamingFilter)
+            .sheet(item: $tagSheet) { purpose in
+                TagSheet(purpose: purpose, otherTags: otherTags(than: purpose.tag)) { name in
+                    Task {
+                        switch purpose {
+                        case let .rename(tag): await session.renameTag(tag, to: name)
+                        case let .merge(tag): await session.mergeTag(tag, into: name)
+                        }
+                    }
                 }
             }
             .sheet(item: $naming) { purpose in
@@ -138,6 +153,22 @@
             .buttonStyle(.plain)
             .help("Show songs tagged “\(tag.tag)”")
             .accessibilityIdentifier(AccessibilityID.sidebarTag)
+            .contextMenu {
+                SidebarTagMenu(
+                    tag: tag.tag,
+                    otherTags: otherTags(than: tag.tag),
+                    sheet: $tagSheet,
+                ) {
+                    Task { await session.deleteTag(tag.tag) }
+                }
+            }
+        }
+
+        /// Every library tag but `tag` (merge targets).
+        private func otherTags(than tag: String) -> [String] {
+            session.library.tags.map(\.tag).filter {
+                $0.caseInsensitiveCompare(tag) != .orderedSame
+            }
         }
 
         @ViewBuilder private var loadIssuesFooter: some View {

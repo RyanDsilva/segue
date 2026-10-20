@@ -14,7 +14,8 @@
         static let currentVersion = 1
 
         var version = Self.currentVersion
-        /// "library", "gigLog" or "setlist:<ULID>".
+        /// "library", "gigLog", "setlist:<ULID>", "smartFilter:<ULID>" or
+        /// "missingEssentials".
         var section: String
         var song: String?
         var gig: String?
@@ -24,6 +25,8 @@
             case .library, nil: "library"
             case .gigLog: "gigLog"
             case let .setlist(id): "setlist:\(id)"
+            case let .smartFilter(id): "smartFilter:\(id)"
+            case .missingEssentials: "missingEssentials"
             }
             self.song = song?.description
             self.gig = gig?.description
@@ -31,10 +34,20 @@
 
         /// The section to show, given the setlists that exist now (a missing one falls
         /// back to the Library).
-        func section(existing: (SetlistID) -> Bool) -> LibrarySession.Section {
+        func section(
+            existing: (SetlistID) -> Bool,
+            filterExists: (SmartFilterID) -> Bool = { _ in false },
+        ) -> LibrarySession.Section {
             switch section {
             case "gigLog":
                 return .gigLog
+            case "missingEssentials":
+                return .missingEssentials
+            case let value where value.hasPrefix("smartFilter:"):
+                guard let ulid = ULID(string: String(value.dropFirst("smartFilter:".count))),
+                      filterExists(SmartFilterID(ulid))
+                else { return .library }
+                return .smartFilter(SmartFilterID(ulid))
             case let value where value.hasPrefix("setlist:"):
                 guard let ulid = ULID(string: String(value.dropFirst("setlist:".count))),
                       existing(SetlistID(ulid))
@@ -110,7 +123,10 @@
         func restoreState() {
             guard let restore else { return }
             if let state = restore.load() {
-                let section = state.section { setlists.setlist($0) != nil }
+                let section = state.section(
+                    existing: { setlists.setlist($0) != nil },
+                    filterExists: { smartFilters.filter($0) != nil },
+                )
                 if case let .setlist(id) = section {
                     setlists.selection = id
                 }

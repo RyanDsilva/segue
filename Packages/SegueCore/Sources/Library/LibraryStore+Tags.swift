@@ -21,6 +21,11 @@ public struct TagRewrite: Sendable, Equatable {
     public var count: Int {
         previous.count
     }
+
+    /// Whether no song was rewritten.
+    public var isEmpty: Bool {
+        previous.isEmpty
+    }
 }
 
 public extension LibraryStore {

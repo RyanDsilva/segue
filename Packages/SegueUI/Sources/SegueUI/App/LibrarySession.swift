@@ -17,6 +17,10 @@
             case gigLog
             /// The builder of one setlist.
             case setlist(SetlistID)
+            /// The library list narrowed to a saved smart filter (P3-6).
+            case smartFilter(SmartFilterID)
+            /// The library list narrowed to songs missing a set essential (R110).
+            case missingEssentials
         }
 
         public let root: LibraryRoot
@@ -29,6 +33,7 @@
                 if case let .setlist(id) = section, setlists.selection != id {
                     setlists.selection = id
                 }
+                syncLibraryScope()
             }
         }
 
@@ -51,6 +56,8 @@
         public let library: LibraryViewModel
         public let setlists: SetlistsViewModel
         public let gigLog: GigLogViewModel
+        /// Saved smart filters (P3-6): the sidebar section and the editor sheet.
+        public let smartFilters: SmartFiltersViewModel
         /// The stores behind the view models, for the live session (phase 2, unit C) and the
         /// gig log (unit D).
         public let stores: LibraryStores
@@ -74,6 +81,7 @@
                 library.undoManager = undoManager
                 setlists.undoManager = undoManager
                 gigLog.undoManager = undoManager
+                smartFilters.undoManager = undoManager
             }
         }
 
@@ -94,6 +102,7 @@
             self.library = library
             self.setlists = setlists
             self.stores = stores
+            smartFilters = SmartFiltersViewModel(store: stores.filters)
             gigLog = GigLogViewModel(shows: stores.shows, autosave: autosave) { [library] in
                 await library.reload()
             }
@@ -105,6 +114,7 @@
         public func refreshFromDisk() async {
             await library.refresh()
             await setlists.reloadFromDisk()
+            await smartFilters.reloadFromDisk()
         }
 
         /// Shows the builder of the setlist selected in `setlists` (after create or
@@ -179,6 +189,7 @@
                 library: libraryStore,
                 setlists: setlistStore,
                 shows: shows,
+                filters: .make(dependencies),
                 fileSystem: dependencies.fileSystem,
                 clock: dependencies.clock,
                 ids: dependencies.ids,
@@ -193,6 +204,7 @@
                 workspace: dependencies.workspace,
                 importPanel: dependencies.importPanel,
             )
+            await session.loadSmartFilters()
             session.restore = SessionRestore(defaults: dependencies.location.defaults, root: root)
             return session
         }
@@ -221,6 +233,9 @@
         public let setlists: SetlistStore
         /// Not loaded until `AppModel` runs the launch check.
         public let shows: ShowStore
+        /// Saved smart filters (P3-6); the set assistant (P3-7) and Pick mode (P3-12) read
+        /// them here.
+        public let filters: SmartFilterStore
         public let fileSystem: any FileSystem
         public let clock: any Clock
         public let ids: any IDGenerator

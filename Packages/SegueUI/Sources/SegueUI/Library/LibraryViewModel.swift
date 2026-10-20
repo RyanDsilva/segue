@@ -53,6 +53,16 @@ public final class LibraryViewModel {
         }
     }
 
+    /// The smart filter (or built-in filter) the list is narrowed to before the search and
+    /// chips apply (P3-6). Set by the session from the sidebar selection.
+    public var scope: LibraryScope = .all {
+        didSet {
+            if scope != oldValue {
+                scheduleSearch()
+            }
+        }
+    }
+
     /// Every tag in the library with its song count, most used first (chips, sidebar).
     public internal(set) var tags: [TagCount] = []
     /// "Last played" / "times played" per song, from the play projection.
@@ -303,7 +313,7 @@ public final class LibraryViewModel {
         try Task.checkCancellation()
         // A newer keystroke may have changed the query while the index was busy.
         guard state == filterState else { return }
-        results = found.records
+        results = scoped(found.records)
         isSearching = false
         recordSearch(state, found)
     }
