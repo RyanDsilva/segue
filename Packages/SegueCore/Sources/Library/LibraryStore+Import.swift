@@ -240,3 +240,37 @@ extension LibraryStore {
 }
 
 extension ImportSkip: Error {}
+
+// MARK: - Reviewed imports (phase 3, P3-4)
+
+public extension ImportCandidate {
+    /// A pasted song for the review sheet's Accept: `name` stands in for a file name (the
+    /// slug base when the song has no `{title}`) and is never read.
+    static func paste(text: String, name: String = "Pasted Song") -> ImportCandidate {
+        ImportCandidate(
+            source: URL(filePath: name).appendingPathExtension("txt"),
+            text: text,
+            convertedFrom: nil,
+            metadata: nil,
+        )
+    }
+
+    /// `self` with the reviewed ChordPro `text` and the draft card's `metadata`.
+    func reviewed(text: String, metadata: SongMetadata) -> ImportCandidate {
+        var sidecar = self.metadata ?? Sidecar(
+            id: SongID(ULID(timestamp: .distantPast, randomness: Array(repeating: 0, count: 10))),
+            createdAt: .distantPast,
+            updatedAt: .distantPast,
+        )
+        sidecar.tags = SongMetadata.normalizedTags(metadata.tags)
+        sidecar.proficiency = metadata.proficiency
+        sidecar.notes = metadata.notes
+        sidecar.cues = metadata.cues
+        return ImportCandidate(
+            source: source,
+            text: text,
+            convertedFrom: convertedFrom,
+            metadata: sidecar,
+        )
+    }
+}

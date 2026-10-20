@@ -1,6 +1,7 @@
 import Diagrams
 import Foundation
 import Library
+import ModelPort
 import Observation
 import Services
 
@@ -184,6 +185,10 @@ public final class LibraryViewModel {
     public internal(set) var importSummary: ImportSummary?
     /// A show is on stage: the main window takes no imports or drops meanwhile.
     public internal(set) var isPerforming = false
+    /// The paste review sheet's model while it is open (P3-4).
+    public internal(set) var pasteReview: PasteReviewModel?
+    /// The AI router the review sheet refines with; the session hands over the app's.
+    @ObservationIgnored public var aiRouter = Router(providers: [])
     /// Undo targets of metadata edits, one per song (3.9.1).
     let metadataTargets = UndoTargets<SongID>()
     /// Metadata undo and redo writes, run in order.

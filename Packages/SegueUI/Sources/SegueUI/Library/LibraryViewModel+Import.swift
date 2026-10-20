@@ -26,9 +26,23 @@ public extension LibraryViewModel {
             services.record(.errorOccurred(.importFailed))
             return
         }
+        await finishImport(summary, files: urls.count, method: method)
+    }
+
+    /// After an import wrote its songs: reload, the summary bar, analytics, the first song
+    /// selected and Edit > Undo Import.
+    func finishImport(_ summary: ImportSummary, files: Int, method: ImportMethod) async {
         await reload()
-        importSummary = summary
-        recordImport(summary, files: urls.count, method: method)
+        recordImport(summary, files: files, method: method)
+        showImported(summary, bar: true)
+    }
+
+    /// Shows what an import (or an accepted paste) wrote: the summary bar when `bar`, the
+    /// first song selected, and Edit > Undo Import (one step for all of them).
+    func showImported(_ summary: ImportSummary, bar: Bool) {
+        if bar {
+            importSummary = summary
+        }
         guard let first = summary.imported.first else { return }
         navigate { [weak self] in
             self?.selection = first.id

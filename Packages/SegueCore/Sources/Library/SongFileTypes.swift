@@ -4,9 +4,10 @@ import Foundation
 /// `importExtensions`; the `.cho` document type, Open With and Quick Look claim only
 /// `claimedExtensions` (`.pro` and `.txt` are too generic to claim, though `.pro` imports).
 public enum SongFileTypes {
-    /// Extensions File > Import Songs… and drag and drop accept (case-insensitive).
-    /// `.crd` is not accepted in 0.5: it is mostly chords-over-lyrics, phase 3's converter.
-    public static let importExtensions = ["cho", "chopro", "chordpro", "pro", "txt"]
+    /// Extensions File > Import Songs… and drag and drop accept (case-insensitive). `.txt`
+    /// and `.crd` (mostly chords over lyrics, R76) that are not already ChordPro go through
+    /// the converter and the review sheet (P3-4).
+    public static let importExtensions = ["cho", "chopro", "chordpro", "pro", "txt", "crd"]
     /// Extensions Segue registers as its document type.
     public static let claimedExtensions = ["cho", "chordpro", "chopro"]
 

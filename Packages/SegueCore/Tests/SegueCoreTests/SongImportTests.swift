@@ -18,12 +18,11 @@ struct SongImportTests {
     }
 
     @Test
-    func `every accepted extension imports and crd is skipped`() async throws {
+    func `every accepted extension imports, crd included (R76)`() async throws {
         let lib = try TestLibrary()
         let store = try await lib.openStore()
         let names = [
             "harbour-lights.cho", "river-song.chopro", "night-drive.chordpro", "old-hymn.pro",
-            "legacy.crd",
         ]
 
         let summary = try await store.importSongs(names.map(Self.fixture))
@@ -32,9 +31,11 @@ struct SongImportTests {
             "songs/harbour-lights.cho", "songs/river-song.cho", "songs/night-drive.cho",
             "songs/old-hymn.cho",
         ])
-        #expect(summary.skipped == [
-            ImportSkip(fileName: "legacy.crd", reason: "Not a ChordPro or text file"),
-        ])
+        #expect(summary.skipped.isEmpty)
+        // A `.crd` is read like a `.txt`; the app sends it through the review sheet (P3-4).
+        let (crd, crdSkips) = try await store.prepareImport([Self.fixture("legacy.crd")])
+        #expect(crd.map(\.fileName) == ["legacy.crd"])
+        #expect(crdSkips.isEmpty)
         #expect(try lib.bytes("songs/river-song.cho") == Data(contentsOf: Self.fixture(
             "river-song.chopro",
         )))
@@ -228,9 +229,12 @@ struct SongImportTests {
 
     @Test
     func `the extension lists live in one place`() {
-        #expect(SongFileTypes.importExtensions == ["cho", "chopro", "chordpro", "pro", "txt"])
+        #expect(SongFileTypes.importExtensions == [
+            "cho", "chopro", "chordpro", "pro", "txt", "crd",
+        ])
         #expect(SongFileTypes.claimedExtensions == ["cho", "chordpro", "chopro"])
         #expect(SongFileTypes.isImportable(URL(filePath: "/a/B.CHO")))
-        #expect(!SongFileTypes.isImportable(URL(filePath: "/a/b.crd")))
+        #expect(SongFileTypes.isImportable(URL(filePath: "/a/b.CRD")))
+        #expect(!SongFileTypes.isImportable(URL(filePath: "/a/b.pdf")))
     }
 }
