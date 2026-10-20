@@ -28,6 +28,11 @@ public struct EvalRecord: Sendable, Hashable, Codable {
     public var key: String?
     public var calls: [EvalCall]
     public var skipped: Bool
+    /// The model's label per block as answered, before the merge (`""` where the model gave
+    /// none): with `rejected`, it separates what the model said from what the merge kept.
+    public var modelLabels: [String]
+    /// Blocks whose refinement the lyric guard rejected (`.refinementRejected`).
+    public var rejected: [Int]
 
     public init(
         fixture: String,
@@ -39,6 +44,8 @@ public struct EvalRecord: Sendable, Hashable, Codable {
         key: String?,
         calls: [EvalCall],
         skipped: Bool,
+        modelLabels: [String] = [],
+        rejected: [Int] = [],
     ) {
         self.fixture = fixture
         self.provider = provider
@@ -49,6 +56,8 @@ public struct EvalRecord: Sendable, Hashable, Codable {
         self.key = key
         self.calls = calls
         self.skipped = skipped
+        self.modelLabels = modelLabels
+        self.rejected = rejected
     }
 }
 
@@ -81,6 +90,16 @@ public enum PasteEvaluator {
                 key: key,
                 calls: calls.map(\.call),
                 skipped: base.isAlreadyChordPro,
+                modelLabels: base.blocks.map {
+                    update.refinements.labels[$0.index]?.rawValue ?? ""
+                },
+                rejected: result.diagnostics.compactMap { diagnostic in
+                    if case let .refinementRejected(block) = diagnostic {
+                        block
+                    } else {
+                        nil
+                    }
+                },
             ))
             if let recordingSource, !calls.isEmpty {
                 recordings.append(RecordingFile(
