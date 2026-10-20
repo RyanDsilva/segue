@@ -75,7 +75,9 @@ final class SegueAssistantE2ETests: SetlistE2ETestCase {
         SetlistE2E.waitForDisk("The lock never reached the setlist file") {
             let file = try XCTUnwrap(SetlistFixture.setlistFiles(root).first)
             let entries = try XCTUnwrap(file["entries"] as? [[String: Any]])
-            return file["schemaVersion"] as? Int == 4 && entries.first?["locked"] as? Bool == true
+            // Locked slots need schema 4 or later (the build writes 5 since P3-16).
+            return (file["schemaVersion"] as? Int ?? 0) >= 4
+                && entries.first?["locked"] as? Bool == true
                 && file["targetDuration"] as? Double == 1200
         }
         app.buttons[AssistantAXID.rebuild].click(in: app)
