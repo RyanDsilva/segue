@@ -13,13 +13,15 @@
         @State private var isEditingText = false
 
         var body: some View {
-            HStack(spacing: 0) {
-                original
-                    .frame(maxWidth: .infinity)
-                Rule(axis: .vertical)
-                result
-                    .frame(maxWidth: .infinity)
-                    .layoutPriority(1)
+            // Layout "a": the original takes 44%, the result (card and preview) the rest.
+            GeometryReader { proxy in
+                HStack(spacing: 0) {
+                    original
+                        .frame(width: (proxy.size.width * 0.44).rounded())
+                    Rule(axis: .vertical)
+                    result
+                        .frame(maxWidth: .infinity)
+                }
             }
         }
 
@@ -30,9 +32,19 @@
                 PasteColumnHeading(
                     title: item.fileName.map { "Original · \($0)" } ?? "Original",
                 )
-                ScrollView([.vertical, .horizontal]) {
-                    originalLines
-                        .padding(.bottom, 12)
+                GeometryReader { proxy in
+                    ScrollView([.vertical, .horizontal]) {
+                        // At least the viewport's size, so a short text sits top left
+                        // instead of centred.
+                        originalLines
+                            .padding(.bottom, 12)
+                            .padding(.trailing, 18)
+                            .frame(
+                                minWidth: proxy.size.width,
+                                minHeight: proxy.size.height,
+                                alignment: .topLeading,
+                            )
+                    }
                 }
                 .accessibilityIdentifier(AccessibilityID.pasteOriginal)
             }
@@ -96,6 +108,7 @@
                     .controlSize(.small)
                     .accessibilityIdentifier(AccessibilityID.pasteEditToggle)
                 }
+                .padding(.trailing, 18)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         card

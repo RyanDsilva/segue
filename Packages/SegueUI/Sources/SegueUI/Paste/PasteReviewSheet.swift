@@ -39,6 +39,8 @@
                 }
             }
             .background(Theme.color.ground)
+            // A container, so every control inside keeps its own identifier.
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.pasteSheet)
         }
 
@@ -183,11 +185,14 @@
                 }
                 if content.showsDownloadLink {
                     dot
-                    Button(PasteFooter.downloadLinkTitle, action: context.openAISettings)
-                        .buttonStyle(.link)
-                        .foregroundStyle(Theme.color.ink)
-                        .help("Settings > AI: download the local model (about 2.3 GB)")
-                        .accessibilityIdentifier(AccessibilityID.pasteDownloadLink)
+                    Button(action: context.openAISettings) {
+                        Text(PasteFooter.downloadLinkTitle).underline()
+                    }
+                    .buttonStyle(.plain)
+                    .pointerStyle(.link)
+                    .foregroundStyle(Theme.color.ink)
+                    .help("Settings > AI: download the local model (about 2.3 GB)")
+                    .accessibilityIdentifier(AccessibilityID.pasteDownloadLink)
                 }
             }
             .font(SchibstedGrotesk.medium.font(size: 12.5))
@@ -253,10 +258,13 @@
                 .padding(16)
                 Rule()
                 HStack(spacing: 10) {
-                    Button("Start blank", action: context.startBlank)
-                        .buttonStyle(.link)
-                        .foregroundStyle(Theme.color.ink)
-                        .accessibilityIdentifier(AccessibilityID.pasteStartBlank)
+                    Button(action: context.startBlank) {
+                        Text("Start blank").underline()
+                    }
+                    .buttonStyle(.plain)
+                    .pointerStyle(.link)
+                    .foregroundStyle(Theme.color.ink)
+                    .accessibilityIdentifier(AccessibilityID.pasteStartBlank)
                     Text("opens the editor with the song card")
                         .font(SchibstedGrotesk.medium.font(size: 12.5))
                         .foregroundStyle(Theme.color.muted)
