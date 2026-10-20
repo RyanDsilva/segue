@@ -43,7 +43,7 @@ struct SongCardValues: Equatable {
         capo = metadata.capo ?? 0
         time = metadata.time
         detectedKey = document.detectedKey
-        missing = SetEssential.missing(in: metadata)
+        missing = SongEssentials.missing(in: document)
     }
 
     var missing: [SetEssential]

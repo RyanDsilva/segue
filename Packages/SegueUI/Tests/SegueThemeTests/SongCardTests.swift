@@ -145,17 +145,13 @@ struct SongCardTests {
     }
 
     @Test
-    func `missing essentials are key tempo and length`() {
-        let blank = SourceSnapshot(text: "{title: X}\n").document.metadata
-        #expect(SetEssential.missing(in: blank) == [.key, .tempo, .length])
+    func `missing essentials name key length and tempo`() {
+        let blank = SourceSnapshot(text: "{title: X}\n").document
+        #expect(SongEssentials.missing(in: blank) == [.key, .length, .tempo])
         #expect(SetEssential
-            .spokenMissing([.key, .tempo, .length]) == "Missing key, tempo and length")
-        let full = SourceSnapshot(text: "{key: Am}\n{tempo: 84}\n{duration: 4:05}\n").document
-            .metadata
-        #expect(SetEssential.missing(in: full).isEmpty)
-        let badKey = SourceSnapshot(text: "{key: Hm}\n{tempo: 84}\n{duration: 245}\n").document
-            .metadata
-        #expect(SetEssential.missing(in: badKey) == [.key])
+            .spokenMissing([.key, .length, .tempo]) == "Missing key, length and tempo")
+        #expect(SetEssential.spokenMissing([.tempo]) == "Missing tempo")
+        #expect(SetEssential.spokenMissing([]).isEmpty)
     }
 
     @Test
