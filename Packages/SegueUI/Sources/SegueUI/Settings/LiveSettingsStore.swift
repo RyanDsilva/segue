@@ -48,17 +48,6 @@ public final class LiveSettingsStore {
         }
     }
 
-    /// The UserDefaults key of `rehearsalClickOn`.
-    public static let rehearsalClickKey = "live.rehearsalClick"
-
-    /// Whether a rehearsal starts with the metronome's click on (R108: off by default).
-    /// Never read for a gig: a show has no audio path at all.
-    public var rehearsalClickOn: Bool {
-        didSet {
-            defaults.set(rehearsalClickOn, forKey: Self.rehearsalClickKey)
-        }
-    }
-
     @ObservationIgnored private let defaults: UserDefaults
 
     /// Reset All Settings (WS2b 4.6): the Live settings back to their defaults.
@@ -66,7 +55,6 @@ public final class LiveSettingsStore {
         settings = LiveSettings()
         runsShortcutsForRehearsals = false
         metronomeOn = false
-        rehearsalClickOn = false
     }
 
     public init(defaults: UserDefaults) {
@@ -74,7 +62,6 @@ public final class LiveSettingsStore {
         settings = Self.load(from: defaults)
         runsShortcutsForRehearsals = defaults.bool(forKey: Self.rehearsalShortcutsKey)
         metronomeOn = defaults.bool(forKey: Self.metronomeKey)
-        rehearsalClickOn = defaults.bool(forKey: Self.rehearsalClickKey)
         updateGigModeTip()
     }
 

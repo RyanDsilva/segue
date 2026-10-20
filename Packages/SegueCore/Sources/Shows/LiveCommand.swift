@@ -45,7 +45,7 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
     case showKeys
     /// The stage metronome's pulse on or off (`M`, R90).
     case toggleMetronome
-    /// The metronome's click on or off: rehearsals only, never a sound in a gig (`⇧M`, R90).
+    /// The metronome's click on or off: rehearsals only, never a sound in a gig (`K`, R118).
     case toggleMetronomeClick
 
     /// Who handles a command.

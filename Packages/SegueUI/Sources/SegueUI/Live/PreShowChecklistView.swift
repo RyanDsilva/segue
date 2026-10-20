@@ -64,8 +64,8 @@
             return "\(checklist.setlistName)  ·  \(songs)"
         }
 
-        /// The metronome (R108): the pulse, and in a rehearsal its click. Both remember the
-        /// last choice.
+        /// The metronome (R108, R118): the pulse (remembered), and in a rehearsal its click
+        /// (off each time).
         private var metronomeSwitches: some View {
             VStack(spacing: 0) {
                 metronomeSwitch(
@@ -81,7 +81,7 @@
                     Rectangle().fill(Theme.color.line).frame(height: 1)
                     metronomeSwitch(
                         "Click",
-                        detail: "Sounds each beat. Rehearsals only. Shift-M on stage.",
+                        detail: "Sounds each beat. Rehearsals only. K on stage.",
                         isOn: Binding(
                             get: { checklist.rehearsalClickOn },
                             set: { checklist.rehearsalClickOn = $0 },

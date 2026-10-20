@@ -80,7 +80,6 @@
                 Section("Metronome") {
                     Toggle("Start shows with the metronome on", isOn: $store.metronomeOn)
                         .accessibilityIdentifier(AccessibilityID.settingsMetronome)
-                    Toggle("Click in rehearsals", isOn: $store.rehearsalClickOn)
                     Text(Self.metronomeHelp)
                         .font(.callout)
                         .foregroundStyle(.secondary)
@@ -97,8 +96,8 @@
 
         static let metronomeHelp = "A quiet pulse in the corner of the stage at each song's "
             + "tempo, beat 1 accented. Songs without a tempo show none. M turns it on and off "
-            + "on stage; the pre-show checklist remembers your last choice. In rehearsals, "
-            + "Shift-M adds a click. Shows never make a sound."
+            + "on stage for that show; the pre-show checklist remembers your last choice. In "
+            + "rehearsals, K adds a click. Shows never make a sound."
 
         static let guide = "Gig Mode Shortcuts are off until you set them up. Segue cannot switch "
             + "Focus on by itself, so it can run a Shortcut you own when a show starts and ends. "

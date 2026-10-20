@@ -1,8 +1,8 @@
 #if os(macOS)
     import Shows
 
-    /// The checklist's metronome switches (R108): they write Settings > Live, so the choice
-    /// is the next show's default too.
+    /// The checklist's metronome switch (R108): it writes Settings > Live, so the choice is
+    /// the next show's default too. The click switch (`rehearsalClickOn`) is per rehearsal.
     public extension PreShowChecklist {
         /// The stage metronome's pulse for this show.
         var metronomeOn: Bool {
@@ -13,12 +13,6 @@
         /// The click, offered for a rehearsal only.
         var offersClick: Bool {
             kind == .rehearsal
-        }
-
-        /// The rehearsal click for this rehearsal.
-        var rehearsalClickOn: Bool {
-            get { settings.rehearsalClickOn }
-            set { settings.rehearsalClickOn = newValue }
         }
     }
 #endif

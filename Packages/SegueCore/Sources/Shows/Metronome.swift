@@ -4,12 +4,12 @@
 import ChordPro
 import Foundation
 
-/// A song's time signature as the metronome counts it: `beats` pulses per bar, the first
+/// A song's time signature as the metronome counts it: `pulses` per bar, the first
 /// accented. `{time}` absent or unreadable counts 4/4.
 public struct MetronomeMeter: Sendable, Hashable {
-    /// Pulses per bar (the signature's upper number, 1-32).
+    /// The signature's upper number (1-32).
     public var beats: Int
-    /// The note value of one pulse (the lower number).
+    /// The signature's lower number.
     public var noteValue: Int
 
     public static let common = Self(beats: 4, noteValue: 4)
@@ -28,10 +28,16 @@ public struct MetronomeMeter: Sendable, Hashable {
         }
     }
 
-    /// Compound meters (6/8, 9/8, 12/8) group their pulses in threes: the first pulse of
-    /// each later group gets a lighter accent.
-    public var groupSize: Int? {
-        noteValue == 8 && beats > 3 && beats.isMultiple(of: 3) ? 3 : nil
+    /// Whether this is a compound meter (6/8, 9/8, 12/8): eighths grouped in threes.
+    public var isCompound: Bool {
+        noteValue == 8 && beats > 3 && beats.isMultiple(of: 3)
+    }
+
+    /// Pulses per bar (R118): a compound meter counts the dotted quarter, so 6/8 is 2
+    /// pulses, 9/8 is 3 and 12/8 is 4, and `{tempo}` is per dotted quarter. Any other meter
+    /// pulses on every written beat.
+    public var pulses: Int {
+        isCompound ? beats / 3 : beats
     }
 }
 
@@ -39,17 +45,15 @@ public struct MetronomeMeter: Sendable, Hashable {
 public enum MetronomeAccent: Sendable, Hashable {
     /// Beat 1 of the bar.
     case downbeat
-    /// The start of a later group in a compound meter (beat 4 of 6/8).
-    case group
     /// Any other beat.
     case plain
 }
 
 /// One beat as the overlay shows it.
 public struct MetronomeBeat: Sendable, Hashable {
-    /// Beats since the start instant (0 is the first downbeat).
+    /// Pulses since the start instant (0 is the first downbeat).
     public var index: Int
-    /// 1-based position in the bar.
+    /// 1-based pulse in the bar.
     public var beatInBar: Int
     /// How far through this beat, in 0..<1 (0 is the click).
     public var phase: Double
@@ -60,11 +64,11 @@ public struct MetronomeBeat: Sendable, Hashable {
     }
 }
 
-/// The metronome for one song: beats every `60 / bpm` seconds from `start`, beat 1 of the
+/// The metronome for one song: pulses every `60 / bpm` seconds from `start`, beat 1 of the
 /// bar at `start`. Every value is computed from the start instant, never accumulated, so a
 /// 10-minute song ends on the same grid it began on; drive it from a monotonic clock.
 public struct MetronomeTrack: Sendable, Hashable {
-    /// Tempo in beats per minute (`{tempo}`).
+    /// Tempo in pulses per minute (`{tempo}`; per dotted quarter in a compound meter).
     public var bpm: Double
     public var meter: MetronomeMeter
     /// The instant of beat 1 (the song became current, or the metronome was switched on).
@@ -91,7 +95,7 @@ public struct MetronomeTrack: Sendable, Hashable {
     /// Tolerance, in beats, for an instant computed from a beat's own time.
     private static let slack = 1e-6
 
-    /// Seconds per beat.
+    /// Seconds per pulse.
     public var interval: TimeInterval {
         60 / bpm
     }
@@ -124,14 +128,12 @@ public struct MetronomeTrack: Sendable, Hashable {
     }
 
     private func beat(index: Int, phase: Double) -> MetronomeBeat {
-        let position = index % meter.beats
-        let accent: MetronomeAccent = if position == 0 {
-            .downbeat
-        } else if let group = meter.groupSize, position.isMultiple(of: group) {
-            .group
-        } else {
-            .plain
-        }
-        return MetronomeBeat(index: index, beatInBar: position + 1, phase: phase, accent: accent)
+        let position = index % meter.pulses
+        return MetronomeBeat(
+            index: index,
+            beatInBar: position + 1,
+            phase: phase,
+            accent: position == 0 ? .downbeat : .plain,
+        )
     }
 }

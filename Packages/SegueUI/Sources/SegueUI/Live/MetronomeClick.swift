@@ -152,7 +152,6 @@
             engine.connect(player, to: engine.mainMixerNode, format: format)
             buffers = [
                 .downbeat: Self.tick(format, frequency: 1760, level: 0.9),
-                .group: Self.tick(format, frequency: 1320, level: 0.7),
                 .plain: Self.tick(format, frequency: 1320, level: 0.5),
             ].compactMapValues(\.self)
             self.engine = engine

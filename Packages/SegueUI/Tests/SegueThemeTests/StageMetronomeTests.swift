@@ -6,6 +6,7 @@ import LiveLayout
 import Setlists
 import Shows
 import Support
+import SwiftUI
 import Synchronization
 import Testing
 
@@ -25,7 +26,7 @@ extension StageWindowSuites {
                 songs: [
                     "{title: Waltz}\n{tempo: 90}\n{time: 3/4}\n[G]One two three\n",
                     "{title: Free}\n[G]No tempo here\n",
-                    "{title: Shuffle}\n{tempo: 120}\n[G]After the break\n",
+                    "{title: Jig}\n{tempo: 120}\n{time: 6/8}\n[G]After the break\n",
                 ],
                 breakBefore: 2,
             )
@@ -64,10 +65,12 @@ extension StageWindowSuites {
             run.env.clock.advance(by: 5)
             live.dispatch(.next)
             _ = try await run.env.waitFor { live.state.record.currentBreak == nil ? true : nil }
-            let shuffle = try #require(metronome.track)
-            #expect(shuffle.bpm == 120)
-            #expect(shuffle.meter == .common)
-            #expect(shuffle.start == run.env.clock.now())
+            // 6/8 counts the dotted quarter (R118): 2 pulses per bar at the tempo.
+            let jig = try #require(metronome.track)
+            #expect(jig.bpm == 120)
+            #expect(jig.meter.pulses == 2)
+            #expect(jig.start == run.env.clock.now())
+            #expect(jig.beat(at: jig.time(ofBeat: 2)).isDownbeat)
             #expect(metronome.showsPulse)
             try await run.end(live)
         }
@@ -87,6 +90,7 @@ extension StageWindowSuites {
                 clock: run.env.clock,
             )
             #expect(!checklist.offersClick)
+            #expect(!checklist.rehearsalClickOn)
             checklist.metronomeOn = true
             #expect(LiveSettingsStore(defaults: run.env.defaults).metronomeOn)
             let live = try await run.start(.gig)
@@ -104,13 +108,14 @@ extension StageWindowSuites {
         func `a gig never constructs the audio path, whatever the settings say`() async throws {
             let run = try await MetronomeRun(songs: ["{title: A}\n{tempo: 100}\n[G]La\n"])
             run.app.liveSettings.metronomeOn = true
-            run.app.liveSettings.rehearsalClickOn = true
-            let live = try await run.start(.gig)
+            let live = try await run.start(.gig, checklistClick: true)
             #expect(live.metronome.click == nil)
             #expect(!live.metronome.clicks)
+            // K does nothing in a show: no click, no notice.
             live.dispatch(.toggleMetronomeClick)
             #expect(live.metronome.click == nil)
             #expect(!live.metronome.clicks)
+            #expect(live.notice == nil)
             run.env.clock.advance(by: 10)
             live.dispatch(.next)
             try await run.end(live)
@@ -123,15 +128,14 @@ extension StageWindowSuites {
                 "{title: A}\n{tempo: 120}\n{time: 3/4}\n[G]La\n",
                 "{title: B}\n{tempo: 60}\n[G]Lo\n",
             ])
-            // Off by default: a rehearsal starts silent.
-            #expect(!run.app.liveSettings.rehearsalClickOn)
+            // A rehearsal starts silent.
             let live = try await run.start(.rehearsal)
             let metronome = live.metronome
             let click = try #require(metronome.click)
             #expect(!metronome.clicks)
             #expect(run.outputs.made == 0)
 
-            // Shift-M: clicks every 0.5 s with beat 1 of each 3/4 bar accented, handed over
+            // K: clicks every 0.5 s with beat 1 of each 3/4 bar accented, handed over
             // `lookahead` ahead on the stage clock.
             live.dispatch(.toggleMetronomeClick)
             #expect(metronome.clicks)
@@ -157,7 +161,7 @@ extension StageWindowSuites {
             #expect(after.first?.beat == 0)
             #expect(after.first?.accent == .downbeat)
 
-            // Shift-M again: silent at once.
+            // K again: silent at once.
             let stops = output.stops
             live.dispatch(.toggleMetronomeClick)
             #expect(output.stops == stops + 1)
@@ -177,36 +181,71 @@ extension StageWindowSuites {
         // MARK: Keys
 
         @Test
-        func `m and Shift-M reach the metronome and a shifted letter still means the letter`(
-        ) throws {
-            func command(
-                _ characters: String,
-                keyCode: UInt16,
-                shift: Bool,
-            ) throws -> LiveCommand? {
-                let event = try #require(NSEvent.keyEvent(
-                    with: .keyDown,
-                    location: .zero,
-                    modifierFlags: shift ? .shift : [],
-                    timestamp: 0,
-                    windowNumber: 0,
-                    context: nil,
-                    characters: characters,
-                    charactersIgnoringModifiers: characters,
-                    isARepeat: false,
-                    keyCode: keyCode,
-                ))
-                let stroke = try #require(LiveKeyInput.keyStroke(event))
-                return InputBindingTable.defaults.command(for: .key(stroke))
+        func `the checklist's click switch starts that rehearsal clicking, and only that one`(
+        ) async throws {
+            let run = try await MetronomeRun(songs: ["{title: A}\n{tempo: 100}\n[G]La\n"])
+            let live = try await run.start(.rehearsal, checklistClick: true)
+            #expect(live.metronome.clicks)
+            #expect(run.outputs.made == 1)
+            try await run.end(live)
+            // The next rehearsal starts silent again (R118).
+            let next = try await run.start(.rehearsal, checklistClick: nil)
+            #expect(!next.metronome.clicks)
+            try await run.end(next)
+        }
+
+        // MARK: Overlay
+
+        @Test
+        func `the overlay draws only while the pulse is on and the song has a tempo`(
+        ) async throws {
+            let run = try await MetronomeRun(songs: [
+                "{title: A}\n{tempo: 96}\n[G]La\n",
+                "{title: B}\n[G]Lo\n",
+            ])
+            let live = try await run.start(.gig)
+            func size() -> CGSize {
+                let host = NSHostingView(rootView: StageMetronomeView(metronome: live.metronome))
+                host.layoutSubtreeIfNeeded()
+                return host.fittingSize
             }
-            #expect(try command("m", keyCode: 46, shift: false) == .toggleMetronome)
-            #expect(try command("M", keyCode: 46, shift: true) == .toggleMetronomeClick)
-            // Shift with any other letter still means the letter; "?" carries its Shift.
-            #expect(try command("A", keyCode: 0, shift: true) == .toggleAutoScroll)
-            #expect(try command("?", keyCode: 44, shift: true) == .showKeys)
-            #expect(try command("K", keyCode: 40, shift: true) == nil)
-            let help = KeyHelp.groups(.defaults).first { $0.title == "Metronome" }
-            #expect(help?.rows.map(\.keys) == [["M"], ["⇧M"]])
+            #expect(size().width == 0)
+            live.dispatch(.toggleMetronome)
+            #expect(live.indicator == "Metronome on")
+            #expect(size().width > StageMetronomeView.dot)
+            #expect(StageMetronomeView.bpmText(96) == "96")
+            #expect(StageMetronomeView.bpmText(92.5) == "92.5")
+            #expect(StageMetronomeView.flash(0) == 1)
+            #expect(StageMetronomeView.flash(0.6) == 0)
+            live.dispatch(.next)
+            _ = try await run.env.waitFor { live.positionText == "2 of 2" ? true : nil }
+            #expect(size().width == 0)
+            try await run.end(live)
+        }
+
+        // MARK: Keys
+
+        @Test
+        func `m and K reach the metronome and the help lists them`() throws {
+            let event = try #require(NSEvent.keyEvent(
+                with: .keyDown,
+                location: .zero,
+                modifierFlags: [],
+                timestamp: 0,
+                windowNumber: 0,
+                context: nil,
+                characters: "k",
+                charactersIgnoringModifiers: "k",
+                isARepeat: false,
+                keyCode: 40,
+            ))
+            let stroke = try #require(LiveKeyInput.keyStroke(event))
+            let table = InputBindingTable.defaults
+            #expect(table.command(for: .key(stroke)) == .toggleMetronomeClick)
+            #expect(table.command(for: .key(KeyStroke("m"))) == .toggleMetronome)
+            #expect(table.command(for: .key(KeyStroke("k", modifiers: .command))) == .openSearch)
+            let help = KeyHelp.groups(table).first { $0.title == "Metronome" }
+            #expect(help?.rows.map(\.keys) == [["M"], ["K"]])
         }
     }
 }
@@ -301,8 +340,25 @@ struct MetronomeRun {
         setlist = try #require(await session.stores.setlists.setlist(id: created.id))
     }
 
-    func start(_ kind: ShowKind) async throws -> LiveSession {
-        #expect(await app.startShow(setlist, kind: kind))
+    /// Starts a run. `checklistClick` shows the pre-show checklist and sets its click switch
+    /// before Start (nil leaves the switch as the checklist offers it).
+    func start(_ kind: ShowKind, checklistClick: Bool? = false) async throws -> LiveSession {
+        if checklistClick == false {
+            #expect(await app.startShow(setlist, kind: kind))
+        } else {
+            app.liveSettings.settings.hiddenChecklistItems = []
+            let started = Task { await app.startShow(setlist, kind: kind) }
+            let checklist = try await env.waitFor { app.preShow }
+            if let checklistClick {
+                if checklist.offersClick {
+                    #expect(!checklist.rehearsalClickOn)
+                }
+                checklist.rehearsalClickOn = checklistClick
+            }
+            checklist.answer(true)
+            #expect(await started.value)
+            app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
+        }
         let live = try #require(app.live)
         live.setViewport(LayoutSize(width: 1390, height: 700))
         return live

@@ -101,6 +101,9 @@ UITests/SegueEditorE2ETests*.swift	SegueEditorE2ETests
 UITests/SegueSongCardE2ETests.swift	SegueSongCardE2ETests
 UITests/SegueSectionBandE2ETests.swift	SegueSectionBandE2ETests
 UITests/SegueSectionNotesE2ETests.swift	SegueSectionNotesE2ETests
+UITests/SegueMetronomeE2ETests.swift	SegueMetronomeE2ETests
+Packages/SegueCore/Sources/Shows/Metronome.swift	SegueMetronomeE2ETests
+Packages/SegueUI/Sources/SegueUI/Live/*Metronome*	SegueMetronomeE2ETests
 UITests/SegueLiveE2ETests+Support.swift	SegueLiveE2ETests SegueGigModeE2ETests SegueReviewPromptE2ETests SegueTipsE2ETests AccessibilityAuditE2ETests
 UITests/SegueLiveE2ETests*.swift	SegueLiveE2ETests
 UITests/SegueGigModeE2ETests.swift	SegueGigModeE2ETests

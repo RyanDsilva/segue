@@ -63,6 +63,8 @@
         public var focusConfirmedByPerformer = false
         /// Rows dismissed for this show only.
         public var dismissed: Set<ChecklistItem> = []
+        /// The metronome click for this rehearsal (R118): off at the start of every one.
+        public var rehearsalClickOn = false
 
         @ObservationIgnored let settings: LiveSettingsStore
         @ObservationIgnored private let power: any PowerSourceReading

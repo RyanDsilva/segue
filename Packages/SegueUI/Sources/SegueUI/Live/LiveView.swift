@@ -62,6 +62,7 @@
             .overlay(alignment: .bottom) { statusLine }
             .overlay(alignment: .top) { problemBanner }
             .overlay(alignment: .topTrailing) { modeIndicator }
+            .overlay(alignment: .bottomTrailing) { metronome }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.liveView)
             .onContinuousHover { phase in
@@ -241,6 +242,16 @@
             .padding(.top, Self.headerHeight + topInset + 8)
             .padding(.trailing, Self.horizontalPadding)
             .animation(reduceMotion ? nil : .linear(duration: 0.15), value: session.indicator)
+        }
+
+        /// The metronome (R90, R118) in the song area's bottom-right corner, above the footer;
+        /// hidden while the request panel covers that corner.
+        @ViewBuilder private var metronome: some View {
+            if !session.showsRequests {
+                StageMetronomeView(metronome: session.metronome)
+                    .padding(.trailing, Self.horizontalPadding - 6)
+                    .padding(.bottom, Self.footerHeight + 14)
+            }
         }
 
         /// Failures that stay up until resolved (the show file is not being written, song

@@ -86,12 +86,11 @@
                 await self?.runStartShortcut(kind: kind) ?? .notRun
             }
             guard await confirm(checklist) else { return false }
-            let omitting = Set(missing.map(\.element.itemId))
             do {
                 let controller = try await ShowController.start(
                     setlist: setlist,
                     kind: kind,
-                    omitting: omitting,
+                    omitting: Set(missing.map(\.element.itemId)),
                     environment: showEnvironment(
                         session,
                         kind: kind,
@@ -100,6 +99,7 @@
                     ),
                 )
                 await presentStage(controller, kind: kind, session: session, resumed: false)
+                live?.metronome.startClicking(checklist.rehearsalClickOn)
                 return true
             } catch {
                 recordError(.showStartFailed, error)

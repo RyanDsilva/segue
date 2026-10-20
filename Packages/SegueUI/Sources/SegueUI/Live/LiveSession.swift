@@ -127,7 +127,6 @@
             metronome = StageMetronome(
                 kind: kind,
                 isOn: context.settings.metronomeOn,
-                clicks: kind == .rehearsal && context.settings.rehearsalClickOn,
                 clock: context.scrollClock,
                 makeClickOutput: context.makeClickOutput,
             )

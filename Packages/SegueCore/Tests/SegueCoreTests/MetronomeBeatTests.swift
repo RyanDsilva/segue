@@ -55,13 +55,16 @@ struct MetronomeBeatTests {
             bars: [1, 2, 3, 1, 2, 3],
             accents: [.downbeat, .plain, .plain, .downbeat, .plain, .plain],
         ),
+        // Compound meters count the dotted quarter (R118).
+        MeterCase(time: "6/8", bars: [1, 2, 1, 2], accents: [.downbeat, .plain, .downbeat, .plain]),
+        MeterCase(time: "9/8", bars: [1, 2, 3, 1], accents: [.downbeat, .plain, .plain, .downbeat]),
         MeterCase(
-            time: "6/8",
-            bars: [1, 2, 3, 4, 5, 6, 1],
-            accents: [.downbeat, .plain, .plain, .group, .plain, .plain, .downbeat],
+            time: "12/8",
+            bars: [1, 2, 3, 4, 1],
+            accents: [.downbeat, .plain, .plain, .plain, .downbeat],
         ),
+        MeterCase(time: "3/8", bars: [1, 2, 3, 1], accents: [.downbeat, .plain, .plain, .downbeat]),
         MeterCase(time: "2/2", bars: [1, 2, 1, 2], accents: [.downbeat, .plain, .downbeat, .plain]),
-        MeterCase(time: "12/8", bars: [1, 2, 3, 4], accents: [.downbeat, .plain, .plain, .group]),
         MeterCase(
             time: nil,
             bars: [1, 2, 3, 4, 1],

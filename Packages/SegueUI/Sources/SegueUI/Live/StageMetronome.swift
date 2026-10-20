@@ -7,8 +7,8 @@
 
     /// The stage metronome (R90, R108, P3-14): a quiet pulse at the current song's
     /// `{tempo}` and `{time}`, toggled per show (pre-show checklist, remembered as the next
-    /// show's default) and by `M`; in a rehearsal only, a click behind its own toggle (`⇧M`;
-    /// the checklist's choice, off by default).
+    /// show's default) and by `M` (this show only); in a rehearsal only, a click behind its
+    /// own toggle (`K`, or the checklist's switch; off at the start of every rehearsal).
     ///
     /// The beat grid restarts on beat 1 whenever a new song becomes current and when the
     /// metronome is switched on. There is no track (nothing pulses or clicks) during a
@@ -41,7 +41,6 @@
         init(
             kind: ShowKind,
             isOn: Bool,
-            clicks: Bool,
             clock: any Clock,
             makeClickOutput: @escaping @MainActor () -> any MetronomeClickOutput,
         ) {
@@ -49,7 +48,6 @@
             self.isOn = isOn
             self.clock = clock
             click = RehearsalClick(kind: kind, clock: clock, makeOutput: makeClickOutput)
-            self.clicks = clicks && click != nil
         }
 
         /// Whether the stage shows the pulse.
@@ -84,7 +82,7 @@
             }
         }
 
-        /// `⇧M`: the rehearsal click on or off. Returns false in a gig (nothing changes).
+        /// `K`: the rehearsal click on or off. Returns false in a gig (nothing changes).
         @discardableResult
         func toggleClick() -> Bool {
             guard click != nil else { return false }
@@ -94,6 +92,13 @@
             }
             syncClick()
             return true
+        }
+
+        /// The checklist's Click switch at the start of a rehearsal (ignored in a gig).
+        func startClicking(_ on: Bool) {
+            if on, !clicks {
+                toggleClick()
+            }
         }
 
         /// The run ended or the stage went away: silence now.
