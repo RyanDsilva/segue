@@ -43,7 +43,7 @@ Date: 2026-10-17.
 | A16, I-2, I-3, B-26 | `content/changelog.json` is the original; the generator writes `website/changelog.json`; the app **bundles that file only** (never fetches it) and shows the What's New sheet only for releases with `showInApp: true`. No separate bundled-copy output. | Section 6; policy and FAQ drop "fetch release notes" |
 | I-5 | Canonical Help menu: Segue Help, Keyboard Shortcuts, Welcome to Segue..., What's New in Segue, Report a Problem..., Request a Feature..., Rate Segue on the App Store, Privacy Policy, Terms of Use, Acknowledgements (removed 2026-10-18; the notices live on the web). "Release Notes" is gone. | Sitemap, `/changelog` intro, support copy |
 | I-6 | Settings > Privacy links the Privacy Policy and `/privacy#usage-statistics`; no Terms link. | Goal 2, sitemap |
-| I-10, A24 | Import accepts `.cho`, `.chordpro`, `.chopro`, `.pro`, `.txt` (text imported as-is). | `/help/import#formats`, FAQ *Superseded (phase 3 ships in 0.5): R76: `.crd` is accepted and `.txt`/`.crd` that need conversion go through the review sheet. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).* |
+| I-10, A24, R76, R96 | Import accepts `.cho`, `.chordpro`, `.chopro`, `.pro`, `.crd`, `.txt`; plain chord sheets (`.txt`/`.crd` that need conversion) go through the converter and the review sheet (a batch in ONE sheet). | `/guide/import-files`, FAQ |
 | I-16, B-32 | Section 2's URL and anchor table is the contract; `/help#trash` and `/help/library#trash` added; no accessibility page. | Section 2 |
 | R41 (A59) | arm64 only: "Requires a Mac with Apple silicon and macOS 26 or later." | Home, support, press, JSON-LD |
 | A34 | About panel links the web `/acknowledgements`. *Superseded 2026-10-18: the app links it nowhere; /privacy and /terms do.* | Sitemap |
@@ -702,6 +702,7 @@ Effective {POLICY_EFFECTIVE_DATE}
 - Segue has no accounts, no ads and no tracking. We don't sell or share your personal information.
 - Segue sends usage statistics and crash reports only if you say yes to each one, and you can change your mind at any time in Settings > Privacy.
 - A bug report is sent only when you press Send, after you've seen everything in it.
+- Segue's AI features run on your Mac. Nothing you paste or type is sent anywhere. The optional AI model is downloaded from Hugging Face only when you click Download.
 - This website sets no cookies. It counts visits with Cloudflare Web Analytics, which doesn't use cookies or track you across sites.
 
 ## Who we are
@@ -718,6 +719,14 @@ Segue also keeps a short technical log of its last four launches on your Mac, su
 
 Removing Segue does not delete your library folder. Back it up like any other folder, for example with Time Machine.
 
+## AI features and the optional model {#ai-features}
+
+Segue can sort a chord sheet you paste into sections, fill in details such as its title and key, and read a set request you type in plain words. This runs entirely on your Mac, with Apple Intelligence (Apple's on-device model) or with a local model you choose to download. What you paste or type is processed on your Mac and is never sent to us, to Apple or to anyone else. You can turn AI off in Settings > AI; Segue then uses only its own built-in rules.
+
+**The optional model download.** Settings > AI offers one local model, Qwen3 4B Instruct (about 2.27 GB). Segue downloads it only when you click Download, never on its own, directly from {vendors.modelDownload.siteLink}, the site that hosts it, and its download network. Like any website, {vendors.modelDownload.name} sees your internet address and which files were requested: always the same files, at a fixed version. Segue sends no account, no identifier and nothing from your library, and it replaces the browser details and language list your Mac would normally send with a plain "Segue" and its version number (R54, R66). Before using the model, Segue checks every file against a fingerprint built into the app.
+
+The model's files stay on your Mac, outside your library folder, and are left out of backups. Delete in Settings > AI removes them. {vendors.modelDownload.name} handles the download under its own privacy policy ({vendors.modelDownload.link}); we receive nothing from it.
+
 ## Usage statistics (optional) {#usage-statistics}
 
 **Off until you say yes.** The first time you open Segue, it asks whether to share usage statistics, with two equal choices and nothing picked for you. Nothing is sent before you answer, and nothing is sent if you say no. You can change your answer at any time in Settings > Privacy; turning it off takes effect immediately and deletes anything waiting to be sent.
@@ -725,6 +734,7 @@ Removing Segue does not delete your library folder. Back it up like any other fo
 **What is sent:**
 
 - which features are used, from a fixed list built into the app (for example "song created", "setlist created", "show started", "transpose used", or "a search matched a romanized Hindi spelling");
+- for the AI features, from the same fixed list (R74, R98): whether a pasted song was refined by the local model, by Apple Intelligence or by Segue's own rules only, the reason a model wasn't used (for example "AI is off"), how long it took and how much you changed it, both as ranges, whether the paste looked like romanized Hindi (yes or no), how a model download ended (for example "completed" or "no connection"), and whether the set assistant or a smart filter was used;
 - rough sizes and durations, always as ranges (for example "50 to 99 songs" or "a 60 to 90 minute show");
 - the Segue version and the macOS version;
 - your Mac's region setting (for example "United States"), which tells us your country. Nothing is worked out from your internet address;
@@ -732,7 +742,7 @@ Removing Segue does not delete your library folder. Back it up like any other fo
 
 Segue sends these through its own small piece of code that can send only the items above. No analytics software from another company runs inside Segue.
 
-**Never sent:** song titles, lyrics, chords, notes, file or folder names, setlist names, venue names, anything you type into search, your contacts, your precise location, your internet address (it isn't stored), or any advertising identifier.
+**Never sent:** song titles, lyrics, chords, notes, file or folder names, setlist names, venue names, anything you type into search, anything you paste or type into a set request, your contacts, your precise location, your internet address (it isn't stored), or any advertising identifier.
 
 **Why:** to learn which features matter, which ones confuse people, and which versions of macOS to support.
 
@@ -815,13 +825,14 @@ You download Segue from the Mac App Store, and Apple handles that, along with an
 - Bug reports: your **consent** when you press Send, and our **legitimate interest** in fixing and improving Segue.
 - Feature board posts and votes: our **legitimate interest** in learning what to build; board update emails: your **consent**.
 - Email: our **legitimate interest** in answering you.
+- The optional AI model download: your **request**, when you click Download.
 - Website hosting, security and website analytics: our **legitimate interest** in delivering a working, safe website and knowing, in aggregate, how it is used.
 
 ## Who receives data
 
-`vendor-table` slot, rendered as a table with columns **Provider | What for | Where | Privacy policy**, one row per provider, from `content/site.json`: TelemetryDeck (usage statistics), Sentry (crash reports and bug reports), Featurebase (feature board), Cloudflare (website hosting and website analytics), Mailgun (email forwarding), Google (email inbox). Below the table: "Apple handles App Store downloads, ratings, reviews and its own crash sharing as an independent controller under its own privacy policy."
+`vendor-table` slot, rendered as a table with columns **Provider | What for | Where | Privacy policy**, one row per provider, from `content/site.json`: TelemetryDeck (usage statistics), Sentry (crash reports and bug reports), Featurebase (feature board), Cloudflare (website hosting and website analytics), Hugging Face (optional AI model download, only when you click Download), Mailgun (email forwarding), Google (email inbox). Below the table: "Apple handles App Store downloads, ratings, reviews and its own crash sharing as an independent controller under its own privacy policy. Hugging Face serves the optional AI model, only when you click Download, the same way under its own privacy policy; it isn't one of our processors, and we receive nothing from it."
 
-Each provider processes data for us under a contract (its data processing terms) that requires it to protect the data at least as well as this policy does and to use it only to provide its service to us. We may also disclose information if the law requires it, or to protect the safety of anyone.
+Each of the other providers processes data for us under a contract (its data processing terms) that requires it to protect the data at least as well as this policy does and to use it only to provide its service to us. We may also disclose information if the law requires it, or to protect the safety of anyone.
 
 ## International transfers
 
@@ -987,6 +998,7 @@ Suggest ideas and vote for the ones you want on the feature board: **segue.ryand
 - A Mac with Apple silicon and macOS 26 or later.
 - About {size} MB of disk space. [VERIFY from the 0.5 archive; write the number, not a slot]
 - No internet connection needed to write songs, build sets or play a show.
+- Optional AI: Apple Intelligence, where your Mac supports it and it's turned on, or Segue's local model (a 2.27 GB download, best with 16 GB of memory or more). Everything works without either.
 
 ## Frequently asked questions
 
@@ -1000,12 +1012,16 @@ It's a normal folder, so Time Machine and any backup tool already cover it. To m
 A plain-text format for songs with chords, used by many apps: chords go in square brackets right before the syllable they belong to, like `[G]Take me [C]home`. See the ChordPro site at https://www.chordpro.org.
 
 **Can I import songs I already have?**
-Yes. Drag ChordPro or text files (.cho, .chordpro, .chopro, .pro or .txt) onto the library, or choose **File > Import Songs...**. See Importing songs (/help/import).
+Yes. Drag ChordPro or text files (.cho, .chordpro, .chopro, .pro, .crd or .txt) onto the library, or choose **File > Import Songs...**. Plain chord sheets (.txt, .crd) are converted to ChordPro, and you check the result before anything is saved. See Import files (/guide/import-files).
+
+**Can I paste a chord sheet from a website?**
+Yes. Copy the chord sheet, then choose **File > New Song from Clipboard**. Segue turns it into ChordPro with its sections and title, and shows you the result to check before it's saved. See Paste a song (/guide/paste-a-song).
 
 **Does Segue need the internet?**
-No. Everything for writing and playing works offline, and the stage view never waits on the network. Segue goes online only for the things you turn on or ask for: usage statistics and crash reports if you said yes, sending a bug report, and opening web pages such as help or the feature board.
+No. Everything for writing and playing works offline, and the stage view never waits on the network. Segue goes online only for the things you turn on or ask for: usage statistics and crash reports if you said yes, sending a bug report, downloading the optional AI model when you click Download (R66), and opening web pages such as the user guide or the feature board.
 
-> *Superseded (phase 3 ships in 0.5): R66: the curated AI model downloads from Hugging Face when the user asks. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
+**Does Segue use AI?**
+Only on your Mac, and only to tidy what you give it: it checks the sections, title and artist of a song you paste and suggests chips for a set request. It never rewrites your lyrics or chords, never runs during a show, and nothing you paste or type is sent anywhere. Turn it off in **Settings > AI**. See AI in Segue (/guide/ai).
 
 **What does Segue collect, and how do I turn it off?**
 Nothing about your songs, ever. If you agreed to share usage statistics or send crash reports, you can turn each off in Settings > Privacy. Details are in the Privacy Policy (/privacy).
@@ -1033,9 +1049,7 @@ Also see: Help (/help), Changelog (/changelog), Privacy Policy (/privacy).
 
 > *Superseded by R126/R127: the help pages are replaced by the user guide at `/guide` (docs/release/specs/WS6-user-guide.md); `/help` and `/help/*` redirect to it (`content/site.json` `redirects`). The section 2 anchor contract is replaced by `SegueLinks.Guide`, which `make site-check` resolves against the built guide.*
 
-Each help page uses `partial:help-nav` (a left column on desktop, a top list on phones), one H1, short task-oriented sections with `id`s, and at most one screenshot per section. Write the body text from the **0.5 App Store build**, opening each feature as you document it; every step and menu name must match the build exactly. If the build is not feature-complete when you reach this step, write against the current `main` App Store flavor and re-check every page in the claims audit before `status: live`. Never document personal-only features (audio, LRCLIB, URL import), AI features, PDF export or MIDI, which are not in 0.5.
-
-> *Superseded (phase 3 ships in 0.5): R61/R62: the AI features (paste cleanup, Settings > AI, the set assistant) ship in the 0.5 App Store build and are documented. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
+Each help page uses `partial:help-nav` (a left column on desktop, a top list on phones), one H1, short task-oriented sections with `id`s, and at most one screenshot per section. Write the body text from the **0.5 App Store build**, opening each feature as you document it; every step and menu name must match the build exactly. If the build is not feature-complete when you reach this step, write against the current `main` App Store flavor and re-check every page in the claims audit before `status: live`. Never document personal-only features (audio, LRCLIB, URL import, the custom-model Advanced settings), PDF export or MIDI, which are not in the 0.5 App Store build. The AI features (paste cleanup, Settings > AI, the set assistant) ship in it (R61/R62) and are documented.
 
 - **`/help` Segue Help**
   - Intro: what Segue is in two sentences; "New here? Start with the Welcome library."
@@ -1068,8 +1082,7 @@ Each help page uses `partial:help-nav` (a left column on desktop, a top list on 
 - **`/help/setlists` Setlists**
   - `#new` New Setlist (Shift-Cmd-N); adding (including Setlist > Add Selected Song to Setlist), reordering, removing songs.
   - `#overrides` Per-show key and capo.
-  - `#running-time` Running time, and songs with unknown length (shown as unknown and flagged in the total, never guessed).
-    - *Phase 3 (0.5): R70's estimates were superseded by R91: lengths are never estimated; a length comes from the song card or "Time it", unknown stays unknown and the total lists the songs without one (R88). Changeover time (R86) and break rows (R85) join the running-time help. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
+  - `#running-time` Running time: a length comes from the song card or "Time it" and is never estimated (R91); unknown stays unknown and the total's "N unknown" lists the songs without one (R88); changeover time (R86) and break rows with per-part totals (R85). Now the guide's running-time page (R126).
   - `#undo` Undo in the builder.
   - `#start` Start Show (Cmd-Return) and Rehearse (Opt-Cmd-Return): the difference.
 - **`/help/live` Stage mode**
@@ -1257,8 +1270,7 @@ Run in this order. Before each run, reset to a clean baseline: `make site` from 
 7. Fonts are subset WOFF2 from the bundled OFL TTFs, with `OFL.txt` alongside and the lock file matching.
 8. The badge is Apple's unmodified artwork, at least 40 px tall with quarter-height clear space, only in the home hero, linked with a campaign token; while `status` is `upcoming` no badge appears anywhere.
 9. Favicon (SVG + 32 px PNG), apple-touch-icon and a 1200x630 Open Graph image exist and are referenced from every page's head.
-10. **Claims audit:** a table in the session's commit message or hand-off lists every product claim on home, support, press and help, each marked verified in the 0.5 App Store build or removed. No personal-only, AI, PDF-export or MIDI feature is claimed. The policy-label diff (test 12) passes.
-    - *Superseded (phase 3 ships in 0.5): R61/R62: AI features may be claimed once verified in the build. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
+10. **Claims audit:** a table in the session's commit message or hand-off lists every product claim on home, support, press and help, each marked verified in the 0.5 App Store build or removed. No personal-only, PDF-export or MIDI feature is claimed; AI features are claimed only as verified in the 0.5 App Store build (R61/R62): on-device, refines pastes and set requests, optional model downloaded on click, nothing pasted leaves the Mac. The policy-label diff (test 12) passes.
 11. Every quality target in section 11 is met locally; production Lighthouse and the request audit are run after the first deploy.
 12. Before production goes live: `make site-check STRICT=1` passes (no placeholders outside `appStore.*`, no maker-note markers).
 13. `/feedback` redirects with 302 and the destination comes from config.

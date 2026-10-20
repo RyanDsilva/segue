@@ -78,6 +78,14 @@
       "transferBasis": "the EU-U.S. Data Privacy Framework and Standard Contractual Clauses",
       "retention": "six months"
     },
+    "modelDownload": {
+      "name": "Hugging Face",
+      "url": "https://huggingface.co",
+      "privacyUrl": "https://huggingface.co/privacy",
+      "location": "United States, through its download network (cdn.hf.co)",
+      "retention": "Hugging Face's own retention, under its privacy policy; we receive nothing from it",
+      "source": "Checked 2026-10-20. huggingface.co/privacy (effective 2023-03-28) section 6: 'The Company and its servers are located in the United States.' A /resolve/<revision>/model.safetensors request answers 302 to us.aws.cdn.hf.co."
+    },
     "emailRouting": {
       "name": "Mailgun",
       "privacyUrl": "https://www.mailgun.com/legal/privacy-policy/",
@@ -129,6 +137,149 @@
       "licence": "MIT License",
       "source": "https://github.com/getsentry/sentry-cocoa",
       "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/Sentry.txt"
+    },
+    {
+      "name": "MLX Swift",
+      "summary": "Runs the optional local AI model on your Mac's GPU.",
+      "licence": "MIT License",
+      "source": "https://github.com/ml-explore/mlx-swift",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/MLXSwift.txt"
+    },
+    {
+      "name": "MLX Swift LM",
+      "summary": "Loads the optional local AI model and keeps its answers to a fixed format.",
+      "licence": "MIT License",
+      "source": "https://github.com/ml-explore/mlx-swift-lm",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/MLXSwiftLM.txt"
+    },
+    {
+      "name": "MLX (C++ core)",
+      "summary": "The array and machine-learning engine inside MLX Swift.",
+      "licence": "MIT License",
+      "source": "https://github.com/ml-explore/mlx",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/MLX.txt"
+    },
+    {
+      "name": "mlx-c",
+      "summary": "C interface to MLX, part of MLX Swift.",
+      "licence": "MIT License",
+      "source": "https://github.com/ml-explore/mlx-c",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/MLXC.txt"
+    },
+    {
+      "name": "metal-cpp",
+      "summary": "C++ interface to Metal, part of MLX Swift.",
+      "licence": "Apache License 2.0",
+      "source": "https://developer.apple.com/metal/cpp/",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/MetalCpp.txt"
+    },
+    {
+      "name": "XGrammar",
+      "summary": "Keeps the local model's answers to the exact format Segue reads.",
+      "licence": "Apache License 2.0",
+      "source": "https://github.com/mlc-ai/xgrammar",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/XGrammar.txt",
+      "noticeFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/XGrammar-NOTICE.txt"
+    },
+    {
+      "name": "swift-transformers",
+      "summary": "Reads the local model's tokenizer.",
+      "licence": "Apache License 2.0",
+      "source": "https://github.com/huggingface/swift-transformers",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/SwiftTransformers.txt"
+    },
+    {
+      "name": "swift-huggingface",
+      "summary": "Model file types used by swift-transformers.",
+      "licence": "Apache License 2.0",
+      "source": "https://github.com/huggingface/swift-huggingface",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/SwiftHuggingFace.txt"
+    },
+    {
+      "name": "swift-jinja",
+      "summary": "Fills in the local model's prompt template.",
+      "licence": "Apache License 2.0",
+      "source": "https://github.com/huggingface/swift-jinja",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/SwiftJinja.txt"
+    },
+    {
+      "name": "Swift Crypto",
+      "summary": "Cryptography used by the model libraries.",
+      "licence": "Apache License 2.0",
+      "source": "https://github.com/apple/swift-crypto",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/SwiftCrypto.txt",
+      "noticeFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/SwiftCrypto-NOTICE.txt"
+    },
+    {
+      "name": "SwiftASN1",
+      "summary": "Data encoding used by Swift Crypto.",
+      "licence": "Apache License 2.0",
+      "source": "https://github.com/apple/swift-asn1",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/SwiftASN1.txt",
+      "noticeFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/SwiftASN1-NOTICE.txt"
+    },
+    {
+      "name": "Swift Collections",
+      "summary": "Data structures used by the model libraries.",
+      "licence": "Apache License 2.0 with Runtime Library Exception",
+      "source": "https://github.com/apple/swift-collections",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/SwiftCollections.txt"
+    },
+    {
+      "name": "Swift Numerics",
+      "summary": "Number types used by MLX Swift.",
+      "licence": "Apache License 2.0 with Runtime Library Exception",
+      "source": "https://github.com/apple/swift-numerics",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/SwiftNumerics.txt"
+    },
+    {
+      "name": "yyjson",
+      "summary": "Fast JSON reading used by the model libraries.",
+      "licence": "MIT License",
+      "source": "https://github.com/ibireme/yyjson",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/yyjson.txt"
+    },
+    {
+      "name": "EventSource",
+      "summary": "Streaming support used by the model libraries.",
+      "licence": "MIT License",
+      "source": "https://github.com/mattt/EventSource",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/EventSource.txt"
+    },
+    {
+      "name": "{fmt}",
+      "summary": "Text formatting inside MLX.",
+      "licence": "MIT License",
+      "source": "https://github.com/fmtlib/fmt",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/fmt.txt"
+    },
+    {
+      "name": "JSON for Modern C++",
+      "summary": "JSON reading inside MLX.",
+      "licence": "MIT License",
+      "source": "https://github.com/nlohmann/json",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/NlohmannJSON.txt"
+    },
+    {
+      "name": "DLPack",
+      "summary": "Array exchange header inside XGrammar.",
+      "licence": "Apache License 2.0",
+      "source": "https://github.com/dmlc/dlpack",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/XGrammar.txt"
+    },
+    {
+      "name": "PicoJSON",
+      "summary": "JSON reading inside XGrammar.",
+      "licence": "BSD 2-Clause License",
+      "source": "https://github.com/kazuho/picojson",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/PicoJSON.txt"
+    },
+    {
+      "name": "Qwen3-4B-Instruct-2507",
+      "summary": "The optional local AI model, downloaded only when you click Download in Settings > AI (Qwen team, Alibaba Cloud; 4-bit MLX conversion by mlx-community).",
+      "licence": "Apache License 2.0",
+      "source": "https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/XGrammar.txt"
     }
   ]
 }

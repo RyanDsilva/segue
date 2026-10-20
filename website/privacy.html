@@ -64,6 +64,7 @@
 <li>Segue has no accounts, no ads and no tracking. We don't sell or share your personal information.</li>
 <li>Segue sends usage statistics and crash reports only if you say yes to each one, and you can change your mind at any time in <span class="nowrap">Settings &gt; Privacy</span>.</li>
 <li>A bug report is sent only when you press Send, after you've seen everything in it.</li>
+<li>Segue's AI features run on your Mac. Nothing you paste or type is sent anywhere. The optional AI model is downloaded from Hugging Face only when you click Download.</li>
 <li>This website sets no cookies. It counts visits with <!--slot:vendors.webAnalytics.name-->Cloudflare Web Analytics<!--/slot-->, which doesn't use cookies or track you across sites.</li>
 </ul>
 </section>
@@ -78,19 +79,26 @@
 <p>Segue also keeps a short technical log of its last four launches on your Mac, such as when a library opened, how long a show ran and which errors happened. It records only codes, counts and timings, never song titles, lyrics, file names or anything you type. It leaves your Mac only inside a bug report you choose to send.</p>
 <p>Removing Segue does not delete your library folder. Back it up like any other folder, for example with Time Machine.</p>
 </section>
+<section id="ai-features">
+<h2>AI features and the optional model</h2>
+<p>Segue can sort a chord sheet you paste into sections, fill in details such as its title and key, and read a set request you type in plain words. This runs entirely on your Mac, with Apple Intelligence (Apple's on-device model) or with a local model you choose to download. What you paste or type is processed on your Mac and is never sent to us, to Apple or to anyone else. You can turn AI off in <span class="nowrap">Settings &gt; AI</span>; Segue then uses only its own built-in rules.</p>
+<p><strong>The optional model download.</strong> <span class="nowrap">Settings &gt; AI</span> offers one local model, Qwen3 4B Instruct (about 2.27 GB). Segue downloads it only when you click Download, never on its own, directly from <!--slot:vendors.modelDownload.siteLink--><a href="https://huggingface.co">Hugging Face</a><!--/slot-->, the site that hosts it, and its download network. Like any website, <!--slot:vendors.modelDownload.name-->Hugging Face<!--/slot--> sees your internet address and which files were requested: always the same files, at a fixed version. Segue sends no account, no identifier and nothing from your library, and it replaces the browser details and language list your Mac would normally send with a plain "Segue" and its version number. Before using the model, Segue checks every file against a fingerprint built into the app.</p>
+<p>The model's files stay on your Mac, outside your library folder, and are left out of backups. Delete in <span class="nowrap">Settings &gt; AI</span> removes them. <!--slot:vendors.modelDownload.name-->Hugging Face<!--/slot--> handles the download under its own privacy policy (<!--slot:vendors.modelDownload.link--><a href="https://huggingface.co/privacy">Hugging Face</a><!--/slot-->); we receive nothing from it.</p>
+</section>
 <section id="usage-statistics">
 <h2>Usage statistics (optional)</h2>
 <p><strong>Off until you say yes.</strong> The first time you open Segue, it asks whether to share usage statistics, with two equal choices and nothing picked for you. Nothing is sent before you answer, and nothing is sent if you say no. You can change your answer at any time in <span class="nowrap">Settings &gt; Privacy</span>; turning it off takes effect immediately and deletes anything waiting to be sent.</p>
 <p><strong>What is sent:</strong></p>
 <ul>
 <li>which features are used, from a fixed list built into the app (for example "song created", "setlist created", "show started", "transpose used", or "a search matched a romanized Hindi spelling");</li>
+<li>for the AI features, from the same fixed list: whether a pasted song was refined by the local model, by Apple Intelligence or by Segue's own rules only, the reason a model wasn't used (for example "AI is off"), how long it took and how much you changed it, both as ranges, whether the paste looked like romanized Hindi (yes or no), how a model download ended (for example "completed" or "no connection"), and whether the set assistant or a smart filter was used;</li>
 <li>rough sizes and durations, always as ranges (for example "50 to 99 songs" or "a 60 to 90 minute show");</li>
 <li>the Segue version and the macOS version;</li>
 <li>your Mac's region setting (for example "United States"), which tells us your country. Nothing is worked out from your internet address;</li>
 <li>a random identifier that Segue creates on your Mac, so we can count how many people use Segue over time. Segue scrambles (hashes) it before sending and <!--slot:vendors.analytics.name-->TelemetryDeck<!--/slot--> scrambles it again, so neither of us can turn it back into the original. It is not your name, email address, Apple Account or any hardware identifier, and we don't link it to them.</li>
 </ul>
 <p>Segue sends these through its own small piece of code that can send only the items above. No analytics software from another company runs inside Segue.</p>
-<p><strong>Never sent:</strong> song titles, lyrics, chords, notes, file or folder names, setlist names, venue names, anything you type into search, your contacts, your precise location, your internet address (it isn't stored), or any advertising identifier.</p>
+<p><strong>Never sent:</strong> song titles, lyrics, chords, notes, file or folder names, setlist names, venue names, anything you type into search, anything you paste or type into a set request, your contacts, your precise location, your internet address (it isn't stored), or any advertising identifier.</p>
 <p><strong>Why:</strong> to learn which features matter, which ones confuse people, and which versions of macOS to support.</p>
 <p><strong>Who processes it:</strong> <!--slot:vendors.analytics.name-->TelemetryDeck<!--/slot-->, in <!--slot:vendors.analytics.location-->the European Union (Germany and the Netherlands), with Amazon Web Services, a U.S. company, among its hosting providers<!--/slot-->, on our behalf. Its privacy policy: <!--slot:vendors.analytics.link--><a href="https://telemetrydeck.com/privacy">TelemetryDeck</a><!--/slot-->.</p>
 <p><strong>How long:</strong> <!--slot:vendors.analytics.retention-->TelemetryDeck has no fixed deletion date for statistics; they may be kept in its archive for up to 10 years<!--/slot-->. Because the identifier is scrambled twice, those statistics can't be traced back to you or your Mac.</p>
@@ -146,7 +154,7 @@
 </section>
 <section id="open-source-software">
 <h2>Open-source software</h2>
-<p>Segue is built with a few open-source components, listed with their licences on the <a href="/acknowledgements">Acknowledgements</a> page. None of them sends anything on its own. The only one that talks to a server is <!--slot:vendors.crash.name-->Sentry<!--/slot-->'s crash reporting library, and only as described in <a href="#crash-reports">Crash reports</a> and <a href="#bug-reports">Bug reports you send</a>.</p>
+<p>Segue is built with open-source components, listed with their licences on the <a href="/acknowledgements">Acknowledgements</a> page. None of them sends anything on its own. The only one that talks to a server is <!--slot:vendors.crash.name-->Sentry<!--/slot-->'s crash reporting library, and only as described in <a href="#crash-reports">Crash reports</a> and <a href="#bug-reports">Bug reports you send</a>. The optional AI model is downloaded by Segue's own code, as described in <a href="#ai-features">AI features and the optional model</a>.</p>
 </section>
 <section id="what-we-never-do">
 <h2>What we never do</h2>
@@ -166,6 +174,7 @@
 <li>Bug reports: your <strong>consent</strong> when you press Send, and our <strong>legitimate interest</strong> in fixing and improving Segue.</li>
 <li>Feature board posts and votes: our <strong>legitimate interest</strong> in learning what to build; board update emails: your <strong>consent</strong>.</li>
 <li>Email: our <strong>legitimate interest</strong> in answering you.</li>
+<li>The optional AI model download: your <strong>request</strong>, when you click Download.</li>
 <li>Website hosting, security and website analytics: our <strong>legitimate interest</strong> in delivering a working, safe website and knowing, in aggregate, how it is used.</li>
 </ul>
 </section>
@@ -179,13 +188,14 @@
 <tr><th scope="row">Sentry</th><td>Crash reports and bug reports</td><td>United States (Sentry&#39;s U.S. region)</td><td><a href="https://sentry.io/privacy/">Sentry privacy policy</a></td></tr>
 <tr><th scope="row">Featurebase</th><td>Feature board</td><td>European Union</td><td><a href="https://help.featurebase.app/articles/4744036-privacy-policy">Featurebase privacy policy</a></td></tr>
 <tr><th scope="row">Cloudflare</th><td>Website hosting and website analytics</td><td>United States and Cloudflare&#39;s global network</td><td><a href="https://www.cloudflare.com/privacypolicy/">Cloudflare privacy policy</a></td></tr>
+<tr><th scope="row">Hugging Face</th><td>Optional AI model download, only when you click Download</td><td>United States, through its download network (cdn.hf.co)</td><td><a href="https://huggingface.co/privacy">Hugging Face privacy policy</a></td></tr>
 <tr><th scope="row">Mailgun</th><td>Email forwarding</td><td>United States</td><td><a href="https://www.mailgun.com/legal/privacy-policy/">Mailgun privacy policy</a></td></tr>
 <tr><th scope="row">Google (Gmail)</th><td>Email inbox</td><td>United States</td><td><a href="https://policies.google.com/privacy">Google (Gmail) privacy policy</a></td></tr>
 </tbody>
 </table>
 <!--/slot--></div>
-<p>Apple handles App Store downloads, ratings, reviews and its own crash sharing as an independent controller under its own privacy policy.</p>
-<p>Each provider processes data for us under a contract (its data processing terms) that requires it to protect the data at least as well as this policy does and to use it only to provide its service to us. We may also disclose information if the law requires it, or to protect the safety of anyone.</p>
+<p>Apple handles App Store downloads, ratings, reviews and its own crash sharing as an independent controller under its own privacy policy. <!--slot:vendors.modelDownload.name-->Hugging Face<!--/slot--> serves the optional AI model, only when you click Download, the same way under its own privacy policy; it isn't one of our processors, and we receive nothing from it.</p>
+<p>Each of the other providers processes data for us under a contract (its data processing terms) that requires it to protect the data at least as well as this policy does and to use it only to provide its service to us. We may also disclose information if the law requires it, or to protect the safety of anyone.</p>
 </section>
 <section id="international-transfers">
 <h2>International transfers</h2>
@@ -204,6 +214,7 @@
 <tr><th scope="row">Feature board email</th><td>until you unsubscribe or ask us to remove it</td></tr>
 <tr><th scope="row">Email to segue@ryandsilva.dev</th><td>as long as needed to answer you, and at most 2 years</td></tr>
 <tr><th scope="row">Website analytics (totals only)</th><td>six months</td></tr>
+<tr><th scope="row">AI model download requests</th><td>Hugging Face&#39;s own retention, under its privacy policy; we receive nothing from it</td></tr>
 <tr><th scope="row">Website request logs</th><td>Cloudflare&#39;s standard retention; we receive no per-visit logs</td></tr>
 </tbody>
 </table>
