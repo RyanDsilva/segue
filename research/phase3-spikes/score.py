@@ -199,7 +199,7 @@ def summarize_set(rows):
         fieldAcc=round(100*sum(r['fieldsOk'] for r in ok)/max(1,sum(r['fields'] for r in ok)),1),
         latMedianS=round(st.median(lats)/1000,2), latP90S=round(lats[int(0.9*(len(lats)-1))]/1000,2), latMaxS=round(max(lats)/1000,2))
 
-CODE_SOURCES = ('header', 'content', 'repetition', 'notSection')
+CODE_SOURCES = ('header', 'content', 'repetition', 'continuation', 'notSection')
 
 def _code_label(b):
     """What code decided for a block, or None when the block is left to the model."""

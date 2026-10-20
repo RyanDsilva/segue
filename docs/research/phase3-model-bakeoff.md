@@ -2,6 +2,27 @@
 
 Ryan did not lock Qwen3-4B (86.1% section labels on his first 10 pastes, about 3 GB peak, 5.2 s per labels call on an M1 Pro under load). He asked for a faster model, because Segue will also run on low-power laptops such as the MacBook Neo. This bake-off ran 10 small instruct models through the same harness as `phase3-eval-real-pastes.md`, with Qwen3-4B as the baseline and Foundation Models (FM) as the comparator that needs no download. The corpus is 51 of Ryan's real pastes (25 English, 26 romanized Hindi, 669 blocks). The pastes, gold data and per-song results stay local and gitignored. This doc gives aggregate numbers only.
 
+## Correction: the app path (2026-10-19, after P3-3's `make eval-ai`)
+
+`make eval-ai` (the shipped pipeline) first scored Qwen3-4B at 88.6% and FM at 89.1% on the same 51 pastes, not 92.2% and 89.5%. Three causes, measured with the same scorer (eval-ai's) on the same pastes:
+
+- **`score.py` was wrong in two ways, in opposite directions.**
+  - It left out `continuation` from `CODE_SOURCES`, so 35 blocks that P3-2 labels in code were scored with the model's answer. Fixed: Qwen3-4B now scores 94.0% and FM 92.1% with `score.py`, and the deterministic tier alone 88.6% (not 86.8%).
+  - It does not model the app's lyric guard. A model `other` on a content block (site text such as a tool menu that code reads as lyric lines) turns the block's lines into `{comment}`s. The guard sees lyric words disappear and refuses the label, so the block stays a verse placeholder. With the same model answers, the guard costs Qwen3-4B 24 blocks (94.0% to 90.4%) and FM 18 (92.1% to 89.4%).
+- **The MLX system prompt was longer than the bake-off's.** The app's labels schema printed the label vocabulary twice as one-value `anyOf` enums, about 140 more prompt tokens. Fixed in `a05cb93`.
+- **P3-2's softer labels prompt** scored lower than the bake-off wording with both providers. Reverted in `ea4a474`.
+
+After both fixes, `make eval-ai` matches the bake-off: Qwen3-4B's answers equal the bake-off run's on 93 of the 96 blocks it is asked about.
+
+| Section labels, 51 pastes, eval-ai scorer | Qwen3-4B | FM |
+|---|---|---|
+| Deterministic tier alone | 88.6% | 88.6% |
+| As first shipped (P3-3) | 88.6% | 89.1% |
+| After `a05cb93` + `ea4a474` | **90.1%** | **89.7%** |
+| Same answers, if the guard accepted a verbatim `{comment}` for `other` | 93.7% | 92.2% |
+
+The ranking of the small models does not change, because the corrected scorer lifts every row. But Qwen3-4B's lead over FM in the shipped app is 3 blocks out of 669, not 2.7 points. Whether the guard may accept `other` is a decision for Ryan.
+
 ## Short answer
 
 - **No small model is worth shipping for this task.**
