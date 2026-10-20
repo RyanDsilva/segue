@@ -14,4 +14,12 @@ This folder holds 10-20 real chord-sheet pastes that re-validate the curated MLX
 - At least 4-5 Hinglish songs, some heavy on Hindi words, some code-mixed.
 - A few deliberately messy ones: web junk around the song, tabs mixed in, no section headers, `x2` repeats, capo notes.
 
+## Fetched pastes and gold conventions
+
+- Besides Ryan's own copies (named by slug only), `E01-*`/`H01-*` files may be fetched from chord sites by an agent: low volume, robots.txt respected, no bot-protection bypass. Each is rendered as a browser select-and-copy of the page would give it, including the site's title/artist heading and the junk a real selection picks up (capo/key lines, strumming widgets, ratings, share buttons, credits).
+- Gold lives in `../gold.local.json`, one entry per file stem, with one label per block **as the P3-1 pipeline segments the paste** (get block indices from `fmspike render`/`dump` with `SPIKE_SEGMENTER=ingest`). Labels: `intro verse prechorus chorus bridge instrumental outro other`; a list accepts any of its labels and its index goes in `ambiguousBlocks`.
+- Labels follow what the section is, not the site's header (e.g. a UG `[Bridge]` that is really the pre-chorus accepts both). Page junk, strumming widgets and chord legends are `other`.
+- `title`/`artist` may be a list of accepted spellings; `null` means the paste does not state it. UG's "Misc Soundtrack" is not an artist, so those entries are `null` unless a body line names the singer.
+- `key`: for capo or retuned songs accept both the shape key and the sounding key; `keyStated` is true when the paste writes a key.
+
 Gold data and results derived from these files (`../gold.local.json`, `../results/`) are gitignored too, because they name real songs.
