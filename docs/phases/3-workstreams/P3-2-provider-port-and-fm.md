@@ -7,7 +7,7 @@ Wave 2 (after P3-1). Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (rea
 - `cat` is aliased to eza and can hang: use `command cat` or the Read tool. Never `rm -rf`: use `trash`. Never an em dash in any file: use "-".
 - Sibling workstreams edit the same working tree concurrently: expect unrelated diffs, never revert or "fix" files you do not own, and stage only your own files.
 - Commits: local only, signed (`git commit -S`), conventional messages, no co-author lines, one commit per resolved step. If signing fails with "failed to fill whole buffer", 1Password is locked: leave the staging intact, tell the orchestrator, never commit unsigned. Never push.
-- Test budget: per step only targeted `swift test --filter <Suite>`; `make quick` + `make gate` once at the end of the workstream; never `make check` (phase gate only, P3-9). Real FM/MLX calls never run inside `make check` or `make gate`.
+- Test budget (R113): per step only targeted in-process suites (`swift test --filter <Suite>`); new UI behaviour gets in-process SegueUI tests, and a new XCUITest only for a flow that cannot be tested in-process. At the end of the workstream ONE `make quick` plus ONE `make e2e-one` per UI test class you added or changed. NO `make gate` per workstream (the orchestrator runs one per wave), no `make check` (phase gate only, P3-9), no E2E retry loops (a failure is investigated, not re-run), no duplicate builds in scratch worktrees. Real FM/MLX calls never run inside `make check` or `make gate`.
 - Stop and ask the orchestrator at any decision fork or spec-vs-code inconsistency.
 
 ## Goal
@@ -36,4 +36,4 @@ Integration through `IngestPipeline` + `ScriptedProvider`: each fixture with FM 
 
 ## Acceptance
 
-Step 0's fixtures pass with the new Chorus labels and the accuracy is reported; paste fixtures refine through FM recordings with zero lyric/chord change; every routing path covered; both flavours build with SegueAI; `make quick` + `make gate` green.
+Step 0's fixtures pass with the new Chorus labels and the accuracy is reported; paste fixtures refine through FM recordings with zero lyric/chord change; every routing path covered; both flavours build with SegueAI; `make quick` green; the wave gate green.

@@ -200,3 +200,7 @@ Phase 3 spec questions 21-29 (Ryan, 2026-10-19):
 - R110. Set essentials outside the card: a quiet dot on library rows and the builder's library column, plus a built-in "Missing essentials" filter (question 27 = c).
 - R111. Tap tempo on the song card: yes (question 28 = a).
 - R112. "Already played" for R102 means actually played, in gigs and rehearsals alike; a skipped song may be added back (question 29 = a).
+
+Test budget (Ryan, 2026-10-19, fourth flag: "Over testing is a habit we want to avoid"):
+
+- R113. Per step: only targeted in-process suites. New UI behaviour is covered by in-process SegueUI tests; a new XCUITest only for a flow that cannot be tested in-process. End of a workstream: ONE `make quick` plus ONE `make e2e-one` per UI test class added or changed. **No `make gate` per workstream:** the orchestrator runs one `make gate` per wave after the wave's workstreams land. `make check` only at the phase gate. No E2E retry loops, no duplicate builds in scratch worktrees. Supersedes the per-workstream gate in R58/R60 and the P3 workstream briefs.
