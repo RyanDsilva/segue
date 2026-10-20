@@ -97,6 +97,12 @@ struct Main {
             return
         }
         switch cmd {
+        case "render":
+            // P3-A part 2: the exact label prompt per sheet (local review of the gold data).
+            for s in try loadSheets(dir: args[2]) where opt("only") == nil || s.name == opt("only") {
+                print("=== \(s.name)\n" + s.render(mode: .hints))
+                print("--- metadata prompt\n" + (s.metadataPrompt() ?? "nil"))
+            }
         case "dump":
             for s in try loadSheets(dir: args[2]) {
                 print("=== \(s.name) blocks=\(s.blocks.count)")

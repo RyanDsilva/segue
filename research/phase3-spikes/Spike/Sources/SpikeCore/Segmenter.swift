@@ -10,6 +10,9 @@ public struct Sheet: Sendable {
     }
     public var name: String
     public var blocks: [Block]
+    /// Set when the sheet came from P3-1's `IngestPipeline` (`IngestSheets.swift`).
+    var usesIngest = false
+    var ingestMetadataPrompt: String?
 
     public init(name: String, raw: String) {
         self.name = name
@@ -175,6 +178,7 @@ public struct Sheet: Sendable {
 
     /// Metadata view: top block (if it has no chords) + bottom block (if no chords) + chord list.
     public func metadataPrompt() -> String? {
+        if usesIngest { return ingestMetadataPrompt }
         var parts: [String] = []
         if let first = blocks.first, !blockHasChords(first) || first.lines.count <= 3 {
             let lines = first.lines.filter { !Sheet.isChordLine($0) }
@@ -206,6 +210,9 @@ public struct Sheet: Sendable {
 public func loadSheets(dir: String) throws -> [Sheet] {
     let fm = FileManager.default
     let files = try fm.contentsOfDirectory(atPath: dir).filter { $0.hasSuffix(".txt") }.sorted()
+    if ProcessInfo.processInfo.environment["SPIKE_SEGMENTER"] == "ingest" {
+        return try loadIngestSheets(dir: dir, files: files)
+    }
     return try files.map { f in
         let data = try Data(contentsOf: URL(fileURLWithPath: dir).appendingPathComponent(f))
         let s = String(decoding: data, as: UTF8.self)

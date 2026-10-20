@@ -181,15 +181,6 @@ From the Hub API (`/api/models/mlx-community/Qwen3-4B-Instruct-2507-4bit/revisio
 
 Total: 2,278,969,697 B (2.28 GB). The Hub gives SHA256 only for the two LFS files (`model.safetensors`, `tokenizer.json`). For the rest, the manifest's SHA256 comes from this local hash of the pinned revision, which matched the Hub's git blob ids. `README.md` and `.gitattributes` are not needed. Which files the loader actually opens is for P3-3 to trim.
 
-## 8. Part 2 status (R64 re-validation)
+## 8. Part 2 (R64 re-validation)
 
-Waiting on Ryan's 10-20 pastes in `research/phase3-eval/pastes/` (empty except the README on 2026-10-19). Ready:
-
-- `research/phase3-spikes/score.py` takes `--gold <json>` and `--hints <json>`, so it can score the gitignored `research/phase3-eval/gold.local.json`. It stays backwards compatible with the 20 spike fixtures.
-- `fmspike dump <dir>` writes the hints, and `mlxspike`/`fmspike` already read any folder of `.txt` pastes.
-
-Still to do when the pastes arrive:
-
-- Build the gold data (from `.cho` files, or drafts for Ryan to confirm).
-- Add the final design to `mlxspike`: a no-free-whitespace grammar and one retry with a whitespace bias on `incompleteOutput`.
-- Run Qwen3-4B and FM, then report the aggregates.
+Done on 2026-10-19 with Ryan's 10 pastes: see `phase3-eval-real-pastes.md`. Qwen3-4B with the final design (no-free-whitespace EBNF grammar, whitespace-bias retry) reached 86.1% labels and 7/10 title/artist through P3-1's pipeline. That is under the bar, but every miss was on an ambiguous section fragment or came from the deterministic layer. The recommendation is to lock the model and fix the pipeline.

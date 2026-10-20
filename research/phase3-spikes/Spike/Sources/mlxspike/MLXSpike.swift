@@ -34,6 +34,35 @@ extension Duration {
 struct Spec: @unchecked Sendable {
     let schema: String
     let system: String
+    /// P3-A final design: a no-free-whitespace EBNF grammar (compact JSON, fixed block
+    /// indices, bounded strings) used instead of the JSON Schema when set.
+    var ebnf: String? = nil
+}
+
+/// EBNF string literal for a JSON fragment (escapes quotes and backslashes).
+func lit(_ s: String) -> String {
+    "\"" + s.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\""
+}
+
+/// Labels: exactly n entries, block indices fixed in order, label from the enum, no whitespace.
+func labelsGrammar(blocks n: Int) -> String {
+    let items = (0..<n).map { "b\($0)" }
+    var rules = ["root ::= " + lit("{\"blocks\":[") + " " + items.joined(separator: " " + lit(",") + " ") + " " + lit("]}")]
+    for i in 0..<n {
+        rules.append("b\(i) ::= " + lit("{\"block\":\(i),\"label\":") + " label " + lit("}"))
+    }
+    rules.append("label ::= " + Vocab.labels.map { lit("\"\($0)\"") }.joined(separator: " | "))
+    return rules.joined(separator: "\n")
+}
+
+/// Metadata: compact object, strings of at most 80 characters, key from the enum.
+func metadataGrammar() -> String {
+    [
+        "root ::= " + lit("{\"title\":") + " str " + lit(",\"artist\":") + " str " + lit(",\"key\":") + " key " + lit("}"),
+        "str ::= " + lit("\"") + " char{0,80} " + lit("\""),
+        #"char ::= [^"\\\x00-\x1f] | "\\" ["\\/bfnrt]"#,
+        "key ::= " + Vocab.keysOrUnknown.map { lit("\"\($0)\"") }.joined(separator: " | "),
+    ].joined(separator: "\n")
 }
 
 /// Make every optional property explicit: type [T, "null"] and required, plus uniqueItems on arrays.
@@ -82,10 +111,12 @@ struct Main {
         let biasOn = args.contains("bias")
         let wsOnly = args.contains("wsbias")
         final class Partial: @unchecked Sendable { var text = "" }
-        func run(_ sp: Spec, prompt: String, maxTokens: Int, rec: inout CallRecord) async {
+        func run(_ sp: Spec, prompt: String, maxTokens: Int, rec: inout CallRecord, wsRetry: Bool = false) async {
             let partial = Partial()
             let system = sp.system
             let schema = sp.schema
+            let ebnf = sp.ebnf
+            let forceWS = wsRetry
             let start = ContinuousClock.now
             do {
                 let (text, inTok, outTok) = try await container.perform { (context: ModelContext) -> (String, Int, Int) in
@@ -95,8 +126,13 @@ struct Main {
                     let gv = TokenizerVocabExtractor.extractForGrammar(from: tokenizer)
                     let gt = try GrammarTokenizer(
                         vocab: gv.vocab, vocabType: gv.vocabType, eosTokenId: Int32(tokenizer.eosTokenId ?? 0))
-                    let constraint = try GrammarConstraint(
-                        tokenizer: gt, jsonSchema: schema, fastForward: true, hostTokenizer: tokenizer)
+                    let constraint = if let ebnf {
+                        try GrammarConstraint(
+                            tokenizer: gt, grammar: ebnf, fastForward: true, hostTokenizer: tokenizer)
+                    } else {
+                        try GrammarConstraint(
+                            tokenizer: gt, jsonSchema: schema, fastForward: true, hostTokenizer: tokenizer)
+                    }
                     var closing: MLXArray? = nil
                     var ws: MLXArray? = nil
                     var wsIDs = Set<Int>()
@@ -104,7 +140,7 @@ struct Main {
                         closing = ClosingTokenBias.compute(tokenizer: tokenizer, eosTokenId: tokenizer.eosTokenId)
                         (ws, wsIDs) = WhitespaceTokenBias.compute(tokenizer: tokenizer)
                     }
-                    if wsOnly { (ws, wsIDs) = WhitespaceTokenBias.compute(tokenizer: tokenizer) }
+                    if wsOnly || forceWS { (ws, wsIDs) = WhitespaceTokenBias.compute(tokenizer: tokenizer) }
                     let n = try GuidedGenerationLoop.run(
                         input: input, context: context, constraint: constraint, maxTokens: maxTokens,
                         vocabSize: gt.vocabSize, closingBias: closing, whitespaceBias: ws,
@@ -125,6 +161,18 @@ struct Main {
                 rec.latencyMs = (ContinuousClock.now - start).ms
                 rec.errorKind = String(describing: type(of: error))
                 rec.errorDetail = String(describing: error) + " partial=" + String(partial.text.suffix(300))
+                // Final design: one retry with a whitespace bias on incompleteOutput.
+                if !wsRetry, args.contains("retry"), String(describing: error).contains("incompleteOutput") {
+                    let firstMs = rec.latencyMs
+                    let firstError = rec.errorDetail ?? ""
+                    rec.errorKind = nil
+                    rec.errorDetail = nil
+                    await run(sp, prompt: prompt, maxTokens: maxTokens, rec: &rec, wsRetry: true)
+                    rec.latencyMs += firstMs
+                    rec.retries = 1
+                    rec.errorDetail = (rec.errorDetail ?? "") + " firstAttempt=" + String(firstError.prefix(200))
+                    return
+                }
             }
             rec.peakMemoryMB = Double(Memory.peakMemory) / 1_048_576
         }
@@ -153,6 +201,7 @@ struct Main {
             let sheets = try loadSheets(dir: args[4])
             let only = opt("only")
             let variant = mode.rawValue + (split ? "-split" : "-combined") + (args.contains("exact") ? "-exact" : "")
+                + (args.contains("ebnf") ? "-ebnf" : "") + (args.contains("retry") ? "-retry" : "")
             for s in sheets where only == nil || s.name.hasPrefix(only!) {
                 var rec = CallRecord(runner: "mlx", model: modelName, task: "paste", item: s.name, variant: variant)
                 let maxResp = (opt("maxbase").flatMap(Int.init) ?? 60) + 16 * s.blocks.count
@@ -162,6 +211,10 @@ struct Main {
                     let fixed = sp.schema.replacingOccurrences(of: #""type":"array""#, with: #""type":"array","minItems":\#(s.blocks.count),"maxItems":\#(s.blocks.count)"#)
                         .replacingOccurrences(of: #""description":"Block number as shown in the sheet","type":"integer""#, with: #""description":"Block number as shown in the sheet","maximum":\#(s.blocks.count - 1),"minimum":0,"type":"integer""#)
                     sp = Spec(schema: fixed, system: sp.system.replacingOccurrences(of: sp.schema, with: fixed))
+                    if args.contains("ebnf") {
+                        sp.ebnf = labelsGrammar(blocks: s.blocks.count)
+                        sp = Spec(schema: sp.schema, system: sp.system + "\nWrite compact JSON with no spaces or line breaks.", ebnf: sp.ebnf)
+                    }
                     await run(sp, prompt: s.render(mode: mode), maxTokens: maxResp, rec: &rec)
                     validate(BlockLabelsOnly.self, &rec)
                 } else if split {
@@ -180,8 +233,11 @@ struct Main {
                     m.chunk = 1
                     m.chunks = 2
                     if let mp = s.metadataPrompt() {
-                        await run(spec(SongMetadata.self, instructions: Prompts.metadataInstructions),
-                                  prompt: mp, maxTokens: 100, rec: &m)
+                        var msp = spec(SongMetadata.self, instructions: Prompts.metadataInstructions)
+                        if args.contains("ebnf") {
+                            msp = Spec(schema: msp.schema, system: msp.system + "\nWrite compact JSON with no spaces or line breaks.", ebnf: metadataGrammar())
+                        }
+                        await run(msp, prompt: mp, maxTokens: 100, rec: &m)
                         validate(SongMetadata.self, &m)
                     } else {
                         m.ok = true

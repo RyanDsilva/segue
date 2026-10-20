@@ -184,6 +184,8 @@ public struct CallRecord: Codable, Sendable {
     public var contextSize: Int?
     public var peakMemoryMB: Double?
     public var output: String?
+    /// P3-A: whitespace-bias retries taken (0 or 1).
+    public var retries: Int?
 
     public init(runner: String, model: String, task: String, item: String, variant: String) {
         self.runner = runner

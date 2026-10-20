@@ -20,9 +20,26 @@ def _flag(name):
 #   (the "any of" form used in gold.py).
 _gold_path = _flag('--gold')
 _hints_path = _flag('--hints') or 'hints.json'
+# P3-A part 2: merge model output with what P3-1's pipeline decided (fmspike/mlxspike run with
+# SPIKE_SEGMENTER=ingest and SPIKE_INGEST_DUMP). --ingest is the code side of the run;
+# --variant is a second dump whose code labels override (e.g. the "repeated block -> chorus"
+# rule in progress), scored as if the model had not been asked about those blocks.
+_ingest_path = _flag('--ingest')
+_variant_path = _flag('--variant')
+# --skip-meta: the metadata call is not made when P3-1 found no top/bottom candidate lines
+# (spike rule 5.3; with chords only, models copy the chord list into the title).
+_skip_meta = '--skip-meta' in sys.argv
+if _skip_meta: sys.argv.remove('--skip-meta')
+# --continuation (what-if, not in P3-1): an unheaded block with no repeat/chords-only/tab hint
+# that directly follows a code-decided block continues that block's section (pastes often put
+# a blank line inside a section). Decided in code, before the model is asked.
+_continuation = '--continuation' in sys.argv
+if _continuation: sys.argv.remove('--continuation')
+_GOLD_LANG = {}
 if _gold_path:
     def _alts(v):
         return tuple(v) if isinstance(v, list) else v
+    _GOLD_LANG = {name: g.get('lang', name[0]) for name, g in json.load(open(_gold_path)).items()}
     PASTE = {name: dict(labels=[_alts(l) for l in g['labels']], title=_alts(g.get('title')),
                         artist=_alts(g.get('artist')), key=_alts(g.get('key', 'unknown')),
                         keyStated=bool(g.get('keyStated')))
@@ -164,6 +181,113 @@ def summarize_set(rows):
     return dict(n=len(rows), ok=len(ok), errors=dict(errs), exact=sum(r['exact'] for r in ok),
         fieldAcc=round(100*sum(r['fieldsOk'] for r in ok)/max(1,sum(r['fields'] for r in ok)),1),
         latMedianS=round(st.median(lats)/1000,2), latP90S=round(lats[int(0.9*(len(lats)-1))]/1000,2), latMaxS=round(max(lats)/1000,2))
+
+CODE_SOURCES = ('header', 'content', 'repetition', 'notSection')
+
+def _code_label(b):
+    """What code decided for a block, or None when the block is left to the model."""
+    if b['labelSource'] == 'notSection' or b['role'] in ('metadata', 'passthrough'):
+        return 'other'
+    if b['labelSource'] in CODE_SOURCES and b.get('codeLabel'):
+        return b['codeLabel']
+    return None
+
+def score_pipeline(path, ingest, variant=None):
+    """Final result of the deterministic pipeline + model refinement, per paste."""
+    recs = [json.loads(l) for l in open(path) if '"warmup"' not in l]
+    by = defaultdict(list)
+    for r in recs:
+        if r['task'] == 'paste': by[r['item']].append(r)
+    rows = []
+    for item, rs in sorted(by.items()):
+        g = PASTE[item]; code = ingest[item]
+        rs = sorted(rs, key=lambda r: r['chunk'])
+        label_recs, meta = rs[:-1], rs[-1]
+        model = {}
+        labels_ok = all(r['ok'] for r in label_recs)
+        if labels_ok:
+            for r in label_recs:
+                for b in json.loads(r['output']).get('blocks', []): model[b['block']] = b['label']
+        blocks = code['blocks']
+        vblocks = variant[item]['blocks'] if variant else blocks
+        final, uh_c, uh_n, hd_c, hd_n, mo_c, mo_n, wrong = [], 0, 0, 0, 0, 0, 0, []
+        cont = {}
+        if _continuation:
+            prev = None
+            for i, b in enumerate(vblocks):
+                c0 = _code_label(b)
+                if c0 is None and prev is not None and i > 0 and b['hint'] in ('', 'no chords'):
+                    c0 = cont[i] = prev
+                prev = c0
+        for i, gl in enumerate(g['labels']):
+            gls = gl if isinstance(gl, tuple) else (gl,)
+            c = cont.get(i) or _code_label(vblocks[i])
+            if c is not None:
+                lab = c; hd_n += 1; hd_c += lab in gls
+            else:
+                lab = model.get(i, 'verse')  # placeholder when the model failed
+                uh_n += 1; uh_c += lab in gls
+            if _code_label(blocks[i]) is None and labels_ok:
+                mo_n += 1; mo_c += model.get(i) in gls
+            final.append(lab)
+            if lab not in gls: wrong.append(i)
+        m = json.loads(meta['output']) if meta['ok'] and meta.get('output') else {}
+        if _skip_meta and code.get('metadataLineCount', 1) == 0:
+            m = {}
+        def fix(v):
+            return None if norm(v) in (None, 'unknown', 'none', 'na', 'null', 'notitle', 'noartist') else v
+        title = code.get('codeTitle') or fix(m.get('title'))
+        artist = (code.get('codeArtists') or [None])[0] or fix(m.get('artist'))
+        if artist and norm(artist) == norm(title): artist = None
+        key = code.get('statedKey') or code.get('detectedKey')
+        if not code.get('statedKey') and code.get('keyAmbiguous') and m.get('key') in code.get('topTwo', []):
+            key = m.get('key')
+        lat = sum(r['latencyMs'] for r in rs)
+        rows.append(dict(item=item, lang=_GOLD_LANG.get(item, item[0]), labelsOk=labels_ok,
+            metaOk=meta['ok'], err=next((r.get('errorKind') for r in rs if not r['ok']), None),
+            retries=sum(r.get('retries') or 0 for r in rs), latency=lat,
+            labelLatency=sum(r['latencyMs'] for r in label_recs), peakMB=max((r.get('peakMemoryMB') or 0) for r in rs),
+            n=len(g['labels']), correct=len(g['labels']) - len(wrong), wrong=wrong,
+            uhC=uh_c, uhN=uh_n, hdC=hd_c, hdN=hd_n, moC=mo_c, moN=mo_n,
+            title=meta_ok(title, g['title']), artist=meta_ok(artist, g['artist']), key=meta_ok(key, g['key']),
+            codeTitleWrong=bool(code.get('codeTitle')) and not meta_ok(code.get('codeTitle'), g['title']),
+            modelTitle=fix(m.get('title')), modelArtist=fix(m.get('artist'))))
+    return rows
+
+def summarize_pipeline(rows):
+    def agg(rs):
+        if not rs: return {}
+        n = sum(r['n'] for r in rs); c = sum(r['correct'] for r in rs)
+        lats = sorted(r['latency'] for r in rs); llats = sorted(r['labelLatency'] for r in rs)
+        pct = lambda a, b: round(100 * a / b, 1) if b else None
+        p = lambda xs, q: round(xs[min(len(xs) - 1, int(round(q * (len(xs) - 1))))] / 1000, 2)
+        return dict(songs=len(rs), blocks=n, labelAcc=pct(c, n),
+            unheadedAcc=pct(sum(r['uhC'] for r in rs), sum(r['uhN'] for r in rs)), unheadedN=sum(r['uhN'] for r in rs),
+            codeDecidedAcc=pct(sum(r['hdC'] for r in rs), sum(r['hdN'] for r in rs)),
+            modelOnUnheadedAcc=pct(sum(r['moC'] for r in rs), sum(r['moN'] for r in rs)),
+            songsAllLabelsRight=sum(1 for r in rs if not r['wrong']),
+            titleOk=sum(r['title'] for r in rs), artistOk=sum(r['artist'] for r in rs),
+            titleArtistOk=sum(1 for r in rs if r['title'] and r['artist']), keyOk=sum(r['key'] for r in rs),
+            labelCallFailures=sum(1 for r in rs if not r['labelsOk']), metaCallFailures=sum(1 for r in rs if not r['metaOk']),
+            retries=sum(r['retries'] for r in rs),
+            perSongP50=p(lats, .5), perSongP90=p(lats, .9), labelsP50=p(llats, .5), labelsP90=p(llats, .9),
+            peakMB=round(max(r['peakMB'] for r in rs)))
+    return {'all': agg(rows), 'en': agg([r for r in rows if r['lang'] == 'E']), 'hi': agg([r for r in rows if r['lang'] == 'H'])}
+
+if _ingest_path and __name__ == '__main__':
+    _ing = json.load(open(_ingest_path))
+    _var = json.load(open(_variant_path)) if _variant_path else None
+    for p in sys.argv[1:]:
+        rows = score_pipeline(p, _ing, _var)
+        print('==', p, '(pipeline merge' + (', variant' if _var else '') + (', skip-meta' if _skip_meta else '') + (', continuation' if _continuation else '') + ')')
+        for k, v in summarize_pipeline(rows).items(): print(' ', k, v)
+        for r in rows:  # block indices and flags only: no lyric or title text
+            if r['wrong'] or not (r['title'] and r['artist']) or not r['labelsOk'] or not r['metaOk']:
+                print('   ', r['item'], f"{r['correct']}/{r['n']}", 'wrong blocks', r['wrong'],
+                      'title', r['title'], 'artist', r['artist'], 'key', r['key'],
+                      'codeTitleWrong', r['codeTitleWrong'], 'modelInventedTitle', r['modelTitle'] is not None,
+                      'modelInventedArtist', r['modelArtist'] is not None, 'err', r['err'])
+    sys.exit(0)
 
 if __name__ == '__main__':
     for p in sys.argv[1:]:
