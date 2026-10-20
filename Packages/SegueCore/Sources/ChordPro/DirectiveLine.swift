@@ -52,6 +52,21 @@ public struct DirectiveLine: Sendable {
         DirectiveSyntax.canonicalName(spelled)
     }
 
+    /// Canonical start line of a section: `{start_of_<kind>}` or `{start_of_<kind>: label}`.
+    public static func sectionStart(_ kind: SectionKind, label: String?) -> String {
+        canonical(name: DirectiveSyntax.startPrefix + DirectiveSyntax.kindName(kind), value: label)
+    }
+
+    /// Canonical end line of a section: `{end_of_<kind>}`.
+    public static func sectionEnd(_ kind: SectionKind) -> String {
+        canonical(name: DirectiveSyntax.endPrefix + DirectiveSyntax.kindName(kind), value: nil)
+    }
+
+    /// True when two kinds spell the same directive (`custom("Intro")` == `custom("intro")`).
+    public static func sameSectionKind(_ lhs: SectionKind, _ rhs: SectionKind) -> Bool {
+        DirectiveSyntax.kindName(lhs).lowercased() == DirectiveSyntax.kindName(rhs).lowercased()
+    }
+
     /// The `SectionKind`s that are pass-through blocks (tab and grid): shown verbatim and
     /// never edited visually.
     public static func isVerbatimSection(_ kind: SectionKind) -> Bool {

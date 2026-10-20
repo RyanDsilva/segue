@@ -41,6 +41,33 @@ public enum EditOperation: Sendable, Hashable {
     /// after the leading metadata directives.
     case setDefine(ChordDefinition)
     case removeDefine(name: String)
+
+    // MARK: Sections (P3-11, the section band; the slash menu's wrap uses `wrapSection`)
+
+    /// Wraps the top-level blocks `first` ... `last` in `{start_of_<kind>: label}` ...
+    /// `{end_of_<kind>}`. Throws `crossesSection` when the range is inside or crosses a
+    /// section. `SectionLabels.next(for:in:)` proposes the numbered label.
+    case wrapSection(first: BlockPath, last: BlockPath, kind: SectionKind, label: String?)
+    /// Re-spells the section's start (and end) directive as `kind` with `label`.
+    case setSectionKind(BlockPath, kind: SectionKind, label: String?)
+    /// Moves the section's top or bottom edge so `toLine` becomes its first (top) or last
+    /// (bottom) line, clamped at the neighbouring sections and the leading metadata.
+    case moveSectionEdge(BlockPath, edge: SectionEdge, toLine: BlockPath)
+    /// Removes the section's start and end directives; its lines stay.
+    case unwrapSection(BlockPath)
+    /// Ends the section before the item `atLine` and starts a new one of the same kind
+    /// there (numbered when the section has a label).
+    case splitSection(BlockPath, atLine: BlockPath)
+    /// Joins `second` (the next section after `first`) onto `first`. With `kind == nil`
+    /// the two must be the same kind (else `sectionKindsDiffer`, so the caller can ask);
+    /// otherwise the merged section becomes `kind`. Keeps `first`'s label.
+    case mergeSections(first: BlockPath, second: BlockPath, kind: SectionKind?)
+}
+
+/// Which edge of a section band moves.
+public enum SectionEdge: Sendable, Hashable {
+    case top
+    case bottom
 }
 
 public enum EditError: Error, Sendable, Hashable {
@@ -57,6 +84,11 @@ public enum EditError: Error, Sendable, Hashable {
     /// A lyric edit or split that would turn the line into something else: a `#` comment,
     /// a `{directive}`, or a new `[chord]` typed as text.
     case notLyricText(BlockPath)
+    /// A section wrap whose lines are inside or span an existing section (sections do not
+    /// nest); the path is the section in the way.
+    case crossesSection(BlockPath)
+    /// A merge of two different kinds without a chosen kind.
+    case sectionKindsDiffer(BlockPath, BlockPath)
 }
 
 /// Plans tree operations as minimal text edits (phase 1 spec, "Sync between modes").
@@ -71,6 +103,8 @@ public enum DocumentEditor {
         var planner = EditPlanner(snapshot: snapshot)
         let name: String = if let lyric = try planLyricOperation(operation, with: &planner) {
             lyric
+        } else if let section = try planSectionOperation(operation, with: &planner) {
+            section
         } else {
             try planDirectiveOperation(operation, with: &planner)
         }
@@ -134,8 +168,38 @@ public enum DocumentEditor {
             planner.removeDefine(name: define)
             return "Remove Chord Shape"
         case .deleteChord, .duplicateChord, .editLyrics, .insertChord, .joinWithPrevious,
-             .moveChord, .replaceChord, .splitLine:
+             .mergeSections, .moveChord, .moveSectionEdge, .replaceChord, .setSectionKind,
+             .splitLine, .splitSection, .unwrapSection, .wrapSection:
             return ""
+        }
+    }
+
+    /// Section band operations; `nil` for every other operation.
+    private static func planSectionOperation(
+        _ operation: EditOperation,
+        with planner: inout EditPlanner,
+    ) throws(EditError) -> String? {
+        switch operation {
+        case let .wrapSection(first, last, kind, label):
+            try planner.wrapSection(first: first, last: last, kind: kind, label: label)
+            return "New Section"
+        case let .setSectionKind(path, kind, label):
+            try planner.setSectionKind(path, kind: kind, label: label)
+            return "Change Section"
+        case let .moveSectionEdge(path, edge, line):
+            try planner.moveSectionEdge(path, edge: edge, toLine: line)
+            return "Resize Section"
+        case let .unwrapSection(path):
+            try planner.unwrapSection(path)
+            return "Remove Section"
+        case let .splitSection(path, line):
+            try planner.splitSection(path, atLine: line)
+            return "Split Section"
+        case let .mergeSections(first, second, kind):
+            try planner.mergeSections(first: first, second: second, kind: kind)
+            return "Merge Sections"
+        default:
+            return nil
         }
     }
 }

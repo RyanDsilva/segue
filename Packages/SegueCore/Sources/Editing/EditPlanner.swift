@@ -10,7 +10,7 @@ import MusicTheory
 /// trims every replacement to the bytes that really change.
 struct EditPlanner {
     let snapshot: SourceSnapshot
-    private var builder: EditBuilder
+    var builder: EditBuilder
     /// Caret after the edit: an offset in the pre-edit text plus an offset into the text
     /// replaced there.
     private var caret: (anchor: Int, extra: Int)?
@@ -225,7 +225,7 @@ struct EditPlanner {
     }
 
     /// Removes a whole line. A last line without an ending takes the previous ending with it.
-    private mutating func deleteLine(_ index: Int) {
+    mutating func deleteLine(_ index: Int) {
         let line = snapshot.map.lines[index]
         if !line.hasEnding, index > 0 {
             builder.replace(snapshot.map.lines[index - 1].contentEnd ..< line.end, with: "")
@@ -234,7 +234,7 @@ struct EditPlanner {
         }
     }
 
-    private func sourceLine(_ path: BlockPath) throws(EditError) -> SourceLine {
+    func sourceLine(_ path: BlockPath) throws(EditError) -> SourceLine {
         guard let index = snapshot.map.lineOfPath[path] else { throw .invalidPath(path) }
         return snapshot.map.lines[index]
     }
