@@ -1,8 +1,13 @@
 #if os(macOS)
+    import Foundation
+    import Library
+    import Support
     import SwiftUI
 
     /// Tags as removable chips plus an "Add tag" field (Return adds; existing tags are
-    /// offered as completions). Case-insensitive duplicates are ignored.
+    /// offered as completions). Case-insensitive duplicates are ignored. While the library
+    /// has no tags of its own (the Welcome songs' tag does not count), the field offers the
+    /// six starter tags instead (R71): a manual pick only, nothing is applied for the user.
     struct TagEditor: View {
         let tags: [String]
         let suggestions: [String]
@@ -59,15 +64,48 @@
         }
 
         private var completions: [String] {
-            let typed = draft.trimmingCharacters(in: .whitespaces).lowercased()
-            guard !typed.isEmpty else { return [] }
-            return suggestions.filter { tag in
-                tag.lowercased().hasPrefix(typed)
-                    && !tags.contains { $0.caseInsensitiveCompare(tag) == .orderedSame }
-            }
-            .prefix(6)
-            .map(\.self)
+            Self.completions(
+                draft: draft,
+                applied: tags,
+                libraryTags: suggestions,
+                seedTags: Self.seedTags,
+            )
         }
+
+        /// Up to six tags to offer for `draft`: the library's tags it prefixes, and while the
+        /// library has no tags of the user's own, the starter tags (all of them while the
+        /// field is empty). Tags already `applied` are left out; matching ignores case.
+        nonisolated static func completions(
+            draft: String,
+            applied: [String],
+            libraryTags: [String],
+            seedTags: [String],
+        ) -> [String] {
+            let typed = draft.trimmingCharacters(in: .whitespaces).lowercased()
+            let starters = StarterTags.suggestions(libraryTags: libraryTags, seedTags: seedTags)
+            guard !typed.isEmpty || !starters.isEmpty else { return [] }
+            var result: [String] = []
+            for tag in starters + libraryTags {
+                let isNew = !(applied + result).contains {
+                    $0.caseInsensitiveCompare(tag) == .orderedSame
+                }
+                if isNew, typed.isEmpty || tag.lowercased().hasPrefix(typed) {
+                    result.append(tag)
+                }
+            }
+            return Array(result.prefix(6))
+        }
+
+        /// The tag the bundled Welcome songs carry (not the user's own), from its manifest.
+        nonisolated static let seedTags: [String] = {
+            guard let folder = Bundle.module.url(forResource: "WelcomeLibrary", withExtension: nil),
+                  let manifest = try? SeedManifest.load(
+                      fromFolder: folder,
+                      fileSystem: LiveFileSystem(),
+                  )
+            else { return [] }
+            return [manifest.tag]
+        }()
 
         private func add() {
             let tag = draft.trimmingCharacters(in: .whitespacesAndNewlines)
