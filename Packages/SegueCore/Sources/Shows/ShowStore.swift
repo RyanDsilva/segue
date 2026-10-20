@@ -58,7 +58,8 @@ public actor ShowStore {
     private static let migrator = SchemaMigrator(
         currentVersion: ShowRecord.currentSchemaVersion,
         // v1 -> v2: break rows, `breakId` and the break events are new, optional shapes.
-        steps: [1: { _ in }],
+        // v2 -> v3: items gain an optional `arrangement` and `arrangementState` (R122).
+        steps: [1: { _ in }, 2: { _ in }],
     )
 
     public init(

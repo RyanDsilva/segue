@@ -304,6 +304,9 @@ public struct LayoutRequest: Sendable {
     public var cues: [SongCue]
     /// Sidecar notes and the setlist item note, shown above the first section.
     public var notes: [String]
+    /// A slot's arrangement (R122), resolved against `model.sections`
+    /// (`ArrangementResolver`): the sections to play, in order; nil = the full song.
+    public var arrangement: [PlayedSection]?
     public var style: LayoutStyle
 
     public init(
@@ -315,6 +318,7 @@ public struct LayoutRequest: Sendable {
         columns: Int? = nil,
         cues: [SongCue] = [],
         notes: [String] = [],
+        arrangement: [PlayedSection]? = nil,
         style: LayoutStyle = .stage,
     ) {
         self.model = model
@@ -325,6 +329,7 @@ public struct LayoutRequest: Sendable {
         self.columns = columns
         self.cues = cues
         self.notes = notes
+        self.arrangement = arrangement
         self.style = style
     }
 }

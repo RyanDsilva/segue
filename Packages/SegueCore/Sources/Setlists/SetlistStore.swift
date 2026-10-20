@@ -492,6 +492,9 @@ private extension SetlistStore {
             // v3 -> v4: song slots gain an optional `locked` flag (R115); a v3 file reads
             // unchanged.
             3: { _ in },
+            // v4 -> v5: song slots gain an optional `arrangement` (R122); a v4 file reads
+            // unchanged.
+            4: { _ in },
         ],
     )
 }

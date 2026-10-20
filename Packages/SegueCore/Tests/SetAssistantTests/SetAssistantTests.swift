@@ -210,6 +210,30 @@ struct SetAssistantTests {
     }
 
     @Test
+    func `rebuild keeps an arranged slot whole and counts its slot length (R122)`() throws {
+        let (_, first) = Self.build("an hour, songs I know well", seed: 4)
+        var entries = first.entries
+        let anchor = SectionAnchor.section(SectionRef(label: "Chorus", occurrence: 1))
+        entries[1].arrangement = SlotArrangement(
+            steps: [ArrangementStep(anchor: anchor, plays: 2)],
+            length: 95,
+        )
+        entries[1].locked = true
+        // An unlocked arranged slot with no slot length has no length for the packer.
+        entries[2].arrangement = SlotArrangement(steps: [ArrangementStep(anchor: anchor)])
+        let (_, rebuilt) = Self.build(
+            "an hour, songs I know well",
+            seed: 5,
+            layout: RebuildLayout(entries: entries),
+        )
+        #expect(rebuilt.entries[1] == entries[1])
+        let slot = try #require(rebuilt.timing.items.first { $0.itemId == entries[1].itemId })
+        #expect(slot.length == SongLength(seconds: 95, source: .slot))
+        #expect(try !rebuilt.songIDs.contains(#require(entries[2].songId)))
+        #expect(try rebuilt.leftOutNoLength.contains(#require(entries[2].songId)))
+    }
+
+    @Test
     func `a request no song meets builds an empty set and says so`() {
         let (_, draft) = Self.build("30 min of hindi in Bb under 61 bpm I know cold", seed: 1)
         #expect(draft.matchingCount < 3)

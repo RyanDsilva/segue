@@ -11,9 +11,22 @@ struct SongPreparation {
     let measurer: Measurer
 
     func measure() -> MeasuredSong {
-        let sections = request.model.sections
+        let original = request.model.sections
+        // Cues pin to the song's own sections (song-relative label + occurrence) before an
+        // arrangement reorders them; a cue shows on its section's first play only, and a
+        // cue on a skipped section is simply not played (not "unmatched").
+        let (pinned, unmatched) = pinCues(original)
+        let sections: [RenderSection]
+        let cues: [[SongCue]]
+        if let order = request.arrangement {
+            let arranged = ArrangedSections.build(original, order: order)
+            sections = arranged.map(\.section)
+            cues = arranged.map { $0.isFirstPlay ? pinned[$0.source] : [] }
+        } else {
+            sections = original
+            cues = pinned
+        }
         let collapsed = RepeatCollapser.collapse(sections, enabled: request.collapseRepeats)
-        let (cues, unmatched) = pinCues(sections)
         let measured = sections.indices.map { index in
             section(index, sections: sections, collapsed: collapsed[index], cues: cues[index])
         }

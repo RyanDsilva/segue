@@ -142,6 +142,7 @@ public struct ReorderDiff: Sendable, Hashable {
                     songId: row.item.songId,
                     overrides: row.item.overrides,
                     note: row.item.note,
+                    arrangement: row.item.arrangement,
                 )
             }
             return currentByID[row.item.itemId]

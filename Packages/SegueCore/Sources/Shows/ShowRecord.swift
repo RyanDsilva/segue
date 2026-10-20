@@ -87,6 +87,15 @@ public enum ItemState: String, Sendable, Hashable, Codable {
     case skipped
 }
 
+/// What the stage did with an item's arrangement (R122), recorded once, when the item
+/// first became current, so the gig log stays truthful after the song is edited.
+public enum ArrangementState: String, Sendable, Hashable, Codable {
+    /// The arrangement was played as saved.
+    case applied
+    /// The arrangement no longer matched the song: the full song was shown.
+    case outOfDate
+}
+
 /// One item of a show, in performed order (`ShowRecord.items`).
 public struct ShowItem: Sendable, Hashable, Codable, Identifiable {
     public var itemId: ShowItemID
@@ -100,6 +109,12 @@ public struct ShowItem: Sendable, Hashable, Codable, Identifiable {
     public var overrides: SetlistOverrides
     public var note: String?
     public var state: ItemState
+    /// The slot's arrangement, copied from the setlist at start like `overrides` (v3); nil =
+    /// the full song. Requests and inserted songs have none.
+    public var arrangement: SlotArrangement?
+    /// What the stage did with `arrangement` (v3); nil until the item is shown, and for items
+    /// without one.
+    public var arrangementState: ArrangementState?
 
     public var id: ShowItemID {
         itemId
@@ -114,6 +129,7 @@ public struct ShowItem: Sendable, Hashable, Codable, Identifiable {
         overrides: SetlistOverrides = SetlistOverrides(),
         note: String? = nil,
         state: ItemState = .pending,
+        arrangement: SlotArrangement? = nil,
     ) {
         self.itemId = itemId
         self.songId = songId
@@ -123,6 +139,7 @@ public struct ShowItem: Sendable, Hashable, Codable, Identifiable {
         self.overrides = overrides
         self.note = note
         self.state = state
+        self.arrangement = arrangement
     }
 }
 
@@ -278,8 +295,9 @@ public enum ShowClosure: String, Sendable, Hashable, Codable {
 /// Versioning follows the sidecar rules (older migrate forward, newer open read-only).
 public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
     /// History: 1 = phase 2; 2 = phase 3 (`planned` may hold break rows, `breakId`, the
-    /// `breakStarted` / `breakEnded` events). A v1 build opens a v2 file read-only.
-    public static let currentSchemaVersion = 2
+    /// `breakStarted` / `breakEnded` events); 3 = per-slot arrangements (`ShowItem.arrangement`,
+    /// `arrangementState`, R122). An older build opens a newer file read-only.
+    public static let currentSchemaVersion = 3
 
     public var id: ShowID
     public var schemaVersion: Int

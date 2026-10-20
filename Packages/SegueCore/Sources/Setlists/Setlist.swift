@@ -165,6 +165,9 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
     /// Kept in place by the set assistant's Rebuild (R115). Song slots only; saved as
     /// `"locked": true` (v4), absent when false.
     public var locked: Bool
+    /// Which sections this slot plays for this gig (R122, v5); nil = the full song. Song
+    /// slots only. Separate from `overrides` so resetting key and capo never drops it.
+    public var arrangement: SlotArrangement?
 
     public var id: SetlistItemID {
         itemId
@@ -199,12 +202,14 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
         overrides: SetlistOverrides = SetlistOverrides(),
         note: String? = nil,
         locked: Bool = false,
+        arrangement: SlotArrangement? = nil,
     ) {
         self.itemId = itemId
         kind = .song(songId)
         self.overrides = overrides
         self.note = note
         self.locked = locked
+        self.arrangement = arrangement
     }
 
     /// A break row.
@@ -214,10 +219,11 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
         overrides = SetlistOverrides()
         note = nil
         locked = false
+        arrangement = nil
     }
 
-    /// A song slot: `{itemId, songId, overrides?, note?, locked?}` (`locked` since v4); a
-    /// break row (v3): `{itemId, break: {label, length?}}`.
+    /// A song slot: `{itemId, songId, overrides?, note?, locked?, arrangement?}` (`locked`
+    /// since v4, `arrangement` since v5); a break row (v3): `{itemId, break: {label, length?}}`.
     private enum CodingKeys: String, CodingKey {
         case itemId
         case songId
@@ -225,6 +231,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
         case overrides
         case note
         case locked
+        case arrangement
     }
 
     public init(from decoder: any Decoder) throws {
@@ -235,6 +242,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
             overrides = SetlistOverrides()
             note = nil
             locked = false
+            arrangement = nil
             return
         }
         kind = try .song(container.decode(SongID.self, forKey: .songId))
@@ -242,6 +250,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
             ?? SetlistOverrides()
         note = try container.decodeIfPresent(String.self, forKey: .note)
         locked = try container.decodeIfPresent(Bool.self, forKey: .locked) ?? false
+        arrangement = try container.decodeIfPresent(SlotArrangement.self, forKey: .arrangement)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -257,6 +266,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
             if locked {
                 try container.encode(true, forKey: .locked)
             }
+            try container.encodeIfPresent(arrangement, forKey: .arrangement)
         case let .break(info):
             try container.encode(info, forKey: .break)
         }
@@ -269,11 +279,11 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
 /// one loads with `readOnly` set and is never rewritten.
 /// History: 0 = pre-versioned; 1 = phase 0 (`entries: [{songId}]`); 2 = phase 2 (entries gain
 /// `itemId`, `overrides`, `note`; the setlist gains timestamps, venue, date, target length);
-/// 3 = phase 3 (break rows, `changeoverSeconds`); 4 = locked song slots (R115). An older
-/// build opens a newer file read-only.
+/// 3 = phase 3 (break rows, `changeoverSeconds`); 4 = locked song slots (R115); 5 = per-slot
+/// arrangements (R122). An older build opens a newer file read-only.
 public struct Setlist: Sendable, Equatable, Identifiable, Codable {
     /// The schema version this build reads and writes.
-    public static let currentSchemaVersion = 4
+    public static let currentSchemaVersion = 5
 
     public var id: SetlistID
     public var schemaVersion: Int

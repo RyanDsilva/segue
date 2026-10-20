@@ -2,8 +2,9 @@ import Foundation
 
 /// Editing one slot, break rows and changeover (R85, R86, R105).
 public extension SetlistStore {
-    /// Replaces the overrides and note of the song slot with `entry.itemId` (its song
-    /// stays), or the label and intermission of the break row with that ID, and saves.
+    /// Replaces the overrides, note and arrangement (R122) of the song slot with
+    /// `entry.itemId` (its song stays), or the label and intermission of the break row with
+    /// that ID, and saves.
     /// Throws `invalidOffsets` when no entry has that item ID or `entry` is not the same
     /// kind of slot (a song never turns into a break, or the other way round).
     @discardableResult
@@ -19,6 +20,7 @@ public extension SetlistStore {
             } else {
                 entries[index].overrides = entry.overrides
                 entries[index].note = entry.note
+                entries[index].arrangement = entry.arrangement
             }
         }
     }

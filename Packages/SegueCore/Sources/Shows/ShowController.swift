@@ -98,6 +98,7 @@ public actor ShowController {
                 origin: .setlist,
                 overrides: entry.overrides,
                 note: entry.note,
+                arrangement: entry.arrangement,
             ))
         }
         guard let first = items.first?.itemId else { throw ShowError.emptySetlist }
@@ -221,6 +222,26 @@ public actor ShowController {
         guard clamped != record.scrollPosition else { return }
         record.scrollPosition = clamped
         currentState.record.scrollPosition = clamped
+        needsWrite = true
+        try await flushScrollPositionIfDue()
+    }
+
+    /// Records what the stage did with `item`'s arrangement (R122): once, the first time it
+    /// is shown, so the gig log says what was actually played. Written with the next action
+    /// or scroll flush.
+    public func recordArrangementState(
+        _ state: ArrangementState,
+        for item: ShowItemID,
+    ) async throws {
+        guard !record.isFinished,
+              let index = record.items.firstIndex(where: { $0.itemId == item }),
+              record.items[index].arrangement != nil,
+              record.items[index].arrangementState == nil
+        else { return }
+        record.items[index].arrangementState = state
+        if currentState.record.items.indices.contains(index) {
+            currentState.record.items[index].arrangementState = state
+        }
         needsWrite = true
         try await flushScrollPositionIfDue()
     }

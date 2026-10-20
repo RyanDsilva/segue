@@ -22,6 +22,9 @@ public enum SongLengthSource: Sendable, Hashable {
     case directive
     /// A break row's intermission (R105).
     case intermission
+    /// An arranged slot's own length (R122): typed or timed for that slot, never derived
+    /// from the song's `{duration}`.
+    case slot
 }
 
 /// A known song length.
@@ -161,7 +164,7 @@ public struct SetlistTiming: Sendable, Hashable {
                     start += changeover
                     part.total += changeover
                 }
-                let length = lengths[songID].flatMap { $0.seconds > 0 ? $0 : nil }
+                let length = Self.length(of: entry, song: songID, lengths: lengths)
                 items.append(ItemTiming(
                     itemId: entry.itemId,
                     start: start,
@@ -186,6 +189,21 @@ public struct SetlistTiming: Sendable, Hashable {
         unknownItemIds = unknown
         self.target = target
         self.changeover = changeover
+    }
+
+    /// A song slot's length: an arranged slot's own length (nil = unknown, whatever the
+    /// song's `{duration}` says, R122), else the song's.
+    static func length(
+        of entry: SetlistEntry,
+        song: SongID,
+        lengths: [SongID: SongLength],
+    ) -> SongLength? {
+        if let arrangement = entry.arrangement {
+            return arrangement.length.flatMap { seconds in
+                seconds > 0 ? SongLength(seconds: seconds, source: .slot) : nil
+            }
+        }
+        return lengths[song].flatMap { $0.seconds > 0 ? $0 : nil }
     }
 
     /// The part a break row opens, if `itemId` is one.

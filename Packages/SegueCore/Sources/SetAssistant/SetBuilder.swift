@@ -120,6 +120,7 @@ public struct SetBuilder: Sendable {
         seed: UInt64,
         newItemID: () -> SetlistItemID,
     ) -> SetDraft {
+        let library = Self.withSlotLengths(library, layout: layout)
         let songsByID = Dictionary(library.songs.map { ($0.id, $0) }) { first, _ in first }
         let scorer = Scorer(
             config: config,
@@ -167,6 +168,31 @@ public struct SetBuilder: Sendable {
             matchingCount: pool.matching,
             tolerance: config.toleranceSeconds,
         )
+    }
+
+    /// The library with an arranged slot's own length (R122) in place of its song's: a kept
+    /// or re-picked slot keeps its arrangement, so it counts the length played there; an
+    /// arranged slot with no slot length has no length (left out under a target, R107).
+    static func withSlotLengths(
+        _ library: AssistantLibrary,
+        layout: RebuildLayout,
+    ) -> AssistantLibrary {
+        var arranged: [SongID: TimeInterval?] = [:]
+        for entry in layout.entries {
+            if let id = entry.songId, let arrangement = entry.arrangement, arranged[id] == nil {
+                // `updateValue`: assigning a nil length through the subscript would drop
+                // the key instead of recording "no length".
+                arranged.updateValue(arrangement.length.flatMap { $0 > 0 ? $0 : nil }, forKey: id)
+            }
+        }
+        guard !arranged.isEmpty else { return library }
+        var library = library
+        for index in library.songs.indices {
+            if let length = arranged[library.songs[index].id] {
+                library.songs[index].length = length
+            }
+        }
+        return library
     }
 
     /// The songs a request admits (locked ones aside), best base score first, with songs
