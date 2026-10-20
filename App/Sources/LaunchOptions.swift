@@ -152,6 +152,8 @@ import VendorServices
         var stageWindowed = false
         var fixedClock: Date?
         var scriptedAI: URL?
+        var guideFixtures = false
+        var clockRate: Double?
 
         init(
             libraryPath: URL? = nil,
@@ -253,7 +255,7 @@ import VendorServices
             onboardingFlag, seedWelcomeFlag, changelogPathFlag, lastSeenVersionFlag,
             appVersionFlag, reviewLogFlag, tipsFlag, exportPathFlag, completedGigsFlag,
             screenshotLibraryFlag, windowFrameFlag, stageWindowedFlag, fixedClockFlag,
-            scriptedAIFlag,
+            scriptedAIFlag, guideFixturesFlag, clockRateFlag,
         ]
 
         /// A Shortcut name with surrounding blanks removed; nil when blank.
@@ -281,7 +283,7 @@ import VendorServices
                 || lastSeenVersion != nil || appVersion != nil || reviewLog != nil
                 || tips != nil || exportPath != nil || completedGigs != nil
                 || screenshotLibrary || windowFrame != nil || stageWindowed
-                || fixedClock != nil || scriptedAI != nil
+                || fixedClock != nil || scriptedAI != nil || guideFixtures || clockRate != nil
         }
 
         /// The library folder this launch opens without the bookmark: `-SegueLibraryPath`, or
@@ -357,6 +359,9 @@ import VendorServices
             if screenshotLibrary {
                 Self.wipeScreenshotLibrary()
             }
+            if guideFixtures {
+                GuideFixtures.write()
+            }
             let services = servicesWiring(defaults: defaults, bundleID: bundleID)
             let polish = polishDependencies(defaults: defaults)
             return AppDependencies(
@@ -409,6 +414,8 @@ import VendorServices
                     completedGigs: completedGigs,
                     lastSeenVersion: lastSeenVersion,
                     allowsWhatsNew: changelogPath != nil || lastSeenVersion != nil,
+                    extraSeedFolders: screenshotLibrary
+                        ? [ScreenshotSongs.writeSeedFolder()].compactMap(\.self) : [],
                 ),
             )
             if let changelogPath {

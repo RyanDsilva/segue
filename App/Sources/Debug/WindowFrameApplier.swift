@@ -60,7 +60,8 @@ import SwiftUI
             guard let start = options.fixedClock else { return SystemClock() }
             let monotonic = SuspendingClock()
             let launch = monotonic.now
-            return MonotonicClock(origin: start) { launch.duration(to: monotonic.now) }
+            let rate = options.clockRate ?? 1
+            return MonotonicClock(origin: start) { launch.duration(to: monotonic.now) * rate }
         }
 
         /// `-SegueWindowFrame` (and, with `-SegueStageWindowed`, the stage window's frame).

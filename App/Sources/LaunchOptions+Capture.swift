@@ -4,7 +4,8 @@
 
     /// The screenshot capture layer (WS5 8.2, built by WS6 for the user guide, R127):
     /// - `-SegueScreenshotLibrary YES`: a clean, known library for captures: wipes
-    ///   `screenshotLibraryFolder`, then seeds the Welcome songs and setlist there, with
+    ///   `screenshotLibraryFolder`, then seeds the Welcome songs and setlist there plus the
+    ///   screenshot-only songs and "JamFest Opener" (`ScreenshotSongs`, WS5 8.4.1), with
     ///   onboarding done, tips hidden, consent declined and no What's New or review prompt
     ///   (the usual test-run defaults). Never touches the user's library bookmark.
     /// - `-SegueWindowFrame x,y,w,h`: the main window's frame in points, top-left origin at
@@ -17,12 +18,19 @@
     /// - `-SegueScriptedAI <directory>`: AI calls replay the `ScriptedProvider` recordings in
     ///   `<directory>` (as Apple's model); a call with no recording keeps the converter's
     ///   result, as with AI off.
+    /// - `-SegueClockRate <n>`: with `-SegueFixedClock`, the app clock runs `n` times faster
+    ///   than real time (a captured gig's songs last minutes, not seconds).
+    /// - `-SegueGuideFixtures YES`: writes `GuideFixtures` into the container and, unless
+    ///   given explicitly, points `-SegueScriptedAI` at its recorded model answer and
+    ///   `-SegueImportPanelPaths` at its import files (WS6 5.2).
     extension LaunchOptions {
         static let screenshotLibraryFlag = "-SegueScreenshotLibrary"
         static let windowFrameFlag = "-SegueWindowFrame"
         static let stageWindowedFlag = "-SegueStageWindowed"
         static let fixedClockFlag = "-SegueFixedClock"
         static let scriptedAIFlag = "-SegueScriptedAI"
+        static let guideFixturesFlag = "-SegueGuideFixtures"
+        static let clockRateFlag = "-SegueClockRate"
 
         /// Every flag takes one value: the last value given for each known flag.
         static func flagValues(_ arguments: [String]) -> [String: String] {
@@ -48,6 +56,13 @@
             stageWindowed = values[Self.stageWindowedFlag].map(Self.isTruthy) ?? false
             fixedClock = values[Self.fixedClockFlag].flatMap { try? Date($0, strategy: .iso8601) }
             scriptedAI = Self.path(values[Self.scriptedAIFlag], directoryHint: .isDirectory)
+            guideFixtures = values[Self.guideFixturesFlag].map(Self.isTruthy) ?? false
+            clockRate = values[Self.clockRateFlag].flatMap(Double.init)
+                .flatMap { $0 > 0 ? $0 : nil }
+            if guideFixtures {
+                scriptedAI = scriptedAI ?? GuideFixtures.aiFolder
+                importPanelPaths = importPanelPaths ?? GuideFixtures.importURLs
+            }
         }
 
         /// "x,y,w,h" in points; nil unless four numbers with a positive size.

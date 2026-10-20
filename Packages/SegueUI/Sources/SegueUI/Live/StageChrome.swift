@@ -267,6 +267,7 @@
                 } else {
                     Text(summary)
                         .foregroundStyle(Theme.color.muted)
+                        .accessibilityIdentifier(AccessibilityID.liveStatus)
                 }
             }
             .font(Theme.font.label)

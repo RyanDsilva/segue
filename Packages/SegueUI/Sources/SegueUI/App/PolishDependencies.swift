@@ -94,6 +94,9 @@
         public var lastSeenVersion: String?
         /// What's New may show in a test run only when a test sets it up.
         public var allowsWhatsNew = false
+        /// Seed manifest folders seeded after the Welcome library, in order (Debug captures:
+        /// WS5's screenshot-only songs and setlist).
+        public var extraSeedFolders: [URL] = []
 
         public init(
             isTestRun: Bool = false,
@@ -105,6 +108,7 @@
             completedGigs: Int? = nil,
             lastSeenVersion: String? = nil,
             allowsWhatsNew: Bool = false,
+            extraSeedFolders: [URL] = [],
         ) {
             self.isTestRun = isTestRun
             self.onboarding = onboarding
@@ -115,6 +119,7 @@
             self.completedGigs = completedGigs
             self.lastSeenVersion = lastSeenVersion
             self.allowsWhatsNew = allowsWhatsNew
+            self.extraSeedFolders = extraSeedFolders
         }
     }
 

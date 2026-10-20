@@ -233,10 +233,18 @@
         }
 
         /// `-SegueSeedWelcome YES`: seed once the library is open, before the first frame
-        /// settles. Never wipes anything.
+        /// settles, then any extra seed folders of the launch. Never wipes anything.
         func seedWelcomeForLaunchIfAsked() async {
-            guard polish.launch.seedWelcome, session != nil else { return }
+            guard polish.launch.seedWelcome, let session else { return }
             await seedWelcomeLibrary()
+            for folder in polish.launch.extraSeedFolders {
+                do {
+                    _ = try await session.seed(fromManifestFolder: folder)
+                } catch {
+                    onboarding.seedState = .failed(UserMessage.describe(error))
+                    return
+                }
+            }
             onboarding.seedState = .idle
         }
     }

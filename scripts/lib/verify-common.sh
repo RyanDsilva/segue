@@ -15,8 +15,9 @@ perf_strings=('slow key' 'slow keystroke' 'slow run loop turn')
 
 # Test-only hooks that must never ship (WS1 4.8f, B-7): every launch-option flag in
 # App/Sources/LaunchOptions*.swift (extracted from the source, so new flags are covered
-# automatically), the UI-testing flag, and the recording Shortcut runner. WS5 adds its own
-# flag strings here only if they are not already LaunchOptions keys.
+# automatically), the UI-testing flag, the recording Shortcut runner, and one of the Debug-only
+# screenshot songs (App/Sources/Debug/ScreenshotSongs.swift, WS5 8.4.1), so they never ship.
+# WS5 adds its own flag strings here only if they are not already LaunchOptions keys.
 test_hook_strings() {
     local flags
     flags=$(grep -h -o -E '"-Segue[A-Za-z]+"' App/Sources/LaunchOptions*.swift | tr -d '"' | sort -u) || true
@@ -24,7 +25,7 @@ test_hook_strings() {
         echo "error: no launch-option flags found in App/Sources/LaunchOptions*.swift" >&2
         return 1
     fi
-    printf '%s\n' "$flags" "-SegueUITesting" "RecordingShortcutRunner"
+    printf '%s\n' "$flags" "-SegueUITesting" "RecordingShortcutRunner" "Lanterns on Pier Nine"
 }
 
 # app_entitlements: the app's own entitlements as sorted JSON, the same in both flavors'

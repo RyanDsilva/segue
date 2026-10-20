@@ -12,6 +12,8 @@ public extension AccessibilityID {
     static let liveScrollStatus = "segue.live.scrollStatus"
     static let liveRequestCount = "segue.live.requestCount"
     static let liveNotice = "segue.live.notice"
+    /// The status line (position and keys) that fades in on mouse move.
+    static let liveStatus = "segue.live.status"
     static let liveProblem = "segue.live.problem"
     static let liveSongUnavailable = "segue.live.songUnavailable"
     static let liveIndicator = "segue.live.indicator"

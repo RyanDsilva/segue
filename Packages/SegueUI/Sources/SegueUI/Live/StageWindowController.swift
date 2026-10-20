@@ -54,7 +54,9 @@
             let windowed = windowedFrame.map { Self.appKitFrame($0, on: screen) }
             let window = StageWindow(
                 contentRect: windowed ?? screen.frame,
-                styleMask: windowed == nil ? [.borderless] : [.titled],
+                // Captures (`windowedFrame`) use the same borderless window at a fixed frame:
+                // no title bar or rounded corners, so a capture shows exactly the stage.
+                styleMask: [.borderless],
                 backing: .buffered,
                 defer: false,
             )
@@ -170,12 +172,15 @@
     }
 
     extension StageWindowController {
-        /// `rect` (top-left origin on the main screen) in AppKit's bottom-left screen space.
+        /// `rect` (top-left origin at the main screen's visible area) in AppKit's bottom-left
+        /// screen space.
         static func appKitFrame(_ rect: CGRect, on screen: NSScreen) -> CGRect {
-            let height = NSScreen.screens.first?.frame.height ?? screen.frame.height
+            // The main screen's visible area, like the main window's `-SegueWindowFrame`, so
+            // the two windows line up and neither sits under the menu bar or the Dock.
+            let visible = NSScreen.screens.first?.visibleFrame ?? screen.visibleFrame
             return CGRect(
-                x: rect.minX,
-                y: height - rect.minY - rect.height,
+                x: visible.minX + rect.minX,
+                y: visible.maxY - rect.minY - rect.height,
                 width: rect.width,
                 height: rect.height,
             )
