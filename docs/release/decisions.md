@@ -231,3 +231,7 @@ AI accuracy follow-up (Ryan, 2026-10-19, after reconciling eval-ai with the bake
 
 - R124. The lyric guard stays strict. The lost "other" labels are recovered in the converter instead: chord-site menu and settings text ("Transpose", "Display Settings" and similar) becomes junk deterministically. Also fix the guard defect where adjacent inline-chord blocks regroup and the whole song's labels are thrown away (drop only the offending labels).
 - R125. Qwen3-4B stays the optional download (R119 stands): in the shipped app it scores 90.1% vs Apple FM 89.7% on the 51 pastes, about 2.5x faster, and with no Hindi refusals.
+
+User guide (Ryan, 2026-10-19):
+
+- R126. A user guide with screenshots ships with 0.5 at `segue.ryandsilva.dev/guide` (same site and deploy; it replaces `/help`, which redirects to it), built with Astro Starlight (free, open source; Node/bun toolchain pinned via mise for the docs only). Screenshots are generated from the real app by a scripted capture (`make docs-shots`, Welcome library, light and dark) so they never go stale; a few short silent how-to clips (paste a song, build a set, go on stage); in-app Help buttons and tips open the matching guide page. Spec: docs/release/specs/WS6-user-guide.md.
