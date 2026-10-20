@@ -375,6 +375,106 @@
   "key": "Bb",
   "keyStated": true
  },
+ "E24-capo-sounding-key": {
+  "labels": [
+   "other",
+   "other",
+   "verse",
+   "chorus",
+   "verse"
+  ],
+  "title": "Cinder Lane",
+  "artist": "Mabel Orrin",
+  "key": "G",
+  "keyStated": true
+ },
+ "E25-repeat-named-blocks": {
+  "labels": [
+   "intro",
+   "verse",
+   "prechorus",
+   "chorus",
+   "prechorus",
+   "chorus",
+   [
+    "intro",
+    "outro"
+   ]
+  ],
+  "title": null,
+  "artist": null,
+  "key": "G",
+  "keyStated": false
+ },
+ "E26-continuation-fragments": {
+  "labels": [
+   "other",
+   "verse",
+   "verse",
+   "chorus",
+   "chorus",
+   [
+    "verse",
+    "outro"
+   ]
+  ],
+  "title": "Copper Wire",
+  "artist": "The Night Ferries",
+  "key": "Am",
+  "keyStated": false
+ },
+ "E27-legend-tuning-no-title": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "other"
+  ],
+  "title": null,
+  "artist": null,
+  "key": "G",
+  "keyStated": false
+ },
+ "E28-inline-brackets-no-directives": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "verse",
+   "chorus"
+  ],
+  "title": "Lantern Road",
+  "artist": null,
+  "key": "G",
+  "keyStated": false
+ },
+ "E29-site-heading-junk": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus"
+  ],
+  "title": "Harbor Lights",
+  "artist": "Mabel Orrin",
+  "key": "G",
+  "keyStated": false
+ },
+ "E30-strumming-widget": {
+  "labels": [
+   "other",
+   "other",
+   "other",
+   "verse",
+   "chorus"
+  ],
+  "title": "Cinder Bells",
+  "artist": "Ada Lund",
+  "key": [
+   "Am",
+   "C"
+  ],
+  "keyStated": false
+ },
  "H01-ug-hinglish": {
   "labels": [
    "other",
@@ -527,6 +627,25 @@
   "title": "Chandni Raat",
   "artist": "Sufi Lanterns",
   "key": "G",
+  "keyStated": false
+ },
+ "H11-paren-chords": {
+  "labels": [
+   "other",
+   "intro",
+   "verse",
+   "chorus",
+   [
+    "other",
+    "instrumental"
+   ]
+  ],
+  "title": "Chaand Ki Baatein",
+  "artist": null,
+  "key": [
+   "D#",
+   "Eb"
+  ],
   "keyStated": false
  }
 }

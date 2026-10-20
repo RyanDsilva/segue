@@ -1,7 +1,9 @@
 import Foundation
 
 /// Section header recognition: `[Verse 1]`, `Chorus:`, `Chorus: (x2)`, `(Chorus)`, `V1`, `CH x2`,
-/// `Mukhda:` (chorus hint), `Antara 2:` (verse hint), `Intro: C G Am F`.
+/// `Mukhda:` (chorus hint), `Antara 2:` (verse hint), `Intro: C G Am F`, `[Chorus] (play loud)`,
+/// and any bracketed name (`[Harmonies]`: the header text stays the label, the kind is left to
+/// the model).
 enum HeaderParser {
     static func parse(_ line: String) -> HeaderInfo? {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
@@ -72,11 +74,18 @@ enum HeaderParser {
         if rest.isEmpty {
             return HeaderInfo(text: name, label: found)
         }
-        if ChordLines.isRepeatMark(rest) {
+        // A repeat mark or a performance note in parentheses stays in the label
+        // (`[Chorus] (play loud)` -> `Chorus (play loud)`).
+        if ChordLines.isRepeatMark(rest) || rest.wholeMatch(of: /\([^()]{1,40}\)/) != nil {
             return HeaderInfo(text: "\(name) \(rest)", label: found)
         }
         if ChordLines.isChordLine(rest) {
             return HeaderInfo(text: name, label: found, trailingChords: rest)
+        }
+        // Chords written inline after the header (`Music: [D#] [G#]`).
+        if ChordLines.hasInlineChords(rest), Segmenter.lyricKey(rest).isEmpty {
+            let chords = rest.replacing(/\[([^\[\]]+)\]/) { String($0.output.1) }
+            return HeaderInfo(text: name, label: found, trailingChords: chords)
         }
         return nil
     }
@@ -124,7 +133,10 @@ enum HeaderParser {
         "chorus": .chorus, "refrain": .chorus, "hook": .chorus, "mukhda": .chorus,
         "bridge": .bridge, "sanchari": .bridge,
         "solo": .instrumental, "instrumental": .instrumental, "interlude": .instrumental,
-        "riff": .instrumental, "break": .instrumental,
+        "riff": .instrumental, "break": .instrumental, "link": .instrumental,
+        // Film-song sheets mark an instrumental passage `Music: (D#) (G#)`.
+        "music": .instrumental,
+        "turnaround": .instrumental,
         "outro": .outro, "ending": .outro, "coda": .outro,
     ]
 }

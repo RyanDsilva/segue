@@ -21,6 +21,9 @@ public enum TextFormat: String, Sendable, Equatable, Hashable {
     case bareLyrics
     /// Chords over lyrics together with inline ChordPro, or ChordPro with plain headers.
     case mixed
+    /// Lyrics with inline `[chords]` and no ChordPro directives (chord-site copies): segmented
+    /// and labelled like any paste, never passed through as finished ChordPro.
+    case inlineChords
 }
 
 /// What one normalized line is.
@@ -158,6 +161,11 @@ public enum LabelSource: String, Sendable, Equatable, Hashable {
     case placeholder
     /// The block's content named it: a guitar tab staff with no header is instrumental.
     case content
+    /// Repetition named it (R101): an unheaded block repeating a named block takes its label;
+    /// two unnamed blocks with the same lyrics are choruses.
+    case repetition
+    /// It continues the named section right before it (a blank line inside a section).
+    case continuation
     /// A refinement (model) named it.
     case refined
     /// Not a song section (metadata or passthrough blocks).

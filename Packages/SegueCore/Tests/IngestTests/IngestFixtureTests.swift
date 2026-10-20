@@ -62,6 +62,20 @@ struct IngestFixtureTests {
         #expect(Set(gold.keys) == Set(Self.fixtures.map(PasteFixtures.stem)))
     }
 
+    /// R101 pins: with a capo, `{key}` is the shapes key (a stated sounding key is lowered by
+    /// the capo when the chords fit that better), and tuning and strumming lines become
+    /// `{comment}` lines.
+    @Test
+    func `capo writes the shapes key and unknown lines become comments`() throws {
+        let result = try PasteFixtures.ingest("E24-capo-sounding-key.txt")
+        #expect(result.text
+            .hasPrefix("{title: Cinder Lane}\n{artist: Mabel Orrin}\n{key: G}\n{capo: 2}\n"))
+        #expect(result.text.contains("{comment: Tuning: Standard}"))
+        #expect(result.text.contains("{comment: Strumming: D D U U D U}"))
+        let shapes = try PasteFixtures.ingest("E05-colon-headers-repeats.txt")
+        #expect(shapes.text.contains("{key: C}\n{capo: 2}"))
+    }
+
     /// The refinement seam: labels and metadata by index re-render without touching lyrics.
     @Test
     func `reassembling with refined labels keeps every lyric`() throws {
@@ -91,6 +105,8 @@ struct IngestFixtureTests {
         }
         print(score.report)
         #expect(score.headedCorrect == score.headed)
+        // R101's repetition rule took the gold set from 92% to 99% (P3-2 step 0).
+        #expect(score.correct * 100 >= score.total * 98, "\(score.report)")
     }
 }
 
@@ -100,7 +116,6 @@ struct LabelScore {
     var correct = 0
     var headed = 0
     var headedCorrect = 0
-    var repetitionCorrect = 0
     var titles = 0
     var titlesCorrect = 0
     var artists = 0
@@ -112,9 +127,6 @@ struct LabelScore {
             total += 1
             if accepted.contains(label) {
                 correct += 1
-            }
-            if accepted.contains(Self.repetitionLabel(block, in: result)) {
-                repetitionCorrect += 1
             }
             if block.labelSource == .header {
                 headed += 1
@@ -136,27 +148,17 @@ struct LabelScore {
         headed \(headedCorrect)/\(headed) (\(percent(headedCorrect, headed))), \
         unheaded \(correct - headedCorrect)/\(total - headed) \
         (\(percent(correct - headedCorrect, total - headed))). \
-        With "repeat of an earlier block = chorus": \(repetitionCorrect)/\(total) \
-        (\(percent(repetitionCorrect, total))). \
         Title \(titlesCorrect)/\(titles), artist \(artistsCorrect)/\(artists).
         """
     }
 
-    /// What the deterministic result renders: the header's label, `other` for metadata
-    /// blocks, `verse` for unlabelled placeholders.
+    /// What the deterministic result renders: the header's (or the R101 repetition rule's)
+    /// label, `other` for metadata blocks, `verse` for unlabelled placeholders.
     static func deterministicLabel(_ block: IngestBlock) -> String {
         switch block.role {
         case .metadata, .passthrough: "other"
         case .content: (block.label ?? .verse).rawValue
         }
-    }
-
-    /// Measured alternative (not rendered): an unheaded block whose lyrics repeat an earlier
-    /// block, and the block it repeats, are choruses.
-    static func repetitionLabel(_ block: IngestBlock, in result: IngestResult) -> String {
-        guard block.isUnlabelled else { return deterministicLabel(block) }
-        let repeated = result.blocks.contains { $0.hints.sameLyricsAs == block.index }
-        return block.hints.sameLyricsAs != nil || repeated ? "chorus" : "verse"
     }
 
     static func norm(_ text: String?) -> String? {

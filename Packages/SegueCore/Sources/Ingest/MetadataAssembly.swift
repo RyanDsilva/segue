@@ -35,7 +35,10 @@ enum MetadataAssembly {
                 guard isTitleBlock, line.lineClass == .unknown else { continue }
                 var fields = MetadataExtractor.titleFields(line.text, isFirst: !seenText) ?? []
                 if fields.isEmpty, previousWasTitle, collector.metadata.artists.isEmpty,
-                   MetadataExtractor.isNameLike(line.text)
+                   MetadataExtractor.isNameLike(line.text),
+                   // The title again (often in capitals) is not the artist.
+                   line.text.trimmingCharacters(in: .whitespaces).lowercased()
+                   != collector.metadata.title?.lowercased()
                 {
                     fields = [.artist(line.text.trimmingCharacters(in: .whitespaces))]
                 }

@@ -6,7 +6,8 @@ import MusicTheory
 /// key inference. Pure and deterministic: the same text always gives the same result.
 public enum IngestPipeline {
     public static func ingest(_ text: String, origin: IngestOrigin) -> IngestResult {
-        let normalized = Normalizer.normalize(text)
+        var normalized = Normalizer.normalize(text)
+        normalized.lines = ChordLines.bracketParenthesisedChords(normalized.lines)
         let classes = FormatDetector.classify(normalized.lines)
         let format = FormatDetector.format(lines: normalized.lines, classes: classes)
         var lines = zip(normalized.lines, classes).enumerated().map { index, pair in
@@ -27,6 +28,7 @@ public enum IngestPipeline {
             blocks[index].labelSource = .content
         }
         assignRoles(&blocks)
+        labelRepeats(&blocks)
         let extraction = MetadataAssembly.extract(&blocks)
         for block in blocks {
             for line in block.lines {
@@ -82,11 +84,19 @@ public enum IngestPipeline {
         return result
     }
 
+    /// Whether `text` could be a song title or artist (not chords, a chord legend, a tuning,
+    /// tab or a capo note). Model answers are checked with it too (P3-2).
+    public static func isPlausibleName(_ text: String) -> Bool {
+        MetadataExtractor.isPlausibleName(text)
+    }
+
     // MARK: - Blocks
 
     private static func makeBlocks(_ lines: [IngestLine]) -> [IngestBlock] {
         Segmenter.groups(lines).enumerated().map { index, group in
             let header = group[0].lineClass == .headerLine ? HeaderParser.parse(group[0].text) : nil
+            // A header whose name is not in the vocabulary (`[Harmonies]`) keeps its text as
+            // the section label; its kind is left to the model.
             let label = header?.label
             return IngestBlock(
                 index: index,
@@ -107,6 +117,15 @@ public enum IngestPipeline {
             setRole(.passthrough, of: &blocks[index])
         }
         for index in blocks.indices where blocks[index].role == .content
+            && (isChordLegend(blocks[index]) || isTempoWidget(blocks[index]))
+        {
+            let widget = isTempoWidget(blocks[index])
+            setRole(.metadata, of: &blocks[index])
+            if widget {
+                blocks[index].lines[1].lineClass = .unknown
+            }
+        }
+        for index in blocks.indices where blocks[index].role == .content
             && blocks[index].lines.allSatisfy({ $0.lineClass == .metadata })
         {
             setRole(.metadata, of: &blocks[index])
@@ -125,6 +144,83 @@ public enum IngestPipeline {
         {
             setRole(.metadata, of: &blocks[0])
         }
+    }
+
+    /// R101 plus P3-A's real-paste eval (docs/research/phase3-eval-real-pastes.md):
+    ///
+    /// 1. Repeats: an unheaded block whose lyrics repeat another block takes that block's
+    ///    label when code knows it (a repeated intro stays an intro); when neither block is
+    ///    named, both are choruses.
+    /// 2. Continuation: an unheaded block with no repeat, chords-only or tab hint directly after
+    ///    a lyric section its header named continues that section (a blank line inside a
+    ///    section). Repeat-labelled blocks do not start a continuation: the next unheaded
+    ///    block after a repeated chorus is usually a new verse.
+    private static func labelRepeats(_ blocks: inout [IngestBlock]) {
+        var partners: [Int: [Int]] = [:]
+        for block in blocks where block.role == .content {
+            if let earlier = block.hints.sameLyricsAs, blocks.indices.contains(earlier),
+               blocks[earlier].role == .content
+            {
+                partners[block.index, default: []].append(earlier)
+                partners[earlier, default: []].append(block.index)
+            }
+        }
+        let known = blocks.map { $0.isUnlabelled ? nil : $0.label }
+        let continued = continuations(blocks, partners: partners)
+        for index in blocks.indices where blocks[index].isUnlabelled {
+            guard let others = partners[index] else { continue }
+            blocks[index].label = others.lazy.compactMap { known[$0] }.first ?? .chorus
+            blocks[index].labelSource = .repetition
+        }
+        for index in blocks.indices where blocks[index].isUnlabelled {
+            guard let label = continued[index] else { continue }
+            blocks[index].label = label
+            blocks[index].labelSource = .continuation
+        }
+    }
+
+    /// The label each unheaded block would continue: the last header-named lyric section
+    /// before it, through a run of unheaded blocks with no chords-only or tab hint. A block
+    /// that repeats another ends the run after itself; a block with a header of its own (an
+    /// unknown name such as `[Harmonies]`) is a new section and ends it.
+    private static func continuations(
+        _ blocks: [IngestBlock],
+        partners: [Int: [Int]],
+    ) -> [Int: SectionLabel] {
+        var result: [Int: SectionLabel] = [:]
+        var carry: SectionLabel?
+        for block in blocks {
+            let isLyricSection = block.role == .content && !block.hints.chordsOnly
+                && !block.hints.guitarTab
+            if isLyricSection, block.labelSource == .header, let label = block.label {
+                carry = label
+            } else if isLyricSection, block.isUnlabelled, block.header == nil, let label = carry {
+                result[block.index] = label
+                if partners[block.index] != nil {
+                    carry = nil
+                }
+            } else {
+                carry = nil
+            }
+        }
+        return result
+    }
+
+    /// A chord site's strumming widget: a short label over a bare tempo (`Verse` / `88 bpm`,
+    /// `Song` / `104 bpm`). Not a section, and its tempo is not the song's.
+    private static func isTempoWidget(_ block: IngestBlock) -> Bool {
+        guard block.lines.count == 2 else { return false }
+        let label = block.lines[0].text.trimmingCharacters(in: .whitespaces)
+        let tempo = block.lines[1].text.trimmingCharacters(in: .whitespaces)
+        return label.split(separator: " ").count <= 3 && !label.contains(":")
+            && tempo.wholeMatch(of: /(?i)\d{2,3}\s*bpm/) != nil
+    }
+
+    /// A block that is a header over chord-shape legend lines only (`[Coda]` then
+    /// `G 3-5-5-4-3-3`) is a note, not a section.
+    private static func isChordLegend(_ block: IngestBlock) -> Bool {
+        let body = block.lines.filter { $0.lineClass != .headerLine }
+        return !body.isEmpty && body.allSatisfy { ChordLines.isChordLegend($0.text) }
     }
 
     private static func setRole(_ role: BlockRole, of block: inout IngestBlock) {

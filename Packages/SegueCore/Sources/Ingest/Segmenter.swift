@@ -57,8 +57,12 @@ enum Segmenter {
             } else {
                 hints.noChords = sheetHasChords && !hasChords(block)
             }
-            let keys = Set(body.filter { $0.lineClass == .lyricLine }.map { lyricKey($0.text) }
+            var keys = Set(body.filter { $0.lineClass == .lyricLine }.map { lyricKey($0.text) }
                 .filter { $0.count > 3 })
+            // A one- or two-word line ("Music:", "Ooh") repeating is not a repeated section.
+            if keys.reduce(0, { $0 + $1.split(separator: " ").count }) < 3 {
+                keys = []
+            }
             if !hints.guitarTab, !hints.chordsOnly, !keys.isEmpty {
                 hints.sameLyricsAs = lyricSets.indices.first { earlier in
                     let other = lyricSets[earlier]

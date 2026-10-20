@@ -84,7 +84,8 @@ enum ChordLines {
                     usesStopWord = true
                 }
             case .unknown:
-                if StopList.contains(token.text) {
+                // `Original Chords - D#, Cm, G#` lists the chords; it is not a chord line.
+                if StopList.contains(token.text) || token.text.lowercased().contains("chord") {
                     return false
                 }
                 unknown += 1
@@ -110,6 +111,48 @@ enum ChordLines {
         guard trimmed.filter({ $0 == "-" }).count >= 4 else { return false }
         return trimmed.wholeMatch(of: /(?:[A-Ga-g][#b]?\s?)?[|:][-0-9|hpbrsxX\/\\~()*.^= \t]+/)
             != nil
+    }
+
+    /// Chord-site sheets that write inline chords in parentheses (`(D#)Talwaron pe`, `Jo
+    /// (Cm)tere`) get them as `[D#]` brackets, so they parse as inline ChordPro. Only when at
+    /// least two lines carry a parenthesised chord that is not a stop word (`(Am)` alone could
+    /// be a lyric); then every parenthesised chord on those lines is converted. Section headers
+    /// such as `(Chorus)` are not chords and stay.
+    static func bracketParenthesisedChords(_ lines: [String]) -> [String] {
+        let pattern = /\(([A-G][^()\s]{0,9})\)/
+        func chordGroups(_ line: String) -> [String] {
+            line.matches(of: pattern).map { String($0.output.1) }.filter(isChord)
+        }
+        let carrying = lines.filter { line in
+            chordGroups(line).contains { !StopList.contains($0) }
+        }
+        guard carrying.count >= 2 else { return lines }
+        return lines.map { line in
+            guard !chordGroups(line).isEmpty, !isRepeatMark(line) else { return line }
+            return line.replacing(pattern) { match in
+                isChord(String(match.output.1)) ? "[\(match.output.1)]" : String(match.output.0)
+            }
+        }
+    }
+
+    /// A chord-shape legend line: a chord name, then its frets, then any note (`G 3-5-5-4-3-3`,
+    /// `C: x32010`, `Em 0-2-2-0-3(3) (= Em7)`).
+    static func isChordLegend(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard let match = trimmed.wholeMatch(
+            of: /(\S+?):?\s+(?:[xX0-9]{4,6}|[xX0-9]{1,2}(?:[-\s][xX0-9]{1,2}){3,5})(?:\(\d{1,2}\))?(?:\s.*)?/,
+        ) else { return false }
+        return isChord(String(match.output.1))
+    }
+
+    /// A tuning line: string names joined by dashes or spaces (`E-A-D-G-B-e`, `D A D G A D`,
+    /// `Eb-Ab-Db-Gb-Bb-Eb`), optionally after `Tuning:`.
+    static func isTuningLine(_ line: String) -> Bool {
+        var trimmed = line.trimmingCharacters(in: .whitespaces)
+        if let match = trimmed.wholeMatch(of: /(?i)tuning\s*:?\s*(.*)/) {
+            trimmed = String(match.output.1)
+        }
+        return trimmed.wholeMatch(of: /[A-Ga-g][#b]?(?:[-\s]+[A-Ga-g][#b]?){3,6}/) != nil
     }
 
     /// Lyric text with inline `[chords]` (at least one bracket holds a chord).

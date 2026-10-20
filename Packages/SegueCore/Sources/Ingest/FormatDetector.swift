@@ -27,6 +27,9 @@ public enum FormatDetector {
         if ChordLines.isTabLine(line) {
             return .tab
         }
+        if ChordLines.isChordLegend(line) {
+            return .unknown
+        }
         if HeaderParser.parse(line) != nil, !underChordLine || trimmed.hasPrefix("[") {
             return .headerLine
         }
@@ -57,6 +60,9 @@ public enum FormatDetector {
         }
         if chordLines > 0 {
             return inline > 0 || directives > 0 ? .mixed : .chordsOverLyrics
+        }
+        if directives == 0, inline > 0 {
+            return structural > 0 ? .mixed : .inlineChords
         }
         if inline > 0 || directives > 0 {
             return structural > 0 && !hasSectionDirectives(lines) ? .mixed : .chordPro
