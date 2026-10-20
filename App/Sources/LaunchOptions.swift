@@ -323,7 +323,8 @@ import VendorServices
         /// scene's default size. Relaunches without a reset keep them: that is the restore test.
         static func forgetWindowFrames(in defaults: UserDefaults = .standard) {
             for key in defaults.dictionaryRepresentation().keys
-            where key.hasPrefix("NSWindow Frame ") {
+                where key.hasPrefix("NSWindow Frame ")
+            {
                 defaults.removeObject(forKey: key)
             }
         }
