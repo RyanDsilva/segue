@@ -142,6 +142,46 @@ public final class PasteReviewItem: Identifiable {
         !aiLabelledBlocks.isEmpty || !aiFields.isEmpty
     }
 
+    /// The sections of `document` (the text as it is now) a model labelled, by their order
+    /// among the `{start_of_*}` sections. Empty when an edit changed the section count.
+    func aiSectionOrdinals(in document: SongDocument) -> Set<Int> {
+        let sources = proposal.sectionSources
+        let sections = document.blocks.count { block in
+            if case .section = block {
+                return true
+            }
+            return false
+        }
+        guard sections == sources.count else { return [] }
+        return Set(sources.indices.filter { sources[$0] == .refined })
+    }
+
+    /// Junk lines the converter dropped (struck through on the original side).
+    public var removedLines: Set<String> {
+        Set(base.diagnostics.compactMap { diagnostic in
+            if case let .removedLine(text, _) = diagnostic {
+                return text.trimmingCharacters(in: .whitespaces)
+            }
+            return nil
+        })
+    }
+
+    /// Lines code could not place, kept as notes (R101; flagged on both sides).
+    public var unknownLines: Set<String> {
+        Set(proposal.lines.filter { $0.lineClass == .unknown }
+            .map { $0.text.trimmingCharacters(in: .whitespaces) })
+    }
+
+    /// Chord tokens that do not parse (flagged in the footer).
+    public var badChords: [String] {
+        proposal.diagnostics.compactMap { diagnostic in
+            if case let .unparseableChord(token, _) = diagnostic {
+                return token
+            }
+            return nil
+        }
+    }
+
     /// The key heard in the chords, offered as a suggestion only (R101).
     public var suggestedKey: String? {
         let inference = proposal.keyInference

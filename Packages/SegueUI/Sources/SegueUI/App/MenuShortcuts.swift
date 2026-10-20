@@ -89,8 +89,15 @@
     public enum MenuShortcuts {
         /// App
         static let settings = MenuShortcut("Segue", "Settings…", ",", system: true)
-        // File
+        /// File
         static let newSong = MenuShortcut("File", "New Song", "n")
+        /// R75: ⌥⌘V (free: no menu uses it, and Segue has no Format menu for Paste Style).
+        static let newSongFromClipboard = MenuShortcut(
+            "File",
+            "New Song from Clipboard",
+            "v",
+            [.command, .option],
+        )
         static let importSongs = MenuShortcut("File", "Import Songs…", "i", [.command, .shift])
         static let showInFinder = MenuShortcut("File", "Show in Finder", "r", [.command, .option])
         static let moveToTrash = MenuShortcut("File", "Move to Trash", .delete)
@@ -118,7 +125,8 @@
 
         /// All of them, in menu order.
         public static let all: [MenuShortcut] = [
-            settings, newSong, importSongs, showInFinder, moveToTrash, close, save, undo, redo,
+            settings, newSong, newSongFromClipboard, importSongs, showInFinder, moveToTrash, close,
+            save, undo, redo,
             refresh, startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak, moveUp,
             moveDown, mainWindow, help, keyboardShortcuts,
         ]

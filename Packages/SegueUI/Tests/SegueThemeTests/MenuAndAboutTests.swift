@@ -23,6 +23,8 @@ struct MenuShortcutsTests {
         #expect(byTitle["Keyboard Shortcuts"]?.displayText == "⌘/")
         #expect(byTitle["Segue Library"]?.displayText == "⌘0")
         #expect(byTitle["Import Songs…"]?.displayText == "⇧⌘I")
+        // R75: ⌥⌘V, free of every other menu item (the clash test above).
+        #expect(byTitle["New Song from Clipboard"]?.displayText == "⌥⌘V")
         #expect(byTitle["Show in Finder"]?.displayText == "⌥⌘R")
         #expect(byTitle["Move to Trash"]?.displayText == "⌘⌫")
         // Set building (R84, R85).
@@ -44,7 +46,9 @@ struct MenuShortcutsTests {
         )
         let source = try files.map { try String(contentsOf: $0, encoding: .utf8) }.joined()
         let names = [
-            "newSong", "importSongs", "showInFinder", "moveToTrash", "close", "save", "refresh",
+            "newSong", "newSongFromClipboard", "importSongs", "showInFinder", "moveToTrash",
+            "close",
+            "save", "refresh",
             "startShow", "rehearse", "newSetlist", "pickSongs", "arrangeSet", "insertBreak",
             "moveUp", "moveDown", "mainWindow", "help", "keyboardShortcuts",
         ]

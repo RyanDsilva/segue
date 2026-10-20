@@ -179,6 +179,8 @@ final class SegueCoreUXE2ETests: XCTestCase {
         let paths = try XCTUnwrap(paths)
         XCTAssertTrue(element(app, CoreAXID.libraryEmpty).appears(timeout: 15))
         element(app, CoreAXID.newSong).click(in: app)
+        // New Song opens the paste flow (R83); Start blank is the empty song.
+        element(app, "segue.paste.startBlank").click(in: app)
         let editor = app.textViews[CoreAXID.editorText]
         XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)

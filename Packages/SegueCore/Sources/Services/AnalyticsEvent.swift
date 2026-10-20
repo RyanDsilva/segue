@@ -226,6 +226,8 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case undoInBuilder
     /// The song card's Time it timer was stopped into a length (R91).
     case timeIt
+    /// The stage metronome was switched on (R90, P3-14).
+    case metronome
 }
 
 public enum FeatureContext: String, Sendable, CaseIterable {

@@ -65,6 +65,8 @@ final class SegueEditorE2ETests: XCTestCase {
     @MainActor
     private func pillGestures(_ app: XCUIApplication) {
         element(app, EditorAXID.newSong).click(in: app)
+        // New Song opens the paste flow (R83); Start blank is the empty song.
+        element(app, "segue.paste.startBlank").click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
         XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)
@@ -110,6 +112,8 @@ final class SegueEditorE2ETests: XCTestCase {
     @MainActor
     private func nashvilleNumberEntry(_ app: XCUIApplication) {
         element(app, EditorAXID.newSong).click(in: app)
+        // New Song opens the paste flow (R83); Start blank is the empty song.
+        element(app, "segue.paste.startBlank").click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
         XCTAssertTrue(editor.appears(timeout: 10))
         XCTAssertTrue(wait { (editor.value as? String)?.isEmpty == true }, "not a new song")
@@ -139,6 +143,8 @@ final class SegueEditorE2ETests: XCTestCase {
     func testCloseAndQuitSaveWithoutAsking() throws {
         let app = try launch()
         element(app, EditorAXID.newSong).click(in: app)
+        // New Song opens the paste flow (R83); Start blank is the empty song.
+        element(app, "segue.paste.startBlank").click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
         XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)
@@ -160,6 +166,8 @@ final class SegueEditorE2ETests: XCTestCase {
     func testKeystrokeLatencyOn200LineSong() throws {
         let app = try launch()
         element(app, EditorAXID.newSong).click(in: app)
+        // New Song opens the paste flow (R83); Start blank is the empty song.
+        element(app, "segue.paste.startBlank").click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
         XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)
@@ -198,6 +206,8 @@ final class SegueEditorE2ETests: XCTestCase {
     func testDarkAppearance() throws {
         let app = try launch(extraArguments: ["-AppleInterfaceStyle", "Dark"])
         element(app, EditorAXID.newSong).click(in: app)
+        // New Song opens the paste flow (R83); Start blank is the empty song.
+        element(app, "segue.paste.startBlank").click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
         XCTAssertTrue(editor.appears(timeout: 10))
         editor.click(in: app)

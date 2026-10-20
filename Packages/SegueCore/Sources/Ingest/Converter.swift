@@ -90,7 +90,7 @@ enum Converter {
     }
 
     /// Splits a body into tab and non-tab runs (a section cannot nest a tab section).
-    private static func runs(_ body: [IngestLine]) -> [(isTab: Bool, lines: [IngestLine])] {
+    static func runs(_ body: [IngestLine]) -> [(isTab: Bool, lines: [IngestLine])] {
         let isTab: (IngestLine) -> Bool = { $0.lineClass == .tab }
         guard body.contains(where: isTab) else { return [(false, body)] }
         // Notes such as "Standard tuning" ride along with the tab.

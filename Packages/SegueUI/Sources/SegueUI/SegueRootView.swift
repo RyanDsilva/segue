@@ -176,6 +176,7 @@
                 }
             }
             .liveModePresentations(app)
+            .pasteReviewSheet(app: app, session: session)
             .reviewPromptTrigger(app)
             // Deletes, import and metadata edits undo through the window (Edit > Undo).
             .onAppear { session.undoManager = undoManager }

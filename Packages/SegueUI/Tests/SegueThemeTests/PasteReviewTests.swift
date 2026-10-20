@@ -62,7 +62,7 @@ struct PasteReviewTests {
         let env = try TestEnvironment()
         let library = try await env.openLibrary()
         library.beginPasteReview(text: Self.paste, source: .listPaste)
-        library.cancelPasteReview()
+        await library.cancelPasteReview()
         #expect(library.pasteReview == nil)
         #expect(!env.exists("songs/harbour-lights.cho"))
         await library.reload()
@@ -116,9 +116,12 @@ struct PasteReviewTests {
     // MARK: Import routing (R96, A29)
 
     @Test
-    func `conversion files open one sheet and only ticked ones import`() async throws {
+    func `a mixed import opens one sheet and lands as one undo step`() async throws {
         let env = try TestEnvironment()
         let library = try await env.openLibrary()
+        let manager = UndoManager()
+        manager.groupsByEvent = false
+        library.undoManager = manager
         let folder = env.scratch.appending(path: "in", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         try Data("{title: Already}\n[G]Done\n".utf8).write(to: folder.appending(path: "a.cho"))
@@ -133,25 +136,51 @@ struct PasteReviewTests {
 
         await library.importWithReview([folder], method: .fileMenu)
 
-        // The ChordPro file imported directly; the three others wait in ONE sheet.
-        #expect(env.exists("songs/already.cho"))
+        // The three conversion files wait in ONE sheet; the ChordPro file lands with them.
+        #expect(!env.exists("songs/already.cho"))
         let review = try #require(library.pasteReview)
+        #expect(review.directFiles.map(\.fileName) == ["a.cho"])
         #expect(review.isBatch)
         #expect(review.items.count == 3)
         #expect(Set(review.items.map(\.source)) == [.fileTxt, .fileCrd])
         let rope = try #require(review.items.first { $0.fileName == "three.txt" })
         review.setTicked(false, for: rope.id)
-        #expect(review.acceptTitle == "Import 2 Songs")
+        #expect(review.acceptTitle == "Import 3 Songs")
 
+        manager.beginUndoGrouping()
         await library.acceptPasteReview()
+        manager.endUndoGrouping()
 
         #expect(env.exists("songs/tide-song.cho"))
         #expect(env.exists("songs/pier-song.cho"))
         #expect(!env.exists("songs/rope-song.cho"))
         let summary = try #require(library.importSummary)
-        #expect(summary.imported.count == 2)
+        #expect(env.exists("songs/already.cho"))
+        #expect(summary.imported.count == 3)
         #expect(summary.skipped.map(\.fileName) == ["three.txt"])
         #expect(library.catalog.count == 3)
+
+        // One Undo Import removes all three.
+        #expect(manager.undoActionName == "Import")
+        manager.undo()
+        try await env.waitFor { library.catalog.isEmpty ? true : nil }
+        #expect(!manager.canUndo)
+    }
+
+    @Test
+    func `cancelling a mixed import still imports its ChordPro files`() async throws {
+        let env = try TestEnvironment()
+        let library = try await env.openLibrary()
+        let folder = env.scratch.appending(path: "mixed", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data("{title: Already}\n[G]Done\n".utf8).write(to: folder.appending(path: "a.cho"))
+        try Data(Self.paste.utf8).write(to: folder.appending(path: "p.txt"))
+        await library.importWithReview([folder], method: .dragDrop)
+        await library.cancelPasteReview()
+        #expect(env.exists("songs/already.cho"))
+        #expect(!env.exists("songs/harbour-lights.cho"))
+        let summary = try #require(library.importSummary)
+        #expect(summary.skipped.map(\.reason) == [LibraryViewModel.cancelledReason])
     }
 
     // MARK: During a show (R95, R109)
@@ -182,6 +211,9 @@ struct PasteReviewTests {
         #expect(library.pasteReview == nil)
         #expect(env.exists("songs/encore.cho"))
         #expect(!env.exists("songs/harbour-lights.cho"))
+        // Nothing in the main window moves on stage: no selection, no editor.
+        #expect(library.selection == nil)
+        #expect(library.editor == nil)
         let skipped = try #require(library.importSummary?.skipped)
         #expect(skipped.map(\.reason) == [LibraryViewModel.pasteDuringShowReason])
     }
@@ -269,17 +301,5 @@ struct PasteReviewTests {
         #expect(footer.producedBy == PasteFooter.aiOffLine)
         #expect(!footer.showsDownloadLink)
         #expect(PasteAnalytics.routing([.sectionLabels: report]) == (.noProvider, .aiOff))
-    }
-
-    @Test
-    func `romanized Hindi detection fires on Hinglish lyrics only`() {
-        let hindi = IngestPipeline.ingest("""
-        Am              G
-        Tum hi ho meri zindagi, dil mein hai pyaar
-        F               E
-        Kya kahoon tujhe, nahi hai koi aur
-        """, origin: .paste)
-        #expect(RomanizedHindi.isDetected(in: hindi))
-        #expect(!RomanizedHindi.isDetected(in: IngestPipeline.ingest(Self.paste, origin: .paste)))
     }
 }

@@ -117,6 +117,9 @@
                     model.multiSelection.keep(only: ids)
                 }
                 .accessibilityIdentifier(AccessibilityID.songList)
+                // ⌘V on the list (never a text field or the editor: they take Paste first)
+                // opens the review sheet on the clipboard (R75); off during a show (R109).
+                .onPasteCommand(of: [.plainText, .utf8PlainText]) { _ in pasteOnList() }
                 // File > Move to Trash and Show in Finder act on this only while the list
                 // itself has focus (never while typing in a field or the editor), so this is
                 // a focused value, not a scene value.
@@ -137,9 +140,11 @@
                         accessibilityIdentifier: AccessibilityID.librarySearch,
                     )
                     .popoverTip(SearchAnyLineTip())
-                    Button("New song") { model.beginNewSong() }
+                    Button("New song") { model.beginNewSongFlow() }
                         .buttonStyle(.seguePrimary)
-                        .help("New Song (⌘N)")
+                        .help(model.isPerforming ? "New Song: starts blank during a show (⌘N)"
+                            : "Paste or type a new song (⌘N)")
+                        .popoverTip(PasteSongTip())
                         .accessibilityIdentifier(AccessibilityID.newSong)
                 }
                 FilterChipsBar(state: $model.filterState, tags: model.tags)
@@ -147,6 +152,29 @@
             .padding(.horizontal, 16)
             .padding(.top, 14)
             .padding(.bottom, 12)
+        }
+
+        /// ⌘V on the song list: the review sheet on the clipboard; during a show, the reason.
+        private func pasteOnList() {
+            guard model.editor == nil else { return }
+            if let reason = model.pasteUnavailableReason {
+                model.flash(reason)
+                return
+            }
+            guard let text = AppModel.clipboardText(), !text.isEmpty else {
+                model.flash("The clipboard has no text to paste")
+                return
+            }
+            model.beginPasteReview(text: text, source: .listPaste)
+        }
+
+        /// The empty library's Paste a Song.
+        private func pasteFromEmptyState() {
+            guard let text = AppModel.clipboardText(), !text.isEmpty else {
+                model.beginNewSongFlow()
+                return
+            }
+            model.beginPasteReview(text: text, source: .emptyState)
         }
 
         @ViewBuilder private var loadIssuesFooter: some View {
@@ -194,14 +222,20 @@
                     ContentUnavailableView {
                         Label("No Songs Yet", systemImage: "music.note")
                     } description: {
-                        Text("Write your first song in ChordPro, or drop ChordPro files here.")
+                        Text("Paste a chord sheet, write a song, or drop song files here.")
                     } actions: {
                         HStack(spacing: 8) {
-                            Button("New Song") { model.beginNewSong() }
+                            Button("Paste a Song") { pasteFromEmptyState() }
+                                .buttonStyle(.segueSecondary)
+                                .disabled(!model.canPaste)
+                                .help(model.pasteUnavailableReason
+                                    ?? "Review the clipboard's chord sheet as a new song (⌥⌘V)")
+                                .accessibilityIdentifier(AccessibilityID.pasteFromEmptyLibrary)
+                            Button("New Song") { model.beginNewSongFlow() }
                                 .buttonStyle(.segueSecondary)
                             Button("Import Songs…") { Task { await session.chooseAndImport() } }
                                 .buttonStyle(.segueSecondary)
-                                .help("Import ChordPro or text files (⇧⌘I)")
+                                .help("Import ChordPro, text or .crd files (⇧⌘I)")
                                 .accessibilityIdentifier(AccessibilityID.importSongs)
                         }
                     }

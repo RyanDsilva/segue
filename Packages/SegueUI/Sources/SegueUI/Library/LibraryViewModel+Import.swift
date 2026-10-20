@@ -6,27 +6,21 @@ import Support
 // In-app import (WS2a 3.2, R15): File > Import Songs… and drag and drop on the library.
 
 public extension LibraryViewModel {
-    /// Whether import is possible now (a library is open and no show is on stage).
+    /// Whether import is possible now: always with a library open. During a show only
+    /// files that are already ChordPro import (R109); the rest wait for the review sheet,
+    /// which is off on stage.
     var canImport: Bool {
-        !isPerforming
+        true
     }
 
     /// Imports the files and folders at `urls` (read at once: drop and panel URLs carry a
-    /// sandbox extension only for now). Pending edits are saved first. The first imported
-    /// song is selected; the summary bar says what happened. Edit > Undo Import moves the
-    /// imported songs to the Trash; Redo puts them back.
+    /// sandbox extension only for now). Pending edits are saved first. Files that are
+    /// already ChordPro import directly; files that need conversion open the review sheet
+    /// (P3-4, R96). The first imported song is selected (never during a show); the summary
+    /// bar says what happened. Edit > Undo Import moves the imported songs to the Trash;
+    /// Redo puts them back.
     func importSongs(_ urls: [URL], method: ImportMethod = .dragDrop) async {
-        guard canImport, !urls.isEmpty else { return }
-        await flushEditor()
-        let summary: ImportSummary
-        do {
-            summary = try await store.importSongs(urls)
-        } catch {
-            errorMessage = UserMessage.describe(error)
-            services.record(.errorOccurred(.importFailed))
-            return
-        }
-        await finishImport(summary, files: urls.count, method: method)
+        await importWithReview(urls, method: method)
     }
 
     /// After an import wrote its songs: reload, the summary bar, analytics, the first song
@@ -44,11 +38,13 @@ public extension LibraryViewModel {
             importSummary = summary
         }
         guard let first = summary.imported.first else { return }
+        registerImportUndo(summary.imported.map(\.id))
+        // On stage nothing in the main window moves: no selection change, no editor closed.
+        guard !isPerforming else { return }
         navigate { [weak self] in
             self?.selection = first.id
             self?.detail = .song(first.id)
         }
-        registerImportUndo(summary.imported.map(\.id))
     }
 
     /// Hides the summary bar.

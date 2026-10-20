@@ -170,9 +170,11 @@
             }
         }
 
-        /// File > Import Songs…: the open panel (or the E2E stand-in), then the import.
+        /// File > Import Songs…: the open panel (or the E2E stand-in), then the import. During
+        /// a show only from the main window (the panel never takes the keyboard from the
+        /// stage), and only already-ChordPro files import (R109).
         public func importSongs() async {
-            guard let session, !isPerforming else { return }
+            guard let session, !isStageKey else { return }
             await session.chooseAndImport()
         }
 

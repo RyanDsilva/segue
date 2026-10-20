@@ -51,6 +51,7 @@
             session.setlists.daysSinceFirstLaunch = days
             session.gigLog.services = services
             session.smartFilters.services = services
+            session.library.aiRouter = ai.router
             TimeItModel.shared.services = services
             liveSettings.services = services
             let songs = session.library.catalog

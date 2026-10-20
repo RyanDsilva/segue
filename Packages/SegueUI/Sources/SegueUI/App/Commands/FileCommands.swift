@@ -3,7 +3,8 @@
     import Library
     import SwiftUI
 
-    /// File (WS2a 3.5.2): New Song, Import Songs…, Export Library Archive… (hidden until
+    /// File (WS2a 3.5.2, P3-4): New Song, New Song from Clipboard, Import Songs…, Export Library
+    /// Archive… (hidden until
     /// WS2b fills its hook), Show in Finder, Move to Trash, Close, Save. There is no New
     /// Window: the main window is a single `Window` reopened from the Window menu.
     struct FileCommands: Commands {
@@ -13,13 +14,18 @@
 
         var body: some Commands {
             CommandGroup(replacing: .newItem) {
-                Button(MenuShortcuts.newSong.title) { newSong() }
+                // During a show New Song goes straight to Start blank and Import takes only
+                // already-ChordPro files (R109); neither acts while the stage has the keyboard.
+                Button(MenuShortcuts.newSong.title) { app.newSong() }
                     .keyboardShortcut(MenuShortcuts.newSong)
-                    // Nothing in the main window may change while the stage is up.
+                    .disabled(app.session == nil)
+                Button(MenuShortcuts.newSongFromClipboard.title) { app.newSongFromClipboard() }
+                    .keyboardShortcut(MenuShortcuts.newSongFromClipboard)
                     .disabled(app.session == nil || app.isPerforming)
+                    .help(app.isPerforming ? LibraryViewModel.pasteDuringShowReason : "")
                 Button(MenuShortcuts.importSongs.title) { Task { await app.importSongs() } }
                     .keyboardShortcut(MenuShortcuts.importSongs)
-                    .disabled(app.session == nil || app.isPerforming)
+                    .disabled(app.session == nil)
                 if let export = app.dependencies.hooks.exportArchive {
                     Button("Export Library Archive…") { export(app.dependencies.workspace) }
                         .disabled(app.session == nil || app.isPerforming)
@@ -49,18 +55,6 @@
                 }
                 .keyboardShortcut(MenuShortcuts.save)
                 .disabled(app.session == nil || app.isPerforming)
-            }
-        }
-
-        private func newSong() {
-            guard let session = app.session else { return }
-            if session.section == .library {
-                session.library.beginNewSong()
-            } else {
-                session.library.navigate {
-                    session.section = .library
-                    session.library.beginNewSong()
-                }
             }
         }
 

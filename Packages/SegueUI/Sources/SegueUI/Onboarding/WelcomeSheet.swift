@@ -114,7 +114,7 @@
     }
 
     /// The grouped surface: `surfaceAlt`, radius 12.
-    private struct WelcomeGroup: ViewModifier {
+    struct WelcomeGroup: ViewModifier {
         var padding: CGFloat = 14
 
         func body(content: Content) -> some View {
@@ -231,6 +231,8 @@
                 WelcomeCards()
                     .padding(.top, 12)
                 if model.mode == .revisit {
+                    WelcomePasteCard(app: app)
+                        .padding(.top, 10)
                     revisitContent
                         .padding(.top, 20)
                 } else {

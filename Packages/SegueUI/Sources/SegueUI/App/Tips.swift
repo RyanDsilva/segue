@@ -35,6 +35,8 @@
         static let songViewed = Tips.Event(id: "songViewed")
         static let visualEditorOpened = Tips.Event(id: "visualEditorOpened")
         static let showStarted = Tips.Event(id: "showStarted")
+        /// A song reached the paste review sheet (P3-4).
+        static let pasteReviewed = Tips.Event(id: "pasteReviewed")
 
         @MainActor
         static func donate(_ event: Tips.Event<Tips.EmptyDonation>) {
@@ -112,6 +114,22 @@
                 #Rule(SegueTips.$librarySongCount) { $0 >= 5 },
                 #Rule(SegueTips.searched) { $0.donations.count == 0 },
             ]
+        }
+    }
+
+    /// Popover on the song list's New Song button (P3-4): New Song from Clipboard.
+    struct PasteSongTip: Tip {
+        var title: Text {
+            Text("Paste any chord sheet")
+        }
+
+        var message: Text? {
+            Text("Copy a song from a chord site or a note and press ⌥⌘V. Segue turns it into "
+                + "a song for you to check, right here on your Mac.")
+        }
+
+        var rules: [Tips.Rule] {
+            Self.globalRules + [#Rule(SegueTips.pasteReviewed) { $0.donations.count == 0 }]
         }
     }
 

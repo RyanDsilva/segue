@@ -188,6 +188,8 @@ final class SegueE2ETests: XCTestCase {
         -> XCUIElement
     {
         element(app, AXID.newSong).click(in: app)
+        // New Song opens the paste flow (R83); Start blank is the empty song.
+        element(app, "segue.paste.startBlank").click(in: app)
         let editor = app.textViews[AXID.editorText]
         XCTAssertTrue(editor.appears(timeout: 5))
         editor.click(in: app)

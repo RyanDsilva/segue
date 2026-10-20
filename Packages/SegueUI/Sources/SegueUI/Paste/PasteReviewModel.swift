@@ -32,6 +32,11 @@ public final class PasteReviewModel {
 
     /// How the files came in (nil for a paste): the import analytics row.
     public let importMethod: ImportMethod?
+    /// Files of the same import that are already ChordPro (A29): written with the reviewed
+    /// ones as ONE import (one undo step), also on Cancel.
+    public let directFiles: [ImportCandidate]
+    /// Files the import left out before review (not songs, duplicates, during a show).
+    public let preSkipped: [ImportSkip]
 
     @ObservationIgnored private let router: Router
     @ObservationIgnored private let services: ServicesHub
@@ -41,12 +46,16 @@ public final class PasteReviewModel {
     /// - Parameters:
     ///   - items: the songs to review (empty for the New Song input state).
     ///   - importMethod: how the files came in (nil for a paste).
+    ///   - directFiles: already-ChordPro files of the same import.
+    ///   - preSkipped: files the import left out before review.
     ///   - router: the AI router (`AIServices.router`).
     ///   - services: the analytics hub.
     ///   - commit: writes the accepted songs as one import; nil when it failed.
     init(
         items: [PasteReviewItem],
         importMethod: ImportMethod? = nil,
+        directFiles: [ImportCandidate] = [],
+        preSkipped: [ImportSkip] = [],
         router: Router,
         services: ServicesHub,
         commit: @escaping ([ImportCandidate]) async -> ImportSummary?,
@@ -55,6 +64,8 @@ public final class PasteReviewModel {
         self.items = items
         selectedID = items.first?.id
         self.importMethod = importMethod
+        self.directFiles = directFiles
+        self.preSkipped = preSkipped
         self.router = router
         self.services = services
         self.commit = commit
@@ -76,12 +87,13 @@ public final class PasteReviewModel {
 
     /// "Accept" for one song, "Import N Songs" for a batch.
     public var acceptTitle: String {
-        guard isBatch else { return "Accept" }
-        return tickedCount == 1 ? "Import 1 Song" : "Import \(tickedCount) Songs"
+        guard isBatch || !directFiles.isEmpty else { return "Accept" }
+        let count = tickedCount + directFiles.count
+        return count == 1 ? "Import 1 Song" : "Import \(count) Songs"
     }
 
     public var canAccept: Bool {
-        phase == .review && tickedCount > 0 && !isClosed
+        phase == .review && (tickedCount > 0 || !directFiles.isEmpty) && !isClosed
     }
 
     // MARK: Input state
@@ -107,16 +119,19 @@ public final class PasteReviewModel {
 
     // MARK: Accept / Cancel
 
-    /// Writes the ticked songs as one import (one undo step) and closes. Refinement stops
-    /// first; the songs are saved as shown. Returns the import summary (unticked files
-    /// listed as not imported), or nil when nothing was written.
+    /// Writes the ticked songs, with the import's already-ChordPro files, as one import (one
+    /// undo step) and closes. Refinement stops first; the songs are saved as shown. Returns
+    /// the import summary (unticked files listed as not imported), or nil when nothing was
+    /// written.
     @discardableResult
     public func accept() async -> ImportSummary? {
         guard canAccept else { return nil }
         stopAll()
         let ticked = items.filter(\.isTicked)
-        guard var summary = await commit(ticked.map(\.importCandidate)) else { return nil }
-        summary.skipped += items.filter { !$0.isTicked }.map {
+        guard var summary = await commit(directFiles + ticked.map(\.importCandidate)) else {
+            return nil
+        }
+        summary.skipped = preSkipped + summary.skipped + items.filter { !$0.isTicked }.map {
             ImportSkip(fileName: $0.fileName ?? "Pasted song", reason: Self.untickedReason)
         }
         for item in items {
@@ -126,7 +141,7 @@ public final class PasteReviewModel {
         return summary
     }
 
-    /// Writes nothing and closes.
+    /// Writes no reviewed song and closes (the host still writes `directFiles`).
     public func cancel() {
         guard !isClosed else { return }
         stopAll()

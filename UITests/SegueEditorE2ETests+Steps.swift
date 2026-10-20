@@ -8,6 +8,8 @@ extension SegueEditorE2ETests {
 
     func createSongWithAutocomplete(_ app: XCUIApplication) {
         element(app, EditorAXID.newSong).click(in: app)
+        // New Song opens the paste flow (R83); Start blank is the empty song.
+        element(app, "segue.paste.startBlank").click(in: app)
         let editor = app.textViews[EditorAXID.editorText]
         XCTAssertTrue(editor.appears(timeout: 10))
         XCTAssertTrue(element(app, EditorAXID.editorModeText).isSelected)

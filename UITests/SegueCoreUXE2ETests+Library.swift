@@ -168,6 +168,13 @@ extension SegueCoreUXE2ETests {
 
         app.typeKey("i", modifierFlags: [.command, .shift], in: app)
 
+        // The plain-text song needs converting: ONE review sheet, then everything imports
+        // together (P3-4, R96).
+        let accept = element(app, "segue.paste.accept")
+        XCTAssertTrue(accept.appears(timeout: 10), "No review sheet for the text file")
+        accept.click(in: app)
+        XCTAssertTrue(accept.disappears(timeout: 10))
+
         let summary = element(app, CoreAXID.importSummary)
         XCTAssertTrue(summary.appears(timeout: 10), "No import summary")
         XCTAssertTrue(wait {
@@ -188,7 +195,11 @@ extension SegueCoreUXE2ETests {
             XCTAssertTrue(exists(paths.song(slug)), slug)
             XCTAssertTrue(exists(paths.library.appending(path: "songs/\(slug).segue.json")), slug)
         }
-        XCTAssertEqual(read(paths.song("night-drive")), "Em        C\nHeadlights on the highway\n")
+        // Converted to ChordPro: the chords sit inline over their words.
+        XCTAssertTrue(
+            read(paths.song("night-drive")).contains("[Em]Headlights"),
+            read(paths.song("night-drive")),
+        )
 
         // Edit > Undo Import moves both to the Trash.
         row(app, "River Song").click(in: app)

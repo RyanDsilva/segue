@@ -3,7 +3,7 @@
     import Setlists
     import SwiftUI
 
-    /// The menu bar (WS2a 3.5): App, File, Library, Setlist and Help menus, each its own
+    /// The menu bar (WS2a 3.5): App, File, Library, Setlist, Live and Help menus, each its own
     /// `Commands` type. Key equivalents come from `MenuShortcuts`. Later workstreams fill
     /// `AppHooks` instead of editing these menus.
     public struct SegueCommands: Commands {
@@ -18,6 +18,7 @@
             FileCommands(app: app)
             LibraryCommands(app: app)
             SetlistCommands(app: app)
+            LiveCommands(app: app)
             WindowCommands()
             HelpCommands(app: app)
         }

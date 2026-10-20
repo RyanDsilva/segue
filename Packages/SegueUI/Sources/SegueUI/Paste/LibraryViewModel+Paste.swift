@@ -2,11 +2,12 @@ import Foundation
 import Ingest
 import Library
 import Services
+import TipKit
 
 // Routes into the paste review sheet (spec 6.1, R75, R83, R95/R109): New Song's input state,
 // a pasted song, and import files that need conversion. During a show every route into the
 // sheet is disabled (R109): New Song goes straight to Start blank, and only files that are
-// already ChordPro import.
+// already ChordPro import, without touching the stage or taking focus.
 
 public extension LibraryViewModel {
     /// Why paste is unavailable now (help text on disabled controls), or nil when it works.
@@ -40,11 +41,14 @@ public extension LibraryViewModel {
         }
         let item = PasteReviewItem(source: source, original: text, origin: .paste)
         pasteReview = makeReview(items: [item])
+        SegueTips.donate(SegueTips.pasteReviewed)
+        PasteSongTip().invalidate(reason: .actionPerformed)
     }
 
     /// "Start blank": closes the sheet (writing nothing) and opens the new-song editor with
     /// the song card focused on Title.
     func startBlank() {
+        // Start blank lives in the input state, which never holds import files.
         pasteReview?.cancel()
         pasteReview = nil
         beginNewSong()
@@ -59,7 +63,8 @@ public extension LibraryViewModel {
         guard let summary = await review.accept() else { return }
         pasteReview = nil
         if let method = review.importMethod {
-            await finishImport(summary, files: review.items.count, method: method)
+            let files = review.items.count + review.directFiles.count + review.preSkipped.count
+            await finishImport(summary, files: files, method: method)
         } else {
             await reload()
             if !summary.imported.isEmpty {
@@ -69,17 +74,33 @@ public extension LibraryViewModel {
         }
     }
 
-    /// Cancel: writes nothing and closes the sheet.
-    func cancelPasteReview() {
-        pasteReview?.cancel()
+    /// Cancel: writes no reviewed song and closes the sheet. The import's already-ChordPro
+    /// files still import (one undo step), as they would have without the sheet.
+    func cancelPasteReview() async {
+        guard let review = pasteReview else { return }
+        review.cancel()
         pasteReview = nil
+        guard let method = review.importMethod,
+              !review.directFiles.isEmpty || !review.preSkipped.isEmpty
+        else { return }
+        var summary = ImportSummary()
+        if !review.directFiles.isEmpty, let written = await writeReviewed(review.directFiles) {
+            summary = written
+        }
+        summary.skipped = review.preSkipped + summary.skipped + review.items.map {
+            ImportSkip(fileName: $0.fileName ?? "Pasted song", reason: Self.cancelledReason)
+        }
+        let files = review.items.count + review.directFiles.count + review.preSkipped.count
+        await finishImport(summary, files: files, method: method)
     }
+
+    static let cancelledReason = "Not imported (review cancelled)"
 
     /// Import with review (R96, A29, R109): files that are already ChordPro import directly
     /// (one undoable import); files that need conversion open ONE review sheet listing
     /// every one of them. During a show conversion files are left out with the reason.
     func importWithReview(_ urls: [URL], method: ImportMethod = .dragDrop) async {
-        guard canImport || isPerforming, !urls.isEmpty, pasteReview == nil else { return }
+        guard canImport, !urls.isEmpty, pasteReview == nil else { return }
         await flushEditor()
         let prepared: ([ImportCandidate], [ImportSkip])
         do {
@@ -112,28 +133,39 @@ public extension LibraryViewModel {
                 ))
             }
         }
-        var summary = ImportSummary(skipped: skipped)
-        if !direct.isEmpty {
-            do {
-                let written = try await store.commitImport(direct)
+        guard !review.isEmpty else {
+            // Nothing to review: the ChordPro files import at once (A29).
+            var summary = ImportSummary(skipped: skipped)
+            if !direct.isEmpty, let written = await writeReviewed(direct) {
                 summary.imported = written.imported
                 summary.converted = written.converted
                 summary.skipped += written.skipped
-            } catch {
-                errorMessage = UserMessage.describe(error)
             }
+            await finishImport(summary, files: urls.count, method: method)
+            return
         }
-        await finishImport(summary, files: urls.count, method: method)
-        guard !review.isEmpty else { return }
-        pasteReview = makeReview(items: review, method: method)
+        // Files to review: everything lands together at Accept (one undo step).
+        pasteReview = makeReview(
+            items: review,
+            method: method,
+            direct: direct,
+            skipped: skipped,
+        )
     }
 }
 
 extension LibraryViewModel {
-    func makeReview(items: [PasteReviewItem], method: ImportMethod? = nil) -> PasteReviewModel {
+    func makeReview(
+        items: [PasteReviewItem],
+        method: ImportMethod? = nil,
+        direct: [ImportCandidate] = [],
+        skipped: [ImportSkip] = [],
+    ) -> PasteReviewModel {
         PasteReviewModel(
             items: items,
             importMethod: method,
+            directFiles: direct,
+            preSkipped: skipped,
             router: aiRouter,
             services: services,
         ) { [weak self] candidates in
@@ -142,7 +174,7 @@ extension LibraryViewModel {
     }
 
     /// Writes reviewed songs (nil when the write failed; the error is shown).
-    private func writeReviewed(_ candidates: [ImportCandidate]) async -> ImportSummary? {
+    func writeReviewed(_ candidates: [ImportCandidate]) async -> ImportSummary? {
         do {
             return try await store.commitImport(candidates)
         } catch {
