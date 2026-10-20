@@ -41,13 +41,38 @@
             return RenderModel(document: song.document, options: applied, capo: capo)
         }
 
+        /// A slot's arrangement checked against its song as loaded (R122); nil for a slot
+        /// that plays the full song.
+        static func resolution(_ item: ShowItem, song: SongRecord) -> ArrangementResolution? {
+            item.arrangement.map {
+                ArrangementResolver.resolve($0, units: SongSections.units(of: song.document))
+            }
+        }
+
+        /// `model` with its sections in the arranged order (the up-next line reads the first
+        /// line actually played); the full song when there is no applicable arrangement.
+        static func arranged(_ model: RenderModel, _ resolution: ArrangementResolution?)
+            -> RenderModel
+        {
+            guard case let .applied(order, _) = resolution else { return model }
+            var arranged = model
+            arranged.sections = ArrangedSections.build(model.sections, order: order).map(\.section)
+            return arranged
+        }
+
         /// Recomputes the plan (and, for a new item, the scroller) from the current state.
         func relayout() {
             upNextModel = upNextSlot.flatMap { slot in
-                slot.song.map { Self.renderModel($0, overrides: slot.item.overrides) }
+                slot.song.map { song in
+                    Self.arranged(
+                        Self.renderModel(song, overrides: slot.item.overrides),
+                        Self.resolution(slot.item, song: song),
+                    )
+                }
             }
             guard let slot = state.current, let song = slot.song else {
                 currentModel = nil
+                currentArrangement = nil
                 plan = nil
                 scroller = nil
                 laidOutItem = nil
@@ -55,6 +80,13 @@
             }
             let model = Self.renderModel(song, overrides: slot.item.overrides)
             currentModel = model
+            let resolution = Self.resolution(slot.item, song: song)
+            currentArrangement = resolution.map { $0.isOutOfDate ? .outOfDate : .applied }
+            recordArrangement(currentArrangement, for: slot.item)
+            var order: [PlayedSection]?
+            if case let .applied(played, _) = resolution {
+                order = played
+            }
             guard viewport.width > 0, viewport.height > 0 else { return }
             let prefs = prefs(for: song)
             let notes = [song.sidecar.notes, slot.item.note]
@@ -69,22 +101,34 @@
                 columns: context.settings.settings.columns(for: prefs),
                 cues: song.sidecar.cues,
                 notes: notes,
+                arrangement: order,
             )
             let newPlan = LayoutEngine.plan(request, metrics: StageTextMetrics())
             plan = newPlan
-            updateScroller(newPlan, item: slot.item.itemId, song: song, prefs: prefs)
+            updateScroller(newPlan, item: slot.item, song: song, prefs: prefs)
+        }
+
+        /// Records once per item what the stage did with its arrangement (the gig log says
+        /// what was played). A failed write is retried with the next action's write.
+        private func recordArrangement(_ state: ArrangementState?, for item: ShowItem) {
+            guard let state, item.arrangementState == nil,
+                  recordedArrangements.insert(item.itemId).inserted
+            else { return }
+            let controller = context.controller
+            Task { try? await controller.recordArrangementState(state, for: item.itemId) }
         }
 
         /// A new item gets a fresh scroller (restoring a resumed position, auto-starting when
         /// the song asks); the same item keeps its position through a re-layout.
         private func updateScroller(
             _ newPlan: LayoutPlan,
-            item: ShowItemID,
+            item slot: ShowItem,
             song: SongRecord,
             prefs: LivePrefs,
         ) {
+            let item = slot.itemId
             let now = context.scrollClock.now()
-            let speed = scrollSpeed(newPlan, song: song, prefs: prefs)
+            let speed = scrollSpeed(newPlan, song: song, item: slot, prefs: prefs)
             if laidOutItem != item || scroller == nil {
                 laidOutItem = item
                 var fresh = AutoScroller(speed: speed, overflow: newPlan.overflow)
@@ -114,13 +158,21 @@
             }
         }
 
-        private func scrollSpeed(_ plan: LayoutPlan, song: SongRecord, prefs: LivePrefs)
-            -> ScrollSpeed
-        {
+        private func scrollSpeed(
+            _ plan: LayoutPlan,
+            song: SongRecord,
+            item: ShowItem,
+            prefs: LivePrefs,
+        ) -> ScrollSpeed {
             let metadata = song.document.metadata
+            // An arranged slot scrolls over its own length (nil = unknown: the tempo path),
+            // never the full song's `{duration}` (R122); out of date plays the full song.
+            let duration = item.arrangement != nil && currentArrangement == .applied
+                ? item.arrangement?.length
+                : metadata.duration
             return ScrollSpeedModel.speed(ScrollSpeedInput(
                 overflow: plan.overflow,
-                duration: metadata.duration,
+                duration: duration,
                 tempo: metadata.tempo,
                 time: metadata.time,
                 lineCount: plan.lineCount,

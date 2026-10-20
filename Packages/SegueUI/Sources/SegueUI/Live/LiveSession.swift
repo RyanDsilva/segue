@@ -80,8 +80,13 @@
         var scroller: AutoScroller?
         /// The rendered model of the current item (with its setlist overrides).
         var currentModel: RenderModel?
-        /// The rendered model of the up-next song.
+        /// The rendered model of the up-next song (in its arranged order).
         var upNextModel: RenderModel?
+        /// What the stage does with the current item's arrangement (R122); nil = the item
+        /// plays the full song as written.
+        var currentArrangement: ArrangementState?
+        /// Items whose arrangement state was sent to the show record.
+        @ObservationIgnored var recordedArrangements: Set<ShowItemID> = []
         /// The item the plan was laid out for; a change resets scrolling.
         @ObservationIgnored var laidOutItem: ShowItemID?
         /// Per-song live memory changed during this run (also saved to the sidecar).

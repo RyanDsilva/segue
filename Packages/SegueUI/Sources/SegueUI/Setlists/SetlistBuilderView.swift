@@ -93,6 +93,28 @@
             .onChange(of: setlist.entries.isEmpty, initial: true) { _, isEmpty in
                 SegueTips.openSetlistHasEntries = !isEmpty
             }
+            .environment(\.slotArrangementActions, SlotArrangementActions(
+                setLength: { [model, setlist] item, seconds in
+                    Task {
+                        guard var arrangement = model.setlist(setlist.id)?.entry(item)?.arrangement
+                        else { return }
+                        arrangement.length = seconds
+                        await model.setArrangement(
+                            arrangement,
+                            of: item,
+                            in: setlist.id,
+                            actionName: "Set Slot Length",
+                        )
+                    }
+                },
+                open: { [model, setlist] item in model.openArrangement(item, in: setlist.id) },
+            ))
+            .sheet(item: Binding(
+                get: { model.arranging.flatMap { $0.setlist == setlist.id ? $0 : nil } },
+                set: { model.arranging = $0 },
+            )) { slot in
+                ArrangementEditorSheet(slot: slot, model: model, library: library)
+            }
             .sheet(item: $naming) { purpose in
                 SetlistNameSheet(purpose: purpose) { name in
                     Task { await model.rename(setlist.id, to: name) }

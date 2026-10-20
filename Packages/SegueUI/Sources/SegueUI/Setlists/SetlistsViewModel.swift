@@ -25,6 +25,8 @@ public final class SetlistsViewModel {
     public var builderMode: BuilderMode = .pick
     /// Arrange's selected rows (songs and breaks) in the shown setlist.
     var arrangeSelection = ListSelection<SetlistItemID>()
+    /// The slot whose Arrange Sections sheet is open (P3-16).
+    public var arranging: ArrangingSlot?
     /// The last failure, shown as a dismissible banner.
     public var errorMessage: String?
     /// Setlist files that could not be loaded (reported, never deleted).

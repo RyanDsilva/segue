@@ -169,6 +169,9 @@
                         onChange: { updated in
                             Task { await model.updateEntry(updated, in: setlist.id) }
                         },
+                        onArrange: record == nil ? nil : {
+                            model.openArrangement(entry.itemId, in: setlist.id)
+                        },
                         onRemove: { remove(IndexSet(integer: offset)) },
                         onMove: isReadOnly ? nil : { delta in move(offset, by: delta) },
                         isLast: offset == setlist.entries.count - 1,
@@ -341,6 +344,8 @@
         let timing: ItemTiming?
         let isReadOnly: Bool
         let onChange: (SetlistEntry) -> Void
+        /// Opens Arrange Sections (P3-16); nil when the song is missing.
+        let onArrange: (() -> Void)?
         let onRemove: () -> Void
         /// Moves the slot one place (-1 up, +1 down); nil when the setlist is read-only.
         var onMove: ((Int) -> Void)?
@@ -387,11 +392,18 @@
                 }
             }
             .popover(isPresented: $isEditing, arrowEdge: .leading) {
-                SetEntryEditor(entry: entry, record: record, onChange: onChange)
+                SetEntryEditor(
+                    entry: entry,
+                    record: record,
+                    onChange: onChange,
+                    onArrange: onArrange,
+                )
             }
             .contextMenu {
                 Button("Edit Key, Capo and Note…") { isEditing = true }
                     .disabled(isReadOnly)
+                Button("Arrange Sections…") { onArrange?() }
+                    .disabled(onArrange == nil)
                 Button("Insert Break After") { onInsertBreak?() }
                     .disabled(onInsertBreak == nil)
                 Button("Remove from Setlist", role: .destructive, action: onRemove)
@@ -403,6 +415,7 @@
             .accessibilityAddTraits(isSelected ? .isSelected : [])
             .accessibilityIdentifier(AccessibilityID.setlistEntry)
             .accessibilityAction(named: "Edit") { isEditing = true }
+            .accessibilityAction(named: "Arrange Sections") { onArrange?() }
             .entryAssistantActions(assistant)
             .accessibilityActions {
                 if let onMove {
@@ -446,12 +459,8 @@
                         .symbolRenderingMode(.multicolor)
                         .help("This song is in the set twice. Remove one of them.")
                         .accessibilityIdentifier(AccessibilityID.entryRepeat)
-                } else if let note = entry.note, !note.isEmpty {
-                    Text(note)
-                        .font(SchibstedGrotesk.medium.font(size: 13))
-                        .foregroundStyle(Theme.color.muted)
-                        .lineLimit(1)
-                        .accessibilityIdentifier(AccessibilityID.entryNote)
+                } else {
+                    SlotDetailLines(entry: entry, record: record, openArrangement: onArrange)
                 }
             }
         }

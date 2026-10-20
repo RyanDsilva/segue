@@ -2,6 +2,7 @@ import Foundation
 import Library
 import Observation
 import Services
+import Setlists
 import Support
 
 /// "Time it" (R91, spec 16.0.1): a per-song Start/Stop timer that fills the song card's
@@ -9,13 +10,28 @@ import Support
 /// selected song keeps the run alive (the card shows it again on return); the run ends only
 /// by Stop, Cancel (Esc) or the song being deleted. Nothing is written to disk here: Stop
 /// hands the elapsed seconds to the field, which commits them as `{duration}`.
+/// What a "Time it" run times: a song (its `{duration}`), or an arranged setlist slot (its
+/// slot length, R122).
+public enum TimeItTarget: Sendable, Hashable {
+    case song(SongID)
+    case slot(SetlistItemID)
+}
+
 @MainActor
 @Observable
 public final class TimeItModel {
     /// The run in progress.
     public struct Run: Sendable, Hashable {
-        public let songID: SongID
+        public let target: TimeItTarget
         public let startedAt: Date
+
+        /// The song being timed; nil for a slot.
+        public var songID: SongID? {
+            if case let .song(id) = target {
+                return id
+            }
+            return nil
+        }
     }
 
     /// The one shared timer the app's song cards use, on a monotonic clock (a changed
@@ -36,22 +52,35 @@ public final class TimeItModel {
 
     /// Whether song `id` is being timed.
     public func isTiming(_ id: SongID) -> Bool {
-        run?.songID == id
+        isTiming(.song(id))
+    }
+
+    public func isTiming(_ target: TimeItTarget) -> Bool {
+        run?.target == target
     }
 
     /// Whether another song than `id` is being timed (its card's Time it is unavailable).
     public func isTimingOther(than id: SongID) -> Bool {
-        run.map { $0.songID != id } ?? false
+        isTimingOther(than: .song(id))
+    }
+
+    public func isTimingOther(than target: TimeItTarget) -> Bool {
+        run.map { $0.target != target } ?? false
     }
 
     /// Starts timing song `id`. Returns false, changing nothing, when another song is being
     /// timed (one run at a time); starting the song already being timed keeps its run.
     @discardableResult
     public func start(_ id: SongID) -> Bool {
+        start(.song(id))
+    }
+
+    @discardableResult
+    public func start(_ target: TimeItTarget) -> Bool {
         if let run {
-            return run.songID == id
+            return run.target == target
         }
-        run = Run(songID: id, startedAt: clock.now())
+        run = Run(target: target, startedAt: clock.now())
         return true
     }
 
@@ -64,7 +93,11 @@ public final class TimeItModel {
     /// Ends song `id`'s run and returns its elapsed time rounded to the nearest second; nil
     /// (changing nothing) when that song is not being timed.
     public func stop(_ id: SongID) -> Int? {
-        guard isTiming(id) else { return nil }
+        stop(.song(id))
+    }
+
+    public func stop(_ target: TimeItTarget) -> Int? {
+        guard isTiming(target) else { return nil }
         let seconds = Int(elapsed().rounded())
         run = nil
         return seconds
@@ -77,13 +110,17 @@ public final class TimeItModel {
 
     /// Ends song `id`'s run without a result (Esc). Nothing happens for another song.
     public func cancel(_ id: SongID) {
-        guard isTiming(id) else { return }
+        cancel(.song(id))
+    }
+
+    public func cancel(_ target: TimeItTarget) {
+        guard isTiming(target) else { return }
         run = nil
     }
 
     /// Ends the run when its song was deleted. Hosts call this after a delete.
     public func songsDeleted(_ ids: some Sequence<SongID>) {
-        guard let run, ids.contains(run.songID) else { return }
-        self.run = nil
+        guard let song = run?.songID, ids.contains(song) else { return }
+        run = nil
     }
 }

@@ -9,6 +9,8 @@
         let entry: SetlistEntry
         let record: SongRecord?
         let onChange: (SetlistEntry) -> Void
+        /// Opens Arrange Sections (P3-16); nil when the song is missing.
+        var onArrange: (() -> Void)?
         @Environment(\.dismiss) private var dismiss
         @State private var note = ""
 
@@ -36,6 +38,20 @@
                             up: AccessibilityID.entryCapoUp,
                             valueID: AccessibilityID.entryCapoValue,
                         ) { change(capoBy: $0) }
+                    }
+                    GridRow {
+                        label("Sections")
+                        Button(arrangementText) {
+                            saveNote()
+                            dismiss()
+                            onArrange?()
+                        }
+                        .buttonStyle(.segueSecondary)
+                        .controlSize(.small)
+                        .disabled(onArrange == nil)
+                        .help("Choose which sections this slot plays for this gig")
+                        .accessibilityLabel("Arrangement: \(arrangementText)")
+                        .accessibilityIdentifier(AccessibilityID.arrangementOpen)
                     }
                     GridRow {
                         label("Note")
@@ -71,6 +87,18 @@
             .frame(width: 340)
             .onAppear { note = entry.note ?? "" }
             .onDisappear(perform: saveNote)
+        }
+
+        /// "Full song", "Custom: 6 of 8 sections" or "Out of date: full song".
+        private var arrangementText: String {
+            guard let arrangement = entry.arrangement else { return "Full song…" }
+            guard let record else { return "Custom…" }
+            let units = SongSections.units(of: record.document)
+            if ArrangementResolver.resolve(arrangement, units: units).isOutOfDate {
+                return "Out of date: full song…"
+            }
+            let draft = ArrangementDraft(arrangement: arrangement, units: units)
+            return "Custom: \(draft.playedCount) of \(draft.partCount) sections…"
         }
 
         private var display: SetlistEntryDisplay {

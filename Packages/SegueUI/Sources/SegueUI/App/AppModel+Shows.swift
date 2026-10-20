@@ -47,6 +47,42 @@
             }
         }
 
+        /// The checklist's actions: Retry on the Focus row, and the out-of-date arrangements
+        /// row with its Edit (R123).
+        private func wire(
+            _ checklist: PreShowChecklist,
+            kind: ShowKind,
+            setlist: Setlist,
+            session: LibrarySession,
+        ) {
+            checklist.retryFocus = { [weak self] in
+                await self?.runStartShortcut(kind: kind) ?? .notRun
+            }
+            let stale = Self.staleArrangements(in: setlist, library: session.library)
+            checklist.staleArrangements = stale.map(\.label)
+            checklist.editStaleArrangement = stale.first.map { first in
+                { [weak session] in session?.setlists.editArrangement(first.item, in: setlist.id) }
+            }
+        }
+
+        /// Arranged slots whose sections changed since (R122, R123): the stage shows them as the
+        /// full song, and the pre-show checklist says so ("#3 Title").
+        internal static func staleArrangements(
+            in setlist: Setlist,
+            library: LibraryViewModel,
+        ) -> [(item: SetlistItemID, label: String)] {
+            setlist.songEntries.enumerated().compactMap { offset, entry in
+                guard let arrangement = entry.arrangement,
+                      let record = entry.songId.flatMap(library.song(id:)),
+                      ArrangementResolver.resolve(
+                          arrangement,
+                          units: SongSections.units(of: record.document),
+                      ).isOutOfDate
+                else { return nil }
+                return (entry.itemId, "#\(offset + 1) \(SongSummary.title(record))")
+            }
+        }
+
         /// "Start show" / "Rehearse" in the setlist builder: refreshes the library, leaves out
         /// entries whose song is gone (listed in the pre-show checklist), runs the start
         /// Shortcut (gig, or a rehearsal when Settings allows), shows the checklist, then
@@ -82,9 +118,7 @@
                 power: dependencies.live.power,
                 clock: dependencies.live.scrollClock,
             )
-            checklist.retryFocus = { [weak self] in
-                await self?.runStartShortcut(kind: kind) ?? .notRun
-            }
+            wire(checklist, kind: kind, setlist: setlist, session: session)
             guard await confirm(checklist) else { return false }
             do {
                 let controller = try await ShowController.start(

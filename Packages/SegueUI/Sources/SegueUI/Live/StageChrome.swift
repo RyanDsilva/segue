@@ -29,6 +29,18 @@
                         .lineLimit(1)
                         .accessibilityIdentifier(AccessibilityID.liveMeta)
                 }
+                if let arrangement = session.currentArrangement {
+                    // Quiet: an arranged slot says so; one whose sections changed says the
+                    // full song is shown (R122, R123).
+                    Text(arrangement == .applied ? "Arranged" : "Full song")
+                        .font(SchibstedGrotesk.medium.font(size: 16))
+                        .foregroundStyle(Theme.color.muted)
+                        .lineLimit(1)
+                        .accessibilityLabel(arrangement == .applied
+                            ? "Arranged for this gig"
+                            : "Full song: the arrangement is out of date")
+                        .accessibilityIdentifier(AccessibilityID.liveArrangement)
+                }
                 Spacer(minLength: 24)
                 if session.kind == .rehearsal {
                     StageChip(text: "Rehearsal")

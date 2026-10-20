@@ -7,7 +7,8 @@
     /// Setlist (WS2a 3.5.3, A33 b): Start Show and Rehearse for the shown builder, New
     /// Setlist…, Add Selected Song(s) to Setlist ▸ (a keyboard and VoiceOver path for adding
     /// songs without dragging), and set building (R84, R85): Pick Songs / Arrange Set,
-    /// Insert Break, and Move Up / Move Down for Arrange's selected rows.
+    /// Insert Break, Arrange Sections… (P3-16), and Move Up / Move Down for Arrange's selected
+    /// rows.
     struct SetlistCommands: Commands {
         let app: AppModel
         @FocusedValue(\.focusedSongID) private var focusedSongID
@@ -60,6 +61,12 @@
             }
             .keyboardShortcut(MenuShortcuts.insertBreak)
             .disabled(builder == nil)
+            Button(MenuShortcuts.arrangeSections.title) {
+                shownBuilder?.model.arrangeSelectedSlot()
+            }
+            .keyboardShortcut(MenuShortcuts.arrangeSections)
+            .disabled(shownBuilder?.model.arrangeableSelection == nil
+                || shownBuilder?.model.builderMode != .arrange)
             Button(MenuShortcuts.moveUp.title) { move(-1) }
                 .keyboardShortcut(MenuShortcuts.moveUp)
                 .disabled(!canMove(-1))

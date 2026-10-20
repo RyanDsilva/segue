@@ -23,6 +23,9 @@
                 if !checklist.missingPositions.isEmpty {
                     missingWarning
                 }
+                if !checklist.staleArrangements.isEmpty {
+                    staleArrangementsWarning
+                }
                 if !checklist.visibleRows.isEmpty {
                     VStack(spacing: 0) {
                         ForEach(checklist.visibleRows, id: \.self) { item in
@@ -147,6 +150,44 @@
             )
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier(AccessibilityID.checklistMissing)
+        }
+
+        /// R123: arrangements that no longer match their song play as the full song.
+        private var staleArrangementsWarning: some View {
+            let count = checklist.staleArrangements.count
+            let lead = count == 1 ? "1 arrangement is out of date"
+                : "\(count) arrangements are out of date"
+            return HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Theme.color.cueText)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(lead): full song on stage")
+                        .font(SchibstedGrotesk.semiBold.font(size: 15))
+                        .foregroundStyle(Theme.color.ink)
+                    Text(checklist.staleArrangements.formatted(.list(type: .and))
+                        + ": the song's sections changed since the arrangement was made.")
+                        .font(Theme.font.label)
+                        .foregroundStyle(Theme.color.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                if let edit = checklist.editStaleArrangement {
+                    Button("Edit") {
+                        checklist.answer(false)
+                        edit()
+                    }
+                    .buttonStyle(.segueSecondary)
+                    .help("Cancel the start and update the arrangement")
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.color.surfaceAlt),
+            )
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(AccessibilityID.checklistArrangements)
         }
 
         private func row(_ item: ChecklistItem) -> some View {

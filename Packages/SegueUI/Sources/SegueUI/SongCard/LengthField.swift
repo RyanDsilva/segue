@@ -64,7 +64,7 @@ enum LengthCommit: Equatable {
     /// whole seconds, or nil to clear; hosts write it with `EditOperation.setLength`. Give
     /// the view `.id(songID)` when one card is reused across songs.
     public struct LengthField: View {
-        let songID: SongID
+        let target: TimeItTarget
         let length: TimeInterval?
         let timeIt: TimeItModel
         let externalFocus: FocusState<Bool>.Binding?
@@ -89,7 +89,24 @@ enum LengthCommit: Equatable {
             focus: FocusState<Bool>.Binding? = nil,
             onCommit: @escaping (TimeInterval?) -> Void,
         ) {
-            self.songID = songID
+            self.init(
+                target: .song(songID),
+                length: length,
+                timeIt: timeIt,
+                focus: focus,
+                onCommit: onCommit,
+            )
+        }
+
+        /// A length field for any Time it target (an arranged slot's length, R122).
+        public init(
+            target: TimeItTarget,
+            length: TimeInterval?,
+            timeIt: TimeItModel = .shared,
+            focus: FocusState<Bool>.Binding? = nil,
+            onCommit: @escaping (TimeInterval?) -> Void,
+        ) {
+            self.target = target
             self.length = length
             self.timeIt = timeIt
             externalFocus = focus
@@ -116,7 +133,7 @@ enum LengthCommit: Equatable {
                 text = Self.text(for: new)
                 problem = nil
             }
-            .onChange(of: songID) { _, _ in
+            .onChange(of: target) { _, _ in
                 text = Self.text(for: length)
                 problem = nil
             }
@@ -131,7 +148,7 @@ enum LengthCommit: Equatable {
         }
 
         private var isTiming: Bool {
-            timeIt.isTiming(songID)
+            timeIt.isTiming(target)
         }
 
         private var field: some View {
@@ -173,29 +190,29 @@ enum LengthCommit: Equatable {
             } else {
                 Button("Time It", systemImage: "stopwatch", action: start)
                     .buttonStyle(.segueSecondary)
-                    .disabled(timeIt.isTimingOther(than: songID))
-                    .help(timeIt.isTimingOther(than: songID)
-                        ? "Another song is being timed: stop it first"
+                    .disabled(timeIt.isTimingOther(than: target))
+                    .help(timeIt.isTimingOther(than: target)
+                        ? "Something else is being timed: stop it first"
                         : "Time the song as you play it; Stop fills in the length")
                     .accessibilityIdentifier(AccessibilityID.songCardTimeIt)
             }
         }
 
         private func start() {
-            guard timeIt.start(songID) else { return }
+            guard timeIt.start(target) else { return }
             problem = nil
             Self.announce("Timing started")
         }
 
         private func stop() {
-            guard let seconds = timeIt.stop(songID) else { return }
+            guard let seconds = timeIt.stop(target) else { return }
             timeIt.recordTimed(in: analyticsContext)
             apply(LengthCommit.timed(seconds, current: length))
         }
 
         private func escape() {
             if isTiming {
-                timeIt.cancel(songID)
+                timeIt.cancel(target)
                 Self.announce("Timing cancelled")
             } else {
                 text = Self.text(for: length)

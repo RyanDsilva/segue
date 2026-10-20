@@ -224,6 +224,19 @@
         }
     }
 
+    /// The Played list's second lines.
+    enum GigPlayedListLines {
+        /// What an arranged slot played (R122): "Custom arrangement: Intro, Verse 1, Chorus
+        /// x2", or the full song when the arrangement no longer matched; nil without one.
+        static func arrangementLine(_ item: ShowItem) -> String? {
+            guard let arrangement = item.arrangement else { return nil }
+            if item.arrangementState == .outOfDate {
+                return "Full song (arrangement out of date)"
+            }
+            return "Custom arrangement: " + arrangement.playedSummary
+        }
+    }
+
     /// Played songs in play order (requests and added songs marked) and skipped ones.
     private struct GigPlayedList: View {
         let entry: GigLogEntry
@@ -241,6 +254,7 @@
                         marker: marker(played),
                         time: GigText.time(played.startedAt),
                         length: GigText.length(played.duration),
+                        detail: GigPlayedListLines.arrangementLine(played.item),
                     )
                     .accessibilityIdentifier(AccessibilityID.gigPlayedRow)
                 }
@@ -277,15 +291,24 @@
             marker: String?,
             time: String,
             length: String,
+            detail: String? = nil,
         ) -> some View {
             HStack(spacing: 8) {
                 Text(number)
                     .foregroundStyle(Theme.color.muted)
                     .frame(width: 32, alignment: .leading)
-                Text(title)
-                    .font(SchibstedGrotesk.semiBold.font(size: 15))
-                    .foregroundStyle(Theme.color.ink)
-                    .lineLimit(1)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(SchibstedGrotesk.semiBold.font(size: 15))
+                        .foregroundStyle(Theme.color.ink)
+                        .lineLimit(1)
+                    if let detail {
+                        Text(detail)
+                            .font(SchibstedGrotesk.medium.font(size: 13))
+                            .foregroundStyle(Theme.color.muted)
+                            .lineLimit(2)
+                    }
+                }
                 if let marker {
                     KeyChip(key: marker)
                 }

@@ -115,6 +115,13 @@
         static let pickSongs = MenuShortcut("Setlist", "Pick Songs", "1")
         static let arrangeSet = MenuShortcut("Setlist", "Arrange Set", "2")
         static let insertBreak = MenuShortcut("Setlist", "Insert Break", "b", [.command, .shift])
+        /// P3-16: the selected slot's Arrange Sections sheet.
+        static let arrangeSections = MenuShortcut(
+            "Setlist",
+            "Arrange Sections…",
+            "a",
+            [.command, .shift],
+        )
         static let moveUp = MenuShortcut("Setlist", "Move Up", .upArrow, .option)
         static let moveDown = MenuShortcut("Setlist", "Move Down", .downArrow, .option)
         // Window
@@ -127,8 +134,8 @@
         public static let all: [MenuShortcut] = [
             settings, newSong, newSongFromClipboard, importSongs, showInFinder, moveToTrash, close,
             save, undo, redo,
-            refresh, startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak, moveUp,
-            moveDown, mainWindow, help, keyboardShortcuts,
+            refresh, startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak,
+            arrangeSections, moveUp, moveDown, mainWindow, help, keyboardShortcuts,
         ]
     }
 

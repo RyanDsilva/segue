@@ -14,8 +14,16 @@
         }
     }
 
+    /// An arranged slot's actions from the builder (P3-16): save its slot length (one undo
+    /// step), open its Arrange Sections sheet. The builder supplies them.
+    struct SlotArrangementActions {
+        var setLength: (SetlistItemID, TimeInterval?) -> Void = { _, _ in }
+        var open: (SetlistItemID) -> Void = { _ in }
+    }
+
     extension EnvironmentValues {
         @Entry var openSongForLength = OpenSongAction()
+        @Entry var slotArrangementActions = SlotArrangementActions()
     }
 
     /// The missing-lengths list (R88): exactly the songs in the set (or in one part) that
@@ -27,6 +35,7 @@
         /// The rows to look at (a part's songs); nil for the whole set.
         var within: Set<SetlistItemID>?
         @Environment(\.openSongForLength) private var openSong
+        @Environment(\.slotArrangementActions) private var slotActions
 
         var body: some View {
             let rows = Self.rows(setlist, within: within, library: library)
@@ -67,21 +76,35 @@
                         .font(SchibstedGrotesk.semiBold.font(size: 14))
                         .foregroundStyle(Theme.color.ink)
                         .lineLimit(1)
-                    Text(row.place)
+                    Text(row.isArranged ? "\(row.place) · Custom arrangement" : row.place)
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                LengthField(songID: row.song, length: nil) { seconds in
-                    Task { await library.editSongSource(id: row.song, .setLength(seconds)) }
+                if row.isArranged {
+                    // An arranged slot has its own length (R122); the song's stays.
+                    LengthField(target: .slot(row.id), length: nil) { seconds in
+                        slotActions.setLength(row.id, seconds)
+                    }
+                    .frame(width: 210)
+                    .environment(\.analyticsContext, .builder)
+                    Button("Edit Arrangement…") { slotActions.open(row.id) }
+                        .buttonStyle(.link)
+                        .font(SchibstedGrotesk.semiBold.font(size: 12))
+                        .help("Open this slot's Arrange Sections")
+                        .accessibilityIdentifier(AccessibilityID.missingLengthsOpen)
+                } else {
+                    LengthField(songID: row.song, length: nil) { seconds in
+                        Task { await library.editSongSource(id: row.song, .setLength(seconds)) }
+                    }
+                    .frame(width: 210)
+                    .environment(\.analyticsContext, .builder)
+                    Button("Open Song") { openSong(row.song) }
+                        .buttonStyle(.link)
+                        .font(SchibstedGrotesk.semiBold.font(size: 12))
+                        .help("Show \(row.title) in the Library with its Length field ready")
+                        .accessibilityIdentifier(AccessibilityID.missingLengthsOpen)
                 }
-                .frame(width: 210)
-                .environment(\.analyticsContext, .builder)
-                Button("Open Song") { openSong(row.song) }
-                    .buttonStyle(.link)
-                    .font(SchibstedGrotesk.semiBold.font(size: 12))
-                    .help("Show \(row.title) in the Library with its Length field ready")
-                    .accessibilityIdentifier(AccessibilityID.missingLengthsOpen)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
@@ -96,10 +119,13 @@
             var title: String
             /// "Set 2 · #6".
             var place: String
+            /// An arranged slot: its own length is missing, not the song's (R122).
+            var isArranged = false
         }
 
-        /// The song slots of `setlist` (inside `within`) whose song has no `{duration}`, in
-        /// set order. A song missing from the library is left out (it has no card).
+        /// The song slots of `setlist` (inside `within`) without a length, in set order: the
+        /// song has no `{duration}`, or an arranged slot has no slot length (whatever the
+        /// song's, R122). A song missing from the library is left out (it has no card).
         static func rows(
             _ setlist: Setlist,
             within: Set<SetlistItemID>?,
@@ -116,14 +142,20 @@
                 }
                 number += 1
                 guard within?.contains(entry.itemId) ?? true, let song = entry.songId,
-                      let record = library.song(id: song),
-                      SetlistTiming.directiveLength(of: record) == nil
+                      let record = library.song(id: song)
                 else { continue }
+                let missing = if let arrangement = entry.arrangement {
+                    (arrangement.length ?? 0) <= 0
+                } else {
+                    SetlistTiming.directiveLength(of: record) == nil
+                }
+                guard missing else { continue }
                 rows.append(Row(
                     id: entry.itemId,
                     song: song,
                     title: SongSummary.title(record),
                     place: hasParts ? "\(part) · #\(number)" : "#\(number)",
+                    isArranged: entry.arrangement != nil,
                 ))
             }
             return rows

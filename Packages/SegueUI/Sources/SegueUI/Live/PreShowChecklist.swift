@@ -55,6 +55,12 @@
         public let kind: ShowKind
         /// 1-based setlist positions of entries whose song is gone; they are left out.
         public let missingPositions: [Int]
+        /// Song slots whose arrangement no longer matches the song (R122, R123): "#3 Title".
+        /// The stage shows them as the full song.
+        public internal(set) var staleArrangements: [String] = []
+        /// Edit on the stale-arrangements row: cancels the start and opens the first one's
+        /// Arrange Sections; set by the app model.
+        @ObservationIgnored var editStaleArrangement: (() -> Void)?
         public let performableCount: Int
         public internal(set) var focus: FocusStatus
         public internal(set) var charger: Bool?
@@ -116,7 +122,7 @@
 
         /// Whether there is anything to show (rows or the missing-songs warning).
         var hasContent: Bool {
-            !visibleRows.isEmpty || !missingPositions.isEmpty
+            !visibleRows.isEmpty || !missingPositions.isEmpty || !staleArrangements.isEmpty
         }
 
         public func isDone(_ item: ChecklistItem) -> Bool {

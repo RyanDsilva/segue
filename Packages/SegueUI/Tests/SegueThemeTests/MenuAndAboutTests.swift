@@ -50,6 +50,7 @@ struct MenuShortcutsTests {
             "close",
             "save", "refresh",
             "startShow", "rehearse", "newSetlist", "pickSongs", "arrangeSet", "insertBreak",
+            "arrangeSections",
             "moveUp", "moveDown", "mainWindow", "help", "keyboardShortcuts",
         ]
         for name in names {
