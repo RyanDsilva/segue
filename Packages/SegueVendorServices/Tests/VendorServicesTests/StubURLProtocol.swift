@@ -73,11 +73,18 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
         private func wait(_ isSatisfied: @escaping @Sendable (State) -> Bool) async {
             await withCheckedContinuation { continuation in
                 let ready = state.withLock { state in
-                    if isSatisfied(state) { return true }
-                    state.waiters.append(Waiter(isSatisfied: isSatisfied, continuation: continuation))
+                    if isSatisfied(state) {
+                        return true
+                    }
+                    state.waiters.append(Waiter(
+                        isSatisfied: isSatisfied,
+                        continuation: continuation,
+                    ))
                     return false
                 }
-                if ready { continuation.resume() }
+                if ready {
+                    continuation.resume()
+                }
             }
         }
 
@@ -87,7 +94,9 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
                 state.waiters = waiting
                 return ready
             }
-            for waiter in ready { waiter.continuation.resume() }
+            for waiter in ready {
+                waiter.continuation.resume()
+            }
         }
 
         func setFallback(_ reply: Reply) {

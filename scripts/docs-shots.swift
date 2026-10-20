@@ -6,7 +6,8 @@
 //   guide/src/data/shots.json                   (the manifest Shot.astro and guide-check read)
 //
 // Usage: scripts/docs-shots.swift --raw <dir> [--raw <dir>...] [--only id,id]
-//        scripts/docs-shots.swift --poster <frame.png> --clip <id> --width <px> --height <px> --seconds <s>
+//        scripts/docs-shots.swift --poster <frame.png> --clip <id> --width <px> --height <px>
+//            --seconds <s>
 //
 // AVIF from ImageIO (no third-party encoder). A shot is rewritten only when it really
 // changed: when fewer than 0.5% of its pixels differ by more than 8/255 from the committed
@@ -112,7 +113,9 @@ func writeShot(_ image: CGImage, to url: URL) throws -> (Int, Int, Bool) {
     let scaled = try normalized(image)
     let data = try avifData(scaled)
     if data.count > shotBudget {
-        throw Failure(description: "\(url.lastPathComponent) is \(data.count / 1024) KB (budget 150 KB)")
+        throw Failure(
+            description: "\(url.lastPathComponent) is \(data.count / 1024) KB (budget 150 KB)",
+        )
     }
     let fresh = !FileManager.default.fileExists(atPath: url.path) || changed(data, from: url)
     if fresh {
@@ -135,7 +138,11 @@ func saveManifest(_ manifest: [String: Any]) throws {
         withJSONObject: manifest,
         options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes],
     )
-    try (String(decoding: data, as: UTF8.self) + "\n").write(to: manifestURL, atomically: true, encoding: .utf8)
+    try (String(decoding: data, as: UTF8.self) + "\n").write(
+        to: manifestURL,
+        atomically: true,
+        encoding: .utf8,
+    )
 }
 
 // MARK: - xcresult attachments
@@ -162,7 +169,10 @@ func attachments(in folder: URL) throws -> [Attachment] {
         for attachment in test["attachments"] as? [[String: Any]] ?? [] {
             guard let file = attachment["exportedFileName"] as? String,
                   let name = attachment["suggestedHumanReadableName"] as? String,
-                  let match = pattern.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)),
+                  let match = pattern.firstMatch(
+                      in: name,
+                      range: NSRange(name.startIndex..., in: name),
+                  ),
                   let id = Range(match.range(at: 1), in: name).map({ String(name[$0]) }),
                   let appearance = Range(match.range(at: 2), in: name).map({ String(name[$0]) })
             else { continue }
@@ -182,7 +192,8 @@ func attachments(in folder: URL) throws -> [Attachment] {
 
 let arguments = Array(CommandLine.arguments.dropFirst())
 func value(_ flag: String) -> String? {
-    arguments.firstIndex(of: flag).flatMap { arguments.indices.contains($0 + 1) ? arguments[$0 + 1] : nil }
+    arguments.firstIndex(of: flag)
+        .flatMap { arguments.indices.contains($0 + 1) ? arguments[$0 + 1] : nil }
 }
 
 do {
@@ -226,7 +237,11 @@ do {
             let name = isStage ? "\(id).avif" : "\(id)-\(image.appearance).avif"
             let result = try writeShot(loadImage(image.file), to: shotsDir.appending(path: name))
             size = (result.0, result.1)
-            if result.2 { written += 1 } else { kept += 1 }
+            if result.2 {
+                written += 1
+            } else {
+                kept += 1
+            }
         }
         // Callout frames: the dark run's (or the only one).
         let framesFile = found.first { $0.id == id && $0.isFrames && $0.appearance != "light" }

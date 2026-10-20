@@ -219,7 +219,9 @@ struct Config {
                   let status = (item["status"] as? NSNumber)?.intValue, [301, 302].contains(status),
                   item.count == 3
             else {
-                throw SiteError.config("redirects[\(index)] needs exactly from, to (paths) and status (301 or 302)")
+                throw SiteError.config(
+                    "redirects[\(index)] needs exactly from, to (paths) and status (301 or 302)",
+                )
             }
             return (from, to, status)
         }
@@ -1413,14 +1415,18 @@ struct Checker {
         let csp = lines.filter { $0.hasPrefix("Content-Security-Policy:") }
         if csp != [Spec.csp, Spec.guideCSP, Spec.guideCSP] {
             fail(
-                "website/_headers: the Content-Security-Policy lines must be exactly:\n    \(Spec.csp)\n"
-                    + "  and, under /guide and /guide/* after \"! Content-Security-Policy\":\n    \(Spec.guideCSP)",
+                "website/_headers: the Content-Security-Policy lines must be exactly:\n"
+                    + "    \(Spec.csp)\n"
+                    + "  and, under /guide and /guide/* after \"! Content-Security-Policy\":\n"
+                    + "    \(Spec.guideCSP)",
             )
         }
         for rule in ["/guide", "/guide/*"] {
-            let index = lines.firstIndex(of: rule)
-            if index == nil || lines.dropFirst((index ?? 0) + 1).first != "! Content-Security-Policy" {
-                fail("website/_headers: a \(rule) rule must start with \"! Content-Security-Policy\"")
+            let next = lines.firstIndex(of: rule).flatMap { lines.dropFirst($0 + 1).first }
+            if next != "! Content-Security-Policy" {
+                fail(
+                    "website/_headers: a \(rule) rule must start with \"! Content-Security-Policy\"",
+                )
             }
         }
     }

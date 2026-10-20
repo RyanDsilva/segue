@@ -1,7 +1,7 @@
 import Foundation
 import Services
-import Synchronization
 import Support
+import Synchronization
 
 /// Batching, retry and the offline queue of the TelemetryDeck client (spec 3.9). All mutable
 /// state of `TelemetryDeckIngestSink` lives here.
