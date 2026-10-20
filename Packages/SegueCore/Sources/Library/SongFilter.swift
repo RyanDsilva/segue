@@ -1,8 +1,11 @@
 // Phase 2 frozen interface (docs/phases/2-interfaces.md). Owner: unit D.
 //
-// Simple filtering only (phase 2 scope): tags, proficiency, key. Smart and saved filters are
-// phase 3.
+// Phase 2 simple filtering: tags, proficiency, key. Phase 3 (P3-6) extends it compatibly
+// with the conditions a saved `SmartFilter` compiles to (any / none tags, several keys,
+// tempo and length ranges, play history); their defaults constrain nothing, so phase 2
+// callers see no change.
 
+import ChordPro
 import Editing
 import Foundation
 import MusicTheory
@@ -21,38 +24,156 @@ public struct SongFilter: Sendable, Equatable {
     /// The key as written (`{key}` or the detected key), compared by name ("G", "Am");
     /// nil = any.
     public var key: String?
+    /// At least one of these tags must be present (case-insensitive); empty = no constraint.
+    public var anyTags: Set<String>
+    /// None of these tags may be present (case-insensitive).
+    public var excludedTags: Set<String>
+    /// The written key must be one of these (compared like `key`); empty = no constraint.
+    public var keys: Set<String>
+    /// `{tempo}` in BPM within these bounds; a song without a tempo never matches.
+    public var tempo: Bounds?
+    /// `{duration}` in seconds within these bounds; a song without a length never matches
+    /// (R91: lengths are never estimated).
+    public var length: Bounds?
+    /// Play-history constraints, resolved against a play-stats snapshot (`SmartFilter`).
+    public var played: PlayHistory?
 
     public init(
         text: String = "",
         tags: Set<String> = [],
         proficiencies: Set<Proficiency> = [],
         key: String? = nil,
+        anyTags: Set<String> = [],
+        excludedTags: Set<String> = [],
+        keys: Set<String> = [],
+        tempo: Bounds? = nil,
+        length: Bounds? = nil,
+        played: PlayHistory? = nil,
     ) {
         self.text = text
         self.tags = tags
         self.proficiencies = proficiencies
         self.key = key
+        self.anyTags = anyTags
+        self.excludedTags = excludedTags
+        self.keys = keys
+        self.tempo = tempo
+        self.length = length
+        self.played = played
+    }
+
+    /// Inclusive numeric bounds; a nil side is open.
+    public struct Bounds: Sendable, Equatable {
+        public var lower: Double?
+        public var upper: Double?
+
+        public init(lower: Double? = nil, upper: Double? = nil) {
+            self.lower = lower
+            self.upper = upper
+        }
+
+        /// Whether `value` lies within the bounds (both ends included).
+        public func contains(_ value: Double) -> Bool {
+            if let lower, value < lower {
+                return false
+            }
+            if let upper, value > upper {
+                return false
+            }
+            return true
+        }
+    }
+
+    /// Play-history constraints with their instants already resolved, plus the "last
+    /// played" snapshot they are checked against (so `matches(_:)` needs no other input).
+    /// A song never played matches neither `before` nor `after`.
+    public struct PlayHistory: Sendable, Equatable {
+        /// The latest start per played song (`PlayStats.lastPlayed`).
+        public var lastPlayed: [SongID: Date]
+        /// Last played strictly before this instant.
+        public var before: Date?
+        /// Last played at or after this instant.
+        public var onOrAfter: Date?
+        /// Never played at all.
+        public var neverPlayed: Bool
+
+        public init(
+            lastPlayed: [SongID: Date],
+            before: Date? = nil,
+            onOrAfter: Date? = nil,
+            neverPlayed: Bool = false,
+        ) {
+            self.lastPlayed = lastPlayed
+            self.before = before
+            self.onOrAfter = onOrAfter
+            self.neverPlayed = neverPlayed
+        }
+
+        /// Whether song `id` satisfies every play-history constraint.
+        public func matches(_ id: SongID) -> Bool {
+            let last = lastPlayed[id]
+            if neverPlayed, last != nil {
+                return false
+            }
+            if let before {
+                guard let last, last < before else { return false }
+            }
+            if let onOrAfter {
+                guard let last, last >= onOrAfter else { return false }
+            }
+            return true
+        }
+
+        /// Whether any constraint is set.
+        var constrains: Bool {
+            neverPlayed || before != nil || onOrAfter != nil
+        }
     }
 
     /// True when no constraint is set (the text may still be non-empty).
     public var hasConstraints: Bool {
-        !tags.isEmpty || !proficiencies.isEmpty || key != nil
+        !tags.isEmpty || !proficiencies.isEmpty || key != nil || !anyTags.isEmpty
+            || !excludedTags.isEmpty || !keys.isEmpty || tempo != nil || length != nil
+            || played?.constrains == true
     }
 
-    /// Whether `song` satisfies the tag, proficiency and key constraints (not `text`).
+    /// Whether `song` satisfies every constraint (not `text`).
     public func matches(_ song: SongRecord) -> Bool {
-        if !tags.isEmpty {
-            let songTags = Set(song.sidecar.tags.map(Self.fold))
-            guard tags.allSatisfy({ songTags.contains(Self.fold($0)) }) else { return false }
-        }
         if !proficiencies.isEmpty {
             guard let level = song.sidecar.proficiency, proficiencies.contains(level)
             else { return false }
         }
-        if let key {
-            guard let written = KeyContext(document: song.document).writtenKey,
-                  Self.sameKey(key, written)
-            else { return false }
+        if let played, !played.matches(song.id) {
+            return false
+        }
+        return matchesTags(song) && matchesKey(song) && matchesNumbers(song.document.metadata)
+    }
+
+    private func matchesTags(_ song: SongRecord) -> Bool {
+        guard !tags.isEmpty || !anyTags.isEmpty || !excludedTags.isEmpty else { return true }
+        let songTags = Set(song.sidecar.tags.map(Self.fold))
+        let has = { (tag: String) in songTags.contains(Self.fold(tag)) }
+        return tags.allSatisfy(has)
+            && (anyTags.isEmpty || anyTags.contains(where: has))
+            && !excludedTags.contains(where: has)
+    }
+
+    private func matchesKey(_ song: SongRecord) -> Bool {
+        guard key != nil || !keys.isEmpty else { return true }
+        guard let written = KeyContext(document: song.document).writtenKey else { return false }
+        if let key, !Self.sameKey(key, written) {
+            return false
+        }
+        return keys.isEmpty || keys.contains { Self.sameKey($0, written) }
+    }
+
+    /// Tempo and length: a song without the value never matches a set range.
+    private func matchesNumbers(_ metadata: Metadata) -> Bool {
+        if let tempo {
+            guard let bpm = metadata.tempo, tempo.contains(bpm) else { return false }
+        }
+        if let length {
+            guard let seconds = metadata.duration, length.contains(seconds) else { return false }
         }
         return true
     }

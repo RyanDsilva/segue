@@ -20,7 +20,7 @@ struct LibraryArchiveTests {
     private static let exportDate = Date(timeIntervalSince1970: 1_772_888_400)
 
     @Test
-    func `archive holds exactly the four library folders under one dated folder`() async throws {
+    func `archive holds exactly the library folders under one dated folder`() async throws {
         let lib = try TestLibrary()
         try await Self.populate(lib)
         let work = try WorkFolder()
@@ -58,6 +58,7 @@ struct LibraryArchiveTests {
         #expect(archived.keys.contains { $0.hasPrefix("setlists/") })
         #expect(archived.keys.contains("shows/01JTEST.show.json"))
         #expect(archived.keys.contains("timings/01JTEST.rehearsal.json"))
+        #expect(archived.keys.contains("filters/ready-songs.filter.json"))
         #expect(!archived.keys.contains { $0.hasPrefix(".segue") || $0.contains(".DS_Store") })
         #expect(!archived.keys.contains("notes.txt"))
         #expect(!archived.keys.contains { $0.hasPrefix("My Stuff") })
@@ -180,6 +181,11 @@ struct LibraryArchiveTests {
         try await setlists.addSong(song.id, to: setlist.id)
         try lib.write(#"{"schemaVersion":1}"#, to: "shows/01JTEST.show.json")
         try lib.write(#"{"schemaVersion":1}"#, to: "timings/01JTEST.rehearsal.json")
+        let filters = SmartFilterStore(fileSystem: lib.fileSystem, clock: lib.clock, ids: lib.ids)
+        try await filters.load(root: lib.root)
+        var ready = SmartFilterConditions()
+        ready.proficiencies = [.ready]
+        try await filters.create(name: "Ready songs", conditions: ready)
         try lib.write("nested", to: "songs/Old Versions/draft.cho")
         try lib.writeBytes([0, 1, 2, 255], to: "songs/.DS_Store")
         try lib.write("private", to: "notes.txt")

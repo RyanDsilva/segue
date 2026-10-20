@@ -10,12 +10,13 @@ public enum LibraryArchiveError: Error, Equatable {
 }
 
 /// Exports a library as one zip (WS2b 4.8, B-23): a single top folder
-/// `Segue Library YYYY-MM-DD/` holding `songs/`, `setlists/`, `shows/` and `timings/` as
-/// they are on disk. Excluded: `.segue/` (the rebuildable index and app-private state),
-/// hidden files such as `.DS_Store`, and anything else at the library root (a user's own
-/// files there are theirs, not Segue's). Empty or missing folders are simply absent.
+/// `Segue Library YYYY-MM-DD/` holding `songs/`, `setlists/`, `shows/`, `timings/` and
+/// `filters/` (saved smart filters, phase 3) as they are on disk. Excluded: `.segue/` (the
+/// rebuildable index and app-private state), hidden files such as `.DS_Store`, and anything
+/// else at the library root (a user's own files there are theirs, not Segue's). Empty or
+/// missing folders are simply absent.
 ///
-/// Mechanism (no third-party code, sandbox-safe): the four folders are copied through the
+/// Mechanism (no third-party code, sandbox-safe): the folders are copied through the
 /// injected `FileSystem` into a staging folder under `temporaryDirectory`, the system zips
 /// the staged folder (`NSFileCoordinator` with `.forUploading`), and the zip is written to
 /// the destination atomically, so a failure never leaves a partial file there. The staging
@@ -24,7 +25,7 @@ public enum LibraryArchiveError: Error, Equatable {
 /// Synchronous and `Sendable`: callers run it off the main actor.
 public struct LibraryArchive: Sendable {
     /// The library folders an archive carries, in archive order.
-    public static let includedFolders = ["songs", "setlists", "shows", "timings"]
+    public static let includedFolders = ["songs", "setlists", "shows", "timings", "filters"]
 
     private let fileSystem: any FileSystem
     private let clock: any Clock

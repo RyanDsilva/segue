@@ -9,6 +9,7 @@ import Foundation
 ///   setlists/<slug>.setlist.json
 ///   shows/<ulid>.show.json            (phase 2: shows and the gig log)
 ///   timings/<ulid>.rehearsal.json     (phase 2: rehearse-setlist timings)
+///   filters/<slug>.filter.json        (phase 3: saved smart filters)
 ///   .segue/index.sqlite
 ///   .segue/library.lock
 /// ```
@@ -44,6 +45,11 @@ public struct LibraryRoot: Sendable, Hashable {
         url.appending(path: "timings", directoryHint: .isDirectory)
     }
 
+    /// `<root>/filters`: saved smart filters (`.filter.json`), phase 3 (R72).
+    public var filtersDirectory: URL {
+        url.appending(path: "filters", directoryHint: .isDirectory)
+    }
+
     /// `<root>/.segue`: app-private, rebuildable state.
     public var appDirectory: URL {
         url.appending(path: ".segue", directoryHint: .isDirectory)
@@ -70,4 +76,6 @@ public struct LibraryRoot: Sendable, Hashable {
     public static let showSuffix = ".show.json"
     /// Filename suffix of rehearsal timing files (`<ulid>.rehearsal.json`).
     public static let rehearsalSuffix = ".rehearsal.json"
+    /// Filename suffix of smart filter files (`<slug>.filter.json`).
+    public static let filterSuffix = ".filter.json"
 }
