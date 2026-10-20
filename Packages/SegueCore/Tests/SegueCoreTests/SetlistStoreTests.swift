@@ -37,7 +37,7 @@ struct SetlistStoreTests {
         #expect(setlist.name == "Friday Gig")
         #expect(setlist.schemaVersion == Setlist.currentSchemaVersion)
         for entry in setlist.entries {
-            #expect(try await library.song(id: entry.songId) != nil)
+            #expect(try await library.song(id: #require(entry.songId)) != nil)
         }
     }
 
@@ -64,7 +64,7 @@ struct SetlistStoreTests {
           ],
           "id" : "\(setlist.id)",
           "name" : "Sangeet Night",
-          "schemaVersion" : 2,
+          "schemaVersion" : 3,
           "updatedAt" : "\(stamp)"
         }
 
@@ -180,7 +180,7 @@ struct SetlistStoreTests {
         #expect(try lib.read("setlists/old-set.setlist.json") == legacy)
 
         try await store.addSong(SongID(lib.ids.next()), to: id)
-        #expect(try lib.read("setlists/old-set.setlist.json").contains("\"schemaVersion\" : 2"))
+        #expect(try lib.read("setlists/old-set.setlist.json").contains("\"schemaVersion\" : 3"))
     }
 
     @Test

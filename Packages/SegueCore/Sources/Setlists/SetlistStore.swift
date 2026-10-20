@@ -45,7 +45,7 @@ public struct SetlistLoadIssue: Sendable, Equatable {
 public actor SetlistStore {
     let fileSystem: any FileSystem
     private let clock: any Clock
-    private let ids: any IDGenerator
+    let ids: any IDGenerator
 
     struct Stored {
         var setlist: Setlist
@@ -82,6 +82,9 @@ public actor SetlistStore {
                     return entry
                 }
             },
+            // v2 -> v3: break rows and `changeoverSeconds` are new, optional shapes; a v2
+            // file reads unchanged.
+            2: { _ in },
         ],
     )
 
@@ -240,6 +243,7 @@ public actor SetlistStore {
             venue: original.venue,
             date: original.date,
             targetDuration: original.targetDuration,
+            changeoverSeconds: original.changeoverSeconds,
         )
         let stored = Stored(setlist: copy, slug: newSlug(for: name, root: root))
         try save(stored, root: root)
@@ -262,24 +266,11 @@ public actor SetlistStore {
             guard (0 ... setlist.entries.count).contains(position) else {
                 throw SetlistError.invalidOffsets(id)
             }
-            var present = Set(setlist.entries.map(\.songId))
+            var present = Set(setlist.entries.compactMap(\.songId))
             let inserted = songIDs
                 .filter { present.insert($0).inserted }
                 .map { song in SetlistEntry(itemId: SetlistItemID(ids.next()), songId: song) }
             setlist.entries.insert(contentsOf: inserted, at: position)
-        }
-    }
-
-    /// Replaces the overrides and note of the entry with `entry.itemId` (its song stays) and
-    /// saves. Throws `invalidOffsets` when no entry has that item ID.
-    @discardableResult
-    public func updateEntry(_ entry: SetlistEntry, in id: SetlistID) throws -> Setlist {
-        try mutate(id) { entries in
-            guard let index = entries.firstIndex(where: { $0.itemId == entry.itemId }) else {
-                throw SetlistError.invalidOffsets(id)
-            }
-            entries[index].overrides = entry.overrides
-            entries[index].note = entry.note
         }
     }
 
@@ -306,13 +297,14 @@ public actor SetlistStore {
             }
             let existing = Set(current.map(\.itemId))
             var counts: [SongID: Int] = [:]
-            for entry in entries {
-                counts[entry.songId, default: 0] += 1
+            for song in entries.compactMap(\.songId) {
+                counts[song, default: 0] += 1
             }
-            if let repeated = entries.first(where: { entry in
-                !existing.contains(entry.itemId) && counts[entry.songId, default: 0] > 1
-            }) {
-                throw SetlistError.duplicateSong(id, repeated.songId)
+            // Break rows hold no song: they never count as a repeat.
+            for entry in entries where !existing.contains(entry.itemId) {
+                if let song = entry.songId, counts[song, default: 0] > 1 {
+                    throw SetlistError.duplicateSong(id, song)
+                }
             }
             current = entries
         }
@@ -320,7 +312,7 @@ public actor SetlistStore {
 
     // MARK: - Private
 
-    private func mutate(
+    func mutate(
         _ id: SetlistID,
         _ change: (inout [SetlistEntry]) throws -> Void,
     ) throws -> Setlist {
@@ -469,32 +461,5 @@ public struct SetlistDetails: Sendable, Equatable {
         self.venue = venue
         self.date = date
         self.targetDuration = targetDuration
-    }
-}
-
-public extension SetlistStore {
-    /// Why `replaceEntries(_:in:)` should not write setlist `id` now, checked against the
-    /// file on disk: it was deleted (in Segue or from the folder) or became read-only (saved
-    /// by a newer Segue) since it was loaded. Nil when it can be saved. The show-end review
-    /// disables Save with this reason (2-interfaces.md, open question 17).
-    func saveBlocker(for id: SetlistID) -> SetlistError? {
-        guard let root else { return .notLoaded }
-        guard let stored = setlists[id] else { return .setlistNotFound(id) }
-        if let reason = stored.setlist.readOnly {
-            return .readOnly(id, reason)
-        }
-        let url = Self.url(root: root, slug: stored.slug)
-        guard fileSystem.fileExists(at: url) else { return .setlistNotFound(id) }
-        if let data = try? fileSystem.readData(at: url),
-           let onDisk = try? Self.decode(data)
-        {
-            if onDisk.id != id {
-                return .setlistNotFound(id)
-            }
-            if let reason = onDisk.readOnly {
-                return .readOnly(id, reason)
-            }
-        }
-        return nil
     }
 }

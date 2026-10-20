@@ -387,9 +387,10 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
 
     /// Planned entries left out of the show at start because their song was missing
     /// (decisions.md, phase 2 build rulings: removed, not skipped). Derived: items are never
-    /// removed during a show, so a planned entry without an item was left out.
+    /// removed during a show, so a planned song entry without an item was left out (break
+    /// rows are never items yet).
     public var omittedEntries: [SetlistEntry] {
         let present = Set(items.map(\.itemId))
-        return planned.filter { !present.contains($0.itemId) }
+        return planned.filter { !$0.isBreak && !present.contains($0.itemId) }
     }
 }

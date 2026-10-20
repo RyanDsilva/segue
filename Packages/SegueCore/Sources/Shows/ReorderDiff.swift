@@ -120,7 +120,8 @@ public struct ReorderDiff: Sendable, Hashable {
     /// - entries the show never had (added to the setlist during the show, or left out at
     ///   start because the song was missing) keep their place after the entry before them
     ///   in `current`, or stay at the end when nothing after them was performed, so Save
-    ///   never drops a song.
+    ///   never drops a song. Break rows are not show items yet: each stays right before the
+    ///   next performed entry that followed it, so it still opens the same part.
     public func entries(
         mergingInto current: [SetlistEntry],
         including inserted: Set<ShowItemID>,
@@ -129,7 +130,7 @@ public struct ReorderDiff: Sendable, Hashable {
             current.map { ($0.itemId, $0) },
             uniquingKeysWith: { first, _ in first },
         )
-        var songs = Set(current.map(\.songId))
+        var songs = Set(current.compactMap(\.songId))
         var written: [SetlistEntry] = performed.compactMap { row in
             if case .inserted = row.change {
                 guard inserted.contains(row.item.itemId),
@@ -150,6 +151,18 @@ public struct ReorderDiff: Sendable, Hashable {
         for (position, entry) in current.enumerated() where !present.contains(entry.itemId) {
             if !current[(position + 1)...].contains(where: { performedIDs.contains($0.itemId) }) {
                 written.append(entry)
+                present.insert(entry.itemId)
+                continue
+            }
+            // A break row opens the part after it: it stays right before the next entry the
+            // show performed, so a song moved within the part above stays above it.
+            if entry.isBreak,
+               let next = current[(position + 1)...].first(where: {
+                   performedIDs.contains($0.itemId)
+               }),
+               let index = written.firstIndex(where: { $0.itemId == next.itemId })
+            {
+                written.insert(entry, at: index)
                 present.insert(entry.itemId)
                 continue
             }
@@ -180,7 +193,7 @@ public struct ReorderDiff: Sendable, Hashable {
     /// never adds them (a song appears at most once per setlist), so the sheet offers no
     /// "Add to setlist" for them.
     public var repeatedItemIds: Set<ShowItemID> {
-        var songs = Set(planned.map(\.songId))
+        var songs = Set(planned.compactMap(\.songId))
         var repeated: Set<ShowItemID> = []
         for row in performed {
             guard case .inserted = row.change else { continue }

@@ -41,7 +41,9 @@
         private var startableSetlist: Setlist? {
             guard let session = app.session, let setlist = app.shownSetlist, !app.isPerforming,
                   !app.isStartingShow, !app.isMainWindowBusy,
-                  setlist.entries.contains(where: { session.library.song(id: $0.songId) != nil })
+                  setlist.entries.contains(where: {
+                      $0.songId.flatMap(session.library.song(id:)) != nil
+                  })
             else { return nil }
             return setlist
         }

@@ -137,7 +137,7 @@
             let tagged = try await Set(stores.library.songs(taggedWith: tag).map(\.id))
             return await store.all().first { setlist in
                 setlist.name == plan.name && !setlist.entries.isEmpty
-                    && setlist.entries.allSatisfy { tagged.contains($0.songId) }
+                    && setlist.entries.allSatisfy { $0.songId.map(tagged.contains) ?? false }
             }?.id
         }
 

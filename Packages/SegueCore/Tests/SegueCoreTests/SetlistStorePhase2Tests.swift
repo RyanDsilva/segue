@@ -143,7 +143,7 @@ struct SetlistStorePhase2Tests {
         var edited = setlist.entries[1]
         edited.overrides = SetlistOverrides(capo: 2)
         edited.note = "tag ending"
-        edited.songId = songs[0] // ignored: the slot keeps its song
+        edited.kind = .song(songs[0]) // ignored: the slot keeps its song
         let updated = try await store.updateEntry(edited, in: setlist.id)
 
         #expect(updated.entries[1].songId == songs[1])

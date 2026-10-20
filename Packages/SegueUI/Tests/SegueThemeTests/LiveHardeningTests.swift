@@ -156,7 +156,7 @@ extension StageWindowSuites {
             var titles: [String?] = []
             for entry in saved.entries {
                 try await titles.append(
-                    fixture.library.song(id: entry.songId)?.document.metadata.title,
+                    fixture.library.song(id: #require(entry.songId))?.document.metadata.title,
                 )
             }
             #expect(titles == ["Alpha", "Charlie", "Bravo", "Added Late"])

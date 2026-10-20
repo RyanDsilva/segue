@@ -27,14 +27,14 @@ struct SetlistTimingTests {
     func `start times accumulate known lengths`() {
         let lengths = [
             songs[0]: SongLength(seconds: 220, source: .directive),
-            songs[1]: SongLength(seconds: 192, source: .learned),
+            songs[1]: SongLength(seconds: 192, source: .directive),
         ]
         let list = entries([0, 1, 0])
         let timing = SetlistTiming(entries: list, lengths: lengths, target: 2700)
         #expect(timing.items.map(\.start) == [0, 220, 412])
         #expect(timing.items.map(\.startIsApproximate) == [false, false, false])
         #expect(timing.items.map(\.itemId) == list.map(\.itemId))
-        #expect(timing.items.map(\.length?.source) == [.directive, .learned, .directive])
+        #expect(timing.items.map(\.length?.source) == [.directive, .directive, .directive])
         #expect(timing.total == 632)
         #expect(timing.unknownCount == 0)
         #expect(!timing.isApproximate)
@@ -102,6 +102,80 @@ struct SetlistTimingTests {
         #expect(timing.items.map(\.start) == [0, 110, 220])
         #expect(timing.total == 320)
         #expect(timing.progress == 320.0 / 600)
+    }
+
+    /// A break row with item byte `byte` (distinct from the song rows' bytes).
+    private func breakRow(
+        _ byte: UInt8,
+        _ label: String,
+        length: TimeInterval? = nil,
+    ) -> SetlistEntry {
+        SetlistEntry(
+            itemId: SetlistItemID(ULID(
+                milliseconds: 3,
+                randomness: Array(repeating: byte, count: 10),
+            )),
+            break: SetlistBreak(label: label, length: length),
+        )
+    }
+
+    @Test
+    func `break rows split the set into parts with their own totals`() {
+        // The direction mockups' set: part 1 = 3:20, 4:05, 3:05, unknown; a 15:00 break;
+        // part 2 = 3:12, unknown, 4:40; 30 s changeovers.
+        let ids = (0 ..< 7).map { index in
+            SongID(ULID(milliseconds: 9, randomness: Array(repeating: UInt8(index), count: 10)))
+        }
+        let known: [Int: TimeInterval] = [0: 200, 1: 245, 2: 185, 4: 192, 6: 280]
+        let lengths = Dictionary(uniqueKeysWithValues: known.map {
+            (ids[$0.key], SongLength(seconds: $0.value, source: .directive))
+        })
+        func song(_ index: Int) -> SetlistEntry {
+            SetlistEntry(
+                itemId: SetlistItemID(ULID(
+                    milliseconds: 4,
+                    randomness: Array(repeating: UInt8(index), count: 10),
+                )),
+                songId: ids[index],
+            )
+        }
+        let pause = breakRow(99, "Set 2", length: 900)
+        let list = [song(0), song(1), song(2), song(3), pause, song(4), song(5), song(6)]
+
+        let timing = SetlistTiming(entries: list, lengths: lengths, target: 2700, changeover: 30)
+
+        #expect(timing.items.map(\.startText) == [
+            "0:00", "3:50", "8:25", "12:00", "≥12:00", "≥27:00", "≥30:42", "≥31:12",
+        ])
+        #expect(timing.items[4].length == SongLength(seconds: 900, source: .intermission))
+        #expect(timing.parts.map(\.totalText) == ["≥12:00 + 1 unknown", "≥8:52 + 1 unknown"])
+        #expect(timing.parts.map(\.label) == [nil, "Set 2"])
+        #expect(timing.parts[1].breakItemId == pause.itemId)
+        #expect(timing.part(openedBy: pause.itemId) == timing.parts[1])
+        #expect(timing.parts.map(\.songItemIds.count) == [4, 3])
+        // The whole: both parts plus the intermission, which is in neither part (R105).
+        #expect(timing.totalText == "≥35:52 + 2 unknown")
+        #expect(timing.unknownItemIds == [list[3].itemId, list[6].itemId])
+        #expect(timing.changeoverNote == "Includes 30 s changeovers between songs.")
+    }
+
+    @Test
+    func `a break without an intermission adds no time and empty parts are zero`() {
+        let lengths = [songs[0]: SongLength(seconds: 100, source: .directive)]
+        let list = [breakRow(90, "Set 1"), entries([0])[0], breakRow(91, "Encore")]
+
+        let timing = SetlistTiming(entries: list, lengths: lengths, target: nil, changeover: 15)
+
+        #expect(timing.parts.map(\.totalText) == ["0:00", "1:40", "0:00"])
+        #expect(timing.items[2].length == nil)
+        #expect(timing.items[2].start == 100)
+        #expect(timing.total == 100)
+        #expect(timing.unknownItemIds.isEmpty)
+    }
+
+    @Test(arguments: [(0.0, "0 s"), (30, "30 s"), (59, "59 s"), (75, "1:15")])
+    func `changeovers read in seconds under a minute`(seconds: TimeInterval, text: String) {
+        #expect(SetlistTiming.formatChangeover(seconds) == text)
     }
 
     @Test

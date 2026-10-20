@@ -64,8 +64,11 @@ public actor ShowController {
         songs: any ShowSongSource,
     ) async -> [SetlistEntry] {
         var missing: [SetlistEntry] = []
-        for entry in setlist.entries where await songs.cachedSong(id: entry.songId) == nil {
-            missing.append(entry)
+        for entry in setlist.entries {
+            guard let song = entry.songId else { continue }
+            if await songs.cachedSong(id: song) == nil {
+                missing.append(entry)
+            }
         }
         return missing
     }
@@ -83,11 +86,14 @@ public actor ShowController {
     ) async throws -> ShowController {
         let now = SegueJSON.stamp(environment.clock.now())
         var items: [ShowItem] = []
+        // Break rows are not stage items yet (R104's interstitial comes with the live
+        // step); the record keeps them in `planned` so the show-end save keeps them.
         for entry in setlist.entries where !omitting.contains(entry.itemId) {
-            let song = await environment.songs.cachedSong(id: entry.songId)
+            guard let songId = entry.songId else { continue }
+            let song = await environment.songs.cachedSong(id: songId)
             items.append(ShowItem(
                 itemId: entry.itemId,
-                songId: entry.songId,
+                songId: songId,
                 title: displayTitle(song),
                 origin: .setlist,
                 overrides: entry.overrides,

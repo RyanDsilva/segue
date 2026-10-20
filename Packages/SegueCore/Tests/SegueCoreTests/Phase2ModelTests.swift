@@ -36,7 +36,7 @@ struct Phase2ModelTests {
         try await again.addSong(SongID(lib.ids.next()), to: id)
         let saved = try lib.read("setlists/twice.setlist.json")
         #expect(saved.contains("\"itemId\" : \"\(setlist.entries[0].itemId)\""))
-        #expect(saved.contains("\"schemaVersion\" : 2"))
+        #expect(saved.contains("\"schemaVersion\" : \(Setlist.currentSchemaVersion)"))
     }
 
     /// One overrides case: inputs and the expected render transpose/capo.

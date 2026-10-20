@@ -62,11 +62,12 @@
             // show still starts with the last saved version; the editor keeps its bar.
             await session.library.flushEditor()
             await session.library.refresh()
-            let missing = setlist.entries.enumerated().filter { _, entry in
-                session.library.song(id: entry.songId) == nil
+            // Break rows hold no song: only song slots can be missing.
+            let missing = setlist.songEntries.enumerated().filter { _, entry in
+                entry.songId.flatMap(session.library.song(id:)) == nil
             }
-            guard missing.count < setlist.entries.count else {
-                startFailure = setlist.entries.isEmpty
+            guard missing.count < setlist.songEntries.count else {
+                startFailure = setlist.songEntries.isEmpty
                     ? "“\(setlist.name)” has no songs yet."
                     : "None of the songs in “\(setlist.name)” can be found in the library folder."
                 return false
@@ -75,7 +76,7 @@
                 setlistName: setlist.name,
                 kind: kind,
                 missingPositions: missing.map { $0.offset + 1 },
-                performableCount: setlist.entries.count - missing.count,
+                performableCount: setlist.songEntries.count - missing.count,
                 focus: runStartShortcut(kind: kind),
                 settings: liveSettings,
                 power: dependencies.live.power,

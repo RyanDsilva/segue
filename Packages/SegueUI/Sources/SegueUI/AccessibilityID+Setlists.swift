@@ -63,6 +63,11 @@ public extension AccessibilityID {
     static let entryRepeat = "segue.setlist.entry.repeat"
     static let entryEdit = "segue.setlist.entry.edit"
     static let entryRemove = "segue.setlist.entry.remove"
+    /// A break row (R85) and its part total.
+    static let setlistBreak = "segue.setlist.break"
+    static let setlistBreakTotal = "segue.setlist.break.total"
+    /// Settings > General "Changeover between songs" (R86).
+    static let settingsChangeover = "segue.settings.general.changeover"
     static let entryTransposeDown = "segue.entryEditor.transpose.down"
     static let entryTransposeUp = "segue.entryEditor.transpose.up"
     static let entryTransposeValue = "segue.entryEditor.transpose.value"

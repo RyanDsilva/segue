@@ -1,11 +1,13 @@
 #if os(macOS)
     import Darwin
+    import Setlists
     import SwiftUI
 
     /// Settings > General: the library folder, where to change it and Show Library in Finder
-    /// (the only place it appears in Settings).
+    /// (the only place it appears in Settings), and the default changeover between songs.
     struct GeneralSettingsView: View {
         let app: AppModel
+        @AppStorage(ChangeoverSetting.defaultsKey) private var changeover = 0
 
         var body: some View {
             Form {
@@ -39,9 +41,29 @@
                     SettingsNote(text: "Songs are plain ChordPro files in this folder. Back it up "
                         + "like any folder; Time Machine works.")
                 }
+                Section("Setlists") {
+                    Stepper(
+                        value: Binding(
+                            get: { ChangeoverSetting.clamped(changeover) },
+                            set: { changeover = ChangeoverSetting.clamped($0) },
+                        ),
+                        in: ChangeoverSetting.range,
+                        step: ChangeoverSetting.step,
+                    ) {
+                        LabeledContent(
+                            "Changeover between songs",
+                            value: SetlistTiming.formatChangeover(
+                                TimeInterval(ChangeoverSetting.clamped(changeover)),
+                            ),
+                        )
+                    }
+                    .accessibilityIdentifier(AccessibilityID.settingsChangeover)
+                    SettingsNote(text: "Added after every song but the last of each part, in "
+                        + "every setlist total. A setlist can set its own.")
+                }
             }
             .formStyle(.grouped)
-            .frame(minHeight: 260)
+            .frame(minHeight: 340)
         }
 
         /// `~/Music/Segue`, with the real home folder (not the sandbox container) as `~`.

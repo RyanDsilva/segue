@@ -19,6 +19,7 @@
         var onOpenLiveSettings: () -> Void = {}
         @State private var naming: SetlistNameSheet.Purpose?
         @State private var isEditingDetails = false
+        @AppStorage(ChangeoverSetting.defaultsKey) private var defaultChangeover = 0
 
         var body: some View {
             GeometryReader { proxy in
@@ -69,7 +70,11 @@
         /// Name and details, the running total, then Rehearse / Start show; the total moves
         /// to its own line when the set column is narrow.
         private var header: some View {
-            let timing = SetlistTiming(setlist: setlist, songs: library.song(id:))
+            let timing = SetlistTiming(
+                setlist: setlist,
+                songs: library.song(id:),
+                defaultChangeover: defaultChangeover,
+            )
             return ViewThatFits(in: .horizontal) {
                 HStack(alignment: .bottom, spacing: 24) {
                     nameBlock
@@ -219,6 +224,7 @@
                         .font(SchibstedGrotesk.bold.font(size: 14))
                         .fixedSize()
                         .foregroundStyle(Theme.color.ink)
+                        .help(timing.changeoverNote ?? "")
                         .accessibilityIdentifier(AccessibilityID.setlistTotal)
                     Spacer(minLength: 8)
                     Text(targetText)
