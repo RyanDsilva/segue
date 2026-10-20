@@ -32,8 +32,7 @@
             }
             .navigationTitle(model.scope.title)
             // The editor sets its own title; a song count under it would read as its own.
-            .navigationSubtitle(model.editor == nil ? songCount(model.scope.isFiltered
-                ? model.scoped(model.catalog).count : model.catalog.count) : "")
+            .navigationSubtitle(model.editor == nil ? songCount(shownCount) : "")
             .toolbar {
                 ToolbarItem(placement: .navigation) {
                     Button("Refresh", systemImage: "arrow.clockwise") {
@@ -47,6 +46,11 @@
     }
 
     extension LibraryPane {
+        /// The songs the list's scope holds (every song, or a smart filter's).
+        var shownCount: Int {
+            model.scope.isFiltered ? model.scoped(model.catalog).count : model.catalog.count
+        }
+
         /// The drop target highlight on the list column (A25): a 2pt cue inset border and
         /// "Drop to import".
         @ViewBuilder var dropHighlight: some View {
