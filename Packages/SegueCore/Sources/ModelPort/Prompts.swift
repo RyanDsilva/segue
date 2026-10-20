@@ -2,9 +2,11 @@ import Foundation
 
 /// The prompts of every task: the spike's validated final design (docs/research/
 /// phase3-spikes.md 5.3: split labels and metadata calls, deterministic hints in the prompt,
-/// greedy). One source for the FM and MLX adapters. One change since the spike: the labels
-/// prompt no longer says every chord-free block is credits (sung tags were labelled `other`
-/// on Ryan's real pastes, docs/research/phase3-eval-real-pastes.md).
+/// greedy). One source for the FM and MLX adapters. The labels prompt is the bake-off's
+/// (docs/research/phase3-model-bakeoff.md): P3-2's softer wording (chord-free blocks are
+/// credits only at the top or bottom, sung tags belong to a section) scored lower on Ryan's
+/// 51 pastes with both Qwen3-4B (88.9% vs 90.1%) and Foundation Models (89.1% vs 89.7%), and
+/// a sung tag the model calls `other` is refused by the lyric guard anyway.
 public enum ModelPrompts {
     // MARK: - Section labels
 
@@ -17,9 +19,8 @@ public enum ModelPrompts {
     outro, \
     other (title, credits, ads, website text, notes, comments).
     Notes in brackets after a block number are facts: when a header names the section, use it. \
-    A block with no chords at the top or bottom of a sheet that has chords is usually title, \
-    credits or website text: other. A short sung line or vocal tag between sections is part of \
-    the song: label it like the section it repeats or belongs to. \
+    A block with no chords in a sheet that has chords is usually title, credits or website text: \
+    other. \
     A block whose lyrics repeat an earlier chorus is a chorus; the repeated part of a song without \
     headers is the chorus. A short chord-only block at the start is the intro, at the end the outro.
     """
