@@ -35,8 +35,8 @@
                 }
                 .allowsHitTesting(false)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Metronome")
-                .accessibilityValue("\(Self.bpmText(track.bpm)) beats per minute")
+                // One label (a container's value never reaches XCUITest).
+                .accessibilityLabel("Metronome, \(Self.bpmText(track.bpm)) beats per minute")
                 .accessibilityIdentifier(AccessibilityID.liveMetronome)
             }
         }

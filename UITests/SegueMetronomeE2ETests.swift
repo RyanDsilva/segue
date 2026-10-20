@@ -46,7 +46,7 @@ final class SegueMetronomeE2ETests: XCTestCase {
         let pulse = app.descendants(matching: .any).matching(identifier: MetronomeAXID.pulse)
             .firstMatch
         XCTAssertTrue(pulse.appears(timeout: 5), "no metronome on stage")
-        XCTAssertEqual(pulse.value as? String, "96 beats per minute")
+        XCTAssertEqual(pulse.label, "Metronome, 96 beats per minute")
         attach(app, "metronome-stage")
 
         app.typeKey("m", modifierFlags: [], in: app)
@@ -78,9 +78,9 @@ final class SegueMetronomeE2ETests: XCTestCase {
             row.click()
             return
         }
-        let switches = row.descendants(matching: .switch)
-        if !switches.isEmpty {
-            switches.firstMatch.click()
+        let control = row.descendants(matching: .switch).firstMatch
+        if control.exists {
+            control.click()
         } else {
             row.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5))
                 .withOffset(CGVector(dx: -30, dy: 0)).click()
