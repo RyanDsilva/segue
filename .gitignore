@@ -63,3 +63,11 @@ research/phase3-eval/pastes/*
 !research/phase3-eval/pastes/README.md
 research/phase3-eval/gold.local.json
 research/phase3-eval/results/
+
+# User guide (WS6): dependencies, Astro state and the build output Pages rebuilds from source
+guide/node_modules/
+guide/.astro/
+website/guide/
+
+# The guide home, moved out of website/guide by guide/scripts/postbuild.mjs
+website/guide.html

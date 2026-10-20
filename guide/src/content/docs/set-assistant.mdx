@@ -1,0 +1,40 @@
+---
+title: Ask the assistant for a set
+description: Say what the gig needs in plain words. Segue fills the open setlist in one step, and one Undo takes it back.
+---
+import Shot from '../../components/Shot.astro';
+import Steps from '../../components/Steps.astro';
+
+<Steps>
+1. Open a setlist in **Arrange** (<kbd>⌘2</kbd>).
+2. In the bar above the set, say what you want, for example: *45 min, songs I know well, upbeat start, no covers*.
+3. Click **Build**. Segue fills the set; locked songs and breaks stay where they are.
+</Steps>
+
+<Shot id="assistant-bar" alt="The set assistant bar with request chips and the running total" callouts={['request', 'chips', 'total']} />
+
+## Chips {#chips}
+
+Each part of the request becomes a chip, such as "45 min" or "Ready+". Remove a chip to loosen the set, then click **Build** again.
+
+## Why a song was picked {#why}
+
+Hover over a song, or select it and press <kbd>Space</kbd>, to see why it was picked: how well you know it, its tags, when you last played it and how its key follows the song before.
+
+<Shot id="assistant-why" alt="The score breakdown for one song in the set" />
+
+## Lock songs, then Rebuild {#lock}
+
+Lock a song to keep it in its place. **Rebuild** packs the unlocked slots again with a different pick. Locks are saved with the setlist.
+
+## Songs with no length {#left-out}
+
+Segue can only time songs with a length, so songs that match but have none are left out, and the bar says how many. Click that note to see them and type a length for each, or [time them](/guide/song-card#length).
+
+## Words Segue understands {#words}
+
+Lengths and counts ("45 min", "10 songs"), proficiency ("songs I know well", "ready"), your own tags ("ballad") and smart filters ("from Openers"), keys ("in G"), tempos, "nothing played recently", and "no" or "without" in front of any of them. An opener or closer is shaped only when you ask: "upbeat start" uses your "upbeat" tag, "big finish" your "crowd pleaser" or "singalong" tag.
+
+## Suggested chips {#model-chips}
+
+If you've downloaded the local model in **Settings > AI**, it reads the request too and may offer extra chips marked "Suggested". Click one to use it. Without the local model, Segue reads requests with its own word list.

@@ -1,0 +1,31 @@
+---
+title: The song card
+description: Title, artist, key, tempo, length and more on one card. Segue writes the ChordPro for you; the file stays standard.
+---
+import Shot from '../../components/Shot.astro';
+
+The song card sits above the song in the library and in the editor. Click any field to change it. Segue writes it into the song's ChordPro file, or into the small details file beside it for tags and proficiency.
+
+<Shot id="card" alt="The song card with title, artist, key, tempo, length, proficiency and tags" callouts={['key', 'tempo', 'length']} />
+
+## Set essentials {#essentials}
+
+Key, length and tempo are the **set essentials**: Segue uses them to time a set and plan its flow. A small dot marks each one that is missing, on the card and on the song's row in the library. The **Missing essentials** filter in the sidebar lists every song that needs one.
+
+## Key {#key}
+
+Pick the key and Major or Minor. If the song has no key yet, Segue suggests one from its chords. With a capo, the key is the key of the shapes you play.
+
+## Tempo {#tempo}
+
+Type the beats per minute, or tap along with the song: each tap updates the tempo.
+
+## Length {#length}
+
+Type a length like `4:05`. Or click **Time it**, play the song, and click **Stop**: the time becomes the length. <kbd>Esc</kbd> cancels. Segue never guesses a length; a song without one shows as unknown in set totals.
+
+<Shot id="card-time-it" alt="Time it running on the song card" />
+
+## Capo, time signature, proficiency and tags {#more}
+
+**Add capo or time signature** shows those two fields. Proficiency is Learning, Ready or Pro, told apart by fill as well as colour. Tags are free words like "opener" or "ballad"; see [Tags and smart filters](/guide/smart-filters).

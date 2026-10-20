@@ -1,0 +1,27 @@
+---
+title: Transpose, capo and diagrams
+description: Change the key or capo for this view without touching the file, switch to Nashville numbers and show guitar or piano diagrams.
+---
+import Shot from '../../components/Shot.astro';
+
+The bar above the song has **Transpose**, **Capo** and **Nashville**.
+
+<Shot id="transpose" alt="The song view transposed, with capo and Nashville controls" />
+
+## Change the key for this view {#transpose}
+
+Transpose and Capo change what you see, not the file. To write the new key into the song itself, choose **Apply to Source**: Segue rewrites the chords and the key and keeps the capo.
+
+## Shapes or concert pitch {#capo}
+
+With a capo, **Shapes** shows the chords as you play them and **Concert** shows the pitch that sounds, for keys and voice.
+
+## Nashville numbers {#nashville}
+
+Turn on **Nashville** to see each chord as a number in the song's key.
+
+## Guitar and piano diagrams {#diagrams}
+
+Turn on **Diagrams** and choose Guitar, with a tuning, or Piano. Shapes you draw yourself are saved in the song as a ChordPro `{define}`, so they travel with the file.
+
+<Shot id="diagrams" alt="Guitar chord diagrams under the song" />

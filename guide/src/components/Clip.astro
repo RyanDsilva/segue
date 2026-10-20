@@ -1,0 +1,46 @@
+---
+// A short silent how-to clip from `make docs-clips` (WS6 6). Click to play (R127): no
+// autoplay and no script; nothing downloads until played. Missing clips show a placeholder.
+import shots from '../data/shots.json';
+
+interface Props {
+  id: string;
+  /** What the clip shows, as text (also the accessible label). */
+  title: string;
+  caption: string;
+}
+
+type Clip = { width: number; height: number; seconds: number };
+const { id, title, caption } = Astro.props;
+const clip = (shots.clips as Record<string, Clip>)[id];
+const base = `${import.meta.env.BASE_URL}/clips/${id}`;
+---
+
+<figure class="clip" data-clip={id}>
+  <div class="panel">
+    {
+      clip ? (
+        <video
+          controls
+          muted
+          loop
+          playsinline
+          preload="none"
+          poster={`${base}.avif`}
+          width={Math.round(clip.width / 2)}
+          height={Math.round(clip.height / 2)}
+          aria-label={title}
+        >
+          <source src={`${base}.mp4`} type="video/mp4" />
+        </video>
+      ) : (
+        <div class="shot">
+          <div class="placeholder" data-placeholder>
+            Clip coming: {title}
+          </div>
+        </div>
+      )
+    }
+  </div>
+  <figcaption>{caption}</figcaption>
+</figure>

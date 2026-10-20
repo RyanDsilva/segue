@@ -1,0 +1,35 @@
+---
+title: Build a set for a gig
+description: Tick songs in the order you want them, then fine-tune the order. Every song appears once per set.
+---
+import Clip from '../../components/Clip.astro';
+import Shot from '../../components/Shot.astro';
+import Steps from '../../components/Steps.astro';
+
+<Steps>
+1. Choose **Setlist > New Setlist…** (<kbd>⇧⌘N</kbd>) and give it a name.
+2. In **Pick** (<kbd>⌘1</kbd>), type in the search box to narrow the library, then press <kbd>Space</kbd> on each song you want. The order you tick them is the set order. <kbd>⌘A</kbd> ticks every song in the filtered list.
+3. Switch to **Arrange** (<kbd>⌘2</kbd>) and move songs with <kbd>⌥↑</kbd> and <kbd>⌥↓</kbd>, or drag them.
+</Steps>
+
+<Shot id="builder-pick" alt="The set builder in Pick mode with ticked songs" />
+
+<Clip id="build-a-set" title="Picking songs and arranging a set" caption="Space ticks songs in order, Command-2 switches to Arrange, Option-Down moves a song." />
+
+## From the library {#from-library}
+
+In the main library, <kbd>⌘</kbd>-click or <kbd>⇧</kbd>-click to select several songs, then choose **Add to Setlist**. **Setlist > Add Selected Song to Setlist** adds the selected one.
+
+## Each song once {#once}
+
+A song can be in a setlist only once. Segue won't add it twice.
+
+## Key and capo for this show {#key-and-capo}
+
+To play a song in another key or with another capo for this setlist only, choose **Edit Key, Capo and Note…** on its row. The song itself doesn't change.
+
+<Shot id="builder-arrange" alt="The set builder in Arrange mode with the running total" />
+
+## Undo {#undo}
+
+Every change in the builder can be undone with Edit > Undo.

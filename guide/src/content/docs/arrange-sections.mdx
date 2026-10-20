@@ -1,0 +1,30 @@
+---
+title: Arrange sections for one gig
+description: Skip a verse, repeat a chorus or change the order for one setlist only. The song file never changes.
+---
+import Shot from '../../components/Shot.astro';
+import Steps from '../../components/Steps.astro';
+
+<Steps>
+1. Select a song in the setlist and choose **Setlist > Arrange Sections…** (<kbd>⇧⌘A</kbd>), or use the Arrangement row in its details.
+2. Untick the sections to skip, change how many times a section plays, and drag sections into a new order. The preview shows the song as it will look on stage.
+3. Click **Done**.
+</Steps>
+
+<Shot id="arrange-sheet" alt="The Arrange Sections sheet with ticked sections and a stage preview" />
+
+## The song stays as it is {#reset}
+
+An arrangement belongs to this slot in this setlist. The song's file never changes. **Reset to Full Song** removes the arrangement.
+
+## Play a section again later {#play-again}
+
+**Play Again Later** adds a copy of a section that you can drag anywhere, for a final chorus after the solo.
+
+## Length for this gig {#slot-length}
+
+An arranged song is shorter or longer than the full song, so it gets its own length for this gig: type it, or time it. Until then it counts as unknown.
+
+## Out of date {#out-of-date}
+
+If you edit the song and a section in the arrangement no longer exists, the arrangement is marked out of date, and the stage shows the full song until you fix it. New sections in the song appear unticked under "New in the song".

@@ -1,0 +1,21 @@
+---
+title: Take a request mid-set
+description: Find any song by a title or a line someone shouts, then play it now, play it next or add it to your requests.
+---
+import Shot from '../../components/Shot.astro';
+import Steps from '../../components/Steps.astro';
+
+<Steps>
+1. On stage, press <kbd>⌘K</kbd> or <kbd>/</kbd> and type a few letters of a title or a line you remember. Spellings vary, so "pyar" finds "Pyaar".
+2. Press <kbd>Return</kbd> to play it now, <kbd>⌥↩</kbd> to play it next, or <kbd>⌘↩</kbd> to add it to your requests, with an optional note such as "table 4".
+</Steps>
+
+<Shot id="stage-search" alt="Quick search on stage, finding Kitaabon Wali Gali" />
+
+## The request queue {#queue}
+
+Press <kbd>Q</kbd> to see your requests and <kbd>R</kbd> to play the oldest one.
+
+## No repeats {#no-repeats}
+
+A song plays once per show. If it was already played tonight, Segue says so. If it is still coming up in the set, Segue offers **Move to Next** instead. A song you skipped can be added back.

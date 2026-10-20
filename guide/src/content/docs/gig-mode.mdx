@@ -1,0 +1,32 @@
+---
+title: Gig Mode Shortcuts
+description: Let a Shortcut silence notifications when a show starts and bring them back when it ends.
+---
+import Shot from '../../components/Shot.astro';
+import Steps from '../../components/Steps.astro';
+
+Gig Mode Shortcuts are off until you set them up. Segue can't switch a Focus on by itself, so it runs Shortcuts you own when a show starts and ends.
+
+## Set them up {#set-up}
+
+<Steps>
+1. In the Shortcuts app, make a Shortcut called "Gig Mode On" that uses the **Set Focus** action to turn on Do Not Disturb, and another called "Gig Mode Off" that turns it off.
+2. In Segue, open **Settings > Live**. Under **Gig Mode Shortcuts**, choose them for **On show start** and **On show end**.
+3. Press **Test**. The first time, macOS asks whether Segue may control Shortcuts: click **OK**.
+</Steps>
+
+<Shot id="settings-live" alt="Settings, Live, with the Gig Mode Shortcuts section" />
+
+Shortcuts can do more than Focus: turn the brightness up, or quit apps that might pop up during a set.
+
+## The checklist row {#checklist}
+
+With a start Shortcut set, the pre-show checklist has a Focus row. It ticks only when Segue knows the Shortcut actually ran. If Segue can't confirm it, tick the row yourself.
+
+## Why Shortcuts may flash {#focus}
+
+macOS may bring the Shortcuts app forward for a moment while it runs your Shortcut. Segue comes straight back to the front.
+
+## If it doesn't run {#permission}
+
+If you clicked Don't Allow, turn Segue on under **System Settings > Privacy & Security > Automation** (Segue's **Open Automation Settings…** button takes you there).

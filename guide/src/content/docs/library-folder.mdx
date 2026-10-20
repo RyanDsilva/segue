@@ -1,0 +1,34 @@
+---
+title: Your library folder
+description: Your library is a folder of plain files. Segue reads it, indexes it for search and never locks it away.
+---
+import Shot from '../../components/Shot.astro';
+
+## What is in the folder {#files}
+
+| Folder | What it holds |
+| --- | --- |
+| `songs/` | One ChordPro file (`.cho`) per song, with a small `.segue.json` file beside it for tags, proficiency and notes |
+| `setlists/` | One file per setlist |
+| `shows/` | Your gig log, one file per show |
+| `filters/` | Your smart filters |
+
+Time Machine and any other backup tool already cover it. To move your library to another Mac, copy the folder and choose it there.
+
+## Use a different folder {#change}
+
+Choose **Library > Choose Library Folder…**, or **Settings > Data**. You can't switch libraries while a show is running.
+
+## Search {#search}
+
+Type in the search field above the song list. Segue searches titles, artists and every lyric line, so a half-remembered line is enough. Romanized Hindi spellings match each other: "pyar" finds "pyaar".
+
+<Shot id="library-search" alt="Searching for kitabon finds Kitaabon Wali Gali by a lyric line" />
+
+## Finder {#finder}
+
+**File > Show in Finder** (<kbd>⌥⌘R</kbd>) reveals a song's file. `.cho` files open in Segue from Finder, and Quick Look previews them.
+
+## When search looks wrong {#rebuild}
+
+Choose **Library > Rebuild Index**. Segue rebuilds its search index from your files and never changes the files themselves.

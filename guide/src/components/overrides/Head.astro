@@ -1,0 +1,21 @@
+---
+// Starlight's head tags, with the canonical and og:url written as the URL Pages serves
+// (`/guide/ai`, `/guide` for the home), not the built file name (`ai.html`, `index.html`).
+const { head } = Astro.locals.starlightRoute;
+const servedUrl = (href: string) => href.replace(/\/index\.html$/, '').replace(/\.html$/, '');
+const tags = head.map(({ tag, attrs, content }) => {
+  if (tag === 'link' && attrs?.rel === 'canonical' && typeof attrs.href === 'string') {
+    return { tag, attrs: { ...attrs, href: servedUrl(attrs.href) }, content };
+  }
+  if (tag === 'meta' && attrs?.property === 'og:url' && typeof attrs.content === 'string') {
+    return { tag, attrs: { ...attrs, content: servedUrl(attrs.content) }, content };
+  }
+  // The site's favicon lives at the origin root, outside the guide's base.
+  if (tag === 'link' && attrs?.rel === 'shortcut icon') {
+    return { tag, attrs: { ...attrs, href: '/favicon.svg' }, content };
+  }
+  return { tag, attrs, content };
+});
+---
+
+{tags.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}

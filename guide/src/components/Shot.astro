@@ -1,0 +1,76 @@
+---
+// A screenshot from `make docs-shots` (WS6 5.6), in a rounded panel, switching dark/light
+// with the system through <picture> (no script), with numbered callout dots placed from the
+// element frames the capture recorded. A shot not captured yet renders a quiet placeholder,
+// which `make guide-check STRICT=1` refuses.
+import shots from '../data/shots.json';
+
+interface Props {
+  /** Shot id, e.g. "paste-review" (file guide/public/shots/<id>-<appearance>.avif). */
+  id: string;
+  alt: string;
+  caption?: string;
+  /** Callout target names, in step order: numbered 1, 2, 3... */
+  callouts?: string[];
+  /** Let the image run off the bottom of the panel (tile crops). */
+  bleed?: boolean;
+}
+
+type Frame = { x: number; y: number; w: number; h: number };
+type Entry = { appearances: string[]; width: number; height: number; callouts?: Record<string, Frame> };
+
+const { id, alt, caption, callouts = [], bleed = false } = Astro.props;
+const entry = (shots.shots as Record<string, Entry>)[id];
+const base = `${import.meta.env.BASE_URL}/shots/${id}`;
+const file = (appearance: string) =>
+  entry && entry.appearances.length === 1 ? `${base}.avif` : `${base}-${appearance}.avif`;
+const points = entry ? { width: Math.round(entry.width / 2), height: Math.round(entry.height / 2) } : undefined;
+const dots = entry
+  ? callouts.flatMap((name, index) => {
+      const frame = entry.callouts?.[name];
+      if (!frame) return [];
+      return [{ n: index + 1, cx: (frame.x + frame.w / 2) * entry.width, cy: (frame.y + frame.h / 2) * entry.height }];
+    })
+  : [];
+---
+
+<figure class:list={['shot', { bleed }]} data-shot={id}>
+  <div class="panel">
+    {
+      entry && points ? (
+        <div class="frame">
+          <picture>
+            {entry.appearances.length > 1 && (
+              <source srcset={file('dark')} media="(prefers-color-scheme: dark)" />
+            )}
+            <img
+              src={file(entry.appearances.includes('light') ? 'light' : 'dark')}
+              alt={alt}
+              width={points.width}
+              height={points.height}
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
+          {dots.length > 0 && (
+            <svg class="callouts" viewBox={`0 0 ${entry.width} ${entry.height}`} aria-hidden="true">
+              {dots.map((dot) => (
+                <g>
+                  <circle cx={dot.cx} cy={dot.cy} r="22" />
+                  <text x={dot.cx} y={dot.cy} text-anchor="middle" dominant-baseline="central" font-size="24">
+                    {dot.n}
+                  </text>
+                </g>
+              ))}
+            </svg>
+          )}
+        </div>
+      ) : (
+        <div class="placeholder" data-placeholder>
+          Screenshot coming: {alt}
+        </div>
+      )
+    }
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>

@@ -1,0 +1,30 @@
+---
+title: AI in Segue
+description: What AI does in Segue, the one switch that turns it off, and the optional local model you can download.
+---
+import AppleModelName from '../../components/AppleModelName.astro';
+import Shot from '../../components/Shot.astro';
+
+## What it does {#what}
+
+Segue converts pastes and reads set requests with its own rules first. AI only refines the result: it checks section labels and the title and artist of a paste, and offers extra chips for a set request. It never rewrites your lyrics or chords, and it never runs during a show.
+
+## One switch {#toggle}
+
+**Settings > AI > Use AI to refine pastes and set requests** is on by default. Turn it off and Segue uses its own rules only.
+
+<Shot id="settings-ai" alt="Settings, AI, with the Use AI switch and the local model card" />
+
+## Apple's model {#apple}
+
+On a Mac with Apple Intelligence turned on, Segue uses <AppleModelName /> for pastes. If it isn't available, Settings > AI says why, for example that it is still getting ready or turned off, with a button to open System Settings. Set requests use only the local model.
+
+## The local model {#local-model}
+
+For the best results, download Segue's local model in **Settings > AI**: about 2.3 GB, downloaded only when you click **Download**. Once it is downloaded, Segue uses it first. It loads only while it works on a paste or a set request, then frees the memory. On a Mac with less than 16 GB of memory, Apple's model stays the default and the local model is optional, slower and heavier. **Delete…** removes the model's files at once; you can download it again any time.
+
+<Shot id="settings-ai-installed" alt="The local model card after the download" />
+
+## What goes online {#online}
+
+Only the model download, from Hugging Face, when you click **Download**. Your songs, pastes and requests never leave your Mac.

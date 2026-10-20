@@ -1,0 +1,34 @@
+---
+title: Text mode, the slash menu and ChordPro
+description: Type a slash at the start of a line to add a section, a note, a key or a tempo by name. No ChordPro to remember.
+---
+import Shot from '../../components/Shot.astro';
+
+## The slash menu {#slash}
+
+In Text mode, type <kbd>/</kbd> at the start of a line and pick by plain name: Verse, Chorus, Bridge, a note, or a value such as Key, Tempo or Length. With lines selected, a section wraps them.
+
+<Shot id="slash-menu" alt="The slash menu listing Verse, Chorus and Bridge" />
+
+## Completion {#completion}
+
+Typing <kbd>[</kbd> suggests chords already in the song. Typing <kbd>{"{"}</kbd> suggests directives, including the section names, and offers values for keys, tempos and lengths.
+
+## Key check {#key-check}
+
+If a directive holds a value Segue can't read, like a key written `Hm`, the editor flags the line and offers a fix.
+
+## ChordPro in six lines {#chordpro}
+
+ChordPro is plain text. Chords go in square brackets right before the syllable they belong to, and directives in curly braces set the title, key and sections:
+
+```text
+{title: Lanterns}
+{key: G}
+{start_of_verse}
+[G]Lanterns on the [D]water, the [Em]boats come [C]in
+[G]Ropes along the [D]railing, the [C]night begins
+{end_of_verse}
+```
+
+Because the files are standard ChordPro, any other ChordPro app can open them.

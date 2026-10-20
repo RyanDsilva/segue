@@ -1,0 +1,356 @@
+{
+  "menus" : [
+    {
+      "items" : [
+        {
+          "keys" : [
+            "⌘,"
+          ],
+          "title" : "Settings…"
+        }
+      ],
+      "menu" : "Segue"
+    },
+    {
+      "items" : [
+        {
+          "keys" : [
+            "⌘N"
+          ],
+          "title" : "New Song"
+        },
+        {
+          "keys" : [
+            "⌥⌘V"
+          ],
+          "title" : "New Song from Clipboard"
+        },
+        {
+          "keys" : [
+            "⇧⌘I"
+          ],
+          "title" : "Import Songs…"
+        },
+        {
+          "keys" : [
+            "⌥⌘R"
+          ],
+          "title" : "Show in Finder"
+        },
+        {
+          "keys" : [
+            "⌘⌫"
+          ],
+          "title" : "Move to Trash"
+        },
+        {
+          "keys" : [
+            "⌘W"
+          ],
+          "title" : "Close"
+        },
+        {
+          "keys" : [
+            "⌘S"
+          ],
+          "title" : "Save"
+        }
+      ],
+      "menu" : "File"
+    },
+    {
+      "items" : [
+        {
+          "keys" : [
+            "⌘Z"
+          ],
+          "title" : "Undo"
+        },
+        {
+          "keys" : [
+            "⇧⌘Z"
+          ],
+          "title" : "Redo"
+        }
+      ],
+      "menu" : "Edit"
+    },
+    {
+      "items" : [
+        {
+          "keys" : [
+            "⌘R"
+          ],
+          "title" : "Refresh"
+        }
+      ],
+      "menu" : "Library"
+    },
+    {
+      "items" : [
+        {
+          "keys" : [
+            "⌘↩"
+          ],
+          "title" : "Start Show"
+        },
+        {
+          "keys" : [
+            "⌥⌘↩"
+          ],
+          "title" : "Rehearse"
+        },
+        {
+          "keys" : [
+            "⇧⌘N"
+          ],
+          "title" : "New Setlist…"
+        },
+        {
+          "keys" : [
+            "⌘1"
+          ],
+          "title" : "Pick Songs"
+        },
+        {
+          "keys" : [
+            "⌘2"
+          ],
+          "title" : "Arrange Set"
+        },
+        {
+          "keys" : [
+            "⇧⌘B"
+          ],
+          "title" : "Insert Break"
+        },
+        {
+          "keys" : [
+            "⇧⌘A"
+          ],
+          "title" : "Arrange Sections…"
+        },
+        {
+          "keys" : [
+            "⌥↑"
+          ],
+          "title" : "Move Up"
+        },
+        {
+          "keys" : [
+            "⌥↓"
+          ],
+          "title" : "Move Down"
+        }
+      ],
+      "menu" : "Setlist"
+    },
+    {
+      "items" : [
+        {
+          "keys" : [
+            "⌘0"
+          ],
+          "title" : "Segue Library"
+        }
+      ],
+      "menu" : "Window"
+    },
+    {
+      "items" : [
+        {
+          "keys" : [
+            "⌘?"
+          ],
+          "title" : "Segue Help"
+        },
+        {
+          "keys" : [
+            "⌘/"
+          ],
+          "title" : "Keyboard Shortcuts"
+        }
+      ],
+      "menu" : "Help"
+    }
+  ],
+  "stage" : [
+    {
+      "group" : "Songs",
+      "rows" : [
+        {
+          "keys" : [
+            "→",
+            "Space"
+          ],
+          "title" : "Next Song"
+        },
+        {
+          "keys" : [
+            "←"
+          ],
+          "title" : "Previous Song"
+        },
+        {
+          "keys" : [
+            "X"
+          ],
+          "title" : "Skip Song"
+        },
+        {
+          "keys" : [
+            "R"
+          ],
+          "title" : "Play Next Request"
+        }
+      ]
+    },
+    {
+      "group" : "Scrolling",
+      "rows" : [
+        {
+          "keys" : [
+            "Page Down"
+          ],
+          "title" : "Page, Then Next Song"
+        },
+        {
+          "keys" : [
+            "Page Up"
+          ],
+          "title" : "Page Back, Then Previous Song"
+        },
+        {
+          "keys" : [
+            "↓"
+          ],
+          "title" : "Scroll Down a Page"
+        },
+        {
+          "keys" : [
+            "↑"
+          ],
+          "title" : "Scroll Up a Page"
+        },
+        {
+          "keys" : [
+            "A"
+          ],
+          "title" : "Start/Pause Auto-Scroll"
+        },
+        {
+          "keys" : [
+            "]"
+          ],
+          "title" : "Scroll Faster"
+        },
+        {
+          "keys" : [
+            "["
+          ],
+          "title" : "Scroll Slower"
+        },
+        {
+          "keys" : [
+            "Home"
+          ],
+          "title" : "Back to Top"
+        }
+      ]
+    },
+    {
+      "group" : "View",
+      "rows" : [
+        {
+          "keys" : [
+            "⌘=",
+            "⌘+"
+          ],
+          "title" : "Zoom In"
+        },
+        {
+          "keys" : [
+            "⌘-"
+          ],
+          "title" : "Zoom Out"
+        },
+        {
+          "keys" : [
+            "⌘0"
+          ],
+          "title" : "Actual Size"
+        },
+        {
+          "keys" : [
+            "C"
+          ],
+          "title" : "Columns"
+        },
+        {
+          "keys" : [
+            "O"
+          ],
+          "title" : "Collapse Repeats"
+        }
+      ]
+    },
+    {
+      "group" : "Metronome",
+      "rows" : [
+        {
+          "keys" : [
+            "M"
+          ],
+          "title" : "Metronome"
+        },
+        {
+          "keys" : [
+            "K"
+          ],
+          "title" : "Metronome Click (Rehearsal)"
+        }
+      ]
+    },
+    {
+      "group" : "Panels",
+      "rows" : [
+        {
+          "keys" : [
+            "⌘K",
+            "/"
+          ],
+          "title" : "Search Library"
+        },
+        {
+          "keys" : [
+            "Q"
+          ],
+          "title" : "Show Requests"
+        },
+        {
+          "keys" : [
+            "S"
+          ],
+          "title" : "Show Set Order"
+        },
+        {
+          "keys" : [
+            "?"
+          ],
+          "title" : "Keyboard Shortcuts"
+        }
+      ]
+    },
+    {
+      "group" : "Show",
+      "rows" : [
+        {
+          "keys" : [
+            "⌘."
+          ],
+          "title" : "End Show"
+        }
+      ]
+    }
+  ]
+}

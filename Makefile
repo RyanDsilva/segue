@@ -42,7 +42,7 @@ WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
 	test-perf e2e e2e-one e2e-smoke gate quick eval-ai lint format verify-appstore check bump \
-	site-fonts site-html docs-check shellcheck actionlint repo-check \
+	site-fonts site-html guide guide-dev guide-check guide-keys docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
 bootstrap: ## Install pinned tools and Xcode's Metal Toolchain, fetch dependencies, generate the workspace
@@ -67,14 +67,30 @@ site: ## Regenerate the website: tokens.css, changelog, slots, redirects, sitema
 	scripts/gen-tokens.swift
 	scripts/gen-site.swift
 
-site-check: tokens-check site-html ## Fail if the website is stale or invalid (STRICT=1 also refuses placeholders)
+site-check: tokens-check site-html guide guide-check ## Fail if the website or guide is stale or invalid (STRICT=1 also refuses placeholders)
 	scripts/gen-site.swift --check $(if $(STRICT),--strict)
 
-site-html: ## Validate every website page with html-validate (runs on Linux too)
-	$(MISE) $(HTMLVALIDATE) --config .htmlvalidate.json 'website/**/*.html'
+site-html: ## Validate every hand-written website page with html-validate (runs on Linux too; not the built guide)
+	$(MISE) $(HTMLVALIDATE) --config .htmlvalidate.json $$(find website -name '*.html' -not -path 'website/guide/*' -not -path 'website/guide.html' | sort)
 
-site-serve: ## Preview the site locally with Cloudflare's Pages emulator (redirects, headers, 404)
+site-serve: guide ## Preview the site and the built guide with Cloudflare's Pages emulator (redirects, headers, 404)
 	WRANGLER_SEND_METRICS=false $(MISE) $(WRANGLER) pages dev website --port 8788
+
+# User guide (WS6): Astro Starlight in guide/, built into website/guide (gitignored); Cloudflare
+# Pages builds it from source with scripts/pages-build.sh.
+guide: ## Build the user guide into website/guide (frozen install, links validated)
+	cd guide && $(MISE) pnpm install --frozen-lockfile --silent
+	cd guide && ASTRO_TELEMETRY_DISABLED=1 $(MISE) pnpm --silent build
+
+guide-dev: ## Live-reloading guide preview at http://localhost:4321/guide
+	cd guide && $(MISE) pnpm install --frozen-lockfile --silent
+	cd guide && ASTRO_TELEMETRY_DISABLED=1 $(MISE) pnpm dev
+
+guide-check: ## Static checks on the guide source and build (runs on Linux; STRICT=1 refuses placeholder shots)
+	$(MISE) node guide/scripts/check.mjs $(if $(STRICT),--strict)
+
+guide-keys: ## Regenerate guide/src/data/keyboard.json from the app's menu and stage key tables
+	cd $(UI_DIR) && SEGUE_WRITE_GUIDE_DATA=1 $(UI_TEST) --filter GuideKeyboardExportTests
 
 site-raster: ## Re-render OG image, touch icon, favicon PNG, wordmark PNGs and screenshot JPEGs
 	scripts/gen-site.swift --raster

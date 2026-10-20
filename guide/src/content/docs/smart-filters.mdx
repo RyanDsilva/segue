@@ -1,0 +1,25 @@
+---
+title: Tags and smart filters
+description: Tag songs your way, then save filters like "Openers" that stay up to date as your library changes.
+---
+import Shot from '../../components/Shot.astro';
+
+## Tags {#tags}
+
+Add tags on the [song card](/guide/song-card): any word that helps you build a set, like "opener", "ballad" or "singalong". Click a tag in the sidebar to see its songs.
+
+## Rename, merge and delete tags {#manage}
+
+Right-click a tag in the sidebar to rename it, merge it into another tag, or delete it. Every song changes with it, and saved smart filters follow. Edit > Undo takes it back.
+
+## Smart filters {#smart}
+
+Choose **New Smart Filter** in the sidebar, name it, and add conditions: tags, proficiency, key, tempo, length or how often you've played it. The filter lists the songs matching all of them, and keeps updating.
+
+<Shot id="filter-editor" alt="The smart filter editor with tag, proficiency and key conditions" />
+
+Smart filters are small files in your library's `filters/` folder, so they travel with it.
+
+## Missing essentials {#missing}
+
+The built-in **Missing essentials** filter lists every song without a key, length or tempo.

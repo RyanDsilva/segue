@@ -1,0 +1,17 @@
+---
+// Direction C (R127): an eyebrow naming the sidebar group, the title, then the page's
+// description as the lead sentence (one source for the lead and the meta description).
+import { isCurrentLink } from '../current';
+
+const route = Astro.locals.starlightRoute;
+const group = route.sidebar.find(
+  (entry) =>
+    entry.type === 'group' &&
+    entry.entries.some((link) => link.type === 'link' && isCurrentLink(link, Astro.url.pathname)),
+);
+const description = route.entry.data.description;
+---
+
+{group && <p class="eyebrow">{group.label}</p>}
+<h1 id="_top">{route.entry.data.title}</h1>
+{description && <p class="lead">{description}</p>}

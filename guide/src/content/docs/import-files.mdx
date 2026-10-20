@@ -1,0 +1,31 @@
+---
+title: Import files
+description: Bring in the ChordPro and text files you already have by dragging them in or with File > Import Songs.
+---
+import Shot from '../../components/Shot.astro';
+
+## Supported files {#formats}
+
+ChordPro files (`.cho`, `.chordpro`, `.chopro`, `.pro`) import as they are. Plain text (`.txt`) and `.crd` files are converted the same way as a paste.
+
+## Drag them in {#drag}
+
+Drag files or whole folders onto the song list. Or choose **File > Import Songs…** (<kbd>⇧⌘I</kbd>) and pick them.
+
+## Files that need converting {#batch}
+
+Text and `.crd` files open one review sheet with a preview of each converted song and a checkbox beside it. Untick any you don't want, then click **Import**. Unticked files are not imported.
+
+<Shot id="import-batch" alt="The review sheet for several converted files, each with a checkbox" />
+
+## Imports are copies {#copy}
+
+Segue copies each file into your library folder. The original stays where it was, untouched. A song that is already in the library is skipped.
+
+## Open With Segue {#open-with}
+
+In Finder, open a `.cho` file with Segue to copy it into your library.
+
+## Files that can't be read {#problems}
+
+If a song file in your library can't be read, Segue says how many were skipped above the song list. Click it to see which files and why. Skipped files stay untouched in the library folder.

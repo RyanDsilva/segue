@@ -1,0 +1,42 @@
+---
+// Previous/next cards (Starlight's pagination data), then the site's small print in short.
+import Icon from '../GuideIcon.astro';
+
+const { prev, next } = Astro.locals.starlightRoute.pagination;
+---
+
+<footer class="guide-footer">
+  <div class="pagination-links print:hidden">
+    {
+      prev && (
+        <a href={prev.href} rel="prev">
+          <Icon name="left-arrow" />
+          <span>
+            Previous
+            <br />
+            <span class="link-title">{prev.label}</span>
+          </span>
+        </a>
+      )
+    }
+    {
+      next && (
+        <a href={next.href} rel="next">
+          <Icon name="right-arrow" />
+          <span>
+            Next
+            <br />
+            <span class="link-title">{next.label}</span>
+          </span>
+        </a>
+      )
+    }
+  </div>
+  <p class="small-print">
+    Still stuck? <a href="/support">Support</a> usually answers within a few days.
+    <span class="sep" aria-hidden="true">·</span>
+    <a href="/privacy">Privacy</a>
+    <span class="sep" aria-hidden="true">·</span>
+    <a href="/">segue.ryandsilva.dev</a>
+  </p>
+</footer>

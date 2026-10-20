@@ -1,0 +1,38 @@
+---
+title: Paste a song from a chord site
+description: Copy a chord sheet from any site or note, press Option-Command-V, check the review and import it. Segue writes the ChordPro.
+---
+import Clip from '../../components/Clip.astro';
+import Shot from '../../components/Shot.astro';
+import Steps from '../../components/Steps.astro';
+
+<Steps>
+1. Copy a song from a chord site, a note or a message: chords over lyrics, a chord-site page or ChordPro all work.
+2. In Segue, press <kbd>⌥⌘V</kbd> (**File > New Song from Clipboard**). With the song list selected, <kbd>⌘V</kbd> does the same. In an empty library, click **Paste a Song**.
+3. Check the review: the original on the left, the song Segue made on the right.
+4. Press <kbd>⌘↩</kbd> to import it.
+</Steps>
+
+<Clip id="paste-a-song" title="Pasting a chord sheet and importing it" caption="Copy, Option-Command-V, a quick look at the review, Command-Return." />
+
+## The review {#review}
+
+The review shows the song's details on the same card as the library, and the lyrics sorted into sections: verses, choruses, a bridge. In the original, the lines Segue left out are struck through: menu text and "Transpose" buttons copied from the site. A line Segue could not place stays in the song as a note, so nothing you pasted is lost.
+
+<Shot id="paste-review" alt="The Review Song sheet with the original paste and the converted song side by side" callouts={['original', 'result', 'footer']} />
+
+Some sites write the artist first. If the title and artist came out the wrong way round, click **Swap Title and Artist**. To fix anything else, click **Edit in Text** or change it on the card.
+
+## Fix a section label {#fix-labels}
+
+Click **Edit in Text** and change the label in the ChordPro, or import the song and fix it with the [section band](/guide/sections). Labels are only labels: your lyrics and chords are kept exactly as pasted.
+
+<Shot id="paste-review-labels" alt="A section label with a sparkle, meaning AI chose it" />
+
+## What the sparkles mean {#ai}
+
+Segue converts every paste with its own rules first. If AI is on (**Settings > AI**), a model on your Mac then checks the section labels and the title and artist, and a small sparkle marks each one it decided. While it works, the footer says "Refining with...". When it is done, the footer names what made the result: the local model, Apple Intelligence, or "Converted without AI". Nothing you paste leaves your Mac. See [AI in Segue](/guide/ai).
+
+## During a show {#during-a-show}
+
+Paste is off while a show is running, so nothing heavy runs on stage. New Song opens a blank song instead.

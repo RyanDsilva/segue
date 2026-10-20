@@ -1,0 +1,49 @@
+---
+// Direction C (R127): flat, always-open groups in workflow order, the four workflow groups
+// numbered 1-4. No collapsing, so no sidebar state script.
+import { isCurrentLink } from '../current';
+
+const { sidebar } = Astro.locals.starlightRoute;
+const pathname = Astro.url.pathname;
+const workflow = ['Bring songs in', 'Make each chart yours', 'Build the set', 'Play the show'];
+const marker = (label: string) => {
+  const index = workflow.indexOf(label);
+  if (index >= 0) return String(index + 1);
+  if (label === 'Reference') return '⌘';
+  return label === 'Start here' ? '' : '·';
+};
+type Entry = (typeof sidebar)[number];
+const links = (entries: Entry[]) => entries.filter((entry) => entry.type === 'link');
+---
+
+<ul class="guide-sidebar">
+  {
+    sidebar.map((entry) =>
+      entry.type === 'group' ? (
+        <li class="group">
+          <span class="group-label">
+            <i class:list={['group-mark', { start: entry.label === 'Start here' }]} aria-hidden="true">
+              {marker(entry.label)}
+            </i>
+            {entry.label}
+          </span>
+          <ul>
+            {links(entry.entries).map((link) => (
+              <li>
+                <a href={link.href} aria-current={isCurrentLink(link, pathname) ? 'page' : undefined}>
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </li>
+      ) : (
+        <li>
+          <a href={entry.href} aria-current={entry.isCurrent ? 'page' : undefined}>
+            {entry.label}
+          </a>
+        </li>
+      )
+    )
+  }
+</ul>

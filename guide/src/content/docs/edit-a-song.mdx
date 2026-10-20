@@ -1,0 +1,25 @@
+---
+title: Edit a song
+description: Place chords right on the syllable in Visual mode, or edit the ChordPro text. Every change saves as you type.
+---
+import Shot from '../../components/Shot.astro';
+
+## Visual and Text {#modes}
+
+The editor has two modes. **Visual** shows the lyrics with chords above them. **Text** edits the ChordPro source directly; see [Text mode, the slash menu and ChordPro](/guide/text-mode).
+
+<Shot id="editor-visual" alt="The editor in Visual mode with chord pills over the lyrics" />
+
+## Place and move chords {#chords}
+
+In Visual mode, click above a syllable to add a chord. Drag a chord pill to move it to another syllable, or select it and use the arrow keys to nudge it one syllable at a time.
+
+## Saving {#autosave}
+
+There is nothing to save: every change is written as you type, and the editor shows "Saved". <kbd>⌘S</kbd> just confirms "All changes saved". **Done** closes the editor. Edit > Undo works across your changes.
+
+If the file changes in another app while you edit, Segue asks whether to reload it, overwrite it with your edits, or save your edits as a new song.
+
+## Spell-check and autocorrect {#spelling}
+
+Spell-check, autocorrect, smart quotes and text replacement are off in the editor. Lyrics are often in other languages or in romanized Hindi with casual spellings, and a chart has to stay exactly as you typed it.
