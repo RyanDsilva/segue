@@ -54,3 +54,79 @@ Items the agents could not verify headlessly:
 - [ ] **Reduce Motion** on: Welcome pages swap without a fade, stage songs change without a fade, nothing zooms.
 - [ ] **Larger Text checks:** the stage at a 48 pt minimum lyric size with zoom (Cmd +) at its limit in a 13-inch-sized window scrolls instead of clipping; the main window at 820x520 with a long title truncates with a tooltip and nothing overlaps; note what macOS 26's Text Size setting changes, if anything.
 - [ ] Dark Interface: no white flash when sheets open, a window opens, or the stage opens and closes.
+
+## Phase 3 (R79): run on the App Store build from a clean first run, then repeat the marked items on the Personal build
+Everything new in 0.5's phase 3, in the order a gig day uses it. Notes on what feels wrong go straight into the fix round.
+
+### Paste and import
+- [ ] **Paste from a real site:** copy a song from a chord site (a UG page and one other, one Hinglish), File > New Song from Clipboard (Option-Command-V). The review sheet shows the original and the result; section labels are right; title and artist are right (the converter wins, R121); a sparkle marks only AI-decided labels or fields (R117); Accept saves; Cancel saves nothing.
+- [ ] **Swap Title/Artist:** a paste whose heading is "Artist - Title" offers the one-click swap.
+- [ ] **New Song:** the paste flow opens first; "Start blank" opens a blank editor with the song card (R83).
+- [ ] **Three-file batch:** drag two `.txt` chord sheets and one `.crd` together: ONE review sheet lists all three with a preview each; untick one; "Import 2 Songs" imports only the ticked ones (R96); one Edit > Undo takes the import back.
+- [ ] **`.crd` import** on its own goes through the converter and the sheet (R76).
+- [ ] **During a show** (start one, switch back to the library window): Option-Command-V, the empty-state button and `.txt`/`.crd` drops are disabled or refused with a clear message; a `.cho` drop still imports; New Song opens blank (R95, R109).
+- [ ] **Question:** the paste review's draft card puts the cursor in Title with the text selected. Keep that, or leave nothing focused?
+
+### AI
+- [ ] **Settings > AI (App Store build):** Apple Intelligence status with its note; the one toggle "Use AI to refine pastes and set requests" (on); the local model card shows Qwen3 4B Instruct, 2.27 GB, memory need, free disk, the Apache-2.0 licence link; no Advanced section (Personal only, R62).
+- [ ] **Model download on the App Store build:** click Download; progress, Cancel, then Download again resumes; it finishes, checks its files and says Downloaded; a paste is now refined by the local model (sparkles). The Personal build sees the same model without a second download (R100). Delete... asks once, then removes it at once, for both apps (R99).
+- [ ] **Apple Intelligence unavailable note:** with Apple Intelligence turned off in System Settings, Settings > AI shows the reason-specific note and "Open System Settings" opens Apple Intelligence & Siri (R69; the link was checked headlessly on 2026-10-20). No nag prompts anywhere.
+- [ ] **AI toggle off:** pastes and set requests still work with Segue's own rules, with no sparkles and no "Refining with..." status.
+- [ ] **Low memory (if a Mac under 16 GB is at hand):** Apple Intelligence is the default and the model card carries the speed and memory note (R120).
+- [ ] **Reset All Settings** (Settings > Data) resets the AI toggle but keeps the downloaded model (R73).
+- [ ] **Welcome card:** "Paste any chord sheet" with the "AI settings and the local model" link; it opens Settings > AI.
+
+### Song card and editor
+- [ ] **Song card fields:** title, artist, key, tempo (Tap: four taps give a sensible BPM, R111), length, capo, time signature, proficiency, tags; each writes the file (check in Text mode); the set-essentials dots disappear as key, length and tempo are filled (R80).
+- [ ] **Time it:** start, stop, the length field fills; Undo is named "Set Length".
+- [ ] **Question:** in the library heading, title and artist are edited by double-click with no visible affordance. OK as is, or add a hint?
+- [ ] **Slash menu:** in Text mode type `/`: plain names, a section entry wraps the selected lines, value pickers for key, tempo and length (R81).
+- [ ] **`{key: Hm}`** is flagged with a fix that writes `{key: Bm}`.
+- [ ] **Section band:** select lines in the visual editor, press V / C / B / I or click a chip; drag a band edge to resize; the band menu's Section Notes... (R82).
+- [ ] **Section notes:** add a note to a chorus with "Show on stage only" on: it shows on stage as a callout and never in the `.cho`; turn it off: it becomes a `{comment}` in Text mode (R87, R106).
+
+### Set building
+- [ ] **A 20-song set in Pick mode by keyboard only:** type to filter, Return, Space to tick (tick order = set order), Down, Command-A ticks the filtered list; nothing is added twice (R84).
+- [ ] **Arrange:** Option-Up / Option-Down and drag; Command-click selects several.
+- [ ] **Library multi-select:** Command-click and Shift-click in the main Library, then Add to Setlist.
+- [ ] **Break rows:** Insert Break (Shift-Command-B); each part shows its own total; a break length counts in the whole-set total only (R85, R105); the changeover time (setlist and the global default in Settings) is added to the totals (R86).
+- [ ] **Missing lengths:** "N unknown" is a button listing exactly the songs without a length; typing a length in a row fills the song (R88).
+- [ ] **Set assistant:** in Arrange type "45 min, songs I know well, upbeat start", Build fills the open setlist as one undo step; a row's breakdown (select it, Space); lock a song, Rebuild keeps it, and it survives reopening (R114, R115); "N songs left out: no length" opens the missing-lengths list (R107); with the local model downloaded, extra "Suggested" chips may appear and are applied only on click (R116).
+- [ ] **Question:** the assistant lands slightly over the target (22:07 for a 20:00 request). Keep "fill to at least the target", or aim for the closest total either side?
+- [ ] **Smart filters:** create one, apply it, use it in a request ("from <filter>"); the built-in "Missing essentials" filter (R110).
+- [ ] **Arrange Sections:** from a slot's popover Arrangement row, the slot context menu and the Setlist menu; skip a section, play one twice, drag one; the live preview follows; a slot length is asked for; Reset to full song (R122, R123). Edit the song so a section disappears: the slot is marked out of date, the pre-show checklist has a row with Edit, and the stage plays the full song with a quiet "Full song" note.
+- [ ] **Question:** an out-of-date arranged slot shows a "Full song" header on stage, and the builder row's mark is a scissors icon. Both OK?
+
+### On stage
+- [ ] **Metronome on stage:** the checklist's Metronome switch, then the pulsing dot plus BPM bottom right, beat 1 red; 6/8 pulses twice per bar; M toggles it for this show only; it is hidden for a song without a tempo (R90, R108, R118).
+- [ ] **Metronome sound in a rehearsal:** K toggles the click (off at the start of every rehearsal); a show never makes a sound.
+- [ ] **Question:** Live > Metronome in the menu bar shows no key equivalent, although M works on stage. Show "M" in the menu?
+- [ ] **No repeats:** during a show, Insert Next (or a request, or Play Now) of a song already played is refused with a clear message; an upcoming song offers "Move to Next" instead; a skipped song may be added back (R102, R112). The quick search result says its standing ("played", "up next").
+- [ ] **Break interstitial:** a break row on stage shows "Break - Set 2 starts with <song>"; Next continues; the show clock keeps running (R104).
+
+### About and the website
+- [ ] **About panel in dark mode:** the one row of links (Website, Help, Support, Privacy Policy) stays legible; each opens the right page (R103).
+- [ ] **Website (live):** /privacy has "AI features and the optional model" and the Hugging Face row; /support answers "Does Segue use AI?"; /acknowledgements lists MLX, XGrammar, swift-transformers and the Qwen3 model; the browser console shows no CSP error for the Web Analytics beacon after the next deploy (P3-9).
+
+### Accessibility of the new screens (R79; claims stay off until these pass)
+The automated audit (`AccessibilityAuditE2ETests/testPhase3ScreensLight`, docs/release/accessibility-audit.md section 6) covers what a machine can see. These walks decide the VoiceOver, Voice Control and keyboard claims.
+
+| Screen | VoiceOver (VO-Right through it, VO-Space to act) | Voice Control ("Show names", "Show numbers") | Full Keyboard Access (Tab, Space, arrows) |
+|---|---|---|---|
+| Paste review sheet, single | [ ] original and result are reachable; each section label is read with its sparkle as "suggested by AI"; Accept and Cancel are named | [ ] "Click Accept", "Click Cancel"; the Title field takes dictation | [ ] Tab reaches the title, artist, every label menu, Accept; Return accepts, Esc cancels |
+| Paste review sheet, batch | [ ] each file row reads its name and checkbox state | [ ] "Click <number>" ticks and unticks a row | [ ] Space ticks the focused row |
+| Settings > AI | [ ] status note, toggle, model card values (size, memory, licence link), Download / Cancel / Delete | [ ] "Click Download", "Click Delete" | [ ] every control reachable, with visible focus |
+| Song card and Time it | [ ] each field reads its name and value; the missing-essential dots are read ("key missing"); Tap and Time it are named | [ ] "Click Tap", "Click Time it", type a length by voice | [ ] Tab order runs title to tags; Space starts and stops Time it |
+| Slash menu | [ ] the menu items are read as a list; the value pickers are reachable | [ ] "Show numbers" picks an item | [ ] arrows and Return choose an item |
+| Section band | [ ] each band is read with its label; the chip bar's V / C / B / I chips are named | [ ] "Click Chorus" on the chip bar | [ ] the band menu opens from the keyboard (Control-Return or the context-menu key) |
+| Section notes sheet | [ ] each note's text and "Show on stage only" checkbox; Add and Done | [ ] "Click Show on stage only" | [ ] Tab through notes; Space toggles the checkbox |
+| Set builder Pick | [ ] each library row says whether it is in the set ("already in set") | [ ] "Click <number>" ticks a row | [ ] Space ticks, Command-A ticks all, focus visible |
+| Set builder Arrange, break rows, totals | [ ] rows read position, title, length; a break reads its label and part total; the total reads "N unknown"; Move up / Move down actions | [ ] "Click Insert Break", "Click <n> unknown" | [ ] Option-Up / Down move the focused row; Shift-Command-B inserts a break |
+| Missing-lengths list | [ ] each row reads the song and its empty length field | [ ] dictate a length into a row | [ ] Tab moves row to row |
+| Set assistant bar and chips | [ ] the field, each chip ("45 min", "Suggested ..."), Build and Rebuild; the "left out" note | [ ] "Click Build", "Click Suggested <chip>" | [ ] Tab reaches each chip and its remove button |
+| Score breakdown popover | [ ] each factor and its weight is read | [ ] n/a (opened by Space or hover) | [ ] Space opens it, Esc closes it |
+| Smart filter editor | [ ] each condition row and its pop-up menus | [ ] add and remove a condition by voice ("Show names") | [ ] every pop-up reachable |
+| Arrange Sections sheet | [ ] each row reads label, play count and skipped state; Reset to full song; the slot length field | [ ] "Click <number>" toggles a row; "Click Done" | [ ] Space skips the focused row; plus and minus change the count |
+| Metronome overlay (stage) | [ ] read as "Metronome, <n> beats per minute"; it never steals VoiceOver focus from the song while pulsing | [ ] n/a (M key) | [ ] M toggles it; K toggles the rehearsal click |
+| Live repeat message | [ ] the refusal and "Move to Next" are announced and reachable | [ ] "Click Move to Next" | [ ] Return and Esc answer it |
+| About panel links (dark) | [ ] each link is read with its name | [ ] "Click Website" | [ ] Tab reaches each link |
