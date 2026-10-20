@@ -1,0 +1,83 @@
+{
+  "calls" : [
+    {
+      "input" : "1c2c898bcb6e41a6",
+      "output" : {
+        "closerTag" : "upbeat",
+        "excludeTags" : [
+
+        ],
+        "includeTags" : [
+          "upbeat"
+        ],
+        "minProficiency" : "ready",
+        "openerTag" : "upbeat"
+      },
+      "task" : "setRequest"
+    },
+    {
+      "input" : "11e79611ef044237",
+      "output" : {
+        "closerTag" : "ballad",
+        "excludeTags" : [
+
+        ],
+        "includeTags" : [
+          "ballad"
+        ],
+        "minProficiency" : "ready",
+        "openerTag" : "ballad"
+      },
+      "task" : "setRequest"
+    },
+    {
+      "input" : "f0fa0ac008e04843",
+      "output" : {
+        "closerTag" : "upbeat",
+        "excludeTags" : [
+
+        ],
+        "includeTags" : [
+          "upbeat"
+        ],
+        "minProficiency" : "ready",
+        "openerTag" : "upbeat"
+      },
+      "task" : "setRequest"
+    },
+    {
+      "input" : "ba8ad442b149f245",
+      "output" : {
+        "closerTag" : "",
+        "excludeTags" : [
+
+        ],
+        "includeTags" : [
+          "upbeat"
+        ],
+        "minProficiency" : "ready",
+        "openerTag" : "upbeat"
+      },
+      "task" : "setRequest"
+    },
+    {
+      "input" : "898a270a19ee90b3",
+      "output" : {
+        "closerTag" : "upbeat",
+        "excludeTags" : [
+
+        ],
+        "includeTags" : [
+          "upbeat"
+        ],
+        "minProficiency" : "ready",
+        "openerTag" : "upbeat"
+      },
+      "task" : "setRequest"
+    }
+  ],
+  "fixture" : "set-requests",
+  "provider" : "fm",
+  "schemaVersion" : 1,
+  "source" : "apple-fm Version 26.6.2 (Build 25G83)"
+}

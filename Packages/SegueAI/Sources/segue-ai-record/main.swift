@@ -15,9 +15,50 @@ import Ingest
 import ModelPort
 
 let arguments = CommandLine.arguments
-guard arguments.count == 3 else {
+guard arguments.count == 3 || arguments.count == 4 && arguments[1] == "--set-requests" else {
     print("usage: segue-ai-record <fixtures dir> <output dir>")
+    print("       segue-ai-record --set-requests <requests.json> <output.json>")
     exit(2)
+}
+
+// P3-7: `--set-requests` records `SetRequestTask` answers for the set assistant's tests. The
+// input is `{"libraryTags": [...], "words": ["mellow vibe", ...]}` (the lexicon's leftovers).
+if arguments[1] == "--set-requests" {
+    struct SetRequestInputs: Decodable {
+        var libraryTags: [String]
+        var words: [String]
+    }
+    let inputs = try JSONDecoder().decode(
+        SetRequestInputs.self, from: Data(contentsOf: URL(fileURLWithPath: arguments[2])),
+    )
+    let provider = FoundationModelsProvider()
+    guard await provider.availability() == .available else {
+        await print("Foundation Models is not available: \(provider.availability())")
+        exit(1)
+    }
+    var calls: [RecordedCall] = []
+    for words in inputs.words {
+        let task = SetRequestTask(words: words, libraryTags: inputs.libraryTags)
+        do throws(ProviderError) {
+            let result = try await provider.run(task, context: CallContext(allowsChunking: false))
+            print("\(words): \(result.output) in \(result.metrics.latency)")
+            if let call = try? RecordedCall.answered(task, result.output) {
+                calls.append(call)
+            }
+        } catch {
+            print("\(words): \(error)")
+            calls.append(RecordedCall.failed(task, error))
+        }
+    }
+    let os = ProcessInfo.processInfo.operatingSystemVersionString
+    let file = RecordingFile(
+        provider: .foundationModels,
+        fixture: "set-requests",
+        source: "apple-fm \(os)",
+        calls: calls,
+    )
+    try file.encoded().write(to: URL(fileURLWithPath: arguments[3]))
+    exit(0)
 }
 
 let fixtures = URL(fileURLWithPath: arguments[1])

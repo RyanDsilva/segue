@@ -23,6 +23,7 @@ let package = Package(
             targets: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
                 "Shows", "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
+                "SetAssistant",
             ],
         ),
     ],
@@ -122,11 +123,21 @@ let package = Package(
             dependencies: ["Ingest"],
             swiftSettings: strictSettings,
         ),
+        // Phase 3 P3-7: the set assistant (request lexicon, scorer with breakdowns, packer,
+        // builder). Pure; the async model pass goes through ModelPort's router.
+        .target(
+            name: "SetAssistant",
+            dependencies: [
+                "Diagrams", "Editing", "Library", "ModelPort", "MusicTheory", "Setlists",
+            ],
+            swiftSettings: strictSettings,
+        ),
         .testTarget(
             name: "SegueCoreTests",
             dependencies: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
                 "Shows", "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
+                "SetAssistant",
                 .product(name: "Tonic", package: "Tonic"),
             ],
             path: "Tests",
