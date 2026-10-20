@@ -147,7 +147,7 @@ Copyright 2009-2010 Cybozu Labs, Inc. and Copyright 2011-2014 Kazuho Oku. BSD 2-
 |---|---|---|---|
 | Qwen3-4B-Instruct-2507 model weights (4-bit MLX conversion) | https://huggingface.co/mlx-community/Qwen3-4B-Instruct-2507-4bit, converted from https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507 | Apache-2.0 | `Packages/SegueUI/Sources/SegueUI/App/Licenses/XGrammar.txt` (same unmodified Apache-2.0 text) |
 
-The weights are not part of the app or the website. The app downloads them from huggingface.co only when the user asks for the on-device model, and stores them on the user's Mac. Provisional: the curated model may be swapped after the model bake-off, and this section must follow it.
+The weights are not part of the app or the website. The app downloads them from huggingface.co only when the user asks for the on-device model, and stores them on the user's Mac. It is the locked curated model (docs/release/decisions.md R119); a future swap must update this section.
 
 ## Served by the website
 

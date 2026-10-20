@@ -31,7 +31,10 @@
                         .font(SchibstedGrotesk.medium.font(size: 13))
                         .foregroundStyle(Theme.color.muted)
                         .fixedSize(horizontal: false, vertical: true)
-                    Button("AI settings and the local model") {
+                    // R120: under 16 GB the local model is opt-in, so the link does not name it.
+                    Button(app.ai.models.isLowMemory ? "AI settings"
+                        : "AI settings and the local model")
+                    {
                         app.selectAISettingsPane()
                         openSettings()
                     }

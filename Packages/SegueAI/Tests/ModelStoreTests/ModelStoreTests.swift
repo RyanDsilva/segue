@@ -322,7 +322,7 @@ struct ModelStoreFixture {
         LocalModelManifest(
             id: "test-model",
             displayName: "Test Model",
-            status: .provisional,
+            status: .locked,
             role: .standard,
             repo: "mlx-community/Test-Model-4bit",
             revision: String(repeating: "ab", count: 20),

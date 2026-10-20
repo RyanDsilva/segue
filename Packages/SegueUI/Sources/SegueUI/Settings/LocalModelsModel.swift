@@ -2,6 +2,7 @@
     import Foundation
     import ModelPort
     import Observation
+    import Services
 
     /// The Settings > AI model card's state (R64, R66, R68, R99): the store's snapshot, kept
     /// current while the pane is open, and the click-only actions. The store itself
@@ -20,6 +21,12 @@
         /// The Mac's memory (injectable for the low-RAM tests).
         @ObservationIgnored public let physicalMemory: UInt64
         @ObservationIgnored private var watcher: Task<Void, Never>?
+        /// `Segue.AI.modelDownload` (R74): called once per download the user started, when it
+        /// ends (completed, cancelled or failed).
+        @ObservationIgnored public var onDownloadFinished: (@MainActor (ModelDownloadSummary)
+            -> Void)?
+        /// Downloads the user started: when, and whether the store reported them busy yet.
+        @ObservationIgnored private var started: [String: (date: Date, seenBusy: Bool)] = [:]
 
         /// - Parameter installer: nil when this build has no model store (previews, tests
         ///   that do not need one).
@@ -36,18 +43,33 @@
             physicalMemory < Self.lowMemoryThreshold
         }
 
+        /// R120: whether the quiet download links (the Welcome card, the review sheet footer)
+        /// offer the curated model. Never on Macs under 16 GB, where Apple Intelligence is the
+        /// default and the download stays an opt-in in Settings > AI; never once the model is
+        /// installed or on its way.
+        public var suggestsDownload: Bool {
+            guard !isLowMemory else { return false }
+            guard let curated = snapshot.models.first(where: { $0.role == .standard }) else {
+                return installer != nil
+            }
+            let state = snapshot.state(of: curated.id)
+            return !state.isInstalled && !state.isBusy
+        }
+
         /// Starts following the store (the pane calls it when it appears; idempotent).
         public func start() {
             guard watcher == nil, let installer else { return }
             watcher = Task { [weak self] in
                 for await snapshot in await installer.updates() {
-                    self?.snapshot = snapshot
+                    self?.apply(snapshot)
                 }
             }
         }
 
-        /// Stops following the store (the pane disappeared).
+        /// Stops following the store (the pane disappeared); a download in progress keeps it
+        /// following until the download ends, so its result is still recorded.
         public func stop() {
+            guard started.isEmpty else { return }
             watcher?.cancel()
             watcher = nil
         }
@@ -55,12 +77,14 @@
         /// Re-reads the store once (tests, and the pane before its stream delivers).
         public func refresh() async {
             guard let installer else { return }
-            snapshot = await installer.snapshot()
+            await apply(installer.snapshot())
         }
 
         public func download(_ id: String) {
             deleteError = nil
             guard let installer else { return }
+            started[id] = (Date(), false)
+            start()
             Task {
                 await installer.download(id)
                 await refresh()
@@ -72,6 +96,33 @@
             Task {
                 await installer.cancelDownload(id)
                 await refresh()
+            }
+        }
+
+        /// Takes a snapshot and reports the downloads it shows ended.
+        private func apply(_ snapshot: LocalModelSnapshot) {
+            self.snapshot = snapshot
+            for (id, entry) in started {
+                let state = snapshot.state(of: id)
+                if state.isBusy {
+                    started[id]?.seenBusy = true
+                    continue
+                }
+                let result: ModelDownloadResult? = switch state {
+                case .installed: .completed
+                case let .failed(failure): ModelDownloadResult(rawValue: failure.rawValue) ?? .other
+                case .notInstalled, .paused: entry.seenBusy ? .cancelled : nil
+                default: nil
+                }
+                guard let result else { continue }
+                started[id] = nil
+                let custom = snapshot.models.first { $0.id == id }?.role == .custom
+                onDownloadFinished?(ModelDownloadSummary(
+                    result: result,
+                    kind: custom ? .custom : .curated,
+                    duration: DownloadDurationBucket(seconds: Date().timeIntervalSince(entry.date)),
+                    ramUnder16: isLowMemory,
+                ))
             }
         }
 

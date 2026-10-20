@@ -92,6 +92,8 @@
                 result[kind] = .unavailable(.notInstalled)
             }
             availability = result
+            // The quiet download links read the model store too (R120).
+            await models.refresh()
         }
 
         /// The R69 note for Foundation Models, or nil when it is available (or not read yet).

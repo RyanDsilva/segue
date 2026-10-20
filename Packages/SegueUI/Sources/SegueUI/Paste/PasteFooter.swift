@@ -24,14 +24,16 @@
         ///   - reports: how its tasks routed so far.
         ///   - aiEnabled: the AI toggle (R93).
         ///   - availability: each provider's last availability read.
+        ///   - suggestsDownload: false on Macs under 16 GB, where the model is opt-in (R120).
         public static func make(
             status: PasteRefinementStatus,
             reports: [ModelTaskKind: RoutingReport],
             aiEnabled: Bool,
             availability: [ProviderKind: ProviderAvailability],
+            suggestsDownload: Bool = true,
         ) -> Self {
-            let curatedMissing = availability[.mlx] == nil
-                || availability[.mlx] == .unavailable(.notInstalled)
+            let curatedMissing = suggestsDownload && (availability[.mlx] == nil
+                || availability[.mlx] == .unavailable(.notInstalled))
             guard aiEnabled else {
                 return Self(
                     refiningLine: nil,

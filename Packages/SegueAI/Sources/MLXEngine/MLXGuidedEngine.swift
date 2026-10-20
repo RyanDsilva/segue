@@ -9,11 +9,12 @@ import Tokenizers
 /// The MLX binding of the provider's `GuidedEngine` seam (P3-A section 5): loads a model
 /// folder with `LLMModelFactory.shared` directly (the `NSClassFromString` registry fails in a
 /// static, dead-stripped app) and Segue's own tokenizer loader (no `MLXHuggingFace`, R66),
-/// caps MLX's buffer cache at 512 MB, and runs `GuidedGenerationLoop` greedily under an
+/// caps MLX's buffer cache at 64 MB (R119), and runs `GuidedGenerationLoop` greedily under an
 /// XGrammar EBNF grammar.
 public struct MLXGuidedEngine: GuidedEngine {
-    /// MLX's buffer cache cap (without one the footprint reached 11.6 GB, spike 3).
-    public static let cacheLimitBytes = 512 << 20
+    /// MLX's buffer cache cap: without one the footprint reached 11.6 GB (spike 3); the
+    /// bake-off found 32-64 MB gives the same output as 512 MB with 0.7-1 GB less peak (R119).
+    public static let cacheLimitBytes = 64 << 20
 
     public init() {}
 

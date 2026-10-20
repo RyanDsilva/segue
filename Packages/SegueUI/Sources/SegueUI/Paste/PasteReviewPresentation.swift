@@ -43,6 +43,7 @@
             PasteReviewContext(
                 aiEnabled: app.ai.gate.isEnabled,
                 availability: app.ai.availability,
+                suggestsDownload: app.ai.models.suggestsDownload,
                 knownArtists: library.knownArtists,
                 knownTags: library.tags.map(\.tag),
                 accept: { Task { await library.acceptPasteReview() } },

@@ -6,7 +6,7 @@ import Foundation
 
 /// One downloadable model, pinned: a config entry, never code. The curated catalog is a bundled
 /// JSON list of these (`ModelStore/Resources/curated-models.json`), so swapping the curated
-/// model, or adding a larger "quality" entry beside it, is a data change.
+/// model is a data change. The catalog holds one model (R119: no second tier).
 public struct LocalModelManifest: Sendable, Hashable, Codable, Identifiable {
     /// One file the loader opens, with its pinned size and digest.
     public struct File: Sendable, Hashable, Codable {
@@ -49,21 +49,17 @@ public struct LocalModelManifest: Sendable, Hashable, Codable, Identifiable {
 
     /// How settled the choice of this model is (R64).
     public enum Status: String, Sendable, Hashable, Codable {
-        /// A stand-in while the choice is open (the bake-off for low-memory Macs runs).
-        case provisional
-        /// The candidate R64 names, not locked yet.
+        /// Named but not locked yet (shown as "Candidate").
         case candidate
-        /// Locked by Ryan's ruling.
+        /// Locked by Ryan's ruling (R119 locks Qwen3-4B-Instruct-2507 4-bit).
         case locked
         /// Added by the user under Advanced (Personal only, R62).
         case custom
     }
 
-    /// Where an entry sits in the curated catalog: the default model, or an optional larger
-    /// one for Macs with memory to spare. The catalog ships one entry today.
+    /// The curated model, or one the user added under Advanced (Personal only, R62).
     public enum Role: String, Sendable, Hashable, Codable {
         case standard
-        case quality
         case custom
     }
 

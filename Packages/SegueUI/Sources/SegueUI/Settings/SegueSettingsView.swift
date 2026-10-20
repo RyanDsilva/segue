@@ -43,8 +43,12 @@
                     )
                 }
                 Tab("AI", systemImage: "sparkles", value: Pane.ai) {
-                    AISettingsView(ai: app.ai, workspace: app.dependencies.workspace)
-                        .accessibilityIdentifier(AccessibilityID.settingsPane("ai"))
+                    AISettingsView(
+                        ai: app.ai,
+                        workspace: app.dependencies.workspace,
+                        services: app.dependencies.services,
+                    )
+                    .accessibilityIdentifier(AccessibilityID.settingsPane("ai"))
                 }
                 Tab("Privacy", systemImage: "hand.raised", value: Pane.privacy) {
                     PrivacySettingsView(

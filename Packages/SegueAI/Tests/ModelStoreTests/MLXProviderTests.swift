@@ -91,7 +91,7 @@ struct MLXProviderTests {
             let manifest = LocalModelManifest(
                 id: "m",
                 displayName: "M",
-                status: .provisional,
+                status: .locked,
                 role: .standard,
                 repo: "mlx-community/M",
                 revision: String(repeating: "0", count: 40),

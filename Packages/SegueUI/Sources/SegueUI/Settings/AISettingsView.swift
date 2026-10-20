@@ -1,5 +1,6 @@
 #if os(macOS)
     import ModelPort
+    import Services
     import SwiftUI
 
     /// Settings > AI (spec section 10, R73, R93): the one "Use AI" toggle, Apple Intelligence's
@@ -10,6 +11,7 @@
     struct AISettingsView: View {
         let ai: AIServices
         let workspace: any WorkspaceActions
+        let services: ServicesHub
         @State private var confirmingDelete: LocalModelManifest?
 
         var body: some View {
@@ -59,6 +61,7 @@
             .formStyle(.grouped)
             .frame(minHeight: 460)
             .task {
+                ai.models.onDownloadFinished = { services.record(.aiModelDownload($0)) }
                 ai.models.start()
                 await ai.models.refresh()
                 await ai.refreshAvailability()
@@ -256,7 +259,7 @@
         /// "Candidate" until R64 locks the model.
         static func badge(_ status: LocalModelManifest.Status) -> String? {
             switch status {
-            case .candidate, .provisional: "Candidate"
+            case .candidate: "Candidate"
             case .custom: "Custom"
             case .locked: nil
             }
@@ -290,10 +293,12 @@
             }
         }
 
-        /// R68: shown on Macs under 16 GB, never blocking.
+        /// R68, R120: on Macs under 16 GB the model is an opt-in (Apple Intelligence is the
+        /// default there); the note says what it costs and never blocks the download.
         static func lowMemoryNote(_ model: LocalModelManifest) -> String {
-            "Needs about \(ByteFormat.size(model.memoryBytes)) of memory while it works. On "
-                + "this Mac other apps may slow down."
+            "Optional on this Mac: Segue uses Apple Intelligence. The local model needs about "
+                + "\(ByteFormat.size(model.memoryBytes)) of memory while it works and takes "
+                + "roughly 20-30 seconds per song here, and other apps may slow down."
         }
     }
 

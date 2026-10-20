@@ -14,6 +14,8 @@
     struct PasteReviewContext {
         var aiEnabled: Bool
         var availability: [ProviderKind: ProviderAvailability]
+        /// R120: whether the quiet download link may show (never on Macs under 16 GB).
+        var suggestsDownload = true
         var knownArtists: [String]
         var knownTags: [String]
         var accept: () -> Void
@@ -126,6 +128,7 @@
                 reports: item.reports,
                 aiEnabled: context.aiEnabled,
                 availability: context.availability,
+                suggestsDownload: context.suggestsDownload,
             )
         }
 
