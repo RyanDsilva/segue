@@ -22,7 +22,7 @@ let package = Package(
             name: "SegueCore",
             targets: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
-                "Shows", "LiveLayout", "Plugins", "Support", "Services",
+                "Shows", "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
             ],
         ),
     ],
@@ -115,11 +115,18 @@ let package = Package(
             dependencies: ["ChordPro", "MusicTheory"],
             swiftSettings: strictSettings,
         ),
+        // Phase 3 P3-2: the AI provider port (tasks, router, ScriptedProvider, paste
+        // refinement). Pure; the Foundation Models and MLX adapters live in Packages/SegueAI.
+        .target(
+            name: "ModelPort",
+            dependencies: ["Ingest"],
+            swiftSettings: strictSettings,
+        ),
         .testTarget(
             name: "SegueCoreTests",
             dependencies: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
-                "Shows", "LiveLayout", "Plugins", "Support", "Services", "Ingest",
+                "Shows", "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
                 .product(name: "Tonic", package: "Tonic"),
             ],
             path: "Tests",
