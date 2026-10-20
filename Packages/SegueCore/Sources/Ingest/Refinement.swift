@@ -35,7 +35,11 @@ extension IngestPipeline {
             metadata.title = title
             refinedFields.insert(.title)
         }
-        if metadata.artists.isEmpty, let artist = nonEmpty(refinements.artist) {
+        // R121: the converter wins. A title code found (a site heading included) means the
+        // artist line, if any, was already read: a model artist is never taken beside it.
+        if metadata.artists.isEmpty, base.metadata.title == nil,
+           let artist = nonEmpty(refinements.artist)
+        {
             metadata.artists = [artist]
             refinedFields.insert(.artist)
         }

@@ -6,7 +6,7 @@ import Testing
 
 /// The refinement merge (`IngestPipeline.apply`) driven through `PasteRefiner` + `Router` +
 /// `ScriptedProvider` replaying real Foundation Models recordings
-/// (`Tests/Fixtures/paste/recorded/fm/<fixture>.json`, made by `segue-ai-record`). Each
+/// (`Tests/Fixtures/paste/recorded/fm/<fixture>.json`, made by `make eval-ai RECORD=1`). Each
 /// refined result must equal `recorded/fm/<fixture>.cho` byte for byte and keep every lyric
 /// word and chord of the deterministic result.
 ///
@@ -150,6 +150,26 @@ struct IngestRefinementTests {
             for: task,
         )
         #expect(invented.title == nil && invented.key == "G")
+    }
+
+    /// R121: the converter wins on title and artist. No metadata call when code found both,
+    /// and a model artist is never taken when code found the title (a site heading included).
+    @Test
+    func `the converter wins on title and artist`() throws {
+        var titledOnly = 0
+        for name in PasteFixtures.names {
+            let result = try PasteFixtures.ingest(name)
+            guard !result.isAlreadyChordPro, result.metadata.title != nil else { continue }
+            if !result.metadata.artists.isEmpty {
+                #expect(PasteRefiner.metadataTask(for: result) == nil, "\(name)")
+                continue
+            }
+            titledOnly += 1
+            let refined = IngestPipeline.apply(Refinements(artist: "Made Up Band"), to: result)
+            #expect(refined.metadata.artists.isEmpty, "\(name)")
+            #expect(!refined.refinedFields.contains(.artist), "\(name)")
+        }
+        #expect(titledOnly > 0)
     }
 
     /// Spike 5.3 / the real-paste eval: no metadata call without a top or bottom candidate.

@@ -32,17 +32,15 @@ public enum PasteRefiner {
         })
     }
 
-    /// The metadata call, or `nil` when code already has title, artist and an unambiguous
-    /// key, or when there is no top or bottom candidate block (spike 5.3: without one FM took
-    /// a chord as the title).
+    /// The metadata call, or `nil` when code already has title and artist (R121: the converter
+    /// wins, whatever the key), or when there is no top or bottom candidate block (spike 5.3:
+    /// without one FM took a chord as the title).
     public static func metadataTask(for result: IngestResult) -> MetadataTask? {
         guard !result.isAlreadyChordPro,
               let candidates = result.questions.metadataCandidates,
               !candidates.topLines.isEmpty || !candidates.bottomLines.isEmpty
         else { return nil }
-        let needed = result.metadata.title == nil || result.metadata.artists.isEmpty
-            || result.keyInference.isAmbiguous
-        guard needed else { return nil }
+        guard result.metadata.title == nil || result.metadata.artists.isEmpty else { return nil }
         return MetadataTask(
             topLines: candidates.topLines,
             bottomLines: candidates.bottomLines,
