@@ -35,7 +35,8 @@ final class SegueAssistantE2ETests: SetlistE2ETestCase {
         field.click(in: app)
         field.typeText("20 min set, songs I know well", in: app)
         SetlistE2E.waitUntil("The chips never showed 20 min and Ready+") {
-            SetlistE2E.all(app, AssistantAXID.chip).allElementsBoundByIndex.map(\.label) == ["20 min", "Ready+"]
+            SetlistE2E.all(app, AssistantAXID.chip).allElementsBoundByIndex.map(\.label)
+                == ["20 min", "Ready+"]
         }
 
         // Build fills this setlist within 20:00 +/- 3 min; Northbound (Learning) stays out.
