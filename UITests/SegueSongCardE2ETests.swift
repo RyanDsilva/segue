@@ -30,8 +30,12 @@ final class SegueSongCardE2ETests: XCTestCase {
         XCTAssertTrue(row.appears(timeout: 15), "no Welcome song row")
         row.click(in: app)
 
-        // Key: open the token, pick Em.
+        // Key: open the token, switch to Minor (the picker opens on the current key's mode,
+        // Kettle On is in G major), pick Em.
         element(app, SongCardAXID.token("key")).click(in: app)
+        let minor = app.radioButtons["Minor"].firstMatch
+        XCTAssertTrue(minor.appears(timeout: 5), "no Major / Minor switch")
+        minor.click(in: app)
         let em = app.descendants(matching: .any).matching(identifier: SongCardAXID.keyOption)
             .matching(NSPredicate(format: "label == %@", "Em")).firstMatch
         XCTAssertTrue(em.appears(timeout: 5), "no key picker")
