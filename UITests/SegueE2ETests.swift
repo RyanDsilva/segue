@@ -326,7 +326,7 @@ final class SegueE2ETests: XCTestCase {
             JSONSerialization.jsonObject(with: Data(contentsOf: setlistURL)) as? [String: Any],
         )
         XCTAssertEqual(setlist["name"] as? String, "Friday Set")
-        XCTAssertEqual(setlist["schemaVersion"] as? Int, 2) // Phase 2: item IDs.
+        XCTAssertEqual(setlist["schemaVersion"] as? Int, 3) // Phase 3: breaks, changeover.
         let entries = try XCTUnwrap(setlist["entries"] as? [[String: Any]])
         XCTAssertEqual(
             entries.compactMap { $0["songId"] as? String },
