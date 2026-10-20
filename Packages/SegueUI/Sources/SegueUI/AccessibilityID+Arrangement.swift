@@ -7,7 +7,6 @@ public extension AccessibilityID {
     /// The slot row's "Custom arrangement" / "out of date" line.
     static let arrangementMark = "segue.setlist.arrangement.mark"
     static let arrangementSheet = "segue.setlist.arrangement.sheet"
-    static let arrangementLength = "segue.setlist.arrangement.length"
     static let arrangementReset = "segue.setlist.arrangement.reset"
     static let arrangementUpdate = "segue.setlist.arrangement.update"
     static let arrangementDone = "segue.setlist.arrangement.done"

@@ -28,7 +28,7 @@ For one gig, a setlist slot can say "play Intro, Verse 1, Chorus, Verse 2, then 
 - **Arranged slot**: a song slot whose `SetlistEntry.arrangement` is non-nil.
 - **Slot length**: the length entered (or timed) for an arranged slot. The song's `{duration}` is untouched and keeps the full song's length.
 
-## 3. Data model (SegueCore `Setlists/`)
+## 3. Data model (SegueCore `Library/`, used by `Setlists`, `Shows` and `LiveLayout`)
 
 ```swift
 /// Which section of the song a step plays: the section notes anchoring rule.
@@ -198,7 +198,7 @@ Renders in the session scratchpad `p3-16/` (light and dark):
 
 ## 14. Files owned
 
-- New: `SegueCore/Sources/Setlists/SlotArrangement.swift`, `ArrangementResolver.swift`; `SegueUI/Sources/SegueUI/Setlists/ArrangementEditor*.swift`, `AccessibilityID+Arrangement.swift`; the tests above; `UITests/SegueArrangementE2ETests.swift`.
+- New: `SegueCore/Sources/Library/SlotArrangement.swift`, `Library/ArrangementResolver.swift` (in Library because live layout applies them and does not depend on Setlists); `SegueUI/Sources/SegueUI/Setlists/ArrangementDraft.swift`, `ArrangementEditorSheet.swift`, `SlotArrangementMark.swift`, `SetlistsViewModel+Arrangement.swift`, `AccessibilityID+Arrangement.swift`; the tests above; `UITests/SegueArrangementE2ETests.swift`.
 - Additive hunks: `Setlists/Setlist.swift` (field, codec, version), `SetlistStore.swift` (migration step), `SetlistTiming.swift`, `Shows/ShowRecord.swift` (field, version), `ShowController.swift` (the copy line only; P3-15 owns the add paths), `LiveLayout/LayoutRequest.swift`, `SongPreparation.swift`, `Library/SectionNotes.swift` (public anchor hook; P3-13 owns the file), `SetAssistant/Packer.swift` (length per entry; P3-7 owns it), `SongCard/TimeItModel.swift` (target enum), `Setlists/SetEntryEditor.swift`, `SetEntriesList.swift` (slot mark, context menu), `MissingLengthsList.swift`, `Live/LiveSession+Viewport.swift`, `Live/StageChrome.swift` (tag), `GigLog/GigDetailView.swift` (second line), and the menu item through the `MenuShortcuts` owner.
 
 ## 15. Acceptance

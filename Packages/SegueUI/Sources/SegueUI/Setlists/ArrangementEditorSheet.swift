@@ -19,44 +19,41 @@
         @State private var focusedRow: Int?
 
         var body: some View {
-            Group {
-                if let setlist = model.setlist(slot.setlist),
-                   let entry = setlist.entry(slot.item),
-                   let songID = entry.songId,
-                   let record = library.song(id: songID)
-                {
-                    let units = SongSections.units(of: record.document)
-                    ArrangementEditorContent(
-                        entry: entry,
-                        record: record,
-                        units: units,
-                        draft: ArrangementDraft(arrangement: entry.arrangement, units: units),
-                        isReadOnly: setlist.readOnly != nil,
-                        focusedRow: $focusedRow,
-                        save: { arrangement, name in
-                            Task {
-                                await model.setArrangement(
-                                    arrangement,
-                                    of: slot.item,
-                                    in: slot.setlist,
-                                    actionName: name,
-                                )
-                            }
-                        },
-                        done: { dismiss() },
-                    )
-                } else {
-                    VStack(spacing: 14) {
-                        Text("This song is no longer in the set or the library.")
-                            .foregroundStyle(Theme.color.muted)
-                        Button("Done") { dismiss() }
-                            .buttonStyle(.seguePrimary)
-                            .keyboardShortcut(.defaultAction)
-                    }
-                    .padding(32)
+            if let setlist = model.setlist(slot.setlist),
+               let entry = setlist.entry(slot.item),
+               let songID = entry.songId,
+               let record = library.song(id: songID)
+            {
+                let units = SongSections.units(of: record.document)
+                ArrangementEditorContent(
+                    entry: entry,
+                    record: record,
+                    units: units,
+                    draft: ArrangementDraft(arrangement: entry.arrangement, units: units),
+                    isReadOnly: setlist.readOnly != nil,
+                    focusedRow: $focusedRow,
+                    save: { arrangement, name in
+                        Task {
+                            await model.setArrangement(
+                                arrangement,
+                                of: slot.item,
+                                in: slot.setlist,
+                                actionName: name,
+                            )
+                        }
+                    },
+                    done: { dismiss() },
+                )
+            } else {
+                VStack(spacing: 14) {
+                    Text("This song is no longer in the set or the library.")
+                        .foregroundStyle(Theme.color.muted)
+                    Button("Done") { dismiss() }
+                        .buttonStyle(.seguePrimary)
+                        .keyboardShortcut(.defaultAction)
                 }
+                .padding(32)
             }
-            .accessibilityIdentifier(AccessibilityID.arrangementSheet)
         }
     }
 
@@ -100,6 +97,9 @@
                     .font(SchibstedGrotesk.extraBold.font(size: 17))
                     .foregroundStyle(Theme.color.ink)
                     .accessibilityAddTraits(.isHeader)
+                    // On the title, not the sheet: an identifier on a container would replace
+                    // every control's own.
+                    .accessibilityIdentifier(AccessibilityID.arrangementSheet)
                 Text("\(SongSummary.title(record)) · this gig only, the song is not changed")
                     .font(SchibstedGrotesk.medium.font(size: 13))
                     .foregroundStyle(Theme.color.muted)
@@ -252,7 +252,6 @@
                     save(next.arrangement, "Set Slot Length")
                 }
                 .disabled(isReadOnly)
-                .accessibilityIdentifier(AccessibilityID.arrangementLength)
                 Text(songLengthHint)
                     .font(SchibstedGrotesk.medium.font(size: 12))
                     .foregroundStyle(Theme.color.muted)
@@ -442,17 +441,28 @@
                     .foregroundStyle(Theme.color.muted)
                 GeometryReader { proxy in
                     let plan = plan
-                    let scale = min(proxy.size.width / Self.stage.width, 1)
+                    let scale = min(max(proxy.size.width - 24, 1) / Self.stage.width, 1)
                     ScrollView(.vertical) {
-                        StagePlanView(plan: plan)
-                            .scaleEffect(scale, anchor: .topLeading)
+                        // The miniature sits in an overlay so the full-size plan never
+                        // widens the panel; only its scaled box takes space.
+                        Color.clear
                             .frame(
                                 width: plan.viewport.width * scale,
                                 height: max(plan.contentHeight, 1) * scale,
-                                alignment: .topLeading,
                             )
+                            .overlay(alignment: .topLeading) {
+                                StagePlanView(plan: plan)
+                                    .scaleEffect(scale, anchor: .topLeading)
+                                    .frame(
+                                        width: plan.viewport.width * scale,
+                                        height: max(plan.contentHeight, 1) * scale,
+                                        alignment: .topLeading,
+                                    )
+                            }
+                            .clipped()
                             .padding(12)
                     }
+                    .frame(width: proxy.size.width, height: proxy.size.height)
                     .background(
                         RoundedRectangle(cornerRadius: 10).fill(Theme.color.ground),
                     )
