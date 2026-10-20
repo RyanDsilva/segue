@@ -135,7 +135,8 @@
                     }
                 }
                 .labelsHidden()
-                .frame(width: 130)
+                .pickerStyle(.menu)
+                .frame(width: 130, alignment: .leading)
                 .accessibilityIdentifier(AccessibilityID.smartFilterField)
                 Picker("Operator", selection: $row.kind) {
                     ForEach(kinds.filter { $0.field == row.kind.field }) { kind in
@@ -143,13 +144,15 @@
                     }
                 }
                 .labelsHidden()
-                .frame(width: 150)
+                .pickerStyle(.menu)
+                .frame(width: 150, alignment: .leading)
                 .accessibilityIdentifier(AccessibilityID.smartFilterOperator)
                 value
                     .frame(maxWidth: .infinity, alignment: .leading)
                 HStack(spacing: 6) {
                     Button(action: onRemove) {
                         Image(systemName: "minus")
+                            .frame(width: 12, height: 12)
                     }
                     .disabled(!canRemove)
                     .help("Remove this condition")
@@ -157,6 +160,7 @@
                     .accessibilityIdentifier(AccessibilityID.smartFilterRemoveRow)
                     Button(action: onAdd) {
                         Image(systemName: "plus")
+                            .frame(width: 12, height: 12)
                     }
                     .disabled(!canAdd)
                     .help("Add a condition")
@@ -232,7 +236,7 @@
         private var keys: some View {
             FlowLayout(spacing: 6) {
                 ForEach(row.keys, id: \.self) { key in
-                    FilterChip(isOn: true) {
+                    FilterChip(isOn: false) {
                         row.keys.removeAll { $0 == key }
                     } label: {
                         HStack(spacing: 4) {

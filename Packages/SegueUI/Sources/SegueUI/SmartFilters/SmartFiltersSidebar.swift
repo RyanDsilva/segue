@@ -21,7 +21,7 @@
                 if missing > 0 {
                     countedRow(
                         LibraryScope.missingEssentialsName,
-                        systemImage: "circle.fill",
+                        systemImage: "smallcircle.filled.circle",
                         count: missing,
                     )
                     .tag(LibrarySession.Section.missingEssentials)
