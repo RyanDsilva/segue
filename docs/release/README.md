@@ -66,9 +66,9 @@ Pasted by Ryan from the steps above. None is secret: the IDs and the DSN ship in
 - [ ] **Approve the progress-dot before/after render (WS2b step 1)** - `design/directions/ws2b/progress-dots-before-after.png` (new `indicatorOff` token, darker `played`).
 - [ ] **Approve the Welcome songs (WS2b, before step 2 ships them).** Title-search each of the four (Apple Music, Spotify, Google "<title> song"): Soundcheck at Seven, Kitaabon Wali Gali, Kettle On, Lights Low, Ferry Lights Over Calder Bay. Read the lyrics in WS2b Appendix A. Any collision -> tell the session which title to change.
 - [ ] **Pick design directions (R39).** One each, or a named mix: Welcome sheet, What's New sheet, `.cho` document icon (WS2b step 3, `design/directions/ws2b/`); website home page (WS4 step 3, on the design canvas or an artifact).
-- [x] **Approve the screenshot-only songs (WS5, before its step 4).** Done 2026-10-20 (R128): five titles and the setlist "JamFest Opener". The title search found one hit, "Northbound Before Dawn" on Apple Music: pick its replacement in WS5 section 17 question 1.
+- [x] **Approve the screenshot-only songs (WS5, before its step 4).** Done 2026-10-20 (R128): five titles and the setlist "JamFest Opener". The one title-search hit is replaced by "Northbound at First Light" (R129).
 - [ ] **Rewrite the maker note (WS4 R-2)** in your own words, removing the `ryan-edit` markers; confirm the policy and terms effective dates (default: day of the first push). Must be done before the first push (6.2).
-- [ ] **Pick the screenshot compositor direction (WS5 step 6)** - A, B or C from `.build/screenshots/directions/` (appearance mix is fixed at 5 dark / 3 light).
+- [ ] **Pick the screenshot compositor direction (WS5 step 6)** - A, B or C from `.build/screenshots/directions/` (appearance mix is fixed at 5 dark / 4 light, R129).
 - [ ] **Grant Screen Recording to your terminal (WS5, before the first `make preview`).** System Settings > Privacy & Security > **Screen & System Audio Recording** > "+" > your terminal app > relaunch it.
 - [ ] **Approve the preview video cut (WS5 step 7)** - `.build/preview/segue-preview-en-US.mp4`.
 - [ ] **VoiceOver and Voice Control walks (WS2b step 12).** The agent prepares the checklist in `docs/release/accessibility-audit.md` and fixes what you find. Labels you cannot walk stay unclaimed.
@@ -135,7 +135,7 @@ Pasted by Ryan from the steps above. None is secret: the IDs and the DSN ship in
 - [ ] **App Information.** Categories Music / Productivity; content rights "No, it does not contain, show, or access third-party content"; license agreement = Apple standard EULA.
 - [ ] **Preview video.** Apps > Segue > macOS App > 0.5 > **App Previews and Screenshots** > drag `.build/preview/segue-preview-en-US.mp4` > Edit poster frame (~6 s).
 - [ ] **App Review Information.** Contact Ryan / Dsilva, `segue@ryandsilva.dev`, your phone (typed here or via `SEGUE_REVIEW_PHONE`; **never committed**); notes from `store/`; attach `.build/review/segue-review-walkthrough.mp4`.
-- [ ] **Submit.** Apps > Segue > macOS App > 0.5 (Prepare for Submission): check every field against `store/` and all 8 screenshots in order > **Build "+"** > the exact gig-tested build > Version Release **Manually release this version** > **Add for Review > Submit to App Review**. On rejection follow WS5 14.6.
+- [ ] **Submit.** Apps > Segue > macOS App > 0.5 (Prepare for Submission): check every field against `store/` and all 9 screenshots in order > **Build "+"** > the exact gig-tested build > Version Release **Manually release this version** > **Add for Review > Submit to App Review**. On rejection follow WS5 14.6.
 - [ ] **Manual release (A51).** After approval, at a moment you choose: Apps > Segue > macOS App > 0.5 > **Release This Version**.
 - [ ] **Flip the site to the badge.** The session sets `appStore.status` to `"live"`, runs `make site && make site-check STRICT=1`, commits; you approve the push. Check the badge links to the live listing.
 - [ ] **After release.** Search "Segue setlists" on the US Mac App Store; check screenshots, preview, privacy and accessibility labels render. Watch Xcode Organizer and Sentry for 48 h. Weekly habit: Sentry **User Feedback**, copy anything worth keeping into GitHub by hand (reports expire after 30 days).
@@ -214,6 +214,6 @@ Recorded so sessions apply them; say if any is wrong.
 
 1. **"Segue Personal" display name** (WS1 question 1, asked at WS1 step 2). Default: both builds show as "Segue"; the alternative sets the Personal flavor's `CFBundleDisplayName = "Segue Personal"`.
 2. **Maker note** (WS4 question 1, asked before the first push). Default: you rewrite it before the first push, so it blocks `STRICT=1` until then; the alternative ships the first push without the maker-note section.
-3. **Screenshot-only song titles and the setlist name.** Resolved by R128: five titles, setlist "JamFest Opener"; one title-search hit still to settle (WS5 section 17 question 1).
+3. **Screenshot-only song titles and the setlist name.** Resolved by R128: five titles, setlist "JamFest Opener"; the one title-search hit replaced by "Northbound at First Light" (R129).
 4. **Review walkthrough capture** (WS5 question 2, asked before 2.5). Default: you record it with QuickTime on the clean-account TestFlight pass; the alternative is a scripted XCUITest capture on Debug-AppStore (repeatable, but skips the library step and is not the shipped binary).
 5. **Profile name.** Resolved: the specs use the installed profile name "Segue Mac App Store"; nothing to rename.

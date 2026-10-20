@@ -1,6 +1,6 @@
 # WS5 - App Store listing, screenshots, preview video and submission
 
-> *Phase 3 (AI entry & assistant) ships in 0.5 (R61-R128, `docs/release/decisions.md`). P3-9 rewrote the lines that assumed no AI, no downloads, the R37 keyword set or the old screenshot songs in place (2026-10-20). Choices still open are marked **DECIDE** and listed in section 17; the evidence is in `docs/research/phase3-store-ai.md`.*
+> *Phase 3 (AI entry & assistant) ships in 0.5 (R61-R128, `docs/release/decisions.md`). P3-9 rewrote the lines that assumed no AI, no downloads, the R37 keyword set or the old screenshot songs in place (2026-10-20). The section 17 questions it opened are ruled by R129 (2026-10-20) and applied in place; the evidence is in `docs/research/phase3-store-ai.md`.*
 
 Spec date: 2026-10-17 (finalised after the open-question round; all decisions through R41 applied). Target: Segue **0.5**, Mac App Store, App Store flavor only (`SegueAppStore`, bundle `dev.ryandsilva.segue`), arm64 only, built with Xcode 27.1 (R41).
 
@@ -21,8 +21,8 @@ Resolutions this spec builds on (so it reads standalone):
 | Listing locales | English (U.S.) only (R8, A46) |
 | Territories | All storefronts except China mainland (A47; no ICP filing) |
 | Screenshot library | Welcome library plus 5 approved screenshot-only original songs and the setlist "JamFest Opener", Debug-only, never shipped (A48, R128, section 8.4.1) |
-| Screenshot appearance | 5 dark, 3 light (A49) |
-| Keywords | R37 set, 97 bytes; a swap is a **DECIDE** item (section 17) |
+| Screenshot appearance | 5 dark, 4 light (A49 plus the 9th shot, light, R129) |
+| Keywords | R37 set, 97 bytes, unchanged (R129) |
 | Release mode | Manual release (A51) |
 | Copyright | `2026 Ryan Rony Dsilva` (R30; Apple renders the symbol) |
 | Vendors | TelemetryDeck (own minimal ingest client, R34), Sentry (US region, R33; crashes, hangs, bug reports), Featurebase (web board only) (R23-R25) |
@@ -111,7 +111,7 @@ The final screenshots and videos are derived binaries. They live under `.build/`
 | Subtitle | `Lyrics & chords for live gigs` | 29 / 30 chars | R3 |
 | Promotional text | section 4.2 | 162 / 170 chars | |
 | Description | section 4.3 | 3,954 / 4,000 chars (P3-9 draft, before the claim pass; recount after) | |
-| Keywords | section 4.5 | 97 / 100 bytes | R37; **DECIDE** a swap (section 17, question 6) |
+| Keywords | section 4.5 | 97 / 100 bytes | R37, unchanged (R129) |
 | Copyright | `2026 Ryan Rony Dsilva` | Apple renders the symbol; must match Info.plist `NSHumanReadableCopyright` (`© 2026 Ryan Rony Dsilva`) | R30 |
 | Support URL | `https://segue.ryandsilva.dev/support` | must show `segue@ryandsilva.dev` | R28, R29 |
 | Marketing URL | `https://segue.ryandsilva.dev` | | R27 |
@@ -126,7 +126,7 @@ The final screenshots and videos are derived binaries. They live under `.build/`
 | SKU | `segue-macos` (permanent, set at record creation) | | B-33 |
 | Accessibility URL | leave empty | | B-32 |
 | License agreement | Apple standard EULA | | R7 |
-| Content rights | **DECIDE** (section 17, question 4): (a) "No, it does not contain, show, or access third-party content" or (b, recommended) "Yes, it contains, shows, or accesses third-party content, and I have the necessary rights" | | The app fetches the Qwen3 model weights (Apache-2.0, notices shipped) on request (R66); Welcome songs are original (R19); pasted text is the user's own action |
+| Content rights | "Yes, it contains, shows, or accesses third-party content, and I have the necessary rights" (R129) | | The app fetches the Qwen3 model weights (Apache-2.0, notices shipped) on request (R66); Welcome songs are original (R19); pasted text is the user's own action |
 | Regulated medical device | No | | 01 step 13 |
 | Made for Kids | No | | |
 | What's New | not shown for a first version | | |
@@ -137,7 +137,7 @@ The final screenshots and videos are derived binaries. They live under `.build/`
 Your chart, your set, your cue. Paste a chord sheet from any site, build tonight's set in minutes, and play it from a stage view that fits every song. No account.
 ```
 
-The 0.5 promo before phase 3 (169 chars) was: "Your chart, your set, your cue. Keep songs as plain ChordPro files, build tonight's set, and play it from a stage view that fits every song. No account, no subscription." It stays true; the new line leads with paste. Ryan approves the copy.
+The 0.5 promo before phase 3 (169 chars) was: "Your chart, your set, your cue. Keep songs as plain ChordPro files, build tonight's set, and play it from a stage view that fits every song. No account, no subscription." It stays true; the new line leads with paste. Approved (R129).
 
 ### 4.3 Description (plain text)
 
@@ -260,7 +260,7 @@ chordpro,songbook,transpose,prompter,worship,hindi,guitar,piano,capo,nashville,s
 - **Excluded words:** words already in the name or subtitle (segue, setlists, chords, lyrics, live, gigs), "app", competitor names, and `band` (implies band sharing Segue does not have).
 - No other locale sets: en-US is the only listing (A46).
 
-- **DECIDE (section 17, question 6).** `ai` cannot be used: Apple requires each keyword to be "greater than two characters". Options: swap `cover` for `paste` (97 bytes), swap `singer` for `metronome` (100 bytes), or keep R37 (recommended).
+- **Kept (R129).** `ai` cannot be used: Apple requires each keyword to be "greater than two characters". The `paste` and `metronome` swaps were considered and R37 stays.
 
 ### 4.6 App Review Information
 
@@ -344,7 +344,7 @@ Click path: App Store Connect > Apps > Segue > App Information > Age Rating > Ed
 | Guns or Other Weapons | None | |
 | Medical or Treatment Information | None | |
 | Health or Wellness Topics | No | |
-| AI features | no item exists (checked at source 2026-10-20) | The questionnaire has no AI, chatbot or assistant item. Segue's models only label the user's own paste and read set requests; no chat, no generated content for others. If Apple adds an item on the day, answer by meaning and tell Ryan. **DECIDE** (section 17, question 3): answer as this table (recommended) or override to 9+. |
+| AI features | no item exists (checked at source 2026-10-20) | The questionnaire has no AI, chatbot or assistant item. Segue's models only label the user's own paste and read set requests; no chat, no generated content for others. If Apple adds an item on the day, answer by meaning and tell Ryan. Answer as this table, 4+, no override (R129). |
 
 Apple rates the app's own content, not what a user types into a local editor (`03` section 6).
 
@@ -363,7 +363,7 @@ Vendors behind the rows (fixed, R23-R25, R33, R34):
 - **TelemetryDeck** (usage analytics, opt-in), sent through Segue's own minimal ingest client, which sends only the WS3 section 5 fields plus OS/app version and region (R34). Region comes from the locale setting, not IP.
 - **Sentry**, US data region (R33): crashes, hangs and MetricKit (opt-in, separate toggle, R25), plus Report a Problem... envelopes (sent only after the preview, R22, R24). Sentry's per-install ID is kept (R25).
 - **Featurebase**: the board is a website opened in the browser; the app sends it nothing, so it adds no rows.
-- **Hugging Face** (the optional AI model download, R66): adds no rows. Segue's own request on the user's click; the developer receives nothing; Hugging Face is not a partner whose code makes the request; an IP address on a request the developer does not retain needs no disclosure (Apple's "collect" definition, `docs/research/phase3-store-ai.md` section 3). The privacy policy discloses it. **DECIDE** (section 17, question 4b): confirm no label change (recommended).
+- **Hugging Face** (the optional AI model download, R66): adds no rows. Segue's own request on the user's click; the developer receives nothing; Hugging Face is not a partner whose code makes the request; an IP address on a request the developer does not retain needs no disclosure (Apple's "collect" definition, `docs/research/phase3-store-ai.md` section 3). The privacy policy discloses it. No label change (R129).
 - **Apple Intelligence** (Foundation Models) runs on the device: adds no rows.
 
 Every row is **Tracking: No** (no cross-app or cross-company linking, no data brokers, no ATT).
@@ -479,9 +479,7 @@ Each test:
 
 ### 8.4 Shot list and captions
 
-Eight shots; the first three show in search results. Both appearances are captured for every shot; which one ships per slot is set in `store/screenshots.json`. The mix is **5 dark, 3 light** (A49), as in the table. At least one must be dark (Apple guidance).
-
-> **DECIDE (section 17, question 2):** add a 9th shot, the paste review sheet (recommended: `paste`, Light, headline "Paste a song from anywhere.", subline "Segue converts it. You check it before it saves."), replace shot 7, add two, or keep eight.
+Nine shots (the 9th, `paste`, added by R129); the first three show in search results. Both appearances are captured for every shot; which one ships per slot is set in `store/screenshots.json`. The mix is **5 dark, 4 light** (A49 plus the light 9th shot), as in the table. At least one must be dark (Apple guidance).
 
 Library content for every shot comes from `-SegueScreenshotLibrary YES` (8.2): the four Welcome songs, "Welcome Set", the screenshot-only songs and the screenshot-only setlist from 8.4.1.
 
@@ -495,6 +493,7 @@ Library content for every shot comes from `-SegueScreenshotLibrary YES` (8.2): t
 | 6 | `request` | Stage mode on "JamFest Opener" with quick search open on `kitabon`, then "Kitaabon Wali Gali" queued: footer shows "Request" and the count dot | Dark | Take a request mid-set. | Search, queue, and play it next. |
 | 7 | `minsize` | Stage mode on the longest Welcome song at a large minimum lyric size, scrolled partway (scroll position visible) | Dark | Readable from the mic stand. | Set a minimum size. Segue scrolls rather than shrinks. |
 | 8 | `checklist` | Pre-show checklist sheet over the setlist. No Gig Mode Shortcut rows (hidden until configured, A37, R18) | Dark | Ready before you walk on. | A pre-show checklist, and shows that survive a crash. |
+| 9 | `paste` | The paste review sheet for a chord-site paste of a Welcome song (the guide's fixture), the original on the left, the converted song on the right with the AI marks of the recorded refinement (R129) | Light | Paste a song from anywhere. | Segue converts it. You check it before it saves. |
 
 Headlines are 23-35 characters and sublines 32-57. Keep any edit within about 36 and about 60, so they set on one line each at the chosen size.
 
@@ -518,7 +517,7 @@ Approved titles (R128, 2026-10-20: five, deliberately fewer than the old 6-10 gu
 |---|---|---|---|---|---|
 | 1 | Lanterns on Pier Nine | D | 92 | 3:48 | clean |
 | 2 | Chai at Platform Four | Em | 96 | 3:40 | clean |
-| 3 | Northbound Before Dawn | Bb | 76 | 4:30 | **hit** on Apple Music ("Northbound Before Dawn (Delta Blues)", Cora Flood). **DECIDE** (section 17, question 1): drop, replace (recommended: "Northbound at First Light", same key, tempo and length, clean on Apple Music; Spotify and Google still to search) or keep |
+| 3 | Northbound at First Light | Bb | 76 | 4:30 | clean on Apple Music (R129: replaces the R128 title that hit an existing song) |
 | 4 | Saltwater Telegraph | Am | 100 | 3:35 | clean |
 | 5 | Last Tram to Wexley | G | 132 | 3:10 | clean |
 
@@ -526,7 +525,7 @@ Dropped (R128): Second Set Shuffle, Tin Roof Weather, Neeli Cycle Ka Safar, Copp
 
 Tags and proficiency marks are set so the library shows a realistic mix (some "Ready", a few "Learning", two "Pro").
 
-Screenshot-only setlist **"JamFest Opener"** (R128; also Debug-only, created by the composite flag): every approved screenshot-only song plus the Welcome songs except "Kitaabon Wali Gali", so 8 entries with five approved titles, with "Ferry Lights Over Calder Bay" in position 3 (so shot 1 has an Up next song) and "Kitaabon Wali Gali" deliberately **not** in the set, so the request in shot 6 and in the preview (9.2) is a real request. Its target length is chosen so the running total sits a little under target. Example with the five R128 titles: Last Tram to Wexley (3:10), Lanterns on Pier Nine (3:48), Ferry Lights Over Calder Bay (4:40), Chai at Platform Four (3:40), Soundcheck at Seven (3:20), Saltwater Telegraph (3:35), Kettle On, Lights Low (3:05), Northbound Before Dawn or its replacement (4:30) = 29:48 against a 30:00 target. Final order and target are fixed in `ScreenshotSongs.swift`.
+Screenshot-only setlist **"JamFest Opener"** (R128; also Debug-only, created by the composite flag): every approved screenshot-only song plus the Welcome songs except "Kitaabon Wali Gali", so 8 entries with five approved titles, with "Ferry Lights Over Calder Bay" in position 3 (so shot 1 has an Up next song) and "Kitaabon Wali Gali" deliberately **not** in the set, so the request in shot 6 and in the preview (9.2) is a real request. Its target length is chosen so the running total sits a little under target. Example with the five R128 titles: Last Tram to Wexley (3:10), Lanterns on Pier Nine (3:48), Ferry Lights Over Calder Bay (4:40), Chai at Platform Four (3:40), Soundcheck at Seven (3:20), Saltwater Telegraph (3:35), Kettle On, Lights Low (3:05), Northbound at First Light (4:30) = 29:48 against a 30:00 target. Final order and target are fixed in `ScreenshotSongs.swift`.
 
 ### 8.5 Export
 
@@ -581,7 +580,7 @@ Rendering rules:
   - Draw a 1 px hairline (`controlBorder` logic from `brand.md` section 7: `line` on light, `muted` at 40% on dark).
   - Shadow: `CGContext.setShadow` with offset (0, -24 px), blur 80 px and black at 35% on light. On dark, use a slightly larger blur and 50%, because a black shadow on #101113 is near invisible. The dark-mode window edge relies on the hairline.
 - **Crop.** Optional `{x, y, w, h}` in raw pixels, for any capture that is not 16:10.
-- **Contact sheet.** A 4x2 grid at 25% scale, for Ryan's review.
+- **Contact sheet.** A 3x3 grid at 25% scale, for Ryan's review.
 
 Design directions (Ryan picks one before the full set is composed; this is his standing preference):
 
@@ -829,12 +828,12 @@ Do not touch `CHANGELOG.md` or any generated file by hand.
 | R4 | before step 8 | Set the price to Free; availability all countries or regions **except China mainland** (A47) | Apps > Segue > Pricing and Availability > Price Schedule > Free; Availability > select all, then untick China mainland |
 | R5 | before step 8 | Put the R13 `.p8` key, Key ID and Issuer ID where `make store-upload` reads them, as the signing/upload spec defines (1Password, never the repo) | 1Password |
 | R6 | first `make preview` | Grant Screen Recording to the terminal app | System Settings > Privacy & Security > Screen & System Audio Recording > + > your terminal; relaunch it |
-| R7 | step 6 | Pick screenshot direction A, B or C (the per-slot appearance is fixed at 5 dark / 3 light, A49) | contact sheet in `.build/screenshots/directions/` |
+| R7 | step 6 | Pick screenshot direction A, B or C (the per-slot appearance is fixed at 5 dark / 4 light, A49, R129) | contact sheet in `.build/screenshots/directions/` |
 | R8 | step 7 | Approve the preview cut | `.build/preview/segue-preview-en-US.mp4` |
 | R9 | after upload | Enter the age rating (section 5) | Apps > Segue > App Information > Age Rating > Edit |
 | R10 | after upload | Enter App Privacy (section 6, as diffed against WS3 10.2), then Publish | Apps > Segue > App Privacy > Get Started/Edit |
 | R11 | after upload | Enter the accessibility labels the audit earned (section 7) | Apps > Segue > App Accessibility > Add Accessibility Support > macOS |
-| R12 | after upload | Categories Music / Productivity; content rights "No"; check the license agreement is the Apple standard EULA | Apps > Segue > App Information |
+| R12 | after upload | Categories Music / Productivity; content rights "Yes ... I have the necessary rights" (R129); check the license agreement is the Apple standard EULA | Apps > Segue > App Information |
 | R13 | after upload | Upload the preview video and set its poster frame (about 6 s) | Apps > Segue > macOS App > 0.5 > App Previews and Screenshots > drag the .mp4 > Edit poster frame |
 | R14 | after upload | Enter the review contact phone, if not via `ENV`; attach the walkthrough video (9.5) | Apps > Segue > macOS App > 0.5 > App Review Information |
 | R16 | 14.2 step 5 | Record the raw review walkthrough with QuickTime on the clean account (9.5), save to `.build/review/raw.mov`, then run `make review-video` | QuickTime Player > File > New Screen Recording |
@@ -947,14 +946,14 @@ After release:
 - [ ] `make store-check` passes and runs in `make check`. A deliberately over-long subtitle or an em dash makes it fail; test once, then revert.
 - [ ] Every description line is backed by a ticked row in 4.4 on the App Store flavor; no unshipped claim remains.
 - [ ] Keywords are exactly the R37 set in 4.5 (97 bytes).
-- [ ] `make screenshots` from a clean `.build/` produces 8 PNGs in `.build/screenshots/final/en-US/`:
+- [ ] `make screenshots` from a clean `.build/` produces 9 PNGs in `.build/screenshots/final/en-US/`:
   - each 2880x1800, `hasAlpha: no`, sRGB;
   - captions from `store/screenshots.json`;
   - the chosen direction;
   - at least one dark shot.
 - [ ] Two consecutive `make screenshots` runs produce visually identical images.
 - [ ] Screenshots show only Welcome-library songs and the approved screenshot-only songs (8.4.1), and no personal-module UI.
-- [ ] The shipped mix is 5 dark, 3 light (A49), as in 8.4.
+- [ ] The shipped mix is 5 dark, 4 light (A49, R129), as in 8.4.
 - [ ] `strings` on the Release-AppStore binary finds none of WS5's flags and no screenshot-only song title (`verify-appstore`).
 - [ ] `make review-video` produces a 60-90 s walkthrough that passes its ffprobe gate (9.5).
 - [ ] `make preview` (or `make preview-edit` on a manual take) produces an mp4 that passes the ffprobe gate: 1920x1080, 30 fps, 15-30 s, H.264 High@4.0, stereo AAC, at most 500 MB. Ryan has approved it.
@@ -989,13 +988,13 @@ After release:
 
 ## 17. Open questions for Ryan
 
-All earlier WS5 questions are closed (A46-A51, B-30 to B-33, R30, R37, R128; see the table at the top). The review walkthrough is captured by Ryan with QuickTime on the clean-account TestFlight pass (former question 2, default a, section 9.5). P3-9 opened these (evidence: `docs/research/phase3-store-ai.md`, which carries the same questions as Q8, Q5, Q1, Q2/Q3, Q4, Q6 and Q7):
+None open. All earlier WS5 questions are closed (A46-A51, B-30 to B-33, R30, R37, R128; see the table at the top). The review walkthrough is captured by Ryan with QuickTime on the clean-account TestFlight pass (section 9.5). The eight questions P3-9 opened (evidence: `docs/research/phase3-store-ai.md`, Q8, Q5, Q1, Q2/Q3, Q4, Q6 and Q7) are ruled by **R129** (2026-10-20) and applied in place above:
 
-1. **"Northbound Before Dawn" title-search hit (R128).** (a) Drop it (four screenshot-only songs); (b) replace it: "Northbound at First Light" (Bb, 76, 4:30), "Second Set Shuffle" (A, 128, 3:05) or "Open Mic at the Laundromat" (E, 118, 2:55), each clean on Apple Music; (c) keep it. **Recommend b, "Northbound at First Light".**
-2. **Screenshots (phase 3 spec 16.2 question 17).** (a) Add a 9th, the paste review sheet (Light); (b) replace shot 7 `minsize` with it; (c) add two (paste review + Arrange Sections or the set assistant bar); (d) no change. **Recommend a.**
-3. **Age rating with AI (question 19).** (a) Answer as section 5 (no AI item exists; 4+); (b) override to 9+. **Recommend a.**
-4. **Content rights and App Privacy with the model download (question 19).** Content rights: (a) "No"; (b) "Yes ... and I have the necessary rights" (the app fetches Apache-2.0 weights). **Recommend b.** App Privacy: no change (the developer receives nothing; section 6). **Recommend no change.**
-5. **"Apple Intelligence" wording (question 20).** (a) Referential use where true ("works with Apple Intelligence"), never in a feature name, no ™, plus "Apple Intelligence is a trademark of Apple Inc." on /acknowledgements; (b) "on-device AI" only in marketing, the term only in-app; (c) avoid it everywhere. **Recommend a.**
-6. **Keywords (question 18).** `ai` is not allowed (2 characters). (a) `cover` -> `paste` (97 bytes); (b) `singer` -> `metronome` (100 bytes); (c) keep R37. **Recommend c.**
-7. **Review notes byte budget.** (a) The 4.6 rewrite at 3,585 / 4,000 bytes; (b) keep the old notes and cut the Apple-events paragraph instead. **Recommend a.**
-8. **Promotional text.** (a) The paste-led line in 4.2 (162 chars); (b) keep the pre-phase-3 line (169 chars, still true). **Recommend a.**
+1. **The R128 title-search hit:** replaced by "Northbound at First Light" (Bb, 76, 4:30) (8.4.1).
+2. **Screenshots:** a 9th shot, the paste review sheet (Light), headline "Paste a song from anywhere.", subline "Segue converts it. You check it before it saves." (8.4).
+3. **Age rating with AI:** answer as section 5 (no AI item exists); 4+, no override.
+4. **Content rights and App Privacy with the model download:** content rights "Yes, it contains, shows, or accesses third-party content, and I have the necessary rights" (4.1); App Privacy label unchanged (section 6).
+5. **"Apple Intelligence" wording:** referential use only ("works with Apple Intelligence"), never in a feature name, no trademark symbol, plus "Apple Intelligence is a trademark of Apple Inc." on /acknowledgements.
+6. **Keywords:** R37 unchanged (4.5).
+7. **Review notes:** the 4.6 rewrite (3,585 / 4,000 bytes).
+8. **Promotional text:** the paste-led line in 4.2 (162 chars).

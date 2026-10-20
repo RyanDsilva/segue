@@ -2,7 +2,7 @@
 
 One file to follow once the App Store Connect account works (it is blocked today with `STATE_ERROR.DPLA_OUTDATED_ERROR`; Apple is resolving it). Every value is in the order App Store Connect asks for it, with its limit and count, and the rule it comes from. Values are copied from `docs/release/specs/WS5-store-listing.md`, `docs/release/decisions.md` and the code (`Project.swift`, `Config/Version.xcconfig`, `scripts/release.sh`); WS5 stays canonical, so if the two ever differ, WS5 wins and this file is corrected.
 
-Where a value waits on a decision, the options are inline under **DECIDE**, with the recommendation; the evidence is in `docs/research/phase3-store-ai.md`. Apple renames sidebar items now and then: match by meaning.
+Every value that waited on a decision is ruled (R129, 2026-10-20: WS5 section 17 questions 1-8); the evidence is in `docs/research/phase3-store-ai.md`. Apple renames sidebar items now and then: match by meaning.
 
 Counts: characters as App Store Connect counts them; bytes as UTF-8 (`len(s.encode())`). Every value below is plain ASCII except where noted.
 
@@ -42,7 +42,7 @@ Alternative: the record can also be created from Xcode > Organizer > Distribute 
 | Subtitle | `Lyrics & chords for live gigs` | 29 chars / 29 bytes, max 30 | R3 |
 | Category, primary | Music | matches `LSApplicationCategoryType = public.app-category.music` | R3 |
 | Category, secondary | Productivity | | R3 |
-| Content Rights | **DECIDE** (WS5 17 q4): (a) "No, it does not contain, show, or access third-party content"; **(b, recommended)** "Yes, it contains, shows, or accesses third-party content, and I have the necessary rights" (the app fetches the Apache-2.0 Qwen3 weights on request; licence and credits ship) | | R66, research 2 |
+| Content Rights | "Yes, it contains, shows, or accesses third-party content, and I have the necessary rights" (the app fetches the Apache-2.0 Qwen3 weights on request; licence and credits ship) | | R129, R66, research 2 |
 | Age Rating | section 3.1 below | expected **4+** | WS5 5 |
 | License Agreement | Apple's Standard License Agreement (leave the default) | | R7 |
 | Regulated medical device (if asked) | No | | 01 step 13 |
@@ -50,7 +50,7 @@ Alternative: the record can also be created from Xcode > Organizer > Distribute 
 
 ### 3.1 Age rating questionnaire (App Information > Age Ratings > Set Up Age Ratings)
 
-The questionnaire has no AI item (read at source 2026-10-20). **DECIDE** (WS5 17 q3): answer as below (recommended) or override to 9+.
+The questionnaire has no AI item (read at source 2026-10-20). Answer as below: **4+**, no override (R129).
 
 | Item | Answer | Why |
 |---|---|---|
@@ -92,7 +92,7 @@ The questionnaire has no AI item (read at source 2026-10-20). **DECIDE** (WS5 17
 
 ## 5. App Privacy (sidebar, General)
 
-Privacy Policy URL: `https://segue.ryandsilva.dev/privacy`. Privacy Choices URL: leave empty. Get Started > **"Yes, we collect data from this app"**, then tick these nine types and Set Up each exactly as below. Every row: **Tracking: No**. Then Publish. Source: WS3 10.2 (single source of truth) = WS5 section 6. The optional Hugging Face model download and Apple Intelligence add no rows (research 3; **DECIDE** WS5 17 q4: confirm no change, recommended).
+Privacy Policy URL: `https://segue.ryandsilva.dev/privacy`. Privacy Choices URL: leave empty. Get Started > **"Yes, we collect data from this app"**, then tick these nine types and Set Up each exactly as below. Every row: **Tracking: No**. Then Publish. Source: WS3 10.2 (single source of truth) = WS5 section 6. The optional Hugging Face model download and Apple Intelligence add no rows (research 3; R129: label unchanged).
 
 | Data type | Purposes | Linked to the user | Tracking |
 |---|---|---|---|
@@ -131,16 +131,10 @@ Claim only what `docs/release/accessibility-audit.md` records as walked and pass
 
 ### 7.1 Promotional Text (162 chars / 162 bytes)
 
-**DECIDE** (WS5 17 q8): (a, recommended) the paste-led line; (b) the pre-phase-3 line (169 chars, still true).
+The paste-led line (R129):
 
 ```
 Your chart, your set, your cue. Paste a chord sheet from any site, build tonight's set in minutes, and play it from a stage view that fits every song. No account.
-```
-
-(b):
-
-```
-Your chart, your set, your cue. Keep songs as plain ChordPro files, build tonight's set, and play it from a stage view that fits every song. No account, no subscription.
 ```
 
 ### 7.2 Description (3954 chars / 3954 bytes)
@@ -205,18 +199,16 @@ Segue is free, with no subscription and no in-app purchases.
 
 ### 7.3 Keywords
 
-**DECIDE** (WS5 17 q6; `ai` is not allowed, Apple requires more than two characters per keyword). **(c, recommended) keep R37:**
+The R37 set, unchanged (R129; `ai` is not allowed, Apple requires more than two characters per keyword):
 
 ```
 chordpro,songbook,transpose,prompter,worship,hindi,guitar,piano,capo,nashville,stage,singer,cover
 ```
 97 bytes.
 
-(a) `cover` -> `paste`: `chordpro,songbook,transpose,prompter,worship,hindi,guitar,piano,capo,nashville,stage,singer,paste` (97 bytes). (b) `singer` -> `metronome`: `chordpro,songbook,transpose,prompter,worship,hindi,guitar,piano,capo,nashville,stage,metronome,cover` (100 bytes).
-
 ### 7.4 Screenshots (Mac, 2880 x 1800 px, sRGB, no alpha; from `make screenshots`, `.build/screenshots/final/en-US/`)
 
-Drag in this order; the first three show in search results. **DECIDE** (WS5 17 q2): (a, recommended) add 9 `paste`; (b) 9 replaces 7; (c) add 9 and 10; (d) eight only.
+Drag all nine in this order; the first three show in search results. Shot 9 `paste` was added by R129.
 
 | # | File | Appearance | Headline | Subline |
 |---|---|---|---|---|
@@ -228,7 +220,7 @@ Drag in this order; the first three show in search results. **DECIDE** (WS5 17 q
 | 6 | `06-request.png` | Dark | Take a request mid-set. | Search, queue, and play it next. |
 | 7 | `07-minsize.png` | Dark | Readable from the mic stand. | Set a minimum size. Segue scrolls rather than shrinks. |
 | 8 | `08-checklist.png` | Dark | Ready before you walk on. | A pre-show checklist, and shows that survive a crash. |
-| 9 (DECIDE) | `09-paste.png` | Light | Paste a song from anywhere. | Segue converts it. You check it before it saves. |
+| 9 | `09-paste.png` | Light | Paste a song from anywhere. | Segue converts it. You check it before it saves. |
 
 The setlist in shots 1, 2 and 6 is "JamFest Opener" with the R128 songs (WS5 8.4.1). Captions are WS5's; the compositor direction is Ryan's pick (WS5 step 6).
 
@@ -254,7 +246,7 @@ Build > + > the **exact TestFlight build that went through the real gig** (versi
 
 ### 8.1 Notes (3,585 bytes)
 
-**DECIDE** (WS5 17 q7): this rewrite (recommended) or the pre-phase-3 notes with the Apple-events paragraph cut. Re-check every name against the TestFlight build before pasting (WS5 4.6, 14.2 step 5).
+The phase 3 rewrite (R129). Re-check every name against the TestFlight build before pasting (WS5 4.6, 14.2 step 5).
 
 ```
 Segue is a songbook and live-performance app for gigging musicians. Songs and setlists are plain ChordPro text files in a folder the user chooses. No account, no sign-in, no in-app purchases.

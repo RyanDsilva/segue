@@ -14,7 +14,8 @@
   "legal": {
     "privacyEffectiveDate": "{POLICY_EFFECTIVE_DATE}",
     "termsEffectiveDate": "{TERMS_EFFECTIVE_DATE}",
-    "copyrightYear": "2026"
+    "copyrightYear": "2026",
+    "aiTrademark": "Apple Intelligence is a trademark of Apple Inc."
   },
   "app": {
     "requirements": "a Mac with Apple silicon and macOS 26 or later"
