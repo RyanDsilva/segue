@@ -76,10 +76,11 @@ Packages/SegueUI/Sources/SegueUI/AccessibilityID*.swift	ALL
 Packages/SegueUI/Sources/SegueUI/Components/*	ALL
 Packages/SegueUI/Sources/SegueUI/Support/*	ALL
 Packages/SegueUI/Sources/SegueUI/Theme/*	SegueEditorE2ETests SegueLiveE2ETests
-Packages/SegueUI/Sources/SegueUI/Editor/*	SegueEditorE2ETests SegueCoreUXE2ETests
+Packages/SegueUI/Sources/SegueUI/Editor/*	SegueEditorE2ETests SegueCoreUXE2ETests SegueSongCardE2ETests
 Packages/SegueUI/Sources/SegueUI/Diagrams/*	SegueEditorE2ETests
 Packages/SegueUI/Sources/SegueUI/Rendering/*	SegueEditorE2ETests SegueLiveE2ETests
-Packages/SegueUI/Sources/SegueUI/Library/*	SegueCoreUXE2ETests SegueSetlistLibraryE2ETests
+Packages/SegueUI/Sources/SegueUI/Library/*	SegueCoreUXE2ETests SegueSetlistLibraryE2ETests SegueSongCardE2ETests
+Packages/SegueUI/Sources/SegueUI/SongCard/*	SegueSongCardE2ETests SegueCoreUXE2ETests SegueEditorE2ETests
 Packages/SegueUI/Sources/SegueUI/Setlists/*	SegueSetlistBuilderE2ETests SegueCoreUXE2ETests
 Packages/SegueUI/Sources/SegueUI/GigLog/*	SegueSetlistGigLogE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/*	SegueLiveE2ETests SegueGigModeE2ETests
@@ -94,6 +95,7 @@ UITests/LaunchSmokeTests.swift	LaunchSmokeTests
 UITests/SegueE2ETests.swift	SegueE2ETests
 UITests/SegueCoreUXE2ETests*.swift	SegueCoreUXE2ETests
 UITests/SegueEditorE2ETests*.swift	SegueEditorE2ETests
+UITests/SegueSongCardE2ETests.swift	SegueSongCardE2ETests
 UITests/SegueLiveE2ETests+Support.swift	SegueLiveE2ETests SegueGigModeE2ETests SegueReviewPromptE2ETests SegueTipsE2ETests AccessibilityAuditE2ETests
 UITests/SegueLiveE2ETests*.swift	SegueLiveE2ETests
 UITests/SegueGigModeE2ETests.swift	SegueGigModeE2ETests

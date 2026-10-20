@@ -17,6 +17,7 @@
         var body: some View {
             VStack(spacing: 0) {
                 EditorTopBar(model: model)
+                EditorSongStrip(model: model)
                 if !model.flaggedDefines.isEmpty {
                     FlaggedDefinesBanner(model: model)
                 }

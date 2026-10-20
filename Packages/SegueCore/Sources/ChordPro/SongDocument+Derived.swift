@@ -157,7 +157,7 @@ extension Metadata {
         extra[name.lowercased(), default: []].append(rest)
     }
 
-    static func parseTempo(_ value: String) -> Double? {
+    public static func parseTempo(_ value: String) -> Double? {
         guard let tempo = Double(value), tempo.isFinite, tempo > 0 else { return nil }
         return tempo
     }
@@ -175,7 +175,7 @@ extension Metadata {
     }
 
     /// A diagnostic message if a metadata value cannot be understood, else `nil`.
-    static func valueProblem(name: String, value: String) -> String? {
+    public static func valueProblem(name: String, value: String) -> String? {
         switch name {
         case "capo" where Int(value) == nil:
             "Capo '\(value)' is not a whole number"
@@ -192,7 +192,7 @@ extension Metadata {
 
     /// Beats and note value from `n/d` (spaces around the slash allowed): 1-32 beats,
     /// a note value of 1, 2, 4, 8, 16, 32 or 64.
-    static func parseTime(_ value: String) -> (beats: Int, noteValue: Int)? {
+    public static func parseTime(_ value: String) -> (beats: Int, noteValue: Int)? {
         let parts = value.split(separator: "/", omittingEmptySubsequences: false)
         guard parts.count == 2,
               let beats = Int(parts[0].trimmingCharacters(in: .whitespaces)),

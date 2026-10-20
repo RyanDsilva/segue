@@ -173,6 +173,7 @@
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                SongEssentialsMark(record: record)
                 stateLabel
                 if isInSet {
                     inSetMark

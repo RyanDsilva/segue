@@ -30,7 +30,7 @@
                         .importDrop(model: model, isTargeted: $isDropTargeted)
                 }
             }
-            .navigationTitle("Library")
+            .navigationTitle(model.scope.title)
             // The editor sets its own title; a song count under it would read as its own.
             .navigationSubtitle(model.editor == nil ? songCount(model.catalog.count) : "")
             .toolbar {
@@ -111,6 +111,7 @@
 
         private var header: some View {
             VStack(alignment: .leading, spacing: 10) {
+                SmartFilterListHeader(session: session)
                 HStack(spacing: 8) {
                     SearchField(
                         text: $model.query,
@@ -270,6 +271,7 @@
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                SongEssentialsMark(record: record)
                 if let key = SongSummary.writtenKey(record) {
                     KeyChip(key: key)
                 }
