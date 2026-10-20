@@ -475,6 +475,55 @@
   ],
   "keyStated": false
  },
+ "E31-site-settings-panel": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus"
+  ],
+  "title": "Lantern Road",
+  "artist": "Odile Fenn",
+  "key": "G",
+  "keyStated": false
+ },
+ "E32-blog-share-widgets": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus"
+  ],
+  "title": "Paper Boats",
+  "artist": "Wren Hollis",
+  "key": [
+   "Am",
+   "C"
+  ],
+  "keyStated": false
+ },
+ "E33-ug-page-widgets": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus"
+  ],
+  "title": "Copper Kettle",
+  "artist": "June Arden",
+  "key": "D",
+  "keyStated": false
+ },
+ "E34-lyrics-like-controls": {
+  "labels": [
+   "other",
+   "verse",
+   "chorus",
+   "bridge",
+   "outro"
+  ],
+  "title": "Settings Sun",
+  "artist": "Mara Quill",
+  "key": "G",
+  "keyStated": false
+ },
  "H01-ug-hinglish": {
   "labels": [
    "other",

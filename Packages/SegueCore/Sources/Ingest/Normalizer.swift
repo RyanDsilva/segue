@@ -8,7 +8,8 @@ struct RemovedLine: Equatable {
 
 /// Cleans pasted text without touching lyric characters beyond whitespace: line endings,
 /// tabs, invisible characters, HTML entities and tag residue, trailing whitespace, and junk
-/// lines (ratings, "Tabbed by", navigation, ads, "Print", comment sections) by `JunkRules`.
+/// lines (ratings, "Tabbed by", navigation, ads, page controls and widgets, comment sections)
+/// by `JunkRules`.
 /// Smart quotes are straightened only in non-lyric lines, after classification
 /// (`straightenQuotes`).
 enum Normalizer {

@@ -47,7 +47,9 @@ Code handles everything code can handle. Models only refine: section labels for 
 ```
 raw text (paste, .txt, .crd)
  -> Normalizer        (code)  HTML residue, tabs->spaces, CRLF, smart quotes in non-lyric lines, ads,
-                               "Tabbed by"/rating/nav junk, chord-site headers (Singer: | Music: | Lyrics:)
+                               "Tabbed by"/rating/nav junk, page controls and widgets (Transpose, Font
+                               Size, Display Settings, share bars, views, post dates: R124),
+                               chord-site headers (Singer: | Music: | Lyrics:)
  -> FormatDetector    (code)  ChordPro | chords-over-lyrics | bare lyrics | mixed; per line:
                                chordLine / lyricLine / headerLine ([Verse], Chorus:, V1, Mukhda:) /
                                directive / tab / blank / unknown
