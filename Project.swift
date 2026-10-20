@@ -171,6 +171,9 @@ func appTarget(name: String, personal: Bool) -> Target {
         .external(name: "SegueCore"),
         // Hosted services (WS3): our TelemetryDeck ingest client and the Sentry SDK.
         .external(name: "VendorServices"),
+        // Phase 3 (P3-2): the AI provider adapters (Foundation Models; MLX with P3-3), in both
+        // flavours (R62, R77).
+        .external(name: "SegueAI"),
     ]
     var settings: SettingsDictionary = [
         "PRODUCT_NAME": "Segue",

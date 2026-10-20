@@ -92,13 +92,14 @@ build: ## Build the Personal flavor
 build-appstore: ## Build the App Store flavor
 	$(XCODEBUILD) -scheme Segue-AppStore -configuration Debug-AppStore build
 
-test: test-packages test-perf ## All package tests: the three packages side by side, then the timing budgets alone
+test: test-packages test-perf ## All package tests: the four packages side by side, then the timing budgets alone
 
-test-packages: ## Package tests of SegueCore, SegueVendorServices and SegueUI side by side (no timing budgets)
+test-packages: ## Package tests of SegueCore, SegueVendorServices, SegueAI and SegueUI side by side (no timing budgets)
 	mkdir -p .build
 	scripts/parallel.sh \
 		core "cd $(CORE_DIR) && $(SWIFT_TEST) --skip '$(PKG_SKIP)'" \
 		vendor "cd Packages/SegueVendorServices && $(SWIFT_TEST) --skip '$(PKG_SKIP)'" \
+		ai "cd Packages/SegueAI && $(SWIFT_TEST) --skip '$(PKG_SKIP)'" \
 		ui "cd $(UI_DIR) && $(UI_TEST) --skip '$(PKG_SKIP)' 2>&1 | tee ../../.build/ui-test.log"
 	! grep -E 'Packages/[^:]+\.swift:[0-9]+:[0-9]+: warning:' .build/ui-test.log
 

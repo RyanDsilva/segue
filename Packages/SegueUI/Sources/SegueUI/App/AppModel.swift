@@ -55,6 +55,9 @@
         public var mail: any MailComposer
         /// First run, What's New, review prompt, appearance and tips (WS2b).
         public var polish: PolishDependencies
+        /// AI providers, router and availability (P3-2, `AppModel+AI.swift`); the app target
+        /// replaces the deterministic-only default with its providers.
+        public var ai = AIServices.deterministicOnly()
 
         public init(
             fileSystem: any FileSystem,

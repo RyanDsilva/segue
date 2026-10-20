@@ -35,6 +35,8 @@ let package = Package(
                 .copy("App/Licenses"),
                 // The Welcome library: original songs and the demo setlist (WS2b 4.2).
                 .copy("App/WelcomeLibrary"),
+                // The AI provider order per task (P3-2, spec 4.1; R63 by default).
+                .copy("App/AIConfig"),
             ],
             swiftSettings: strictSettings,
         ),

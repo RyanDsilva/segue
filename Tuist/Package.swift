@@ -43,6 +43,8 @@ import PackageDescription
     private let staticLibraries = [
         "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists", "Shows",
         "LiveLayout", "Plugins", "Support", "Services", "SegueCore", "SegueUI", "Tonic",
+        // Phase 3 (P3-2): the paste pipeline, the AI port and the FM adapter.
+        "Ingest", "ModelPort", "GenerableTasks", "FoundationModelsAdapter",
     ]
 
     let packageSettings = PackageSettings(
@@ -61,8 +63,9 @@ import PackageDescription
         targetSettings: Dictionary(
             uniqueKeysWithValues: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists", "Shows",
-                "LiveLayout", "Plugins", "Support", "Services",
+                "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
                 "SegueUI", "SeguePersonalModules", "VendorServices",
+                "GenerableTasks", "FoundationModelsAdapter", "segue-ai-record",
             ].map { ($0, firstPartyStrict) } + sentryStaticTargets.map { ($0, quietLibtool) },
         ),
     )
@@ -79,5 +82,7 @@ let package = Package(
         .package(path: "../Packages/SegueUI"),
         .package(path: "../Packages/SeguePersonalModules"),
         .package(path: "../Packages/SegueVendorServices"),
+        // Phase 3 (P3-2): the AI adapters, in both flavours (R62, R77).
+        .package(path: "../Packages/SegueAI"),
     ],
 )
