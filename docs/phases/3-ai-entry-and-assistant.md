@@ -329,6 +329,7 @@ Integration-first: real parser, real file store on a fresh temp library, real GR
 | P3-13 | Section notes: `{comment}` + cues merged (R87) | P3-10, P3-11 | 3 | new |
 | P3-14 | Visual metronome (R90) | P3-12 (live-side break rows) | 3 | new |
 | P3-15 | No repeats in a show (R102) + About panel A (R103) | P3-12 (live-side break rows) | 3 | new |
+| P3-16 | Per-slot arrangements: skip, repeat and reorder sections for one gig (R122) | P3-12, P3-13 (anchoring), P3-5 (length field) | 3 | new |
 | P3-9 | Release fold-in + accessibility re-walk + phase gate `make check` | all | 4 | |
 
 (P3-8, the stats screen, was dropped by R74.) Shell files (`AppModel`, `SegueRootView`, commands, `SegueApp.swift`, `Project.swift`, the Settings host, `MenuShortcuts.swift`) are owned per workstream as listed in each spec:
