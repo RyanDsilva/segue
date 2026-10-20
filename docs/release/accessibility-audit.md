@@ -82,11 +82,12 @@ Per screen (automated where possible, VoiceOver walk by Ryan for the rest):
 | Editor, text and visual | pill actions (in process) | Pending |
 | Setlist builder | audit; Move up / Move down added | Pending |
 | Gig log and detail | audit | Pending |
-| Settings, 5 panes | audit | Pending |
+| Settings, 6 panes (AI added in phase 3) | audit | Pending |
 | Stage, checklist, panels | audit | Pending |
 | Reorder review, resume prompt, alerts | not audited (sheets) | Pending |
 | What's New | E2E: badge words | Pending |
 | Tips | system TipKit views | Pending (one tip) |
+| Phase 3 screens (paste review, song card, section band, section notes, Pick / Arrange, assistant, Arrange Sections, Settings > AI, metronome) | audit, section 6.1 | Pending (walkthrough.md rows) |
 
 ## 6. Apple's automated audit (`AccessibilityAuditE2ETests`)
 
@@ -100,6 +101,22 @@ Per screen (automated where possible, VoiceOver walk by Ryan for the rest):
 | Action is missing | 34 | SwiftUI `Menu` buttons (they open on press) and anonymous containers; VoiceOver opens them with VO-Space. Walk item |
 | Parent/Child mismatch | 19 | SwiftUI sidebar icon images and canvas overlay elements; walk item |
 | Contrast failed / nearly passed | 136 | Not trusted as a gate on macOS: it samples screenshots, includes inactive windows behind Settings (AppKit dims their text), translucent sidebars and system views (`ContentUnavailableView`), and flags `muted` text (#55555C, 7.4:1 on white by the WCAG formula). One real issue was found and fixed: "In set" rows in the builder's library column faded the whole row to 55%; the title now uses `muted` instead and nothing fades. The token contrast test (section 2) is the gate; the manual Increase Contrast pass decides the claim |
+
+### 6.1 Phase 3 screens (P3-9, R79, 2026-10-20)
+
+`AccessibilityAuditE2ETests/testPhase3ScreensLight` (in `AccessibilityAuditE2ETests+Phase3.swift`) runs the same audit and the same `ignoredIssue` rules on a fresh Welcome library in light appearance over 13 states: the song card and its tempo field, the Section Notes sheet, the visual editor with section bands, the paste review sheet, Settings > AI, the set builder in Pick and in Arrange, the set assistant after Build and a row's score breakdown, the Arrange Sections sheet, the rehearsal checklist with the metronome rows, and the stage with the metronome and a section-note callout. `testMainScreensLight` now also walks the AI pane. First run: 310 findings on the phase 3 states and 9 failures (below); after the fixes both tests pass.
+
+Fixed (Segue's to fix, enforced by the test):
+
+| Finding | Where | Fix |
+|---|---|---|
+| Label not human-readable | Settings > AI, the licence link read "Apache-2.0" | Spoken as "Apache 2.0 license" (`AISettingsView.licenseLabel`, in-process test in `AISettingsTests`); the visible text is unchanged, so Voice Control still matches it |
+| Element has no description | the song card's "Add tag" field (seen in the paste review sheet's metadata block) | `accessibilityLabel("Add tag")` |
+| Unknown role | paste review section labels, the Arrange Sections stage preview, the stage metronome, the stage section-note callout | each is one combined element; they now carry the static-text trait (AXStaticText), so VoiceOver reads them as text |
+
+Triaged as before (section 6 rules), counts from the first run: 115 "no description" on anonymous SwiftUI groups, the Touch Bar and the system "emoji & symbols" item; 57 "action is missing" (SwiftUI `Menu` buttons such as More, Setlist, the editor's instrument and stage-columns menus, and anonymous containers); 16 parent/child mismatches (sidebar icon images); 107 contrast findings sampled from screenshots (the token test is the gate; the Increase Contrast pass decides the claim); 7 unknown roles on UI-test instrumentation.
+
+Walk items the audit cannot see are in `docs/release/walkthrough.md` ("Accessibility of the new screens"): VoiceOver, Voice Control and Full Keyboard Access rows per new screen, including the sparkle read as "AI" on a section label, the metronome never taking focus while it pulses, and the live repeat message. No label in section 8 changes until Ryan walks them.
 
 ## 7. Larger Text (4.9.4)
 

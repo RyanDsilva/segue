@@ -120,6 +120,13 @@
             + "Apple Intelligence otherwise. It loads only while it works on a paste or a set "
             + "request, never during a show."
 
+        /// The licence link read aloud: an SPDX id such as "Apache-2.0" is not human-readable
+        /// to VoiceOver (Apple's audit), so it is spoken as "Apache 2.0 license"; Voice
+        /// Control still matches the visible words.
+        static func licenseLabel(_ spdx: String) -> String {
+            "\(spdx.replacingOccurrences(of: "-", with: " ")) license"
+        }
+
         static func deleteMessage(_ model: LocalModelManifest) -> String {
             "This removes the model's files from this Mac at once, for both Segue apps. You can "
                 + "download it again (\(ByteFormat.size(model.downloadBytes)))."
@@ -180,6 +187,7 @@
                         Button(model.license.name) { workspace.open(model.license.url) }
                             .buttonStyle(.link)
                             .help(model.license.upstreamRepo)
+                            .accessibilityLabel(AISettingsView.licenseLabel(model.license.name))
                             .accessibilityIdentifier(AccessibilityID.settingsAIModelLicense)
                     }
                     if let freeDisk {

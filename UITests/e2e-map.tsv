@@ -128,6 +128,7 @@ UITests/SegueReviewPromptE2ETests.swift	SegueReviewPromptE2ETests
 UITests/SegueTipsE2ETests.swift	SegueTipsE2ETests
 UITests/SegueFinderE2ETests.swift	SegueFinderE2ETests
 UITests/AccessibilityAuditE2ETests.swift	AccessibilityAuditE2ETests
+UITests/AccessibilityAuditE2ETests+Phase3.swift	AccessibilityAuditE2ETests
 UITests/SeguePasteE2ETests.swift	SeguePasteE2ETests
 UITests/SegueAISettingsE2ETests.swift	SegueAISettingsE2ETests
 Packages/SegueUI/Sources/SegueUI/Paste/*	SeguePasteE2ETests SegueCoreUXE2ETests

@@ -300,6 +300,7 @@
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(label)
                         .accessibilityValue(isAI ? "AI" : "")
+                        .accessibilityAddTraits(.isStaticText)
                         .accessibilityIdentifier(AccessibilityID.pasteSectionLabel)
                         .help(isAI ? "\(label): labelled by AI" : label)
                     } else {

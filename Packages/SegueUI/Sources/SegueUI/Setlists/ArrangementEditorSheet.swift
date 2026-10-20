@@ -477,6 +477,7 @@
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Stage preview")
             .accessibilityValue(order.isEmpty ? "Nothing plays" : "\(order.count) sections")
+            .accessibilityAddTraits(.isStaticText)
             .accessibilityIdentifier(AccessibilityID.arrangementPreview)
         }
 

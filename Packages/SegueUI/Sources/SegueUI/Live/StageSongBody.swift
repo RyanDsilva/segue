@@ -152,6 +152,7 @@
             .offset(x: lyricOrigin + cue.x, y: cue.y)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(cue.text)
+            .accessibilityAddTraits(.isStaticText)
             .accessibilityIdentifier(AccessibilityID.liveCue)
         }
 

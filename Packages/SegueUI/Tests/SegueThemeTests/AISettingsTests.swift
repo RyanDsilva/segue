@@ -126,6 +126,12 @@ struct AISettingsTests {
     }
 
     @Test
+    func `the licence link is read aloud in words, not as an SPDX id`() {
+        // Apple's audit flags "Apache-2.0" as a label that is not human-readable.
+        #expect(AISettingsView.licenseLabel(Self.model.license.name) == "Apache 2.0 license")
+    }
+
+    @Test
     func `delete removes the model at once after the confirmation`() async throws {
         let env = try TestEnvironment()
         let (ai, installer) = Self.services(env, state: .installed)

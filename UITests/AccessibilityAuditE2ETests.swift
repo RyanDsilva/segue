@@ -2,13 +2,16 @@ import XCTest
 
 /// Apple's automated accessibility audit on every main screen (WS2b 4.9.2, section 7):
 /// library, song detail, editor (text and visual), setlist builder, gig log, each Settings
-/// pane, the Welcome sheet and the stage, in light and dark. XCUITest does not expose custom
+/// pane, the Welcome sheet and the stage, in light; the phase 3 screens are in
+/// `AccessibilityAuditE2ETests+Phase3.swift`. XCUITest does not expose custom
 /// accessibility actions, so the chord pill's actions are `EditorCanvasAccessibilityTests` and
 /// the set rows' Move up / Move down are in the VoiceOver walk. Findings that are not Segue's
 /// to fix are listed in `ignoredIssue` with the reason (accessibility-audit.md).
 final class AccessibilityAuditE2ETests: XCTestCase {
     private var library: LiveLibrary?
-    private var app: XCUIApplication?
+    var app: XCUIApplication?
+    /// The phase 3 test's Welcome library (`AccessibilityAuditE2ETests+Phase3.swift`).
+    var welcomeRoot: URL?
     /// Every finding, by screen, written to the report attachment.
     private var findings: [String] = []
 
@@ -25,6 +28,9 @@ final class AccessibilityAuditE2ETests: XCTestCase {
         add(report)
         E2E.terminate(app)
         library?.remove()
+        if let welcomeRoot {
+            try? FileManager.default.removeItem(at: welcomeRoot)
+        }
     }
 
     @MainActor
@@ -89,7 +95,7 @@ final class AccessibilityAuditE2ETests: XCTestCase {
     @MainActor
     private func auditSettingsAndWelcome(_ app: XCUIApplication, _ look: String) {
         app.typeKey(",", modifierFlags: .command, in: app)
-        for pane in ["General", "Appearance", "Live", "Privacy", "Data"] {
+        for pane in ["General", "Appearance", "Live", "AI", "Privacy", "Data"] {
             let tab = app.toolbars.buttons[pane].firstMatch
             XCTAssertTrue(tab.appears(timeout: 10))
             tab.click(in: app)
@@ -127,12 +133,12 @@ final class AccessibilityAuditE2ETests: XCTestCase {
 
 @MainActor
 extension AccessibilityAuditE2ETests {
-    private func element(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {
+    func element(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
     /// Runs the audit on the frontmost state; every finding not on the ignore list fails.
-    private func audit(_ app: XCUIApplication, _ screen: String) {
+    func audit(_ app: XCUIApplication, _ screen: String) {
         E2E.waitUntil(timeout: 0.4) { false }
         do {
             try app.performAccessibilityAudit(for: .all) { issue in

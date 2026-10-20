@@ -37,6 +37,7 @@
                 .accessibilityElement(children: .ignore)
                 // One label (a container's value never reaches XCUITest).
                 .accessibilityLabel("Metronome, \(Self.bpmText(track.bpm)) beats per minute")
+                .accessibilityAddTraits(.isStaticText)
                 .accessibilityIdentifier(AccessibilityID.liveMetronome)
             }
         }

@@ -59,6 +59,7 @@
                     }
                     .onSubmit(add)
                     .disabled(isDisabled)
+                    .accessibilityLabel("Add tag")
                     .accessibilityIdentifier(AccessibilityID.songTagField)
             }
         }
