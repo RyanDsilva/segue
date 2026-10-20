@@ -105,6 +105,11 @@
         static let startShow = MenuShortcut("Setlist", "Start Show", .return)
         static let rehearse = MenuShortcut("Setlist", "Rehearse", .return, [.command, .option])
         static let newSetlist = MenuShortcut("Setlist", "New Setlist…", "n", [.command, .shift])
+        static let pickSongs = MenuShortcut("Setlist", "Pick Songs", "1")
+        static let arrangeSet = MenuShortcut("Setlist", "Arrange Set", "2")
+        static let insertBreak = MenuShortcut("Setlist", "Insert Break", "b", [.command, .shift])
+        static let moveUp = MenuShortcut("Setlist", "Move Up", .upArrow, .option)
+        static let moveDown = MenuShortcut("Setlist", "Move Down", .downArrow, .option)
         // Window
         static let mainWindow = MenuShortcut("Window", "Segue Library", "0")
         // Help
@@ -114,7 +119,8 @@
         /// All of them, in menu order.
         public static let all: [MenuShortcut] = [
             settings, newSong, importSongs, showInFinder, moveToTrash, close, save, undo, redo,
-            refresh, startShow, rehearse, newSetlist, mainWindow, help, keyboardShortcuts,
+            refresh, startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak, moveUp,
+            moveDown, mainWindow, help, keyboardShortcuts,
         ]
     }
 

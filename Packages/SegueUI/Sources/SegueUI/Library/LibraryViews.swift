@@ -93,10 +93,23 @@
             VStack(spacing: 0) {
                 header
                 Rule()
-                SelectableList(items: model.results, selection: $model.listSelection) { record in
+                SelectableList(
+                    items: model.results,
+                    selection: $model.multiSelection,
+                    allowsMultiple: true,
+                ) { record in
                     SongRow(record: record, stats: model.playStats[record.id])
                 } menu: { record in
-                    SongActions(session: session, songID: record.id)
+                    // A right-click inside a multi-selection adds the whole selection.
+                    SongActions(
+                        session: session,
+                        songID: record.id,
+                        selection: model.multiSelection.contains(record.id)
+                            ? model.selectedSongs : [record.id],
+                    )
+                }
+                .onChange(of: model.results.map(\.id)) { _, ids in
+                    model.multiSelection.keep(only: ids)
                 }
                 .accessibilityIdentifier(AccessibilityID.songList)
                 // File > Move to Trash and Show in Finder act on this only while the list
@@ -198,9 +211,15 @@
     struct SongActions: View {
         let session: LibrarySession
         let songID: SongID
+        /// The songs Add to Setlist adds (the multi-selection); just `songID` by default.
+        var selection: [SongID] = []
 
         var body: some View {
-            AddToSetlistMenu(session: session, songID: songID)
+            if selection.count > 1 {
+                AddSongsToSetlistMenu(session: session, songIDs: selection)
+            } else {
+                AddToSetlistMenu(session: session, songID: songID)
+            }
             Button("Show in Finder") { session.revealSong(songID) }
                 .accessibilityIdentifier(AccessibilityID.songShowInFinder)
             Divider()
@@ -307,6 +326,8 @@
             // autosave (which makes it the selection) never rebuilds the editor mid-typing.
             if let editor = model.editor {
                 editorView(editor)
+            } else if model.multiSelection.isMultiple {
+                MultiSelectionPane(session: session, songIDs: model.selectedSongs)
             } else if case let .song(id) = model.detail, let record = model.song(id: id) {
                 SongDetailPane(model: model, session: session, record: record)
                     .id(id)

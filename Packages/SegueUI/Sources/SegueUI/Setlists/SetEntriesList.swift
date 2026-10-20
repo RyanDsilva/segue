@@ -1,13 +1,22 @@
 #if os(macOS)
+    import AppKit
     import Library
     import Setlists
     import SwiftUI
 
-    /// The set column's rows (layout a): #, title (and slot note), key after overrides,
-    /// capo, length and start time. Drag a row onto another to move it before that row;
-    /// drop library songs on a row (inserted before it) or on the zone below (appended).
-    /// Songs already in the set are never added again. Click a row to edit its overrides
-    /// and note.
+    extension FocusedValues {
+        /// True while the builder's set list has keyboard focus (Setlist > Move Up / Move
+        /// Down act only then).
+        @Entry var arrangeListFocused: Bool?
+    }
+
+    /// The set column's rows (direction C): #, title (and slot note), key after overrides,
+    /// capo, length and start time, each with its part's colour on the leading edge; break
+    /// rows are markers with the part's total. Drag a row onto another to move it before
+    /// that row; drop library songs on a row (inserted before it) or on the zone below
+    /// (appended). Songs already in the set are never added again. Click a row to select it
+    /// and edit it (⌘-click and ⇧-click select several without editing); ⌥↑ / ⌥↓ move the
+    /// selected rows, ↑ / ↓ move the selection.
     struct SetEntriesList: View {
         let setlist: Setlist
         let model: SetlistsViewModel
@@ -15,6 +24,7 @@
         /// The row a drag hovers over (an insertion line is drawn above it).
         @State private var dropTarget: SetlistItemID?
         @AppStorage(ChangeoverSetting.defaultsKey) private var defaultChangeover = 0
+        @FocusState private var listFocused: Bool
 
         var body: some View {
             let timing = SetlistTiming(
@@ -24,26 +34,79 @@
             )
             let repeated = setlist.repeatedEntries
             let positions = songPositions
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(
-                        Array(setlist.entries.enumerated()),
-                        id: \.element.itemId,
-                    ) { offset, entry in
-                        row(
-                            offset: offset,
-                            position: positions[offset],
-                            entry: entry,
-                            timing: timing,
-                            firstPosition: repeated.contains(entry.itemId)
-                                ? entry.songId.flatMap(firstPosition(of:)) : nil,
-                        )
+            let parts = partIndexes(setlist.entries)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(
+                            Array(setlist.entries.enumerated()),
+                            id: \.element.itemId,
+                        ) { offset, entry in
+                            row(
+                                offset: offset,
+                                place: Place(position: positions[offset], part: parts[offset]),
+                                entry: entry,
+                                timing: timing,
+                                firstPosition: repeated.contains(entry.itemId)
+                                    ? entry.songId.flatMap(firstPosition(of:)) : nil,
+                            )
+                            .id(entry.itemId)
+                        }
+                        dropZone
                     }
-                    dropZone
+                }
+                .focusable()
+                .focusEffectDisabled()
+                .focused($listFocused)
+                .focusedValue(\.arrangeListFocused, listFocused ? true : nil)
+                .onKeyPress(keys: [.upArrow, .downArrow]) { press in
+                    keyMove(press, proxy: proxy)
                 }
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.setlistEntries)
+        }
+
+        private var order: [SetlistItemID] {
+            setlist.entries.map(\.itemId)
+        }
+
+        /// ↑ / ↓ move the selection (⇧ extends it); ⌥ moves the selected rows, for when the
+        /// menu item is not reached first.
+        private func keyMove(_ press: KeyPress, proxy: ScrollViewProxy) -> KeyPress.Result {
+            let delta = press.key == .upArrow ? -1 : 1
+            if press.modifiers.contains(.option) {
+                guard !isReadOnly else { return .ignored }
+                Task { await model.moveSelection(in: setlist.id, by: delta) }
+                return .handled
+            }
+            guard !order.isEmpty else { return .ignored }
+            model.arrangeSelection.move(
+                delta,
+                in: order,
+                extending: press.modifiers.contains(.shift),
+            )
+            if let focus = model.arrangeSelection.focus {
+                proxy.scrollTo(focus)
+            }
+            return .handled
+        }
+
+        /// A click: plain selects the row (and the caller opens its editor); ⌘ toggles it
+        /// and ⇧ extends to it. Returns whether it was a plain click.
+        private func select(_ id: SetlistItemID) -> Bool {
+            listFocused = true
+            let flags = NSEvent.modifierFlags
+            if flags.contains(.command) {
+                model.arrangeSelection.toggle(id, in: order)
+                return false
+            }
+            if flags.contains(.shift) {
+                model.arrangeSelection.extend(to: id, in: order)
+                return false
+            }
+            model.arrangeSelection.select(id)
+            return true
         }
 
         /// Each entry's 1-based song number: break rows are not numbered, so the songs
@@ -65,32 +128,34 @@
             return songPositions[index]
         }
 
+        /// Where a row sits: its song number (nil for a break) and its part.
+        private struct Place {
+            var position: Int?
+            var part: Int
+        }
+
         @ViewBuilder
         private func row(
             offset: Int,
-            position: Int?,
+            place: Place,
             entry: SetlistEntry,
             timing: SetlistTiming,
             firstPosition: Int?,
         ) -> some View {
             if let info = entry.breakInfo {
-                dragDrop(
-                    SetBreakRow(
-                        info: info,
-                        part: timing.part(openedBy: entry.itemId),
-                        changeoverNote: timing.changeoverNote,
-                        isReadOnly: isReadOnly,
-                        onRemove: { remove(IndexSet(integer: offset)) },
-                    ),
-                    offset: offset,
-                    entry: entry,
-                    title: info.label,
-                )
+                breakRow(offset: offset, part: place.part, entry: entry, info: info, timing: timing)
             } else {
                 let record = entry.songId.flatMap(library.song(id:))
                 dragDrop(
                     SetEntryRow(
-                        position: position ?? offset + 1,
+                        position: place.position ?? offset + 1,
+                        part: place.part,
+                        isSelected: model.arrangeSelection.contains(entry.itemId),
+                        onSelect: { select(entry.itemId) },
+                        onInsertBreak: isReadOnly ? nil : {
+                            model.arrangeSelection.select(entry.itemId)
+                            Task { await model.insertBreak(in: setlist.id) }
+                        },
                         entry: entry,
                         repeatOf: firstPosition,
                         record: record,
@@ -108,6 +173,36 @@
                     title: record.map(SongSummary.title) ?? "Missing song",
                 )
             }
+        }
+
+        private func breakRow(
+            offset: Int,
+            part: Int,
+            entry: SetlistEntry,
+            info: SetlistBreak,
+            timing: SetlistTiming,
+        ) -> some View {
+            dragDrop(
+                SetBreakRow(
+                    entry: entry,
+                    info: info,
+                    part: part,
+                    timing: timing.part(openedBy: entry.itemId),
+                    changeoverNote: timing.changeoverNote,
+                    setlist: setlist,
+                    library: library,
+                    isSelected: model.arrangeSelection.contains(entry.itemId),
+                    isReadOnly: isReadOnly,
+                    onSelect: { select(entry.itemId) },
+                    onChange: { updated in
+                        Task { await model.updateBreak(updated, in: setlist.id) }
+                    },
+                    onRemove: { remove(IndexSet(integer: offset)) },
+                ),
+                offset: offset,
+                entry: entry,
+                title: info.label,
+            )
         }
 
         /// The insertion line, drag source and drop target every row shares.
@@ -174,7 +269,7 @@
         /// "Drag songs here or press + in the library"; drops append.
         private var dropZone: some View {
             Text(setlist.entries.isEmpty
-                ? "Drag songs here or press + in the library"
+                ? "Tick songs in Pick, or drag them here"
                 : "Drag more songs here")
                 .font(SchibstedGrotesk.medium.font(size: 14))
                 .foregroundStyle(Theme.color.muted)
@@ -216,57 +311,16 @@
         }
     }
 
-    /// A break row (R85): its label, the intermission when it has one, and the total of the
-    /// part it opens. Interim layout until the step 0 design direction is picked.
-    private struct SetBreakRow: View {
-        let info: SetlistBreak
-        let part: PartTiming?
-        let changeoverNote: String?
-        let isReadOnly: Bool
-        let onRemove: () -> Void
-
-        var body: some View {
-            HStack(spacing: 10) {
-                Text(info.label.isEmpty ? "Break" : info.label)
-                    .font(SchibstedGrotesk.bold.font(size: 15))
-                    .foregroundStyle(Theme.color.ink)
-                    .lineLimit(1)
-                if let length = info.length, length > 0 {
-                    Text("\(SetlistTiming.format(length)) break")
-                        .font(SchibstedGrotesk.medium.font(size: 13))
-                        .foregroundStyle(Theme.color.muted)
-                }
-                Spacer(minLength: 8)
-                if let part {
-                    Text(part.totalText)
-                        .font(SchibstedGrotesk.semiBold.font(size: 14))
-                        .foregroundStyle(Theme.color.ink)
-                        .help(changeoverNote ?? "")
-                        .accessibilityIdentifier(AccessibilityID.setlistBreakTotal)
-                }
-            }
-            .padding(.leading, 32)
-            .padding(.trailing, 40)
-            .padding(.top, 16)
-            .padding(.bottom, 8)
-            .background(Theme.color.ground)
-            .overlay(alignment: .bottom) {
-                Rectangle().fill(Theme.color.lineStrong).frame(height: 1)
-            }
-            .contentShape(Rectangle())
-            .contextMenu {
-                Button("Remove Break", role: .destructive, action: onRemove)
-                    .disabled(isReadOnly)
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(part.map { "\(info.label), \($0.totalText)" } ?? info.label)
-            .accessibilityIdentifier(AccessibilityID.setlistBreak)
-        }
-    }
-
     /// One slot: `#  Title  Key  Capo  Length  Start`, the note under the title.
     private struct SetEntryRow: View {
         let position: Int
+        /// The part the row is in (its leading-edge colour).
+        let part: Int
+        let isSelected: Bool
+        /// Returns whether the click was plain (opens the editor).
+        let onSelect: () -> Bool
+        /// Context menu "Insert Break After"; nil when read-only.
+        let onInsertBreak: (() -> Void)?
         let entry: SetlistEntry
         /// For a setlist saved with a song twice (before the one-song-once rule): the
         /// position of the song's first entry, shown so the repeat can be removed.
@@ -304,12 +358,16 @@
             .padding(.leading, 32)
             .padding(.trailing, 12)
             .padding(.vertical, 11)
-            .background(isHovered || isEditing ? Theme.color.surfaceAlt : Theme.color.ground)
+            .background(isSelected || isHovered || isEditing ? Theme.color.surfaceAlt
+                : Theme.color.ground)
+            .overlay(alignment: .leading) {
+                Rectangle().fill(PartPalette.color(part)).frame(width: 4)
+            }
             .overlay(alignment: .bottom) { Rule() }
             .contentShape(Rectangle())
             .onHover { isHovered = $0 }
             .onTapGesture {
-                if !isReadOnly {
+                if onSelect(), !isReadOnly {
                     isEditing = true
                 }
             }
@@ -319,12 +377,15 @@
             .contextMenu {
                 Button("Edit Key, Capo and Note…") { isEditing = true }
                     .disabled(isReadOnly)
+                Button("Insert Break After") { onInsertBreak?() }
+                    .disabled(onInsertBreak == nil)
                 Button("Remove from Setlist", role: .destructive, action: onRemove)
                     .disabled(isReadOnly)
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel(repeatOf.map { "\(position). \(title), also at \($0)" }
                 ?? "\(position). \(title)")
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
             .accessibilityIdentifier(AccessibilityID.setlistEntry)
             .accessibilityAction(named: "Edit") { isEditing = true }
             .accessibilityActions {

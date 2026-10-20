@@ -12,7 +12,19 @@ import Support
 @Observable
 public final class SetlistsViewModel {
     public private(set) var setlists: [Setlist] = []
-    public var selection: SetlistID?
+    public var selection: SetlistID? {
+        didSet {
+            if selection != oldValue {
+                arrangeSelection = ListSelection()
+            }
+        }
+    }
+
+    /// The builder's mode (Setlist > Pick Songs ⌘1 / Arrange Set ⌘2), shared by every
+    /// setlist so switching setlists keeps it.
+    public var builderMode: BuilderMode = .pick
+    /// Arrange's selected rows (songs and breaks) in the shown setlist.
+    var arrangeSelection = ListSelection<SetlistItemID>()
     /// The last failure, shown as a dismissible banner.
     public var errorMessage: String?
     /// Setlist files that could not be loaded (reported, never deleted).
@@ -216,7 +228,7 @@ public final class SetlistsViewModel {
     /// as one undoable step named `undo.name`, unless the operation changed nothing (an add
     /// of songs already in the setlist).
     @discardableResult
-    private func mutate(
+    func mutate(
         undo: (id: SetlistID, name: String)? = nil,
         _ operation: (SetlistStore) async throws -> Setlist,
         then: (Setlist) -> Void = { _ in },

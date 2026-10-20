@@ -25,6 +25,12 @@ struct MenuShortcutsTests {
         #expect(byTitle["Import Songs…"]?.displayText == "⇧⌘I")
         #expect(byTitle["Show in Finder"]?.displayText == "⌥⌘R")
         #expect(byTitle["Move to Trash"]?.displayText == "⌘⌫")
+        // Set building (R84, R85).
+        #expect(byTitle["Pick Songs"]?.displayText == "⌘1")
+        #expect(byTitle["Arrange Set"]?.displayText == "⌘2")
+        #expect(byTitle["Insert Break"]?.displayText == "⇧⌘B")
+        #expect(byTitle["Move Up"]?.displayText == "⌥↑")
+        #expect(byTitle["Move Down"]?.displayText == "⌥↓")
     }
 
     @Test
@@ -39,7 +45,8 @@ struct MenuShortcutsTests {
         let source = try files.map { try String(contentsOf: $0, encoding: .utf8) }.joined()
         let names = [
             "newSong", "importSongs", "showInFinder", "moveToTrash", "close", "save", "refresh",
-            "startShow", "rehearse", "newSetlist", "mainWindow", "help", "keyboardShortcuts",
+            "startShow", "rehearse", "newSetlist", "pickSongs", "arrangeSet", "insertBreak",
+            "moveUp", "moveDown", "mainWindow", "help", "keyboardShortcuts",
         ]
         for name in names {
             #expect(source.contains("MenuShortcuts.\(name)"), "MenuShortcuts.\(name) is unused")

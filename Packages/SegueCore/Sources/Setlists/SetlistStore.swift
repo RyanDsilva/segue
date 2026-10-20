@@ -178,7 +178,7 @@ public actor SetlistStore {
         fromOffsets source: IndexSet,
         toOffset destination: Int,
     ) throws -> Setlist {
-        try mutate(setlistID) { entries in
+        try renumbered(setlistID) { entries in
             guard source.allSatisfy(entries.indices.contains),
                   (0 ... entries.count).contains(destination)
             else {
@@ -194,10 +194,21 @@ public actor SetlistStore {
         }
     }
 
+    /// `move(in:fromOffsets:toOffset:)` and `remove(in:atOffsets:)` keep automatic break
+    /// labels in part order.
+    private func renumbered(_ id: SetlistID, _ change: (inout [SetlistEntry]) throws -> Void)
+        throws -> Setlist
+    {
+        try mutateSetlist(id) { setlist in
+            try change(&setlist.entries)
+            setlist.renumberBreaks()
+        }
+    }
+
     /// Removes entries at `offsets` (SwiftUI `onDelete`) and saves.
     @discardableResult
     public func remove(in setlistID: SetlistID, atOffsets offsets: IndexSet) throws -> Setlist {
-        try mutate(setlistID) { entries in
+        try renumbered(setlistID) { entries in
             guard offsets.allSatisfy(entries.indices.contains) else {
                 throw SetlistError.invalidOffsets(setlistID)
             }
@@ -274,7 +285,8 @@ public actor SetlistStore {
         }
     }
 
-    /// Replaces venue, date and target length and saves. A blank venue is saved as none.
+    /// Replaces venue, date, target length and changeover and saves. A blank venue is
+    /// saved as none.
     @discardableResult
     public func updateDetails(_ details: SetlistDetails, of id: SetlistID) throws -> Setlist {
         try mutateSetlist(id) { setlist in
@@ -282,6 +294,7 @@ public actor SetlistStore {
             setlist.venue = blankVenue ? nil : details.venue
             setlist.date = details.date
             setlist.targetDuration = details.targetDuration
+            setlist.changeoverSeconds = details.changeoverSeconds.map { max($0, 0) }
         }
     }
 
@@ -447,19 +460,33 @@ private struct PartialSetlist: Decodable {
     }
 }
 
-/// The editable gig details of a setlist (builder header).
+/// The editable details of a setlist (the builder's Details popover).
 public struct SetlistDetails: Sendable, Equatable {
     public var venue: String?
     public var date: CalendarDay?
     public var targetDuration: TimeInterval?
+    /// Seconds between songs; nil uses the app-wide default (R86).
+    public var changeoverSeconds: Int?
 
     public init(
         venue: String? = nil,
         date: CalendarDay? = nil,
         targetDuration: TimeInterval? = nil,
+        changeoverSeconds: Int? = nil,
     ) {
         self.venue = venue
         self.date = date
         self.targetDuration = targetDuration
+        self.changeoverSeconds = changeoverSeconds
+    }
+
+    /// The details `setlist` has now.
+    public init(_ setlist: Setlist) {
+        self.init(
+            venue: setlist.venue,
+            date: setlist.date,
+            targetDuration: setlist.targetDuration,
+            changeoverSeconds: setlist.changeoverSeconds,
+        )
     }
 }

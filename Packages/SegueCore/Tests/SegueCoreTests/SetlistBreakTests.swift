@@ -36,14 +36,21 @@ struct SetlistBreakTests {
 
         var setlist = try await fix.store.insertBreak(into: id, at: 2)
         setlist = try await fix.store.insertBreak(into: id, label: "Encore", length: 120)
-        setlist = try await fix.store.setChangeover(30, of: id)
+        setlist = try await fix.store.updateDetails(SetlistDetails(changeoverSeconds: 30), of: id)
 
         #expect(setlist.entries.map(\.breakInfo) == [
             nil, nil, SetlistBreak(label: "Set 2"), nil, SetlistBreak(label: "Encore", length: 120),
         ])
         #expect(setlist.songEntries.map(\.songId) == fix.songs.prefix(3).map(\.self))
         #expect(setlist.changeoverSeconds == 30)
-        #expect(setlist.nextBreakLabel == "Set 4")
+        #expect(setlist.breakLabel(at: setlist.entries.count) == "Set 4")
+        // A break inserted before "Set 2" opens part 2; the automatic label after it moves
+        // on to "Set 3", the typed "Encore" stays.
+        let inserted = try await fix.store.insertBreak(into: id, at: 1)
+        #expect(inserted.entries.compactMap(\.breakInfo?.label) == ["Set 2", "Set 3", "Encore"])
+        let removed = try await fix.store.remove(in: id, atOffsets: [1])
+        #expect(removed.entries.compactMap(\.breakInfo?.label) == ["Set 2", "Encore"])
+        setlist = removed
         let json = try lib.read(fix.path)
         #expect(json.contains("\"schemaVersion\" : 3"))
         #expect(json.contains("\"break\" : {"))
@@ -145,7 +152,7 @@ struct SetlistBreakTests {
         let reversed = try await fix.store.replaceEntries(added.entries.reversed(), in: id)
         #expect(reversed.entries.map(\.itemId) == added.entries.reversed().map(\.itemId))
         // Duplicate keeps breaks and changeover, with new item IDs.
-        _ = try await fix.store.setChangeover(45, of: id)
+        _ = try await fix.store.updateDetails(SetlistDetails(changeoverSeconds: 45), of: id)
         let copy = try await fix.store.duplicate(id)
         #expect(copy.entries.map(\.kind) == reversed.entries.map(\.kind))
         #expect(Set(copy.entries.map(\.itemId)).isDisjoint(with: reversed.entries.map(\.itemId)))
@@ -187,5 +194,57 @@ struct SetlistBreakTests {
 
         #expect(saved.map(\.itemId) == [item(2), item(1), item(3), item(4), item(5)])
         #expect(diff.repeatedItemIds.isEmpty)
+    }
+
+    @Test
+    func `on stage a break shows once between parts and the clock keeps running`() async throws {
+        let harness = try await ShowHarness()
+        var (setlist, _) = try await harness.makeSet(4)
+        setlist = try await harness.setlists.insertBreak(into: setlist.id, at: 2, length: 600)
+        let breakRow = setlist.entries[2]
+        let show = try await ShowController.start(
+            setlist: setlist,
+            kind: .gig,
+            environment: harness.environment(),
+        )
+        #expect(await show.state.record.items.map(\.title) == [
+            "Song 1",
+            "Song 2",
+            "Song 3",
+            "Song 4",
+        ])
+
+        harness.lib.clock.advance(by: 200)
+        try await show.perform(.next)
+        harness.lib.clock.advance(by: 180)
+        var state = try await show.perform(.next)
+        // Set 1 is done: the stage shows "Break - Set 2 starts with Song 3".
+        #expect(state.record.breakId == breakRow.itemId)
+        #expect(state.record.currentBreak?.label == "Set 2")
+        #expect(state.currentTitle == "Song 3")
+
+        harness.lib.clock.advance(by: 900)
+        state = try await show.perform(.next) // ends the break only
+        #expect(state.record.breakId == nil)
+        #expect(state.currentTitle == "Song 3")
+        let reloaded = try #require(try await harness.reloadedShow(state.record.id))
+        #expect(reloaded.schemaVersion == ShowRecord.currentSchemaVersion)
+        #expect(reloaded.events.map(\.kind).suffix(2) == [.breakStarted, .breakEnded])
+
+        // Back into set 1 and forward again: the break is not shown twice.
+        try await show.perform(.previous)
+        state = try await show.perform(.next)
+        #expect(state.record.breakId == nil)
+        #expect(state.currentTitle == "Song 3")
+
+        harness.lib.clock.advance(by: 240)
+        let ending = try await show.end()
+        let played = try #require(ending.gigLogEntry).played
+        // Song 3's time starts when the break ended, not when it became current.
+        #expect(played.map(\.item.title) == ["Song 1", "Song 2", "Song 3"])
+        #expect(played.last?.duration == 240)
+        // The show-end save keeps the break where it was.
+        #expect(ending.diff == nil)
+        #expect(ending.record.omittedEntries.isEmpty)
     }
 }

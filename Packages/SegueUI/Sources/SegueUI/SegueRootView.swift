@@ -251,7 +251,7 @@
 
         @ViewBuilder private var detail: some View {
             switch session.section {
-            case .library, .smartFilter, .missingEssentials, nil:
+            case .library, .missingEssentials, nil, .smartFilter:
                 LibraryPane(session: session)
             case .gigLog:
                 GigLogPane(model: session.gigLog) { id in
@@ -273,6 +273,12 @@
                             openSettings()
                         },
                     )
+                    .environment(\.openSongForLength, OpenSongAction { song in
+                        // The missing-lengths list's Open Song: the song's card in the
+                        // Library with its Length field focused (R88).
+                        session.sidebarSelection = .library
+                        session.library.showSong(song, focusing: .length)
+                    })
                     .id(id)
                 } else {
                     ContentUnavailableView(

@@ -64,7 +64,7 @@ Packages/SegueCore/Sources/MusicTheory/*	SegueEditorE2ETests SegueSetlistBuilder
 Packages/SegueCore/Sources/Diagrams/*	SegueEditorE2ETests
 Packages/SegueCore/Sources/LiveLayout/*	SegueLiveE2ETests
 Packages/SegueCore/Sources/Library/*	SegueCoreUXE2ETests SegueSetlistLibraryE2ETests SegueE2ETests SegueSetlistGigLogE2ETests
-Packages/SegueCore/Sources/Setlists/*	SegueSetlistBuilderE2ETests SegueCoreUXE2ETests SegueLiveE2ETests
+Packages/SegueCore/Sources/Setlists/*	SegueSetlistBuilderE2ETests SegueSetBuilderE2ETests SegueCoreUXE2ETests SegueLiveE2ETests
 Packages/SegueCore/Sources/Shows/*	SegueLiveE2ETests SegueGigModeE2ETests SegueSetlistGigLogE2ETests
 Packages/SegueCore/Sources/Support/*	ALL
 Packages/SegueCore/Sources/Plugins/*	ALL
@@ -81,7 +81,7 @@ Packages/SegueUI/Sources/SegueUI/Diagrams/*	SegueEditorE2ETests
 Packages/SegueUI/Sources/SegueUI/Rendering/*	SegueEditorE2ETests SegueLiveE2ETests
 Packages/SegueUI/Sources/SegueUI/Library/*	SegueCoreUXE2ETests SegueSetlistLibraryE2ETests SegueSongCardE2ETests
 Packages/SegueUI/Sources/SegueUI/SongCard/*	SegueSongCardE2ETests SegueCoreUXE2ETests SegueEditorE2ETests
-Packages/SegueUI/Sources/SegueUI/Setlists/*	SegueSetlistBuilderE2ETests SegueCoreUXE2ETests
+Packages/SegueUI/Sources/SegueUI/Setlists/*	SegueSetlistBuilderE2ETests SegueSetBuilderE2ETests SegueCoreUXE2ETests
 Packages/SegueUI/Sources/SegueUI/GigLog/*	SegueSetlistGigLogE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/*	SegueLiveE2ETests SegueGigModeE2ETests
 Packages/SegueUI/Sources/SegueUI/Settings/*	SegueLiveE2ETests SegueGigModeE2ETests SegueServicesE2ETests SegueSettingsE2ETests
@@ -100,8 +100,9 @@ UITests/SegueSectionBandE2ETests.swift	SegueSectionBandE2ETests
 UITests/SegueLiveE2ETests+Support.swift	SegueLiveE2ETests SegueGigModeE2ETests SegueReviewPromptE2ETests SegueTipsE2ETests AccessibilityAuditE2ETests
 UITests/SegueLiveE2ETests*.swift	SegueLiveE2ETests
 UITests/SegueGigModeE2ETests.swift	SegueGigModeE2ETests
-UITests/SegueSetlistE2ESupport.swift	SegueSetlistBuilderE2ETests SegueSetlistLibraryE2ETests SegueSetlistGigLogE2ETests
+UITests/SegueSetlistE2ESupport.swift	SegueSetlistBuilderE2ETests SegueSetBuilderE2ETests SegueSetlistLibraryE2ETests SegueSetlistGigLogE2ETests
 UITests/SegueSetlistBuilderE2ETests.swift	SegueSetlistBuilderE2ETests
+UITests/SegueSetBuilderE2ETests.swift	SegueSetBuilderE2ETests
 UITests/SegueSetlistLibraryE2ETests.swift	SegueSetlistLibraryE2ETests
 UITests/SegueSetlistGigLogE2ETests.swift	SegueSetlistGigLogE2ETests
 UITests/SegueServicesE2ETests+Support.swift	SegueServicesE2ETests SegueReportProblemE2ETests

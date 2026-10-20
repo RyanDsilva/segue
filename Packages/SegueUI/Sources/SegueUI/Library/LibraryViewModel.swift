@@ -86,7 +86,26 @@ public final class LibraryViewModel {
             if listSelection != oldValue, listSelection != selection {
                 select(listSelection)
             }
+            if multiSelection.focus != listSelection {
+                multiSelection = ListSelection(single: listSelection)
+            }
         }
+    }
+
+    /// The list's selected rows (R84: ⌘-click, ⇧-click, ⇧↑ / ⇧↓). Its focus is
+    /// `listSelection`, the song the detail pane and single-song commands use; Add to
+    /// Setlist adds every selected song.
+    var multiSelection = ListSelection<SongID>() {
+        didSet {
+            if listSelection != multiSelection.focus {
+                listSelection = multiSelection.focus
+            }
+        }
+    }
+
+    /// The selected songs in list order (one when a single row is selected).
+    var selectedSongs: [SongID] {
+        multiSelection.ordered(in: results.map(\.id))
     }
 
     /// What the detail pane shows.

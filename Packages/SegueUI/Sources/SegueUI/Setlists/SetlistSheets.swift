@@ -72,19 +72,26 @@
         }
     }
 
-    /// Venue, date and target length of a setlist (the builder header's details line).
+    /// A setlist's details (the builder header's details line): venue, date, target length
+    /// and the changeover between songs (R86; "Default" follows Settings > General).
     struct SetlistDetailsEditor: View {
         let setlist: Setlist
         let onSave: (SetlistDetails) -> Void
         @Environment(\.dismiss) private var dismiss
+        @AppStorage(ChangeoverSetting.defaultsKey) private var defaultChangeover = 0
         @State private var venue = ""
         @State private var hasDate = false
         @State private var date = Date.now
         @State private var target = ""
+        /// -1 = the app-wide default.
+        @State private var changeover = -1
+
+        /// The changeovers the picker offers, in seconds.
+        static let changeoverChoices = [0, 10, 15, 20, 30, 45, 60, 90, 120]
 
         var body: some View {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Gig Details")
+                Text("Details")
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
                 Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
@@ -118,6 +125,21 @@
                                 .foregroundStyle(Theme.color.muted)
                         }
                     }
+                    GridRow {
+                        label("Changeover")
+                        Picker("Changeover", selection: $changeover) {
+                            Text("Default (\(defaultText))").tag(-1)
+                            Divider()
+                            ForEach(choices, id: \.self) { seconds in
+                                Text(SetlistTiming.formatChangeover(TimeInterval(seconds)))
+                                    .tag(seconds)
+                            }
+                        }
+                        .labelsHidden()
+                        .fixedSize()
+                        .help("Added after every song but the last of each part")
+                        .accessibilityIdentifier(AccessibilityID.detailsChangeover)
+                    }
                 }
                 HStack {
                     Spacer()
@@ -149,6 +171,17 @@
                 ?? "Type minutes (45) or m:ss"
         }
 
+        private var defaultText: String {
+            SetlistTiming
+                .formatChangeover(TimeInterval(ChangeoverSetting.clamped(defaultChangeover)))
+        }
+
+        /// The choices, plus the setlist's own value when it is not one of them.
+        private var choices: [Int] {
+            let own = setlist.changeoverSeconds.map { [$0] } ?? []
+            return Array(Set(Self.changeoverChoices + own)).sorted()
+        }
+
         private func label(_ text: String) -> some View {
             Text(text)
                 .font(Theme.font.label)
@@ -160,6 +193,7 @@
             hasDate = setlist.date != nil
             date = setlist.date?.date ?? .now
             target = setlist.targetDuration.map { SetlistTiming.format($0) } ?? ""
+            changeover = setlist.changeoverSeconds ?? -1
         }
 
         private func save() {
@@ -168,6 +202,7 @@
                 venue: trimmed.isEmpty ? nil : trimmed,
                 date: hasDate ? CalendarDay(date) : nil,
                 targetDuration: DurationText.parse(target),
+                changeoverSeconds: changeover < 0 ? nil : changeover,
             ))
             dismiss()
         }

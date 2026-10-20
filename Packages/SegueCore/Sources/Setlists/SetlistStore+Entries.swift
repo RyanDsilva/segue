@@ -24,7 +24,8 @@ public extension SetlistStore {
     }
 
     /// Inserts a break row at `offset` (nil = append) and saves. Its label defaults to the
-    /// next part's number ("Set 2", `Setlist.nextBreakLabel`). Throws `invalidOffsets`
+    /// part it opens ("Set 2", `Setlist.breakLabel(at:)`); automatic labels after it are
+    /// renumbered. Throws `invalidOffsets`
     /// when `offset` is outside `0 ... entries.count`.
     @discardableResult
     func insertBreak(
@@ -38,19 +39,15 @@ public extension SetlistStore {
             guard (0 ... setlist.entries.count).contains(position) else {
                 throw SetlistError.invalidOffsets(id)
             }
-            let info = SetlistBreak(label: label ?? setlist.nextBreakLabel, length: length)
+            let info = SetlistBreak(
+                label: label ?? setlist.breakLabel(at: position),
+                length: length,
+            )
             setlist.entries.insert(
                 SetlistEntry(itemId: SetlistItemID(ids.next()), break: info),
                 at: position,
             )
-        }
-    }
-
-    /// Sets the setlist's changeover in seconds (nil = the app-wide default, R86) and saves.
-    @discardableResult
-    func setChangeover(_ seconds: Int?, of id: SetlistID) throws -> Setlist {
-        try mutateSetlist(id, writesUnchanged: false) { setlist in
-            setlist.changeoverSeconds = seconds.map { max($0, 0) }
+            setlist.renumberBreaks()
         }
     }
 }

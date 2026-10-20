@@ -66,6 +66,21 @@ public extension AccessibilityID {
     /// A break row (R85) and its part total.
     static let setlistBreak = "segue.setlist.break"
     static let setlistBreakTotal = "segue.setlist.break.total"
+    /// The builder's Pick | Arrange control, the timeline strip and the "N unknown" button.
+    static let builderMode = "segue.setlist.mode"
+    static let setlistTimeline = "segue.setlist.timeline"
+    static let setlistUnknownButton = "segue.setlist.unknown"
+    /// The missing-lengths popover (R88), its rows and their Open Song buttons.
+    static let missingLengths = "segue.setlist.missingLengths"
+    static let missingLengthsRow = "segue.setlist.missingLengths.row"
+    static let missingLengthsOpen = "segue.setlist.missingLengths.open"
+    /// The break editor popover's label and length fields.
+    static let breakLabelField = "segue.setlist.break.label"
+    static let breakLengthField = "segue.setlist.break.length"
+    /// Library multi-select: the detail pane's "N songs selected" and its Add to Setlist.
+    static let multiSelection = "segue.library.multiSelection"
+    /// The Details popover's changeover picker.
+    static let detailsChangeover = "segue.setlist.details.changeover"
     /// Settings > General "Changeover between songs" (R86).
     static let settingsChangeover = "segue.settings.general.changeover"
     static let entryTransposeDown = "segue.entryEditor.transpose.down"

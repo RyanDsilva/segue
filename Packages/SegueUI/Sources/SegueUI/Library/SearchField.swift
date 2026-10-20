@@ -9,9 +9,12 @@
         @Binding var text: String
         var prompt: String
         var accessibilityIdentifier: String
+        /// Return or ↓ in the field (the builder's Pick moves focus to the first result);
+        /// nil leaves both keys to the field.
+        var onSubmit: (() -> Void)?
 
         func makeCoordinator() -> Coordinator {
-            Coordinator(text: $text)
+            Coordinator(text: $text, onSubmit: onSubmit)
         }
 
         func makeNSView(context: Context) -> NSSearchField {
@@ -31,6 +34,7 @@
 
         func updateNSView(_ field: NSSearchField, context: Context) {
             context.coordinator.text = $text
+            context.coordinator.onSubmit = onSubmit
             if field.stringValue != text {
                 field.stringValue = text
             }
@@ -39,9 +43,24 @@
         @MainActor
         final class Coordinator: NSObject, NSSearchFieldDelegate {
             var text: Binding<String>
+            var onSubmit: (() -> Void)?
 
-            init(text: Binding<String>) {
+            init(text: Binding<String>, onSubmit: (() -> Void)?) {
                 self.text = text
+                self.onSubmit = onSubmit
+            }
+
+            func control(
+                _: NSControl,
+                textView _: NSTextView,
+                doCommandBy selector: Selector,
+            ) -> Bool {
+                guard let onSubmit,
+                      selector == #selector(NSResponder.insertNewline(_:))
+                      || selector == #selector(NSResponder.moveDown(_:))
+                else { return false }
+                onSubmit()
+                return true
             }
 
             func controlTextDidChange(_ notification: Notification) {

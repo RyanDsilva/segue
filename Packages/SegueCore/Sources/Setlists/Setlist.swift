@@ -335,10 +335,31 @@ public struct Setlist: Sendable, Equatable, Identifiable, Codable {
         entries.filter { !$0.isBreak }
     }
 
-    /// The label the next inserted break gets: "Set N", where N is one more than the number
-    /// of parts the setlist has now (the first part has no break row above it).
-    public var nextBreakLabel: String {
-        "Set \(entries.count(where: \.isBreak) + 2)"
+    /// The automatic label of a break row at `position`: "Set N" for the part it opens
+    /// (the first part has no break row above it).
+    public func breakLabel(at position: Int) -> String {
+        "Set \(entries.prefix(position).count(where: \.isBreak) + 2)"
+    }
+
+    /// Renumbers break rows whose label is still automatic ("Set 3" that now opens part 2
+    /// becomes "Set 2"); labels the user typed stay. Run after inserting, moving or removing.
+    public mutating func renumberBreaks() {
+        var part = 1
+        for index in entries.indices {
+            guard var info = entries[index].breakInfo else { continue }
+            part += 1
+            if Self.isAutomaticBreakLabel(info.label), info.label != "Set \(part)" {
+                info.label = "Set \(part)"
+                entries[index].kind = .break(info)
+            }
+        }
+    }
+
+    /// "Set 2", "Set 10": a label Segue gave and may renumber.
+    static func isAutomaticBreakLabel(_ label: String) -> Bool {
+        guard label.hasPrefix("Set ") else { return false }
+        let number = label.dropFirst(4)
+        return !number.isEmpty && number.allSatisfy(\.isASCII) && number.allSatisfy(\.isNumber)
     }
 
     /// Entries whose song already appears earlier in the setlist. Only setlists saved before

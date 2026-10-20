@@ -1,4 +1,5 @@
 #if os(macOS)
+    import AppKit
     import Library
     import Setlists
     import Support
@@ -33,30 +34,49 @@
         }
     }
 
-    /// The builder's left column (layout a, "library to set"): search with typed filter
-    /// tokens and chips, then every matching song with key, tempo and length. `+` appends,
-    /// or drag a row into the set. A song is in a set at most once: a song already in it
-    /// reads quieter, shows "In set" with a checkmark instead of `+`, and does not drag.
+    /// Pick mode's library checklist (R84, direction C): search with typed filter tokens and
+    /// chips, then every matching song with a checkbox. A ticked box shows the song's
+    /// number in the set; tick order is set order. Click or Space ticks the focused row,
+    /// ↑ / ↓ move the focus, Return (or ↓) in the search field moves it to the first
+    /// result, and ⌘A (Edit > Select All) ticks every row the filter shows. Unticking
+    /// removes the song's entry. A song is in a set at most once, so a ticked row simply is
+    /// in the set. Unticked rows still drag into the set.
     struct BuilderLibraryColumn: View {
         let setlist: Setlist
         let library: LibraryViewModel
-        let onAdd: (SongID) -> Void
+        /// Ticks (adds) or unticks (removes) a song.
+        let onToggle: (SongID) -> Void
+        /// ⌘A: ticks these songs (the rows shown, in order).
+        let onTickAll: ([SongID]) -> Void
         @State private var state = SongFilterState()
         /// Matches for `state`; nil until the first search completes.
         @State private var matches: [SongRecord]?
+        /// The row Space ticks.
+        @State private var focusedRow: SongID?
+        @FocusState private var listFocused: Bool
 
         var body: some View {
+            let numbers = songNumbers
             VStack(spacing: 0) {
                 header
                 Rule()
                 // A plain stack, not a List: a List claims mouse drags for its own rows, so
                 // `.draggable` rows inside one never start a drag.
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(songs) { record in
-                            row(record)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(songs) { record in
+                                row(record, number: numbers[record.id])
+                            }
                         }
                     }
+                    .focusable()
+                    .focusEffectDisabled()
+                    .focused($listFocused)
+                    .onKeyPress(.upArrow) { moveFocus(-1, proxy: proxy) }
+                    .onKeyPress(.downArrow) { moveFocus(1, proxy: proxy) }
+                    .onKeyPress(.space) { tickFocused() }
+                    .onCommand(#selector(NSResponder.selectAll(_:))) { tickAllShown() }
                 }
                 .overlay { emptyState }
                 .accessibilityElement(children: .contain)
@@ -68,17 +88,31 @@
             }
         }
 
+        /// Each song's number in the set (songs only, across parts).
+        private var songNumbers: [SongID: Int] {
+            var numbers: [SongID: Int] = [:]
+            for (offset, song) in setlist.entries.compactMap(\.songId).enumerated() {
+                numbers[song] = numbers[song] ?? offset + 1
+            }
+            return numbers
+        }
+
         /// A song already in the set has no drag source, so dragging it never shows a drop
         /// indicator in the set.
         @ViewBuilder
-        private func row(_ record: SongRecord) -> some View {
-            let isInSet = setlist.contains(record.id)
+        private func row(_ record: SongRecord, number: Int?) -> some View {
             let row = BuilderLibraryRow(
                 record: record,
-                isInSet: isInSet,
+                number: number,
+                isFocused: listFocused && focusedRow == record.id,
                 isReadOnly: setlist.readOnly != nil,
-            ) { onAdd(record.id) }
-            if isInSet {
+            ) {
+                focusedRow = record.id
+                listFocused = true
+                onToggle(record.id)
+            }
+            .id(record.id)
+            if number != nil {
                 row
             } else {
                 row.draggable(SongDragPayload.encode(record.id)) {
@@ -96,6 +130,7 @@
                     text: $state.query,
                     prompt: "Search or filter: ready, upbeat, key G",
                     accessibilityIdentifier: AccessibilityID.builderSearch,
+                    onSubmit: focusFirstResult,
                 )
                 FilterChipsBar(state: $state, tags: library.tags, maxTags: 6)
             }
@@ -104,6 +139,38 @@
 
         private var songs: [SongRecord] {
             matches ?? library.catalog
+        }
+
+        private var isReadOnly: Bool {
+            setlist.readOnly != nil
+        }
+
+        private func focusFirstResult() {
+            focusedRow = songs.first?.id
+            listFocused = true
+        }
+
+        private func moveFocus(_ delta: Int, proxy: ScrollViewProxy) -> KeyPress.Result {
+            let ids = songs.map(\.id)
+            guard !ids.isEmpty else { return .ignored }
+            let current = focusedRow.flatMap { ids.firstIndex(of: $0) }
+            let next = current.map { min(max($0 + delta, 0), ids.count - 1) }
+                ?? (delta > 0 ? 0 : ids.count - 1)
+            focusedRow = ids[next]
+            proxy.scrollTo(ids[next])
+            return .handled
+        }
+
+        private func tickFocused() -> KeyPress.Result {
+            guard !isReadOnly, let focusedRow, songs.contains(where: { $0.id == focusedRow })
+            else { return .ignored }
+            onToggle(focusedRow)
+            return .handled
+        }
+
+        private func tickAllShown() {
+            guard !isReadOnly else { return }
+            onTickAll(songs.map(\.id))
         }
 
         @ViewBuilder private var emptyState: some View {
@@ -143,27 +210,29 @@
         }
     }
 
-    /// One library song in the builder: grip, title, "G · 96 · 3:40", state, then `+`, or
-    /// "In set" with a checkmark when the song is already in the set.
+    /// One library song in Pick: a checkbox (the song's set number when ticked), title,
+    /// "G · 96 · 3:40" and "Learning" when it applies. Clicking anywhere on the row ticks
+    /// or unticks it.
     private struct BuilderLibraryRow: View {
         let record: SongRecord
-        let isInSet: Bool
+        /// The song's number in the set; nil when it is not in the set.
+        let number: Int?
+        let isFocused: Bool
         let isReadOnly: Bool
-        let onAdd: () -> Void
+        let onToggle: () -> Void
         @State private var isHovered = false
+
+        private var isInSet: Bool {
+            number != nil
+        }
 
         var body: some View {
             HStack(spacing: 12) {
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Theme.color.muted.opacity(isInSet ? 0 : 0.45))
-                    .accessibilityHidden(true)
+                checkbox
                 VStack(alignment: .leading, spacing: 2) {
-                    // A song already in the set reads quieter through its colour and the
-                    // "In set" label, never by fading the row (text keeps 4.5:1, WS2b 4.9).
                     Text(SongSummary.title(record))
                         .font(SchibstedGrotesk.semiBold.font(size: 15))
-                        .foregroundStyle(isInSet ? Theme.color.muted : Theme.color.ink)
+                        .foregroundStyle(Theme.color.ink)
                         .lineLimit(1)
                     if !meta.isEmpty {
                         Text(meta)
@@ -173,20 +242,24 @@
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                SongEssentialsMark(record: record)
                 stateLabel
-                if isInSet {
-                    inSetMark
-                } else {
-                    addButton
-                }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
-            .background(isHovered ? Theme.color.ground.opacity(0.7) : Color.clear)
+            .background(background)
+            .overlay(alignment: .leading) {
+                if isFocused {
+                    Rectangle().fill(Theme.color.ink).frame(width: 3)
+                }
+            }
             .overlay(alignment: .bottom) { Rule() }
             .contentShape(Rectangle())
             .onHover { isHovered = $0 }
+            .onTapGesture {
+                if !isReadOnly {
+                    onToggle()
+                }
+            }
             .accessibilityElement(children: .contain)
             .accessibilityLabel(isInSet
                 ? "\(SongSummary.title(record)), already in set"
@@ -194,61 +267,63 @@
             .accessibilityIdentifier(AccessibilityID.builderLibraryRow)
         }
 
-        private var addButton: some View {
-            Button(action: onAdd) {
-                Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Theme.color.ink)
-                    .frame(width: 30, height: 30)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Theme.color.ground),
-                    )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(Theme.color.controlBorder, lineWidth: 1)
+        private var background: Color {
+            if isFocused {
+                return Theme.color.ground
+            }
+            return isHovered ? Theme.color.ground.opacity(0.7) : Color.clear
+        }
+
+        /// A box; ticked, it is filled and shows the song's number in the set. A button for
+        /// VoiceOver and the keyboard ("Add Harbour Lights to setlist" / "Remove ...").
+        private var checkbox: some View {
+            Button(action: onToggle) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(isInSet ? Theme.color.ink : Theme.color.ground)
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .strokeBorder(
+                            isInSet ? Theme.color.ink : Theme.color.lineStrong,
+                            lineWidth: 1.5,
+                        )
+                    if let number {
+                        Text("\(number)")
+                            .font(SchibstedGrotesk.extraBold.font(size: number > 99 ? 8 : 10.5))
+                            .foregroundStyle(Theme.color.ground)
+                            .minimumScaleFactor(0.6)
                     }
-                    .contentShape(Rectangle())
+                }
+                .frame(width: 20, height: 20)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(isReadOnly)
-            .help("Add to the end of the set")
-            .accessibilityLabel("Add \(SongSummary.title(record)) to setlist")
-            .accessibilityIdentifier(AccessibilityID.builderAdd)
-        }
-
-        /// Where `+` was: a checkmark and "In set", not a control.
-        private var inSetMark: some View {
-            HStack(spacing: 4) {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 11, weight: .bold))
-                Text("In set")
-                    .font(SchibstedGrotesk.medium.font(size: 13))
-            }
-            .foregroundStyle(Theme.color.muted)
-            .frame(minWidth: 30, minHeight: 30, alignment: .trailing)
-            .help("Already in this setlist. A song can be in a setlist only once.")
-            .accessibilityElement(children: .ignore)
-            // Without a trait the combined element has no role ("Unknown role" in the audit).
-            .accessibilityAddTraits(.isStaticText)
-            .accessibilityLabel("Already in set")
-            .accessibilityIdentifier(AccessibilityID.builderInSet)
+            .help(isInSet ? "In the set at #\(number ?? 0). Click to take it out."
+                : "Add to the end of the set")
+            .accessibilityLabel(isInSet
+                ? "Remove \(SongSummary.title(record)) from setlist"
+                : "Add \(SongSummary.title(record)) to setlist")
+            .accessibilityValue(isInSet ? "In set at \(number ?? 0)" : "")
+            .accessibilityAddTraits(isInSet ? .isSelected : [])
+            .accessibilityIdentifier(isInSet ? AccessibilityID.builderInSet : AccessibilityID
+                .builderAdd)
         }
 
         @ViewBuilder private var stateLabel: some View {
-            if !isInSet, let level = record.sidecar.proficiency, level == .learning {
+            if let level = record.sidecar.proficiency, level == .learning {
                 Text(ProficiencyMark.label(level))
                     .font(SchibstedGrotesk.medium.font(size: 13))
                     .foregroundStyle(Theme.color.muted)
             }
         }
 
-        /// "G · 96 · 3:40" (each part only when known).
+        /// "G · 96 · 3:40" (each part only when known; a missing length reads --:--).
         private var meta: String {
             [
                 SongSummary.writtenKey(record),
                 SongSummary.tempo(record),
-                SetlistTiming.directiveLength(of: record).map { SetlistTiming.format($0.seconds) },
+                SetlistTiming.directiveLength(of: record).map { SetlistTiming.format($0.seconds) }
+                    ?? SetlistTiming.unknownText,
             ].compactMap(\.self).joined(separator: " · ")
         }
     }
