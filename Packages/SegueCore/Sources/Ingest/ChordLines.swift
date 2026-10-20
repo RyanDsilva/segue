@@ -139,9 +139,12 @@ enum ChordLines {
     /// `C: x32010`, `Em 0-2-2-0-3(3) (= Em7)`).
     static func isChordLegend(_ line: String) -> Bool {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
-        guard let match = trimmed.wholeMatch(
-            of: /(\S+?):?\s+(?:[xX0-9]{4,6}|[xX0-9]{1,2}(?:[-\s][xX0-9]{1,2}){3,5})(?:\(\d{1,2}\))?(?:\s.*)?/,
-        ) else { return false }
+        let pattern = #/
+        (\S+?) :? \s+
+        (?: [xX0-9]{4,6} | [xX0-9]{1,2} (?: [-\s] [xX0-9]{1,2} ){3,5} )
+        (?: \( \d{1,2} \) )? (?: \s .* )?
+        /#
+        guard let match = trimmed.wholeMatch(of: pattern) else { return false }
         return isChord(String(match.output.1))
     }
 

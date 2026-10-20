@@ -162,7 +162,10 @@ enum MetadataExtractor {
         let rest = String(match.output.2)
         // Only a heading: nothing after the word, or a byline, a dash, or more site words
         // (not a sentence such as "For chords in the original key, transpose...").
-        let heading = /(?i)\s*(?:(?:by|guitar|piano|ukulele|and|lyrics|with|easy)\b|[-\u{2013}\u{2014}:|(]).*/
+        let heading = #/
+        (?i) \s* (?: (?: by|guitar|piano|ukulele|and|lyrics|with|easy ) \b
+        | [-\u{2013}\u{2014}:|(] ) .*
+        /#
         guard rest.trimmingCharacters(in: .whitespaces).isEmpty || rest
             .wholeMatch(of: heading) != nil
         else { return nil }
