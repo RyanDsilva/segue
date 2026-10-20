@@ -76,6 +76,7 @@
                     Task { await library.editSongSource(id: row.song, .setLength(seconds)) }
                 }
                 .frame(width: 210)
+                .environment(\.analyticsContext, .builder)
                 Button("Open Song") { openSong(row.song) }
                     .buttonStyle(.link)
                     .font(SchibstedGrotesk.semiBold.font(size: 12))

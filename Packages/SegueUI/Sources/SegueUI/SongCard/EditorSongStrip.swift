@@ -23,6 +23,7 @@
                 ),
                 layout: model.startedAsNew ? .expanded : .strip,
             )
+            .environment(\.analyticsContext, .editor)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)

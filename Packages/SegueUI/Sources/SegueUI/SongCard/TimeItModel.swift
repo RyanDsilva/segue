@@ -1,6 +1,7 @@
 import Foundation
 import Library
 import Observation
+import Services
 import Support
 
 /// "Time it" (R91, spec 16.0.1): a per-song Start/Stop timer that fills the song card's
@@ -25,6 +26,8 @@ public final class TimeItModel {
     public private(set) var run: Run?
 
     @ObservationIgnored private let clock: any Support.Clock
+    /// Records the Time it analytics row; the app hands over its hub when a library opens.
+    @ObservationIgnored public var services: ServicesHub = .disabled
 
     /// `clock` is injectable so tests script the elapsed time.
     public init(clock: any Support.Clock = MonotonicClock()) {
@@ -65,6 +68,11 @@ public final class TimeItModel {
         let seconds = Int(elapsed().rounded())
         run = nil
         return seconds
+    }
+
+    /// Records that a run was stopped into a length (`featureUsed(.timeIt)`, R74).
+    public func recordTimed(in context: FeatureContext) {
+        services.record(.featureUsed(.timeIt, context))
     }
 
     /// Ends song `id`'s run without a result (Esc). Nothing happens for another song.

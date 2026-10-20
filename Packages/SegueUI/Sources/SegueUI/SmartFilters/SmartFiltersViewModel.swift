@@ -101,8 +101,10 @@ public final class SmartFiltersViewModel {
             let created = try await store.create(name: trimmed, conditions: conditions)
             await reload()
             registerCreationUndo(created.id, actionName: "New Smart Filter")
-            // TODO(P3-4): record Segue.AI.smartFilterUsed(action: created, conditions bucket)
-            // once P3-4 defines the event.
+            services.record(.aiSmartFilterUsed(
+                action: .created,
+                conditions: SmallBucket(conditions.count),
+            ))
             return created
         } catch {
             errorMessage = UserMessage.describe(error)

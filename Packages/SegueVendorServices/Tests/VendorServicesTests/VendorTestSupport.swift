@@ -231,6 +231,62 @@ enum VocabularySample {
         events += PaletteAction.allCases.map {
             .editorChordPalette(action: $0, chords: .zero)
         }
+        events += AISample.all
         return events
+    }
+}
+
+/// Phase 3 AI rows (R74, R98): every enum value and bucket at least once.
+enum AISample {
+    static var all: [AnalyticsEvent] {
+        var events: [AnalyticsEvent] = []
+        let providers = AIProviderUsed.allCases
+        let rows = [
+            PasteSource.allCases.count, PasteFallback.allCases.count,
+            LatencyBucket.allCases.count, PasteOutcome.allCases.count,
+            CorrectionBucket.allCases.count, providers.count,
+        ].max() ?? 0
+        for row in 0 ..< rows {
+            events.append(.aiPasteFinished(PasteFinishedSummary(
+                source: pick(PasteSource.allCases, row),
+                provider: pick(providers, row),
+                fallback: pick(PasteFallback.allCases, row),
+                latency: pick(LatencyBucket.allCases, row),
+                outcome: pick(PasteOutcome.allCases, row),
+                correction: pick(CorrectionBucket.allCases, row),
+                romanHindi: row.isMultiple(of: 2),
+            )))
+        }
+        let downloads = max(
+            ModelDownloadResult.allCases.count,
+            DownloadDurationBucket.allCases.count,
+        )
+        for row in 0 ..< downloads {
+            events.append(.aiModelDownload(ModelDownloadSummary(
+                result: pick(ModelDownloadResult.allCases, row),
+                kind: pick(ModelDownloadKind.allCases, row),
+                duration: pick(DownloadDurationBucket.allCases, row),
+                ramUnder16: row.isMultiple(of: 2),
+            )))
+        }
+        let buckets = SmallBucket.allCases
+        for row in buckets.indices {
+            events.append(.aiAssistantUsed(AssistantUsedSummary(
+                context: pick(AssistantContext.allCases, row),
+                lexiconChips: buckets[row],
+                suggestedShown: pick(buckets, row + 1),
+                suggestedAccepted: pick(buckets, row + 2),
+                provider: pick(providers, row),
+                rebuilt: row.isMultiple(of: 2),
+            )))
+        }
+        for action in SmartFilterAction.allCases {
+            events += buckets.map { .aiSmartFilterUsed(action: action, conditions: $0) }
+        }
+        return events
+    }
+
+    private static func pick<T>(_ values: [T], _ row: Int) -> T {
+        values[row % values.count]
     }
 }

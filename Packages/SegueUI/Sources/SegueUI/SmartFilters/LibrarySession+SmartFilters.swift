@@ -1,6 +1,7 @@
 #if os(macOS)
     import Foundation
     import Library
+    import Services
 
     // P3-6: smart filters in the session (load, list scope from the sidebar selection) and
     // library-wide tag management (rename, merge, delete), each one undo step.
@@ -42,6 +43,12 @@
 
         /// Shows the library list narrowed to filter `id`.
         func showSmartFilter(_ id: SmartFilterID) {
+            if let filter = smartFilters.filter(id) {
+                smartFilters.services.record(.aiSmartFilterUsed(
+                    action: .applied,
+                    conditions: SmallBucket(filter.conditions.count),
+                ))
+            }
             library.navigate { [weak self] in self?.section = .smartFilter(id) }
         }
 

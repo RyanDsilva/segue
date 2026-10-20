@@ -72,6 +72,8 @@ enum LengthCommit: Equatable {
         @State private var text: String
         @State private var problem: String?
         @FocusState private var ownFocus: Bool
+        /// Where the card sits, for the Time it analytics row (library by default).
+        @Environment(\.analyticsContext) private var analyticsContext
 
         /// - Parameters:
         ///   - songID: the song whose length this is (Time it runs are keyed to it).
@@ -186,8 +188,7 @@ enum LengthCommit: Equatable {
 
         private func stop() {
             guard let seconds = timeIt.stop(songID) else { return }
-            // P3-4 analytics: record `.featureUsed(.timeIt, <context>)` here once
-            // `FeatureKey.timeIt` exists (spec section 11).
+            timeIt.recordTimed(in: analyticsContext)
             apply(LengthCommit.timed(seconds, current: length))
         }
 

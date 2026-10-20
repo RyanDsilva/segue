@@ -30,8 +30,12 @@ struct ServicesVocabularyTests {
             #expect(crumb.message == signal.name)
             #expect(crumb.data == signal.params)
         }
-        // Rows 1-18 of section 5, one signal name each.
-        #expect(names.count == 18)
+        // Rows 1-18 of section 5 plus the phase 3 AI rows 19-22, one signal name each.
+        #expect(names.count == 22)
+        #expect(names.isSuperset(of: [
+            "Segue.AI.pasteFinished", "Segue.AI.modelDownload", "Segue.AI.assistantUsed",
+            "Segue.AI.smartFilterUsed",
+        ]))
     }
 
     @Test
@@ -71,5 +75,14 @@ struct ServicesVocabularyTests {
         #expect([0, 1, 2, 6, 7, 13, 14, 29, 30, 89, 90].map { DaysBucket(days: $0).rawValue } == [
             "0", "1", "2-6", "2-6", "7-13", "7-13", "14-29", "14-29", "30-89", "30-89", "90+",
         ])
+        #expect([nil, 0, 0.99, 1, 2.9, 3, 9.9, 10, 29.9, 30].map {
+            LatencyBucket(seconds: $0).rawValue
+        } == ["none", "<1s", "<1s", "1-3s", "1-3s", "3-10s", "3-10s", "10-30s", "10-30s", "30s+"])
+        #expect([0, 1, 2, 3, 4, 40].map { CorrectionBucket(changes: $0).rawValue } == [
+            "none", "small", "medium", "medium", "large", "large",
+        ])
+        #expect([0, 59, 60, 299, 300, 899, 900, 3599, 3600].map {
+            DownloadDurationBucket(seconds: TimeInterval($0)).rawValue
+        } == ["<1m", "<1m", "1-5m", "1-5m", "5-15m", "5-15m", "15-60m", "15-60m", "60m+"])
     }
 }

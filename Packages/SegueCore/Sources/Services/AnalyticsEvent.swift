@@ -57,6 +57,15 @@ public enum AnalyticsEvent: Sendable, Hashable {
     case searchPerformed(context: SearchContext, matchTier: SearchMatchTier, results: SmallBucket)
     /// Row 18: a chord palette chip was armed or an armed chord placed (daily per action).
     case editorChordPalette(action: PaletteAction, chords: SmallBucket)
+    /// Row 19 (phase 3, R74/R98): one pasted or converted song left the review sheet (one
+    /// per file in a batch).
+    case aiPasteFinished(PasteFinishedSummary)
+    /// Row 20 (R74): a model download ended.
+    case aiModelDownload(ModelDownloadSummary)
+    /// Row 21 (R74): the set assistant built or rebuilt a set.
+    case aiAssistantUsed(AssistantUsedSummary)
+    /// Row 22 (R74): a smart filter was created, applied or filled from the assistant.
+    case aiSmartFilterUsed(action: SmartFilterAction, conditions: SmallBucket)
 }
 
 // MARK: - Grouped parameters (cases with more than four values)
@@ -215,6 +224,8 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case shapeEditor
     case showInFinder
     case undoInBuilder
+    /// The song card's Time it timer was stopped into a length (R91).
+    case timeIt
 }
 
 public enum FeatureContext: String, Sendable, CaseIterable {
@@ -339,6 +350,7 @@ extension AnalyticsEvent {
         case .feedbackSent: "Feedback"
         case .errorOccurred: "Error"
         case .searchPerformed: "Search"
+        case .aiAssistantUsed, .aiModelDownload, .aiPasteFinished, .aiSmartFilterUsed: "AI"
         }
     }
 
@@ -359,6 +371,10 @@ extension AnalyticsEvent {
         case .errorOccurred: "occurred"
         case .searchPerformed: "performed"
         case .editorChordPalette: "chordPalette"
+        case .aiPasteFinished: "pasteFinished"
+        case .aiModelDownload: "modelDownload"
+        case .aiAssistantUsed: "assistantUsed"
+        case .aiSmartFilterUsed: "smartFilterUsed"
         }
     }
 
@@ -440,50 +456,8 @@ extension AnalyticsEvent {
             ]
         case let .editorChordPalette(action, chords):
             ["segue.action": action.rawValue, "segue.chords": chords.rawValue]
-        }
-    }
-}
-
-// MARK: - Throttling
-
-/// How often an event may be sent (spec 3.4 and section 5's Throttle column).
-public enum ThrottleRule: Sendable, Hashable {
-    /// Every occurrence (rare by nature).
-    case perOccurrence
-    /// At most once per local calendar day per key.
-    case daily(key: String)
-    /// Once per install per key (milestones).
-    case once(key: String)
-}
-
-public extension AnalyticsEvent {
-    /// The event's throttle rule. Keys are built from the signal name and fixed raw values.
-    var throttle: ThrottleRule {
-        let name = "Segue.\(area).\(eventName)"
-        switch self {
-        case .analyticsEnabled, .feedbackSent, .libraryCreated, .showEnded, .showStarted,
-             .songImported:
-            return .perOccurrence
-        case .appLaunched, .librarySnapshot, .songDeleted:
-            return .daily(key: name)
-        case let .songCreated(source):
-            return .daily(key: "\(name)|\(source.rawValue)")
-        case let .featureUsed(feature, context):
-            return .daily(key: "\(name)|\(feature.rawValue)|\(context.rawValue)")
-        case let .editorOpened(mode):
-            return .daily(key: "\(name)|\(mode.rawValue)")
-        case let .setlistCreated(source):
-            return .daily(key: "\(name)|\(source.rawValue)")
-        case let .milestoneReached(milestone, _):
-            return .once(key: "\(name)|\(milestone.rawValue)")
-        case let .helpOpened(item):
-            return .daily(key: "\(name)|\(item.rawValue)")
-        case let .errorOccurred(code):
-            return .daily(key: "\(name)|\(code.rawValue)")
-        case let .searchPerformed(context, tier, _):
-            return .daily(key: "\(name)|\(context.rawValue)|\(tier.rawValue)")
-        case let .editorChordPalette(action, _):
-            return .daily(key: "\(name)|\(action.rawValue)")
+        case .aiAssistantUsed, .aiModelDownload, .aiPasteFinished, .aiSmartFilterUsed:
+            aiParams
         }
     }
 }
