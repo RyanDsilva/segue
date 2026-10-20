@@ -24,6 +24,7 @@
         /// confirmation (and quits once the run ended); otherwise quits at once when nothing
         /// is pending, or saves first and answers later (asking only if the save fails).
         func shouldTerminate() -> NSApplication.TerminateReply {
+            Self.persistWindowFrames()
             if let live = app?.live, !live.isEnding {
                 live.requestEnd(quitting: true)
                 StageWindowController.shared.stageWindow?.makeKeyAndOrderFront(nil)
@@ -54,6 +55,17 @@
                 window?.close()
             }
             return false
+        }
+
+        /// Writes every autosaved window's frame to the defaults now. AppKit's own autosave is
+        /// lazy, so a quit soon after a drag (or a force-quit) could leave the previous frame
+        /// on disk and the next launch at the default size.
+        static func persistWindowFrames() {
+            for window in NSApp.windows where !window.frameAutosaveName.isEmpty {
+                window.saveFrame(usingName: window.frameAutosaveName)
+            }
+            // Waits for cfprefsd to take the writes, so an immediate relaunch reads them.
+            UserDefaults.standard.synchronize()
         }
 
         private func revealMainWindow() {
@@ -116,6 +128,27 @@
         override func forwardingTarget(for selector: Selector?) -> Any? {
             guard let selector, original?.responds(to: selector) == true else { return nil }
             return original
+        }
+
+        /// A title-bar drag has no "did end" message, so every step of it is saved (one small
+        /// defaults write each); a resize is saved when it ends.
+        func windowDidMove(_ notification: Notification) {
+            original?.windowDidMove?(notification)
+            persistFrame(of: notification)
+        }
+
+        func windowDidEndLiveResize(_ notification: Notification) {
+            original?.windowDidEndLiveResize?(notification)
+            persistFrame(of: notification)
+        }
+
+        private func persistFrame(of notification: Notification) {
+            nonisolated(unsafe) let object = notification.object
+            MainActor.assumeIsolated {
+                guard let window = object as? NSWindow, !window.frameAutosaveName.isEmpty
+                else { return }
+                window.saveFrame(usingName: window.frameAutosaveName)
+            }
         }
 
         func windowShouldClose(_ sender: NSWindow) -> Bool {
