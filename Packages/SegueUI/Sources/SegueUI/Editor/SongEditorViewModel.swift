@@ -41,6 +41,10 @@ public final class SongEditorViewModel {
 
     /// `.create` until a new song's first autosave writes its file, then `.edit`.
     public internal(set) var mode: Mode
+    /// Whether this editor session began on a new song (Start blank). Unlike `mode`, the
+    /// first autosave does not change it, so layout keyed on it (the expanded song card)
+    /// stays put while the user types instead of jumping when the file is first written.
+    public let startedAsNew: Bool
     public internal(set) var editorMode: EditorMode {
         didSet {
             if editorMode == .visual, oldValue != .visual {
@@ -158,6 +162,7 @@ public final class SongEditorViewModel {
     ) {
         autosave = timing.scheduler()
         self.mode = mode
+        startedAsNew = mode == .create
         self.userShapes = userShapes
         self.source = source
         originalSource = source

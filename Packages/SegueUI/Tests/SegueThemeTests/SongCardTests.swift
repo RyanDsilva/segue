@@ -126,6 +126,22 @@ struct SongCardTests {
     }
 
     @Test
+    func `a new song keeps the expanded card after its first autosave`() async throws {
+        let fix = try await library()
+        fix.model.beginNewSong()
+        let editor = try #require(fix.model.editor)
+        #expect(editor.mode == .create)
+        #expect(editor.perform(SongCardWrite.key(SongKey(parsing: "Am"))))
+        #expect(await fix.model.flushEditor())
+        // The file exists now (`.edit`), but the card layout must not jump under the caret.
+        guard case .edit = editor.mode else {
+            Issue.record("the first save did not create the song")
+            return
+        }
+        #expect(editor.startedAsNew)
+    }
+
+    @Test
     func `draft mode edits the text in memory and writes nothing to disk`() async throws {
         let env = try await library().env
         let before = try FileManager.default.contentsOfDirectory(atPath: env.libraryURL.path)

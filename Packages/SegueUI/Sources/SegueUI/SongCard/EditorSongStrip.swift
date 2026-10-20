@@ -7,7 +7,9 @@
     /// The song card while the editor is open (direction 2): the token strip under the top
     /// bar. Its edits go through the editor's own `perform`, the path the top bar's capo
     /// stepper uses, so both stay in sync and share one undo stack and the autosave. A new
-    /// song (Start blank) shows the expanded card with Title and Artist.
+    /// song (Start blank) shows the expanded card with Title and Artist for the whole
+    /// session: collapsing it when the first autosave lands would jump the text under the
+    /// caret.
     struct EditorSongStrip: View {
         let model: SongEditorViewModel
         @State private var standIn = SongID.standIn()
@@ -19,7 +21,7 @@
                     songID: songID,
                     perform: { _ = model.perform($0) },
                 ),
-                layout: model.mode == .create ? .expanded : .strip,
+                layout: model.startedAsNew ? .expanded : .strip,
             )
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
