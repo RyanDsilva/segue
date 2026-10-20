@@ -27,6 +27,18 @@ func footprintMB() -> Double {
     return kr == KERN_SUCCESS ? Double(info.phys_footprint) / 1_048_576 : -1
 }
 
+/// Lifetime peak of the process's physical footprint (what Activity Monitor's "Memory" tracks).
+func peakFootprintMB() -> Double {
+    var info = task_vm_info_data_t()
+    var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<natural_t>.size)
+    let kr = withUnsafeMutablePointer(to: &info) {
+        $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+            task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
+        }
+    }
+    return kr == KERN_SUCCESS ? Double(info.ledger_phys_footprint_peak) / 1_048_576 : -1
+}
+
 extension Duration {
     var ms: Double { Double(components.seconds) * 1000 + Double(components.attoseconds) / 1e15 }
 }
@@ -108,6 +120,8 @@ struct Main {
         print("loaded \(modelName) in \(Int(loadMs)) ms, footprint \(Int(footprintMB())) MB, mlx peak \(Memory.peakMemory / 1_048_576) MB")
 
         if let lim = opt("cachelimit").flatMap(Int.init) { Memory.cacheLimit = lim * 1_048_576 }
+        // Bake-off: simulate a constrained machine with MLX's allocation limit (MB).
+        if let lim = opt("memlimit").flatMap(Int.init) { Memory.memoryLimit = lim * 1_048_576 }
         let biasOn = args.contains("bias")
         let wsOnly = args.contains("wsbias")
         final class Partial: @unchecked Sendable { var text = "" }
@@ -270,6 +284,6 @@ struct Main {
             print("unknown task")
         }
         print("footprint now \(Int(footprintMB())) MB, mlx active \(Memory.activeMemory / 1_048_576) cache \(Memory.cacheMemory / 1_048_576)")
-        print("final footprint \(Int(footprintMB())) MB, mlx peak \(Memory.peakMemory / 1_048_576) MB")
+        print("final footprint \(Int(footprintMB())) MB, mlx peak \(Memory.peakMemory / 1_048_576) MB, peak footprint \(Int(peakFootprintMB())) MB")
     }
 }

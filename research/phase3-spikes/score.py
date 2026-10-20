@@ -58,6 +58,23 @@ def meta_ok(val, gold):
     v = norm(val)
     return any((v is None and g is None) or (g is not None and v == norm(g)) for g in golds)
 
+_PC = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
+
+def key_norm(k):
+    """'F#m' / 'Gbm' / 'F# minor' -> (6, 'm'); None when not a key. Keeps accidentals (norm()
+    strips '#', which made F#m == Fm) and treats enharmonic spellings as equal."""
+    if not k: return None
+    m = re.match(r'^\s*([A-Ga-g])\s*([#\u266fb\u266d]?)\s*(m(?!aj)|min(?:or)?|maj(?:or)?)?\s*$', str(k))
+    if not m: return None
+    pc = _PC[m.group(1).upper()] + {'#': 1, '\u266f': 1, 'b': -1, '\u266d': -1}.get(m.group(2), 0)
+    q = m.group(3) or ''
+    return (pc % 12, 'm' if q.startswith('m') and not q.startswith('maj') else '')
+
+def key_ok(val, gold):
+    golds = gold if isinstance(gold, tuple) else (gold,)
+    v = key_norm(val)
+    return any((v is None and key_norm(g) is None) or (v is not None and v == key_norm(g)) for g in golds)
+
 def merge_chunks(recs):
     """records for one item/run -> merged output dict or error"""
     out = {'blocks': []}
@@ -105,7 +122,7 @@ def score_paste(path):
             row.update(uhC=uh_c, uhN=uh_n, blocksGold=len(g['labels']), blocksOut=len(out['blocks']), labelCorrect=correct,
                        countMismatch=len(out['blocks']) != len(g['labels']) or sorted(lab) != list(range(len(g['labels']))),
                        title=meta_ok(out.get('title'), g['title']), artist=meta_ok(out.get('artist'), g['artist']),
-                       key=meta_ok(out.get('key'), g['key']), keyStated=g['keyStated'], out=out)
+                       key=key_ok(out.get('key'), g['key']), keyStated=g['keyStated'], out=out)
         rows.append(row)
     return rows
 
@@ -211,6 +228,7 @@ def score_pipeline(path, ingest, variant=None):
         blocks = code['blocks']
         vblocks = variant[item]['blocks'] if variant else blocks
         final, uh_c, uh_n, hd_c, hd_n, mo_c, mo_n, wrong = [], 0, 0, 0, 0, 0, 0, []
+        mu_c = mu_n = 0  # unheaded blocks left to the model whose gold is not ambiguous
         cont = {}
         if _continuation:
             prev = None
@@ -219,7 +237,10 @@ def score_pipeline(path, ingest, variant=None):
                 if c0 is None and prev is not None and i > 0 and b['hint'] in ('', 'no chords'):
                     c0 = cont[i] = prev
                 prev = c0
+        skipped = 0
         for i, gl in enumerate(g['labels']):
+            if gl is None:  # unmappable after a gold re-index (remap_gold.py): not scored
+                skipped += 1; final.append(None); continue
             gls = gl if isinstance(gl, tuple) else (gl,)
             c = cont.get(i) or _code_label(vblocks[i])
             if c is not None:
@@ -227,6 +248,7 @@ def score_pipeline(path, ingest, variant=None):
             else:
                 lab = model.get(i, 'verse')  # placeholder when the model failed
                 uh_n += 1; uh_c += lab in gls
+                if len(gls) == 1: mu_n += 1; mu_c += lab in gls
             if _code_label(blocks[i]) is None and labels_ok:
                 mo_n += 1; mo_c += model.get(i) in gls
             final.append(lab)
@@ -247,9 +269,9 @@ def score_pipeline(path, ingest, variant=None):
             metaOk=meta['ok'], err=next((r.get('errorKind') for r in rs if not r['ok']), None),
             retries=sum(r.get('retries') or 0 for r in rs), latency=lat,
             labelLatency=sum(r['latencyMs'] for r in label_recs), peakMB=max((r.get('peakMemoryMB') or 0) for r in rs),
-            n=len(g['labels']), correct=len(g['labels']) - len(wrong), wrong=wrong,
-            uhC=uh_c, uhN=uh_n, hdC=hd_c, hdN=hd_n, moC=mo_c, moN=mo_n,
-            title=meta_ok(title, g['title']), artist=meta_ok(artist, g['artist']), key=meta_ok(key, g['key']),
+            n=len(g['labels']) - skipped, correct=len(g['labels']) - skipped - len(wrong), wrong=wrong,
+            uhC=uh_c, uhN=uh_n, muC=mu_c, muN=mu_n, hdC=hd_c, hdN=hd_n, moC=mo_c, moN=mo_n,
+            title=meta_ok(title, g['title']), artist=meta_ok(artist, g['artist']), key=key_ok(key, g['key']),
             codeTitleWrong=bool(code.get('codeTitle')) and not meta_ok(code.get('codeTitle'), g['title']),
             modelTitle=fix(m.get('title')), modelArtist=fix(m.get('artist'))))
     return rows
@@ -263,6 +285,7 @@ def summarize_pipeline(rows):
         p = lambda xs, q: round(xs[min(len(xs) - 1, int(round(q * (len(xs) - 1))))] / 1000, 2)
         return dict(songs=len(rs), blocks=n, labelAcc=pct(c, n),
             unheadedAcc=pct(sum(r['uhC'] for r in rs), sum(r['uhN'] for r in rs)), unheadedN=sum(r['uhN'] for r in rs),
+            unheadedUnambig=f"{sum(r['muC'] for r in rs)}/{sum(r['muN'] for r in rs)}",
             codeDecidedAcc=pct(sum(r['hdC'] for r in rs), sum(r['hdN'] for r in rs)),
             modelOnUnheadedAcc=pct(sum(r['moC'] for r in rs), sum(r['moN'] for r in rs)),
             songsAllLabelsRight=sum(1 for r in rs if not r['wrong']),
