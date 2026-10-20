@@ -90,6 +90,17 @@
       "retention": "as long as needed to answer you, and at most 2 years"
     }
   },
+  "redirects": [
+    { "from": "/help", "to": "/guide", "status": 301 },
+    { "from": "/help/library", "to": "/guide/library-folder", "status": 301 },
+    { "from": "/help/import", "to": "/guide/import-files", "status": 301 },
+    { "from": "/help/editor", "to": "/guide/edit-a-song", "status": 301 },
+    { "from": "/help/setlists", "to": "/guide/build-a-set", "status": 301 },
+    { "from": "/help/live", "to": "/guide/go-on-stage", "status": 301 },
+    { "from": "/help/shortcuts", "to": "/guide/gig-mode", "status": 301 },
+    { "from": "/help/keyboard", "to": "/guide/keyboard", "status": 301 },
+    { "from": "/help/*", "to": "/guide", "status": 301 }
+  ],
   "credits": [
     {
       "name": "Schibsted Grotesk",

@@ -1,2 +1,11 @@
 /feedback https://segue.featurebase.app/ 302
 /favicon.ico /favicon-32.png 301
+/help /guide 301
+/help/library /guide/library-folder 301
+/help/import /guide/import-files 301
+/help/editor /guide/edit-a-song 301
+/help/setlists /guide/build-a-set 301
+/help/live /guide/go-on-stage 301
+/help/shortcuts /guide/gig-mode 301
+/help/keyboard /guide/keyboard 301
+/help/* /guide 301

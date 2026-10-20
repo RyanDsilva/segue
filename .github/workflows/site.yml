@@ -1,4 +1,5 @@
-# Website checks that run on Linux. scripts/gen-site.swift needs AppKit, CryptoKit and
+# Website checks that run on Linux, and the user guide build (WS6): Astro Starlight with the
+# links validator, then guide/scripts/check.mjs. scripts/gen-site.swift needs AppKit, CryptoKit and
 # ImageIO, so `gen-site.swift --check` (the slot, changelog and staleness check) stays local:
 # `make site-check` in `make check`, and the pre-push hook runs `make site-check STRICT=1`
 # for any push that touches website/ or content/.
@@ -49,3 +50,20 @@ jobs:
           install_args: node pnpm
       - name: html-validate (make site-html)
         run: make site-html
+
+  guide:
+    name: Guide
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.10.12
+          install_args: node pnpm
+      - name: Build the guide (make guide)
+        run: make guide
+      - name: Guide checks (make guide-check)
+        run: make guide-check

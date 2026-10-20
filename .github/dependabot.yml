@@ -51,3 +51,23 @@ updates:
     commit-message:
       prefix: build
       include: scope
+
+  # The user guide's Astro Starlight toolchain (WS6). Exact pins in guide/package.json and a
+  # frozen pnpm-lock.yaml; the Site workflow's "Guide" job builds and checks every bump.
+  - package-ecosystem: npm
+    directory: /guide
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Los_Angeles
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    groups:
+      guide:
+        patterns: ["*"]
+    labels: ["dependencies", "area/website"]
+    commit-message:
+      prefix: build
+      include: scope

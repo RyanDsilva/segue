@@ -5,9 +5,10 @@
 #   1. every commit being pushed is signed with a good signature (`%G?` is G, or U for a
 #      good signature whose key has unknown validity);
 #   2. `make repo-check` passes (exactly what the Linux CI runs);
-#   3. if any pushed commit touches website/ or content/, `make site-check STRICT=1` passes:
+#   3. if any pushed commit touches website/, content/ or guide/, `make site-check STRICT=1` passes:
 #      a push to main publishes the site, so placeholders and the draft maker note must
-#      never reach it (docs/release/specs/WS4-website.md section 8.3, B-29).
+#      never reach it (docs/release/specs/WS4-website.md section 8.3, B-29), and neither may
+#      user-guide screenshot or clip placeholders (WS6 4.7).
 #
 # One-time bypass for check 3 only: SEGUE_ALLOW_SITE_PLACEHOLDERS=1 git push ...
 # It exists for the first push, while the site is still "Coming soon" and the Cloudflare
@@ -50,7 +51,7 @@ while read -r _local_ref local_sha _remote_ref remote_sha; do
 	fi
 
 	# shellcheck disable=SC2086
-	if [ -n "$(git log --format=%H $range -- website content 2>/dev/null)" ]; then
+	if [ -n "$(git log --format=%H $range -- website content guide 2>/dev/null)" ]; then
 		touched=yes
 	fi
 done
@@ -75,7 +76,7 @@ if [ "${SEGUE_ALLOW_SITE_PLACEHOLDERS:-}" = 1 ]; then
 	exit 0
 fi
 
-echo "pre-push: website/ or content/ changed; running make site-check STRICT=1" >&2
+echo "pre-push: website/, content/ or guide/ changed; running make site-check STRICT=1" >&2
 if ! make site-check STRICT=1; then
 	echo "pre-push: blocked. Fix the site check above (placeholders, maker note, stale files)." >&2
 	exit 1

@@ -9,9 +9,9 @@
       "showInApp": false,
       "draft": true,
       "highlights": [
-        { "kind": "new", "text": "Stage mode that fits every song on one screen, never below your minimum size.", "help": "/help/live#minimum-size" },
-        { "kind": "new", "text": "Setlists with drag and drop, per-show key and capo, and running time.", "help": "/help/setlists" },
-        { "kind": "new", "text": "Import ChordPro and text files by dragging them onto the library.", "help": "/help/import" }
+        { "kind": "new", "text": "Stage mode that fits every song on one screen, never below your minimum size.", "help": "/guide/go-on-stage#minimum-size" },
+        { "kind": "new", "text": "Setlists with drag and drop, per-show key and capo, and running time.", "help": "/guide/build-a-set" },
+        { "kind": "new", "text": "Import ChordPro and text files by dragging them onto the library.", "help": "/guide/import-files" }
       ]
     }
   ]

@@ -117,18 +117,30 @@ func isPlaceholder(_ text: String) -> Bool {
 // MARK: - Fixed facts from the spec
 
 enum Spec {
-    /// Section 2: anchors the app links to. Never rename without a redirect.
+    /// Section 2: site anchors linked from outside (the app's guide links are checked from
+    /// SegueLinks.swift itself, WS6 7.1). Never rename without a redirect.
     static let contractLinks = [
-        "/help#trash", "/help/library#trash", "/help/live#requests", "/help/live#minimum-size",
-        "/help/live#auto-scroll", "/help/live#resume", "/help/shortcuts#gig-mode",
-        "/help/import#formats", "/help/keyboard#stage", "/support#report-a-bug",
-        "/support#request-a-feature", "/privacy#usage-statistics", "/privacy#crash-reports",
-        "/privacy#bug-reports", "/privacy#your-choices",
+        "/guide", "/support#report-a-bug", "/support#request-a-feature",
+        "/privacy#usage-statistics", "/privacy#crash-reports", "/privacy#bug-reports",
+        "/privacy#your-choices",
     ]
+    /// The user guide (WS6): built by Astro into website/guide (gitignored), so its pages are
+    /// not hand pages; links into it resolve against the build (`make guide` runs first).
+    static let guideDirectory = "guide/"
+    static let guideHome = "guide.html"
     /// Section 9.3, checked byte for byte in `_headers`.
     static let csp = "Content-Security-Policy: default-src 'none'; "
         + "script-src https://static.cloudflareinsights.com; "
         + "connect-src 'self'; img-src 'self'; style-src 'self'; "
+        + "font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
+        + "upgrade-insecure-requests"
+    /// WS6 4.5: the guide's CSP, under a `/guide/*` rule that first detaches the site CSP.
+    /// Starlight's own bundled scripts (search, menu) run from 'self'; Pagefind needs
+    /// WebAssembly ('wasm-unsafe-eval') and draws its icons as data: images; clips are
+    /// same-origin media. Set on both `/guide` (the home, guide.html) and `/guide/*`.
+    static let guideCSP = "Content-Security-Policy: default-src 'none'; "
+        + "script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com; "
+        + "connect-src 'self'; img-src 'self' data:; media-src 'self'; style-src 'self'; "
         + "font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
         + "upgrade-insecure-requests"
     static let homeTitle = "Segue - Setlists & Chords for Mac"
@@ -195,6 +207,21 @@ struct Config {
     var credits: [[String: String]] {
         (value("credits") as? [[String: Any]] ?? []).map { credit in
             credit.compactMapValues { $0 as? String }
+        }
+    }
+
+    /// `redirects`: moved pages, e.g. the old /help pages to the guide (WS6 7.3).
+    func redirects() throws -> [(from: String, to: String, status: Int)] {
+        guard let list = root["redirects"] as? [[String: Any]] else { return [] }
+        return try list.enumerated().map { index, item in
+            guard let from = item["from"] as? String, from.hasPrefix("/"),
+                  let to = item["to"] as? String, to.hasPrefix("/"),
+                  let status = (item["status"] as? NSNumber)?.intValue, [301, 302].contains(status),
+                  item.count == 3
+            else {
+                throw SiteError.config("redirects[\(index)] needs exactly from, to (paths) and status (301 or 302)")
+            }
+            return (from, to, status)
         }
     }
 
@@ -364,9 +391,9 @@ func parseHighlight(_ raw: Any, at path: String) throws -> Highlight {
     var help: String?
     if let raw = object["help"] {
         guard let link = raw as? String,
-              ["/help", "/support", "/privacy"].contains(where: { link.hasPrefix($0) })
+              ["/guide", "/support", "/privacy"].contains(where: { link.hasPrefix($0) })
         else {
-            throw SiteError.changelog("\(path).help must start with /help, /support or /privacy")
+            throw SiteError.changelog("\(path).help must start with /guide, /support or /privacy")
         }
         help = link
     }
@@ -579,7 +606,19 @@ struct Page {
 
 /// Every hand-written page (everything but the generated changelog), sorted.
 func handPages() -> [String] {
-    files(under: "website").filter { $0.hasSuffix(".html") && $0 != "changelog.html" }
+    files(under: "website").filter {
+        $0.hasSuffix(".html") && $0 != "changelog.html" && !isGuideOutput($0)
+    }
+}
+
+/// Built by `make guide` (gitignored): website/guide/** and the home page website/guide.html.
+func isGuideOutput(_ path: String) -> Bool {
+    path.hasPrefix(Spec.guideDirectory) || path == Spec.guideHome
+}
+
+/// The built guide's pages, empty before `make guide`.
+func guidePages() -> [String] {
+    files(under: "website").filter { isGuideOutput($0) && $0.hasSuffix(".html") }
 }
 
 /// Regular files under a repo directory, as sorted paths relative to it.
@@ -602,7 +641,6 @@ struct Renderer {
         switch name {
         case "partial:header": try partial("header", page: page)
         case "partial:footer": try partial("footer", page: page)
-        case "partial:help-nav": try partial("help-nav", page: page)
         case "appstore:hero": try appStore("hero")
         case "appstore:footer": try appStore("footer")
         case "appstore:press": try appStore("press")
@@ -933,11 +971,9 @@ func changelogTemplate(_ releases: [Release], origin: String) -> String {
 func redirectsFile(_ config: Config) throws -> String {
     let board = try config.string("vendors.board.boardUrl")
     let feedback = isPlaceholder(board) ? "/support#request-a-feature" : board
-    return """
-    /feedback \(feedback) 302
-    /favicon.ico /favicon-32.png 301
-
-    """
+    let moved = try config.redirects().map { "\($0.from) \($0.to) \($0.status)" }
+    return (["/feedback \(feedback) 302", "/favicon.ico /favicon-32.png 301"] + moved)
+        .joined(separator: "\n") + "\n"
 }
 
 func sitemap(_ pages: [Page], html: [String: String], origin: String) -> String {
@@ -1025,6 +1061,10 @@ struct Checker {
 
     func textFiles() -> [(path: String, text: String)] {
         publishedFiles().compactMap { path in
+            // The built guide: its pages only (its bundled assets are checked by guide-check).
+            if isGuideOutput(path), !path.hasSuffix(".html") {
+                return nil
+            }
             guard Self.textExtensions.contains((path as NSString).pathExtension),
                   let data = data(path), let text = String(data: data, encoding: .utf8)
             else { return nil }
@@ -1158,6 +1198,26 @@ struct Checker {
             let link = String(url.dropFirst(build.config.origin.count))
             if let problem = linkProblem(link.isEmpty ? "/" : link, from: home) {
                 fail("\(Spec.appLinks) link \(url) does not resolve: \(problem)")
+            }
+        }
+        // Guide pages: links that leave the guide (Starlight's validator covers the rest).
+        for file in guidePages() {
+            let html = data(file).flatMap { String(data: $0, encoding: .utf8) } ?? ""
+            let page = Page(file: file, html: html)
+            for link in captures(#"\shref="(/[^"]*)""#, in: html).map({ unescapeHTML($0[1]) })
+                where !link.hasPrefix("/guide")
+            {
+                if let problem = linkProblem(link, from: page) {
+                    fail("website/\(file): broken link \"\(link)\": \(problem)")
+                }
+            }
+        }
+        if guidePages().isEmpty {
+            fail("website/guide is not built; run `make guide` first")
+        }
+        for redirect in (try? build.config.redirects()) ?? [] {
+            if let problem = linkProblem(redirect.to, from: home) {
+                fail("content/site.json redirect \(redirect.from) -> \(redirect.to): \(problem)")
             }
         }
         for release in build.allReleases {
@@ -1351,10 +1411,17 @@ struct Checker {
         }
         let lines = text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
         let csp = lines.filter { $0.hasPrefix("Content-Security-Policy:") }
-        if csp != [Spec.csp] {
+        if csp != [Spec.csp, Spec.guideCSP, Spec.guideCSP] {
             fail(
-                "website/_headers: the Content-Security-Policy line must be exactly:\n    \(Spec.csp)",
+                "website/_headers: the Content-Security-Policy lines must be exactly:\n    \(Spec.csp)\n"
+                    + "  and, under /guide and /guide/* after \"! Content-Security-Policy\":\n    \(Spec.guideCSP)",
             )
+        }
+        for rule in ["/guide", "/guide/*"] {
+            let index = lines.firstIndex(of: rule)
+            if index == nil || lines.dropFirst((index ?? 0) + 1).first != "! Content-Security-Policy" {
+                fail("website/_headers: a \(rule) rule must start with \"! Content-Security-Policy\"")
+            }
         }
     }
 
