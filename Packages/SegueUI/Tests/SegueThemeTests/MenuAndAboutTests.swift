@@ -89,6 +89,15 @@ struct AboutPanelTests {
             }
         }
         #expect(links == [SegueLinks.site, SegueLinks.help, SegueLinks.support, SegueLinks.privacy])
+        // R103: one row, exactly these four labels, no other credits text.
+        #expect(credits.string == "Website · Help · Support · Privacy\u{00A0}Policy")
+        var labels: [String] = []
+        credits.enumerateAttribute(.link, in: whole) { value, range, _ in
+            if value != nil {
+                labels.append((credits.string as NSString).substring(with: range))
+            }
+        }
+        #expect(labels == ["Website", "Help", "Support", "Privacy\u{00A0}Policy"])
         for name in ["Schibsted", "GRDB", "Tonic", "Sentry", "open-source", "Acknowledgements"] {
             #expect(!credits.string.contains(name), "About credits mention \(name)")
         }
