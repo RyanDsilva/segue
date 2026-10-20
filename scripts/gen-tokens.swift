@@ -324,15 +324,21 @@ func render() throws -> [(path: String, contents: String)] {
     return files.sorted { $0.0 < $1.0 }
 }
 
-/// All regular files currently under the catalog, repo-relative.
+/// All regular files currently under the catalog, repo-relative. The walker yields paths
+/// relative to the catalog, so no prefix arithmetic on absolute paths: those disagree when
+/// the repo sits under a symlink (`/tmp` resolves to `/private/tmp`).
 func existingCatalogFiles() -> Set<String> {
     let root = repoRoot.appendingPathComponent(catalogPath)
-    guard let walker = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)
-    else { return [] }
+    guard let walker = FileManager.default.enumerator(atPath: root.path) else { return [] }
     var paths = Set<String>()
-    for case let url as URL in walker where !url.hasDirectoryPath {
-        guard url.lastPathComponent != ".DS_Store" else { continue }
-        paths.insert(catalogPath + url.path.dropFirst(root.path.count))
+    for case let relative as String in walker {
+        guard (relative as NSString).lastPathComponent != ".DS_Store" else { continue }
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(
+            atPath: root.appendingPathComponent(relative).path, isDirectory: &isDirectory,
+        )
+        guard exists, !isDirectory.boolValue else { continue }
+        paths.insert("\(catalogPath)/\(relative)")
     }
     return paths
 }
