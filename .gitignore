@@ -24,6 +24,10 @@ Packages/*/.swiftpm/
 xcuserdata/
 *.xcuserstate
 
+# VS Code per-user state (the Swift extension writes launch.json on its own; untracked
+# files there made make gate run the full E2E suite)
+.vscode/
+
 # Local signing overrides (not used yet; see Project.swift)
 Tuist/Signing.xcconfig
 
