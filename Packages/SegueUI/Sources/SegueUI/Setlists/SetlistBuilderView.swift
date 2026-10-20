@@ -158,7 +158,7 @@
             }
             .controlSize(.large)
             .fixedSize()
-            .disabled(setlist.entries.isEmpty)
+            .disabled(setlist.songCount == 0)
         }
 
         /// "The Anchor · Fri 23 Oct 2026", or a prompt to add them. Click to edit.
@@ -167,7 +167,7 @@
             return Button {
                 isEditingDetails = true
             } label: {
-                Text(parts.isEmpty ? "Add venue, date and target…" : parts.joined(separator: " · "))
+                Text(parts.isEmpty ? "Add details…" : parts.joined(separator: " · "))
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.muted)
                     .lineLimit(1)

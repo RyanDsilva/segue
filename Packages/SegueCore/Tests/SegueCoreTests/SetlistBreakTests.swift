@@ -42,6 +42,8 @@ struct SetlistBreakTests {
             nil, nil, SetlistBreak(label: "Set 2"), nil, SetlistBreak(label: "Encore", length: 120),
         ])
         #expect(setlist.songEntries.map(\.songId) == fix.songs.prefix(3).map(\.self))
+        // Counts are of songs: two break rows leave "Friday 3", not 5.
+        #expect(setlist.songCount == 3)
         #expect(setlist.changeoverSeconds == 30)
         #expect(setlist.breakLabel(at: setlist.entries.count) == "Set 4")
         // A break inserted before "Set 2" opens part 2; the automatic label after it moves

@@ -115,7 +115,7 @@
         }
 
         private func setlistRow(_ setlist: Setlist) -> some View {
-            countedRow(setlist.name, count: setlist.entries.count)
+            countedRow(setlist.name, count: setlist.songCount)
                 .lineLimit(1)
                 .tag(LibrarySession.Section.setlist(setlist.id))
                 .accessibilityElement(children: .combine)

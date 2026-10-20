@@ -335,6 +335,12 @@ public struct Setlist: Sendable, Equatable, Identifiable, Codable {
         entries.filter { !$0.isBreak }
     }
 
+    /// How many songs the setlist holds: every "N songs" count (the sidebar, the builder)
+    /// reads this, never `entries.count`, since break rows are not songs.
+    public var songCount: Int {
+        entries.count { !$0.isBreak }
+    }
+
     /// The automatic label of a break row at `position`: "Set N" for the part it opens
     /// (the first part has no break row above it).
     public func breakLabel(at position: Int) -> String {
