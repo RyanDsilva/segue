@@ -309,12 +309,15 @@ enum SetlistAXID {
     static let songTagRemove = "segue.song.tag.remove"
     static let songTagField = "segue.song.tag.field"
     static let songNotes = "segue.song.notes"
-    static let songCue = "segue.song.cue"
-    static let songEditNotes = "segue.song.editNotes"
-    static let notesEditorText = "segue.notesEditor.text"
-    static let notesEditorAddCue = "segue.notesEditor.addCue"
-    static let notesEditorCueText = "segue.notesEditor.cue.text"
-    static let notesEditorSave = "segue.notesEditor.save"
+    static let sectionNotesOpen = "segue.sectionNotes.open"
+    static let sectionNotesSummary = "segue.sectionNotes.summary"
+    static let sectionNotesDone = "segue.sectionNotes.done"
+    static let sectionNoteText = "segue.sectionNotes.note.text"
+    static let sectionNoteStageOnly = "segue.sectionNotes.note.stageOnly"
+    static func sectionNotesAdd(_ group: String) -> String {
+        "segue.sectionNotes.add.\(group)"
+    }
+
     static let newSetlist = "segue.setlists.new"
     static let newSetlistName = "segue.setlists.new.name"
     static let newSetlistCreate = "segue.setlists.new.create"

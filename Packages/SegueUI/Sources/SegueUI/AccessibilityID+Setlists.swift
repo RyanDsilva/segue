@@ -31,14 +31,6 @@ public extension AccessibilityID {
     static let songTagRemove = "segue.song.tag.remove"
     static let songTagField = "segue.song.tag.field"
     static let songNotes = "segue.song.notes"
-    static let songCue = "segue.song.cue"
-    static let songEditNotes = "segue.song.editNotes"
-    static let notesEditorText = "segue.notesEditor.text"
-    static let notesEditorAddCue = "segue.notesEditor.addCue"
-    static let notesEditorCueSection = "segue.notesEditor.cue.section"
-    static let notesEditorCueText = "segue.notesEditor.cue.text"
-    static let notesEditorCueRemove = "segue.notesEditor.cue.remove"
-    static let notesEditorSave = "segue.notesEditor.save"
 
     // MARK: Setlist builder
 

@@ -64,6 +64,7 @@ Packages/SegueCore/Sources/MusicTheory/*	SegueEditorE2ETests SegueSetlistBuilder
 Packages/SegueCore/Sources/Diagrams/*	SegueEditorE2ETests
 Packages/SegueCore/Sources/LiveLayout/*	SegueLiveE2ETests
 Packages/SegueCore/Sources/Library/*	SegueCoreUXE2ETests SegueSetlistLibraryE2ETests SegueE2ETests SegueSetlistGigLogE2ETests
+Packages/SegueCore/Sources/Library/*SectionNotes*	SegueSectionNotesE2ETests
 Packages/SegueCore/Sources/Setlists/*	SegueSetlistBuilderE2ETests SegueSetBuilderE2ETests SegueCoreUXE2ETests SegueLiveE2ETests
 Packages/SegueCore/Sources/Shows/*	SegueLiveE2ETests SegueGigModeE2ETests SegueSetlistGigLogE2ETests
 Packages/SegueCore/Sources/Support/*	ALL
@@ -77,9 +78,11 @@ Packages/SegueUI/Sources/SegueUI/Components/*	ALL
 Packages/SegueUI/Sources/SegueUI/Support/*	ALL
 Packages/SegueUI/Sources/SegueUI/Theme/*	SegueEditorE2ETests SegueLiveE2ETests
 Packages/SegueUI/Sources/SegueUI/Editor/*	SegueEditorE2ETests SegueCoreUXE2ETests SegueSongCardE2ETests SegueSectionBandE2ETests
+Packages/SegueUI/Sources/SegueUI/Editor/*SectionNotes*	SegueSectionNotesE2ETests
 Packages/SegueUI/Sources/SegueUI/Diagrams/*	SegueEditorE2ETests
 Packages/SegueUI/Sources/SegueUI/Rendering/*	SegueEditorE2ETests SegueLiveE2ETests
 Packages/SegueUI/Sources/SegueUI/Library/*	SegueCoreUXE2ETests SegueSetlistLibraryE2ETests SegueSongCardE2ETests
+Packages/SegueUI/Sources/SegueUI/Library/*SectionNotes*	SegueSectionNotesE2ETests
 Packages/SegueUI/Sources/SegueUI/SongCard/*	SegueSongCardE2ETests SegueCoreUXE2ETests SegueEditorE2ETests
 Packages/SegueUI/Sources/SegueUI/Setlists/*	SegueSetlistBuilderE2ETests SegueSetBuilderE2ETests SegueCoreUXE2ETests
 Packages/SegueUI/Sources/SegueUI/GigLog/*	SegueSetlistGigLogE2ETests
@@ -97,6 +100,7 @@ UITests/SegueCoreUXE2ETests*.swift	SegueCoreUXE2ETests
 UITests/SegueEditorE2ETests*.swift	SegueEditorE2ETests
 UITests/SegueSongCardE2ETests.swift	SegueSongCardE2ETests
 UITests/SegueSectionBandE2ETests.swift	SegueSectionBandE2ETests
+UITests/SegueSectionNotesE2ETests.swift	SegueSectionNotesE2ETests
 UITests/SegueLiveE2ETests+Support.swift	SegueLiveE2ETests SegueGigModeE2ETests SegueReviewPromptE2ETests SegueTipsE2ETests AccessibilityAuditE2ETests
 UITests/SegueLiveE2ETests*.swift	SegueLiveE2ETests
 UITests/SegueGigModeE2ETests.swift	SegueGigModeE2ETests
@@ -109,7 +113,7 @@ UITests/SegueServicesE2ETests+Support.swift	SegueServicesE2ETests SegueReportPro
 UITests/SegueServicesE2ETests.swift	SegueServicesE2ETests
 UITests/SegueReportProblemE2ETests.swift	SegueReportProblemE2ETests
 # WS2b. SegueWelcomeE2ETests.swift also holds the shared WelcomeLibrary fixture.
-UITests/SegueWelcomeE2ETests.swift	SegueWelcomeE2ETests SegueSettingsE2ETests SegueFinderE2ETests SegueWhatsNewE2ETests
+UITests/SegueWelcomeE2ETests.swift	SegueWelcomeE2ETests SegueSettingsE2ETests SegueFinderE2ETests SegueWhatsNewE2ETests SegueSectionBandE2ETests SegueSectionNotesE2ETests
 UITests/SegueSettingsE2ETests.swift	SegueSettingsE2ETests
 UITests/SegueWhatsNewE2ETests.swift	SegueWhatsNewE2ETests
 UITests/SegueReviewPromptE2ETests.swift	SegueReviewPromptE2ETests

@@ -34,6 +34,9 @@ extension SongEditorViewModel {
             }
             let controller = VisualEditorController(model: self)
             controller.pendingFocus = true
+            controller.sectionNoteCount = { [weak self] in
+                self?.sectionNoteCount(forSectionAt: $0) ?? 0
+            }
             visualController = controller
             if editorMode == .visual {
                 refreshCanvas()

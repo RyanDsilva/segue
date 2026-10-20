@@ -32,6 +32,11 @@
                 return true
             }
             let band = bandIndex(at: point)
+            if let band, let path = noteBadgeHit(point, band: band) {
+                bandGesture = nil
+                model.showSectionNotes(forSectionAt: path)
+                return true
+            }
             if event.clickCount >= 2, let band, isOnCap(point, band: band) {
                 bandGesture = nil
                 beginRename(band: band)
@@ -261,6 +266,10 @@
             }
             mergeItem.isEnabled = next != nil
             menu.addItem(mergeItem)
+            menu.addItem(.separator())
+            menu.addItem(item("Section Notes...") { [weak self] in
+                self?.model.showSectionNotes(forSectionAt: path)
+            })
             return menu
         }
 

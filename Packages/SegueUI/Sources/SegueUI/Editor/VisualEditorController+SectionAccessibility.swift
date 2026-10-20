@@ -34,8 +34,13 @@
                     element.setAccessibilityIdentifier(AccessibilityID.sectionBand)
                     element.setAccessibilityLabel(band.title)
                     let count = "\(lines) \(lines == 1 ? "line" : "lines")"
-                    element.setAccessibilityValue("\(SectionLabels.displayName(kind)), \(count)")
-                    element.setAccessibilityCustomActions(sectionActions(band, path: path))
+                    element.setAccessibilityValue(
+                        "\(SectionLabels.displayName(kind)), \(count)"
+                            + sectionNotesValue(forSectionAt: path),
+                    )
+                    element.setAccessibilityCustomActions(
+                        sectionActions(band, path: path) + [sectionNotesAction(path)],
+                    )
                 case .slot:
                     element.setAccessibilityIdentifier(AccessibilityID.sectionBandSlot)
                     element.setAccessibilityLabel("Lines outside a section")

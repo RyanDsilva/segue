@@ -63,6 +63,7 @@
                     onCancel: { customizing = nil },
                 )
             }
+            .sectionNotesSheet(for: model)
         }
 
         @ToolbarContentBuilder private var toolbar: some ToolbarContent {

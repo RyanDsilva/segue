@@ -47,26 +47,27 @@ final class SegueSetlistLibraryE2ETests: SetlistE2ETestCase {
     @MainActor
     private func editNotesAndCues(_ app: XCUIApplication, _ root: URL) throws {
         select(app, "Harbor Lights")
-        click(app, SetlistAXID.songEditNotes)
-        let notes = app.textViews[SetlistAXID.notesEditorText]
+        // The song's own note is typed in place.
+        let notes = SetlistE2E.element(app, SetlistAXID.songNotes)
         XCTAssertTrue(notes.appears(timeout: 5))
         notes.click(in: app)
         notes.typeText("Start soft, build into the last chorus", in: app)
-        click(app, SetlistAXID.notesEditorAddCue)
-        let cue = app.textFields[SetlistAXID.notesEditorCueText]
+        // A stage-only section note on the verse (P3-13).
+        click(app, SetlistAXID.sectionNotesOpen)
+        click(app, SetlistAXID.sectionNotesAdd("verse"))
+        let cue = app.textFields[SetlistAXID.sectionNoteText].firstMatch
         XCTAssertTrue(cue.appears(timeout: 5))
         cue.click(in: app)
         cue.typeText("Watch Ravi for the stop", in: app)
-        screenshot(app, "notes-editor")
-        click(app, SetlistAXID.notesEditorSave)
+        click(app, SetlistAXID.sectionNoteStageOnly)
+        screenshot(app, "section-notes")
+        click(app, SetlistAXID.sectionNotesDone)
 
-        let shown = SetlistE2E.element(app, SetlistAXID.songNotes)
-        XCTAssertTrue(shown.appears(timeout: 5))
         XCTAssertEqual(
-            SetlistE2E.text(shown),
+            SetlistE2E.element(app, SetlistAXID.songNotes).value as? String,
             "Start soft, build into the last chorus",
         )
-        let shownCue = SetlistE2E.element(app, SetlistAXID.songCue)
+        let shownCue = SetlistE2E.element(app, SetlistAXID.sectionNotesSummary)
         XCTAssertTrue(shownCue.appears(timeout: 5))
         XCTAssertTrue(SetlistE2E.text(shownCue).contains("Watch Ravi for the stop"))
         SetlistE2E.waitForDisk("Notes and cues never reached the sidecar") {

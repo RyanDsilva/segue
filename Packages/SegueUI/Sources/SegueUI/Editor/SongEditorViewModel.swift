@@ -57,6 +57,11 @@ public final class SongEditorViewModel {
     public internal(set) var options: DisplayOptions
     /// The song's stage memory (sidecar `live`); the editor sets its column choice.
     public internal(set) var livePrefs: LivePrefs
+    /// The song's stage-only section notes (sidecar `cues`, P3-13); chart notes are the
+    /// source's `{comment}` lines.
+    public internal(set) var cues: [SongCue]
+    /// The section notes sheet, open on one group (P3-13).
+    public var sectionNotesRequest: SectionNotesRequest?
     /// The rendered song (debounced ~100 ms after typing): preview, header, diagram strip.
     public private(set) var renderModel: RenderModel?
     /// Inline diagnostics for the text as of `renderModel`.
@@ -125,6 +130,9 @@ public final class SongEditorViewModel {
     @ObservationIgnored let persistLivePrefs: ((SongID, LivePrefs) async throws
         -> SongRecord)?
     @ObservationIgnored var savedLivePrefs: LivePrefs
+    @ObservationIgnored let persistCues: ((SongID, [SongCue]) async throws -> SongRecord)?
+    /// The last stage-note sidecar write; the next one waits for it (P3-13).
+    @ObservationIgnored var cuesTask: Task<Void, Never>?
     @ObservationIgnored var renderTask: Task<Void, Never>?
     @ObservationIgnored var prefsTask: Task<Void, Never>?
     @ObservationIgnored var revision = 0
@@ -148,6 +156,7 @@ public final class SongEditorViewModel {
     ///   - persistPrefs: writes display preferences to a song's sidecar. Edits persist each
     ///     toggle at once; a new song persists its toggles after its first save.
     ///   - livePrefs, persistLivePrefs: the song's stage memory and its writer, the same way.
+    ///   - cues, persistCues: the song's stage-only section notes and their writer.
     public init(
         mode: Mode,
         source: String,
@@ -157,6 +166,8 @@ public final class SongEditorViewModel {
         userShapes: UserShapeLibrary = .empty,
         persistPrefs: ((SongID, DisplayPrefs) async throws -> SongRecord)? = nil,
         persistLivePrefs: ((SongID, LivePrefs) async throws -> SongRecord)? = nil,
+        cues: [SongCue] = [],
+        persistCues: ((SongID, [SongCue]) async throws -> SongRecord)? = nil,
         autosave timing: AutosaveTiming = .standard,
         save: @escaping (String) async throws -> SongRecord,
     ) {
@@ -173,6 +184,8 @@ public final class SongEditorViewModel {
         savedPrefs = prefs
         self.livePrefs = livePrefs
         savedLivePrefs = livePrefs
+        self.cues = cues
+        self.persistCues = persistCues
         options = prefs.displayOptions
         snapshot = SourceSnapshot(text: source)
         isEmpty = source.isEmpty

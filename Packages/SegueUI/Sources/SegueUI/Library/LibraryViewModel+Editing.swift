@@ -211,6 +211,8 @@ extension LibraryViewModel {
             userShapes: userShapes,
             persistPrefs: persistPrefs(following: base),
             persistLivePrefs: persistLivePrefs(following: base),
+            cues: record.sidecar.cues,
+            persistCues: persistCues(following: base),
             autosave: autosave,
             save: save,
         )
@@ -236,6 +238,7 @@ extension LibraryViewModel {
             userShapes: userShapes,
             persistPrefs: persistPrefs(following: base),
             persistLivePrefs: persistLivePrefs(following: base),
+            persistCues: persistCues(following: base),
             autosave: autosave,
             save: { [weak self] source in
                 guard let self else { throw CancellationError() }
@@ -282,6 +285,19 @@ extension LibraryViewModel {
         { [weak self] id, prefs in
             guard let self else { throw CancellationError() }
             let saved = try await updateDisplayPrefs(id: id, prefs)
+            base.revision.sidecarHash = saved.revision.sidecarHash
+            return saved
+        }
+    }
+
+    /// Stage-only section notes write the sidecar only, like the display toggles.
+    private func persistCues(
+        following base: RevisionBox,
+    ) -> (SongID, [SongCue]) async throws -> SongRecord {
+        { [weak self] id, cues in
+            guard let self else { throw CancellationError() }
+            let saved = try await store.updateSectionNotes(id: id, source: nil, cues: cues)
+            await applySaved(saved)
             base.revision.sidecarHash = saved.revision.sidecarHash
             return saved
         }
