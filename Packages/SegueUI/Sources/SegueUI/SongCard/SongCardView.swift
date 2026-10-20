@@ -19,6 +19,9 @@
 
         let host: SongCardHost
         var layout: Layout = .strip
+        /// The Help button opening the guide's song card page; off where the surrounding
+        /// sheet has its own (the paste review's draft card).
+        var showsHelp = true
         var timeIt: TimeItModel = .shared
         var router: SongCardFocusRouter = .shared
 
@@ -33,10 +36,18 @@
             VStack(alignment: .leading, spacing: 12) {
                 if layout == .expanded {
                     textFields(values)
+                        .disabled(host.isReadOnly)
                 }
-                tokens(values)
+                HStack(alignment: .top, spacing: 8) {
+                    tokens(values)
+                        .disabled(host.isReadOnly)
+                    if showsHelp {
+                        Spacer(minLength: 0)
+                        // A read-only song still has help.
+                        GuideHelpButton(.songCard)
+                    }
+                }
             }
-            .disabled(host.isReadOnly)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.songCard)
             .onAppear {

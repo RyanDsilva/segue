@@ -24,11 +24,24 @@ final class SegueSongCardE2ETests: XCTestCase {
         let library = try XCTUnwrap(library)
         let app = XCUIApplication()
         self.app = app
-        E2E.launch(app, arguments: library.arguments(["-SegueSeedWelcome", "YES"]))
+        let workspaceLog = library.root.appending(path: "workspace.log")
+        E2E.launch(app, arguments: library.arguments([
+            "-SegueSeedWelcome", "YES",
+            "-SegueWorkspaceLog", workspaceLog.path(percentEncoded: false),
+        ]))
         let row = app.descendants(matching: .any).matching(identifier: SongCardAXID.songRow)
             .matching(NSPredicate(format: "label BEGINSWITH %@", "Kettle On")).firstMatch
         XCTAssertTrue(row.appears(timeout: 15), "no Welcome song row")
         row.click(in: app)
+
+        // The card's Help button opens the guide's song card page (WS6 7.2).
+        let help = element(app, SongCardAXID.help)
+        XCTAssertTrue(help.appears(timeout: 5), "no Help button on the song card")
+        help.click(in: app)
+        XCTAssertTrue(E2E.waitUntil {
+            let log = (try? String(contentsOf: workspaceLog, encoding: .utf8)) ?? ""
+            return log.contains("/guide/song-card")
+        }, "the Help button opened no guide page")
 
         // Key: open the token, switch to Minor (the picker opens on the current key's mode,
         // Kettle On is in G major), pick Em.
@@ -118,6 +131,7 @@ enum SongCardAXID {
     static let editorModeText = "segue.editor.mode.text"
     static let editorText = "segue.editor.text"
     static let slashMenu = "segue.editor.slashMenu"
+    static let help = "segue.guideHelp.songCard"
 
     static func token(_ field: String) -> String {
         "segue.songCard.token.\(field)"

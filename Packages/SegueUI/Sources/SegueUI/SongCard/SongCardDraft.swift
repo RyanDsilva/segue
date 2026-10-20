@@ -35,6 +35,7 @@
                         knownTags: knownTags,
                     ),
                     layout: .expanded,
+                    showsHelp: false,
                 )
                 Grid(
                     alignment: .leadingFirstTextBaseline,
