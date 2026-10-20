@@ -109,8 +109,10 @@ final class SegueSetlistLibraryE2ETests: SetlistE2ETestCase {
         let upbeat = SetlistE2E.all(app, SetlistAXID.filterTag)
             .matching(NSPredicate(format: "label ==[c] %@", "upbeat")).firstMatch
         XCTAssertTrue(upbeat.appears(timeout: 5))
+        revealChip(app, tag: "upbeat")
         upbeat.click(in: app)
         waitForRows(app, ["Harbor Lights", "Paper Boats"])
+        revealChip(app, tag: "upbeat")
         upbeat.click(in: app)
         waitForRows(app, SetlistFixture.sortedTitles)
         let sidebarTag = SetlistE2E.all(app, SetlistAXID.sidebarTag)
@@ -155,6 +157,45 @@ final class SegueSetlistLibraryE2ETests: SetlistE2ETestCase {
         SetlistE2E.waitUntil("Tag \(tag) never showed") {
             SetlistE2E.texts(app, SetlistAXID.songTag).contains { $0.hasPrefix(tag) }
         }
+    }
+
+    /// Pages the filter chip row with its "More filters" button until the `tag` chip sits
+    /// clear of that button (P3-12): at the default window width the tag chips start past
+    /// the column's edge, as they do for a user. The button goes once the row ends.
+    @MainActor
+    private func revealChip(_ app: XCUIApplication, tag: String) {
+        func state() -> (clear: Bool, more: Bool) {
+            // One accessibility snapshot per read, so nothing waits on a missing element
+            // (the button goes when the row reaches its end).
+            let chip = E2E.snapshots(app, identifier: SetlistAXID.filterTag)
+                .first { $0.label.caseInsensitiveCompare(tag) == .orderedSame }
+            guard let frame = chip?.frame, frame.minX.isFinite, frame.width > 0 else {
+                return (false, Self.moreFilters(in: app) != nil)
+            }
+            guard let button = Self.moreFilters(in: app) else { return (true, false) }
+            return (frame.maxX <= button.minX, true)
+        }
+        for _ in 0 ..< 6 {
+            let now = state()
+            guard !now.clear, now.more else { break }
+            app.buttons["More filters"].firstMatch.click(in: app)
+            _ = E2E.waitUntil(timeout: 2) { state().clear }
+        }
+        XCTAssertTrue(E2E.waitUntil(timeout: 2) { state().clear }, "\(tag) chip not revealed")
+    }
+
+    /// The chip row's "More filters" button frame, when it shows.
+    @MainActor
+    private static func moreFilters(in app: XCUIApplication) -> CGRect? {
+        guard let top = try? app.snapshot() else { return nil }
+        var stack: [any XCUIElementSnapshot] = [top]
+        while let node = stack.popLast() {
+            if node.elementType == .button, node.label == "More filters" {
+                return node.frame
+            }
+            stack.append(contentsOf: node.children)
+        }
+        return nil
     }
 
     @MainActor
