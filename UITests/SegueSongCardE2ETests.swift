@@ -65,7 +65,9 @@ final class SegueSongCardE2ETests: XCTestCase {
             XCTAssertTrue(text.contains(directive), "\(directive) missing from:\n\(text)")
         }
 
-        // `/cho` + Return on two typed lines wraps them in a Chorus.
+        // `/cho` + Return on two typed lines wraps them in a Chorus. Kettle On already has a
+        // chorus, so under the section numbering rule (P3-11) the new one, below it, is
+        // Chorus 2 and the existing one becomes Chorus 1 in the same undo step.
         editor.click(in: app)
         editor.typeKey(.downArrow, modifierFlags: .command, in: app)
         editor.typeText("\nLa la one\nLa la two", in: app)
@@ -77,8 +79,9 @@ final class SegueSongCardE2ETests: XCTestCase {
         editor.typeKey(.return, modifierFlags: [], in: app)
         XCTAssertTrue(E2E.waitUntil {
             let value = editor.value as? String ?? ""
-            return value
-                .contains("{start_of_chorus: Chorus 1}\nLa la one\nLa la two\n{end_of_chorus}")
+            return value.contains("{start_of_chorus: Chorus 1}\n")
+                && value
+                .contains("{start_of_chorus: Chorus 2}\nLa la one\nLa la two\n{end_of_chorus}")
         }, "no chorus in:\n\(editor.value as? String ?? "")")
     }
 
