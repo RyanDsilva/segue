@@ -1,6 +1,6 @@
 import XCTest
 
-/// Settings (WS2b 4.6) and Help > Welcome to Segue… through the real UI: the five panes, the
+/// Settings (WS2b 4.6) and Help > Welcome to Segue… through the real UI: the six panes, the
 /// last pane restored, Appearance kept across a relaunch, Remove Welcome Songs moving files to
 /// the Trash, and the Welcome sheet's revisit mode adding them back. The reset scopes and the
 /// edited-song rule are `WelcomeSeedingTests` (in process).
@@ -31,6 +31,8 @@ final class SegueSettingsE2ETests: XCTestCase {
         attach(app, "settings-appearance-dark")
         pane(app, "Live")
         attach(app, "settings-live-dark")
+        pane(app, "AI")
+        attach(app, "settings-ai-dark")
         pane(app, "Privacy")
         attach(app, "settings-privacy-dark")
         pane(app, "Data")
@@ -76,9 +78,9 @@ final class SegueSettingsE2ETests: XCTestCase {
         ]))
         XCTAssertTrue(row(app, SettingsAXID.songRow, "Soundcheck at Seven").appears(timeout: 15))
 
-        // Five panes; General shows the folder.
+        // Six panes; General shows the folder.
         openSettings(app)
-        for pane in ["General", "Appearance", "Live", "Privacy", "Data"] {
+        for pane in ["General", "Appearance", "Live", "AI", "Privacy", "Data"] {
             XCTAssertTrue(app.toolbars.buttons[pane].firstMatch.exists, "no \(pane) pane")
         }
         pane(app, "General")

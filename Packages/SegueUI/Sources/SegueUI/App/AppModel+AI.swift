@@ -3,6 +3,7 @@
     import Foundation
     import ModelPort
     import Observation
+    import SwiftUI
     import Synchronization
 
     /// The switches every routed call reads (Sendable, so the router can read them from any
@@ -48,13 +49,24 @@
         public let router: Router
         /// The last availability read per provider kind (`refreshAvailability`).
         public private(set) var availability: [ProviderKind: ProviderAvailability] = [:]
+        /// Settings > AI's toggle (P3-3, R93); it sets `gate.isEnabled`.
+        public let preferences: AIPreferences
+        /// Settings > AI's model card (P3-3): the shared model store, if this build has one.
+        public let models: LocalModelsModel
+        /// Settings > AI > Advanced, supplied by the Personal build only (R62, R97).
+        public var advancedSection: (@MainActor () -> AnyView)?
 
         public init(
             providers: [any LanguageModelProvider],
             policy: RoutingPolicy = AIServices.bundledPolicy,
             gate: AIGate = AIGate(),
+            defaults: UserDefaults = .standard,
+            installer: (any LocalModelInstaller)? = nil,
+            physicalMemory: UInt64 = ProcessInfo.processInfo.physicalMemory,
         ) {
             self.gate = gate
+            preferences = AIPreferences(defaults: defaults, gate: gate)
+            models = LocalModelsModel(installer: installer, physicalMemory: physicalMemory)
             router = Router(
                 providers: providers,
                 policy: policy,

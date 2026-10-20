@@ -60,13 +60,14 @@
         }
 
         /// Data > Reset All Settings… (A17): Live settings, Appearance, the default
-        /// changeover, the last Settings pane and the tips. Never consent, the library,
-        /// onboarding, What's New or the review counters, the shape library or the key
-        /// bindings.
+        /// changeover, the AI toggle (R73), the last Settings pane and the tips. Never consent,
+        /// the library, onboarding, What's New or the review counters, the shape library, the
+        /// key bindings or downloaded AI models (R73).
         func resetAllSettings() {
             liveSettings.resetToDefaults()
             polish.appearance.reset()
             ChangeoverSetting.reset()
+            ai.preferences.reset()
             polish.preferences.selectedPane = nil
             polish.preferences.requestTipsReset()
         }

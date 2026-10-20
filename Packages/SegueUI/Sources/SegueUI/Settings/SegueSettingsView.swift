@@ -1,9 +1,9 @@
 #if os(macOS)
     import SwiftUI
 
-    /// The app's Settings window (Segue > Settings…, WS2b 4.6): General, Appearance, Live,
-    /// Privacy (WS3's view, hosted as is) and Data. The window title follows the pane, and
-    /// the last pane comes back when Settings reopens (HIG).
+    /// The app's Settings window (Segue > Settings…, WS2b 4.6): General, Appearance, Live, AI
+    /// (P3-3, R73), Privacy (WS3's view, hosted as is) and Data. The window title follows the
+    /// pane, and the last pane comes back when Settings reopens (HIG).
     public struct SegueSettingsView: View {
         let app: AppModel
 
@@ -16,6 +16,7 @@
             case general
             case appearance
             case live
+            case ai
             case privacy
             case data
         }
@@ -40,6 +41,10 @@
                         shortcuts: app.dependencies.live.shortcuts,
                         workspace: app.dependencies.workspace,
                     )
+                }
+                Tab("AI", systemImage: "sparkles", value: Pane.ai) {
+                    AISettingsView(ai: app.ai, workspace: app.dependencies.workspace)
+                        .accessibilityIdentifier(AccessibilityID.settingsPane("ai"))
                 }
                 Tab("Privacy", systemImage: "hand.raised", value: Pane.privacy) {
                     PrivacySettingsView(
