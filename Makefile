@@ -42,7 +42,7 @@ WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
 	test-perf e2e e2e-one e2e-smoke gate quick eval-ai lint format verify-appstore check bump \
-	site-fonts site-html guide guide-dev guide-check guide-keys docs-shots docs-clips docs-check shellcheck actionlint repo-check \
+	site-fonts site-html guide guide-dev guide-check guide-keys docs-shots docs-clips screenshots screenshots-compose preview preview-edit docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
 bootstrap: ## Install pinned tools and Xcode's Metal Toolchain, fetch dependencies, generate the workspace
@@ -97,6 +97,18 @@ docs-shots: ## Guide screenshots from the App Store flavour, dark and light (nee
 
 docs-clips: ## Guide how-to clips from the App Store flavour (needs the screen and Screen Recording; ONLY=id)
 	scripts/docs-shots.sh clips $(ONLY)
+
+screenshots: ## App Store screenshots: capture (App Store flavour), export, compose, verify (needs the screen)
+	scripts/store-shots.sh shots
+
+screenshots-compose: ## Re-compose and verify the App Store screenshots from the last captures
+	scripts/store-shots.sh compose
+
+preview: ## App Store preview video: record the storyboard, edit, check Apple's spec (needs Screen Recording)
+	scripts/store-shots.sh preview
+
+preview-edit: ## Re-edit the App Store preview from the last recording (no capture)
+	scripts/store-shots.sh preview-edit
 
 site-raster: ## Re-render OG image, touch icon, favicon PNG, wordmark PNGs and screenshot JPEGs
 	scripts/gen-site.swift --raster

@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# The App Store screenshots and preview (docs/release/specs/WS5-store-listing.md sections 8
+# and 9), from the App Store flavour on the screenshot library (Welcome songs plus the
+# screenshot-only songs and "JamFest Opener").
+#
+#   scripts/store-shots.sh shots     AppStoreScreenshotTests in dark, then light; export;
+#                                    compose with store/screenshots.json into
+#                                    .build/screenshots/final/en-US/*.png (2880x1800, sRGB,
+#                                    no alpha), the contact sheet and the A/B/C direction
+#                                    samples; verify
+#   scripts/store-shots.sh compose   compose and verify again from the last raw captures
+#   scripts/store-shots.sh preview-edit  edit the last recording again (no capture)
+#   scripts/store-shots.sh preview   record AppStorePreviewTests (scripts/lib/record.sh), cut
+#                                    it to the test's markers and edit it with
+#                                    scripts/make-preview.sh
+#
+# Needs a logged-in session on a Retina display (the tests fail on any other capture size)
+# and, for the preview, Screen Recording permission for the terminal ([RYAN], once). Never
+# part of `make check`, `make gate` or CI. Make targets: `make screenshots`, `make preview`.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+# shellcheck source=lib/discard.sh
+source scripts/lib/discard.sh
+# shellcheck source=lib/record.sh
+source scripts/lib/record.sh
+
+mode="${1:-}"
+out=".build/screenshots"
+
+run_tests() { # <bundle> <appearance> <only-testing>
+    local bundle="$1" appearance="$2" only="$3"
+    discard "$bundle"
+    TEST_RUNNER_SEGUE_SHOT_APPEARANCE="$appearance" SEGUE_RESULT_BUNDLE="$bundle" \
+        scripts/xcodebuild.sh -scheme Segue-AppStore -configuration Debug-AppStore \
+        test-without-building "-only-testing:$only"
+}
+
+export_attachments() { # <bundle> <folder>
+    discard "$2"
+    xcrun xcresulttool export attachments --path "$1" --output-path "$2" \
+        --schema-version 0.4.0 >/dev/null
+}
+
+compose() {
+    discard "$out/final"
+    scripts/compose-screenshots.swift --raw "$out/raw-dark" --raw "$out/raw-light" \
+        --captions store/screenshots.json --tokens design/tokens.json \
+        --fonts Packages/SegueUI/Sources/SegueUI/Theme/Fonts \
+        --out "$out/final" --contact-sheet "$out/contact-sheet.png" \
+        --directions "$out/directions"
+    scripts/compose-screenshots.swift --verify "$out/final"
+}
+
+build() {
+    scripts/xcodebuild.sh -scheme Segue-AppStore -configuration Debug-AppStore build-for-testing
+}
+
+case "$mode" in
+shots)
+    mkdir -p "$out"
+    build
+    for appearance in dark light; do
+        run_tests "$out/$appearance.xcresult" "$appearance" \
+            SegueAppStoreUITests/AppStoreScreenshotTests
+        export_attachments "$out/$appearance.xcresult" "$out/raw-$appearance"
+    done
+    compose
+    ;;
+compose)
+    compose
+    ;;
+preview)
+    preview=".build/preview"
+    mkdir -p "$preview"
+    build
+    # The stage and builder windows the test places: 1440x810 pt (16:9) at the top-left of
+    # the screen's visible area, as a screencapture -R rect.
+    rect=$(osascript -l JavaScript -e 'ObjC.import("AppKit");
+        const s = $.NSScreen.screens.objectAtIndex(0), f = s.frame, v = s.visibleFrame;
+        Math.round(v.origin.x) + "," + Math.round(f.size.height - v.origin.y - v.size.height) + ",1440,810"')
+    raw="$preview/raw.mov"
+    discard "$raw"
+    # The whole run is recorded, no pointer; the test's markers cut it to the storyboard.
+    record_start "$raw" "$rect" 0
+    run_tests "$preview/run.xcresult" dark SegueAppStoreUITests/AppStorePreviewTests || {
+        record_stop
+        exit 1
+    }
+    record_stop
+    [[ -s "$raw" && -n "$recorded_started" ]] || {
+        echo "store-shots: no recording (Screen Recording permission?)" >&2
+        exit 1
+    }
+    export_attachments "$preview/run.xcresult" "$preview/attachments"
+    marker() { # <name>: the marker's epoch time from the exported attachments
+        local file
+        # shellcheck disable=SC2016 # $name is a jq variable
+        file=$(mise exec -- jq -r --arg name "$1" \
+            '[.[].attachments[] | select(.suggestedHumanReadableName | startswith($name))][0].exportedFileName' \
+            "$preview/attachments/manifest.json")
+        [[ -n "$file" && "$file" != null ]] || { echo "store-shots: no $1 marker" >&2; exit 1; }
+        tr -d '[:space:]' <"$preview/attachments/$file"
+    }
+    start=$(marker clip-start)
+    end=$(marker clip-end)
+    # The cut, kept for `make preview-edit` (re-edit without re-recording).
+    printf '%s %s\n' "$(perl -e "printf '%.3f', $start - $recorded_started")" \
+        "$(perl -e "printf '%.3f', $end - $start")" >"$preview/cut.txt"
+    # Caption timings from the scene markers (scene-<caption id>), relative to clip-start.
+    mise exec -- jq -r '.previewCaptions[].id' store/screenshots.json >"$preview/ids.txt"
+    : >"$preview/timings.txt"
+    previous="" previous_at=""
+    while read -r id; do
+        at=$(perl -e "printf '%.3f', $(marker "scene-$id") - $start")
+        [[ -z "$previous" ]] || echo "$previous $previous_at $at" >>"$preview/timings.txt"
+        previous="$id" previous_at="$at"
+    done <"$preview/ids.txt"
+    echo "$previous $previous_at $(perl -e "printf '%.3f', $end - $start")" >>"$preview/timings.txt"
+    read -r from length <"$preview/cut.txt"
+    scripts/make-preview.sh "$raw" "$from" "$length" "$preview/timings.txt"
+    ;;
+preview-edit)
+    # Edit again from the last recording (.build/preview/raw.mov and its cut); for a manual
+    # QuickTime take (WS5 9.3), save it as raw.mov and write "<from> <length>" to cut.txt.
+    read -r from length <.build/preview/cut.txt
+    scripts/make-preview.sh .build/preview/raw.mov "$from" "$length" .build/preview/timings.txt
+    ;;
+*)
+    echo "usage: scripts/store-shots.sh shots|compose|preview|preview-edit" >&2
+    exit 2
+    ;;
+esac

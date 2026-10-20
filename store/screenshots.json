@@ -1,0 +1,125 @@
+{
+  "canvas": {
+    "width": 2880,
+    "height": 1800
+  },
+  "direction": "A",
+  "windowCornerRadius": 52,
+  "locales": {
+    "en-US": [
+      {
+        "id": "01-stage",
+        "raw": "appstore-01-stage",
+        "appearance": "dark",
+        "background": "dark",
+        "headline": "Your chart, your set, your cue.",
+        "subline": "A stage view that fits every song on one screen.",
+        "crop": null
+      },
+      {
+        "id": "02-builder",
+        "raw": "appstore-02-builder",
+        "appearance": "dark",
+        "background": "dark",
+        "headline": "Build tonight's set in minutes.",
+        "subline": "Drag, reorder, and watch the running time.",
+        "crop": null
+      },
+      {
+        "id": "03-search",
+        "raw": "appstore-03-search",
+        "appearance": "light",
+        "background": "light",
+        "headline": "Find the song from one line.",
+        "subline": "Search lyrics, even romanized Hindi with casual spelling.",
+        "crop": null
+      },
+      {
+        "id": "04-editor",
+        "raw": "appstore-04-editor",
+        "appearance": "light",
+        "background": "light",
+        "headline": "Put chords right on the syllable.",
+        "subline": "Or edit the ChordPro text directly.",
+        "crop": null
+      },
+      {
+        "id": "05-theory",
+        "raw": "appstore-05-theory",
+        "appearance": "light",
+        "background": "light",
+        "headline": "Transpose, capo, Nashville numbers.",
+        "subline": "Guitar and piano diagrams in any tuning.",
+        "crop": null
+      },
+      {
+        "id": "06-request",
+        "raw": "appstore-06-request",
+        "appearance": "dark",
+        "background": "dark",
+        "headline": "Take a request mid-set.",
+        "subline": "Search, queue, and play it next.",
+        "crop": null
+      },
+      {
+        "id": "07-minsize",
+        "raw": "appstore-07-minsize",
+        "appearance": "dark",
+        "background": "dark",
+        "headline": "Readable from the mic stand.",
+        "subline": "Set a minimum size. Segue scrolls rather than shrinks.",
+        "crop": null
+      },
+      {
+        "id": "08-checklist",
+        "raw": "appstore-08-checklist",
+        "appearance": "dark",
+        "background": "dark",
+        "headline": "Ready before you walk on.",
+        "subline": "A pre-show checklist, and shows that survive a crash.",
+        "crop": null
+      },
+      {
+        "id": "09-paste",
+        "raw": "appstore-09-paste",
+        "appearance": "light",
+        "background": "light",
+        "headline": "Paste a song from anywhere.",
+        "subline": "Segue converts it. You check it before it saves.",
+        "crop": null
+      }
+    ]
+  },
+  "previewCaptions": [
+    {
+      "id": "1-build",
+      "text": "Build tonight's set.",
+      "from": 0.0,
+      "to": 3.5
+    },
+    {
+      "id": "2-fits",
+      "text": "Every song fits the screen.",
+      "from": 3.5,
+      "to": 9.0
+    },
+    {
+      "id": "3-request",
+      "text": "Take a request mid-set.",
+      "from": 9.0,
+      "to": 15.0
+    },
+    {
+      "id": "4-hindi",
+      "text": "Romanized Hindi, chords on the syllable.",
+      "from": 15.0,
+      "to": 19.0
+    },
+    {
+      "id": "5-cue",
+      "text": "Your chart, your set, your cue.",
+      "from": 19.0,
+      "to": 22.0
+    }
+  ]
+}

@@ -208,6 +208,8 @@ chordpro,songbook,transpose,prompter,worship,hindi,guitar,piano,capo,nashville,s
 
 ### 7.4 Screenshots (Mac, 2880 x 1800 px, sRGB, no alpha; from `make screenshots`, `.build/screenshots/final/en-US/`)
 
+Generated 2026-10-20 (direction A, provisional until Ryan picks A, B or C from `.build/screenshots/directions/directions-sheet.png`; `make screenshots-compose` re-composes in seconds after `direction` changes in `store/screenshots.json`). Contact sheet: `.build/screenshots/contact-sheet.png`. Sizes: 01 713 KB, 02 563 KB, 03 489 KB, 04 738 KB, 05 714 KB, 06 807 KB, 07 594 KB, 08 579 KB, 09 730 KB.
+
 Drag all nine in this order; the first three show in search results. Shot 9 `paste` was added by R129.
 
 | # | File | Appearance | Headline | Subline |
@@ -226,7 +228,7 @@ The setlist in shots 1, 2 and 6 is "JamFest Opener" with the R128 songs (WS5 8.4
 
 ### 7.5 App Preview (one, `.build/preview/segue-preview-en-US.mp4`)
 
-1920 x 1080 landscape, 15-30 s (target 26 s), H.264 High 4.0, 30 fps, at most 500 MB, a silent stereo AAC track; app footage only. Poster frame at about 6 s (full stage view). Storyboard WS5 9.2. Processing can take up to 24 h.
+1920 x 1080 landscape, 15-30 s, H.264 High 4.0, 30 fps, at most 500 MB, a silent stereo AAC track; app footage only. Generated 2026-10-20 by `make preview`: **23.1 s, 3.4 MB**, passes the ffprobe gate. Poster frame at about **6 s** (Ferry Lights Over Calder Bay on stage, full view). Storyboard WS5 9.2 (as built). Processing can take up to 24 h. `make preview-edit` re-edits the last recording without re-recording.
 
 ### 7.6 Build
 

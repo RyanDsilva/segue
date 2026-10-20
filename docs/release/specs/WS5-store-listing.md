@@ -596,6 +596,8 @@ Design directions (Ryan picks one before the full set is composed; this is his s
 
 Implement all three behind `--direction`, render shots 1 and 3 in each as `.build/screenshots/directions/*.png`, and show Ryan (section 13, step R7). Then lock `direction` in the JSON.
 
+> **As built (2026-10-20).** `make screenshots` renders shots 1-3 in A, B and C (`.build/screenshots/directions/`, with `directions-sheet.png`) and the full set in the JSON's `direction` (A until Ryan picks). A no longer bleeds off the bottom: any bleed hid the stage's Up next footer, so the window sits whole on the canvas, bottom-anchored with a 70 px margin. `windowCornerRadius` is 52 px (measured on a raw macOS 26 capture). The PNGs are written as 24-bit RGB (ImageIO keeps a padding alpha channel for CGContext's RGBX images). The captures run without test plans, like the guide's (`TEST_RUNNER_SEGUE_SHOT_APPEARANCE`); the stage is captured as its borderless window's live view, so stage shots have no title bar or window corners.
+
 ### 8.7 Make target
 
 ```make
@@ -658,6 +660,8 @@ Open the contact sheet and every final PNG at 100%. Fix each of these at the sou
 | 23.5-26.0 | `?` shows the key overlay briefly, then closes; hold on the stage | "Your chart, your set, your cue." |
 
 The poster frame (chosen in App Store Connect) is a frame at about 6 s, showing the full stage view.
+
+> **As built (2026-10-20).** The cut is five scenes, 23 s, each caption timed from a `scene-<id>` marker the test writes (so captions stay on their scene however long the app takes): Build tonight's set (the JamFest Opener builder, Command-Return, the checklist) -> Every song fits the screen (stage on song 3, Ferry Lights, two columns, Up next) -> Take a request mid-set (Command-K, `kitabon`, queued; the footer shows the request) -> Romanized Hindi, chords on the syllable (R plays Kitaabon Wali Gali) -> Your chart, your set, your cue (`?`, then back). The auto-scroll scene was dropped: at the song's own pace a few seconds of auto-scroll move the chart by a few pixels, so it never read on video, and speeding it up would misrepresent the app. The footage is scaled to 1664x936 under a 112 px `ground.dark` caption band, so captions never cover the stage header (no scrim). Recording is `scripts/record-app.swift` (ScreenCaptureKit, Segue's windows only), not `screencapture -v`: that hung past its time limit after the stage had been up, and a whole-screen recording also caught other apps and XCUITest's "Automation Running" banner.
 
 ### 9.3 Capture method
 
