@@ -84,7 +84,7 @@ struct EditorBuildRulingsTests {
         source.textView.setSelectedRange(NSRange(location: end, length: 0))
         source.textView.insertText(" [b7", replacementRange: source.textView.selectedRange())
         source.updateCompletion(typed: "[")
-        #expect(source.completion.items.first == "b7")
+        #expect(source.completion.items.first?.title == "b7")
         source.acceptCompletion()
         #expect(model.source == "{title: Raah}\n{key: G}\n\n[G]Dil ki [C]baat hai [F]\n")
 

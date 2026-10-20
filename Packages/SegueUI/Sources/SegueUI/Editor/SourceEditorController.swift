@@ -343,9 +343,12 @@
 
         func textView(
             _: NSTextView,
-            shouldChangeTextIn _: NSRange,
+            shouldChangeTextIn range: NSRange,
             replacementString: String?,
         ) -> Bool {
+            if !isApplyingChange, interceptSlashTyping(in: range, replacement: replacementString) {
+                return false
+            }
             if !isApplyingChange {
                 lastTypedText = replacementString
             }
@@ -390,10 +393,20 @@
     extension SourceEditorController: SourceKeyHandling {
         func handleCommand(_ selector: Selector) -> Bool {
             guard completion.isVisible else { return false }
+            if completion.items.isEmpty {
+                // A header-only hint: Esc closes it, every other key behaves as usual.
+                guard selector == #selector(NSResponder.cancelOperation(_:)) else { return false }
+                completion.hide()
+                return true
+            }
             switch selector {
-            case #selector(NSResponder.moveDown(_:)), #selector(NSResponder.moveRight(_:)):
+            case #selector(NSResponder.moveDown(_:)):
                 completion.moveSelection(by: 1)
-            case #selector(NSResponder.moveLeft(_:)), #selector(NSResponder.moveUp(_:)):
+            case #selector(NSResponder.moveUp(_:)):
+                completion.moveSelection(by: -1)
+            case #selector(NSResponder.moveRight(_:)) where completion.kind?.isList == false:
+                completion.moveSelection(by: 1)
+            case #selector(NSResponder.moveLeft(_:)) where completion.kind?.isList == false:
                 completion.moveSelection(by: -1)
             case #selector(NSResponder.insertNewline(_:)), #selector(NSResponder.insertTab(_:)):
                 acceptCompletion()
