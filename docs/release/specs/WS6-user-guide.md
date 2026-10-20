@@ -431,6 +431,17 @@ Two sessions if needed: steps 1-3 and 6 (no app capture) in the first; 4-5 and 7
 
 ---
 
+## As built (2026-10-19)
+
+What landed, and where it differs from the sections above (this list wins where they disagree):
+
+- **Landed:** the guide site (direction C, system appearance only), all 27 pages written from the App Store build's UI strings, `/help` redirects, Guide nav, the guide CSP, CI job, Dependabot, the generated keyboard reference (menus, editor keys, stage keys), `SegueLinks.Guide` with Help buttons (paste review, batch import, section notes, smart filter editor, Arrange Sections sheet, pre-show checklist, set assistant bar, missing-lengths list, Settings > Live / AI / Privacy / Data, Gig Mode section, Keyboard Shortcuts window, empty library link) and Learn More on all six tips, the capture layer and `make docs-shots` / `make docs-clips`, and a first set of 17 captures. Not done: a Help button on the song card itself (the card already links through the tips and pages).
+- **Formats and URLs:** Astro `build.format: 'preserve'` (not `'file'`, which made Starlight write `.html` into every link); the guide home is moved to `website/guide.html` by `guide/scripts/postbuild.mjs`, so `/guide` serves without a redirect; canonical and search-result URLs drop `.html` (Head and Search overrides).
+- **Heading ids:** `{#id}` heading attributes through Astro 7's Satteri processor (`headingAttributes: true`); syntax highlighting is off (it writes style attributes).
+- **CSP:** both `/guide` and `/guide/*` rules detach the site CSP; `img-src 'self' data:` (Pagefind draws its icons as data: images). Starlight's Search, MobileMenuToggle, Sidebar, Footer, PageTitle, Head, SiteTitle, ThemeProvider and ThemeSelect are overridden so no inline script, inline style or style attribute ships; zero CSP violations measured in headless Chrome.
+- **Capture layer:** the appearance reaches the tests as `TEST_RUNNER_SEGUE_SHOT_APPEARANCE` (xcodebuild passes `TEST_RUNNER_*` to the runner), so there are no test plans; `-SegueWindowFrame` is relative to the screen's visible area (a Dock on the left covered the window otherwise); the stage window is titled ("Perform") when windowed, so stage shots include a thin title bar until a crop is added. `-SegueGuideFixtures` is not built: the Welcome library alone covers the first captures, and `-SegueScriptedAI <dir>` exists but no recording is committed yet, so the paste review shows "Converted without AI".
+- **Still to capture (after the walkthrough fix round, R127):** paste-review-labels, import-batch, card-time-it, band, notes-sheet, notes-stage, slash-menu, diagrams, assistant-why, timeline, missing-lengths, arrange-sheet, filter-editor, stage-break, gig-log, settings-ai-installed, welcome-cards, and the three clips. `make guide-check STRICT=1` (and so the pre-push hook for guide changes) refuses the placeholders until they exist.
+
 ## Resolved questions (R127, 2026-10-19)
 
 1. Visual direction: **C "Tiles"**.

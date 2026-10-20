@@ -1031,6 +1031,8 @@ Also see: Help (/help), Changelog (/changelog), Privacy Policy (/privacy).
 
 ### 9.7 Help (`/help` and `/help/*`) - outline
 
+> *Superseded by R126/R127: the help pages are replaced by the user guide at `/guide` (docs/release/specs/WS6-user-guide.md); `/help` and `/help/*` redirect to it (`content/site.json` `redirects`). The section 2 anchor contract is replaced by `SegueLinks.Guide`, which `make site-check` resolves against the built guide.*
+
 Each help page uses `partial:help-nav` (a left column on desktop, a top list on phones), one H1, short task-oriented sections with `id`s, and at most one screenshot per section. Write the body text from the **0.5 App Store build**, opening each feature as you document it; every step and menu name must match the build exactly. If the build is not feature-complete when you reach this step, write against the current `main` App Store flavor and re-check every page in the claims audit before `status: live`. Never document personal-only features (audio, LRCLIB, URL import), AI features, PDF export or MIDI, which are not in 0.5.
 
 > *Superseded (phase 3 ships in 0.5): R61/R62: the AI features (paste cleanup, Settings > AI, the set assistant) ship in the 0.5 App Store build and are documented. Handled in P3-9 (`docs/phases/3-workstreams/P3-9-release-fold-in.md`).*
@@ -1144,12 +1146,12 @@ Then `make site && make site-check STRICT=1`.
    - Project name: `segue` (gives `segue.pages.dev`; if taken, note the name Cloudflare assigns).
    - Production branch: `main`.
    - Framework preset: **None**.
-   - Build command: leave **empty**.
+   - Build command: `scripts/pages-build.sh` (*WS6 4.4: builds the user guide into `website/guide`; this replaced "leave empty"*).
    - Build output directory: `website`.
    - Root directory (advanced): leave empty (repo root).
    - Environment variables: none.
 6. **Save and Deploy**. The first deploy publishes `website/` at `https://segue.pages.dev`.
-7. **Deploy only when `website/` changes:** project > **Settings** > **Build** > **Build watch paths** > Edit: Include paths `website/*`, Exclude paths empty > Save. (Cloudflare still builds on an empty push, or on a push with 20+ commits or 3000+ changed files.)
+7. **Deploy only when the site or guide changes:** project > **Settings** > **Build** > **Build watch paths** > Edit: Include paths `website/*`, `guide/*`, `scripts/pages-build.sh`, `.node-version` (*WS6*), Exclude paths empty > Save. (Cloudflare still builds on an empty push, or on a push with 20+ commits or 3000+ changed files.)
 8. **Turn off preview deployments (B-27):** **Settings** > **Build** > **Branch control** > Preview branch: **None** > Save. Only `main` deploys.
 9. **Enable Web Analytics (R38):** project > **Metrics** > **Web Analytics** > **Enable**. Cloudflare injects the beacon from the **next** deployment, so trigger one: **Deployments** > the latest production deployment > **...** > **Retry deployment**. If the label differs, Web Analytics for a Pages project lives under the project's Metrics tab; the account-level Web Analytics page also lists it.
 
