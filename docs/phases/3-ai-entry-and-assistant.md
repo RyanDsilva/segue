@@ -68,7 +68,8 @@ raw text (paste, .txt, .crd)
  -> AI refinement     (model, async)  only: labels for unheaded blocks, title/artist when code found
                                none, unknown-line classes; results stream into the open sheet
  -> Lyric guard       (code)  the lyric token sequence of the assembled result must equal the
-                               converter's; any difference rejects the AI result for that block
+                               converter's (flat words; regrouping into sections is not a change);
+                               any difference rejects the AI result for that block only (R124)
  -> Key inference     (code)  stated key wins; else KeyDetector; a model key is used only when
                                KeyDetector.isAmbiguous and the model's key is in the top two. A
                                detected key is shown in the review sheet's song card only and is

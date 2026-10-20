@@ -209,7 +209,10 @@ struct IngestClassificationTests {
             + "{start_of_chorus}\n[C]Tum ho\n{end_of_chorus}\n").0
         let respelled = ChordProParser.parse("{start_of_verse}\n[G]Pyaar hai\n{end_of_verse}\n\n"
             + "{start_of_chorus}\n[C]Tum hoo\n{end_of_chorus}\n").0
+        // R124: the same words regrouped (two sections become one run of loose lines).
+        let regrouped = ChordProParser.parse("[G]Pyaar hai\n[C]Tum ho\n").0
         #expect(LyricGuard.check(original: original, refined: relabelled) == .identical)
+        #expect(LyricGuard.check(original: original, refined: regrouped) == .identical)
         #expect(LyricGuard.check(original: original, refined: respelled) == .differs(unit: 1))
     }
 

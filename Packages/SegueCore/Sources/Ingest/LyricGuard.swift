@@ -4,7 +4,8 @@ import Foundation
 /// The guard's verdict.
 public enum LyricGuardVerdict: Sendable, Equatable, Hashable {
     case identical
-    /// The first lyric unit (top-level section, or run of loose lines) whose words differ.
+    /// The lyric unit (top-level section, or run of loose lines) of the original that holds
+    /// the first differing word.
     case differs(unit: Int)
 }
 
@@ -12,19 +13,28 @@ public enum LyricGuardVerdict: Sendable, Equatable, Hashable {
 /// token sequence of two documents. Tokens are compared exactly (case, accents and
 /// punctuation included), so any respelling is caught; chords, directives, comments, tab
 /// sections, bar lines and repeat marks are not lyrics.
+///
+/// The comparison is over the flat word sequence (R124): how words group into sections is not
+/// a lyric. A relabel can turn adjacent sections into one run of loose lines (inline-chord
+/// lines of an `other` block), which regroups the same words without changing any of them.
 public enum LyricGuard {
-    /// Compares `refined` against `original`, unit by unit.
+    /// Compares `refined` against `original` word by word.
     public static func check(original: SongDocument, refined: SongDocument) -> LyricGuardVerdict {
-        let lhs = units(of: original)
-        let rhs = units(of: refined)
-        for unit in 0 ..< max(lhs.count, rhs.count) {
-            let left = unit < lhs.count ? lhs[unit] : []
-            let right = unit < rhs.count ? rhs[unit] : []
-            if left != right {
+        let units = units(of: original)
+        let lhs = units.flatMap(\.self)
+        let rhs = tokens(of: refined)
+        guard lhs != rhs else { return .identical }
+        let common = zip(lhs, rhs).prefix { $0 == $1 }.count
+        // The unit of `original` that holds the first differing word (or the last unit when
+        // `refined` only adds words at the end).
+        var end = 0
+        for (unit, words) in units.enumerated() {
+            end += words.count
+            if common < end {
                 return .differs(unit: unit)
             }
         }
-        return .identical
+        return .differs(unit: max(units.count - 1, 0))
     }
 
     /// Lyric words per unit: each top-level section is a unit, and so is each run of

@@ -130,6 +130,50 @@ struct IngestRefinementTests {
         #expect(LyricGuard.check(original: base.document, refined: refined.document) == .identical)
     }
 
+    /// R124 regression: two adjacent inline-chord blocks labelled `other` each keep their
+    /// words alone (inline-chord lines stay lyrics), but together their loose lines run into
+    /// one group. Regrouping is not a lyric change, and one label that does fail never
+    /// discards the others.
+    @Test
+    func `adjacent other blocks with inline chords keep every other label`() {
+        let paste = """
+        G              C
+        Harbor lights are burning low
+
+        [G]Lanterns swing along the [C]quay
+        [D]Every rope is coiled and [G]free
+
+        [G]Gulls are calling [C]out to sea
+        [D]Tide is turning [G]home to me
+
+        C              G
+        Shine, shine, harbor lights
+        D              G
+        Guide them through the night
+
+        G              C
+        Sails are down and boats are in
+        """
+        let base = IngestPipeline.ingest(paste, origin: .paste)
+        #expect(base.questions.unheadedBlocks == [0, 1, 2, 3, 4])
+        let refined = IngestPipeline.apply(
+            Refinements(labels: [1: .other, 2: .other, 3: .chorus, 4: .other]),
+            to: base,
+        )
+        // Block 4 has no inline chords: `other` would turn its lyrics into comments.
+        #expect(refined.diagnostics.filter {
+            if case .refinementRejected = $0 {
+                true
+            } else {
+                false
+            }
+        } == [.refinementRejected(block: 4)])
+        #expect(refined.blocks[1].label == .other && refined.blocks[2].label == .other)
+        #expect(refined.blocks[3].label == .chorus)
+        #expect(refined.blocks[4].labelSource == .placeholder)
+        #expect(LyricGuard.check(original: base.document, refined: refined.document) == .identical)
+    }
+
     @Test
     func `model titles that are chords, capo or tuning notes are dropped`() {
         let task = MetadataTask(
