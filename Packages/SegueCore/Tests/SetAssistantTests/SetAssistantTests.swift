@@ -167,6 +167,34 @@ struct SetAssistantTests {
     }
 
     @Test
+    func `locks are saved in the setlist and Rebuild honours them after reopening (R115)`()
+        async throws
+    {
+        let test = try TestLibrary()
+        let (store, _) = try await test.loadSetlists()
+        let created = try await store.create(name: "Locks")
+        let (_, first) = Self.build("an hour", seed: 2)
+        try await store.replaceEntries(first.entries, in: created.id)
+        let pinned: Set = [first.entries[0].itemId, first.entries[3].itemId]
+        try await store.setLocked(pinned, true, in: created.id)
+        #expect(try test.read("setlists/locks.setlist.json").contains("\"locked\" : true"))
+
+        let (reopened, _) = try await test.loadSetlists()
+        let saved = try #require(await reopened.setlist(id: created.id))
+        #expect(Set(saved.entries.filter(\.locked).map(\.itemId)) == pinned)
+        let (_, rebuilt) = Self.build(
+            "an hour",
+            seed: 77,
+            layout: RebuildLayout(entries: saved.entries),
+        )
+        #expect(rebuilt.entries[0] == saved.entries[0])
+        #expect(rebuilt.entries[3] == saved.entries[3])
+        #expect(rebuilt.entries.filter(\.locked).count == 2)
+        try await reopened.setLocked([saved.entries[0].itemId], false, in: created.id)
+        #expect(await reopened.setlist(id: created.id)?.entries.filter(\.locked).count == 1)
+    }
+
+    @Test
     func `rebuild keeps a re-picked song's item, overrides and note`() {
         let (_, first) = Self.build("30 min set", seed: 9)
         var entries = first.entries

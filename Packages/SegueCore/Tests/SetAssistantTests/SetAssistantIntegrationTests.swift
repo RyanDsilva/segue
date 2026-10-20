@@ -68,36 +68,85 @@ struct SetAssistantIntegrationTests {
         )
     }
 
-    /// Instant lexicon chips, then the async pass replayed from the recorded real FM answer
-    /// (slot and proficiency guesses dropped), then the suggestion accepted.
+    /// Instant lexicon chips, then the async pass: set requests go to the local model only
+    /// (R116), so with only Foundation Models registered nobody is asked and the lexicon
+    /// stands; the user adds a tag chip by hand.
     static func chips(for text: String, lexicon: SetRequestLexicon, tags: [String])
         async throws -> SetRequest
     {
-        // Instant chips.
         let parsed = lexicon.parse(text)
         #expect(parsed.chips == [.length(1800), .proficiency(.ready)])
         #expect(parsed.leftover == ["pub", "night"])
         var chips = parsed.chips.map { RequestChip($0, origin: .lexicon) }
 
-        // The async pass: replayed real FM answer, slot and proficiency guesses dropped.
         let fm = try Self.recordedFM()
         let task = try #require(SuggestedChips.task(for: parsed, libraryTags: tags))
         let routed = await Router(providers: [fm]).run(task)
-        let output = try #require(routed.output)
-        let suggested = SuggestedChips.suggestions(
-            from: output, words: task.words, libraryTags: tags, existing: chips,
-        )
-        #expect(suggested == [RequestChip(.tag("upbeat"), origin: .suggested)])
-        for chip in suggested {
-            chips.merge(chip)
-        }
-        // A suggestion applies only once accepted.
-        #expect(SetRequest(chips: chips).includeTags.isEmpty)
+        #expect(routed.output == nil)
+        #expect(routed.report.attempts.map(\.provider) == [.mlx])
+        #expect(fm.calls.isEmpty)
+
         chips.merge(RequestChip(.tag("upbeat"), origin: .confirmed))
         let request = SetRequest(chips: chips)
         #expect(request.includeTags == ["upbeat"])
         #expect(request.proficiency == .ready)
         return request
+    }
+
+    /// The recorded real Foundation Models answers, kept as negative data (R116): it invents
+    /// a proficiency and opener / closer tags for words that ask for neither. Even replayed
+    /// through an explicit FM route, the guards keep those out of the suggestions.
+    @Test
+    func `recorded FM answers invent fields the guards drop (R116)`() async throws {
+        let tags = AssistantFixture.tags.sorted()
+        let fm = try Self.recordedFM()
+        let policy = RoutingPolicy(orders: [.setRequest: [.foundationModels]])
+        for words in ["mellow vibe", "romantic", "high energy throughout", "pub night"] {
+            let task = SetRequestTask(words: words, libraryTags: tags)
+            let output = try #require(await Router(providers: [fm], policy: policy).run(task)
+                .output)
+            #expect(output.minProficiency == .ready, "invented for \(words)")
+            #expect(!output.openerTag.isEmpty, "invented for \(words)")
+            let suggested = SuggestedChips.suggestions(
+                from: output, words: words, libraryTags: tags, existing: [],
+            )
+            #expect(suggested.allSatisfy { chip in
+                if case .tag = chip.kind {
+                    true
+                } else {
+                    false
+                }
+            })
+        }
+    }
+
+    @Test
+    func `a local model's answer becomes suggested chips that apply once accepted`() {
+        let output = SetRequestOutput(
+            includeTags: ["upbeat", "Unknown"],
+            excludeTags: ["cover"],
+            minProficiency: .pro,
+            openerTag: "upbeat",
+            closerTag: "singalong",
+        )
+        let stated = [RequestChip(.length(1800), origin: .lexicon)]
+        let suggested = SuggestedChips.suggestions(
+            from: output,
+            words: "songs we know cold, open with something lively",
+            libraryTags: AssistantFixture.tags,
+            existing: stated,
+        )
+        #expect(suggested.map(\.kind) == [
+            .tag("upbeat"), .excludeTag("cover"), .proficiency(.pro), .opener(tag: "upbeat"),
+            .closer(tag: "singalong"),
+        ])
+        var chips = stated
+        for chip in suggested {
+            chips.merge(chip)
+        }
+        #expect(SetRequest(chips: chips) == SetRequest(targetLength: 1800))
+        chips.merge(RequestChip(.tag("upbeat"), origin: .confirmed))
+        #expect(SetRequest(chips: chips).includeTags == ["upbeat"])
     }
 
     /// Writes `draft` as a new setlist through the real store, then loads it back from disk.

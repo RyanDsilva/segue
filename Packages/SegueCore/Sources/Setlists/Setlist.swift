@@ -162,6 +162,9 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
     /// A short performance note for this slot ("start soft"), shown in live mode. Song slots
     /// only.
     public var note: String?
+    /// Kept in place by the set assistant's Rebuild (R115). Song slots only; saved as
+    /// `"locked": true` (v4), absent when false.
+    public var locked: Bool
 
     public var id: SetlistItemID {
         itemId
@@ -195,11 +198,13 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
         songId: SongID,
         overrides: SetlistOverrides = SetlistOverrides(),
         note: String? = nil,
+        locked: Bool = false,
     ) {
         self.itemId = itemId
         kind = .song(songId)
         self.overrides = overrides
         self.note = note
+        self.locked = locked
     }
 
     /// A break row.
@@ -208,16 +213,18 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
         kind = .break(info)
         overrides = SetlistOverrides()
         note = nil
+        locked = false
     }
 
-    // A song slot: `{itemId, songId, overrides?, note?}` (unchanged since v2); a break row
-    // (v3): `{itemId, break: {label, length?}}`.
+    /// A song slot: `{itemId, songId, overrides?, note?, locked?}` (`locked` since v4); a
+    /// break row (v3): `{itemId, break: {label, length?}}`.
     private enum CodingKeys: String, CodingKey {
         case itemId
         case songId
         case `break`
         case overrides
         case note
+        case locked
     }
 
     public init(from decoder: any Decoder) throws {
@@ -227,12 +234,14 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
             kind = .break(info)
             overrides = SetlistOverrides()
             note = nil
+            locked = false
             return
         }
         kind = try .song(container.decode(SongID.self, forKey: .songId))
         overrides = try container.decodeIfPresent(SetlistOverrides.self, forKey: .overrides)
             ?? SetlistOverrides()
         note = try container.decodeIfPresent(String.self, forKey: .note)
+        locked = try container.decodeIfPresent(Bool.self, forKey: .locked) ?? false
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -245,6 +254,9 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
                 try container.encode(overrides, forKey: .overrides)
             }
             try container.encodeIfPresent(note, forKey: .note)
+            if locked {
+                try container.encode(true, forKey: .locked)
+            }
         case let .break(info):
             try container.encode(info, forKey: .break)
         }
@@ -257,10 +269,11 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
 /// one loads with `readOnly` set and is never rewritten.
 /// History: 0 = pre-versioned; 1 = phase 0 (`entries: [{songId}]`); 2 = phase 2 (entries gain
 /// `itemId`, `overrides`, `note`; the setlist gains timestamps, venue, date, target length);
-/// 3 = phase 3 (break rows, `changeoverSeconds`). A v2 build opens a v3 file read-only.
+/// 3 = phase 3 (break rows, `changeoverSeconds`); 4 = locked song slots (R115). An older
+/// build opens a newer file read-only.
 public struct Setlist: Sendable, Equatable, Identifiable, Codable {
     /// The schema version this build reads and writes.
-    public static let currentSchemaVersion = 3
+    public static let currentSchemaVersion = 4
 
     public var id: SetlistID
     public var schemaVersion: Int

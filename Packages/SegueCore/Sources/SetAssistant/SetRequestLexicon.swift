@@ -40,9 +40,9 @@ public struct LexiconResult: Sendable, Hashable {
 /// The instant request parser (spec section 7 step 1). Pure and fast: build one per library
 /// vocabulary and call `parse` on every keystroke.
 public struct SetRequestLexicon: Sendable {
-    /// Slot phrases map to the first of these tags the library has (R92: only when asked).
+    /// Slot phrases map to the first of these tags the library has (R92: only when asked;
+    /// R116 drops "start soft" / "end soft").
     public static let strongOpenerTags = ["upbeat"]
-    public static let softSlotTags = ["ballad", "acoustic"]
     public static let bigCloserTags = ["crowd pleaser", "singalong"]
 
     private let tagsByKey: [String: String]
@@ -150,18 +150,10 @@ public struct SetRequestLexicon: Sendable {
             "strong opener", "start big", "big start", "open big", "start high", "kick off strong",
             "start with a bang", "open with a bang",
         ])
-        add(.opener(softSlotTags), [
-            "start soft", "soft start", "start slow", "slow start", "open soft", "start gentle",
-            "gentle start", "start mellow", "start quiet", "ease in",
-        ])
         add(.closer(bigCloserTags), [
             "finish big", "end big", "big finish", "big closer", "close big", "close strong",
             "finish strong", "end strong", "strong finish", "end on a high", "finish on a high",
             "end high", "go out big",
-        ])
-        add(.closer(softSlotTags), [
-            "end soft", "finish soft", "close soft", "end quiet", "finish quiet", "wind down",
-            "end slow", "finish slow",
         ])
         // Longest first, so "nothing im still learning" wins over "still learning".
         return table.sorted { $0.0.count > $1.0.count }

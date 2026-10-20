@@ -1,8 +1,8 @@
 import Foundation
 
 /// The provider order per task (spec 4.1). Config-driven: the app reads it from a bundled
-/// JSON file; `standard` is R63 (curated MLX if installed, else FM, else code), also for set
-/// requests (R92).
+/// JSON file; `standard` is R63 (curated MLX if installed, else FM, else code), except set
+/// requests: the local model only, else the lexicon alone (R116 supersedes R92's FM step).
 public struct RoutingPolicy: Sendable, Hashable, Codable {
     public var schemaVersion: Int
     public var orders: [ModelTaskKind: [ProviderKind]]
@@ -12,9 +12,11 @@ public struct RoutingPolicy: Sendable, Hashable, Codable {
         self.orders = orders
     }
 
-    /// R63 for every task.
+    /// R63 for every task but set requests (R116: MLX only).
     public static let standard = Self(orders: Dictionary(
-        uniqueKeysWithValues: ModelTaskKind.allCases.map { ($0, [.mlx, .foundationModels]) },
+        uniqueKeysWithValues: ModelTaskKind.allCases.map { kind in
+            (kind, kind == .setRequest ? [.mlx] : [.mlx, .foundationModels])
+        },
     ))
 
     /// The order for `kind`; a task the file does not name keeps the standard order.

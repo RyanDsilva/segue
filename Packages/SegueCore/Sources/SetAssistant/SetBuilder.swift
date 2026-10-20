@@ -53,9 +53,14 @@ public struct RebuildLayout: Sendable, Equatable {
     public var entries: [SetlistEntry]
     public var locked: Set<SetlistItemID>
 
-    public init(entries: [SetlistEntry] = [], locked: Set<SetlistItemID> = []) {
+    public init(entries: [SetlistEntry], locked: Set<SetlistItemID>) {
         self.entries = entries
         self.locked = locked
+    }
+
+    /// The layout of a saved setlist: its entries, locked as saved (R115).
+    public init(entries: [SetlistEntry] = []) {
+        self.init(entries: entries, locked: Set(entries.filter(\.locked).map(\.itemId)))
     }
 
     public static let empty = Self()

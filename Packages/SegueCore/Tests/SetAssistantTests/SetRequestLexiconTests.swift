@@ -59,8 +59,8 @@ struct SetRequestLexiconTests {
         ),
         Case(
             text: "quick 20 min opener set, start soft and build up",
-            chips: [.length(1200), .opener(tag: "ballad")],
-            leftover: ["quick", "opener", "up"],
+            chips: [.length(1200)],
+            leftover: ["quick", "opener", "start", "soft", "up"],
         ),
         Case(
             text: "two hour gig, originals only, songs in D or A",

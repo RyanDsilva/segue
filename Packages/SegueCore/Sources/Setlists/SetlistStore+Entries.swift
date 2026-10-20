@@ -23,6 +23,23 @@ public extension SetlistStore {
         }
     }
 
+    /// Locks or unlocks the song slots `itemIds` (R115: Rebuild keeps locked songs in place)
+    /// and saves. Break rows and unknown IDs are ignored; nothing is written when nothing
+    /// changes.
+    @discardableResult
+    func setLocked(_ itemIds: Set<SetlistItemID>, _ locked: Bool, in id: SetlistID) throws
+        -> Setlist
+    {
+        try mutateSetlist(id, writesUnchanged: false) { setlist in
+            for index in setlist.entries.indices
+                where itemIds.contains(setlist.entries[index].itemId) && !setlist.entries[index]
+                .isBreak
+            {
+                setlist.entries[index].locked = locked
+            }
+        }
+    }
+
     /// Inserts a break row at `offset` (nil = append) and saves. Its label defaults to the
     /// part it opens ("Set 2", `Setlist.breakLabel(at:)`); automatic labels after it are
     /// renumbered. Throws `invalidOffsets`

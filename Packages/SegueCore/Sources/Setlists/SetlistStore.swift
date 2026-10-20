@@ -55,39 +55,6 @@ public actor SetlistStore {
     var root: LibraryRoot?
     var setlists: [SetlistID: Stored] = [:]
 
-    /// Forward migrations, `steps[n]` takes version `n` to `n + 1`.
-    private static let migrator = SchemaMigrator(
-        currentVersion: Setlist.currentSchemaVersion,
-        steps: [
-            // v0: pre-versioned file; `entries` may be missing.
-            0: { object in
-                object["entries"] = object["entries"] ?? [Any]()
-            },
-            // v1 -> v2: every entry gains a stable `itemId` (derived from the setlist ID and
-            // position, see `SetlistItemID.migrated`). The other v2 fields are optional.
-            1: { object in
-                guard let idString = object["id"] as? String,
-                      let ulid = ULID(string: idString)
-                else {
-                    return // decoding reports the missing/invalid id
-                }
-                let setlist = SetlistID(ulid)
-                let entries = object["entries"] as? [Any] ?? []
-                object["entries"] = entries.enumerated().map { offset, raw -> Any in
-                    guard var entry = raw as? [String: Any] else { return raw }
-                    if entry["itemId"] == nil {
-                        entry["itemId"] = SetlistItemID
-                            .migrated(setlist: setlist, position: offset).description
-                    }
-                    return entry
-                }
-            },
-            // v2 -> v3: break rows and `changeoverSeconds` are new, optional shapes; a v2
-            // file reads unchanged.
-            2: { _ in },
-        ],
-    )
-
     public init(fileSystem: any FileSystem, clock: any Clock, ids: any IDGenerator) {
         self.fileSystem = fileSystem
         self.clock = clock
@@ -489,4 +456,42 @@ public struct SetlistDetails: Sendable, Equatable {
             changeoverSeconds: setlist.changeoverSeconds,
         )
     }
+}
+
+private extension SetlistStore {
+    /// Forward migrations, `steps[n]` takes version `n` to `n + 1`.
+    static let migrator = SchemaMigrator(
+        currentVersion: Setlist.currentSchemaVersion,
+        steps: [
+            // v0: pre-versioned file; `entries` may be missing.
+            0: { object in
+                object["entries"] = object["entries"] ?? [Any]()
+            },
+            // v1 -> v2: every entry gains a stable `itemId` (derived from the setlist ID and
+            // position, see `SetlistItemID.migrated`). The other v2 fields are optional.
+            1: { object in
+                guard let idString = object["id"] as? String,
+                      let ulid = ULID(string: idString)
+                else {
+                    return // decoding reports the missing/invalid id
+                }
+                let setlist = SetlistID(ulid)
+                let entries = object["entries"] as? [Any] ?? []
+                object["entries"] = entries.enumerated().map { offset, raw -> Any in
+                    guard var entry = raw as? [String: Any] else { return raw }
+                    if entry["itemId"] == nil {
+                        entry["itemId"] = SetlistItemID
+                            .migrated(setlist: setlist, position: offset).description
+                    }
+                    return entry
+                }
+            },
+            // v2 -> v3: break rows and `changeoverSeconds` are new, optional shapes; a v2
+            // file reads unchanged.
+            2: { _ in },
+            // v3 -> v4: song slots gain an optional `locked` flag (R115); a v3 file reads
+            // unchanged.
+            3: { _ in },
+        ],
+    )
 }
