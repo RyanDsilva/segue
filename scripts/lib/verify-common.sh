@@ -5,8 +5,10 @@
 # `app_entitlements`, `fail`, `pass`, `failures`, `check_no_test_hooks`,
 # `check_resource_bundle` and `check_third_party_notices`.
 
-# Anything that can only come from the personal package or its compilation condition.
-forbidden='SeguePersonalModules|PersonalModules|SEGUE_PERSONAL'
+# Anything that can only come from the personal package or its compilation condition,
+# including Settings > AI > Advanced custom models and the eval code "Check this model" runs
+# (R62, R97: Personal only).
+forbidden='SeguePersonalModules|PersonalModules|SEGUE_PERSONAL|AdvancedModels|AIEval'
 
 # Editor performance notices that exist in Debug builds only (WS1 4.8a).
 perf_strings=('slow key' 'slow keystroke' 'slow run loop turn')

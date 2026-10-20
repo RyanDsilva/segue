@@ -30,9 +30,13 @@ let package = Package(
                 "MLXEngine",
             ],
         ),
-        // Manual only (never run by tests or gates): records real FM outputs for
-        // ScriptedProvider. `make eval-ai RECORD=1` supersedes it for both providers.
-        .executable(name: "segue-ai-record", targets: ["segue-ai-record"]),
+        // The eval's fixture runner and scorer: `make eval-ai` and Personal's "Check this
+        // model" (R62). Not linked by the App Store flavour.
+        .library(name: "SegueAIEval", targets: ["AIEval"]),
+        // `make eval-ai` (manual, never run by tests or gates): real FM and MLX over the paste
+        // fixtures, scores against the baseline, and with RECORD=1 the ScriptedProvider
+        // recordings. Built by xcodebuild, which builds MLX's Metal library.
+        .executable(name: "segue-eval", targets: ["segue-eval"]),
     ],
     dependencies: [
         .package(path: "../SegueCore"),
@@ -88,10 +92,21 @@ let package = Package(
             ],
             swiftSettings: strictSettings,
         ),
+        // The eval's MLX-free half: fixtures and gold, the pipeline run, the spike metrics.
+        .target(
+            name: "AIEval",
+            dependencies: [.product(name: "SegueCore", package: "SegueCore")],
+            resources: [.copy("Resources/baseline.json")],
+            swiftSettings: strictSettings,
+        ),
         .executableTarget(
-            name: "segue-ai-record",
+            name: "segue-eval",
             dependencies: [
+                "AIEval",
                 "FoundationModelsAdapter",
+                "MLXAdapter",
+                "MLXEngine",
+                "ModelStore",
                 .product(name: "SegueCore", package: "SegueCore"),
             ],
             swiftSettings: strictSettings,
@@ -108,6 +123,7 @@ let package = Package(
         .testTarget(
             name: "ModelStoreTests",
             dependencies: [
+                "AIEval",
                 "ModelStore",
                 "MLXAdapter",
                 .product(name: "SegueCore", package: "SegueCore"),

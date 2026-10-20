@@ -108,3 +108,15 @@ public extension ModelStore {
         return values?.volumeAvailableCapacityForImportantUsage
     }
 }
+
+public extension ModelStore {
+    /// R54 headers for any Hub request (downloads, and Personal's model card lookups).
+    static func hubHeaders(appVersion: String) -> [String: String] {
+        FileTransfer.headers(appVersion: appVersion)
+    }
+
+    /// The ephemeral, cookie-free session configuration every Hub request uses.
+    static func hubSessionConfiguration() -> URLSessionConfiguration {
+        FileTransfer.configuration()
+    }
+}

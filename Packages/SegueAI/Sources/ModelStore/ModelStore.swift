@@ -161,6 +161,12 @@ public actor ModelStore: LocalModelInstaller {
         return (model, location.modelDirectory(for: model))
     }
 
+    /// Where `id`'s files live (installed or not), or nil without a store.
+    public func folder(for id: String) -> URL? {
+        guard let location, let model = model(id) else { return nil }
+        return location.modelDirectory(for: model)
+    }
+
     // MARK: - Custom models (Personal, R62)
 
     /// Adds (or replaces) a custom model entry; downloading stays a separate click.

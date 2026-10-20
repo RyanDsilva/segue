@@ -3,7 +3,8 @@
 # "Phase 0 build rulings"):
 #
 #   1. Builds Segue-AppStore in Release-AppStore and Debug-AppStore with a link map, and fails
-#      if anything from SeguePersonalModules appears in
+#      if anything from SeguePersonalModules (including Settings > AI > Advanced custom models
+#      and the AIEval code behind "Check this model", R62, R97) appears in
 #        - the build graph (the build description Xcode planned for that build),
 #        - the per-configuration intermediates and products,
 #        - the linker map,

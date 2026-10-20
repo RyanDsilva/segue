@@ -47,7 +47,7 @@ import PackageDescription
         // Phase 3 (P3-2): the paste pipeline, the AI port and the FM adapter.
         "Ingest", "ModelPort", "GenerableTasks", "FoundationModelsAdapter",
         // Phase 3 (P3-3): the model store, the MLX provider and its MLX binding.
-        "ModelStore", "MLXAdapter", "MLXEngine",
+        "ModelStore", "MLXAdapter", "MLXEngine", "AIEval",
         // Phase 3 (P3-7): the set assistant.
         "SetAssistant",
     ]
@@ -78,7 +78,7 @@ import PackageDescription
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists", "Shows",
                 "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
                 "SegueUI", "SeguePersonalModules", "VendorServices",
-                "GenerableTasks", "FoundationModelsAdapter", "segue-ai-record",
+                "GenerableTasks", "FoundationModelsAdapter", "segue-eval", "AIEval",
                 "ModelStore", "MLXAdapter", "MLXEngine", "SetAssistant",
             ].map { ($0, firstPartyStrict) } + (sentryStaticTargets + ["_NumericsShims"]).map {
                 // swift-numerics' shim target compiles to no symbols, like sentry's iOS files.

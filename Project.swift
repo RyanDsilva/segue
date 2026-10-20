@@ -219,10 +219,14 @@ func appTarget(name: String, personal: Bool) -> Target {
         // WS4's generated changelog from the bundle (WS2b 4.3, B-26); it is never fetched.
         // The third-party notices ride along at Contents/Resources (not shown in the UI): MIT
         // and the OFL need them to accompany the binary.
-        resources: [
+        resources: .resources([
             "design/icon/Segue.icon", "App/PrivacyInfo.xcprivacy", "website/changelog.json",
             "design/icon/document/Segue-Document.icns", "THIRD_PARTY_NOTICES.md",
-        ],
+        ] + (personal ? [
+            // Settings > AI > Advanced "Check this model" (Personal only, R62): the original
+            // paste fixtures and their gold, at Contents/Resources/paste.
+            .folderReference(path: "Packages/SegueCore/Tests/Fixtures/paste"),
+        ] : [])),
         entitlements: .file(path: .relativeToRoot(entitlementsPath)),
         scripts: [stampResourceBundle],
         dependencies: dependencies,

@@ -64,14 +64,9 @@ struct SegueApp: App {
         // and no UI test depends on a model, and a scripted model store, so no test touches
         // the network or the real shared store.
         #if DEBUG
-            let aiDefaults = AppStateReset.defaults(
-                for: options,
-                bundleID: Bundle.main.bundleIdentifier,
-            )
-            dependencies.ai = options.isTestRun
-                ? Self.testRunAI(defaults: aiDefaults) : Self.liveAI(defaults: aiDefaults)
+            dependencies.ai = Self.makeAI(options: options, workspace: dependencies.workspace)
         #else
-            dependencies.ai = Self.liveAI(defaults: .standard)
+            dependencies.ai = Self.makeAI(workspace: dependencies.workspace)
         #endif
         // Settings > Appearance (R36) applies before the first window draws; TipKit is
         // configured before any tip view exists (WS2b 4.4).
@@ -83,6 +78,35 @@ struct SegueApp: App {
         _app = State(initialValue: AppModel(dependencies: dependencies))
     }
 
+    /// The launch's AI: scripted for test runs, else live; plus, in Personal, Settings > AI >
+    /// Advanced custom models (R62, R97).
+    @MainActor
+    static func makeAI(
+        isTestRun: Bool = false,
+        defaults: UserDefaults = .standard,
+        workspace: any WorkspaceActions,
+    ) -> AIServices {
+        #if DEBUG
+            if isTestRun {
+                return testRunAI(defaults: defaults)
+            }
+        #endif
+        let ai = liveAI(defaults: defaults)
+        #if SEGUE_PERSONAL
+            if let store = ai.models.installer as? ModelStore {
+                ai.advancedSection = {
+                    AdvancedModels.section(
+                        store: store,
+                        models: ai.models,
+                        appVersion: appVersion,
+                        open: { workspace.open($0) },
+                    )
+                }
+            }
+        #endif
+        return ai
+    }
+
     /// The AI a real launch routes to (R63): the installed local MLX model, then Apple
     /// Foundation Models, then the deterministic converter. The model store is the app-group
     /// store both flavours share (R67, R100); custom models only in Personal (R62).
@@ -92,9 +116,7 @@ struct SegueApp: App {
         let store = ModelStore(
             location: .appGroup(),
             options: .init(
-                appVersion: Bundle.main.object(
-                    forInfoDictionaryKey: "CFBundleShortVersionString",
-                ) as? String ?? "0",
+                appVersion: appVersion,
                 allowsCustomModels: flavor == .personal,
                 activeModel: .userDefaults(),
             ),
@@ -114,7 +136,26 @@ struct SegueApp: App {
         )
     }
 
+    /// `CFBundleShortVersionString` (the model downloader's `Segue/<version>` User-Agent).
+    static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+    }
+
     #if DEBUG
+        /// `makeAI` for a Debug launch: test runs use the test defaults suite and get the
+        /// scripted model store.
+        @MainActor
+        static func makeAI(options: LaunchOptions, workspace: any WorkspaceActions) -> AIServices {
+            makeAI(
+                isTestRun: options.isTestRun,
+                defaults: AppStateReset.defaults(
+                    for: options,
+                    bundleID: Bundle.main.bundleIdentifier,
+                ),
+                workspace: workspace,
+            )
+        }
+
         /// Test runs (E2E): no providers, and the curated catalog behind a scripted store
         /// whose Download walks to installed without any network (spec 14).
         @MainActor

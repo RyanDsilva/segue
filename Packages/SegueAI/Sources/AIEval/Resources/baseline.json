@@ -1,0 +1,50 @@
+{
+  "fm-fixtures" : {
+    "artists" : 40,
+    "artistsRight" : 40,
+    "blockCountMismatches" : 0,
+    "blocks" : 268,
+    "blocksRight" : 265,
+    "calls" : 20,
+    "failures" : {
+      "unsupportedLanguage" : 2
+    },
+    "headed" : 178,
+    "headedRight" : 178,
+    "keys" : 40,
+    "keysRight" : 39,
+    "labelsCallP50Ms" : 11018,
+    "labelsCallP90Ms" : 17508,
+    "retries" : 0,
+    "songP50Ms" : 0,
+    "songP90Ms" : 15657,
+    "songs" : 40,
+    "songsAllLabelsRight" : 38,
+    "titles" : 40,
+    "titlesRight" : 40
+  },
+  "mlx-fixtures" : {
+    "artists" : 40,
+    "artistsRight" : 40,
+    "blockCountMismatches" : 0,
+    "blocks" : 268,
+    "blocksRight" : 260,
+    "calls" : 20,
+    "failures" : {
+
+    },
+    "headed" : 178,
+    "headedRight" : 178,
+    "keys" : 40,
+    "keysRight" : 39,
+    "labelsCallP50Ms" : 3943,
+    "labelsCallP90Ms" : 4153,
+    "retries" : 0,
+    "songP50Ms" : 0,
+    "songP90Ms" : 4146,
+    "songs" : 40,
+    "songsAllLabelsRight" : 33,
+    "titles" : 40,
+    "titlesRight" : 40
+  }
+}

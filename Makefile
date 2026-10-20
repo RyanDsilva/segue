@@ -41,7 +41,7 @@ HTMLVALIDATE := pnpm dlx html-validate@11.16.4
 WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
-	test-perf e2e e2e-one e2e-smoke gate quick lint format verify-appstore check bump \
+	test-perf e2e e2e-one e2e-smoke gate quick eval-ai lint format verify-appstore check bump \
 	site-fonts site-html docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
@@ -158,6 +158,9 @@ upload-dsyms: ## Upload an archive's dSYMs to Sentry (ARCHIVE=path or DSYMS=dir;
 
 probe-shortcuts: ## R35 probe: build the sandboxed Shortcuts Events probe app (research/shortcuts-events-probe)
 	research/shortcuts-events-probe/build.sh
+
+eval-ai: ## Manual: real FM + MLX over the paste fixtures and local pastes vs the baseline (BASELINE=1, RECORD=1, PROVIDERS=, MODEL=); never in check or gate
+	scripts/eval-ai.sh
 
 verify-appstore: ## Build the App Store flavor and assert no personal-module symbols
 	scripts/verify-appstore.sh
