@@ -43,6 +43,8 @@
     /// in the set. Unticked rows still drag into the set.
     struct BuilderLibraryColumn: View {
         let setlist: Setlist
+        /// Read here (not only through `setlist`) so a tick re-renders the checklist at once.
+        let model: SetlistsViewModel
         let library: LibraryViewModel
         /// Ticks (adds) or unticks (removes) a song.
         let onToggle: (SongID) -> Void
@@ -52,11 +54,17 @@
         /// Matches for `state`; nil until the first search completes.
         @State private var matches: [SongRecord]?
         /// The row Space ticks.
-        @State private var focusedRow: SongID?
+        /// The row Space ticks, shared with the rows (they read it in their own bodies).
+        @State private var cursor = PickCursor()
         @FocusState private var listFocused: Bool
 
+        private var focusedRow: SongID? {
+            get { cursor.row }
+            nonmutating set { cursor.row = newValue }
+        }
+
         var body: some View {
-            let numbers = songNumbers
+            let rows = pickRows
             VStack(spacing: 0) {
                 header
                 Rule()
@@ -65,18 +73,28 @@
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 0) {
-                            ForEach(songs) { record in
-                                row(record, number: numbers[record.id])
+                            // The tick state is part of the data: a lazy stack does not
+                            // re-render a row when only a value its closure captured changed.
+                            ForEach(rows) { pick in
+                                row(pick)
                             }
                         }
                     }
                     .focusable()
                     .focusEffectDisabled()
                     .focused($listFocused)
+                    .onChange(of: listFocused, initial: true) { _, focused in
+                        cursor.isActive = focused
+                    }
                     .onKeyPress(.upArrow) { moveFocus(-1, proxy: proxy) }
                     .onKeyPress(.downArrow) { moveFocus(1, proxy: proxy) }
                     .onKeyPress(.space) { tickFocused() }
-                    .onCommand(#selector(NSResponder.selectAll(_:))) { tickAllShown() }
+                    // Edit > Select All does not reach a SwiftUI list, so ⌘A arrives as a key.
+                    .onKeyPress(keys: ["a"]) { press in
+                        guard press.modifiers == .command else { return .ignored }
+                        tickAllShown()
+                        return .handled
+                    }
                 }
                 .overlay { emptyState }
                 .accessibilityElement(children: .contain)
@@ -88,23 +106,41 @@
             }
         }
 
-        /// Each song's number in the set (songs only, across parts).
-        private var songNumbers: [SongID: Int] {
+        /// One checklist row: the song and its number in the set (nil when not ticked).
+        private struct PickRow: Identifiable, Equatable {
+            var record: SongRecord
+            var number: Int?
+
+            var id: SongID {
+                record.id
+            }
+        }
+
+        /// The rows shown, each with its number in the set (songs only, across parts).
+        private var pickRows: [PickRow] {
             var numbers: [SongID: Int] = [:]
-            for (offset, song) in setlist.entries.compactMap(\.songId).enumerated() {
+            let current = model.setlist(setlist.id) ?? setlist
+            for (offset, song) in current.entries.compactMap(\.songId).enumerated() {
                 numbers[song] = numbers[song] ?? offset + 1
             }
-            return numbers
+            return songs.map { record in
+                PickRow(
+                    record: record,
+                    number: numbers[record.id],
+                )
+            }
         }
 
         /// A song already in the set has no drag source, so dragging it never shows a drop
         /// indicator in the set.
         @ViewBuilder
-        private func row(_ record: SongRecord, number: Int?) -> some View {
+        private func row(_ pick: PickRow) -> some View {
+            let record = pick.record
+            let number = pick.number
             let row = BuilderLibraryRow(
                 record: record,
-                number: number,
-                isFocused: listFocused && focusedRow == record.id,
+                tick: TickSource(model: model, setlist: setlist),
+                cursor: cursor,
                 isReadOnly: setlist.readOnly != nil,
             ) {
                 focusedRow = record.id
@@ -213,11 +249,31 @@
     /// One library song in Pick: a checkbox (the song's set number when ticked), title,
     /// "G · 96 · 3:40" and "Learning" when it applies. Clicking anywhere on the row ticks
     /// or unticks it.
+    /// Pick's keyboard cursor: the row Space ticks, and whether the checklist has focus.
+    @MainActor
+    @Observable
+    final class PickCursor {
+        var row: SongID?
+        var isActive = false
+    }
+
+    /// Where a row reads its tick: the setlist as the view model holds it now, read in the
+    /// row's own body so a tick re-renders the row however the lazy stack caches it.
+    @MainActor
+    private struct TickSource {
+        let model: SetlistsViewModel
+        let setlist: Setlist
+
+        func number(of song: SongID) -> Int? {
+            let current = model.setlist(setlist.id) ?? setlist
+            return current.entries.lazy.compactMap(\.songId).firstIndex(of: song).map { $0 + 1 }
+        }
+    }
+
     private struct BuilderLibraryRow: View {
         let record: SongRecord
-        /// The song's number in the set; nil when it is not in the set.
-        let number: Int?
-        let isFocused: Bool
+        let tick: TickSource
+        let cursor: PickCursor
         let isReadOnly: Bool
         let onToggle: () -> Void
         @State private var isHovered = false
@@ -226,9 +282,14 @@
             number != nil
         }
 
+        private var isFocused: Bool {
+            cursor.isActive && cursor.row == record.id
+        }
+
         var body: some View {
+            let number = tick.number(of: record.id)
             HStack(spacing: 12) {
-                checkbox
+                checkbox(number)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(SongSummary.title(record))
                         .font(SchibstedGrotesk.semiBold.font(size: 15))
@@ -276,7 +337,12 @@
 
         /// A box; ticked, it is filled and shows the song's number in the set. A button for
         /// VoiceOver and the keyboard ("Add Harbour Lights to setlist" / "Remove ...").
-        private var checkbox: some View {
+        /// The song's number in the set; nil when it is not in the set.
+        private var number: Int? {
+            tick.number(of: record.id)
+        }
+
+        private func checkbox(_ number: Int?) -> some View {
             Button(action: onToggle) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 5, style: .continuous)

@@ -13,7 +13,13 @@
         let changeoverNote: String?
         let setlist: Setlist
         let library: LibraryViewModel
-        let isSelected: Bool
+        /// Read in the row's own body, so a selection change re-renders it.
+        let selection: () -> Bool
+
+        private var isSelected: Bool {
+            selection()
+        }
+
         let isReadOnly: Bool
         /// Returns whether the click was plain (opens the editor).
         let onSelect: () -> Bool
@@ -43,17 +49,20 @@
                 }
                 Spacer(minLength: 8)
                 if let timing {
-                    Text(timing.totalText)
-                        .font(SchibstedGrotesk.semiBold.font(size: 14))
-                        .foregroundStyle(Theme.color.ink)
-                        .help(changeoverNote ?? "")
-                        .accessibilityIdentifier(AccessibilityID.setlistBreakTotal)
+                    TotalText(
+                        total: timing.total,
+                        unknown: timing.unknownCount,
+                        note: changeoverNote,
+                        font: SchibstedGrotesk.semiBold.font(size: 14),
+                        identifier: AccessibilityID.setlistBreakTotal,
+                    )
                     if timing.unknownCount > 0 {
                         MissingLengthsButton(
                             count: timing.unknownCount,
                             setlist: setlist,
                             library: library,
                             within: Set(timing.songItemIds),
+                            followsTotal: timing.total > 0,
                         )
                     }
                 }

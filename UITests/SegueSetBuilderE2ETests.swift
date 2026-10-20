@@ -19,13 +19,13 @@ final class SegueSetBuilderE2ETests: SetlistE2ETestCase {
     @MainActor
     private func pickWithTheKeyboard(_ app: XCUIApplication) -> [String] {
         // Pick: filter, Return to the first result, Space ticks it.
-        SetlistE2E.search(app, SetlistAXID.builderSearch, "harbor")
-        SetlistE2E.waitUntil("The filter never narrowed to Harbor Lights") {
-            SetlistE2E.texts(app, SetlistAXID.builderLibraryRow) == ["Harbor Lights"]
+        SetlistE2E.search(app, SetlistAXID.builderSearch, "lamp")
+        SetlistE2E.waitUntil("The filter never narrowed to Lamplighter") {
+            SetlistE2E.texts(app, SetlistAXID.builderLibraryRow) == ["Lamplighter"]
         }
         app.typeKey(.return, modifierFlags: [])
         app.typeKey(.space, modifierFlags: [])
-        waitForEntries(app, ["Harbor Lights"])
+        waitForEntries(app, ["Lamplighter"])
         // Clear the filter: Return, Space (Dil Ki Raah), ↓ ↓ Space (Kitchen Radio).
         SetlistE2E.search(app, SetlistAXID.builderSearch, "")
         SetlistE2E.waitUntil("The filter never cleared") {
@@ -36,14 +36,19 @@ final class SegueSetBuilderE2ETests: SetlistE2ETestCase {
         app.typeKey(.downArrow, modifierFlags: [])
         app.typeKey(.downArrow, modifierFlags: [])
         app.typeKey(.space, modifierFlags: [])
-        waitForEntries(app, ["Harbor Lights", "Dil Ki Raah", "Kitchen Radio"])
+        waitForEntries(app, ["Lamplighter", "Dil Ki Raah", "Kitchen Radio"])
         // ⌘A ticks every row the filter shows; nothing is added twice.
         app.typeKey("a", modifierFlags: .command)
         let picked = [
-            "Harbor Lights", "Dil Ki Raah", "Kitchen Radio", "Lamplighter", "Morning Ferry",
+            "Lamplighter", "Dil Ki Raah", "Kitchen Radio", "Harbor Lights", "Morning Ferry",
             "Northbound", "Paper Boats", "Saawan Ki Shaam",
         ]
         waitForEntries(app, picked)
+        // Every row shows its tick (VoiceOver says it is in the set).
+        SetlistE2E.waitUntil("The checklist never showed every row ticked") {
+            SetlistE2E.texts(app, SetlistAXID.builderLibraryRow)
+                .allSatisfy { $0.hasSuffix("already in set") }
+        }
         screenshot(app, "pick-dark")
         return picked
     }
@@ -126,7 +131,7 @@ final class SegueSetBuilderE2ETests: SetlistE2ETestCase {
         screenshot(app, "library-multi-light")
         let menu = pane.descendants(matching: .any)[SetlistAXID.addToSetlistMenu]
         menu.click(in: app)
-        let item = app.menuItems["Friday"]
+        let item = menu.descendants(matching: .menuItem)["Friday"]
         XCTAssertTrue(item.appears(timeout: 5))
         item.click()
 
@@ -136,6 +141,20 @@ final class SegueSetBuilderE2ETests: SetlistE2ETestCase {
             return ids == ["Dil Ki Raah", "Kitchen Radio", "Northbound"]
                 .map { SetlistFixture.song($0).id }
         }
+
+        // The builder in light: Arrange, a break after Kitchen Radio.
+        click(app, SetlistAXID.setlistRow)
+        app.typeKey("2", modifierFlags: .command)
+        let kitchen = SetlistE2E.row(app, SetlistAXID.setlistEntry, "2. Kitchen Radio")
+        XCTAssertTrue(kitchen.appears(timeout: 5))
+        XCUIElement.perform(withKeyModifiers: .command) {
+            kitchen.staticTexts[SetlistAXID.entryTitle].click()
+        }
+        app.typeKey("b", modifierFlags: [.command, .shift])
+        SetlistE2E.waitUntil("Insert Break added no break row") {
+            SetlistE2E.texts(app, SetlistAXID.setlistBreakTotal) == ["2:58"]
+        }
+        screenshot(app, "arrange-light")
     }
 
     // MARK: - Steps

@@ -55,7 +55,7 @@
                     rowView(row)
                 }
             }
-            .frame(width: 440)
+            .frame(width: 500)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.missingLengths)
         }
@@ -75,7 +75,7 @@
                 LengthField(songID: row.song, length: nil) { seconds in
                     Task { await library.editSongSource(id: row.song, .setLength(seconds)) }
                 }
-                .frame(width: 170)
+                .frame(width: 210)
                 Button("Open Song") { openSong(row.song) }
                     .buttonStyle(.link)
                     .font(SchibstedGrotesk.semiBold.font(size: 12))

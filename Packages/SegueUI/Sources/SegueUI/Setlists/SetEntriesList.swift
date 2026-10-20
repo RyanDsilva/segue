@@ -150,7 +150,7 @@
                     SetEntryRow(
                         position: place.position ?? offset + 1,
                         part: place.part,
-                        isSelected: model.arrangeSelection.contains(entry.itemId),
+                        selection: { model.arrangeSelection.contains(entry.itemId) },
                         onSelect: { select(entry.itemId) },
                         onInsertBreak: isReadOnly ? nil : {
                             model.arrangeSelection.select(entry.itemId)
@@ -191,7 +191,7 @@
                     changeoverNote: timing.changeoverNote,
                     setlist: setlist,
                     library: library,
-                    isSelected: model.arrangeSelection.contains(entry.itemId),
+                    selection: { model.arrangeSelection.contains(entry.itemId) },
                     isReadOnly: isReadOnly,
                     onSelect: { select(entry.itemId) },
                     onChange: { updated in
@@ -316,7 +316,13 @@
         let position: Int
         /// The part the row is in (its leading-edge colour).
         let part: Int
-        let isSelected: Bool
+        /// Read in the row's own body, so a selection change re-renders it.
+        let selection: () -> Bool
+
+        private var isSelected: Bool {
+            selection()
+        }
+
         /// Returns whether the click was plain (opens the editor).
         let onSelect: () -> Bool
         /// Context menu "Insert Break After"; nil when read-only.

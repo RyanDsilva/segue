@@ -91,17 +91,19 @@
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(timing.totalText)
-                        .font(SchibstedGrotesk.bold.font(size: 15))
-                        .foregroundStyle(Theme.color.ink)
-                        .fixedSize()
-                        .help(timing.changeoverNote ?? "")
-                        .accessibilityIdentifier(AccessibilityID.setlistTotal)
+                    TotalText(
+                        total: timing.total,
+                        unknown: timing.unknownCount,
+                        note: timing.changeoverNote,
+                        font: SchibstedGrotesk.bold.font(size: 15),
+                        identifier: AccessibilityID.setlistTotal,
+                    )
                     if !timing.unknownItemIds.isEmpty {
                         MissingLengthsButton(
                             count: timing.unknownItemIds.count,
                             setlist: setlist,
                             library: library,
+                            followsTotal: timing.total > 0,
                         )
                     }
                     Spacer(minLength: 8)
@@ -295,13 +297,43 @@
         }
     }
 
-    /// "2 unknown ▾" (R88), tinted red: opens the list of exactly the songs without a length.
+    /// A total in the phase 2 notation, drawn as its known part ("≥38:20") with the
+    /// "+ 2 unknown" part as the `MissingLengthsButton` beside it; VoiceOver and the E2E
+    /// suite read the whole notation ("≥38:20 + 2 unknown").
+    struct TotalText: View {
+        let total: TimeInterval
+        let unknown: Int
+        let note: String?
+        let font: Font
+        let identifier: String
+
+        var body: some View {
+            Text(visible)
+                .font(font)
+                .foregroundStyle(Theme.color.ink)
+                .fixedSize()
+                .help(note ?? "")
+                .accessibilityLabel(SetlistTiming.totalText(total: total, unknown: unknown))
+                .accessibilityIdentifier(identifier)
+        }
+
+        /// "38:20", "≥38:20", or nothing when only unknowns are left (the button says it).
+        private var visible: String {
+            guard unknown > 0 else { return SetlistTiming.format(total) }
+            guard total > 0 else { return "" }
+            return SetlistTiming.lowerBoundPrefix + SetlistTiming.format(total)
+        }
+    }
+
+    /// "+ 2 unknown ▾" (R88), tinted red: opens the list of exactly the songs without a length.
     struct MissingLengthsButton: View {
         let count: Int
         let setlist: Setlist
         let library: LibraryViewModel
         /// A part's song slots; nil for the whole set.
         var within: Set<SetlistItemID>?
+        /// Drawn after a known total ("≥38:20 + 2 unknown"): starts with "+ ".
+        var followsTotal = true
         @State private var isOpen = false
 
         var body: some View {
@@ -309,7 +341,7 @@
                 isOpen.toggle()
             } label: {
                 HStack(spacing: 4) {
-                    Text("\(count) unknown")
+                    Text(followsTotal ? "+ \(count) unknown" : "\(count) unknown")
                     Image(systemName: "chevron.down")
                         .font(.system(size: 8, weight: .bold))
                 }

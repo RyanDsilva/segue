@@ -29,6 +29,7 @@
                     if model.builderMode == .pick {
                         BuilderLibraryColumn(
                             setlist: setlist,
+                            model: model,
                             library: library,
                             onToggle: { songID in
                                 Task { await model.toggle(songID, in: setlist.id) }
