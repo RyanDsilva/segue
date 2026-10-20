@@ -1,3 +1,4 @@
+import FoundationModelsAdapter
 import Plugins
 import SegueUI
 import Services
@@ -26,7 +27,7 @@ struct SegueApp: App {
         #if DEBUG
             // Test-only launch arguments are honoured in Debug builds only.
             let options = LaunchOptions(arguments: ProcessInfo.processInfo.arguments)
-            let dependencies = options.dependencies(
+            var dependencies = options.dependencies(
                 fileSystem: options.fileSystem,
                 clock: clock,
                 ids: ids,
@@ -37,7 +38,7 @@ struct SegueApp: App {
             // has no test hooks compiled in (WS1 4.8f).
             let services = ServicesWiring.release(defaults: .standard)
             let polish = PolishDependencies(defaults: .standard)
-            let dependencies = AppDependencies(
+            var dependencies = AppDependencies(
                 fileSystem: LiveFileSystem(),
                 clock: clock,
                 ids: ids,
@@ -54,6 +55,13 @@ struct SegueApp: App {
                 polish: polish,
             )
         #endif
+        // On-device AI (P3-2): Apple Foundation Models. A test run gets no providers, so every
+        // AI call keeps its deterministic result and no UI test depends on a model.
+        #if DEBUG
+            dependencies.ai = options.isTestRun ? .deterministicOnly() : Self.liveAI()
+        #else
+            dependencies.ai = Self.liveAI()
+        #endif
         // Settings > Appearance (R36) applies before the first window draws; TipKit is
         // configured before any tip view exists (WS2b 4.4).
         dependencies.polish.appearance.apply()
@@ -62,6 +70,12 @@ struct SegueApp: App {
             preferences: dependencies.polish.preferences,
         )
         _app = State(initialValue: AppModel(dependencies: dependencies))
+    }
+
+    /// The AI providers a real launch routes to (MLX joins with P3-3).
+    @MainActor
+    static func liveAI() -> AIServices {
+        AIServices(providers: [FoundationModelsProvider()])
     }
 
     /// The user's chord shape library in Application Support.
