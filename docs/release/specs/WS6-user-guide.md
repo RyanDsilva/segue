@@ -1,6 +1,6 @@
 # WS6 - User guide (segue.ryandsilva.dev/guide)
 
-Status: **draft, waiting on the open questions at the end** (direction, theme, capture ownership, storage, clips, callouts, guide JavaScript, landing order). Nothing here is built yet.
+Status: **final.** Ryan resolved the open questions on 2026-10-19 (R127, recorded at the end).
 Spec date: 2026-10-19. Target: Segue **0.5**, ships with the release (R126).
 
 This is the brief for one focused build session (or two, see section 11). It must be executable standalone. Read these first:
@@ -431,36 +431,13 @@ Two sessions if needed: steps 1-3 and 6 (no app capture) in the first; 4-5 and 7
 
 ---
 
-## Open questions for Ryan
+## Resolved questions (R127, 2026-10-19)
 
-1. **Visual direction** (renders in section 3).
-   - a. A "Starlight, branded": familiar three-column docs.
-   - b. B "Support article": centred single column, hub home with tiles.
-   - c. **C "Tiles" (recommended)**: closest to the landing page's rounded tiles and to Linear/Things; numbered workflow sidebar.
-   - d. A named mix (for example C's sidebar and panels with B's single-column measure on task pages).
-2. **Theme behaviour on the guide.**
-   - a. **Follow the system only, no toggle (recommended)**: matches the landing page (WS4 5.2), screenshots switch with `<picture>` and no script, nothing stored in the browser.
-   - b. Keep Starlight's Auto / Dark / Light select (stores the choice in localStorage; needs Starlight's small inline theme script allowed by hash in the CSP, and screenshots switched by the theme attribute).
-3. **Who builds the shared capture layer** (WS5 8.2-8.3 flags and the `SegueAppStoreUITests` target).
-   - a. **WS6 builds it, exactly as WS5 specifies (recommended)**: the guide can land before WS5, and WS5 then only adds its own tests.
-   - b. WS5 builds it first; WS6 waits for it (the guide's shots slip behind store work).
-   - c. A small separate workstream builds it before either.
-4. **Where screenshots and clips live.**
-   - a. **Committed as AVIF and MP4 with write-on-real-change and size budgets (recommended)**: Pages builds from git with no Mac in the loop; about 8 MB of shots and 5 MB of clips.
-   - b. Git LFS (GitHub Free's 1 GB storage and bandwidth limits; Cloudflare Pages' LFS support would need verifying).
-   - c. Not in git: a local `wrangler pages deploy` uploads the build (needs Cloudflare credentials on the Mac, R46-style, and gives up the Git-integration deploy).
-5. **Clip playback.**
-   - a. **Click to play, muted, looping, with a poster (recommended)**: no JavaScript, respects Reduce Motion, nothing downloads until clicked.
-   - b. Autoplay muted loops when scrolled into view, paused under Reduce Motion (needs a small script).
-   - c. Animated AVIF images instead of video (autoplay with no script, but no pause control and larger files).
-6. **Callouts on screenshots.**
-   - a. **Numbered coral dots placed from the capture's element frames, matching the numbered steps (recommended)**: crisp, themable, move with the UI because the frames are recorded at capture time.
-   - b. No callouts; the steps and crops carry it.
-   - c. Callouts baked into the images by the script.
-7. **JavaScript on the guide.** The landing site ships no JavaScript of its own; Starlight needs some for search, the mobile menu and the table of contents.
-   - a. **Allow Starlight's bundled first-party scripts under `/guide/*` only, with the path-scoped CSP in 4.5 (recommended).**
-   - b. Strip the guide to no JavaScript: no search, a CSS-only mobile menu (needs overriding several Starlight components).
-8. **When the guide lands in the R79 order.**
-   - a. **Pages and site integration now (steps 1-3, 6); screenshots, clips and final copy after Ryan's R56 walkthrough fix round and before WS5 (recommended)**, so shots show the final UI and WS5 reuses the capture layer.
-   - b. Everything now, re-shooting after the walkthrough (more churn).
-   - c. Everything after WS5, just before submission (the guide becomes a last-minute item).
+1. Visual direction: **C "Tiles"**.
+2. Theme: **follows the system only**, no toggle; screenshots switch with `<picture>`.
+3. Shared capture layer: **WS6 builds it**, exactly as WS5 8.2-8.3 specify.
+4. Storage: **committed AVIF shots and MP4 clips** with the section 5.6 and 6 budgets.
+5. Clips: **click to play**, muted, looping, with a poster; no JavaScript.
+6. Callouts: **numbered coral dots** placed from the element frames recorded at capture.
+7. JavaScript: **Starlight's own bundled scripts under `/guide/*` only** (search works), with the 4.5 CSP.
+8. Order: the site, theme, IA, all page copy, redirects, deep links, CI and the `docs-shots`/`docs-clips` tooling land now; the final screenshots and clips are generated after Ryan's R56 walkthrough fix round (placeholders or current captures until then).
