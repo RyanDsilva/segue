@@ -8,7 +8,8 @@
 #   make eval-ai                     run and compare
 #   make eval-ai BASELINE=1          store the fixture scores as the new baseline
 #   make eval-ai RECORD=1            refresh the ScriptedProvider recordings of the committed
-#                                    fixtures (never of Ryan's pastes)
+#                                    fixtures (never of Ryan's pastes) and the set assistant's
+#                                    set-request recordings
 #   make eval-ai PROVIDERS=mlx       one provider only (mlx, fm or mlx,fm)
 #   make eval-ai MODEL=<dir>         the model folder (default .build/p3a/model/<revision>)
 #
@@ -50,7 +51,8 @@ if [[ -n "${BASELINE:-}" ]]; then
     args+=(--write-baseline)
 fi
 if [[ -n "${RECORD:-}" ]]; then
-    args+=(--record "$fixtures/recorded")
+    args+=(--record "$fixtures/recorded"
+        --set-requests Packages/SegueCore/Tests/Fixtures/setRequests/requests.json)
 fi
 
 # Swift Build (the SwiftPM build system of Xcode 27) compiles MLX's Metal kernels into

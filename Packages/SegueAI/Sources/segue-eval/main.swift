@@ -2,12 +2,15 @@
 // and the local MLX model over the golden paste fixtures and, when present, Ryan's local
 // pastes; writes one JSON line per paste and provider plus a score summary (the spike
 // metrics, aggregate numbers only), compares the fixture scores with the stored baseline, and
-// with --record refreshes the `ScriptedProvider` recordings of the committed fixtures only.
+// with --record refreshes the `ScriptedProvider` recordings of the committed fixtures only
+// (and, with --set-requests, the set assistant's `SetRequestTask` recordings beside that
+// requests file, in `recorded/<provider>/set-requests.json`).
 // Built by xcodebuild (SwiftPM's command line does not build MLX's Metal library).
 //
 //   segue-eval --fixtures <dir> --gold <file> --model <dir> --out <dir>
 //              [--pastes <dir> --pastes-gold <file>] [--providers mlx,fm]
 //              [--baseline <file>] [--write-baseline] [--record <recorded dir>]
+//              [--set-requests <requests.json>]
 
 import AIEval
 import Foundation
@@ -110,6 +113,38 @@ for name in providerNames {
     }
 }
 
+/// P3-7: records `SetRequestTask` answers for the set assistant's tests. The input is
+/// `{"libraryTags": [...], "words": ["mellow vibe", ...]}` (the lexicon's leftovers).
+func recordSetRequests(_ requests: URL, provider: any LanguageModelProvider, source: String)
+    async throws
+{
+    struct SetRequestInputs: Decodable {
+        var libraryTags: [String]
+        var words: [String]
+    }
+    let inputs = try JSONDecoder().decode(SetRequestInputs.self, from: Data(contentsOf: requests))
+    var calls: [RecordedCall] = []
+    for words in inputs.words {
+        let task = SetRequestTask(words: words, libraryTags: inputs.libraryTags)
+        do throws(ProviderError) {
+            let result = try await provider.run(task, context: CallContext(allowsChunking: false))
+            print("  \(words): \(result.output) in \(result.metrics.latency)")
+            try? calls.append(RecordedCall.answered(task, result.output))
+        } catch {
+            print("  \(words): \(error)")
+            calls.append(RecordedCall.failed(task, error))
+        }
+    }
+    let file = RecordingFile(
+        provider: provider.id.kind, fixture: "set-requests", source: source, calls: calls,
+    )
+    let folder = requests.deletingLastPathComponent()
+        .appending(path: "recorded/\(provider.id.kind.rawValue)", directoryHint: .isDirectory)
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    try file.encoded().write(to: folder.appending(path: "set-requests.json"))
+    print("  recorded \(calls.count) set requests into \(folder.path)")
+}
+
 let os = ProcessInfo.processInfo.operatingSystemVersionString
 var scores: [String: EvalScore] = [:]
 var summary = ""
@@ -146,6 +181,11 @@ for provider in providers {
             }
             print("  recorded \(recordings.count) files into \(folder.path)")
         }
+    }
+    if options.url("record") != nil, let requests = options.url("set-requests") {
+        print("== \(kind) on set requests")
+        let source = kind == "fm" ? "apple-fm \(os)" : "mlx \(provider.id)"
+        try await recordSetRequests(requests, provider: provider, source: source)
     }
 }
 
