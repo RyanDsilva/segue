@@ -128,10 +128,13 @@ enum Spec {
     /// not hand pages; links into it resolve against the build (`make guide` runs first).
     static let guideDirectory = "guide/"
     static let guideHome = "guide.html"
-    /// Section 9.3, checked byte for byte in `_headers`.
+    /// Section 9.3, checked byte for byte in `_headers`. The Pages-injected Web Analytics
+    /// beacon carries only a token, so beacon.min.js posts to
+    /// https://cloudflareinsights.com/cdn-cgi/rum (not the site's own /cdn-cgi/rum).
     static let csp = "Content-Security-Policy: default-src 'none'; "
         + "script-src https://static.cloudflareinsights.com; "
-        + "connect-src 'self'; img-src 'self'; style-src 'self'; "
+        + "connect-src 'self' https://cloudflareinsights.com; "
+        + "img-src 'self'; style-src 'self'; "
         + "font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
         + "upgrade-insecure-requests"
     /// WS6 4.5: the guide's CSP, under a `/guide/*` rule that first detaches the site CSP.
@@ -140,7 +143,8 @@ enum Spec {
     /// same-origin media. Set on both `/guide` (the home, guide.html) and `/guide/*`.
     static let guideCSP = "Content-Security-Policy: default-src 'none'; "
         + "script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com; "
-        + "connect-src 'self'; img-src 'self' data:; media-src 'self'; style-src 'self'; "
+        + "connect-src 'self' https://cloudflareinsights.com; "
+        + "img-src 'self' data:; media-src 'self'; style-src 'self'; "
         + "font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
         + "upgrade-insecure-requests"
     static let homeTitle = "Segue - Setlists & Chords for Mac"

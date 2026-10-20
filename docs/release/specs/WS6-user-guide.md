@@ -201,7 +201,7 @@ website/guide/                       BUILD OUTPUT (gitignored), Astro outDir
 ```
 /guide/*
   ! Content-Security-Policy
-  Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com; connect-src 'self'; img-src 'self'; media-src 'self'; style-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; img-src 'self'; media-src 'self'; style-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
 ```
 
   Verify in headless Chrome against `make site-serve` that every guide page loads with **zero CSP violations** in the console (search opened and queried, mobile menu opened, a clip played). If Starlight emits `style=` attributes or an inline script that cannot be externalised, prefer an override component that removes it; only if that is impossible, add the narrowest source (`'sha256-...'` hash, or `style-src-attr 'unsafe-inline'`) and say so in the commit. WS4 check 9 ("`_headers` contains exactly the CSP line") is updated to expect both blocks.
