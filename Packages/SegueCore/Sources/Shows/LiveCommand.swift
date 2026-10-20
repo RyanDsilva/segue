@@ -43,6 +43,10 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
     case endShow
     /// Shows or hides the keyboard help overlay (`?`).
     case showKeys
+    /// The stage metronome's pulse on or off (`M`, R90).
+    case toggleMetronome
+    /// The metronome's click on or off: rehearsals only, never a sound in a gig (`⇧M`, R90).
+    case toggleMetronomeClick
 
     /// Who handles a command.
     public enum Scope: Sendable, Hashable {
@@ -62,7 +66,8 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
              .scrollFaster, .scrollPageDown, .scrollPageUp, .scrollSlower, .toggleAutoScroll,
              .toggleCollapseRepeats, .zoomIn, .zoomOut:
             .viewport
-        case .endShow, .openSearch, .showKeys, .toggleRequests, .toggleSidebar:
+        case .endShow, .openSearch, .showKeys, .toggleMetronome, .toggleMetronomeClick,
+             .toggleRequests, .toggleSidebar:
             .chrome
         }
     }
@@ -103,6 +108,8 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
         case .cycleColumns: "Columns"
         case .endShow: "End Show"
         case .showKeys: "Keyboard Shortcuts"
+        case .toggleMetronome: "Metronome"
+        case .toggleMetronomeClick: "Metronome Click (Rehearsal)"
         }
     }
 }

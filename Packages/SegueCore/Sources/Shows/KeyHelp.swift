@@ -26,6 +26,7 @@ public enum KeyHelp {
             .scrollFaster, .scrollSlower, .restartScroll,
         ]),
         ("View", [.zoomIn, .zoomOut, .resetZoom, .cycleColumns, .toggleCollapseRepeats]),
+        ("Metronome", [.toggleMetronome, .toggleMetronomeClick]),
         ("Panels", [.openSearch, .toggleRequests, .toggleSidebar, .showKeys]),
         ("Show", [.endShow]),
     ]

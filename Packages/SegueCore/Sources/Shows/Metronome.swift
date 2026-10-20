@@ -111,6 +111,11 @@ public struct MetronomeTrack: Sendable, Hashable {
         start.addingTimeInterval(Double(index) * interval)
     }
 
+    /// Beat `index` (at its click, phase 0).
+    public func beat(_ index: Int) -> MetronomeBeat {
+        beat(index: max(0, index), phase: 0)
+    }
+
     /// The first beat at or after `now` (the next click to schedule) and its instant.
     public func nextBeat(atOrAfter now: Date) -> (beat: MetronomeBeat, time: Date) {
         let beats = now.timeIntervalSince(start) / interval

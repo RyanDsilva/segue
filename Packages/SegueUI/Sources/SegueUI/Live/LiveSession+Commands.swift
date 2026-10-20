@@ -91,6 +91,8 @@
                 showsDrawer.toggle()
             case .showKeys:
                 overlay = overlay == .keys ? nil : .keys
+            case .toggleMetronome, .toggleMetronomeClick:
+                dispatchMetronome(command)
             case .endShow:
                 if overlay == .endConfirm {
                     cancelEnd()

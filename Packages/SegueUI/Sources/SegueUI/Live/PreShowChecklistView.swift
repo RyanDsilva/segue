@@ -37,6 +37,7 @@
                             .strokeBorder(Theme.color.line, lineWidth: 1)
                     }
                 }
+                metronomeSwitches
                 HStack(spacing: 10) {
                     Spacer()
                     Button("Cancel") { checklist.answer(false) }
@@ -61,6 +62,63 @@
             let count = checklist.performableCount
             let songs = count == 1 ? "1 song" : "\(count) songs"
             return "\(checklist.setlistName)  ·  \(songs)"
+        }
+
+        /// The metronome (R108): the pulse, and in a rehearsal its click. Both remember the
+        /// last choice.
+        private var metronomeSwitches: some View {
+            VStack(spacing: 0) {
+                metronomeSwitch(
+                    "Metronome",
+                    detail: "A quiet pulse at each song’s tempo. M on stage.",
+                    isOn: Binding(
+                        get: { checklist.metronomeOn },
+                        set: { checklist.metronomeOn = $0 },
+                    ),
+                    id: AccessibilityID.checklistMetronome,
+                )
+                if checklist.offersClick {
+                    Rectangle().fill(Theme.color.line).frame(height: 1)
+                    metronomeSwitch(
+                        "Click",
+                        detail: "Sounds each beat. Rehearsals only. Shift-M on stage.",
+                        isOn: Binding(
+                            get: { checklist.rehearsalClickOn },
+                            set: { checklist.rehearsalClickOn = $0 },
+                        ),
+                        id: AccessibilityID.checklistMetronomeClick,
+                    )
+                }
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(Theme.color.line, lineWidth: 1)
+            }
+        }
+
+        private func metronomeSwitch(
+            _ title: String,
+            detail: String,
+            isOn: Binding<Bool>,
+            id: String,
+        ) -> some View {
+            Toggle(isOn: isOn) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(SchibstedGrotesk.semiBold.font(size: 15))
+                        .foregroundStyle(Theme.color.ink)
+                    Text(detail)
+                        .font(SchibstedGrotesk.medium.font(size: 13))
+                        .foregroundStyle(Theme.color.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .accessibilityIdentifier(id)
         }
 
         private var missingWarning: some View {

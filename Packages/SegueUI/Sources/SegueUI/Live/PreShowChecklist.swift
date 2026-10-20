@@ -64,7 +64,7 @@
         /// Rows dismissed for this show only.
         public var dismissed: Set<ChecklistItem> = []
 
-        @ObservationIgnored private let settings: LiveSettingsStore
+        @ObservationIgnored let settings: LiveSettingsStore
         @ObservationIgnored private let power: any PowerSourceReading
         @ObservationIgnored var continuation: CheckedContinuation<Bool, Never>?
         @ObservationIgnored private var powerTask: Task<Void, Never>?

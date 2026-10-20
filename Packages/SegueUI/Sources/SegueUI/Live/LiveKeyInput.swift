@@ -44,8 +44,9 @@
             }
             guard let command = session.context.bindings.command(for: .key(stroke)) else {
                 // Swallow plain unbound keys on stage (no beep); let other Cmd combinations
-                // reach the app.
+                // reach the app. A shifted letter counts as plain.
                 return stroke.modifiers.isEmpty
+                    || stroke.modifiers == .shift && stroke.key.count == 1
             }
             if isRepeat, command.scope != .viewport {
                 return true
@@ -174,9 +175,13 @@
                 }
                 return KeyStroke(name, modifiers: modifiers)
             }
-            // The character already carries Shift ("+" rather than Shift-"=").
+            // The character already carries Shift ("+" rather than Shift-"="), except for a
+            // letter, whose case the stroke drops (Shift-M is the metronome click).
             guard let characters = event.charactersIgnoringModifiers, characters.count == 1
             else { return nil }
+            if flags.contains(.shift), characters.first?.isLetter == true {
+                modifiers.insert(.shift)
+            }
             return KeyStroke(characters, modifiers: modifiers)
         }
 

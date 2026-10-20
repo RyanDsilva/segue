@@ -14,8 +14,9 @@ public struct KeyModifiers: OptionSet, Sendable, Hashable, Codable {
     public static let command = Self(rawValue: 1 << 0)
     public static let option = Self(rawValue: 1 << 1)
     public static let control = Self(rawValue: 1 << 2)
-    /// Recorded for named keys only. For character keys the character already carries Shift
-    /// ("+" rather than Shift-"="), so input sources drop it there.
+    /// Recorded for named keys and letters only. For other character keys the character
+    /// already carries Shift ("+" rather than Shift-"="), so input sources drop it there.
+    /// A letter with Shift that has no binding of its own falls back to the plain letter.
     public static let shift = Self(rawValue: 1 << 3)
 
     private static let names: [(String, Self)] = [
@@ -144,9 +145,18 @@ public struct InputBindingTable: Sendable, Hashable {
         self.bindings = bindings
     }
 
-    /// The command bound to `trigger` (the last binding wins).
+    /// The command bound to `trigger` (the last binding wins). Shift with a letter that has
+    /// no binding of its own means the plain letter (Shift-A still toggles auto-scroll).
     public func command(for trigger: InputTrigger) -> LiveCommand? {
-        bindings.last { $0.trigger == trigger }?.command
+        if let command = bindings.last(where: { $0.trigger == trigger })?.command {
+            return command
+        }
+        guard case let .key(stroke) = trigger, stroke.modifiers.contains(.shift),
+              stroke.key.count == 1, stroke.key.first?.isLetter == true
+        else { return nil }
+        var plain = stroke
+        plain.modifiers.remove(.shift)
+        return bindings.last { $0.trigger == .key(plain) }?.command
     }
 
     /// Every trigger bound to `command`, in table order (for help text).
@@ -261,6 +271,8 @@ public struct InputBindingTable: Sendable, Hashable {
             key("0", .resetZoom, [.command]),
             key(".", .endShow, [.command]),
             key("?", .showKeys),
+            key("m", .toggleMetronome),
+            key("m", .toggleMetronomeClick, [.shift]),
         ],
     )
 

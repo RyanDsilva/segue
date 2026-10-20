@@ -17,6 +17,11 @@
         public var scrollClock: any Clock
         /// `bindings.json` (Application Support); nil uses the default keys only.
         public var bindingsURL: URL?
+        /// The rehearsal metronome click's audio output (a recorder in tests). Called only
+        /// in a rehearsal, on the first click.
+        public var makeClickOutput: @MainActor () -> any MetronomeClickOutput = {
+            AudioEngineClickOutput()
+        }
 
         public init(
             settings: LiveSettingsStore,

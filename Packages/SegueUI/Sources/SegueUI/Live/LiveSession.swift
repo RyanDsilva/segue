@@ -34,6 +34,11 @@
             var scrollClock: any Clock
             /// The engine's clock: elapsed set time.
             var clock: any Clock
+            /// Makes the rehearsal click's audio output (only ever called in a rehearsal).
+            var makeClickOutput: @MainActor () -> any MetronomeClickOutput = {
+                AudioEngineClickOutput()
+            }
+
             /// Called once the performer confirmed ending the run.
             var onEnd: @MainActor (LiveSession) async -> Void
         }
@@ -45,6 +50,8 @@
         public var showsRequests = false
         public var showsDrawer = false
         public let search: QuickSearchModel
+        /// The stage metronome (R90); its click exists only in a rehearsal.
+        public let metronome: StageMetronome
         /// A short message on the stage ("No requests queued."); cleared by the next command.
         public var notice: String?
 
@@ -117,6 +124,14 @@
             self.kind = kind
             self.context = context
             search = QuickSearchModel(library: context.library)
+            metronome = StageMetronome(
+                kind: kind,
+                isOn: context.settings.metronomeOn,
+                clicks: kind == .rehearsal && context.settings.rehearsalClickOn,
+                clock: context.scrollClock,
+                makeClickOutput: context.makeClickOutput,
+            )
+            metronome.follow(state)
             pendingFraction = state.record.scrollPosition > 0 ? state.record.scrollPosition : nil
             relayout()
         }
@@ -150,6 +165,7 @@
 
         /// The stage went away: release the assertion and stop the timer.
         func stop() {
+            metronome.stop()
             flushTask?.cancel()
             flushTask = nil
             keepAwake?.end()
@@ -228,6 +244,7 @@
             let changed = newState.current?.item.itemId != previousItem
                 || newState.current?.song != state.current?.song
             state = newState
+            metronome.follow(newState)
             if changed {
                 laidOutItem = nil
             }
@@ -237,6 +254,7 @@
         /// "End Show" confirmed: ends the run through the app (gig log, Shortcut, review).
         public func confirmEnd() {
             overlay = nil
+            metronome.stop()
             enqueue { session in
                 session.isEnding = true
                 await session.flushScroll()

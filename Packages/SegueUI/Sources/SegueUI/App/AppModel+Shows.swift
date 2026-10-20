@@ -313,6 +313,7 @@
                 settings: liveSettings,
                 scrollClock: dependencies.live.scrollClock,
                 clock: session.stores.clock,
+                makeClickOutput: dependencies.live.makeClickOutput,
                 onEnd: { [weak self] live in await self?.finishRun(live) },
             ))
             live.services = services
