@@ -24,7 +24,7 @@ extension SegueEditorE2ETests {
         editor.typeText("{ti", in: app)
         let chips = completionChips(app)
         XCTAssertTrue(chips.firstMatch.appears(timeout: 5), "No directive completion")
-        XCTAssertEqual(chips.firstMatch.label, "title")
+        XCTAssertEqual(chips.firstMatch.label, "Title")
         attachScreenshot(app, name: "directive-completion")
         app.typeKey(.return, modifierFlags: [], in: app)
         XCTAssertTrue(waitForValue(editor, "{title: }"))
