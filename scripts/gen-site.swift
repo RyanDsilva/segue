@@ -682,6 +682,13 @@ struct Renderer {
                 : try config.string("\(base).name")
             return "<a href=\"\(escapeHTML(href))\">\(escapeHTML(label))</a>"
         }
+        // Until Ryan sets the effective dates on release, the live legal pages say so instead of
+        // showing the placeholder; --strict still refuses the placeholder in content/site.json.
+        if name.hasPrefix("legal."), name.hasSuffix("EffectiveDate"),
+           let date = config.value(name) as? String, isPlaceholder(date)
+        {
+            return "on the App Store release date"
+        }
         switch config.value(name) {
         case let text as String: return escapeHTML(text)
         case let number as NSNumber where jsonBool(number) == nil: return number.stringValue
