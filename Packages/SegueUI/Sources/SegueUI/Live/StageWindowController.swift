@@ -24,6 +24,11 @@
 
         override private init() {}
 
+        /// Debug captures only (`-SegueStageWindowed`, WS5 8.2): present the stage in a normal
+        /// window at this frame (points, top-left origin at the main screen's visible area)
+        /// instead of covering the screen. Release never sets it.
+        public var windowedFrame: CGRect?
+
         /// The stage window while it is up.
         var stageWindow: NSWindow? {
             window
@@ -46,9 +51,10 @@
             }
             self.app = app
 
+            let windowed = windowedFrame.map { Self.appKitFrame($0, on: screen) }
             let window = StageWindow(
-                contentRect: screen.frame,
-                styleMask: [.borderless],
+                contentRect: windowed ?? screen.frame,
+                styleMask: windowed == nil ? [.borderless] : [.titled],
                 backing: .buffered,
                 defer: false,
             )
@@ -60,11 +66,18 @@
             window.hasShadow = false
             window.collectionBehavior = [.fullScreenNone, .managed]
             window.delegate = self
-            window.contentView = NSHostingView(rootView: stage(live, screen: screen))
+            window.contentView = NSHostingView(rootView: stage(
+                live,
+                screen: windowed == nil ? screen : nil,
+            ))
             self.window = window
 
-            hideSystemChrome()
-            window.setFrame(screen.frame, display: true)
+            if let windowed {
+                window.setFrame(windowed, display: true)
+            } else {
+                hideSystemChrome()
+                window.setFrame(screen.frame, display: true)
+            }
             window.makeKeyAndOrderFront(nil)
             NSApp.activate()
             observe(window)
@@ -104,8 +117,9 @@
             observers = []
         }
 
-        private func stage(_ live: LiveSession, screen: NSScreen) -> some View {
-            LiveView(session: live, topInset: screen.safeAreaInsets.top)
+        /// The stage view; `screen` is nil in a captures window (no camera-housing inset).
+        private func stage(_ live: LiveSession, screen: NSScreen?) -> some View {
+            LiveView(session: live, topInset: screen?.safeAreaInsets.top ?? 0)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.color.ground)
                 .ignoresSafeArea()
@@ -147,11 +161,24 @@
 
         /// Re-covers the screen after a display change (resolution, arrangement).
         private func refit() {
-            guard let window, let live = app?.live,
+            guard windowedFrame == nil, let window, let live = app?.live,
                   let screen = window.screen ?? NSScreen.main
             else { return }
             window.contentView = NSHostingView(rootView: stage(live, screen: screen))
             window.setFrame(screen.frame, display: true)
+        }
+    }
+
+    extension StageWindowController {
+        /// `rect` (top-left origin on the main screen) in AppKit's bottom-left screen space.
+        static func appKitFrame(_ rect: CGRect, on screen: NSScreen) -> CGRect {
+            let height = NSScreen.screens.first?.frame.height ?? screen.frame.height
+            return CGRect(
+                x: rect.minX,
+                y: height - rect.minY - rect.height,
+                width: rect.width,
+                height: rect.height,
+            )
         }
     }
 

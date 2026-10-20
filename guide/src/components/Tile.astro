@@ -11,9 +11,9 @@ interface Props {
 }
 
 const { number, title, href, shot } = Astro.props;
-const entry = (shots.shots as Record<string, { appearances: string[] }>)[shot];
+const entry = (shots.shots as Record<string, { appearances: string[]; stage?: boolean }>)[shot];
 const base = `${import.meta.env.BASE_URL}/shots/${shot}`;
-const one = entry && entry.appearances.length === 1;
+const one = entry?.stage === true;
 ---
 
 <a class="tile" href={href}>
@@ -25,7 +25,7 @@ const one = entry && entry.appearances.length === 1;
       entry ? (
         <picture>
           {!one && <source srcset={`${base}-dark.avif`} media="(prefers-color-scheme: dark)" />}
-          <img src={one ? `${base}.avif` : `${base}-light.avif`} alt="" width="640" height="272" loading="lazy" />
+          <img src={one ? `${base}.avif` : `${base}-light.avif`} alt="" width="880" height="550" loading="lazy" decoding="async" />
         </picture>
       ) : (
         <span class="placeholder" data-placeholder />

@@ -42,7 +42,7 @@ WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
 	test-perf e2e e2e-one e2e-smoke gate quick eval-ai lint format verify-appstore check bump \
-	site-fonts site-html guide guide-dev guide-check guide-keys docs-check shellcheck actionlint repo-check \
+	site-fonts site-html guide guide-dev guide-check guide-keys docs-shots docs-clips docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
 bootstrap: ## Install pinned tools and Xcode's Metal Toolchain, fetch dependencies, generate the workspace
@@ -91,6 +91,12 @@ guide-check: ## Static checks on the guide source and build (runs on Linux; STRI
 
 guide-keys: ## Regenerate guide/src/data/keyboard.json from the app's menu and stage key tables
 	cd $(UI_DIR) && SEGUE_WRITE_GUIDE_DATA=1 $(UI_TEST) --filter GuideKeyboardExportTests
+
+docs-shots: ## Guide screenshots from the App Store flavour, dark and light (needs the screen; ONLY=id,id)
+	scripts/docs-shots.sh shots $(ONLY)
+
+docs-clips: ## Guide how-to clips from the App Store flavour (needs the screen and Screen Recording; ONLY=id)
+	scripts/docs-shots.sh clips $(ONLY)
 
 site-raster: ## Re-render OG image, touch icon, favicon PNG, wordmark PNGs and screenshot JPEGs
 	scripts/gen-site.swift --raster

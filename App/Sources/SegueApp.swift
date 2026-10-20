@@ -20,17 +20,25 @@ struct SegueApp: App {
     @NSApplicationDelegateAdaptor(SegueAppDelegate.self) private var appDelegate
     @State private var app: AppModel
     private let plugins: PluginRegistry
+    /// `-SegueWindowFrame` (Debug captures): the main window's frame, top-left origin.
+    private let windowFrame: CGRect?
 
     init() {
         Theme.registerFonts()
         plugins = PluginRegistry()
         plugins.registerAll(Self.pluginModules)
 
-        let clock = SystemClock()
-        let ids = ULIDGenerator(clock: clock)
         #if DEBUG
             // Test-only launch arguments are honoured in Debug builds only.
             let options = LaunchOptions(arguments: ProcessInfo.processInfo.arguments)
+            let clock = Self.captureClock(options)
+            windowFrame = Self.captureWindowFrame(options)
+        #else
+            let clock = SystemClock()
+            windowFrame = nil
+        #endif
+        let ids = ULIDGenerator(clock: clock)
+        #if DEBUG
             var dependencies = options.dependencies(
                 fileSystem: options.fileSystem,
                 clock: clock,
@@ -76,6 +84,15 @@ struct SegueApp: App {
             preferences: dependencies.polish.preferences,
         )
         _app = State(initialValue: AppModel(dependencies: dependencies))
+    }
+
+    /// Debug captures: puts the main window at `-SegueWindowFrame` once it exists.
+    @ViewBuilder private var windowFrameApplier: some View {
+        #if DEBUG
+            if let windowFrame {
+                WindowFrameApplier(frame: windowFrame)
+            }
+        #endif
     }
 
     /// The launch's AI: scripted for test runs, else live; plus, in Personal, Settings > AI >
@@ -146,13 +163,38 @@ struct SegueApp: App {
         /// scripted model store.
         @MainActor
         static func makeAI(options: LaunchOptions, workspace: any WorkspaceActions) -> AIServices {
-            makeAI(
+            if let directory = options.scriptedAI {
+                return scriptedAI(
+                    directory: directory,
+                    defaults: AppStateReset.defaults(
+                        for: options,
+                        bundleID: Bundle.main.bundleIdentifier,
+                    ),
+                )
+            }
+            return makeAI(
                 isTestRun: options.isTestRun,
                 defaults: AppStateReset.defaults(
                     for: options,
                     bundleID: Bundle.main.bundleIdentifier,
                 ),
                 workspace: workspace,
+            )
+        }
+
+        /// `-SegueScriptedAI` (guide captures): Apple's model replayed from recordings; a call
+        /// with no recording fails quietly, so the converter's result stands.
+        @MainActor
+        static func scriptedAI(directory: URL, defaults: UserDefaults) -> AIServices {
+            let provider = try? ScriptedProvider(
+                id: .foundationModels,
+                directory: directory,
+                onMissing: { _ in },
+            )
+            return AIServices(
+                providers: provider.map { [$0] } ?? [],
+                defaults: defaults,
+                installer: ScriptedModelInstaller(models: ModelStore.curatedCatalog),
             )
         }
 
@@ -210,6 +252,7 @@ struct SegueApp: App {
         Window("Segue Library", id: SegueRootView.windowID) {
             SegueRootView(app: app)
                 .frame(minWidth: 820, minHeight: 520)
+                .background(windowFrameApplier)
         }
         .defaultSize(width: 1120, height: 720)
         .commandsRemoved()

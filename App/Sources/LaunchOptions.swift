@@ -64,6 +64,7 @@ import VendorServices
     /// - `-SegueTips <show|hide>`: show every tip, or none (test runs hide them by default).
     /// - `-SegueExportPath <file>`: Export Library Archive writes `<file>` without the panel.
     /// - `-SegueCompletedGigs <n>`: preset the completed-gig counter of the review prompt.
+    /// (Capture flags: LaunchOptions+Capture.swift.)
     struct LaunchOptions: Sendable, Equatable {
         static let libraryPathFlag = "-SegueLibraryPath"
         static let resetStateFlag = "-SegueResetState"
@@ -145,6 +146,12 @@ import VendorServices
         var tips: PolishLaunch.Tips?
         var exportPath: URL?
         var completedGigs: Int?
+        var screenshotLibrary = false
+        /// `-SegueWindowFrame`, top-left origin on the main screen.
+        var windowFrame: CGRect?
+        var stageWindowed = false
+        var fixedClock: Date?
+        var scriptedAI: URL?
 
         init(
             libraryPath: URL? = nil,
@@ -189,13 +196,7 @@ import VendorServices
         /// Parses `arguments` (as in `ProcessInfo.arguments`; the first element is the
         /// executable). Unknown arguments are ignored; a flag without a value is ignored.
         init(arguments: [String]) {
-            // Every flag takes one value: collect the last value given for each.
-            var values: [String: String] = [:]
-            var iterator = arguments.dropFirst().makeIterator()
-            while let argument = iterator.next() {
-                guard Self.flags.contains(argument), let value = iterator.next() else { continue }
-                values[argument] = value
-            }
+            let values = Self.flagValues(arguments)
             libraryPath = Self.path(values[Self.libraryPathFlag], directoryHint: .isDirectory)
             shapeLibraryPath = Self.path(
                 values[Self.shapeLibraryPathFlag],
@@ -240,9 +241,10 @@ import VendorServices
             completedGigs = values[Self.completedGigsFlag].flatMap(Int.init).flatMap { count in
                 count >= 0 ? count : nil
             }
+            parseCapture(values)
         }
 
-        private static let flags: Set = [
+        static let flags: Set = [
             libraryPathFlag, resetStateFlag, rememberLibraryFlag, testDefaultsFlag,
             shapeLibraryPathFlag, shortcutLogFlag, liveTimeScaleFlag, bindingsPathFlag,
             startShortcutFlag, endShortcutFlag, workspaceLogFlag, trashPathFlag,
@@ -250,6 +252,8 @@ import VendorServices
             servicesLiveFlag, consentFlag, appearanceFlag, mailLogFlag,
             onboardingFlag, seedWelcomeFlag, changelogPathFlag, lastSeenVersionFlag,
             appVersionFlag, reviewLogFlag, tipsFlag, exportPathFlag, completedGigsFlag,
+            screenshotLibraryFlag, windowFrameFlag, stageWindowedFlag, fixedClockFlag,
+            scriptedAIFlag,
         ]
 
         /// A Shortcut name with surrounding blanks removed; nil when blank.
@@ -260,7 +264,7 @@ import VendorServices
             return trimmed
         }
 
-        private static func path(_ value: String?, directoryHint: URL.DirectoryHint) -> URL? {
+        static func path(_ value: String?, directoryHint: URL.DirectoryHint) -> URL? {
             guard let value, !value.isEmpty else { return nil }
             return URL(filePath: value, directoryHint: directoryHint).standardizedFileURL
         }
@@ -276,6 +280,8 @@ import VendorServices
                 || onboarding != nil || seedWelcome || changelogPath != nil
                 || lastSeenVersion != nil || appVersion != nil || reviewLog != nil
                 || tips != nil || exportPath != nil || completedGigs != nil
+                || screenshotLibrary || windowFrame != nil || stageWindowed
+                || fixedClock != nil || scriptedAI != nil
         }
 
         /// The library folder this launch opens without the bookmark: `-SegueLibraryPath`, or
@@ -290,7 +296,7 @@ import VendorServices
             return folder
         }
 
-        private static func isTruthy(_ value: String) -> Bool {
+        static func isTruthy(_ value: String) -> Bool {
             ["yes", "true", "1"].contains(value.lowercased())
         }
     }
@@ -347,6 +353,9 @@ import VendorServices
             if resetState {
                 AppStateReset.wipeTestState(defaults, bundleID: bundleID)
                 AppStateReset.forgetWindowFrames()
+            }
+            if screenshotLibrary {
+                Self.wipeScreenshotLibrary()
             }
             let services = servicesWiring(defaults: defaults, bundleID: bundleID)
             let polish = polishDependencies(defaults: defaults)

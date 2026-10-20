@@ -13,5 +13,7 @@ actionlint = "1.7.12"
 shellcheck = "0.11.0"
 jq = "1.8.2"
 yq = "4.54.1"
+# Guide clips (WS6 6, `make docs-clips`) and the App Store preview (WS5 9.4).
+ffmpeg = "9.0.2"
 # dSYM upload to Sentry in `make upload` / `make upload-dsyms` (WS3 6.5).
 "aqua:getsentry/sentry-cli" = "3.8.0"

@@ -14,14 +14,14 @@ forbidden='SeguePersonalModules|PersonalModules|SEGUE_PERSONAL|AdvancedModels|AI
 perf_strings=('slow key' 'slow keystroke' 'slow run loop turn')
 
 # Test-only hooks that must never ship (WS1 4.8f, B-7): every launch-option flag in
-# App/Sources/LaunchOptions.swift (extracted from the source, so new flags are covered
+# App/Sources/LaunchOptions*.swift (extracted from the source, so new flags are covered
 # automatically), the UI-testing flag, and the recording Shortcut runner. WS5 adds its own
 # flag strings here only if they are not already LaunchOptions keys.
 test_hook_strings() {
-    local source="App/Sources/LaunchOptions.swift" flags
-    flags=$(grep -o -E '"-Segue[A-Za-z]+"' "$source" | tr -d '"' | sort -u) || true
+    local flags
+    flags=$(grep -h -o -E '"-Segue[A-Za-z]+"' App/Sources/LaunchOptions*.swift | tr -d '"' | sort -u) || true
     if [[ -z "$flags" ]]; then
-        echo "error: no launch-option flags found in $source" >&2
+        echo "error: no launch-option flags found in App/Sources/LaunchOptions*.swift" >&2
         return 1
     fi
     printf '%s\n' "$flags" "-SegueUITesting" "RecordingShortcutRunner"

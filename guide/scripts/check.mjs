@@ -75,7 +75,7 @@ for (const id of used.shots) {
     if (strict) fail(`shot "${id}" is used but not captured yet (run make docs-shots)`);
     continue;
   }
-  const names = entry.appearances.length === 1 ? [`${id}.avif`] : entry.appearances.map((a) => `${id}-${a}.avif`);
+  const names = entry.stage ? [`${id}.avif`] : entry.appearances.map((a) => `${id}-${a}.avif`);
   for (const name of names) {
     const path = join(guide, 'public/shots', name);
     if (!existsSync(path)) {

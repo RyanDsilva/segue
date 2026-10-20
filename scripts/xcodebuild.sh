@@ -15,6 +15,8 @@
 #
 # Result bundles: each run writes one to .build/results; only the newest $keep_results are
 # kept (older ones go to the Trash, see scripts/lib/discard.sh), so they do not pile up.
+# SEGUE_RESULT_BUNDLE writes it to that path instead (the capture runs read their
+# attachments from it, WS5 8.3 / WS6 5.5).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # shellcheck source=lib/discard.sh
@@ -25,7 +27,7 @@ destination="${SEGUE_DESTINATION:-platform=macOS,arch=arm64}"
 results=".build/results"
 keep_results=10
 mkdir -p "$results"
-bundle="$results/$(date +%Y%m%d-%H%M%S)-$$.xcresult"
+bundle="${SEGUE_RESULT_BUNDLE:-$results/$(date +%Y%m%d-%H%M%S)-$$.xcresult}"
 
 status=0
 xcodebuild \

@@ -1,5 +1,209 @@
 {
-  "schema": 1,
-  "shots": {},
-  "clips": {}
+  "clips" : {
+
+  },
+  "schema" : 1,
+  "shots" : {
+    "assistant-bar" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 134,
+      "stage" : false,
+      "width" : 1760
+    },
+    "builder-arrange" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "builder-pick" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "card" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "checklist" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 778,
+      "stage" : false,
+      "width" : 1080
+    },
+    "editor-visual" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "library-search" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "metronome" : {
+      "appearances" : [
+        "dark"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1144,
+      "stage" : true,
+      "width" : 1760
+    },
+    "new-song" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 880,
+      "stage" : false,
+      "width" : 1280
+    },
+    "paste-review" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1311,
+      "stage" : false,
+      "width" : 1760
+    },
+    "settings-ai" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1216,
+      "stage" : false,
+      "width" : 1120
+    },
+    "settings-live" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1216,
+      "stage" : false,
+      "width" : 1120
+    },
+    "settings-privacy" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1216,
+      "stage" : false,
+      "width" : 1120
+    },
+    "stage" : {
+      "appearances" : [
+        "dark"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1144,
+      "stage" : true,
+      "width" : 1760
+    },
+    "stage-search" : {
+      "appearances" : [
+        "dark"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1144,
+      "stage" : true,
+      "width" : 1760
+    },
+    "start-library" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "transpose" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    }
+  }
 }

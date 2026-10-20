@@ -329,7 +329,7 @@ let uiTests: Target = .target(
     bundleId: uiTestsBundleID,
     deploymentTargets: deploymentTargets,
     infoPlist: .default,
-    sources: ["UITests/**"],
+    sources: [.glob("UITests/**", excluding: ["UITests/AppStore/**"])],
     // Merged into the sandboxed test runner: read-write access to the E2E temp library
     // (/private/tmp/segue-e2e/). Test-only; never part of an app product.
     entitlements: .file(path: "UITests/SegueUITests.entitlements"),
@@ -337,6 +337,24 @@ let uiTests: Target = .target(
     settings: .settings(base: signingSettings.merging(["TEST_TARGET_NAME": "Segue"]) { _, new in
         new
     }),
+)
+
+/// The screenshot capture layer (WS5 8.3, built by WS6, R127): UI tests against the App Store
+/// flavour that capture the user guide's screenshots and clips (`make docs-shots`,
+/// `make docs-clips`) and later the store screenshots. Never part of `make e2e` or the gate.
+let appStoreUITests: Target = .target(
+    name: "SegueAppStoreUITests",
+    destinations: [.mac],
+    product: .uiTests,
+    bundleId: uiTestsBundleID + ".appstore",
+    deploymentTargets: deploymentTargets,
+    infoPlist: .default,
+    sources: ["UITests/AppStore/**", "UITests/E2ESupport.swift"],
+    dependencies: [.target(name: "SegueAppStore")],
+    settings: .settings(base: signingSettings
+        .merging(["TEST_TARGET_NAME": "SegueAppStore"]) { _, new in
+            new
+        }),
 )
 
 // MARK: - Schemes
@@ -359,6 +377,10 @@ let appStoreScheme: Scheme = .scheme(
     name: "Segue-AppStore",
     shared: true,
     buildAction: .buildAction(targets: ["SegueAppStore"]),
+    testAction: .targets(
+        [.testableTarget(target: "SegueAppStoreUITests")],
+        configuration: debugAppStore,
+    ),
     runAction: .runAction(configuration: debugAppStore, executable: "SegueAppStore"),
     archiveAction: .archiveAction(configuration: releaseAppStore),
     profileAction: .profileAction(configuration: releaseAppStore, executable: "SegueAppStore"),
@@ -374,6 +396,8 @@ let project = Project(
         developmentRegion: "en",
     ),
     settings: projectSettings,
-    targets: [personalApp, appStoreApp, personalQuickLook, appStoreQuickLook, uiTests],
+    targets: [
+        personalApp, appStoreApp, personalQuickLook, appStoreQuickLook, uiTests, appStoreUITests,
+    ],
     schemes: [personalScheme, appStoreScheme],
 )
