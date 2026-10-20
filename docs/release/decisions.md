@@ -204,3 +204,9 @@ Phase 3 spec questions 21-29 (Ryan, 2026-10-19):
 Test budget (Ryan, 2026-10-19, fourth flag: "Over testing is a habit we want to avoid"):
 
 - R113. Per step: only targeted in-process suites. New UI behaviour is covered by in-process SegueUI tests; a new XCUITest only for a flow that cannot be tested in-process. End of a workstream: ONE `make quick` plus ONE `make e2e-one` per UI test class added or changed. **No `make gate` per workstream:** the orchestrator runs one `make gate` per wave after the wave's workstreams land. `make check` only at the phase gate. No E2E retry loops, no duplicate builds in scratch worktrees. Supersedes the per-workstream gate in R58/R60 and the P3 workstream briefs.
+
+Set assistant (Ryan, 2026-10-19):
+
+- R114. Set assistant UI: design A, a command bar above the set in Arrange; Build fills the open setlist as one undo step (no draft setlist).
+- R115. Locked songs are saved in the setlist file and survive reopening; Rebuild honours them.
+- R116. Apple Foundation Models is NOT used for set requests (it invented tags and proficiencies in testing); suggestion chips come only from the downloaded local model, else the lexicon alone. "Start soft / end soft" phrases are dropped. Supersedes the FM fallback in R92.
