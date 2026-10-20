@@ -367,19 +367,6 @@ public final class SongEditorViewModel {
         }
     }
 
-    /// Updates the status bar's line and column for a source offset.
-    func sourceCaretDidMove(to offset: Int) {
-        #if os(macOS)
-            let textView = sourceEditor.textView
-            let line = textView.lineIndex(forOffset: offset)
-            let start = textView.lineStarts.indices.contains(line) ? textView.lineStarts[line] : 0
-            let updated = Cursor(line: line + 1, column: offset - start + 1)
-            if updated != cursor {
-                cursor = updated
-            }
-        #endif
-    }
-
     #if DEBUG
         /// Records one key event's processing time (Debug only; the E2E suite reads the
         /// summary). Shortcuts (⌘V, ⌘Z, ⌘↑) are not typing: they restart the measurement,
@@ -421,4 +408,21 @@ public final class SongEditorViewModel {
     [G]Lyrics with [C]chords in [D]brackets
     {end_of_verse}
     """
+}
+
+// MARK: - Caret
+
+extension SongEditorViewModel {
+    /// Updates the status bar's line and column for a source offset.
+    func sourceCaretDidMove(to offset: Int) {
+        #if os(macOS)
+            let textView = sourceEditor.textView
+            let line = textView.lineIndex(forOffset: offset)
+            let start = textView.lineStarts.indices.contains(line) ? textView.lineStarts[line] : 0
+            let updated = Cursor(line: line + 1, column: offset - start + 1)
+            if updated != cursor {
+                cursor = updated
+            }
+        #endif
+    }
 }

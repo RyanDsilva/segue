@@ -69,9 +69,15 @@ final class SegueSongCardE2ETests: XCTestCase {
             XCTAssertTrue(text.contains(directive), "\(directive) missing from:\n\(text)")
         }
 
-        // `/cho` + Return on two typed lines wraps them in a Chorus. Kettle On already has a
-        // chorus, so under the section numbering rule (P3-11) the new one, below it, is
-        // Chorus 2 and the existing one becomes Chorus 1 in the same undo step.
+        slashWrapsAChorus(app, editor: editor)
+    }
+
+    /// `/cho` + Return on two typed lines wraps them in a Chorus.
+    @MainActor
+    private func slashWrapsAChorus(_ app: XCUIApplication, editor: XCUIElement) {
+        // Kettle On already has a chorus, so under the section numbering rule (P3-11) the
+        // new one, below it, is Chorus 2 and the existing one becomes Chorus 1 in the same
+        // undo step.
         editor.click(in: app)
         editor.typeKey(.downArrow, modifierFlags: .command, in: app)
         editor.typeText("\nLa la one\nLa la two", in: app)
