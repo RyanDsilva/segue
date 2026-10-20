@@ -38,8 +38,9 @@ final class SegueSectionNotesE2ETests: XCTestCase {
     /// Library: a stage-only note on the chorus; only the sidecar changes.
     @MainActor
     private func addStageNote(_ app: XCUIApplication, _ library: WelcomeLibrary) throws {
-        let source = try String(contentsOf: choURL(library), encoding: .utf8)
+        // The row appears once the Welcome songs are seeded: read the file only after it.
         selectKettle(app)
+        let source = try String(contentsOf: choURL(library), encoding: .utf8)
         element(app, NotesAXID.open).click(in: app)
         element(app, NotesAXID.add("chorus")).click(in: app)
         let field = app.textFields[NotesAXID.text].firstMatch
