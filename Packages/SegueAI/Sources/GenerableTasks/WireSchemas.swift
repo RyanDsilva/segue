@@ -24,12 +24,15 @@ public enum WireSchemas {
                         guides: [.range(0 ... max(blockCount - 1, 0))],
                     ),
                 ),
+                // An inline string enum, as `BlockLabelWire`'s own guide encodes: a named
+                // `anyOf` schema prints every label twice as one-value enums, about 140
+                // more prompt tokens that cost Qwen3-4B accuracy on Ryan's pastes.
                 .init(
                     name: "label",
                     description: "Section kind of this block",
                     schema: DynamicGenerationSchema(
-                        name: "SectionLabel",
-                        anyOf: WireVocabulary.labels,
+                        type: String.self,
+                        guides: [.anyOf(WireVocabulary.labels)],
                     ),
                 ),
             ])

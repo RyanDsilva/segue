@@ -141,6 +141,19 @@ struct FoundationModelsAdapterMappingTests {
         #expect(plain.contains("\"minItems\":3"))
     }
 
+    /// The MLX system prompt carries this schema as text: the label vocabulary appears once,
+    /// as an inline string enum (the spike's form). A named `anyOf` schema printed it twice as
+    /// one-value enums, about 140 more prompt tokens, and cost Qwen3-4B about 1.5 points of
+    /// label accuracy on Ryan's pastes.
+    @Test
+    func `the MLX label schema lists the vocabulary once, inline`() throws {
+        let json = try schemaJSON(for: Self.task)
+        let vocabulary = WireVocabulary.labels.map { "\"\($0)\"" }.joined(separator: ",")
+        #expect(json.contains("\"enum\":[\(vocabulary)],\"type\":\"string\""))
+        #expect(json.components(separatedBy: "\"prechorus\"").count == 2)
+        #expect(!json.contains("anyOf"))
+    }
+
     @Test
     func `set request schemas offer only the library's tags`() throws {
         let json = try schemaJSON(for: SetRequestTask(
