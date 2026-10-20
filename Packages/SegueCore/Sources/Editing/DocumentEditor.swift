@@ -48,6 +48,13 @@ public enum EditOperation: Sendable, Hashable {
     /// `{end_of_<kind>}`. Throws `crossesSection` when the range is inside or crosses a
     /// section. `SectionLabels.next(for:in:)` proposes the numbered label.
     case wrapSection(first: BlockPath, last: BlockPath, kind: SectionKind, label: String?)
+    /// `wrapSection` labelled by the numbering rule (`SectionLabels.proposal`) from the
+    /// wrapped lyrics, numbering existing same-kind sections in the same step when this is
+    /// the second distinct one ("Chorus" -> "Chorus 1", new "Chorus 2").
+    case createSection(first: BlockPath, last: BlockPath, kind: SectionKind)
+    /// `setSectionKind` labelled by the numbering rule (the band's V / C / B / I on exactly
+    /// one section); no change when the section already is `kind`.
+    case changeSectionKind(BlockPath, to: SectionKind)
     /// Re-spells the section's start (and end) directive as `kind` with `label`.
     case setSectionKind(BlockPath, kind: SectionKind, label: String?)
     /// Moves the section's top or bottom edge so `toLine` becomes its first (top) or last
@@ -167,8 +174,9 @@ public enum DocumentEditor {
         case let .removeDefine(define):
             planner.removeDefine(name: define)
             return "Remove Chord Shape"
-        case .deleteChord, .duplicateChord, .editLyrics, .insertChord, .joinWithPrevious,
-             .mergeSections, .moveChord, .moveSectionEdge, .replaceChord, .setSectionKind,
+        case .changeSectionKind, .createSection, .deleteChord, .duplicateChord, .editLyrics,
+             .insertChord, .joinWithPrevious, .mergeSections, .moveChord, .moveSectionEdge,
+             .replaceChord, .setSectionKind,
              .splitLine, .splitSection, .unwrapSection, .wrapSection:
             return ""
         }
@@ -183,6 +191,12 @@ public enum DocumentEditor {
         case let .wrapSection(first, last, kind, label):
             try planner.wrapSection(first: first, last: last, kind: kind, label: label)
             return "New Section"
+        case let .createSection(first, last, kind):
+            try planner.createSection(first: first, last: last, kind: kind)
+            return "New Section"
+        case let .changeSectionKind(path, kind):
+            try planner.changeSectionKind(path, to: kind)
+            return "Change Section"
         case let .setSectionKind(path, kind, label):
             try planner.setSectionKind(path, kind: kind, label: label)
             return "Change Section"

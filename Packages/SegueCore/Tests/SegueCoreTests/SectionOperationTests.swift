@@ -86,7 +86,7 @@ struct SectionOperationTests {
     }
 
     @Test(arguments: documents)
-    func `splitting every section anywhere and merging it back restores the text`(
+    func `splitting every section anywhere and merging it back restores its lines`(
         name: String,
     ) throws {
         let snapshot = try SourceSnapshot(text: Self.load(name))
@@ -111,7 +111,11 @@ struct SectionOperationTests {
                     in: halves,
                 )
                 let merged = try expectSectionEdit(merge, in: halves)
-                #expect(merged.text == snapshot.text)
+                // Splitting may number the first half ("Chorus" -> "Chorus 1"); the merge keeps
+                // that label, so compare everything but the label.
+                let whole = try #require(merged.section(at: path))
+                #expect(whole.items == section.items)
+                #expect(merged.sectionPaths == snapshot.sectionPaths)
             }
         }
     }
@@ -151,7 +155,9 @@ struct SectionOperationTests {
             }
         }
     }
+}
 
+extension SectionOperationTests {
     // MARK: - Kitaabon Wali Gali, exact results
 
     @Test
@@ -162,18 +168,21 @@ struct SectionOperationTests {
             DocumentEditor.change(for: .unwrapSection(verse2), in: original),
             in: original,
         )
-        let label = SectionLabels.next(for: .chorus, in: loose.document)
-        #expect(label == "Chorus 2")
         let change = try DocumentEditor.change(
-            for: .wrapSection(
+            for: .createSection(
                 first: BlockPath(block: verse2.block),
                 last: BlockPath(block: verse2.block + 3),
                 kind: .chorus,
-                label: label,
             ),
             in: loose,
         )
+        #expect(change.actionName == "New Section")
         let after = try expectSectionEdit(change, in: loose)
+        // A second, different chorus: both are numbered in the same step.
+        #expect(after.text.contains("""
+        {start_of_chorus: Chorus 1}
+        [F]Kitaabon wali [G]gali,
+        """))
         #expect(after.text.contains("""
         {start_of_chorus: Chorus 2}
         [Am]Baarish ki boondein [G]khidki pe likhti,
@@ -183,6 +192,71 @@ struct SectionOperationTests {
         {end_of_chorus}
         """))
         #expect(after.parseDiagnostics.isEmpty)
+        // As a verse it is simply the next number; the old Verse 1 is untouched.
+        let verse = try DocumentEditor.change(
+            for: .createSection(
+                first: BlockPath(block: verse2.block),
+                last: BlockPath(block: verse2.block + 3),
+                kind: .verse,
+            ),
+            in: loose,
+        )
+        let asVerse = try expectSectionEdit(verse, in: loose)
+        #expect(asVerse.text == original.text)
+    }
+
+    @Test
+    func `the same chorus written out again takes the same label`() throws {
+        let text = """
+        {start_of_chorus}
+        [G]La la la
+        {end_of_chorus}
+        {start_of_verse: Verse 1}
+        v
+        {end_of_verse}
+        [G]La  la LA
+        """
+        let snapshot = SourceSnapshot(text: text)
+        let change = try DocumentEditor.change(
+            for: .createSection(
+                first: BlockPath(block: 2),
+                last: BlockPath(block: 2),
+                kind: .chorus,
+            ),
+            in: snapshot,
+        )
+        #expect(snapshot.text.applying(change.edits) == text.replacingOccurrences(
+            of: "[G]La  la LA",
+            with: "{start_of_chorus}\n[G]La  la LA\n{end_of_chorus}",
+        ))
+    }
+
+    @Test
+    func `changing one section's kind numbers it by the rule`() throws {
+        let snapshot = try Self.kitaabon()
+        let verse2 = snapshot.sectionPaths[2]
+        let change = try DocumentEditor.change(
+            for: .changeSectionKind(verse2, to: .chorus),
+            in: snapshot,
+        )
+        let after = try expectSectionEdit(change, in: snapshot)
+        #expect(after.section(at: snapshot.sectionPaths[1])?.label == "Chorus 1")
+        #expect(after.section(at: verse2)?.label == "Chorus 2")
+        // Verse 1, above the chorus, becomes Chorus 1 and the old chorus Chorus 2.
+        let first = try expectSectionEdit(
+            DocumentEditor.change(
+                for: .changeSectionKind(snapshot.sectionPaths[0], to: .chorus),
+                in: snapshot,
+            ),
+            in: snapshot,
+        )
+        #expect(first.section(at: snapshot.sectionPaths[0])?.label == "Chorus 1")
+        #expect(first.section(at: snapshot.sectionPaths[1])?.label == "Chorus 2")
+        #expect(after.section(at: verse2)?.kind == .chorus)
+        #expect(try DocumentEditor.change(
+            for: .changeSectionKind(verse2, to: .verse),
+            in: snapshot,
+        ).isEmpty)
     }
 
     @Test
@@ -236,17 +310,38 @@ struct SectionOperationTests {
     }
 
     @Test
-    func `labels number from the sections already in the song`() throws {
-        let document = try Self.kitaabon().document
-        #expect(SectionLabels.next(for: .verse, in: document) == "Verse 3")
-        #expect(SectionLabels.next(for: .chorus, in: document) == "Chorus 2")
-        #expect(SectionLabels.next(for: .bridge, in: document) == "Bridge 2")
-        #expect(SectionLabels.next(for: .custom("intro"), in: document) == "Intro 1")
+    func `labels number verses always and other kinds from the second distinct one`() {
+        let document = SourceSnapshot(text: """
+        {start_of_verse: Verse 1}
+        a
+        {end_of_verse}
+        {start_of_chorus}
+        c
+        {end_of_chorus}
+        """).document
+        #expect(SectionLabels.next(for: .verse, in: document) == "Verse 2")
+        #expect(SectionLabels.next(for: .bridge, in: document) == "Bridge")
+        #expect(SectionLabels.next(for: .custom("intro"), in: document) == "Intro")
+        let chorus = SectionLabels.proposal(for: .chorus, lyrics: ["d"], in: document)
+        #expect(chorus.label == "Chorus 2")
+        #expect(chorus.renames == [BlockPath(block: 1): "Chorus 1"])
+        let empty = SourceSnapshot(text: "x\n").document
+        #expect(SectionLabels.next(for: .verse, in: empty) == "Verse 1")
+        #expect(SectionLabels.proposal(for: .chorus, lyrics: ["x"], in: empty).label == nil)
+        // Existing numbers stay; unnumbered ones take the lowest free number.
         let gaps = SourceSnapshot(text: "{sov: Verse 4}\na\n{eov}\n{sov}\nb\n{eov}\n").document
-        #expect(SectionLabels.next(for: .verse, in: gaps) == "Verse 5")
+        let verse = SectionLabels.proposal(for: .verse, lyrics: nil, in: gaps)
+        #expect(verse.label == "Verse 6")
+        #expect(verse.renames == [BlockPath(block: 1): "Verse 5"])
+        // Numbers follow source order: a chorus made above the existing one is Chorus 1.
+        let above = SectionLabels.proposal(for: .chorus, lyrics: ["d"], at: 0, in: document)
+        #expect(above.label == "Chorus 1")
+        #expect(above.renames == [BlockPath(block: 1): "Chorus 2"])
         #expect(SectionLabels.displayName(.custom("pre_chorus")) == "Pre Chorus")
     }
+}
 
+extension SectionOperationTests {
     // MARK: - Edge clamping (unit)
 
     @Test

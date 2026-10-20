@@ -55,6 +55,52 @@ extension EditPlanner {
         snapshot.insertLine(DirectiveLine.sectionEnd(kind), afterLine: bottom, into: &builder)
     }
 
+    mutating func createSection(
+        first: BlockPath,
+        last: BlockPath,
+        kind: SectionKind,
+    ) throws(EditError) {
+        guard first <= last, first.block < snapshot.document.blocks.count,
+              last.block < snapshot.document.blocks.count
+        else { throw .invalidPath(last) }
+        let lyrics = snapshot.document.blocks[first.block ... last.block].compactMap { block in
+            if case let .line(line) = block {
+                line.segments.map(\.text).joined()
+            } else {
+                nil
+            }
+        }
+        let proposal = SectionLabels.proposal(
+            for: kind,
+            lyrics: lyrics,
+            at: first.block,
+            in: snapshot.document,
+        )
+        try wrapSection(first: first, last: last, kind: kind, label: proposal.label)
+        try apply(proposal.renames)
+    }
+
+    mutating func changeSectionKind(_ path: BlockPath, to kind: SectionKind) throws(EditError) {
+        let span = try sectionSpan(path)
+        guard !DirectiveLine.sameSectionKind(span.section.kind, kind) else { return }
+        let lyrics = span.section.items.compactMap { item in
+            if case let .line(line) = item {
+                line.segments.map(\.text).joined()
+            } else {
+                nil
+            }
+        }
+        let proposal = SectionLabels.proposal(
+            for: kind,
+            lyrics: lyrics,
+            at: path.block,
+            in: snapshot.document,
+            excluding: path,
+        )
+        try setSectionKind(path, kind: kind, label: proposal.label)
+        try apply(proposal.renames)
+    }
+
     mutating func setSectionKind(
         _ path: BlockPath,
         kind: SectionKind,
@@ -106,11 +152,17 @@ extension EditPlanner {
             : snapshot.map.defaultEnding
         let end = span.end.map { snapshot.map.lines[$0].text }
             ?? DirectiveLine.sectionEnd(span.section.kind)
-        let label = span.section.label.flatMap { $0.isEmpty ? nil : $0 }.map { _ in
-            SectionLabels.next(for: span.section.kind, in: snapshot.document)
-        }
-        let start = DirectiveLine.sectionStart(span.section.kind, label: label)
+        // The second half is a new, distinct section of the same kind: numbered by the rule,
+        // which may number the first half too ("Chorus" -> "Chorus 1" + "Chorus 2").
+        let proposal = SectionLabels.proposal(
+            for: span.section.kind,
+            lyrics: nil,
+            at: path.block,
+            in: snapshot.document,
+        )
+        let start = DirectiveLine.sectionStart(span.section.kind, label: proposal.label)
         builder.insert(end + ending + start + ending, at: line.start)
+        try apply(proposal.renames)
     }
 
     mutating func mergeSections(
@@ -217,6 +269,13 @@ extension EditPlanner {
     private func lineIndex(_ path: BlockPath) throws(EditError) -> Int {
         guard let index = snapshot.map.lineOfPath[path] else { throw .invalidPath(path) }
         return index
+    }
+
+    /// Relabels existing sections (numbering them), keeping each directive's spelling.
+    private mutating func apply(_ renames: [BlockPath: String]) throws(EditError) {
+        for (path, label) in renames.sorted(by: { $0.key < $1.key }) {
+            try setSectionLabel(path, label: label)
+        }
     }
 
     private mutating func respell(_ line: Int, as text: String) {
