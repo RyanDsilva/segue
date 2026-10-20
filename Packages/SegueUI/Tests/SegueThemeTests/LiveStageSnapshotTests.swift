@@ -77,6 +77,58 @@ extension StageWindowSuites {
             live.overlay = nil
         }
 
+        /// The status line (and a notice in it) has its own band between the song and the
+        /// footer: showing it at the start of a show changes no pixel of the song, so the
+        /// last lyric line is never covered (WS6 found it over the last line).
+        @Test
+        func `the status line never covers the song`() async throws {
+            _ = NSApplication.shared
+            let env = try TestEnvironment()
+            let app = try await env.openApp()
+            let fixture = try await LiveFixture(app: app, titles: ["Long"], lines: 40)
+            app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
+            #expect(await app.startShow(fixture.setlist, kind: .gig))
+            let live = try #require(app.live)
+            defer { StageWindowController.shared.close() }
+
+            let screen = Self.screens[0].size
+            live.notice = nil
+            _ = try render(live, screen: screen, name: "stage-13in-status-hidden")
+            let hidden = try Bitmap(stageImage(live, screen: screen))
+            live.notice = "Kept for this show only: this song cannot be changed."
+            let plan = try render(live, screen: screen, name: "stage-13in-status-shown")
+            let shown = try Bitmap(stageImage(live, screen: screen))
+            live.notice = nil
+            // The song fills the body to its bottom edge, so a covered line would show.
+            #expect(plan.needsScroll)
+
+            // Rows in 2x pixels; the header is skipped (its clock ticks between renders), and
+            // a pixel counts as changed past 8/255 (two renders differ by 1/255 in text
+            // antialiasing).
+            let scale = 2.0
+            let bandTop = LiveView.headerHeight + LiveView.bodyTopPadding
+                + LiveView.viewport(for: screen, topInset: 0).height
+            let bandBottom = bandTop + LiveView.statusBandHeight
+            var changed = (song: 0, band: 0, footer: 0)
+            for row in Int(LiveView.headerHeight * scale) ..< Int(screen.height * scale) {
+                for column in 0 ..< Int(screen.width * scale)
+                    where hidden.rgb(x: column, y: row).differs(from: shown.rgb(x: column, y: row))
+                {
+                    let y = Double(row) / scale
+                    if y < bandTop {
+                        changed.song += 1
+                    } else if y < bandBottom {
+                        changed.band += 1
+                    } else {
+                        changed.footer += 1
+                    }
+                }
+            }
+            #expect(changed.song == 0, "the status line changed \(changed.song) song pixels")
+            #expect(changed.footer == 0, "the status line changed \(changed.footer) footer pixels")
+            #expect(changed.band > 0, "the notice never showed")
+        }
+
         /// The integration pass's review set: the basic and 40-line fixtures through the real
         /// stage at 13", 16" and 1080p, in `.build/screenshots/integration/`. Asserts the
         /// build rulings on each: no wrapped lyric line when it fits, at most two columns
@@ -233,15 +285,20 @@ extension StageWindowSuites {
         ) throws -> LayoutPlan {
             live.setViewport(LiveView.viewport(for: screen, topInset: 0))
             let plan = try #require(live.plan)
+            let image = try stageImage(live, screen: screen)
+            #expect(image.width == Int(screen.width * 2))
+            try DiagramSnapshotTests.writePNG(image, to: directory.appending(path: "\(name).png"))
+            return plan
+        }
+
+        /// The stage at `screen`, rendered at 2x in the dark stage theme.
+        private func stageImage(_ live: LiveSession, screen: CGSize) throws -> CGImage {
             let view = LiveView(session: live)
                 .frame(width: screen.width, height: screen.height)
                 .environment(\.colorScheme, .dark)
             let renderer = ImageRenderer(content: view)
             renderer.scale = 2
-            let image = try #require(renderer.cgImage, "no image for \(name)")
-            #expect(image.width == Int(screen.width * 2))
-            try DiagramSnapshotTests.writePNG(image, to: directory.appending(path: "\(name).png"))
-            return plan
+            return try #require(renderer.cgImage, "no stage image")
         }
 
         /// `<repo>/.build/screenshots/live`.
@@ -250,5 +307,13 @@ extension StageWindowSuites {
                 .deletingLastPathComponent()
                 .appending(path: "live", directoryHint: .isDirectory)
         }
+    }
+}
+
+private extension RGB {
+    /// More than 8/255 apart in any channel.
+    func differs(from other: RGB) -> Bool {
+        abs(Int(red) - Int(other.red)) > 8 || abs(Int(green) - Int(other.green)) > 8
+            || abs(Int(blue) - Int(other.blue)) > 8
     }
 }

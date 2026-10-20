@@ -18,18 +18,25 @@
         @State private var statusHideTask: Task<Void, Never>?
 
         nonisolated static let horizontalPadding: CGFloat = 40
-        nonisolated static let bodyVerticalPadding: CGFloat = 20
+        /// Space between the header and the song.
+        nonisolated static let bodyTopPadding: CGFloat = 20
+        /// The status line's (and the metronome's) height.
+        nonisolated static let statusLineHeight: CGFloat = 30
+        /// The band between the song and the footer that the status line and the metronome
+        /// sit in, so they never cover a lyric line: the line plus 8pt above and below.
+        nonisolated static let statusBandHeight: CGFloat = statusLineHeight + 2 * 8
         /// Fixed chrome heights, so the body (and the layout viewport) follows from the
         /// screen size alone.
         nonisolated static let headerHeight: CGFloat = 76
         nonisolated static let footerHeight: CGFloat = 64
 
-        /// The layout viewport for a stage of `size` (the body minus its padding).
+        /// The layout viewport for a stage of `size` (the body minus its padding and the
+        /// status band).
         static func viewport(for size: CGSize, topInset: CGFloat) -> LayoutSize {
             let body = size.height - headerHeight - footerHeight - topInset
             return LayoutSize(
                 width: max(0, size.width - 2 * horizontalPadding),
-                height: max(0, body - 2 * bodyVerticalPadding),
+                height: max(0, body - bodyTopPadding - statusBandHeight),
             )
         }
 
@@ -39,6 +46,7 @@
                     .frame(height: Self.headerHeight)
                     .padding(.top, topInset)
                 songArea
+                statusBand
                 StageFooter(session: session)
                     .frame(height: Self.footerHeight)
             }
@@ -59,7 +67,6 @@
             .overlay(alignment: .top) { searchOverlay }
             .overlay { endConfirm }
             .overlay { keysOverlay }
-            .overlay(alignment: .bottom) { statusLine }
             .overlay(alignment: .top) { problemBanner }
             .overlay(alignment: .topTrailing) { modeIndicator }
             .overlay(alignment: .bottomTrailing) { metronome }
@@ -82,14 +89,14 @@
                 songContent
             }
             .padding(.horizontal, Self.horizontalPadding)
-            .padding(.vertical, Self.bodyVerticalPadding)
+            .padding(.top, Self.bodyTopPadding)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .contentShape(Rectangle())
             .clipped()
             .onGeometryChange(for: LayoutSize.self) { proxy in
                 LayoutSize(
                     width: max(0, proxy.size.width - 2 * Self.horizontalPadding),
-                    height: max(0, proxy.size.height - 2 * Self.bodyVerticalPadding),
+                    height: max(0, proxy.size.height - Self.bodyTopPadding),
                 )
             } action: { size in
                 session.setViewport(size)
@@ -244,13 +251,17 @@
             .animation(reduceMotion ? nil : .linear(duration: 0.15), value: session.indicator)
         }
 
-        /// The metronome (R90, R118) in the song area's bottom-right corner, above the footer;
+        /// The metronome (R90, R118) at the right end of the status band, above the footer;
         /// hidden while the request panel covers that corner.
         @ViewBuilder private var metronome: some View {
             if !session.showsRequests {
                 StageMetronomeView(metronome: session.metronome)
+                    .frame(height: Self.statusLineHeight)
                     .padding(.trailing, Self.horizontalPadding - 6)
-                    .padding(.bottom, Self.footerHeight + 14)
+                    .padding(
+                        .bottom,
+                        Self.footerHeight + (Self.statusBandHeight - Self.statusLineHeight) / 2,
+                    )
             }
         }
 
@@ -281,12 +292,19 @@
             }
         }
 
-        @ViewBuilder private var statusLine: some View {
-            if statusVisible || session.notice != nil {
-                StageStatusLine(session: session)
-                    .padding(.bottom, 92)
-                    .transition(.opacity)
+        /// The reserved band under the song: the status line fades in here, so it never
+        /// covers the last lyric line (and showing it never changes the layout).
+        private var statusBand: some View {
+            ZStack {
+                if statusVisible || session.notice != nil {
+                    StageStatusLine(session: session)
+                        .frame(height: Self.statusLineHeight)
+                        .padding(.horizontal, Self.horizontalPadding)
+                        .transition(.opacity)
+                }
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: Self.statusBandHeight)
         }
 
         /// The status line fades in on mouse move and out 3 s later (no motion with Reduce

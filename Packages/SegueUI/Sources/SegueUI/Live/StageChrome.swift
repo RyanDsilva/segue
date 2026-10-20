@@ -272,7 +272,7 @@
             .font(Theme.font.label)
             .lineLimit(1)
             .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .frame(maxHeight: .infinity)
             .background(StagePanelBackground(radius: 8))
         }
 
