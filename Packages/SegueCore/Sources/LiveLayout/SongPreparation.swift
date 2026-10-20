@@ -106,38 +106,15 @@ struct SongPreparation {
         return "Repeat \(label)"
     }
 
-    /// Cues per section (by display label, case-insensitive, and 1-based occurrence of that
-    /// label), and the cues whose section no longer exists.
+    /// Cues per section and the cues whose section no longer exists, by the section notes
+    /// anchoring rule (`SectionNotes.pin`: display label, case-insensitive, and 1-based
+    /// occurrence of that label).
     private func pinCues(_ sections: [RenderSection]) -> ([[SongCue]], [SongCue]) {
-        var pinned = Array(repeating: [SongCue](), count: sections.count)
-        var seen: [String: Int] = [:]
-        var occurrence: [Int] = []
-        let labels = sections.map { RepeatCollapser.displayLabel($0).map(Self.key) }
-        for label in labels {
-            let count = label.map { (seen[$0] ?? 0) + 1 } ?? 0
-            if let label {
-                seen[label] = count
-            }
-            occurrence.append(count)
-        }
-        var unmatched: [SongCue] = []
-        for cue in request.cues {
-            let key = Self.key(cue.section)
-            let targets = sections.indices.filter { index in
-                labels[index] == key && (cue.occurrence.map { $0 == occurrence[index] } ?? true)
-            }
-            if targets.isEmpty {
-                unmatched.append(cue)
-            }
-            for target in targets {
-                pinned[target].append(cue)
-            }
-        }
-        return (pinned, unmatched)
-    }
-
-    private static func key(_ label: String) -> String {
-        label.trimmingCharacters(in: .whitespaces).lowercased()
+        let (pinned, unmatched) = SectionNotes.pin(request.cues, to: sections)
+        return (
+            pinned.map { $0.map { request.cues[$0] } },
+            unmatched.map { request.cues[$0] },
+        )
     }
 
     /// Lyric lines as performed: `{chorus}` repeats count their chorus's lines.

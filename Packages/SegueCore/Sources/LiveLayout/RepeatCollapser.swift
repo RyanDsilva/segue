@@ -3,6 +3,7 @@
 import ChordPro
 import Editing
 import Foundation
+import Library
 
 /// Repeat detection: the first occurrence always renders in full; a later section whose
 /// content equals an earlier one (normalized lyrics and display chords) becomes a reference,
@@ -65,19 +66,10 @@ public enum RepeatCollapser {
             ?? choruses.first
     }
 
-    /// The label the gutter shows: the section's own, else its kind's name.
+    /// The label the gutter shows: the section's own, else its kind's name. The same label
+    /// section notes pin to (`SectionNotes.label(of:)`).
     public static func displayLabel(_ section: RenderSection) -> String? {
-        if let label = section.label?.trimmingCharacters(in: .whitespaces), !label.isEmpty {
-            return label
-        }
-        return switch section.kind {
-        case .verse: "Verse"
-        case .chorus: "Chorus"
-        case .bridge: "Bridge"
-        case .tab: "Tab"
-        case let .custom(name): name.replacingOccurrences(of: "_", with: " ").capitalized
-        case nil: nil
-        }
+        SectionNotes.label(of: section)
     }
 
     // MARK: - Matching

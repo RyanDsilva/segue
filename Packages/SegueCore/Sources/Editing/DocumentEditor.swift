@@ -69,6 +69,18 @@ public enum EditOperation: Sendable, Hashable {
     /// the two must be the same kind (else `sectionKindsDiffer`, so the caller can ask);
     /// otherwise the merged section becomes `kind`. Keeps `first`'s label.
     case mergeSections(first: BlockPath, second: BlockPath, kind: SectionKind?)
+
+    // MARK: Section notes (P3-13: chart notes are `{comment}` lines)
+
+    /// Inserts `{comment: text}` as a whole line: as the first line inside the section when
+    /// `at` is a section header, else just above the line at `at`. Throws `notCommentText`
+    /// when the text would not read back as the same comment.
+    case insertComment(String, at: BlockPath)
+    /// Changes the text of the comment directive at `path`, keeping its spelling (`{c}`,
+    /// `{ci}`, padding).
+    case setCommentText(BlockPath, text: String)
+    /// Removes the comment directive line at `path`.
+    case removeComment(BlockPath)
 }
 
 /// Which edge of a section band moves.
@@ -96,6 +108,8 @@ public enum EditError: Error, Sendable, Hashable {
     case crossesSection(BlockPath)
     /// A merge of two different kinds without a chosen kind.
     case sectionKindsDiffer(BlockPath, BlockPath)
+    /// Note text that would not read back as one comment directive with that text.
+    case notCommentText(String)
 }
 
 /// Plans tree operations as minimal text edits (phase 1 spec, "Sync between modes").
@@ -112,6 +126,8 @@ public enum DocumentEditor {
             lyric
         } else if let section = try planSectionOperation(operation, with: &planner) {
             section
+        } else if let comment = try planCommentOperation(operation, with: &planner) {
+            comment
         } else {
             try planDirectiveOperation(operation, with: &planner)
         }
@@ -180,9 +196,10 @@ public enum DocumentEditor {
             planner.removeDefine(name: define)
             return "Remove Chord Shape"
         case .changeSectionKind, .createSection, .deleteChord, .duplicateChord, .editLyrics,
-             .insertChord, .joinWithPrevious, .mergeSections, .moveChord, .moveSectionEdge,
-             .replaceChord, .setSectionKind,
-             .splitLine, .splitSection, .unwrapSection, .wrapSection:
+             .insertChord, .insertComment, .joinWithPrevious, .mergeSections, .moveChord,
+             .moveSectionEdge, .removeComment,
+             .replaceChord, .setCommentText, .setSectionKind, .splitLine,
+             .splitSection, .unwrapSection, .wrapSection:
             return ""
         }
     }

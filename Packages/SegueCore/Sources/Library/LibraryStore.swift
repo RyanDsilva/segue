@@ -381,7 +381,7 @@ public actor LibraryStore {
         return decoded.sidecar
     }
 
-    private func write(
+    func write(
         source: String,
         sidecar: Sidecar,
         over existing: LoadedSong,
