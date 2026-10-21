@@ -85,7 +85,11 @@ extension SongEditorViewModel {
         guard let group = notes.group(forSectionAt: path), group.kind == .section,
               group.acceptsChartNotes || canEditStageNotes
         else { return nil }
-        guard case let .instance(number) = notes.placement(forSectionAt: path) else {
+        // A label written out once: a note there shows every time it is played or repeated,
+        // so the title names no instance (R146).
+        guard group.writtenOut.count > 1,
+              case let .instance(number) = notes.placement(forSectionAt: path)
+        else {
             return "Add Note to \(group.title)..."
         }
         return "Add Note to \(group.title) #\(number)..."

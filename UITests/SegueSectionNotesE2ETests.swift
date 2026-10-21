@@ -1,6 +1,6 @@
 import XCTest
 
-/// Section notes through the real UI (P3-13, R87, R106), on a fresh Welcome library: add a
+/// Section notes through the real UI (P3-13, P3-17, R87, R106), on a fresh Welcome library: add a
 /// stage-only note on Kettle On's chorus from the library's Section Notes sheet, rehearse
 /// the Welcome Set and see it as a callout on stage; then in the editor open the chorus
 /// band's Section Notes, turn "Show on stage only" off, and see the `{comment}` in Text mode.
@@ -59,6 +59,47 @@ final class SegueSectionNotesE2ETests: XCTestCase {
             let file = (try? String(contentsOf: self.choURL(library), encoding: .utf8)) ?? ""
             return expected.allSatisfy(file.contains)
         }, "not every note reached the chart")
+    }
+
+    /// P3-17: notes added from the chorus band's "Add Note to Chorus..." item open preset
+    /// (a chart note on a chorus written out once shows every time) and a second note lands
+    /// after the first, inside the chorus, in Text mode.
+    @MainActor
+    func testBandMenuNotesAppendInAddOrder() throws {
+        let library = try XCTUnwrap(library)
+        let app = XCUIApplication()
+        self.app = app
+        E2E.launch(app, arguments: library.arguments(["-SegueSeedWelcome", "YES"]))
+        selectKettle(app)
+        element(app, NotesAXID.editSong).click(in: app)
+        element(app, NotesAXID.editorModeVisual).click(in: app)
+        let canvas = app.textViews[NotesAXID.editorVisual]
+        XCTAssertTrue(canvas.appears(timeout: 5))
+        let band = app.descendants(matching: .any).matching(identifier: NotesAXID.band)
+            .matching(NSPredicate(format: "label == %@", "Chorus")).firstMatch
+        XCTAssertTrue(reveal(band, in: canvas), "no Chorus band on screen")
+        for (index, text) in ["Build it up", "Then drop out"].enumerated() {
+            band.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
+                .withOffset(CGVector(dx: 0, dy: 10)).rightClick()
+            let item = app.menuItems["Add Note to Chorus..."]
+            XCTAssertTrue(item.appears(timeout: 5), "no Add Note item in the band menu")
+            item.click()
+            let placement = app.popUpButtons[NotesAXID.additionPlacement].firstMatch
+            XCTAssertTrue(placement.appears(timeout: 5), "no Shows on pop-up")
+            XCTAssertEqual(placement.value as? String, "Every time")
+            let field = app.textFields.matching(identifier: NotesAXID.text).element(boundBy: index)
+            XCTAssertTrue(field.appears(timeout: 5), "no new note field")
+            field.typeText(text, in: app)
+            if index == 1 {
+                attach(app, "section-notes-band-menu")
+            }
+            element(app, NotesAXID.done).click(in: app)
+        }
+        element(app, NotesAXID.editorModeText).click(in: app)
+        let editor = app.textViews[NotesAXID.editorText]
+        XCTAssertTrue(editor.appears(timeout: 5))
+        let both = "{start_of_chorus}\n{comment: Build it up}\n{comment: Then drop out}\n"
+        XCTAssertTrue((editor.value as? String ?? "").contains(both), "\(editor.value ?? "")")
     }
 
     // MARK: - Steps
@@ -209,6 +250,7 @@ enum NotesAXID {
     static let done = "segue.sectionNotes.done"
     static let text = "segue.sectionNotes.note.text"
     static let stageOnly = "segue.sectionNotes.note.stageOnly"
+    static let additionPlacement = "segue.sectionNotes.addition.placement"
     static func add(_ group: String) -> String {
         "segue.sectionNotes.add.\(group)"
     }

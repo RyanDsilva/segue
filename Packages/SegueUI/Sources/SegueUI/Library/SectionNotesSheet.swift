@@ -62,10 +62,12 @@
         }
     }
 
-    /// "Section Notes" (R87): every note of the song grouped by section. Each note shows
-    /// everywhere (a `{comment}` in the chart) unless "Show on stage only" is on (a cue,
-    /// live mode only); the checkbox moves it between the two. Every change applies at once
-    /// as one undo step; text commits on Return or when the field loses focus.
+    /// "Section Notes" (R87): every note of the song grouped by section. Each note shows in
+    /// the chart (a `{comment}`) unless "Show on stage only" is on (a cue, live mode only);
+    /// the checkbox moves it between the two. On a label that occurs more than once, a "Shows
+    /// on" pop-up places it every time or on one instance (P3-17, R146 direction A). Every
+    /// change applies at once as one undo step; text commits on Return or when the field
+    /// loses focus.
     struct SectionNotesSheet: View {
         let host: SectionNotesHost
         /// The group to scroll to (the section band's badge).
@@ -81,15 +83,25 @@
         @State private var drafts: [SectionNoteID: String] = [:]
         /// Notes being added, not committed yet.
         @State private var additions: [Addition] = []
-        @State private var work: Task<Void, Never>?
-        @FocusState private var focused: Field?
+        /// The pending additions, for the rows in `SectionNotesSheet+Additions.swift`.
+        var pending: [Addition] {
+            get { additions }
+            nonmutating set { additions = newValue }
+        }
 
-        private enum Field: Hashable {
+        @State private var work: Task<Void, Never>?
+        @FocusState var focused: Field?
+        /// A chart note just moved onto a repeat (now a stage note): its row explains why.
+        @State private var movedToRepeat: SectionNoteID?
+        /// A stage note on a repeat waiting for "Move" before it becomes a chart note.
+        @State private var chartConfirmation: SectionNote?
+
+        enum Field: Hashable {
             case note(SectionNoteID)
             case addition(UUID)
         }
 
-        private struct Addition: Identifiable {
+        struct Addition: Identifiable {
             let id = UUID()
             let group: SectionNoteGroup.ID
             var text = ""
@@ -142,6 +154,27 @@
             .onChange(of: focused) { old, _ in
                 commit(old)
             }
+            .alert(
+                "Move this note into the chart?",
+                isPresented: Binding(
+                    get: { chartConfirmation != nil },
+                    set: {
+                        if !$0 {
+                            chartConfirmation = nil
+                        }
+                    },
+                ),
+                presenting: chartConfirmation,
+            ) { note in
+                Button("Move") {
+                    run(.setStageOnly(note.id, false), repeatHint: true)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: { note in
+                if let group = notes.group(of: note.id) {
+                    Text(SectionNotesPlacement.chartConfirmation(for: note, in: group) ?? "")
+                }
+            }
         }
 
         private var header: some View {
@@ -149,8 +182,8 @@
                 Text("Section Notes")
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
-                Text("Notes show in the chart everywhere. “Show on stage only” keeps one off "
-                    + "the chart and shows it beside its section on stage.")
+                Text("Notes show in the chart and on stage, every time a section is played or "
+                    + "only the time you pick. “Show on stage only” keeps a note off the chart.")
                     .font(.callout)
                     .foregroundStyle(Theme.color.muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -166,7 +199,9 @@
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(40)
         }
+    }
 
+    extension SectionNotesSheet {
         // MARK: Groups
 
         private func groupView(_ group: SectionNoteGroup) -> some View {
@@ -222,17 +257,22 @@
 
         private func noteRow(_ note: SectionNote, in group: SectionNoteGroup) -> some View {
             VStack(alignment: .leading, spacing: 6) {
-                TextField("Note", text: draftBinding(note))
-                    .textFieldStyle(.roundedBorder)
-                    .focused($focused, equals: .note(note.id))
-                    .onSubmit { commit(.note(note.id)) }
-                    .disabled(host.isReadOnly)
-                    .accessibilityLabel("Note on \(group.title)")
-                    .accessibilityIdentifier(AccessibilityID.sectionNoteText)
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
+                    TextField("Note", text: draftBinding(note))
+                        .textFieldStyle(.roundedBorder)
+                        .focused($focused, equals: .note(note.id))
+                        .onSubmit { commit(.note(note.id)) }
+                        .disabled(host.isReadOnly)
+                        .accessibilityLabel("Note on \(group.title)")
+                        .accessibilityIdentifier(AccessibilityID.sectionNoteText)
+                    if note.needsPlacementCheck {
+                        CheckPlacementMark()
+                    }
+                }
+                HStack(spacing: 8) {
                     stageToggle(note, in: group)
-                    placement(note, in: group)
                     Spacer()
+                    placement(note, in: group)
                     Button {
                         run(.delete(note.id))
                     } label: {
@@ -244,6 +284,14 @@
                     .help("Delete Note")
                     .accessibilityLabel("Delete Note")
                     .accessibilityIdentifier(AccessibilityID.sectionNoteDelete)
+                }
+                if movedToRepeat == note.id,
+                   let hint = SectionNotesPlacement.repeatHint(for: note.placement, in: group)
+                {
+                    RepeatHintView(hint: hint) {
+                        movedToRepeat = nil
+                        run(.setStageOnly(note.id, false), repeatHint: true)
+                    }
                 }
             }
             .padding(10)
@@ -257,10 +305,19 @@
                 : group.kind == .section && host.canEditStageNotes
             return Toggle("Show on stage only", isOn: Binding(
                 get: { note.isStageOnly },
-                set: { run(.setStageOnly(note.id, $0)) },
+                set: { stageOnly in
+                    if !stageOnly, SectionNotesPlacement.chartConfirmation(for: note, in: group)
+                        != nil
+                    {
+                        chartConfirmation = note
+                    } else {
+                        run(.setStageOnly(note.id, stageOnly))
+                    }
+                },
             ))
             .toggleStyle(.checkbox)
             .controlSize(.small)
+            .fixedSize()
             .disabled(host.isReadOnly || !allowed)
             .help(allowed ? "" : stageHelp(group))
             .accessibilityIdentifier(AccessibilityID.sectionNoteStageOnly)
@@ -274,8 +331,8 @@
             }
         }
 
-        /// Which occurrence a stage note shows on, or where an orphaned one goes; a chart
-        /// note's occurrence is where its line sits.
+        /// The "Shows on" pop-up of a note on a repeated label (a linked chart note is captioned
+        /// with the instances holding its copies), or where an orphaned cue goes.
         @ViewBuilder
         private func placement(_ note: SectionNote, in group: SectionNoteGroup) -> some View {
             if note.isStageOnly, group.kind == .orphaned {
@@ -290,26 +347,35 @@
                 .controlSize(.small)
                 .disabled(host.isReadOnly)
                 .accessibilityIdentifier(AccessibilityID.sectionNoteMove)
-            } else if note.isStageOnly, group.hasPlacements {
-                Picker("Shows", selection: Binding(
-                    get: { note.occurrence },
-                    set: { run(.place(note.id, $0.map(NotePlacement.instance) ?? .everyTime)) },
-                )) {
-                    Text("Every time").tag(Int?.none)
-                    ForEach(1 ... group.occurrences, id: \.self) {
-                        Text("Only #\($0)").tag(Int?.some($0))
-                    }
+            } else if group.hasPlacements, let current = note.placement {
+                if note.isLinked {
+                    Text("In " + note.instances.map { "#\($0)" }.joined(separator: ", "))
+                        .font(.caption)
+                        .foregroundStyle(Theme.color.muted)
                 }
-                .labelsHidden()
-                .fixedSize()
-                .controlSize(.small)
+                PlacementPicker(
+                    choices: SectionNotesPlacement.choices(in: group, chart: !note.isStageOnly),
+                    selection: Binding(
+                        get: { current },
+                        set: { place(note, at: $0, in: group) },
+                    ),
+                    identifier: AccessibilityID.sectionNotePlacement,
+                )
                 .disabled(host.isReadOnly)
-                .accessibilityLabel("Shows")
-                .accessibilityIdentifier(AccessibilityID.sectionNoteOccurrence)
-            } else if let occurrence = note.occurrence, !note.isStageOnly {
-                Text("In #\(occurrence)")
-                    .font(.caption)
-                    .foregroundStyle(Theme.color.muted)
+            }
+        }
+
+        /// Moves `note`; a chart note picked onto a repeat becomes a stage note there and
+        /// its row explains why. Re-picking the same placement re-stamps a stage note's
+        /// fingerprint, which clears "Check placement" (R146).
+        private func place(
+            _ note: SectionNote,
+            at placement: NotePlacement,
+            in group: SectionNoteGroup,
+        ) {
+            let toRepeat = !note.isStageOnly && SectionNotesPlacement.isRepeat(placement, in: group)
+            run(.place(note.id, placement), repeatHint: toRepeat) { result in
+                movedToRepeat = toRepeat ? result : nil
             }
         }
 
@@ -323,10 +389,19 @@
         }
 
         private func add(to group: SectionNoteGroup, placement: NotePlacement? = nil) {
+            var placement = group.hasPlacements ? placement ?? group.defaultPlacement : nil
+            // A chart note cannot pick the one written-out chorus of a repeated label: there
+            // it shows every time anyway (R146).
+            if let chosen = placement,
+               !SectionNotesPlacement.choices(in: group, chart: group.acceptsChartNotes)
+                   .contains(where: { $0.placement == chosen }), group.acceptsChartNotes
+            {
+                placement = .everyTime
+            }
             let addition = Addition(
                 group: group.id,
                 stageOnly: !group.acceptsChartNotes,
-                placement: group.hasPlacements ? placement ?? group.defaultPlacement : nil,
+                placement: placement,
             )
             additions.append(addition)
             // Focus once the new field is in the view.
@@ -335,7 +410,7 @@
 
         /// Saves what `field` holds: a changed note's text (an emptied note is deleted), or
         /// a new note (an empty one is dropped).
-        private func commit(_ field: Field?) {
+        func commit(_ field: Field?) {
             switch field {
             case let .note(id):
                 guard let draft = drafts.removeValue(forKey: id),
@@ -347,13 +422,17 @@
                 guard let index = additions.firstIndex(where: { $0.id == id }) else { return }
                 let addition = additions.remove(at: index)
                 let text = CommentText.clean(addition.text)
-                guard !text.isEmpty else { return }
-                run(.add(
-                    group: addition.group,
-                    text: text,
-                    stageOnly: addition.stageOnly,
-                    placement: addition.placement,
-                ))
+                guard !text.isEmpty, let group = notes.group(id: addition.group) else { return }
+                let onRepeat = SectionNotesPlacement.isRepeat(addition.placement, in: group)
+                run(
+                    .add(
+                        group: addition.group,
+                        text: text,
+                        stageOnly: addition.stageOnly || onRepeat,
+                        placement: addition.placement,
+                    ),
+                    repeatHint: onRepeat && !addition.stageOnly,
+                )
             case nil:
                 return
             }
@@ -362,13 +441,18 @@
         /// Applies `edit` after the edits before it, then re-reads the song. The edit names
         /// its note by ID, resolved when it applies, so a queued edit never hits another note;
         /// a note whose ID the edit changed keeps its focus and draft under the new ID.
-        private func run(_ edit: SectionNoteEdit) {
+        private func run(
+            _ edit: SectionNoteEdit,
+            repeatHint: Bool = false,
+            then done: @escaping @MainActor (SectionNoteID?) -> Void = { _ in },
+        ) {
             let previous = work
-            let context = SectionNoteEditContext(entry: host.entry)
+            let context = SectionNoteEditContext(entry: host.entry, repeatHint: repeatHint)
             work = Task { @MainActor in
                 await previous?.value
                 let change = await host.apply(edit, context)
                 reload(renaming: edit.noteID, to: change?.resultID)
+                done(change?.resultID)
             }
         }
 
@@ -399,66 +483,6 @@
                 await work?.value
                 dismiss()
             }
-        }
-    }
-
-    private extension SectionNoteEdit {
-        /// The existing note this edit names; nil for an add.
-        var noteID: SectionNoteID? {
-            switch self {
-            case let .delete(id), let .pin(id, _, _), let .place(id, _),
-                 let .setStageOnly(id, _), let .setText(id, _):
-                id
-            case .add:
-                nil
-            }
-        }
-    }
-
-    // MARK: Pending additions
-
-    extension SectionNotesSheet {
-        /// A row for one pending addition. Its bindings find the addition by id, never by
-        /// position: committing one (when focus leaves it) removes it from `additions` while
-        /// its row is still on screen for a pass, and a positional binding would index past
-        /// the end of the shortened array.
-        private func additionRow(_ addition: Addition, in group: SectionNoteGroup) -> some View {
-            VStack(alignment: .leading, spacing: 6) {
-                TextField("New note", text: additionBinding(addition.id, \.text, or: ""))
-                    .textFieldStyle(.roundedBorder)
-                    .focused($focused, equals: .addition(addition.id))
-                    .onSubmit { commit(.addition(addition.id)) }
-                    .accessibilityLabel("New note on \(group.title)")
-                    .accessibilityIdentifier(AccessibilityID.sectionNoteText)
-                Toggle("Show on stage only", isOn: additionBinding(
-                    addition.id, \.stageOnly, or: addition.stageOnly,
-                ))
-                .toggleStyle(.checkbox)
-                .controlSize(.small)
-                .disabled(!group.acceptsChartNotes
-                    || !(group.acceptsStageNotes && host.canEditStageNotes))
-                .accessibilityIdentifier(AccessibilityID.sectionNoteStageOnly)
-            }
-            .padding(10)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Theme.color.surfaceAlt))
-            .accessibilityElement(children: .contain)
-        }
-
-        /// A binding to one field of the pending addition with `id`; a row that outlives its
-        /// addition by a pass shows `fallback` and ignores writes.
-        private func additionBinding<Value>(
-            _ id: UUID,
-            _ keyPath: WritableKeyPath<Addition, Value>,
-            or fallback: Value,
-        ) -> Binding<Value> {
-            Binding(
-                get: { additions.first { $0.id == id }?[keyPath: keyPath] ?? fallback },
-                set: { value in
-                    if let index = additions.firstIndex(where: { $0.id == id }) {
-                        additions[index][keyPath: keyPath] = value
-                    }
-                },
-            )
         }
     }
 #endif

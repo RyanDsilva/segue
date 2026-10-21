@@ -1,4 +1,4 @@
-// P3-13: accessibility identifiers of the section notes sheet and the library's notes rows.
+// P3-13, P3-17: accessibility identifiers of the section notes sheet and the library's notes rows.
 // Mirror new IDs in the UITests target (it cannot import SegueUI).
 
 public extension AccessibilityID {
@@ -12,7 +12,16 @@ public extension AccessibilityID {
     static let sectionNoteText = "segue.sectionNotes.note.text"
     /// A note's "Show on stage only" checkbox.
     static let sectionNoteStageOnly = "segue.sectionNotes.note.stageOnly"
-    static let sectionNoteOccurrence = "segue.sectionNotes.note.occurrence"
+    /// A saved note's "Shows on" placement pop-up (P3-17).
+    static let sectionNotePlacement = "segue.sectionNotes.note.placement"
+    /// A new note's "Shows on" placement pop-up.
+    static let sectionNoteAdditionPlacement = "segue.sectionNotes.addition.placement"
+    /// The `{chorus}` repeat explanation under a row.
+    static let sectionNoteRepeatHint = "segue.sectionNotes.repeatHint"
+    /// The quiet "Check placement" mark on a stage note whose section changed.
+    static let sectionNoteCheckPlacement = "segue.sectionNotes.note.checkPlacement"
+    /// A new note's discard button.
+    static let sectionNoteDiscard = "segue.sectionNotes.addition.discard"
     static let sectionNoteMove = "segue.sectionNotes.note.move"
     static let sectionNoteDelete = "segue.sectionNotes.note.delete"
 
