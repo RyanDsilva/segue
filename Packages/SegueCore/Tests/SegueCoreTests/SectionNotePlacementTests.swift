@@ -222,6 +222,41 @@ struct SectionNotePlacementTests {
         #expect(charted.text.contains("{comment: Third}\n{comment: Fourth}\n[G]Line one"))
     }
 
+    // MARK: Arrangements (R146)
+
+    @Test
+    func `note edits never change a fingerprint and older arrangements stay applied`() throws {
+        func units(_ text: String) -> [SongSectionUnit] {
+            SongSections.units(of: SourceSnapshot(text: text).document)
+        }
+        let chorus = try NoteFix.chorus(NoteFix.song)
+        let noted = try NoteFix.apply(
+            .add(group: chorus.id, text: "Lift", stageOnly: false, placement: nil),
+            to: NoteFix.song,
+        )
+        #expect(units(noted.text).map(\.fingerprint) == units(NoteFix.song).map(\.fingerprint))
+        // A placed cue stays put when a note lands at the top of its chorus.
+        let cue = SongCue(
+            section: "Chorus",
+            occurrence: 2,
+            text: "Watch Ravi",
+            fingerprint: units(NoteFix.song)[2].fingerprint,
+        )
+        let note = try #require(NoteFix.notes(noted.text, [cue]).note(.stage(cue.id)))
+        #expect(note.placement == .instance(2) && !note.needsPlacementCheck)
+
+        // An arrangement saved before R146 carries comment-including fingerprints.
+        let old = units(noted.text)
+        #expect(old[0].legacyFingerprint != old[0].fingerprint)
+        let saved = SlotArrangement(steps: old.map {
+            ArrangementStep(anchor: $0.anchor, fingerprint: $0.legacyFingerprint)
+        })
+        guard case .applied = ArrangementResolver.resolve(saved, units: old) else {
+            Issue.record("an older arrangement reads out of date")
+            return
+        }
+    }
+
     // MARK: Interop
 
     @Test

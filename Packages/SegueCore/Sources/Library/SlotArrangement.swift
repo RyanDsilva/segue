@@ -194,6 +194,8 @@ public struct SongSectionUnit: Sendable, Hashable, Identifiable {
     public var index: Int
     public var anchor: SectionAnchor
     public var fingerprint: String
+    /// The pre-R146 fingerprint (comments included), accepted when resolving older rows.
+    public var legacyFingerprint: String
     /// "Verse 2", "Chorus", "Lead-in", "After Verse 2".
     public var title: String
     /// "2nd" when the title occurs more than once in the song, else nil.
@@ -248,6 +250,7 @@ public enum SongSections {
                 index: index,
                 anchor: anchor,
                 fingerprint: fingerprint(of: section),
+                legacyFingerprint: legacyFingerprint(of: section),
                 title: title,
                 ordinal: nil,
                 kind: section.kind,
@@ -280,10 +283,21 @@ public enum SongSections {
         return "\(number)\(suffix)"
     }
 
-    /// The content fingerprint (R123): the first two content lines (lyrics normalized;
-    /// chords only for a chord-only line; comments; tab lines), FNV-1a 32-bit in hex. A
+    /// The content fingerprint (R123, R146): the first two content lines (lyrics normalized;
+    /// chords only for a chord-only line; tab lines), FNV-1a 32-bit in hex. `{comment}` lines
+    /// are left out, so adding, moving or deleting a section note never changes it. A
     /// `{chorus}` repeat is "repeat" (its content is its chorus's).
     public static func fingerprint(of section: RenderSection) -> String {
+        fingerprint(of: section, includingComments: false)
+    }
+
+    /// The fingerprint as builds before R146 computed it (comments counted as content lines).
+    /// The resolver still accepts it, so an arrangement saved by such a build stays applied.
+    public static func legacyFingerprint(of section: RenderSection) -> String {
+        fingerprint(of: section, includingComments: true)
+    }
+
+    private static func fingerprint(of section: RenderSection, includingComments: Bool) -> String {
         if section.isRepeat {
             return "repeat"
         }
@@ -297,7 +311,7 @@ public enum SongSections {
                 let chords = line.chords.map(\.text).joined(separator: " ")
                 return chords.isEmpty ? nil : "h:" + chords
             case let .comment(text, _, _):
-                return "c:" + normalize(text)
+                return includingComments ? "c:" + normalize(text) : nil
             case let .verbatim(text, _):
                 let trimmed = text.trimmingCharacters(in: .whitespaces)
                 return trimmed.isEmpty ? nil : "v:" + trimmed

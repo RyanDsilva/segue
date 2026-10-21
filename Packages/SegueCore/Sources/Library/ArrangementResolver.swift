@@ -71,7 +71,10 @@ public enum ArrangementResolver {
         guard let unit = units.first(where: { $0.anchor.matches(step.anchor) }) else {
             return nil
         }
-        if let fingerprint = step.fingerprint, fingerprint != unit.fingerprint {
+        // A row saved before R146 carries the comment-including fingerprint.
+        if let fingerprint = step.fingerprint, fingerprint != unit.fingerprint,
+           fingerprint != unit.legacyFingerprint
+        {
             return nil
         }
         return unit
