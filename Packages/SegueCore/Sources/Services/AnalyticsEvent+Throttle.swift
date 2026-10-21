@@ -42,6 +42,9 @@ public extension AnalyticsEvent {
             return .daily(key: "\(name)|\(action.rawValue)")
         case let .aiSmartFilterUsed(action, _):
             return .daily(key: "\(name)|\(action.rawValue)")
+        case let .notesEdited(summary):
+            return .daily(key: "\(name)|\(summary.action.rawValue)|\(summary.kind.rawValue)|"
+                + summary.placement.rawValue)
         }
     }
 }

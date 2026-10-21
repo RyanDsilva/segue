@@ -172,6 +172,7 @@
             case .showResumeFailed: "showResumeFailed"
             case .shapeLibraryUnreadable: "shapeLibraryUnreadable"
             case .bindingsUnreadable: "bindingsUnreadable"
+            case .sectionNoteGone: "sectionNoteGone"
             case .other: "other"
             }
         }

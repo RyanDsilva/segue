@@ -144,6 +144,17 @@ enum VocabularySample {
             }
         }
         events += AISample.all
+        let actions = NoteEditAction.allCases, kinds = NoteKind.allCases
+        let placements = NotePlacementKind.allCases, entries = NoteEntry.allCases
+        for row in 0 ..< max(actions.count, kinds.count, placements.count, entries.count) {
+            events.append(.notesEdited(NotesEditedSummary(
+                action: actions[row % actions.count],
+                kind: kinds[row % kinds.count],
+                placement: placements[row % placements.count],
+                entry: entries[row % entries.count],
+                repeatHint: row.isMultiple(of: 2),
+            )))
+        }
         return events
     }
 

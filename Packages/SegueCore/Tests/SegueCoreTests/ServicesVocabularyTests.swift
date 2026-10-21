@@ -30,11 +30,12 @@ struct ServicesVocabularyTests {
             #expect(crumb.message == signal.name)
             #expect(crumb.data == signal.params)
         }
-        // Rows 1-18 of section 5 plus the phase 3 AI rows 19-22, one signal name each.
-        #expect(names.count == 22)
+        // Rows 1-18 of section 5, the phase 3 AI rows 19-22 and the section notes row 23
+        // (P3-17), one signal name each.
+        #expect(names.count == 23)
         #expect(names.isSuperset(of: [
             "Segue.AI.pasteFinished", "Segue.AI.modelDownload", "Segue.AI.assistantUsed",
-            "Segue.AI.smartFilterUsed",
+            "Segue.AI.smartFilterUsed", "Segue.Notes.edited",
         ]))
     }
 

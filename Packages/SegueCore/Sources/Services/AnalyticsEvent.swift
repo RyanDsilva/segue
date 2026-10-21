@@ -66,6 +66,9 @@ public enum AnalyticsEvent: Sendable, Hashable {
     case aiAssistantUsed(AssistantUsedSummary)
     /// Row 22 (R74): a smart filter was created, applied or filled from the assistant.
     case aiSmartFilterUsed(action: SmartFilterAction, conditions: SmallBucket)
+    /// Row 23 (P3-17): a section note was added, moved, toggled or deleted (daily per action,
+    /// kind and placement).
+    case notesEdited(NotesEditedSummary)
 }
 
 // MARK: - Grouped parameters (cases with more than four values)
@@ -299,6 +302,9 @@ public enum ErrorCode: String, Sendable, CaseIterable {
     case showResumeFailed
     case shapeLibraryUnreadable
     case bindingsUnreadable
+    /// A section note edit whose note was no longer in the song (P3-17: stale edits after
+    /// the move to stable IDs; should stay near zero).
+    case sectionNoteGone
     case other
 }
 
@@ -353,6 +359,7 @@ extension AnalyticsEvent {
         case .errorOccurred: "Error"
         case .searchPerformed: "Search"
         case .aiAssistantUsed, .aiModelDownload, .aiPasteFinished, .aiSmartFilterUsed: "AI"
+        case .notesEdited: "Notes"
         }
     }
 
@@ -377,6 +384,7 @@ extension AnalyticsEvent {
         case .aiModelDownload: "modelDownload"
         case .aiAssistantUsed: "assistantUsed"
         case .aiSmartFilterUsed: "smartFilterUsed"
+        case .notesEdited: "edited"
         }
     }
 
@@ -460,6 +468,14 @@ extension AnalyticsEvent {
             ["segue.action": action.rawValue, "segue.chords": chords.rawValue]
         case .aiAssistantUsed, .aiModelDownload, .aiPasteFinished, .aiSmartFilterUsed:
             aiParams
+        case let .notesEdited(summary):
+            [
+                "segue.action": summary.action.rawValue,
+                "segue.kind": summary.kind.rawValue,
+                "segue.placement": summary.placement.rawValue,
+                "segue.entry": summary.entry.rawValue,
+                "segue.repeatHint": String(summary.repeatHint),
+            ]
         }
     }
 }
