@@ -43,7 +43,7 @@ Every target has a one-line `##` description in the [Makefile](Makefile). After 
 | Ships | Mac App Store | Ryan's Mac only |
 | Extra modules | none | `Packages/SeguePersonalModules` |
 
-Personal-only features (planned: audio analysis, synced-lyrics lookup, import from URL) depend on models or sources whose licences or terms do not allow store distribution. They live in their own package, compiled in only under the `SEGUE_PERSONAL` condition, so the App Store build never contains their source or their symbols. `make verify-appstore` proves it on every `make check`: it builds the App Store flavour and fails if anything personal reaches its build graph, link map, binary or bundle.
+Personal-only features (planned: synced-lyrics lookup, import from URL) depend on models or sources whose licences or terms do not allow store distribution. They live in their own package, compiled in only under the `SEGUE_PERSONAL` condition, so the App Store build never contains their source or their symbols. `make verify-appstore` proves it on every `make check`: it builds the App Store flavour and fails if anything personal reaches its build graph, link map, binary or bundle.
 
 ## Repo layout
 

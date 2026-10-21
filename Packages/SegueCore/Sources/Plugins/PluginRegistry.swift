@@ -3,7 +3,8 @@ import Synchronization
 // Plugin seam for restricted, personal-build-only modules (phase 5). Core defines the
 // protocols; `SeguePersonalModules` implements them. Core never knows that package exists.
 // The capability protocols are intentionally empty beyond identity in phase 0; phase 5
-// adds their real requirements.
+// adds their real requirements. Two capabilities remain, LRCLIB lyrics and URL import
+// (R133); audio analysis left the roadmap with audio-to-chart (R132).
 
 /// Common identity of every plugin.
 public protocol Plugin: Sendable {
@@ -13,11 +14,8 @@ public protocol Plugin: Sendable {
     var displayName: String { get }
 }
 
-/// Turns external input (URL, file, page) into a song. Phase 5.
+/// Turns external input (URL, file, page) into a song. Phase 5 (URL import).
 public protocol SongImporter: Plugin {}
-
-/// Analyzes audio (transcription, key/BPM, sections, chords). Phase 5.
-public protocol AudioAnalyzer: Plugin {}
 
 /// Looks up lyrics from an external source (e.g. LRCLIB). Phase 5.
 public protocol LyricsSource: Plugin {}
@@ -32,7 +30,6 @@ public protocol PluginModule {
 public final class PluginRegistry: Sendable {
     private struct Contents {
         var songImporters: [any SongImporter] = []
-        var audioAnalyzers: [any AudioAnalyzer] = []
         var lyricsSources: [any LyricsSource] = []
     }
 
@@ -52,20 +49,12 @@ public final class PluginRegistry: Sendable {
         contents.withLock { $0.songImporters.append(importer) }
     }
 
-    public func register(_ analyzer: any AudioAnalyzer) {
-        contents.withLock { $0.audioAnalyzers.append(analyzer) }
-    }
-
     public func register(_ source: any LyricsSource) {
         contents.withLock { $0.lyricsSources.append(source) }
     }
 
     public var songImporters: [any SongImporter] {
         contents.withLock { $0.songImporters }
-    }
-
-    public var audioAnalyzers: [any AudioAnalyzer] {
-        contents.withLock { $0.audioAnalyzers }
     }
 
     public var lyricsSources: [any LyricsSource] {
