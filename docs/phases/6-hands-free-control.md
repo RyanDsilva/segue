@@ -59,7 +59,7 @@ Let the performer drive live mode without touching the MacBook: MIDI controllers
 
 Integration-first; unit tests only for the tricky timing logic.
 
-- **MIDI integration (primary):** create a real virtual CoreMIDI source with `MIDISourceCreateWithProtocol`, drive a running live-mode session with Note/CC/PC packets, and assert the live view actually changed (page, song, autoscroll state). Cover hot-plug by creating and disposing a source mid-test, and restart persistence of a learned binding via a real `controls.json`.
+- **MIDI integration (primary):** create a real virtual CoreMIDI source with `MIDISourceCreateWithProtocol`, drive a running live-mode session with Note/CC/PC packets, and assert the live view actually changed (page, song, autoscroll state). Cover hot-plug by creating and disposing a source mid-test, and restart persistence of a learned binding via a real `bindings.json` (R145).
 - **Key learn (in-process):** drive the mapping pane's learn state with synthesized key events, assert the table and `bindings.json` round trip and that the `?` help reflects the new key.
 - **Unit (narrow):** debounce and opt-in long-press state machine driven by the injected clock (tap, hold, bounce, interleaved bindings).
 - **Manual E2E (recorded in the PR):** one USB MIDI foot controller through a 3-song setlist.

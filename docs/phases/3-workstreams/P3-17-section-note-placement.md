@@ -2,7 +2,7 @@
 
 Follow-up to P3-13 (new, 2026-10-20), from the Featurebase bug "Section Notes Exact Placement". In v0.5 scope as a phase 3 fix. Parent spec: `docs/phases/3-ai-entry-and-assistant.md` section 16.0.6 (read only; a sibling owns that file). Rulings: `docs/release/decisions.md` **R144** (this work), R87 (one section note concept with "Show on stage only"), R106 (chart notes stay `{comment}` in the `.cho`, stage-only notes stay sidecar cues), R122/R123 (per-slot arrangements anchor by label + occurrence + a first-two-lyric-lines fingerprint), R113 (test budget), R74 (closed analytics vocabulary); phase 2 interfaces `docs/phases/2-interfaces.md` (cue anchoring). Sibling spec: `P3-13-section-notes.md` (what exists today), `P3-16-slot-arrangements.md` (anchors and fingerprint).
 
-**Do not start step 2 until Ryan has closed the Open Questions at the end.** Step 1 (stage note IDs) does not depend on them.
+The Open Questions at the end are closed (R145, Ryan 2026-10-20): every answer is the spec's recommendation.
 
 ## Session rules
 
@@ -57,7 +57,7 @@ public struct SongCue: Sendable, Hashable, Codable {
 }
 ```
 
-On disk: `{"id": "01JB...", "section": "Chorus", "occurrence": 2, "text": "Watch Ravi"}`. Open question 5 adds an optional `fp` (section fingerprint) field; if Ryan takes it, it lands in the same schema bump, never a second one.
+On disk: `{"id": "01JB...", "section": "Chorus", "occurrence": 2, "text": "Watch Ravi"}`. Open question 5 (= a, R145) adds an optional `fp` (section fingerprint) field on placed cues in this same schema bump, never a second one.
 
 ### 3.2 Migration (`SidecarCodec` step `3:`)
 
@@ -93,7 +93,7 @@ What each kind of note can do with each placement:
 
 | Placement | Stage note | Chart note |
 |---|---|---|
-| Every time | cue with `occurrence: nil` (today's default) | open question 2 |
+| Every time | cue with `occurrence: nil` (today's default) | one `{comment}` copy appended in each written-out instance, one linked row (R145 question 2) |
 | #n, written out | cue with `occurrence: n` | `{comment}` line inside that section's block, appended (4.4) |
 | #n, a `{chorus}` repeat | cue with `occurrence: n` | not possible: explained, offered stage-only (4.3) |
 
@@ -106,8 +106,8 @@ A label that occurs once shows no picker (placement is implicit).
 - The pending addition row (the "Add Note" row) gets the same picker next to the "Show on stage only" checkbox.
 - **Default placement for a new note:**
   - Opened from the section band (badge, context menu, VoiceOver action): the instance of that band. `SectionNotesRequest` gains `placement: NotePlacement?`; `showSectionNotes(forSectionAt:)` computes it from the header path via `Anchors`. For a band of a label that occurs once, no placement.
-  - Opened from the library or the song card (no band): open question 3.
-- **Band context menu:** keep "Section Notes..." and add **"Add Note to Chorus #2..."** (title uses the band's label and, when the label repeats, its instance), which opens the sheet scrolled to the group with a new addition row already open, focused, and preset to that instance. Open question 4 asks whether this extra item is wanted.
+  - Opened from the library or the song card (no band): Every time (R145 question 3).
+- **Band context menu:** keep "Section Notes..." and add **"Add Note to Chorus #2..."** (title uses the band's label and, when the label repeats, its instance), which opens the sheet scrolled to the group with a new addition row already open, focused, and preset to that instance. Kept (R145 question 4).
 - Identifiers: `segue.sectionNotes.note.placement` (picker on a saved note), `segue.sectionNotes.addition.placement` (picker on a new note), `segue.sectionNotes.repeatHint` (4.3). Pickers carry accessibility labels "Shows on".
 
 ### 4.3 `{chorus}` repeats
@@ -233,11 +233,19 @@ E2E (at most one new flow, in the existing class `SegueSectionNotesE2ETests`): o
 - Arrangements are never marked out of date by note edits.
 - `make quick` green; `make e2e-one` for `SegueSectionNotesE2ETests` green; the wave gate green.
 
-## 12. Open Questions (for Ryan; recommendations only, not decided)
+## 12. Open Questions (resolved, R145)
+
+Ryan closed all six on 2026-10-20 with the recommendations: 1 = I, 2 = a, 3 = a, 4 = a, 5 = a, 6 = a. The original questions stay below for the record, each with its answer.
 
 1. **Chart note identity.** (I) Derived IDs: chart notes stay positional `{comment}` lines, only stage notes get persisted IDs; (II) a sidecar map keyed by section fingerprint and text, giving chart notes persistent IDs Segue reconciles on read; (III) an ID in the `.cho`, as a `# segue-note <id>` file comment above the note (IIIb) or an `{x_segue_note}` directive (IIIc); attributes on `{comment}` (IIIa) are ruled out because ChordPro defines none and other apps would print them. **Recommend I**: it fixes every reported bug, leaves files untouched, and nothing yet needs a chart note to be identifiable from outside the file; II stays the upgrade path.
+   **Answer (R145): I.** Chart notes keep derived, positional IDs; only stage notes get persisted IDs.
 2. **"Every time" for a chart note** on a label with several written-out sections. (a) Write one `{comment}` copy into each written-out instance, shown in the sheet as one note "in #1, #2" (linked by identical text and position; editing the row edits all copies; a copy edited elsewhere just becomes its own note); (b) "Every time" is a stage-only placement: picking it for a chart note turns on "Show on stage only", with a hint; (c) "Every time" for a chart note means the first written-out instance (today's behaviour; repeats of it show it, other written-out copies do not). **Recommend a**: it is the only answer where "Every time" means what it says in the chart, PDFs and other apps, and it needs no identity beyond Option I.
+   **Answer (R145): a.** One `{comment}` copy in each written-out instance, shown as one linked note "in #1, #2, #3".
 3. **Default placement with no band context** (sheet opened from the library or song card, or "Add Note" on a group). (a) "Every time"; (b) #1; (c) no default: the picker starts empty and Add asks for a choice. **Recommend a** for stage notes (matches today's cue default) and, if question 2 is a, for chart notes too; if question 2 is b or c, #1 for chart notes.
+   **Answer (R145): a.** Every time, for stage and chart notes alike.
 4. **Band context menu item.** (a) Add "Add Note to Chorus #2..." next to "Section Notes..." (opens the sheet with a new note row preset to that instance and focused); (b) keep only "Section Notes...", which scrolls to the group and presets the next Add to that instance. **Recommend a**: one step instead of two for the most common action, and it makes the instance default visible in the menu title.
+   **Answer (R145): a.** The band context menu gains "Add Note to Chorus #2...".
 5. **Stage notes and section shifts.** When a verse or chorus is inserted earlier in the song, "Chorus #2" silently becomes a different chorus for an existing stage note (today and after this spec). (a) Store the section fingerprint (`fp`) on each placed cue in the same schema 4 bump; on read, if label + occurrence no longer matches the fingerprint and exactly one same-label instance does, re-anchor to it; otherwise keep the occurrence and show a quiet "Check placement" mark on the note in the sheet; (b) leave as is (label + occurrence only). **Recommend a**: it reuses R123's fingerprint so notes and arrangements agree, and it is cheap only if done in the same schema bump.
+   **Answer (R145): a.** Placed cues store `fp` in the schema 4 bump; re-anchor when exactly one same-label instance matches, else a quiet "Check placement" mark.
 6. **Sheet grouping.** (a) One group per label with notes ordered by placement and a placement picker per note (this spec); (b) one sub-group per instance nested under the label ("Chorus" > "#1", "#2", "#3 (repeat)", "Every time"), each with its own Add. **Recommend a** for v0.5 (smaller change to a shipped sheet, and most songs have few notes); revisit b if analytics shows heavy per-instance use.
+   **Answer (R145): a.** One group per label, a placement picker per note.
