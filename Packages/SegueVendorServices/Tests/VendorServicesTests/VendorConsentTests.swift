@@ -7,8 +7,9 @@ import Testing
 
 /// The real vendor adapters behind the consent gate: nothing is constructed, written or sent
 /// before consent, and revoking stops everything. Serialized because the Sentry SDK is
-/// process-wide state.
-@Suite(.serialized)
+/// process-wide state. Every wait is on an event (a request arriving, a cancellation, a
+/// directory change); the time limit is only a backstop against a hang.
+@Suite(.serialized, .timeLimit(.minutes(1)))
 struct VendorConsentTests {
     /// A config whose DSN points at this Mac, so the started SDK can never reach Sentry.
     /// Its TelemetryDeck namespace routes the analytics adapter to the harness's stub.
@@ -23,21 +24,30 @@ struct VendorConsentTests {
         ))
     }
 
-    static func hub(_ harness: IngestHarness, _ consent: ConsentState) throws -> ServicesHub {
+    static func hub(
+        _ harness: IngestHarness,
+        _ consent: ConsentState,
+        factory: RecordingFactory? = nil,
+    ) throws -> ServicesHub {
         let throttle = AnalyticsThrottle(suiteName: harness.suiteName, clock: SystemClock())
         return try ServicesHub(
-            factory: harness.factory(config: config(namespace: harness.namespace)),
+            factory: factory ?? recording(harness),
             consent: consent,
             throttle: throttle,
         )
     }
 
+    static func recording(_ harness: IngestHarness) throws -> RecordingFactory {
+        try RecordingFactory(harness.factory(config: config(namespace: harness.namespace)))
+    }
+
     @Test(arguments: [ConsentState.undecided, ConsentState.allDeclined])
-    func `no vendor is touched before consent`(consent: ConsentState) async throws {
+    func `no vendor is touched before consent`(consent: ConsentState) throws {
         let harness = try IngestHarness()
         defer { harness.cleanUp() }
         let route = harness.route()
-        let hub = try Self.hub(harness, consent)
+        let factory = try Self.recording(harness)
+        let hub = try Self.hub(harness, consent, factory: factory)
 
         let sample = VocabularySample.all
         for index in 0 ..< 200 {
@@ -46,8 +56,9 @@ struct VendorConsentTests {
         for crumb in LifecycleCrumb.allCases {
             hub.record(crumb)
         }
-        try await Task.sleep(for: .milliseconds(200))
 
+        // No adapter was ever built, so nothing exists that could send later.
+        #expect(factory.made.isEmpty)
         #expect(route.captured.isEmpty)
         #expect(!SentrySDK.isEnabled)
         #expect(hub.installationID == nil)
@@ -66,19 +77,25 @@ struct VendorConsentTests {
 
         await hub.apply(.analyticsOnly)
         hub.record(.helpOpened(.reportProblem))
-        try await eventually { route.captured.flatMap(\.signals).count == 2 }
+        await route.waitForSignals(2)
         let types = route.captured.flatMap(\.signals).compactMap { $0["type"] as? String }
         #expect(types == ["TelemetryDeck.Session.started", "Segue.Help.opened"])
         #expect(!SentrySDK.isEnabled)
 
         route.setFallback(.hang)
         hub.record(.helpOpened(.requestFeature))
-        try await eventually { harness.queueFileExists }
+        // On the wire, so already on disk: the queue persists before it sends.
+        await route.waitForSignals(3)
+        #expect(harness.queueFileExists)
         await hub.apply(.allDeclined)
+        // Revoking cancelled the hanging request instead of waiting it out.
+        await route.waitForCancelled(1)
         hub.record(.helpOpened(.privacyPolicy))
-        try await Task.sleep(for: .milliseconds(150))
 
-        #expect(route.captured.flatMap(\.signals).count <= 3)
+        // The hub swapped the Null sink in before shutting the old one down, and `apply`
+        // returned only once the old send loop had wound down: nothing is left that could
+        // still send, so there is nothing to wait for.
+        #expect(route.captured.flatMap(\.signals).count == 3)
         #expect(!route.captured.flatMap(\.signals).contains { signal in
             (signal["payload"] as? [String: String])?["segue.item"] == "privacyPolicy"
         })
@@ -103,7 +120,8 @@ struct VendorConsentTests {
         )
         #expect(SentrySDK.isEnabled)
         #expect(!SentryCrashReporter.startsAtNextLaunch)
-        try await eventually { reporter.installationID != nil }
+        // The SDK writes `INSTALLATION` from its own background queue, with no callback.
+        try await whenDirectoryChanges(cache) { reporter.installationID != nil }
         let diagnosticsID = reporter.installationID
         reporter.addBreadcrumb(Services.Breadcrumb(.helpOpened(.help)))
 

@@ -65,6 +65,12 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
             await wait { $0.captured.count >= count }
         }
 
+        /// Returns once the requests that have arrived carry `count` signals in all, however
+        /// they were batched.
+        func waitForSignals(_ count: Int) async {
+            await wait { $0.captured.flatMap(\.signals).count >= count }
+        }
+
         /// Returns once `count` in-flight requests have been cancelled.
         func waitForCancelled(_ count: Int) async {
             await wait { $0.cancelled >= count }

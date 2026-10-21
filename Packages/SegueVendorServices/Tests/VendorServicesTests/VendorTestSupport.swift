@@ -1,6 +1,7 @@
 import Foundation
 import Services
 import Support
+import Synchronization
 import Testing
 @testable import VendorServices
 
@@ -119,20 +120,74 @@ struct IngestHarness {
     }
 }
 
-struct TimedOut: Error {}
+/// Wraps the real factory and records every adapter the hub asks it for. The hub reaches a
+/// vendor only through its factory, so an empty record proves that no vendor code ran: a
+/// synchronous fact, with no waiting for something not to happen.
+final class RecordingFactory: ServicesFactory {
+    enum Made: Equatable {
+        case analytics
+        case crashReporter
+    }
 
-/// Polls `condition` until it holds, failing after `timeout`.
-nonisolated(nonsending) func eventually(
-    timeout: Duration = .seconds(10),
-    _ condition: () async -> Bool,
+    private let base: VendorServicesFactory
+    private let record = Mutex<[Made]>([])
+
+    init(_ base: VendorServicesFactory) {
+        self.base = base
+    }
+
+    var made: [Made] {
+        record.withLock { $0 }
+    }
+
+    func makeAnalytics() -> any AnalyticsSink {
+        record.withLock { $0.append(.analytics) }
+        return base.makeAnalytics()
+    }
+
+    func makeCrashReporter() -> any CrashReporter {
+        record.withLock { $0.append(.crashReporter) }
+        return base.makeCrashReporter()
+    }
+}
+
+struct CannotWatch: Error {
+    let path: String
+}
+
+/// Returns once `condition` holds, re-checking it each time an entry of `directory` is
+/// added, removed or renamed (a kqueue vnode event on the directory, not a timer). For state
+/// a vendor SDK writes to disk from its own background queue with no completion callback.
+/// The watch is armed before the first check, so a change that lands in between still wakes
+/// it.
+func whenDirectoryChanges(
+    _ directory: URL,
+    until condition: @escaping @Sendable () -> Bool,
 ) async throws {
-    let deadline = ContinuousClock.now + timeout
-    while await !condition() {
-        guard ContinuousClock.now < deadline else {
-            Issue.record("condition not met within \(timeout)")
-            throw TimedOut()
-        }
-        try await Task.sleep(for: .milliseconds(10))
+    let path = directory.path(percentEncoded: false)
+    let descriptor = open(path, O_EVTONLY)
+    guard descriptor >= 0 else { throw CannotWatch(path: path) }
+    let (changes, continuation) = AsyncStream.makeStream(
+        of: Void.self,
+        bufferingPolicy: .bufferingNewest(1),
+    )
+    let source = DispatchSource.makeFileSystemObjectSource(
+        fileDescriptor: descriptor,
+        eventMask: [.write, .link, .rename, .delete],
+        queue: .global(),
+    )
+    source.setEventHandler { continuation.yield() }
+    source.setCancelHandler { close(descriptor) }
+    source.resume()
+    defer {
+        source.cancel()
+        continuation.finish()
+    }
+    if condition() {
+        return
+    }
+    for await _ in changes where condition() {
+        return
     }
 }
 
