@@ -60,14 +60,15 @@ Superseded by R134: there is no Segue sync mechanism to choose. The iOS app read
 The iOS Personal scheme links `Packages/SeguePersonalModules` exactly like the Mac one, and the same absence checks run on the iOS App Store archive. Implications to design for:
 - **URL import:** delivered via the iOS Share extension in the Personal build only.
 - **LRCLIB search:** the same `LyricsSource` implementation as the Mac.
-- **Custom model setting (R97):** only if the iOS app gets the phase 3 AI features; not decided.
+- **Custom model setting (R97):** stays Mac-only; not offered on iOS (R143).
 
 ## 5. Library source (Files-app folder, R134)
 
 - The library is a **folder the user picks in the Files app** (folder picker), from any provider: iCloud Drive, Dropbox, On My iPhone or others. It is accessed through a security-scoped bookmark; a stale or broken bookmark shows a re-pick prompt and never silently falls back to an empty library. Same layout as the Mac: `.cho` + JSON sidecar per song, setlists and gig log as JSON.
 - The app reads and writes the ChordPro files and sidecars in that folder directly. The SQLite index stays a rebuildable projection per device.
 - **No Segue sync engine and no conflict UI.** Moving changes between devices is the file provider's job; whatever the provider leaves in the folder is what the library shows.
-- Open questions (section 11): offline guarantees for cloud-provider folders, and whether gig-log files stay per device.
+- **Gig ready** (R143): before a gig the app eagerly downloads the setlist's song files and sidecars from a cloud-provider folder and keeps them pinned offline (with a visible ready / not ready state per setlist), rather than relying on the provider's own offline setting.
+- **Gig log stays one file per device per gig** (R143), so two devices never write the same file.
 
 ## 6. Partner live sync design
 
@@ -143,7 +144,7 @@ Integration-first; unit tests only for tricky pure logic.
 
 ## 10. Resolved decisions
 
-See `docs/decisions.md` and `docs/release/decisions.md` R132-R138. R7.1 (transport) is resolved in `docs/decisions.md` (Phase 7 research outcomes); R7.2 is superseded by R134.
+See `docs/decisions.md` and `docs/release/decisions.md` R132-R138 and R143. R7.1 (transport) is resolved in `docs/decisions.md` (Phase 7 research outcomes); R7.2 is superseded by R134.
 
 1. **Follower tracks section/scroll**, not just song - layout-independent `scrollHint`.
 2. **Trusted devices remembered** - code only on first pairing.
@@ -152,10 +153,14 @@ See `docs/decisions.md` and `docs/release/decisions.md` R132-R138. R7.1 (transpo
 5. **Personal modules on iOS** - same absence checks (audio-to-chart and its model variants removed, R132).
 6. **User-picked Files-app folder** (R134, replacing the user-picked iCloud Drive folder) - any provider, no Segue sync engine, no conflict UI; bookmark failure handling required.
 7. **Follower's own transpose/instrument view persists per partner device** between gigs; it never resets to the leader's view.
+8. **Gig ready kept** (R143) - eager download and offline pinning of a setlist's files from a cloud-provider folder.
+9. **One gig-log file per device per gig** (R143).
+10. **Custom model setting (R97) is Mac-only** (R143).
 
 ## 11. Open questions
 
 1. Transport choice and no-router fallback - resolved by R7.1 in `docs/decisions.md` (Network.framework, TCP + TLS, Bonjour, peer-to-peer Wi-Fi).
 2. iCloud Drive folder vs CKSyncEngine - moot (R134).
-3. Offline guarantees for a cloud-provider library folder: keep the earlier "Gig ready" idea (download a setlist's files eagerly before a gig) or rely on the provider's own offline setting.
-4. Gig log files: keep one file per device per gig (it made sync conflicts impossible by construction), or one shared file now that Segue has no conflict handling.
+3. Offline guarantees for a cloud-provider library folder - resolved by R143: keep "Gig ready" (download a setlist's files eagerly before a gig and pin them offline).
+4. Gig log files - resolved by R143: keep one file per device per gig.
+5. Custom model setting (R97) on iOS - resolved by R143: Mac-only.
