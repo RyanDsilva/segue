@@ -1,15 +1,21 @@
 ---
 title: Section notes
-description: One note per section, like "softer" or "key change". Keep it in the chart, or show it on stage only.
+description: Notes on a section, like "softer" or "key change", every time it is played or just once. Keep them in the chart, or show them on stage only.
 ---
 import Shot from '../../components/Shot.astro';
 
-Choose **Section Notes…** from the editor or the song's menu, pick a section, and type a note.
+Choose **Section Notes…** from the editor or the song's menu, pick a section, and type a note. To go straight to one section, right-click its band and choose **Add Note to Chorus #2…**.
 
 <Shot id="notes-sheet" alt="The Section Notes sheet with a note on Chorus" />
 
+## Every time, or just once {#placement}
+
+When a section plays more than once, **Shows on** picks where the note goes: **Every time**, or one play such as **Chorus #2**. New notes start at Every time, and a second note on a section goes below the first.
+
+A repeat written as `{chorus}` has no lines of its own, so a note there shows on stage only. If you add a section before a placed note and Segue cannot tell which one it belongs to, the note shows **Check placement**: pick its place again to confirm.
+
 ## Show on stage only {#stage-only}
 
-Notes show in the chart everywhere by default, written into the song file. Turn on **Show on stage only** to keep a note off the printed chart and see it only during a show. A stage-only note pins to a named section, so it stays with that section when you edit the song.
+Notes are written into the song file and show in the chart. Turn on **Show on stage only** to keep a note off the printed chart and see it only during a show. A stage-only note stays with its section when you edit the song.
 
 <Shot id="notes-stage" alt="A section note shown beside the chorus on stage" />
