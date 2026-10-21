@@ -40,7 +40,7 @@ E2E_SMOKE   := LaunchSmokeTests SegueE2ETests/testSongToSetlistToLiveView \
 HTMLVALIDATE := pnpm dlx html-validate@11.16.4
 WRANGLER     := pnpm dlx wrangler@4.151.1
 
-.PHONY: bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
+.PHONY: sentry-pull bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
 	test-perf e2e e2e-one e2e-smoke gate quick eval-ai lint format verify-appstore check bump \
 	site-fonts site-html guide guide-dev guide-check guide-keys docs-shots docs-clips screenshots screenshots-compose preview preview-edit docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
@@ -189,6 +189,9 @@ upload: ## validate, upload the verified .pkg, signed local tag, dSYMs to Sentry
 upload-dsyms: ## Upload an archive's dSYMs to Sentry (ARCHIVE=path or DSYMS=dir; DRY_RUN=1)
 	@test -n "$(ARCHIVE)$(DSYMS)" || (echo "usage: make upload-dsyms ARCHIVE=<xcarchive> | DSYMS=<dir>" >&2; exit 2)
 	scripts/upload-dsyms.sh $(if $(DRY_RUN),--dry-run) $(ARCHIVE)
+
+sentry-pull: ## Save open Sentry issues and feedback to .build/sentry (Ryan, Terminal.app)
+	scripts/sentry-pull.sh
 
 probe-shortcuts: ## R35 probe: build the sandboxed Shortcuts Events probe app (research/shortcuts-events-probe)
 	research/shortcuts-events-probe/build.sh
