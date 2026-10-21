@@ -38,7 +38,7 @@ Make adding a song take under a minute from any messy source, make entering a so
 | About panel, variant A (native, one row of links) | yes | yes | R103 |
 | URL import, LRCLIB, audio | no | phase 5 | R61 |
 
-Out of scope for 0.5: energy rating (deferred, R71), AI energy or AI tag guesses at import (R71), a local AI stats screen or metrics database (R74), learned lengths and length estimates (R91), a ⌘K add palette (R89), metronome sound during a show (R90), a "gap queue" or "Detect sections" on existing songs (brainstorm direction C), PDF/photo import (phase 4), macOS 27 `LanguageModel` / `MLXFoundationModels` (revisited in 0.6, R77), Private Cloud Compute.
+Out of scope for 0.5: energy rating (deferred, R71), AI energy or AI tag guesses at import (R71), a local AI stats screen or metrics database (R74), learned lengths and length estimates (R91), a ⌘K add palette (R89), metronome sound during a show (R90), a "gap queue" or "Detect sections" on existing songs (brainstorm direction C), PDF/photo import (not planned: phase 4 lists importing PDFs as a non-goal), macOS 27 `LanguageModel` / `MLXFoundationModels` (revisited in 0.6, R77), Private Cloud Compute.
 
 ## 3. Design principle: deterministic first, model last
 
