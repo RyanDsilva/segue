@@ -36,7 +36,7 @@ Make adding a song take under a minute from any messy source, make entering a so
 | Visual metronome on stage (sound in rehearsal only) | yes | yes | R90 |
 | No repeats within a show (live mode) | yes | yes | R102 |
 | About panel, variant A (native, one row of links) | yes | yes | R103 |
-| URL import, LRCLIB, audio | no | phase 5 | R61 |
+| URL import, LRCLIB | no | phase 5 | R61, R132 (audio removed) |
 
 Out of scope for 0.5: energy rating (deferred, R71), AI energy or AI tag guesses at import (R71), a local AI stats screen or metrics database (R74), learned lengths and length estimates (R91), a ⌘K add palette (R89), metronome sound during a show (R90), a "gap queue" or "Detect sections" on existing songs (brainstorm direction C), PDF/photo import (not planned: phase 4 lists importing PDFs as a non-goal), macOS 27 `LanguageModel` / `MLXFoundationModels` (revisited in 0.6, R77), Private Cloud Compute.
 
