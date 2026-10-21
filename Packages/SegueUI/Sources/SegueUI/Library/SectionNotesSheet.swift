@@ -175,10 +175,8 @@
                 ForEach(group.notes) { note in
                     noteRow(note, in: group)
                 }
-                ForEach($additions) { $addition in
-                    if addition.group == group.id {
-                        additionRow($addition, in: group)
-                    }
+                ForEach(additions.filter { $0.group == group.id }) { addition in
+                    additionRow(addition, in: group)
                 }
                 if group.notes.isEmpty, !additions.contains(where: { $0.group == group.id }) {
                     Text("No notes")
@@ -296,29 +294,6 @@
             }
         }
 
-        private func additionRow(
-            _ addition: Binding<Addition>,
-            in group: SectionNoteGroup,
-        ) -> some View {
-            VStack(alignment: .leading, spacing: 6) {
-                TextField("New note", text: addition.text)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($focused, equals: .addition(addition.wrappedValue.id))
-                    .onSubmit { commit(.addition(addition.wrappedValue.id)) }
-                    .accessibilityLabel("New note on \(group.title)")
-                    .accessibilityIdentifier(AccessibilityID.sectionNoteText)
-                Toggle("Show on stage only", isOn: addition.stageOnly)
-                    .toggleStyle(.checkbox)
-                    .controlSize(.small)
-                    .disabled(!group.acceptsChartNotes
-                        || !(group.acceptsStageNotes && host.canEditStageNotes))
-                    .accessibilityIdentifier(AccessibilityID.sectionNoteStageOnly)
-            }
-            .padding(10)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Theme.color.surfaceAlt))
-            .accessibilityElement(children: .contain)
-        }
-
         // MARK: Edits
 
         private func draftBinding(_ note: SectionNote) -> Binding<String> {
@@ -387,6 +362,53 @@
                 await work?.value
                 dismiss()
             }
+        }
+    }
+
+    // MARK: Pending additions
+
+    extension SectionNotesSheet {
+        /// A row for one pending addition. Its bindings find the addition by id, never by
+        /// position: committing one (when focus leaves it) removes it from `additions` while
+        /// its row is still on screen for a pass, and a positional binding would index past
+        /// the end of the shortened array.
+        private func additionRow(_ addition: Addition, in group: SectionNoteGroup) -> some View {
+            VStack(alignment: .leading, spacing: 6) {
+                TextField("New note", text: additionBinding(addition.id, \.text, or: ""))
+                    .textFieldStyle(.roundedBorder)
+                    .focused($focused, equals: .addition(addition.id))
+                    .onSubmit { commit(.addition(addition.id)) }
+                    .accessibilityLabel("New note on \(group.title)")
+                    .accessibilityIdentifier(AccessibilityID.sectionNoteText)
+                Toggle("Show on stage only", isOn: additionBinding(
+                    addition.id, \.stageOnly, or: addition.stageOnly,
+                ))
+                .toggleStyle(.checkbox)
+                .controlSize(.small)
+                .disabled(!group.acceptsChartNotes
+                    || !(group.acceptsStageNotes && host.canEditStageNotes))
+                .accessibilityIdentifier(AccessibilityID.sectionNoteStageOnly)
+            }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Theme.color.surfaceAlt))
+            .accessibilityElement(children: .contain)
+        }
+
+        /// A binding to one field of the pending addition with `id`; a row that outlives its
+        /// addition by a pass shows `fallback` and ignores writes.
+        private func additionBinding<Value>(
+            _ id: UUID,
+            _ keyPath: WritableKeyPath<Addition, Value>,
+            or fallback: Value,
+        ) -> Binding<Value> {
+            Binding(
+                get: { additions.first { $0.id == id }?[keyPath: keyPath] ?? fallback },
+                set: { value in
+                    if let index = additions.firstIndex(where: { $0.id == id }) {
+                        additions[index][keyPath: keyPath] = value
+                    }
+                },
+            )
         }
     }
 #endif

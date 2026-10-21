@@ -33,6 +33,34 @@ final class SegueSectionNotesE2ETests: XCTestCase {
         chartItInTheEditor(app, library)
     }
 
+    /// The issue-board report: notes added to several sections in one sitting, without
+    /// saving in between, must not crash and must all land in the chart.
+    @MainActor
+    func testNotesOnSeveralSectionsAtOnce() throws {
+        let library = try XCTUnwrap(library)
+        let app = XCUIApplication()
+        self.app = app
+        E2E.launch(app, arguments: library.arguments(["-SegueSeedWelcome", "YES"]))
+        selectKettle(app)
+        element(app, NotesAXID.open).click(in: app)
+        let notes = [("verse-1", "Soft start"), ("chorus", "Big"), ("verse-3", "Pull back")]
+        for (index, (group, text)) in notes.enumerated() {
+            element(app, NotesAXID.add(group)).click(in: app)
+            // The groups are in song order, so each new field sits after the earlier ones.
+            let field = app.textFields.matching(identifier: NotesAXID.text).element(boundBy: index)
+            XCTAssertTrue(field.appears(timeout: 5), "no new note field in \(group)")
+            field.typeText(text, in: app)
+        }
+        attach(app, "section-notes-several")
+        element(app, NotesAXID.done).click(in: app)
+        XCTAssertTrue(app.state == .runningForeground, "the app crashed")
+        let expected = ["{comment: Soft start}", "{comment: Big}", "{comment: Pull back}"]
+        XCTAssertTrue(E2E.waitUntil {
+            let file = (try? String(contentsOf: self.choURL(library), encoding: .utf8)) ?? ""
+            return expected.allSatisfy(file.contains)
+        }, "not every note reached the chart")
+    }
+
     // MARK: - Steps
 
     /// Library: a stage-only note on the chorus; only the sidecar changes.
