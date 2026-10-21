@@ -50,6 +50,7 @@ Product rulings for phases 0-7 live here; the v0.5 App Store release rulings (R1
 
 - Songbook PDF **with table of contents**. No duplex, notes opt-in per export, no branding footer, no large-print setlist.
 - ChordPro export **applies current transpose by default**.
+  - *Moot: ChordPro export and the setlist one-pager were removed from the roadmap by R132 (release/decisions.md); the phase 4 PDFs ship in v0.5 (R138).*
 
 ## Phase 5
 
@@ -58,15 +59,18 @@ Product rulings for phases 0-7 live here; the v0.5 App Store release rulings (R1
 - ASR default **picked by eval** (WhisperKit vs SpeechAnalyzer on user's recordings).
 - URL import: **Ultimate Guitar, E-Chords/Chordie, generic page extraction**.
 - Success bar: **accuracy targets gate** (WER <= 25%, chords >= 70%).
+  - *Audio-to-chart was removed from the roadmap by R132, so in-app recording, the ASR default and the accuracy gate are moot. LRCLIB and URL import stay (R133).*
 
 ## Phase 6
 
 - None of: MIDI program-change out, pedals outside live mode, per-song pedal overrides, long-press default. Taps stay instant; long-press opt-in.
+  - *MIDI program-change out is reopened by R135 (research ticket on the Ampero II Stomp first, scope after). Bluetooth HID pedals and presets are removed by R132.*
 
 ## Phase 7
 
 - Partner follows **section/scroll position**; **trusted devices remembered**. Partner cannot request songs.
 - **Visual editor on iPhone**, **personal modules on iOS**, **user-picked iCloud Drive folder**.
+  - *The iCloud Drive folder is superseded by R134: a Files-app folder from any provider, with no Segue sync engine and no conflict UI.*
 - Transport and iCloud-vs-CKSyncEngine stay gated on research tickets R7.1 / R7.2.
 
 ## Round 2 (2026-10-17)
@@ -115,6 +119,7 @@ Product rulings for phases 0-7 live here; the v0.5 App Store release rulings (R1
 
 - **R7.1 transport:** Network.framework (new Swift NetworkListener/NetworkBrowser/NetworkConnection), TCP + TLS, length-prefixed JSON, Bonjour `_segue._tcp`, peer-to-peer Wi-Fi enabled. Wi-Fi Aware adapter later for iOS-to-iOS / Android. See `docs/research/phase7-sync.md`.
 - **R7.2 library sync:** keep the user-picked iCloud Drive folder; change detection via NSFilePresenter plus rescan on launch/foreground/bookmark resolve (NSMetadataQuery is unreliable for user-picked folders); detect both NSFileVersion conflicts and "name 2.cho" duplicates.
+  - *Superseded by R134 (no Segue sync mechanism).*
 
 ## Key screen layouts (2026-10-17)
 

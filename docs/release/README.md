@@ -15,6 +15,7 @@ Legend: **-> paste to Claude** = not secret, give it to the session. **-> 1Passw
 - Next: the "Now" phase below, then WS1 steps 1-7 (they need nothing from Ryan).
 - **2026-10-18: phase 3 (AI entry & assistant) is pulled into 0.5 (R61-R79).** Release order (R79): phase 3 lands -> the R56 walkthrough (with phase 3 items) -> WS5 -> TestFlight -> real gig -> submit. Spec: `docs/phases/3-ai-entry-and-assistant.md`; workstreams: `docs/phases/3-workstreams/`. Your phase 3 items are in 2.3a.
 - **2026-10-19: rulings R80-R103** (metadata entry and fast set building from the walkthrough brainstorm, manual lengths + "Time it" instead of learned/estimated lengths, answers to phase 3 questions 1-16, converter rulings, no repeats within a show, About panel A). P3-1 has landed (55d8701); P3-A Part 1 proved MLX in the sandboxed archive and the shared app-group store with no profile regeneration. Six new workstreams P3-10 to P3-15. New questions 21-29 are in the phase 3 spec section 16.1.
+- **2026-10-20: roadmap rulings R132-R139.** v0.5 gains the phase 3 leftovers, the phase 4 PDFs (single chart, songbook, print, embedded preview), N1 Singer view, N4 Medleys and N8 Gig stats (launch is blocked on the Apple account anyway). Then phase 6 MIDI (with the Ampero MIDI-output research), phase 5 LRCLIB + URL import, phase 7 iOS + N5 Share by file. App Store only: no DMG or direct distribution (R139). Canonical order: `docs/00-vision.md` section 4.
 
 ---
 
@@ -144,6 +145,8 @@ Pasted by Ryan from the steps above. None is secret: the IDs and the DSN ship in
 ---
 
 ### Later tasks (recorded)
+- [ ] **v0.5 additions (R138):** phase 3 leftovers; phase 4 single chart + songbook PDFs with print and embedded preview (`docs/phases/4-export.md`); N1 Singer view, N4 Medleys, N8 Gig stats (specs not written yet).
+- [ ] **After launch, in order (R138):** phase 6 MIDI input + mapping with MIDI learn, with the R135 Ampero II Stomp MIDI-output research ticket alongside; phase 5 LRCLIB + URL import; phase 7 iOS/iPadOS app, partner follow, personal modules on iOS, plus N5 Share by file. Phase 5 vs 7 is unranked (iOS last by default).
 - [ ] **Website trim pass (R57):** in a fresh session once the app is feature-complete, cut copy and sections (Ryan: "too much text and site is too long"), then swap in real screenshots (WS5).
 - [ ] **Post-launch:** fold research 01-09 and open-questions.md into decisions.md plus a short summary.
 

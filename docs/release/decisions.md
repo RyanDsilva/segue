@@ -25,6 +25,7 @@ Release rulings live here; product rulings for phases 0-7 live in [../decisions.
 ## App scope for 0.5
 - R14. v0.5 = current AppStore build + readiness fixes (`research/06`) + review fixes (`research/03`) + everything below.
   - *Extended by R61: phase 3 "AI entry & assistant" is in v0.5.*
+  - *Extended again by R138: phase 4 PDFs, N1, N4 and N8 are in v0.5.*
 - R15. Must:
   - in-app import (drag and drop + File > Import) and Delete Song;
   - all deletes go to the Trash;
@@ -112,6 +113,7 @@ Overrides and specifics:
 Ryan's rulings after the phase 3 spikes (`docs/research/phase3-spikes.md`). The canonical phase 3 spec is `docs/phases/3-ai-entry-and-assistant.md`; its workstreams are `docs/phases/3-workstreams/P3-*.md`.
 
 - R61. **Phase 3 "AI entry & assistant" ships in v0.5, before the upload**, in both flavours (extends R14). Phases 4-7 stay post-launch. URL import stays phase 5, Personal-only.
+  - *Amended by R138 (2026-10-20): the phase 4 PDFs, N1 Singer view, N4 Medleys and N8 Gig stats join v0.5; phases 5-7 stay post-launch in the R138 order.*
 - R62. AI scope: **both flavours** ship Apple Foundation Models plus **one curated local MLX model**, downloaded only on user request. Choosing an arbitrary `mlx-community` model (Settings > AI > Advanced) is **Personal-only**. Narrows the earlier "any mlx-community model" ruling in `../decisions.md` (Phase 3).
 - R63. **Paste routing:** curated MLX if installed, else Foundation Models if available, else the deterministic converter alone. The review sheet is always shown. Deterministic conversion runs first; models only refine (labels, metadata, ambiguous lines). **Supersedes** the "Romanized Hindi AI cleanup: try Apple Foundation Models first" ruling in `../decisions.md` (Phase 3 research outcomes) and the spec's FM-first rule.
 - R64. **Curated model candidate:** `mlx-community/Qwen3-4B-Instruct-2507-4bit` (2.28 GB), **not locked**. It is locked only after the spike scorer is re-run on 10-20 of Ryan's own real pastes (UG and others, some Hinglish) and reaches >= 90%. The pastes live in the gitignored `research/phase3-eval/pastes/` (format in its README) because they contain copyrighted lyrics; they are never committed.
@@ -251,3 +253,20 @@ Store answers and copy (Ryan, 2026-10-20, from docs/research/phase3-store-ai.md 
 
 - R130 (Ryan, 2026-10-20). App Store screenshot layout A (store/screenshots.json direction A) and the 23 s preview cut are approved; the poster frame is set at about 6 s in App Store Connect. The phase 3 site copy (privacy, support, acknowledgements) is approved and published.
 - R131 (Ryan, 2026-10-20). The phase 3 walkthrough is done with no changes requested; every open walkthrough question keeps the as-built behaviour.
+
+## Roadmap prioritization (Ryan, 2026-10-20)
+
+Ryan's session on what phases 4-7 keep, what joins them and in which order. Item numbers follow Ryan's session list (phase.item): 4.3 is the phase 4 spec's "Setlist one-pager" and 4.5 its "ChordPro export"; 5.1-5.3 are the phase 5 goals; 6.1-6.4 are the phase 6 scope bullets (pedals, MIDI input, mapping UI, presets); 7.1-7.4 are the phase 7 goals and scope (iOS app, iCloud Drive sync, partner follow, personal modules on iOS). N1-N9 are the session's new-feature suggestions. The phase specs (`docs/phases/4-7`) and `docs/00-vision.md` are edited in place to match.
+
+- R132. **Removed from the roadmap:** 4.3 the setlist one-pager (floor sheet); 4.5 ChordPro export (the library already is ChordPro files, and the Settings export archive covers a whole-library copy); 5.1 audio-to-chart (recording, separation, transcription, chord detection and its eval); 6.1 Bluetooth HID pedals and 6.4 the pedal presets; 7.2 iCloud Drive library sync with its conflict UI (replaced by R134). Supersedes the matching rulings in `../decisions.md` (Phase 4 "ChordPro export applies current transpose", Phase 5 in-app recording, ASR default and accuracy gate, Phase 7 "user-picked iCloud Drive folder" and the R7.2 research outcome).
+- R133. **Kept:** phase 4 single chart PDF and songbook PDF, with print and the embedded preview as their infrastructure; 5.2 LRCLIB lyrics search and 5.3 URL import (Personal-only, `SeguePersonalModules`); 6.2 MIDI input and 6.3 the mapping UI with MIDI learn; 7.1 the iOS/iPadOS app, 7.3 live partner follow and 7.4 personal modules on iOS.
+- R134. **iOS library source replaces 7.2:** the iOS app opens a library folder the user picks in the Files app (any provider: iCloud Drive, Dropbox, On My iPhone) and reads the ChordPro files and sidecars in it directly. There is no Segue sync engine and no conflict UI; syncing is the file provider's job. Supersedes the phase 7 library sync design and the vision's "iOS sync later via iCloud Drive folder".
+- R135. **MIDI output reopened (research first).** Ryan wants per-song preset switching on his Ampero II Stomp, which reopens the phase 6 non-goal "MIDI output (per-song program changes) - decided: not built" and `../decisions.md` Phase 6 "None of: MIDI program-change out". A research ticket comes first: Ampero II Stomp program change over USB MIDI and TRS MIDI, timing on song change, banks and preset numbering. Scope is decided after it lands: a Personal module (Ryan's suggestion) or a generic MIDI-out feature in the store build. The ticket runs alongside the MIDI input phase (R138).
+- R136. **New features added** (specs not written yet):
+  - N1 **Singer view:** a lyrics-only view with the chords hidden.
+  - N4 **Medleys:** several songs joined into one set slot with a written transition.
+  - N5 **Share by file:** AirDrop or Share a setlist plus its songs as one file; goes with the iOS phase.
+  - N8 **Gig stats:** most played, not played lately and per-venue history, built on the existing play history (gig log).
+- R137. **Considered and declined:** N2 an external stage display; N3 Shortcuts/Siri/Spotlight App Intents; N6 OnSong/OpenSong import; N7 extra instrument diagrams (ukulele, bass); N9 a per-singer default key.
+- R138. **Order.** Launch is blocked on the Apple account anyway, so v0.5 (pre-launch) gains: the phase 3 leftovers, the phase 4 PDFs (single chart, songbook, print, embedded preview), N1 Singer view, N4 Medleys and N8 Gig stats. Then phase 6 (MIDI input and mapping with MIDI learn) with the R135 Ampero research alongside. Then phase 5 (LRCLIB search, URL import). Then phase 7 (iOS app, partner follow, personal modules on iOS) with N5 Share by file. Ryan did not rank phase 5 against phase 7; iOS last is the orchestrator's default and open to change. Amends R61 ("phases 4-7 stay post-launch") and extends R14.
+- R139. **App Store only.** No DMG and no direct (Developer ID) distribution.

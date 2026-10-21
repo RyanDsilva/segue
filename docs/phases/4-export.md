@@ -4,7 +4,7 @@
 
 ## Goal
 
-Get charts and setlists out of Segue as paper or shareable files. For now the only sharing mechanism is PDF; live partner sync waits for phase 7. Exports must look as good as the live view and must match what the performer currently sees: transpose, capo, Nashville and diagram settings.
+Get charts and setlists out of Segue as paper or shareable PDFs. Live partner sync and share-by-file (N5) wait for phase 7. **Ships in v0.5** (`docs/release/decisions.md` R138); the setlist one-pager and ChordPro export were removed from the roadmap (R132). Exports must look as good as the live view and must match what the performer currently sees: transpose, capo, Nashville and diagram settings.
 
 ## Scope
 
@@ -14,17 +14,13 @@ Get charts and setlists out of Segue as paper or shareable files. For now the on
    - a setlist page with song order, key, capo and duration;
    - a **table of contents** with page numbers (can share the setlist page when it fits; TOC entries are PDF outline/bookmark links too);
    - then each song, starting on a new page.
-3. **Setlist one-pager** - a single page with large type, built to be taped to the floor or sent to a duo partner. Each row shows #, title, key, capo, BPM, and an optional short cue (the first line of the song's notes). It also shows the total duration, and the request queue is never printed.
-4. **Print** - all three PDF types go through the macOS print panel (`NSPrintOperation` with the PDF as the source).
-5. **Embedded preview** - every export opens in an in-app PDF viewer (`PDFView` wrapped for SwiftUI). The viewer has toolbar options (paper size, display toggles, include diagrams, include notes) and re-renders live when they change. Save, Share (`ShareLink` / `NSSharingServicePicker`) and Print are secondary actions in the viewer. There is no download-only path.
-6. **ChordPro export**:
-   - a song as its `.cho` file;
-   - a setlist as a folder or `.zip` containing the songs' `.cho` files with an order prefix (`01-wonderwall.cho`) plus `setlist.json`;
-   - the whole library as a `.zip` backup that includes the sidecars.
-   - **Default: the current transpose is baked into the exported chords** (what you see is what your partner gets). Option to keep the original chords and add a `{transpose:}` directive instead. Capo is exported as `{capo:}`; the library file itself is never modified.
+3. **Print** - both PDF types go through the macOS print panel (`NSPrintOperation` with the PDF as the source).
+4. **Embedded preview** - every export opens in an in-app PDF viewer (`PDFView` wrapped for SwiftUI). The viewer has toolbar options (paper size, display toggles, include diagrams, include notes) and re-renders live when they change. Save, Share (`ShareLink` / `NSSharingServicePicker`) and Print are secondary actions in the viewer. There is no download-only path.
 
 ## Non-goals
 
+- **Setlist one-pager** (floor sheet) - removed from the roadmap (R132).
+- **ChordPro export** (song, setlist folder/zip, library zip) - removed (R132): the library already is ChordPro files, and the Settings export archive covers a whole-library copy.
 - Exporting to other apps' formats: OnSong, OpenSong XML, Word.
 - Email/cloud upload integrations beyond the system share sheet.
 - Annotations or handwriting on PDFs.
@@ -84,18 +80,15 @@ Integration-first: exercise the real parser, real library files, real `ChartLayo
 
 - **Export integration tests (primary):** load fixture songs from a temp library folder (short, long, chords only, tabs, transposed, Nashville, with diagrams), export each PDF type end to end, then assert via PDFKit: page count, outline/TOC entries and their target pages, extracted text contains the expected chords in transposed/Nashville form, no line pair split across pages, metadata.
 - **Visual snapshots:** rasterise each page at fixed DPI and compare to reference PNGs with a small tolerance; fonts bundled for determinism.
-- **ChordPro export round-trip:** export a setlist zip from a real library, import into an empty library, assert songs, sidecars and order survive; assert baked transpose produces the expected chord symbols and that the source `.cho` files are unchanged.
 - **Paginator unit tests (narrow):** only the tricky pure cases - over-long section, orphan heading, fit-to-one-page fallback, TOC re-offset.
 - **E2E (XCUITest):** open a setlist, open the songbook preview, toggle capo, preview updates, save to a temp folder, assert a valid PDF exists.
 
 ## Acceptance criteria
 
-- The three PDF types render with vector, selectable text and correct metadata.
+- Both PDF types render with vector, selectable text and correct metadata.
 - Exports reflect the current transpose, capo, Nashville and diagram settings. Changing a toggle in the preview re-renders in under 1 s for a 20-song setlist on Apple Silicon.
 - No line pair is ever split, and the section-keeping rules hold on the fixture suite.
-- The one-pager is readable at 1.5 m, with a minimum title size of 20 pt, and handles up to 25 songs on one page by shrinking type with a floor.
 - Print works through the system panel. Save and Share work in the sandbox, using the user-selected destination or the share sheet.
-- A ChordPro zip re-imports into an empty library with nothing lost: songs, sidecars, setlist order.
 - All export code runs in the App Store scheme; there is no dependency on personal modules.
 
 ## Resolved decisions
@@ -105,9 +98,9 @@ See `docs/decisions.md`.
 1. **Table of contents: yes**, with page numbers and PDF outline links - requires the two-pass render (rule 10).
 2. **Duplex: no** - songs start on a new page, no blank padding.
 3. **Notes in export: opt-in per export** - default off, toggle in preview toolbar.
-4. **Large-print two-page setlist: no** - one-pager only, shrink-with-floor rule stands.
-5. **ChordPro export bakes current transpose by default** - `{transpose:}` mode is the secondary option.
-6. **No branding footer.**
+4. **No branding footer.**
+5. **Removed (R132):** the setlist one-pager (so the earlier "no large-print two-page setlist" ruling is moot) and ChordPro export (so "bakes current transpose by default" is moot).
+6. **Ships in v0.5** (R138).
 
 ## Open questions
 

@@ -1,27 +1,29 @@
 # Phase 7 - iOS/iPadOS app & partner live sync
 
-Canonical context: `docs/00-vision.md` (product decisions) and `docs/research.md` (verified/unverified findings). This doc is standalone but defers to the vision doc where they disagree.
+Canonical context: `docs/00-vision.md` (product decisions) and `docs/research.md` (verified/unverified findings). This doc is standalone but defers to the vision doc where they disagree. Roadmap: the last phase by the orchestrator's default (`docs/release/decisions.md` R138; Ryan has not ranked it against phase 5). iCloud Drive library sync and its conflict UI were removed (R132) and replaced by a Files-app library folder (R134).
 
 ## 1. Goal
 
 1. Ship Segue on iPhone and iPad, reusing `SegueCore` and `SegueUI`, so the same library is usable on a mic-stand iPad or a phone in a pocket.
-2. Keep that library in sync across Mac and iOS through an iCloud Drive folder, with files staying canonical.
+2. Open the library on iOS from a folder the user picks in the Files app (any provider), reading the ChordPro files directly; files stay canonical and Segue has no sync engine of its own (R134).
 3. Let a duo partner's device follow the leader's set live during a gig over the local network, with no internet required.
 
 ## 2. Scope / non-goals
 
 **In scope**
 - iOS/iPadOS app target (iOS 26+), Personal and App Store schemes mirroring the Mac split.
-- Library in an iCloud Drive folder: discovery, download-on-demand, conflict resolution UI, offline guarantees.
+- Library from a Files-app folder (iCloud Drive, Dropbox, On My iPhone or any other provider), picked by the user (R134).
 - Leader/follower live set sync between Apple devices (Mac <-> iPad/iPhone, any combination), following song **and section/scroll position**.
-- Personal modules (audio-to-chart, LRCLIB, URL import) in the iOS Personal scheme (see section 4a).
+- Personal modules (LRCLIB, URL import) in the iOS Personal scheme (see section 4a).
+- **N5 Share by file** (R136): AirDrop or Share a setlist plus its songs as one file. Spec not written yet.
 - Transport behind a port; first adapter chosen by the research ticket in section 4.
 
 **Non-goals**
 - Android client (protocol stays open to it; no app).
 - Accounts, cloud backend, multi-user editing of the same song at the same time.
+- A Segue sync engine, iCloud-specific sync or a conflict-resolution UI (R132, R134): the file provider syncs the folder.
 - Partner editing the leader's songs or setlist, or requesting songs into the leader's queue (follower is strictly read-only for set state - decided).
-- Bluetooth pedal/MIDI parity on iOS beyond what phase 6 code gives for free.
+- MIDI parity on iOS beyond what phase 6 code gives for free (Bluetooth HID pedals are removed, R132).
 
 ## 3. Mandatory tickets before build
 
@@ -37,12 +39,9 @@ Verify at primary source (Apple docs, WWDC sessions, SDK headers) the claims `re
 
 Output: a ranked transport choice for Mac<->iOS with a no-router fallback, plus a spike measuring latency and reconnect on real devices. Until it lands, the transport stays a port with no committed adapter.
 
-### R7.2 - Storage re-check (blocks sync implementation)
+### R7.2 - Storage re-check (superseded)
 
-The storage decision (files canonical + rebuildable index) explicitly deferred the sync mechanism to this phase. Re-check iCloud Drive folder sync vs CKSyncEngine + GRDB against the current OS:
-- iCloud Drive: eviction/dataless behaviour on iOS 26+, NSFileVersion conflict reliability, the 26.2 package-sync regression (does it affect plain folders?).
-- CKSyncEngine: what it would cost to keep files canonical (files as export vs source of truth).
-Default if nothing new turns up: iCloud Drive folder, as designed below.
+Superseded by R134: there is no Segue sync mechanism to choose. The iOS app reads a user-picked Files-app folder; the earlier iCloud Drive vs CKSyncEngine outcome (`docs/decisions.md`, Phase 7 research outcomes) no longer applies.
 
 ## 4. Platform adaptation
 
@@ -59,19 +58,16 @@ Default if nothing new turns up: iCloud Drive folder, as designed below.
 ### 4a. Personal modules on iOS
 
 The iOS Personal scheme links `Packages/SeguePersonalModules` exactly like the Mac one, and the same absence checks run on the iOS App Store archive. Implications to design for:
-- **Model size and memory:** large Whisper/Demucs models may exceed comfortable iPhone memory and storage; pick smaller per-device model variants (device-class entry in the model manifest) and analyse with the app in the foreground (no long background processing guarantee).
-- **Sandbox:** models download into the app container (Application Support, excluded from iCloud backup); mic via `NSMicrophoneUsageDescription`.
 - **URL import:** delivered via the iOS Share extension in the Personal build only.
-- All three must be re-validated on iPhone hardware against the phase 5 eval targets; failing devices hide the feature rather than ship a degraded one.
+- **LRCLIB search:** the same `LyricsSource` implementation as the Mac.
+- **Custom model setting (R97):** only if the iOS app gets the phase 3 AI features; not decided.
 
-## 5. Library sync design (iCloud Drive)
+## 5. Library source (Files-app folder, R134)
 
-- Library folder is a **user-picked iCloud Drive folder** (visible in Files, portable), accessed via security-scoped bookmark on each device. First launch on iOS asks the user to pick (or create) the folder; a stale/broken bookmark shows a re-pick prompt and never silently falls back to an empty library. Same layout as Mac: `.cho` + JSON sidecar per song, setlists and gig log as JSON.
-- **Discovery:** `NSMetadataQuery` on the ubiquity scope feeds the index; the SQLite index stays a rebuildable projection per device.
-- **Coordination:** every read/write goes through `NSFileCoordinator`; library objects adopt `NSFilePresenter` so open editors see external changes.
-- **Dataless files:** an evicted file shows in the library with a cloud badge; opening it triggers `startDownloadingUbiquitousItem`. A setlist marked **"Gig ready"** pins all its songs, sidecars and assets locally (download eagerly, warn if any fail). The live view only ever opens fully local files.
-- **Conflicts:** detect via `NSFileVersion.unresolvedConflictVersionsOfItem`. Song conflicts get a side-by-side diff UI (keep mine / keep theirs / keep both as copy). Sidecar and setlist JSON use field-level merge where safe (tags union, latest play log append) and fall back to the same UI.
-- Gig log is append-only per device (one file per device per gig) to make conflicts impossible by construction.
+- The library is a **folder the user picks in the Files app** (folder picker), from any provider: iCloud Drive, Dropbox, On My iPhone or others. It is accessed through a security-scoped bookmark; a stale or broken bookmark shows a re-pick prompt and never silently falls back to an empty library. Same layout as the Mac: `.cho` + JSON sidecar per song, setlists and gig log as JSON.
+- The app reads and writes the ChordPro files and sidecars in that folder directly. The SQLite index stays a rebuildable projection per device.
+- **No Segue sync engine and no conflict UI.** Moving changes between devices is the file provider's job; whatever the provider leaves in the folder is what the library shows.
+- Open questions (section 11): offline guarantees for cloud-provider folders, and whether gig-log files stay per device.
 
 ## 6. Partner live sync design
 
@@ -121,7 +117,7 @@ The follower screen must **never blank, jump unexpectedly, or show a spinner ove
 | Song differs (hash mismatch) | Show leader's version (from payload), badge "leader's version". |
 | Stale/duplicate/out-of-order snapshot | Ignored by the version check. |
 | Venue Wi-Fi blocks peer traffic | Fall back to the no-router transport chosen in R7.1. |
-| iCloud offline at gig | No impact: gig-ready pinning means everything is local. |
+| Cloud provider offline at gig | Open question 3 (offline guarantees for a cloud-provider folder). |
 
 ## 8. Test strategy
 
@@ -129,36 +125,37 @@ Integration-first; unit tests only for tricky pure logic.
 
 - **Protocol integration (primary):** leader and follower engines connected through the in-memory transport with fault injection (drops, delays, reorder, disconnect), deterministic via injected clock and RNG; assert follower state and rendered position after each scenario. The same suite runs against the real adapter chosen by R7.1.
 - **Device integration:** Mac leader + iPad follower and iPhone follower on the real adapter: song changes, section/scroll following across different layouts, trusted-device reconnect without code.
-- **iCloud E2E:** two devices on a user-picked iCloud Drive folder, edit the same song offline on both, reconnect, resolve via the conflict UI; evict a gig-ready set and confirm pinning re-downloads it; broken bookmark shows the re-pick prompt.
+- **Files-folder E2E:** pick a library folder in the Files app, open songs and setlists from it, see an edit made on the Mac after the provider syncs it; a broken bookmark shows the re-pick prompt.
 - **Personal modules on iOS:** phase 5 pipeline integration tests on iPhone hardware; App Store iOS archive passes absence checks.
-- **Unit (narrow):** sidecar field-level merge rules, `scrollHint` mapping between layouts.
+- **Unit (narrow):** `scrollHint` mapping between layouts.
 - **Field test:** venue-like setup (busy Wi-Fi, no router) measuring follow latency and reconnect time.
 - UI tests for iPhone and iPad live views and the touch visual editor at all size classes, including dark stage theme pixel checks.
 
 ## 9. Acceptance criteria
 
-- The same library opens on Mac, iPad and iPhone; an edit on one appears on the others within normal iCloud latency, and no data is lost on a concurrent edit (conflict UI shown).
-- A "gig ready" setlist is fully usable in airplane mode on every device.
+- The same library folder opens on Mac, iPad and iPhone through the Files app; an edit on one appears on the others once the file provider has synced it.
 - The follower follows song changes and section/scroll position in under 500 ms on local Wi-Fi (target from R7.1 spike), recovers from a 30 s disconnect without user action, and never shows an empty screen.
 - The follower can show songs it does not have locally via `songPayload`.
 - A trusted partner device reconnects with no code; a new device requires the code.
-- The visual editor works on iPhone; personal modules run in the iOS Personal build and are absent from the iOS App Store archive.
+- The visual editor works on iPhone; personal modules (LRCLIB, URL import) run in the iOS Personal build and are absent from the iOS App Store archive.
 - Transport adapters are swappable without touching core, proven by the in-memory and one real adapter passing the same test suite.
 - Both schemes (Personal, App Store) build and pass tests for iOS.
 
 ## 10. Resolved decisions
 
-See `docs/decisions.md`. Still blocked: transport (R7.1) and iCloud Drive vs CKSyncEngine (R7.2).
+See `docs/decisions.md` and `docs/release/decisions.md` R132-R138. R7.1 (transport) is resolved in `docs/decisions.md` (Phase 7 research outcomes); R7.2 is superseded by R134.
 
 1. **Follower tracks section/scroll**, not just song - layout-independent `scrollHint`.
 2. **Trusted devices remembered** - code only on first pairing.
 3. **No partner song requests** - `requestSong` removed; follower is read-only.
 4. **Visual editor on iPhone** - touch-adapted, shared chord-placement model with the Mac editor.
-5. **Personal modules on iOS** - per-device model variants, foreground analysis, same absence checks.
-6. **User-picked iCloud Drive folder** - visible and portable; bookmark failure handling required.
+5. **Personal modules on iOS** - same absence checks (audio-to-chart and its model variants removed, R132).
+6. **User-picked Files-app folder** (R134, replacing the user-picked iCloud Drive folder) - any provider, no Segue sync engine, no conflict UI; bookmark failure handling required.
 7. **Follower's own transpose/instrument view persists per partner device** between gigs; it never resets to the leader's view.
 
 ## 11. Open questions
 
-1. Transport choice and no-router fallback - blocked on R7.1.
-2. iCloud Drive folder vs CKSyncEngine - blocked on R7.2 (a user-picked folder makes the iCloud Drive path the default unless R7.2 finds a blocker).
+1. Transport choice and no-router fallback - resolved by R7.1 in `docs/decisions.md` (Network.framework, TCP + TLS, Bonjour, peer-to-peer Wi-Fi).
+2. iCloud Drive folder vs CKSyncEngine - moot (R134).
+3. Offline guarantees for a cloud-provider library folder: keep the earlier "Gig ready" idea (download a setlist's files eagerly before a gig) or rely on the provider's own offline setting.
+4. Gig log files: keep one file per device per gig (it made sync conflicts impossible by construction), or one shared file now that Segue has no conflict handling.
