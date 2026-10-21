@@ -2,6 +2,7 @@
     import AppKit
     import ChordPro
     import Editing
+    import Services
     import SwiftUI
 
     /// Section band gestures (P3-11): pick lines in the lane (click a band or drag), press
@@ -34,7 +35,7 @@
             let band = bandIndex(at: point)
             if let band, let path = noteBadgeHit(point, band: band) {
                 bandGesture = nil
-                model.showSectionNotes(forSectionAt: path)
+                model.showSectionNotes(forSectionAt: path, entry: .badge)
                 return true
             }
             if event.clickCount >= 2, let band, isOnCap(point, band: band) {
@@ -268,8 +269,17 @@
             menu.addItem(mergeItem)
             menu.addItem(.separator())
             menu.addItem(item("Section Notes...") { [weak self] in
-                self?.model.showSectionNotes(forSectionAt: path)
+                self?.model.showSectionNotes(forSectionAt: path, entry: .bandMenu)
             })
+            if let title = model.addNoteTitle(forSectionAt: path) {
+                menu.addItem(item(title) { [weak self] in
+                    self?.model.showSectionNotes(
+                        forSectionAt: path,
+                        entry: .bandMenu,
+                        addNote: true,
+                    )
+                })
+            }
             return menu
         }
 

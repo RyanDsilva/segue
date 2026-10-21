@@ -1,6 +1,7 @@
 import Editing
 import Foundation
 import Library
+import Services
 
 /// Section notes from the library detail pane (P3-13): one edit writes the song's `.cho`
 /// and its sidecar cues together and is one step on Edit > Undo.
@@ -12,10 +13,15 @@ extension LibraryViewModel {
     }
 
     /// Plans `edit` on song `id` as the catalog holds it and writes it. Failures show in the
-    /// error banner; returns whether it applied.
+    /// error banner; returns the change when it applied (its `resultID` names the note
+    /// afterwards), else nil.
     @discardableResult
-    func editSectionNotes(id: SongID, _ edit: SectionNoteEdit) async -> Bool {
-        guard let record = song(id: id), !record.isReadOnly else { return false }
+    func editSectionNotes(
+        id: SongID,
+        _ edit: SectionNoteEdit,
+        context: SectionNoteEditContext = SectionNoteEditContext(entry: .library),
+    ) async -> SectionNoteChange? {
+        guard let record = song(id: id), !record.isReadOnly else { return nil }
         let change: SectionNoteChange
         do {
             change = try SectionNotes.change(
@@ -25,17 +31,19 @@ extension LibraryViewModel {
             )
         } catch {
             errorMessage = SongEditorViewModel.message(for: error)
-            return false
+            services.recordNoteEditFailure(error)
+            return nil
         }
         let before = NotesState(source: record.source, cues: record.sidecar.cues)
         let after = NotesState(
             source: change.source.map { record.source.applying($0.edits) } ?? record.source,
             cues: change.cues,
         )
-        guard after.source != before.source || after.cues != before.cues else { return true }
-        guard await writeNotes(id: id, after, over: record) else { return false }
+        guard after.source != before.source || after.cues != before.cues else { return change }
+        guard await writeNotes(id: id, after, over: record) else { return nil }
         registerNotesUndo(id, actionName: change.actionName, before: before, after: after)
-        return true
+        services.recordNoteEdit(change, context: context)
+        return change
     }
 
     private func writeNotes(id: SongID, _ state: NotesState, over record: SongRecord) async

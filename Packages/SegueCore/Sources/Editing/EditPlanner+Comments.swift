@@ -21,6 +21,9 @@ extension DocumentEditor {
         case let .removeComment(path):
             try planner.removeComment(path)
             return "Delete Note"
+        case let .editComments(edits):
+            try planner.editComments(edits)
+            return "Edit Notes"
         default:
             return nil
         }
@@ -59,6 +62,57 @@ extension EditPlanner {
         } else {
             snapshot.insertLine(line, afterLine: index == 0 ? nil : index - 1, into: &builder)
         }
+    }
+
+    mutating func editComments(_ edits: [CommentEdit]) throws(EditError) {
+        var touched: Set<BlockPath> = []
+        for edit in edits {
+            switch edit {
+            case let .append(text, section):
+                try appendComment(text, to: section)
+            case let .setText(path, text):
+                guard touched.insert(path).inserted else { throw .invalidPath(path) }
+                try setCommentText(path, text: text)
+            case let .remove(path):
+                guard touched.insert(path).inserted else { throw .invalidPath(path) }
+                try removeComment(path)
+            }
+        }
+    }
+
+    /// See `CommentEdit.append`.
+    private mutating func appendComment(_ text: String, to section: BlockPath) throws(EditError) {
+        guard CommentText.isValid(text) else { throw .notCommentText(text) }
+        guard section.item == nil, case let .section(body) = snapshot.block(at: section) else {
+            throw .wrongBlockKind(section)
+        }
+        let after = Self.lastLeadingNote(in: body).map { BlockPath(block: section.block, item: $0) }
+            ?? section
+        guard let index = snapshot.map.lineOfPath[after] else { throw .invalidPath(after) }
+        let line = snapshot.map.lines[index]
+        if caret == nil {
+            let ending = snapshot.map.defaultEnding.utf16.count
+            caret = line.hasEnding ? (line.end, 0) : (line.contentEnd, ending)
+        }
+        snapshot.insertLine(
+            DirectiveLine.canonical(name: "comment", value: text),
+            afterLine: index,
+            into: &builder,
+        )
+    }
+
+    /// The item index of the last comment in the run of comments (and blank lines) that
+    /// opens `section`, or nil when its first non-blank item is not a comment.
+    static func lastLeadingNote(in section: Section) -> Int? {
+        var last: Int?
+        for (index, item) in section.items.enumerated() {
+            switch item {
+            case .commentDirective: last = index
+            case .blank: continue
+            default: return last
+            }
+        }
+        return last
     }
 
     mutating func setCommentText(_ path: BlockPath, text: String) throws(EditError) {

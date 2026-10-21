@@ -110,9 +110,7 @@ struct WelcomeLibraryTests {
         #expect(soundcheck.sidecar.tags == ["Welcome", "folk"])
         #expect(soundcheck.sidecar.proficiency == .pro)
         #expect(soundcheck.sidecar.notes?.hasPrefix("Count in 1-2-3-4.") == true)
-        #expect(soundcheck.sidecar.cues == [
-            SongCue(section: "Chorus", occurrence: 3, text: "Big stop on the last line"),
-        ])
+        #expect(soundcheck.sidecar.cues.contents == ["Chorus|3|Big stop on the last line"])
         #expect(byFile["kitaabon-wali-gali.cho"]?.sidecar.proficiency == .ready)
         #expect(byFile["kettle-on-lights-low.cho"]?.sidecar.tags == ["Welcome", "waltz"])
         let ferry = try #require(byFile["ferry-lights-over-calder-bay.cho"])

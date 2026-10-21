@@ -3,6 +3,7 @@ import Editing
 import Foundation
 import Library
 @testable import SegueUI
+import Services
 import Support
 import SwiftUI
 import Testing
@@ -71,7 +72,7 @@ struct SectionNotesUITests {
         #expect(!note.isStageOnly)
 
         manager.beginUndoGrouping()
-        #expect(await model.editSectionNotes(id: id, .setStageOnly(note.source, true)))
+        #expect(await model.editSectionNotes(id: id, .setStageOnly(note.id, true)) != nil)
         manager.endUndoGrouping()
         #expect(manager.undoActionName == "Show on Stage Only")
         #expect(try env.read(Self.file)
@@ -100,20 +101,21 @@ struct SectionNotesUITests {
 
     @Test
     func `the editor toggle is one step on its undo stack`() throws {
-        let model = editor(cues: [SongCue(section: "Verse", text: "Soft")])
+        let soft = SongCue(section: "Verse", text: "Soft")
+        let model = editor(cues: [soft])
         _ = model.sourceEditor
         let manager = model.sourceEditor.undoManager
         manager.groupsByEvent = false
         let stage = try #require(model.sectionNotes.all.first { $0.isStageOnly })
 
-        #expect(model.editSectionNotes(.setStageOnly(stage.source, false)))
+        #expect(model.editSectionNotes(.setStageOnly(stage.id, false)) != nil)
         #expect(model.source.contains("{start_of_verse}\n{comment: Soft}\n[G]Boats"))
         #expect(model.cues.isEmpty)
         #expect(manager.undoActionName == "Show on Chart")
 
         manager.undo()
         #expect(model.source == Self.source)
-        #expect(model.cues == [SongCue(section: "Verse", text: "Soft")])
+        #expect(model.cues == [soft])
         manager.redo()
         #expect(model.cues.isEmpty)
         #expect(model.source.contains("{comment: Soft}"))
@@ -154,8 +156,88 @@ struct SectionNotesUITests {
             CGPoint(x: frame.rect.minX + 4, y: badge.y),
             band: chorusBand,
         ) == nil)
-        model.showSectionNotes(forSectionAt: chorus)
+        model.showSectionNotes(forSectionAt: chorus, entry: .badge)
         #expect(model.sectionNotesRequest?.group == "section:chorus")
+        #expect(model.sectionNotesRequest?.entry == .badge)
+        // The chorus occurs once: no placement, and the menu item names just the label.
+        #expect(model.sectionNotesRequest?.placement == nil)
+        #expect(model.addNoteTitle(forSectionAt: chorus) == "Add Note to Chorus...")
+    }
+
+    /// Chorus #1, Chorus #2 and a `{chorus}` repeat.
+    static let repeated = """
+    {title: Tide}
+
+    {start_of_chorus}
+    [C]Tide comes in
+    {end_of_chorus}
+
+    {start_of_chorus}
+    [C]Tide goes out
+    {end_of_chorus}
+
+    {chorus}
+
+    """
+
+    @Test
+    func `a band request presets its instance and the menu item names it`() throws {
+        let model = SongEditorViewModel(
+            mode: .edit(SongID(ULID(milliseconds: 0, randomness: Array(repeating: 2, count: 10)))),
+            source: Self.repeated,
+            cues: [],
+            persistCues: { _, _ in throw CancellationError() },
+            save: { _ in throw CancellationError() },
+        )
+        let group = try #require(model.sectionNotes.groups.first)
+        let second = group.headers[1]
+        #expect(model.addNoteTitle(forSectionAt: second) == "Add Note to Chorus #2...")
+        model.showSectionNotes(forSectionAt: second, entry: .bandMenu, addNote: true)
+        let request = try #require(model.sectionNotesRequest)
+        #expect(request.group == group.id)
+        #expect(request.placement == .instance(2))
+        #expect(request.addsNote && request.entry == .bandMenu)
+        // Without a band: Every time (R145 question 3), applied by the sheet's default.
+        model.showSectionNotes(forSectionAt: nil)
+        #expect(model.sectionNotesRequest?.placement == nil)
+        #expect(group.defaultPlacement == .everyTime)
+
+        // A note added with the request's placement lands in the second chorus.
+        let change = try #require(model.editSectionNotes(
+            .add(group: group.id, text: "Build", stageOnly: false, placement: request.placement),
+            context: SectionNoteEditContext(entry: .bandMenu),
+        ))
+        #expect(model.source.contains("{start_of_chorus}\n{comment: Build}\n[C]Tide goes out"))
+        #expect(try model.sectionNotes.note(#require(change.resultID))?.placement == .instance(2))
+    }
+
+    @Test
+    func `note edits are recorded with their entry and a stale edit as an error code`(
+    ) async throws {
+        let fixture = try await library()
+        let (env, model, id) = (fixture.env, fixture.model, fixture.id)
+        let recording = RecordingLog(url: env.scratch.appending(path: "services.jsonl"))
+        model.services = ServicesHub(
+            factory: RecordingServicesFactory(log: recording),
+            consent: ConsentState(analytics: .granted(.now), crashReports: .declined(.now)),
+            throttle: AnalyticsThrottle(suiteName: env.suiteName, clock: env.clock),
+        )
+        let note = try #require(SectionNotesHost.library(model, id: id).notes().all.first)
+        #expect(await model.editSectionNotes(id: id, .setStageOnly(note.id, true)) != nil)
+        let signal = try #require(recording.entries().first {
+            $0["name"] as? String == "Segue.Notes.edited"
+        })
+        let params = try #require(signal["params"] as? [String: String])
+        #expect(params == [
+            "segue.action": "toggle", "segue.kind": "stage", "segue.placement": "single",
+            "segue.entry": "library", "segue.repeatHint": "false",
+        ])
+        // The chart note is gone now: an edit naming it fails and is counted.
+        #expect(await model.editSectionNotes(id: id, .delete(note.id)) == nil)
+        #expect(recording.entries().contains {
+            $0["name"] as? String == "Segue.Error.occurred"
+                && ($0["params"] as? [String: String])?["segue.code"] == "sectionNoteGone"
+        })
     }
 
     @Test

@@ -13,7 +13,7 @@ struct EditPlanner {
     var builder: EditBuilder
     /// Caret after the edit: an offset in the pre-edit text plus an offset into the text
     /// replaced there.
-    private var caret: (anchor: Int, extra: Int)?
+    var caret: (anchor: Int, extra: Int)?
 
     init(snapshot: SourceSnapshot) {
         self.snapshot = snapshot

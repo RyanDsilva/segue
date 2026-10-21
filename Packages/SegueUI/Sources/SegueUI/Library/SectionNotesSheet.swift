@@ -1,6 +1,7 @@
 #if os(macOS)
     import Editing
     import Library
+    import Services
     import SwiftUI
 
     /// Where the section notes sheet reads the song and sends its edits: the library detail
@@ -13,8 +14,10 @@
         var isReadOnly = false
         /// Stage-only notes need the sidecar (a new song has one after its first save).
         var canEditStageNotes = true
-        /// Applies one edit as one undo step; false when it did not apply.
-        let apply: (SectionNoteEdit) async -> Bool
+        /// Where the sheet was opened from (analytics).
+        var entry: NoteEntry = .sheet
+        /// Applies one edit as one undo step; nil when it did not apply.
+        let apply: (SectionNoteEdit, SectionNoteEditContext) async -> SectionNoteChange?
     }
 
     extension SectionNotesHost {
@@ -27,15 +30,17 @@
                     return SectionNotes(document: record.document, cues: record.sidecar.cues)
                 },
                 isReadOnly: model.song(id: id)?.isReadOnly ?? true,
-                apply: { await model.editSectionNotes(id: id, $0) },
+                entry: .library,
+                apply: { await model.editSectionNotes(id: id, $0, context: $1) },
             )
         }
 
-        static func editor(_ model: SongEditorViewModel) -> Self {
+        static func editor(_ model: SongEditorViewModel, entry: NoteEntry = .sheet) -> Self {
             SectionNotesHost(
                 notes: { model.sectionNotes },
                 canEditStageNotes: model.canEditStageNotes,
-                apply: { model.editSectionNotes($0) },
+                entry: entry,
+                apply: { model.editSectionNotes($0, context: $1) },
             )
         }
     }
@@ -47,7 +52,12 @@
                 get: { model.sectionNotesRequest },
                 set: { model.sectionNotesRequest = $0 },
             )) { request in
-                SectionNotesSheet(host: .editor(model), focus: request.group)
+                SectionNotesSheet(
+                    host: .editor(model, entry: request.entry),
+                    focus: request.group,
+                    placement: request.placement,
+                    addsNote: request.addsNote,
+                )
             }
         }
     }
@@ -60,17 +70,22 @@
         let host: SectionNotesHost
         /// The group to scroll to (the section band's badge).
         var focus: SectionNoteGroup.ID?
+        /// A new note's placement on `focus` (the band's instance, R144); nil = the group's
+        /// default (Every time, R145 question 3).
+        var placement: NotePlacement?
+        /// Open with a new note row on `focus` ("Add Note to Chorus #2...").
+        var addsNote = false
         @Environment(\.dismiss) private var dismiss
         @State private var notes = SectionNotes(sections: [], cues: [])
         /// Text being typed into an existing note, not committed yet.
-        @State private var drafts: [SectionNote.Source: String] = [:]
+        @State private var drafts: [SectionNoteID: String] = [:]
         /// Notes being added, not committed yet.
         @State private var additions: [Addition] = []
         @State private var work: Task<Void, Never>?
         @FocusState private var focused: Field?
 
         private enum Field: Hashable {
-            case note(SectionNote.Source)
+            case note(SectionNoteID)
             case addition(UUID)
         }
 
@@ -79,6 +94,7 @@
             let group: SectionNoteGroup.ID
             var text = ""
             var stageOnly: Bool
+            var placement: NotePlacement?
         }
 
         var body: some View {
@@ -101,6 +117,9 @@
                             if let focus {
                                 proxy.scrollTo(focus, anchor: .top)
                             }
+                            if addsNote, let group = notes.group(id: focus ?? "") {
+                                add(to: group, placement: placement)
+                            }
                         }
                     }
                 }
@@ -119,7 +138,7 @@
             .background(Theme.color.ground)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.sectionNotesSheet)
-            .onAppear(perform: reload)
+            .onAppear { reload() }
             .onChange(of: focused) { old, _ in
                 commit(old)
             }
@@ -205,8 +224,8 @@
             VStack(alignment: .leading, spacing: 6) {
                 TextField("Note", text: draftBinding(note))
                     .textFieldStyle(.roundedBorder)
-                    .focused($focused, equals: .note(note.source))
-                    .onSubmit { commit(.note(note.source)) }
+                    .focused($focused, equals: .note(note.id))
+                    .onSubmit { commit(.note(note.id)) }
                     .disabled(host.isReadOnly)
                     .accessibilityLabel("Note on \(group.title)")
                     .accessibilityIdentifier(AccessibilityID.sectionNoteText)
@@ -215,7 +234,7 @@
                     placement(note, in: group)
                     Spacer()
                     Button {
-                        run(.delete(note.source))
+                        run(.delete(note.id))
                     } label: {
                         Image(systemName: "minus.circle")
                     }
@@ -238,7 +257,7 @@
                 : group.kind == .section && host.canEditStageNotes
             return Toggle("Show on stage only", isOn: Binding(
                 get: { note.isStageOnly },
-                set: { run(.setStageOnly(note.source, $0)) },
+                set: { run(.setStageOnly(note.id, $0)) },
             ))
             .toggleStyle(.checkbox)
             .controlSize(.small)
@@ -259,11 +278,11 @@
         /// note's occurrence is where its line sits.
         @ViewBuilder
         private func placement(_ note: SectionNote, in group: SectionNoteGroup) -> some View {
-            if case .stage = note.source, group.kind == .orphaned {
+            if note.isStageOnly, group.kind == .orphaned {
                 Menu("Move to") {
                     ForEach(notes.groups.filter { $0.kind == .section }) { target in
                         Button(target.title) {
-                            run(.pin(note.source, section: target.title, occurrence: nil))
+                            run(.pin(note.id, section: target.title, occurrence: nil))
                         }
                     }
                 }
@@ -271,10 +290,10 @@
                 .controlSize(.small)
                 .disabled(host.isReadOnly)
                 .accessibilityIdentifier(AccessibilityID.sectionNoteMove)
-            } else if case .stage = note.source, group.occurrences > 1, let label = group.label {
+            } else if note.isStageOnly, group.hasPlacements {
                 Picker("Shows", selection: Binding(
                     get: { note.occurrence },
-                    set: { run(.pin(note.source, section: label, occurrence: $0)) },
+                    set: { run(.place(note.id, $0.map(NotePlacement.instance) ?? .everyTime)) },
                 )) {
                     Text("Every time").tag(Int?.none)
                     ForEach(1 ... group.occurrences, id: \.self) {
@@ -298,13 +317,17 @@
 
         private func draftBinding(_ note: SectionNote) -> Binding<String> {
             Binding(
-                get: { drafts[note.source] ?? note.text },
-                set: { drafts[note.source] = $0 },
+                get: { drafts[note.id] ?? note.text },
+                set: { drafts[note.id] = $0 },
             )
         }
 
-        private func add(to group: SectionNoteGroup) {
-            let addition = Addition(group: group.id, stageOnly: !group.acceptsChartNotes)
+        private func add(to group: SectionNoteGroup, placement: NotePlacement? = nil) {
+            let addition = Addition(
+                group: group.id,
+                stageOnly: !group.acceptsChartNotes,
+                placement: group.hasPlacements ? placement ?? group.defaultPlacement : nil,
+            )
             additions.append(addition)
             // Focus once the new field is in the view.
             Task { @MainActor in focused = .addition(addition.id) }
@@ -314,38 +337,52 @@
         /// a new note (an empty one is dropped).
         private func commit(_ field: Field?) {
             switch field {
-            case let .note(source):
-                guard let draft = drafts.removeValue(forKey: source),
-                      let note = notes.note(source), draft != note.text
+            case let .note(id):
+                guard let draft = drafts.removeValue(forKey: id),
+                      let note = notes.note(id), draft != note.text
                 else { return }
                 let text = CommentText.clean(draft)
-                run(text.isEmpty ? .delete(source) : .setText(source, text))
+                run(text.isEmpty ? .delete(id) : .setText(id, text))
             case let .addition(id):
                 guard let index = additions.firstIndex(where: { $0.id == id }) else { return }
                 let addition = additions.remove(at: index)
                 let text = CommentText.clean(addition.text)
                 guard !text.isEmpty else { return }
-                run(.add(group: addition.group, text: text, stageOnly: addition.stageOnly))
+                run(.add(
+                    group: addition.group,
+                    text: text,
+                    stageOnly: addition.stageOnly,
+                    placement: addition.placement,
+                ))
             case nil:
                 return
             }
         }
 
-        /// Applies `edit` after the edits before it, then re-reads the song.
+        /// Applies `edit` after the edits before it, then re-reads the song. The edit names
+        /// its note by ID, resolved when it applies, so a queued edit never hits another note;
+        /// a note whose ID the edit changed keeps its focus and draft under the new ID.
         private func run(_ edit: SectionNoteEdit) {
             let previous = work
+            let context = SectionNoteEditContext(entry: host.entry)
             work = Task { @MainActor in
                 await previous?.value
-                _ = await host.apply(edit)
-                reload()
+                let change = await host.apply(edit, context)
+                reload(renaming: edit.noteID, to: change?.resultID)
             }
         }
 
-        private func reload() {
+        private func reload(renaming old: SectionNoteID? = nil, to new: SectionNoteID? = nil) {
             notes = host.notes()
+            if let old, let new, old != new, focused == .note(old) {
+                if let draft = drafts.removeValue(forKey: old) {
+                    drafts[new] = draft
+                }
+                focused = .note(new)
+            }
             // Typing in progress survives a reload; every other draft was committed.
-            if case let .note(source) = focused, let draft = drafts[source] {
-                drafts = [source: draft]
+            if case let .note(id) = focused, let draft = drafts[id] {
+                drafts = [id: draft]
             } else {
                 drafts = [:]
             }
@@ -361,6 +398,19 @@
                 await pending?.value
                 await work?.value
                 dismiss()
+            }
+        }
+    }
+
+    private extension SectionNoteEdit {
+        /// The existing note this edit names; nil for an add.
+        var noteID: SectionNoteID? {
+            switch self {
+            case let .delete(id), let .pin(id, _, _), let .place(id, _),
+                 let .setStageOnly(id, _), let .setText(id, _):
+                id
+            case .add:
+                nil
             }
         }
     }

@@ -81,6 +81,21 @@ public enum EditOperation: Sendable, Hashable {
     case setCommentText(BlockPath, text: String)
     /// Removes the comment directive line at `path`.
     case removeComment(BlockPath)
+    /// Several chart note edits as one change (P3-17): moves, every-time copies and linked
+    /// edits. Every path names a line of the snapshot before the change. The caret after the
+    /// change is at the start of the first appended line.
+    case editComments([CommentEdit])
+}
+
+/// One part of `EditOperation.editComments`.
+public enum CommentEdit: Sendable, Hashable {
+    /// Appends `{comment: text}` to the section whose header is at `section`, after its
+    /// leading notes: the run of comment lines (and blank lines between them) right after
+    /// the header. With no such run, directly after the header. A comment further down,
+    /// between lyric lines, does not move the insertion point (R144).
+    case append(String, section: BlockPath)
+    case setText(BlockPath, String)
+    case remove(BlockPath)
 }
 
 /// Which edge of a section band moves.
@@ -195,8 +210,9 @@ public enum DocumentEditor {
         case let .removeDefine(define):
             planner.removeDefine(name: define)
             return "Remove Chord Shape"
-        case .changeSectionKind, .createSection, .deleteChord, .duplicateChord, .editLyrics,
-             .insertChord, .insertComment, .joinWithPrevious, .mergeSections, .moveChord,
+        case .changeSectionKind, .createSection, .deleteChord, .duplicateChord, .editComments,
+             .editLyrics, .insertChord, .insertComment, .joinWithPrevious, .mergeSections,
+             .moveChord,
              .moveSectionEdge, .removeComment,
              .replaceChord, .setCommentText, .setSectionKind, .splitLine,
              .splitSection, .unwrapSection, .wrapSection:

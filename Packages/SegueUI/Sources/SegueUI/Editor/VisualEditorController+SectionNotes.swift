@@ -1,6 +1,7 @@
 #if os(macOS)
     import AppKit
     import Editing
+    import Services
 
     /// The section band's note badge (P3-13): a click on it opens the section notes sheet on
     /// that section; VoiceOver hears the count and gets a "Section Notes" action.
@@ -37,7 +38,7 @@
 
         func sectionNotesAction(_ path: BlockPath) -> NSAccessibilityCustomAction {
             NSAccessibilityCustomAction(name: "Section Notes") { [weak self] in
-                self?.model.showSectionNotes(forSectionAt: path)
+                self?.model.showSectionNotes(forSectionAt: path, entry: .badge)
                 return self != nil
             }
         }

@@ -187,7 +187,7 @@ struct SongImportTests {
         #expect(song.sidecar.tags == ["opener", "upbeat"])
         #expect(song.sidecar.proficiency == .ready)
         #expect(song.sidecar.notes == "Watch the bridge")
-        #expect(song.sidecar.cues == [SongCue(section: "Chorus", text: "Big")])
+        #expect(song.sidecar.cues.contents == ["Chorus|*|Big"])
         #expect(song.sidecar.createdAt == SegueJSON.stamp(lib.clock.now()))
         #expect(try await store.search(query: "opener").map(\.id) == [song.id])
         // Only the song is listed: the sidecar is not reported as skipped either.

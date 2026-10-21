@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Support
 
@@ -39,6 +40,10 @@ enum SidecarCodec {
                     object["live"] = [String: Any]()
                 }
             },
+            // v3 -> v4: each cue gains a stable `id` (and, when placed on one occurrence, an
+            // optional `fp`). The IDs are derived on decode (`PartialSidecar.repairCueIDs`), the
+            // same path that repairs a hand-edited v4 file, so nothing changes here.
+            3: { _ in },
         ],
     )
 
@@ -74,7 +79,8 @@ enum SidecarCodec {
                 }
                 return .editable(sidecar, migratedFrom: version)
             case let .newer(found):
-                let partial = try? SegueJSON.decode(PartialSidecar.self, from: data)
+                var partial = try? SegueJSON.decode(PartialSidecar.self, from: data)
+                partial?.repairCueIDs()
                 return .newer(partial?.complete(schemaVersion: found), found: found)
             }
         } catch {
@@ -85,6 +91,7 @@ enum SidecarCodec {
     /// `json` decoded field by field at the current version; nil without a usable `id`.
     private static func lenient(_ json: Data, fallbackDate: Date) throws -> Sidecar? {
         var object = try SegueJSON.decode(PartialSidecar.self, from: json)
+        object.repairCueIDs()
         object.createdAt = object.createdAt ?? fallbackDate
         object.updatedAt = object.updatedAt ?? object.createdAt
         return object.complete(schemaVersion: Sidecar.currentSchemaVersion)
@@ -180,6 +187,35 @@ private struct PartialSidecar: Decodable {
             createdAt: created,
             updatedAt: updatedAt ?? created,
         )
+    }
+
+    /// Gives every cue a usable, unique `id` (schema 4, P3-17): a cue without one (a v3 file
+    /// being migrated, or a hand-edited file) and every later duplicate of an `id` get a
+    /// derived ID. Derived IDs are deterministic, so re-reading a file before it is saved,
+    /// or another device migrating the same file, yields the same IDs: the timestamp is the
+    /// file's `createdAt` (else the Unix epoch), the randomness the first 80 bits of a
+    /// SHA-256 over the song ID, the cue's index and its content.
+    mutating func repairCueIDs() {
+        guard let id, var cues else { return }
+        var seen: Set<CueID> = []
+        for index in cues.indices {
+            let cue = cues[index]
+            if cue.id == .unassigned || seen.contains(cue.id) {
+                cues[index].id = Self.derivedCueID(song: id, index: index, cue: cue, at: createdAt)
+            }
+            seen.insert(cues[index].id)
+        }
+        self.cues = cues
+    }
+
+    static func derivedCueID(song: SongID, index: Int, cue: SongCue, at created: Date?) -> CueID {
+        let occurrence = cue.occurrence.map(String.init) ?? "*"
+        let key = "segue.cue-id:\(song)|\(index)|\(cue.section)|\(occurrence)|\(cue.text)"
+        let digest = SHA256.hash(data: Data(key.utf8))
+        return CueID(ULID(
+            timestamp: created ?? Date(timeIntervalSince1970: 0),
+            randomness: Array(digest.prefix(10)),
+        ))
     }
 
     /// Cues one by one, so one malformed cue does not hide the others.
