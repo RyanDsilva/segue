@@ -524,6 +524,23 @@
   "key": "G",
   "keyStated": false
  },
+ "E35-dash-emoji-footnotes": {
+  "labels": [
+   "other",
+   "other",
+   "other",
+   "intro",
+   "verse",
+   "chorus",
+   "other",
+   "outro",
+   "other"
+  ],
+  "title": "Harbor Lights",
+  "artist": "Wren Calloway",
+  "key": "G",
+  "keyStated": true
+ },
  "H01-ug-hinglish": {
   "labels": [
    "other",
@@ -696,5 +713,19 @@
    "Eb"
   ],
   "keyStated": false
+ },
+ "H12-dash-emoji-hinglish": {
+  "labels": [
+   "other",
+   "other",
+   "chorus",
+   "verse",
+   "other",
+   "other"
+  ],
+  "title": "Chaand Ki Galiyan",
+  "artist": "Raghav Sen",
+  "key": "Am",
+  "keyStated": true
  }
 }

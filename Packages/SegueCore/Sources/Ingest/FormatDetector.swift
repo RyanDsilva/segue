@@ -39,6 +39,9 @@ public enum FormatDetector {
         if MetadataExtractor.keyValueFields(line) != nil {
             return .metadata
         }
+        if MetadataExtractor.isNoteLine(line) {
+            return .unknown
+        }
         return .lyricLine
     }
 

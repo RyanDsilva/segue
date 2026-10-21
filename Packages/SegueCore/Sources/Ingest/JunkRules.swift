@@ -149,8 +149,9 @@ enum JunkRules {
             .split(separator: " ")
             .map(String.init)
         guard !words.isEmpty, words.count <= 12 else { return false }
-        // A widget's value left on its own line: a zoom or font size (`100%`).
-        if words.count == 1, words[0].wholeMatch(of: /\d{1,3}%/) != nil {
+        // A widget's value left on its own line: a zoom or font size (`100%`), or a transpose
+        // or key widget's `0` (R142).
+        if words.count == 1, words[0] == "0" || words[0].wholeMatch(of: /\d{1,3}%/) != nil {
             return true
         }
         var index = 0

@@ -183,6 +183,8 @@ struct IngestClassificationTests {
         JunkCase(line: "You like ? Help us ! Subscribe to our YouTube Channel !", rule: "promo"),
         JunkCase(line: "How to read a Tab", rule: "promo"),
         JunkCase(line: "Collection of strumming patterns", rule: "promo"),
+        // R142: a transpose or key widget's value on its own line.
+        JunkCase(line: "0", rule: "site control"),
         // Not junk: credits we keep, and lyrics that brush against the rules.
         JunkCase(line: "Singer: Ananya Rao | Music: Vikram Das | Lyrics: Neel Kapoor"),
         JunkCase(line: "Paper Lanterns Chords by The Hollow Pines"),
@@ -206,7 +208,8 @@ struct IngestClassificationTests {
         JunkCase(line: "Tuning: E A D G B E"),
         JunkCase(line: "Key: G"),
         JunkCase(line: "Home"),
-        JunkCase(line: "0"),
+        JunkCase(line: "10"),
+        JunkCase(line: "0 to 60 in a heartbeat"),
     ]
 
     @Test(arguments: junkCases)
@@ -296,6 +299,77 @@ struct IngestClassificationTests {
         #expect(detected.isAmbiguous)
         #expect(detected.topTwo.count == 2)
         #expect(detected.accepts(modelKey: detected.topTwo[1]))
+    }
+}
+
+/// R142: the paste converter gaps closed in v0.5.
+extension IngestClassificationTests {
+    /// R142: chord-site fields written with an en or em dash or after an emoji read like the
+    /// colon form; a dash field whose value has site words is not a credit.
+    @Test
+    func `dash and emoji fields are metadata`() {
+        let cases: [(String, [MetadataField]?)] = [
+            ("Capo \u{2013} 3rd Fret", [.capo(3)]),
+            ("Capo \u{2014} 2", [.capo(2)]),
+            ("Key/Scale \u{2013} Eb", [.key("Eb")]),
+            ("Original Scale \u{2013} Cm", [.key("Cm")]),
+            ("Tempo \u{2013} 96 bpm", [.tempo(96)]),
+            ("Singer \u{2013} Raghav Sen", [.artist("Raghav Sen")]),
+            ("\u{1F3B6} Song: Chaand Ki Galiyan", [.title("Chaand Ki Galiyan")]),
+            ("\u{1F3A4} Singer: Raghav Sen", [.artist("Raghav Sen")]),
+            ("\u{1F3BC} Album: Neeli Raat (2021)", [.album("Neeli Raat (2021)")]),
+            ("Song \u{2013} Chaand Ki Galiyan Chords", nil),
+            ("Tempo \u{2013} 4/4", nil),
+            ("Capo \u{2013} N/A", nil),
+            ("\u{1F319} Chaand bhi kehta hai: tu aaja", nil),
+        ]
+        for (line, fields) in cases {
+            #expect(MetadataExtractor.keyValueFields(line) == fields, "\(line)")
+        }
+    }
+
+    /// R142: site notes become `{comment}` lines; lyrics with a dash, a colon or a leading
+    /// emoji (romanized Hindi included) stay lyrics, word for word.
+    @Test(arguments: [
+        ("*    Some folks prefer G rather than Em", true),
+        ("**   Song is in key of F#m", true),
+        ("\u{1F4C5} Release Date: 2003", true),
+        ("\u{1F4D6} Storyline: A song about rain \u{1F327}\u{FE0F} and longing.", true),
+        ("Strumming \u{2013} DDU UDU", true),
+        ("Guitar Tuning \u{2014} Standard (E A D G B E)", true),
+        ("Original Chords \u{2013} D#, Cm, G#", true),
+        ("Tempo \u{2013} 4/4", true),
+        ("Strumming Pattern \u{2013} DD UU DUD", true),
+        ("Tu hi meri \u{2013} manzil hai", false),
+        ("Bheegi Raatein Chords \u{2013} Tara, Neel Kapoor", false),
+        ("Neeli Raat Lyrics \u{2013} Raghav Sen", false),
+        ("Turn the key \u{2013} and go", false),
+        ("Love \u{2013} it's all we need", false),
+        ("\u{1F319} Chaand bhi kehta hai: tu aaja", false),
+        ("\u{1F3B5} Dil: ab tu hi bata", false),
+        ("Release Date: 2003", false),
+        ("*sigh* not again tonight", false),
+        ("Orignal Chords \u{2013} [Cm] [A#] [G#]", false),
+    ])
+    func `site notes are told from lyrics`(line: String, isNote: Bool) {
+        #expect(MetadataExtractor.isNoteLine(line) == isNote)
+        #expect(FormatDetector
+            .classify(line, underChordLine: false) == (isNote ? .unknown : .lyricLine)
+            || ChordLines.hasInlineChords(line))
+    }
+
+    /// R142: fingering lines, with or without the chord name, are chord legends (`{comment}`),
+    /// even directly under the chord they shape.
+    @Test(arguments: [
+        ("E- 022300", true), ("B-024400", true), ("A- 002200 (Technically an Asus2)", true),
+        ("C#m- 046600", true), ("320033", true), ("x-3-2-0-1-0", true),
+        ("Em7     0-2-2-0-3-3", true), ("G     3-x-0-0-3(3)", true),
+        ("1998", false), ("Saal 2024 mein", false), ("Main 1-2-3 ginta hoon", false),
+        ("xxxxxx", false),
+    ])
+    func `fingering lines are chord legends`(line: String, isLegend: Bool) {
+        #expect(ChordLines.isChordLegend(line) == isLegend)
+        #expect((FormatDetector.classify(line, underChordLine: true) == .unknown) == isLegend)
     }
 }
 

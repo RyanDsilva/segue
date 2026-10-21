@@ -136,11 +136,15 @@ enum ChordLines {
     }
 
     /// A chord-shape legend line: a chord name, then its frets, then any note (`G 3-5-5-4-3-3`,
-    /// `C: x32010`, `Em 0-2-2-0-3(3) (= Em7)`).
+    /// `C: x32010`, `Em 0-2-2-0-3(3) (= Em7)`, `E- 022300`, `B-024400`), or a fingering on its
+    /// own (`320033`, `x-3-2-0-1-0`) under the chord it shapes (R142).
     static func isChordLegend(_ line: String) -> Bool {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.wholeMatch(of: /[xX0-9]{6}|[xX0-9]{1,2}(?:-[xX0-9]{1,2}){5}/) != nil {
+            return trimmed.contains(where: \.isNumber)
+        }
         let pattern = #/
-        (\S+?) :? \s+
+        (\S+?) (?: \s* [:\-] \s* | \s+ )
         (?: [xX0-9]{4,6} | [xX0-9]{1,2} (?: [-\s] [xX0-9]{1,2} ){3,5} )
         (?: \( \d{1,2} \) )? (?: \s .* )?
         /#

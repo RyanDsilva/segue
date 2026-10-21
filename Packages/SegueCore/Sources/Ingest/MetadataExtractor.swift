@@ -18,13 +18,15 @@ enum MetadataField: Equatable {
 
 /// Finds title/artist/key/capo/tempo in directives, "Title - Artist" header lines,
 /// chord-site credit lines (`Singer: | Music: | Lyrics:`), `Key: G`, `Scale: Am`, `Capo 2`.
+/// Chord sites also write the label with a spaced en or em dash (`Capo – 3rd Fret`) or
+/// after an emoji (`🎤 Singer: X`); both read like the colon form (R142).
 enum MetadataExtractor {
     // MARK: - Key/value lines (anywhere in the sheet)
 
     /// The fields of a key/value line, or `nil` unless every part of it is one
     /// (`Key: D   Capo 2 (play in C shapes)`, `Scale: Am | Capo: 3rd fret`).
     static func keyValueFields(_ line: String) -> [MetadataField]? {
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        let trimmed = withoutSymbolPrefix(line)
         guard !trimmed.isEmpty, trimmed.count <= 120 else { return nil }
         let parts = trimmed
             .split(separator: /\s+\|\s+|\s{2,}|\s*\|\s*/)
@@ -39,27 +41,107 @@ enum MetadataExtractor {
     }
 
     private static func keyValue(_ part: String) -> [MetadataField]? {
-        if let match = part.wholeMatch(of: /(?i)(key|scale)\s*[:=\-]?\s*(.+)/) {
-            let value = String(match.output.2).trimmingCharacters(in: .whitespaces)
+        let keyPattern = #/
+        (?i) (?: original \s+ )? (?: key | scale ) (?: \s* \/ \s* (?: key | scale ) )?
+        \s* [:=\-\u{2013}\u{2014}]? \s* (.+)
+        /#
+        if let match = part.wholeMatch(of: keyPattern) {
+            let value = String(match.output.1).trimmingCharacters(in: .whitespaces)
             guard SongKey(parsing: value) != nil else { return nil }
             return [.key(value)]
         }
         if let capo = capoFields(part) {
             return capo
         }
-        let tempo = /(?i)(?:(?:tempo|bpm)\s*[:=]?\s*)?(\d{2,3})\s*(?:bpm)?/
+        let tempo = /(?i)(?:(?:tempo|bpm)\s*[:=\u{2013}\u{2014}]?\s*)?(\d{2,3})\s*(?:bpm)?/
         if let match = part.wholeMatch(of: tempo),
            part.lowercased().contains("bpm") || part.lowercased().contains("tempo")
         {
             return Int(match.output.1).map { [.tempo($0)] }
         }
-        guard let match = part.wholeMatch(of: /([A-Za-z][A-Za-z ]{1,20}?)\s*:\s*(\S.*)/),
+        let labelled = /([A-Za-z][A-Za-z ]{1,20}?)\s*(:|\s[\u{2013}\u{2014}])\s*(\S.*)/
+        guard let match = part.wholeMatch(of: labelled),
               let make = labelledFields[String(match.output.1).lowercased()]
         else { return nil }
-        let value = String(match.output.2).trimmingCharacters(in: .whitespaces)
-        guard isPlausibleName(value) else { return nil }
+        let value = String(match.output.3).trimmingCharacters(in: .whitespaces)
+        // The dash form is a site heading as often as a credit (`Song – X Chords`), so its
+        // value must also be free of site words.
+        let isDash = match.output.2 != ":"
+        guard isDash ? isPlausibleField(value) : isPlausibleName(value) else { return nil }
         return [make(value)]
     }
+
+    /// `line` trimmed, without the emoji or symbols a chord site puts before a field label
+    /// (`🎶 Song: X`). Letters and digits are never removed.
+    static func withoutSymbolPrefix(_ line: String) -> String {
+        var rest = Substring(line.trimmingCharacters(in: .whitespaces))
+        while let first = rest.first, first == " " || isSymbol(first) {
+            rest = rest.dropFirst()
+        }
+        return String(rest)
+    }
+
+    private static func isSymbol(_ character: Character) -> Bool {
+        !character.isLetter && !character.isNumber && character.unicodeScalars.contains { scalar in
+            scalar.properties.isEmojiPresentation || scalar.properties
+                .generalCategory == .otherSymbol
+        }
+    }
+
+    // MARK: - Note lines
+
+    /// A line of site notes that is never a lyric (R142), read as a `{comment}`:
+    ///
+    /// - a footnote: `*    Some folks prefer G`, `**   Song is in key of F#m`;
+    /// - a song-details field after an emoji (`📅 Release Date: 2003`);
+    /// - a chord-site field written with a spaced en or em dash (`Strumming – DDU UDU`,
+    ///   `Guitar Tuning – Standard`, `Tempo – 4/4`).
+    ///
+    /// Both field forms need a label whose last word is in `noteLabels`, so a lyric that merely
+    /// starts with an emoji or holds a dash is never taken. Fields that carry metadata
+    /// (`Capo – 3rd Fret`) are `keyValueFields` lines instead.
+    static func isNoteLine(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard !ChordLines.hasInlineChords(trimmed) else { return false }
+        if trimmed.wholeMatch(of: /\*{1,4}\s+\S.*/) != nil {
+            return true
+        }
+        let stripped = withoutSymbolPrefix(trimmed)
+        let hasPrefix = stripped.count < trimmed.count
+        let field = #/
+        ( [A-Za-z][A-Za-z\/]* (?: \s [A-Za-z][A-Za-z\/]* ){0,2} )
+        \s* ( : | \s [\u{2013}\u{2014}] ) \s* \S .*
+        /#
+        guard let match = stripped.wholeMatch(of: field) else { return false }
+        let label = String(match.output.1)
+        let isDash = match.output.2 != ":"
+        let words = label.split(whereSeparator: { $0 == " " || $0 == "/" }).map { $0.lowercased() }
+        guard hasPrefix || isDash, let last = words.last, noteLabels.contains(last) else {
+            return false
+        }
+        guard isDash else { return true }
+        // A dash field's label is a title-case name made of note words only (`Suggested
+        // Strumming`, `Guitar Tuning`), never a sentence or a page heading whose song title
+        // comes before the word (`X Chords – Y`, `X Lyrics – Y`).
+        return label.split(separator: " ").allSatisfy { $0.first?.isUppercase == true }
+            && words.allSatisfy { noteLabels.contains($0) || noteModifiers.contains($0) }
+    }
+
+    /// Words that may come before a dash field's last word (`Original Chords`).
+    private static let noteModifiers: Set = [
+        "guitar", "standard", "stander", "original", "orignal", "suggested", "basic", "easy",
+        "main", "time", "release",
+    ]
+
+    /// Last words of a note label (chord-site song details and playing notes). Misspellings
+    /// seen on real sites are included (`Stander Tunning`).
+    private static let noteLabels: Set = [
+        "song", "singer", "singers", "artist", "album", "movie", "film", "music", "lyrics",
+        "lyricist", "composer", "director", "starring", "cast", "label", "genre", "language",
+        "year", "date", "released", "duration", "storyline", "capo", "key", "scale", "tuning",
+        "tunning", "chords", "chord", "strumming", "pattern", "rhythm", "tempo", "bpm",
+        "signature",
+    ]
 
     /// `Label: value` credit lines (chord-site style) and the field each label fills.
     private static let labelledFields: [String: @Sendable (String) -> MetadataField] = {
@@ -88,8 +170,8 @@ enum MetadataExtractor {
     /// `Capo 2`, `Capo: 3rd fret`, `Capo on 2`, `Capo 2 (play in C shapes)`.
     private static func capoFields(_ part: String) -> [MetadataField]? {
         let pattern = #/
-        (?i) capo \s* [:\-]? \s* (?:on \s+)? (?:fret \s+)? (\d{1,2}) (?:st|nd|rd|th)?
-        (?: \s* fret)? \s* (?: \( (.*) \) )?
+        (?i) capo \s* [:\-\u{2013}\u{2014}]? \s* (?:on \s+)? (?:fret \s+)?
+        (\d{1,2}) (?:st|nd|rd|th)? (?: \s* fret)? \s* (?: \( (.*) \) )?
         /#
         guard let match = part.wholeMatch(of: pattern),
               let fret = Int(match.output.1), (0 ... 12).contains(fret)
@@ -188,7 +270,8 @@ enum MetadataExtractor {
     }
 
     /// False for text that is never a title or artist: chord symbols only, a chord-shape
-    /// legend (`G 3-5-5-4-3-3`), a tuning (`E-A-D-G-B-e`), tab, or a capo/key/tuning note.
+    /// legend (`G 3-5-5-4-3-3`), a tuning (`E-A-D-G-B-e`), tab, a capo/key/tuning note, or a
+    /// site note (`Strumming Pattern – DD UU`, whose dash is not "Title - Artist").
     static func isPlausibleName(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return false }
@@ -203,6 +286,7 @@ enum MetadataExtractor {
             .hasInlineChords(trimmed) && !ChordLines.isChordLine(trimmed)
             && !ChordLines.isChordLegend(trimmed) && !ChordLines.isTuningLine(trimmed)
             && !ChordLines.isTabLine(trimmed) && keyValueFields(trimmed) == nil
+            && !isNoteLine(trimmed)
     }
 
     /// A title or artist value (not a whole line): plausible, and no site words such as

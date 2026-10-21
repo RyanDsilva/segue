@@ -125,8 +125,9 @@ public enum IngestPipeline {
                 blocks[index].lines[1].lineClass = .unknown
             }
         }
+        // Metadata fields and site notes (footnotes, song-details fields, fingerings) only.
         for index in blocks.indices where blocks[index].role == .content
-            && blocks[index].lines.allSatisfy({ $0.lineClass == .metadata })
+            && blocks[index].lines.allSatisfy({ [.metadata, .unknown].contains($0.lineClass) })
         {
             setRole(.metadata, of: &blocks[index])
         }
