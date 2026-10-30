@@ -175,7 +175,8 @@ public struct LayoutStyle: Sendable, Hashable {
     /// its gutter (up to `maxGutterWidth`) rather than breaking a label mid-name.
     public var gutterWidth: Double
     public var maxGutterWidth: Double
-    /// Gap between the gutter and the lyrics.
+    /// Gap between the gutter and the lyrics (18 pt, R163: wide enough for the rehearsal
+    /// loop bracket to sit clear of the section tint).
     public var gutterGap: Double
     /// Gap between columns.
     public var columnGap: Double
@@ -249,7 +250,7 @@ public struct LayoutStyle: Sendable, Hashable {
     public init(
         gutterWidth: Double = 64,
         maxGutterWidth: Double = 104,
-        gutterGap: Double = 12,
+        gutterGap: Double = 18,
         columnGap: Double = 48,
         minColumnWidth: Double = 360,
         maxColumns: Int = 3,

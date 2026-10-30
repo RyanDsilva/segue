@@ -9,6 +9,9 @@
         let plan: LayoutPlan
         var style: LayoutStyle = .stage
 
+        /// How far left of the lyrics a section's tint starts.
+        static let tintLead: CGFloat = 8
+
         var body: some View {
             ZStack(alignment: .topLeading) {
                 Color.clear
@@ -66,7 +69,7 @@
                         width: max(0, column.width - lyricOrigin + 12),
                         height: block.height + 12,
                     )
-                    .offset(x: lyricOrigin - 8, y: -6)
+                    .offset(x: lyricOrigin - StagePlanView.tintLead, y: -6)
                     .accessibilityHidden(true)
             }
         }

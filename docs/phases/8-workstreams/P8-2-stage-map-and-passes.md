@@ -282,7 +282,7 @@ The strip is one container, "Section map", identifier `segue.live.map`. Each chi
 Decorations that change with scroll are drawn in a separate overlay above `StagePlanView` (which stays `Equatable` and is not redrawn per frame), positioned from `plan.passes` and the gutter label lines:
 
 - **Current pass**: a 7 pt `cue` dot before the gutter name, 6 pt gap, vertically centred on the name's x-height; the name drawn `ink` (it is `muted` otherwise for non-chorus labels). Exactly one pass is current.
-- **Looping pass** (rehearsal): a dashed bracket in the gutter gap, 9 pt right of the gutter (in the 18 pt gutter gap), 3 pt wide, radius 2, from the pass's top to 8 pt below its bottom, `cue` dashes 8 pt with 5 pt gaps; and under the gutter lines, 6 pt below, a "⟲ Loop" label, bold 12, `cueText`, 5 pt gap after the glyph.
+- **Looping pass** (rehearsal): a dashed bracket in the gutter gap, centred in the clear strip between the gutter and the section tint (the tint starts 8 pt left of the lyrics, so in the 18 pt gutter gap the bracket's left edge is 3.5 pt right of the gutter, R163), 3 pt wide, radius 2, from the pass's top to 8 pt below its bottom, `cue` dashes 8 pt with 5 pt gaps; and under the gutter lines, 6 pt below, a "⟲ Loop" label, bold 12, `cueText`, 5 pt gap after the glyph.
 
 ## 9. Current pass and progress
 

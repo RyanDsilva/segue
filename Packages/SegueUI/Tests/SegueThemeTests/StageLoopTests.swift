@@ -13,6 +13,18 @@ extension StageWindowSuites {
     @MainActor
     @Suite(.serialized)
     struct StageLoopTests {
+        /// R163: the bracket sits in the gutter gap, clear of the gutter and of the tint.
+        @Test
+        func `the loop bracket sits clear of the gutter and the section tint`() {
+            let style = LayoutStyle.stage
+            #expect(style.gutterGap == 18)
+            let gutter = 96.0
+            let x = StagePassOverlay.loopBracketX(gutterWidth: gutter, style: style)
+            let tintStart = gutter + style.gutterGap - StagePlanView.tintLead
+            #expect(x - gutter >= 3)
+            #expect(tintStart - (x + StagePassOverlay.loopBracketWidth) >= 3)
+        }
+
         @Test
         func `the loop key in a gig flashes and changes nothing`() async throws {
             let run = try await MetronomeRun(songs: [MapSong.source(), "{title: Two}\n[G]La\n"])

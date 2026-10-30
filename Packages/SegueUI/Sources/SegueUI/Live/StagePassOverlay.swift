@@ -18,6 +18,16 @@
         static let dot: CGFloat = 7
         static let dotGap: CGFloat = 6
 
+        /// The loop bracket's x in its column: centred in the clear strip between the gutter
+        /// and the section tint, which starts `StagePlanView.tintLead` left of the lyrics
+        /// (R163: the 18 pt gutter gap keeps it clear of both).
+        static func loopBracketX(gutterWidth: Double, style: LayoutStyle) -> CGFloat {
+            let clear = style.gutterGap - StagePlanView.tintLead
+            return gutterWidth + (clear - loopBracketWidth) / 2
+        }
+
+        static let loopBracketWidth: CGFloat = 3
+
         var body: some View {
             ZStack(alignment: .topLeading) {
                 Color.clear
@@ -74,7 +84,7 @@
         @ViewBuilder
         private func loopMarks(_ index: Int) -> some View {
             let parts = blocks(of: index)
-            let x = plan.gutterWidth + (style.gutterGap - LoopBracket.width) / 2
+            let x = Self.loopBracketX(gutterWidth: plan.gutterWidth, style: style)
             ForEach(parts.indices, id: \.self) { part in
                 let (block, column) = parts[part]
                 let extra: CGFloat = part == parts.count - 1 ? 8 : 0
@@ -112,7 +122,7 @@
 
     /// The loop's dashed bracket: 3 pt wide, 8 pt dashes with 5 pt gaps, rounded ends.
     private struct LoopBracket: View {
-        static let width: CGFloat = 3
+        static let width = StagePassOverlay.loopBracketWidth
         let height: CGFloat
 
         var body: some View {
