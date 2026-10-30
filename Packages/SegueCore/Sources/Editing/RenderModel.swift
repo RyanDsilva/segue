@@ -66,7 +66,11 @@ public struct RenderModel: Sendable, Equatable {
         )
         let tuning = metadata.extra["tuning"]?.first.flatMap(Tuning.init(metaValue:))
             ?? options.tuning
-        let headerKey = transform.displayKey.map { key in
+        // In the bass-note view the header names the sounding key (the notes are not
+        // shapes) and carries the scale line (P8-4 section 6.2).
+        let bassView = options.bass?.notes == true
+        let shownKey = bassView ? transform.concertKey : transform.displayKey
+        let headerKey = shownKey.map { key in
             options.nashville ? Nashville.header(for: key) : key.name
         }
         self.init(
@@ -79,6 +83,7 @@ public struct RenderModel: Sendable, Equatable {
                 capo: capo,
                 tempo: metadata.tempo,
                 time: metadata.time,
+                scale: bassView ? transform.concertKey.map(RenderHeader.scaleText) : nil,
             ),
             sections: RenderSectionBuilder(transform: transform).sections(of: document),
             diagrams: options.showDiagrams
@@ -146,6 +151,9 @@ public struct RenderHeader: Sendable, Equatable {
     public var capo: Int?
     public var tempo: Double?
     public var time: String?
+    /// The bass-note view's scale line, "A major: A B C# D E F# G#" / "F#m: F# G# A B C# D
+    /// E"; nil without a key or outside the bass-note view (P8-4 section 6.2).
+    public var scale: String?
 
     public init(
         title: String?,
@@ -156,6 +164,7 @@ public struct RenderHeader: Sendable, Equatable {
         capo: Int?,
         tempo: Double?,
         time: String?,
+        scale: String? = nil,
     ) {
         self.title = title
         self.subtitle = subtitle
@@ -165,6 +174,14 @@ public struct RenderHeader: Sendable, Equatable {
         self.capo = capo
         self.tempo = tempo
         self.time = time
+        self.scale = scale
+    }
+
+    /// "A major: A B C# D E F# G#" for a major key, "F#m: F# G# A B C# D E" for a minor
+    /// key, spelled by `SongKey.scaleNotes`.
+    public static func scaleText(for key: SongKey) -> String {
+        let name = key.mode == .major ? "\(key.name) major" : key.name
+        return name + ": " + key.scaleNotes.map(\.chartName).joined(separator: " ")
     }
 }
 
@@ -298,18 +315,29 @@ public struct RenderChord: Sendable, Equatable {
     /// Lyric offset the chord sits above (`0 ... RenderLine.lyricCount`; see
     /// `RenderLine.characterStarts`).
     public var offset: Int
-    /// Text to draw (transposed / Nashville).
+    /// Text to draw big (transposed / Nashville, or the bass note in the bass-note view).
     public var text: String
     /// Source text between the brackets.
     public var original: String
     public var kind: Kind
+    /// Small text drawn after `text`: the concert chord beside a bass note (P8-4 section
+    /// 6.2); nil otherwise.
+    public var detail: String?
 
-    public init(ref: ChordRef, offset: Int, text: String, original: String, kind: Kind) {
+    public init(
+        ref: ChordRef,
+        offset: Int,
+        text: String,
+        original: String,
+        kind: Kind,
+        detail: String? = nil,
+    ) {
         self.ref = ref
         self.offset = offset
         self.text = text
         self.original = original
         self.kind = kind
+        self.detail = detail
     }
 }
 

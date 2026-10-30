@@ -19,6 +19,10 @@ public struct DisplayOptions: Sendable, Hashable, Codable {
     public var instrument: Instrument
     /// Guitar tuning for diagrams when the song has no `{meta: tuning ...}`.
     public var tuning: Tuning
+    /// The user's bass-note view (P8-4, from `InstrumentProfile`; nil = off). Never
+    /// persisted: excluded from coding and absent from `DisplayPrefs`, so no per-song write
+    /// can carry it.
+    public var bass: BassView?
 
     public init(
         transpose: Int = 0,
@@ -27,6 +31,7 @@ public struct DisplayOptions: Sendable, Hashable, Codable {
         showDiagrams: Bool = false,
         instrument: Instrument = .guitar,
         tuning: Tuning = .standard,
+        bass: BassView? = nil,
     ) {
         self.transpose = transpose
         self.capoMode = capoMode
@@ -34,6 +39,29 @@ public struct DisplayOptions: Sendable, Hashable, Codable {
         self.showDiagrams = showDiagrams
         self.instrument = instrument
         self.tuning = tuning
+        self.bass = bass
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case transpose
+        case capoMode
+        case nashville
+        case showDiagrams
+        case instrument
+        case tuning
+    }
+}
+
+/// The bass-note view's text for one chord (`DisplayTransform.bassText`).
+public struct BassChordText: Sendable, Equatable {
+    /// "B", or "3 · B" when the song's Nashville toggle is on.
+    public var note: String
+    /// The concert chord ("A/C#" for `G/B` under capo 2) when `chordBeside` is on.
+    public var chord: String?
+
+    public init(note: String, chord: String?) {
+        self.note = note
+        self.chord = chord
     }
 }
 
@@ -112,6 +140,32 @@ public struct DisplayTransform: Sendable, Hashable {
     /// The key the displayed chords are in.
     public var displayKey: SongKey? {
         key.writtenKey?.transposed(by: semitones)
+    }
+
+    /// The sounding (concert) key: the written key + capo + transpose.
+    public var concertKey: SongKey? {
+        key.writtenKey?.transposed(by: concertSemitones)
+    }
+
+    /// The bass-note view's text for a chord (P8-4 section 6.1): nil unless
+    /// `options.bass?.notes`. The note is the slash bass, else the root, at sounding pitch
+    /// whatever the capo mode, spelled as the transposer spelled it; "3 · B" when the
+    /// song's Nashville toggle is on and a key is known. `N.C.` and unknown chords come
+    /// back verbatim with no chord.
+    public func bassText(_ token: ChordToken) -> BassChordText? {
+        guard let bass = options.bass, bass.notes else { return nil }
+        guard let concert = concert(token).chord else {
+            return BassChordText(note: token.original, chord: nil)
+        }
+        let symbol = concert.symbol
+        let noteClass = symbol.bass ?? symbol.root
+        var note = noteClass.chartName
+        if options.nashville, let written = key.writtenKey {
+            // Numbers are transposition-invariant: the concert note in the concert key.
+            let sounding = written.transposed(by: concertSemitones)
+            note = Nashville.degree(of: noteClass.pitchClass, in: sounding) + " \u{00B7} " + note
+        }
+        return BassChordText(note: note, chord: bass.chordBeside ? concert.original : nil)
     }
 
     /// Text to show for a chord as written: transposed, or a Nashville number when

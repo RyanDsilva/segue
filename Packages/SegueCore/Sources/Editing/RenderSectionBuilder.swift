@@ -136,12 +136,14 @@ struct RenderSectionBuilder {
                 case .noChord: .noChord
                 case .unknown: .unknown
                 }
+                let bass = transform.bassText(token)
                 chords.append(RenderChord(
                     ref: ChordRef(line: path, index: chords.count),
                     offset: offset,
-                    text: transform.display(token),
+                    text: bass?.note ?? transform.display(token),
                     original: chord,
                     kind: kind,
+                    detail: bass?.chord,
                 ))
             }
             runs.append(segment.text)

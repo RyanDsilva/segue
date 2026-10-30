@@ -150,6 +150,12 @@ public enum Nashville {
         "7",
     ]
 
+    /// The Nashville degree of a single note in `key` ("5", "b7", "#4"), numbered from the
+    /// relative major in a minor key (`E` in A minor is "3"). The bass-note view's number.
+    public static func degree(of pitchClass: PitchClass, in key: SongKey) -> String {
+        degree(of: pitchClass, from: key.relativeMajor.tonic.pitchClass)
+    }
+
     private static func degree(of pitchClass: PitchClass, from tonic: PitchClass) -> String {
         degreeNames[tonic.semitones(to: pitchClass)]
     }

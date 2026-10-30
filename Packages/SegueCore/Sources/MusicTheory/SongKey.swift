@@ -150,6 +150,19 @@ public enum KeySpelling {
     /// - Sharp keys and C / Am spell black keys sharp, except the flat 3rd and flat 7th of the
     ///   (relative) major, which are flats: `Eb Bb` in C and A minor, `Bb` in G and E minor.
     public static func spell(_ pitchClass: PitchClass, in key: SongKey?) -> NoteClass {
+    /// The key's scale from the tonic, seven notes: the major scale, or the natural minor,
+    /// each spelled by `KeySpelling.spell` so its letters match the chart's (white keys stay
+    /// natural: F# major reads `F# G# A# B C# D# F`).
+    public var scaleNotes: [NoteClass] {
+        let degrees = mode == .major ? [0, 2, 4, 5, 7, 9, 11] : [0, 2, 3, 5, 7, 8, 10]
+        return degrees.map { offset in
+            offset == 0 ? tonic : KeySpelling.spell(
+                tonic.pitchClass.transposed(by: offset),
+                in: self,
+            )
+        }
+    }
+
         let (sharp, flat) = NoteClass.spellings(of: pitchClass)
         guard sharp != flat else { return sharp }
         let key = key ?? SongKey(tonic: NoteClass(.C), mode: .major)
