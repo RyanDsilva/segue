@@ -36,8 +36,8 @@
                         set: { on in store.update { $0.setPlaysBass(on) } },
                     ))
                     .accessibilityIdentifier(AccessibilityID.settingsInstrumentPlaysBass)
-                    SettingsNote(text: "Turns on bass notes and uses your strings and tuning "
-                        + "for the neck.")
+                    SettingsNote(text: "Turns on bass notes. The strings and tuning below set "
+                        + "the mini neck either way.")
                     Picker("Strings", selection: Binding(
                         get: { profile.strings },
                         set: { count in

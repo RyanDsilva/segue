@@ -46,8 +46,8 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
         return BassView(
             notes: true,
             chordBeside: chordBeside,
-            // Without "I play bass" the neck uses EADG (decision 2, section 7.3).
-            tuning: playsBass ? tuning : .bassStandard4,
+            // The Settings strings and tuning, with or without "I play bass" (R163).
+            tuning: tuning,
             neck: stageNeck,
             fretboard: playsBass && fretboard,
         )
@@ -115,7 +115,7 @@ public struct BassView: Sendable, Hashable {
     public var notes: Bool
     /// The full concert chord small beside the note.
     public var chordBeside: Bool
-    /// The profile's tuning, else `.bassStandard4`.
+    /// The profile's strings and tuning, for anyone (R163).
     public var tuning: Tuning
     /// The stage mini neck (`bassNotes && stageNeck`).
     public var neck: Bool

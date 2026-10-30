@@ -45,8 +45,10 @@ struct StageBassNeckTests {
     }
 
     @Test
-    func `EADG without the profile and the profile's five strings with it`() throws {
+    func `the Settings strings and tuning with or without the profile`() throws {
         let transform = Self.transform(key: "D", capo: nil)
+        // R163: the neck uses the Settings tuning for anyone, not only for "I play bass".
+        let standard = InstrumentProfile(bassNotes: true)
         let anyone = InstrumentProfile(strings: 5, tuning: .bassStandard5, bassNotes: true)
         let bassist = InstrumentProfile(
             playsBass: true,
@@ -55,7 +57,8 @@ struct StageBassNeckTests {
             bassNotes: true,
         )
         for (profile, expected) in [
-            (anyone, FretPosition(string: 1, fret: 5)),
+            (standard, FretPosition(string: 1, fret: 5)),
+            (anyone, FretPosition(string: 0, fret: 3)),
             (bassist, FretPosition(string: 0, fret: 3)),
         ] {
             let tuning = try #require(profile.bassView?.tuning)
