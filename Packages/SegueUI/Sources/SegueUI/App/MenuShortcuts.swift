@@ -130,6 +130,8 @@
         static let pickSongs = MenuShortcut("Setlist", "Pick Songs", "1")
         static let arrangeSet = MenuShortcut("Setlist", "Arrange Set", "2")
         static let insertBreak = MenuShortcut("Setlist", "Insert Break", "b", [.command, .shift])
+        /// P8-5: focuses the set composer at the end of the set list.
+        static let addSongByName = MenuShortcut("Setlist", "Add Song by Name", "l")
         /// P3-16: the selected slot's Arrange Sections sheet.
         static let arrangeSections = MenuShortcut(
             "Setlist",
@@ -156,6 +158,7 @@
             save, undo, redo,
             refresh, rehearseSong, playSongLive,
             startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak,
+            addSongByName,
             arrangeSections, moveUp, moveDown, mainWindow, help, keyboardShortcuts,
         ]
     }

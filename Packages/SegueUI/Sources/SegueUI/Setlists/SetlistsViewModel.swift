@@ -27,6 +27,8 @@ public final class SetlistsViewModel {
     var arrangeSelection = ListSelection<SetlistItemID>()
     /// The slot whose Arrange Sections sheet is open (P3-16).
     public var arranging: ArrangingSlot?
+    /// The set composer at the end of the shown builder's set list (P8-5); ⌘L focuses it.
+    public let composer = SetComposerModel()
     /// The last failure, shown as a dismissible banner.
     public var errorMessage: String?
     /// Setlist files that could not be loaded (reported, never deleted).

@@ -46,6 +46,16 @@ public extension AccessibilityID {
     static let setlistRehearse = "segue.setlist.rehearse"
     static let setlistMenu = "segue.setlist.menu"
     static let setlistDropZone = "segue.setlist.dropZone"
+    /// The set composer (P8-5): its field, ghost, cells, status line, "2 of 5" counter and
+    /// alternatives list. Its row keeps `setlistDropZone`.
+    static let setlistComposer = "segue.setlist.composer"
+    static let setlistComposerGhost = "segue.setlist.composer.ghost"
+    static let setlistComposerKey = "segue.setlist.composer.key"
+    static let setlistComposerCapo = "segue.setlist.composer.capo"
+    static let setlistComposerLength = "segue.setlist.composer.length"
+    static let setlistComposerStatus = "segue.setlist.composer.status"
+    static let setlistComposerCounter = "segue.setlist.composer.counter"
+    static let setlistComposerAlternatives = "segue.setlist.composer.alternatives"
     static let entryTitle = "segue.setlist.entry.title"
     static let entryKey = "segue.setlist.entry.key"
     static let entryCapo = "segue.setlist.entry.capo"

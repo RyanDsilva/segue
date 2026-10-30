@@ -194,6 +194,12 @@
         },
         {
           "keys" : [
+            "⌘L"
+          ],
+          "title" : "Add Song by Name"
+        },
+        {
+          "keys" : [
             "⌥↓"
           ],
           "title" : "Move Down"

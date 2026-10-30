@@ -55,6 +55,7 @@ struct MenuShortcutsTests {
             "close",
             "save", "refresh", "rehearseSong", "playSongLive",
             "startShow", "rehearse", "newSetlist", "pickSongs", "arrangeSet", "insertBreak",
+            "addSongByName",
             "arrangeSections",
             "moveUp", "moveDown", "mainWindow", "help", "keyboardShortcuts",
         ]
