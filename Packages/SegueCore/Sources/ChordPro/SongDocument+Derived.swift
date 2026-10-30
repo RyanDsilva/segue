@@ -101,14 +101,14 @@ public extension SongDocument {
     }
 }
 
-extension Metadata {
+public extension Metadata {
     /// Standard metadata directives that have no dedicated field and land in `extra`.
-    static let extraNames: Set = [
+    internal static let extraNames: Set = [
         "album", "arranger", "composer", "copyright", "lyricist", "sorttitle", "year",
     ]
 
     /// Collects metadata from the directives in `blocks` (including inside sections).
-    init(blocks: [Block]) {
+    internal init(blocks: [Block]) {
         self.init()
         collect(blocks)
     }
@@ -157,13 +157,13 @@ extension Metadata {
         extra[name.lowercased(), default: []].append(rest)
     }
 
-    public static func parseTempo(_ value: String) -> Double? {
+    static func parseTempo(_ value: String) -> Double? {
         guard let tempo = Double(value), tempo.isFinite, tempo > 0 else { return nil }
         return tempo
     }
 
     /// Seconds from `ss`, `mm:ss` or `h:mm:ss`.
-    static func parseDuration(_ value: String) -> TimeInterval? {
+    internal static func parseDuration(_ value: String) -> TimeInterval? {
         let parts = value.split(separator: ":", omittingEmptySubsequences: false)
         guard (1 ... 3).contains(parts.count) else { return nil }
         var total = 0.0
@@ -175,7 +175,7 @@ extension Metadata {
     }
 
     /// A diagnostic message if a metadata value cannot be understood, else `nil`.
-    public static func valueProblem(name: String, value: String) -> String? {
+    static func valueProblem(name: String, value: String) -> String? {
         switch name {
         case "capo" where Int(value) == nil:
             "Capo '\(value)' is not a whole number"
@@ -192,7 +192,7 @@ extension Metadata {
 
     /// Beats and note value from `n/d` (spaces around the slash allowed): 1-32 beats,
     /// a note value of 1, 2, 4, 8, 16, 32 or 64.
-    public static func parseTime(_ value: String) -> (beats: Int, noteValue: Int)? {
+    static func parseTime(_ value: String) -> (beats: Int, noteValue: Int)? {
         let parts = value.split(separator: "/", omittingEmptySubsequences: false)
         guard parts.count == 2,
               let beats = Int(parts[0].trimmingCharacters(in: .whitespaces)),
@@ -201,5 +201,20 @@ extension Metadata {
               [1, 2, 4, 8, 16, 32, 64].contains(noteValue)
         else { return nil }
         return (beats, noteValue)
+    }
+
+    /// Pulses per bar of `{time}` (R118): a compound meter (6/8, 9/8, 12/8) counts the
+    /// dotted quarter, so 6/8 is 2, 9/8 is 3 and 12/8 is 4; any other meter pulses on every
+    /// written beat. No `{time}` (or an unreadable one) is 4. The one home of the rule: the
+    /// metronome and the walk-up beat estimate (P8-4 section 8.5) both call it.
+    static func pulses(ofTime time: String?) -> Int {
+        guard let time, let parsed = parseTime(time) else { return 4 }
+        return pulses(beats: parsed.beats, noteValue: parsed.noteValue)
+    }
+
+    /// Pulses per bar of a `beats/noteValue` signature (see `pulses(ofTime:)`).
+    static func pulses(beats: Int, noteValue: Int) -> Int {
+        let compound = noteValue == 8 && beats > 3 && beats.isMultiple(of: 3)
+        return compound ? beats / 3 : max(1, beats)
     }
 }

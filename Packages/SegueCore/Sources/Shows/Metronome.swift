@@ -33,11 +33,11 @@ public struct MetronomeMeter: Sendable, Hashable {
         noteValue == 8 && beats > 3 && beats.isMultiple(of: 3)
     }
 
-    /// Pulses per bar (R118): a compound meter counts the dotted quarter, so 6/8 is 2
-    /// pulses, 9/8 is 3 and 12/8 is 4, and `{tempo}` is per dotted quarter. Any other meter
-    /// pulses on every written beat.
+    /// Pulses per bar (R118, `Metadata.pulses`): a compound meter counts the dotted quarter,
+    /// so 6/8 is 2 pulses, 9/8 is 3 and 12/8 is 4, and `{tempo}` is per dotted quarter. Any
+    /// other meter pulses on every written beat.
     public var pulses: Int {
-        isCompound ? beats / 3 : beats
+        Metadata.pulses(beats: beats, noteValue: noteValue)
     }
 }
 

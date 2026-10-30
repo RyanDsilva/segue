@@ -1,0 +1,679 @@
+{
+ "cases": [
+  {
+   "name": "I-IV in G walks up the scale",
+   "from": "G",
+   "to": "C",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "A B",
+   "expectContains": [
+    "B"
+   ]
+  },
+  {
+   "name": "I-V in G walks down",
+   "from": "G",
+   "to": "D",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "F# E"
+  },
+  {
+   "name": "I-vi in G",
+   "from": "G",
+   "to": "Em",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "F#"
+  },
+  {
+   "name": "IV-V in G, the note between",
+   "from": "C",
+   "to": "D",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "C#"
+  },
+  {
+   "name": "V-i in A minor, pop: melodic",
+   "from": "E",
+   "to": "Am",
+   "key": "Am",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "F# G#",
+   "expectContains": [
+    "G#"
+   ],
+   "mustNotContain": [
+    "F G"
+   ]
+  },
+  {
+   "name": "V-i in A minor, Bollywood: harmonic first",
+   "from": "E",
+   "to": "Am",
+   "key": "Am",
+   "genre": "bollywood",
+   "intoSection": false,
+   "expectTop1": "F G#",
+   "expectContains": [
+    "F# G#",
+    "G#"
+   ],
+   "mustNotContain": [
+    "F G"
+   ]
+  },
+  {
+   "name": "bVII-i in A minor",
+   "from": "G",
+   "to": "Am",
+   "key": "Am",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "G#"
+  },
+  {
+   "name": "rock bVI-bVII: nothing first, then the passing note",
+   "from": "F",
+   "to": "G",
+   "key": "Am",
+   "genre": "rock",
+   "next": "Am",
+   "intoSection": false,
+   "expectTop1": "hold",
+   "expectContains": [
+    "F#"
+   ]
+  },
+  {
+   "name": "rock bVII-i: nothing first, then the leading tone",
+   "from": "G",
+   "to": "Am",
+   "key": "Am",
+   "genre": "rock",
+   "prev": "F",
+   "intoSection": false,
+   "expectTop1": "hold",
+   "expectContains": [
+    "G#"
+   ]
+  },
+  {
+   "name": "secondary dominant A7-Dm in C walks A7's C#",
+   "from": "A7",
+   "to": "Dm",
+   "key": "C",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "B C#",
+   "expectContains": [
+    "C#"
+   ],
+   "mustNotContain": [
+    "B C"
+   ]
+  },
+  {
+   "name": "slash line C-C/B is already a step",
+   "from": "C",
+   "to": "C/B",
+   "key": "C",
+   "genre": "pop",
+   "next": "Am",
+   "intoSection": false,
+   "expectNone": true
+  },
+  {
+   "name": "slash line C/B-Am: nothing first",
+   "from": "C/B",
+   "to": "Am",
+   "key": "C",
+   "genre": "pop",
+   "prev": "C",
+   "intoSection": false,
+   "expectTop1": "hold",
+   "expectContains": [
+    "Bb"
+   ]
+  },
+  {
+   "name": "slash line Am-Am/G: nothing first",
+   "from": "Am",
+   "to": "Am/G",
+   "key": "C",
+   "genre": "pop",
+   "prev": "C/B",
+   "intoSection": false,
+   "expectTop1": "hold",
+   "expectContains": [
+    "Ab"
+   ]
+  },
+  {
+   "name": "tritone G-C# in C: a half step below",
+   "from": "G",
+   "to": "C#",
+   "key": "C",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "C"
+  },
+  {
+   "name": "legacy G-C in G",
+   "from": "G",
+   "to": "C",
+   "key": "G",
+   "genre": null,
+   "intoSection": false,
+   "expectTop1": "A B"
+  },
+  {
+   "name": "legacy C-G in G walks down",
+   "from": "C",
+   "to": "G",
+   "key": "G",
+   "genre": null,
+   "intoSection": false,
+   "expectTop1": "B A"
+  },
+  {
+   "name": "legacy G-D in G",
+   "from": "G",
+   "to": "D",
+   "key": "G",
+   "genre": null,
+   "intoSection": false,
+   "expectTop1": "F# E"
+  },
+  {
+   "name": "legacy D-C in G, the note between",
+   "from": "D",
+   "to": "C",
+   "key": "G",
+   "genre": null,
+   "intoSection": false,
+   "expectTop1": "Db"
+  },
+  {
+   "name": "legacy G-A in G",
+   "from": "G",
+   "to": "A",
+   "key": "G",
+   "genre": null,
+   "intoSection": false,
+   "expectTop1": "G#"
+  },
+  {
+   "name": "legacy C-F# in C, tritone",
+   "from": "C",
+   "to": "F#",
+   "key": "C",
+   "genre": null,
+   "intoSection": false,
+   "expectTop1": "F"
+  },
+  {
+   "name": "legacy Bb-Eb in C",
+   "from": "Bb",
+   "to": "Eb",
+   "key": "C",
+   "genre": null,
+   "intoSection": false,
+   "expectTop1": "C D"
+  },
+  {
+   "name": "legacy Bb-C in C",
+   "from": "Bb",
+   "to": "C",
+   "key": "C",
+   "genre": null,
+   "intoSection": false,
+   "expectTop1": "B"
+  },
+  {
+   "name": "legacy G-C with no key: half step below",
+   "from": "G",
+   "to": "C",
+   "key": null,
+   "genre": null,
+   "intoSection": false,
+   "expectTop1": "B"
+  },
+  {
+   "name": "legacy G-G7 is the same note",
+   "from": "G",
+   "to": "G7",
+   "key": "G",
+   "genre": null,
+   "intoSection": false,
+   "expectNone": true
+  },
+  {
+   "name": "legacy E-F in C is a half step",
+   "from": "E",
+   "to": "F",
+   "key": "C",
+   "genre": null,
+   "intoSection": false,
+   "expectNone": true
+  },
+  {
+   "name": "G: I-ii",
+   "from": "G",
+   "to": "Am",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "G#"
+  },
+  {
+   "name": "G: I-iii",
+   "from": "G",
+   "to": "Bm",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "A"
+  },
+  {
+   "name": "G: ii-V",
+   "from": "Am",
+   "to": "D",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "B C",
+   "expectContains": [
+    "B C#",
+    "C#"
+   ]
+  },
+  {
+   "name": "G: V-I",
+   "from": "D",
+   "to": "G",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "E F#",
+   "expectContains": [
+    "F#"
+   ]
+  },
+  {
+   "name": "G: IV-I walks down",
+   "from": "C",
+   "to": "G",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "B A"
+  },
+  {
+   "name": "G: vi-IV",
+   "from": "Em",
+   "to": "C",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "D"
+  },
+  {
+   "name": "G: V-vi",
+   "from": "D",
+   "to": "Em",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "D#"
+  },
+  {
+   "name": "G: iii-vi",
+   "from": "Bm",
+   "to": "Em",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "C D"
+  },
+  {
+   "name": "G: vi-ii",
+   "from": "Em",
+   "to": "Am",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "F# G"
+  },
+  {
+   "name": "Am: i-iv",
+   "from": "Am",
+   "to": "Dm",
+   "key": "Am",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "B C"
+  },
+  {
+   "name": "Am: i-v",
+   "from": "Am",
+   "to": "Em",
+   "key": "Am",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "G F"
+  },
+  {
+   "name": "Am: i-VI walks down",
+   "from": "Am",
+   "to": "F",
+   "key": "Am",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "G"
+  },
+  {
+   "name": "Am: iv-i",
+   "from": "Dm",
+   "to": "Am",
+   "key": "Am",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "C B"
+  },
+  {
+   "name": "Am: V-i, rock",
+   "from": "E",
+   "to": "Am",
+   "key": "Am",
+   "genre": "rock",
+   "intoSection": false,
+   "expectTop1": "F# G#",
+   "expectContains": [
+    "G#"
+   ],
+   "mustNotContain": [
+    "F G"
+   ]
+  },
+  {
+   "name": "Am: V-i, worship",
+   "from": "E",
+   "to": "Am",
+   "key": "Am",
+   "genre": "worship",
+   "intoSection": false,
+   "expectTop1": "F# G#",
+   "mustNotContain": [
+    "F G"
+   ]
+  },
+  {
+   "name": "Am: V7-i, country",
+   "from": "E7",
+   "to": "Am",
+   "key": "Am",
+   "genre": "country",
+   "intoSection": false,
+   "expectTop1": "F# G#",
+   "mustNotContain": [
+    "F G"
+   ]
+  },
+  {
+   "name": "secondary dominant E7-Am in C keeps E7's G#",
+   "from": "E7",
+   "to": "Am",
+   "key": "C",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "F G#",
+   "mustNotContain": [
+    "F G"
+   ]
+  },
+  {
+   "name": "slash line Am/G-F: nothing first",
+   "from": "Am/G",
+   "to": "F",
+   "key": "C",
+   "genre": "pop",
+   "prev": "Am",
+   "intoSection": false,
+   "expectTop1": "hold",
+   "expectContains": [
+    "Gb"
+   ]
+  },
+  {
+   "name": "G-D/F#-Em: D/F#-Em is a written line",
+   "from": "D/F#",
+   "to": "Em",
+   "key": "G",
+   "genre": "pop",
+   "prev": "G",
+   "intoSection": false,
+   "expectTop1": "hold",
+   "expectContains": [
+    "F"
+   ]
+  },
+  {
+   "name": "Bb: I-IV",
+   "from": "Bb",
+   "to": "Eb",
+   "key": "Bb",
+   "genre": "pop",
+   "beats": 4,
+   "intoSection": false,
+   "expectTop1": "C D"
+  },
+  {
+   "name": "Eb: I-IV",
+   "from": "Eb",
+   "to": "Ab",
+   "key": "Eb",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "F G"
+  },
+  {
+   "name": "F: I-IV",
+   "from": "F",
+   "to": "Bb",
+   "key": "F",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "G A"
+  },
+  {
+   "name": "Gm: V-i melodic",
+   "from": "D",
+   "to": "Gm",
+   "key": "Gm",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "E F#",
+   "mustNotContain": [
+    "Eb F"
+   ]
+  },
+  {
+   "name": "E: I-IV",
+   "from": "E",
+   "to": "A",
+   "key": "E",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "F# G#"
+  },
+  {
+   "name": "F#: I-IV",
+   "from": "F#",
+   "to": "B",
+   "key": "F#",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "G# A#"
+  },
+  {
+   "name": "E: V-I",
+   "from": "B",
+   "to": "E",
+   "key": "E",
+   "genre": "pop",
+   "intoSection": false,
+   "expectTop1": "C# D#"
+  },
+  {
+   "name": "one-beat chord gets nothing",
+   "from": "G",
+   "to": "C",
+   "key": "G",
+   "genre": "pop",
+   "beats": 1,
+   "intoSection": false,
+   "expectNone": true
+  },
+  {
+   "name": "two beats: one note",
+   "from": "G",
+   "to": "C",
+   "key": "G",
+   "genre": "pop",
+   "beats": 2,
+   "intoSection": false,
+   "expectTop1": "B",
+   "mustNotContain": [
+    "A B"
+   ]
+  },
+  {
+   "name": "four beats: the scale walk",
+   "from": "G",
+   "to": "C",
+   "key": "G",
+   "genre": "pop",
+   "beats": 4,
+   "intoSection": false,
+   "expectTop1": "A B"
+  },
+  {
+   "name": "eight beats: still the scale walk",
+   "from": "G",
+   "to": "C",
+   "key": "G",
+   "genre": "pop",
+   "beats": 8,
+   "intoSection": false,
+   "expectTop1": "A B"
+  },
+  {
+   "name": "fast and two beats gets nothing",
+   "from": "G",
+   "to": "C",
+   "key": "G",
+   "genre": "pop",
+   "beats": 2,
+   "tempo": 170,
+   "intoSection": false,
+   "expectNone": true
+  },
+  {
+   "name": "rock prefers the half step below",
+   "from": "G",
+   "to": "C",
+   "key": "G",
+   "genre": "rock",
+   "beats": 4,
+   "intoSection": false,
+   "expectTop1": "B",
+   "expectContains": [
+    "A B"
+   ]
+  },
+  {
+   "name": "country walks up a fourth",
+   "from": "D",
+   "to": "G",
+   "key": "G",
+   "genre": "country",
+   "beats": 4,
+   "intoSection": false,
+   "expectTop1": "E F#"
+  },
+  {
+   "name": "into a verse walks down",
+   "from": "G",
+   "to": "C",
+   "key": "G",
+   "genre": "pop",
+   "energyUp": false,
+   "intoSection": true,
+   "expectTop1": "E D"
+  },
+  {
+   "name": "into a chorus walks up",
+   "from": "G",
+   "to": "C",
+   "key": "G",
+   "genre": "pop",
+   "energyUp": true,
+   "intoSection": true,
+   "expectTop1": "A B"
+  },
+  {
+   "name": "worship keeps a lone chromatic note out",
+   "from": "C",
+   "to": "D/F#",
+   "key": "G",
+   "genre": "worship",
+   "intoSection": false,
+   "expectNone": true
+  },
+  {
+   "name": "worship into a section allows it",
+   "from": "C",
+   "to": "D/F#",
+   "key": "G",
+   "genre": "worship",
+   "intoSection": true,
+   "expectTop1": "F"
+  },
+  {
+   "name": "slow ballad keeps a lone chromatic note out",
+   "from": "C",
+   "to": "D/F#",
+   "key": "G",
+   "genre": "pop",
+   "tempo": 60,
+   "intoSection": false,
+   "expectNone": true
+  },
+  {
+   "name": "the change into N.C. gets nothing",
+   "from": "G",
+   "to": "N.C.",
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectNone": true
+  },
+  {
+   "name": "the last chord gets nothing",
+   "from": "G",
+   "to": null,
+   "key": "G",
+   "genre": "pop",
+   "intoSection": false,
+   "expectNone": true
+  }
+ ]
+}
