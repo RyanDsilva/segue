@@ -16,6 +16,7 @@ Get charts and setlists out of Segue as paper or shareable PDFs. Live partner sy
    - then each song, starting on a new page.
 3. **Print** - both PDF types go through the macOS print panel (`NSPrintOperation` with the PDF as the source).
 4. **Embedded preview** - every export opens in an in-app PDF viewer (`PDFView` wrapped for SwiftUI). The viewer has toolbar options (paper size, display toggles, include diagrams, include notes) and re-renders live when they change. Save, Share (`ShareLink` / `NSSharingServicePicker`) and Print are secondary actions in the viewer. There is no download-only path.
+   - *Note (2026-10-30): the "Bass chart" toolbar option (R158 P8-4 Q8, spec `docs/phases/8-workstreams/P8-4-bass.md` section 7.4) is part of this phase's build: P8-4a reached its step 3c before this export existed, so the toggle, its rendering through `DisplayOptions.withBass(_:forcingNotes:)`, the " (Bass)" file name, the "bass chart" keyword, the `bassChart` analytics key and the tests in P8-4 section 11.5 move here (R161). P8-4a already provides everything below the toggle.*
 
 ## Non-goals
 
