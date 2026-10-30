@@ -1,245 +1,443 @@
 import Foundation
 import Library
 
-/// The Arrange Sections sheet's rows (P3-16, R122, R123), derived from a slot's saved
-/// arrangement and the song as it is now. Pure: every edit returns the arrangement to save,
-/// and the sheet re-derives its rows from the saved value (so undo shows at once).
-///
-/// Interim adapter (P8-2 section 5) until P8-3 rebuilds the sheet on passes: loading folds
-/// consecutive Full passes of one part into a row with that play count and a Skip pass into
-/// a skipped row; saving expands rows back into passes and writes `knownParts`. An
-/// arrangement using any other show mode is not loaded into rows (`usesShowModes`), so the
-/// old editor can never drop a mode.
+/// The Arrange Sections sheet's lane (P8-3, R149): a slot's passes as chips, the song's parts
+/// as palette groups, and every edit. Pure: `apply` never mutates the receiver; it returns
+/// the arrangement to save, the new selection and the undo name, or why it was refused. The
+/// views only map gestures and keys to edits.
 struct ArrangementDraft: Equatable {
-    /// The most times a row can be played in a row.
-    static let maxPlays = 9
-
-    struct Row: Equatable, Identifiable {
-        /// Position in `rows`.
+    /// One pass in the lane.
+    struct Chip: Equatable, Identifiable {
+        /// Position in the lane.
         var id: Int
         var unit: SongSectionUnit
-        /// 0 = skipped.
-        var plays: Int
-        /// A part added to the song since the arrangement was saved ("New in the song").
-        var isNew: Bool
-        /// A "Play Again Later" copy: unticking removes it.
-        var isAgain: Bool
+        var mode: PassMode
+        /// The pass's name and number among the shown passes ("2 of 3"), the same numbering
+        /// as the stage map and the gutter badges (`PassNaming`).
+        var name: PassName?
+        /// The part's occurrences differ in content, so the chip shows its ordinal.
+        var showsOrdinal: Bool
 
-        var isPlayed: Bool {
-            plays > 0
+        /// "Chorus", or "Chorus 3rd" when the ordinal shows.
+        var title: String {
+            showsOrdinal ? unit.name : unit.title
+        }
+
+        /// "2 of 3", or nil when the label plays once or the pass is skipped.
+        var number: String? {
+            name?.badgeText
         }
     }
 
-    private(set) var rows: [Row]
-    /// Saved rows that no longer match the song (out of date).
+    /// One palette button: the parts sharing a label (and roadmap token).
+    struct Group: Equatable, Identifiable {
+        /// Position in the palette.
+        var id: Int
+        var token: RoadmapToken
+        /// The group's occurrences, in song order.
+        var units: [SongSectionUnit]
+        /// A part of the group was added to the song after the arrangement was saved.
+        var isNew: Bool
+
+        var title: String {
+            token.title
+        }
+    }
+
+    enum Edit: Equatable {
+        /// Inserts part `unit` (index into the song's parts) at lane position `at`.
+        case insert(unit: Int, at: Int)
+        /// Inserts palette group `group` after lane position `after`, the occurrence by the
+        /// counting rule (decision 10).
+        case insertGroup(Int, after: Int)
+        case duplicate(Int)
+        /// ⌥-drag: a copy of pass `from` at drop index `to` (0 ... count).
+        case copy(Int, to: Int)
+        case playAgainAtEnd(Int)
+        case remove(Int)
+        /// Moves pass `from` to drop index `to` (0 ... count, before the pass there).
+        case move(from: Int, to: Int)
+        case setMode(Int, PassMode)
+        case toggleSkip(Int)
+        /// A roadmap commit.
+        case replace([ArrangementPass])
+        /// The out-of-date banner's Update: the lane as shown.
+        case update
+        case setLength(TimeInterval?)
+    }
+
+    enum Refusal: Equatable, Error {
+        case lastPlayingPass
+        case tooManyPasses
+        case nothingChanged
+
+        /// The help text for a refused control.
+        var message: String? {
+            switch self {
+            case .lastPlayingPass: "At least one pass plays"
+            case .tooManyPasses: "A slot can have up to \(SlotArrangement.maxPasses) passes"
+            case .nothingChanged: nil
+            }
+        }
+    }
+
+    struct Result: Equatable {
+        var arrangement: SlotArrangement
+        var selection: Int
+        var actionName: String
+    }
+
+    /// The passes that resolve against the song, in played order.
+    private(set) var chips: [Chip]
+    /// Saved passes that no longer name a part of the song (out of date).
     private(set) var missing: [ArrangementPass]
-    /// The saved arrangement uses Chords only or First line passes, which this editor cannot
-    /// show: the sheet is read-only.
-    let usesShowModes: Bool
+    /// Parts added to the song after the arrangement was saved ("New" in the palette).
+    private(set) var newParts: [SongSectionUnit]
+    /// The palette, in order of first appearance in the song.
+    let groups: [Group]
     var length: TimeInterval?
-    /// Whether the slot has a saved arrangement (else the rows are the full song).
+    /// Whether the slot has a saved arrangement (else the lane is the full song).
     let isCustom: Bool
-    /// The song's parts as they are now (every one is known on save).
+    /// The saved arrangement cannot be played as saved (missing parts or a broken
+    /// invariant): the stage shows the full song.
+    let isOutOfDate: Bool
     private let units: [SongSectionUnit]
 
     init(arrangement: SlotArrangement?, units: [SongSectionUnit]) {
-        isCustom = arrangement != nil
         self.units = units
+        isCustom = arrangement != nil
         length = arrangement?.length
-        usesShowModes = arrangement.usesShowModes
-        guard let arrangement else {
-            rows = units.enumerated().map { offset, unit in
-                Row(id: offset, unit: unit, plays: 1, isNew: false, isAgain: false)
-            }
-            missing = []
-            return
-        }
-        var rows: [Row] = []
+        let saved = arrangement ?? .fullSong(units)
+        isOutOfDate = arrangement.map {
+            ArrangementResolver.resolve($0, units: units).isOutOfDate
+        } ?? false
+        var lane: [(pass: ArrangementPass, unit: SongSectionUnit)] = []
         var missing: [ArrangementPass] = []
-        var listed = Set<Int>()
-        var previous: ArrangementPass?
-        for pass in arrangement.passes {
-            defer { previous = pass }
-            guard let unit = ArrangementResolver.unit(for: pass, in: units) else {
+        for pass in saved.passes {
+            if let unit = ArrangementResolver.unit(for: pass, in: units) {
+                lane.append((pass, unit))
+            } else {
                 missing.append(pass)
-                continue
             }
-            // A Full pass right after a Full pass of the same part is one more play.
-            if pass.isShown, let last = previous, last.isShown, last.anchor == pass.anchor,
-               let row = rows.last, row.unit.index == unit.index,
-               row.plays < Self.maxPlays
-            {
-                rows[rows.count - 1].plays += 1
-                continue
-            }
-            let isAgain = listed.contains(unit.index)
-            if isAgain, !pass.isShown {
-                continue
-            }
-            listed.insert(unit.index)
-            rows.append(Row(
-                id: rows.count,
-                unit: unit,
-                plays: pass.isShown ? 1 : 0,
-                isNew: false,
-                isAgain: isAgain,
-            ))
         }
-        // A part the arrangement knew but plays nowhere is a skipped row; only a part it
-        // never knew is new.
-        let known = arrangement.effectiveKnownParts
-        for unit in units where !listed.contains(unit.index) {
-            let isNew = !known.contains { $0.anchor.matches(unit.anchor) }
-            rows.append(Row(id: rows.count, unit: unit, plays: 0, isNew: isNew, isAgain: false))
-        }
-        self.rows = rows
         self.missing = missing
+        let known = saved.effectiveKnownParts
+        newParts = arrangement == nil ? [] : units.filter { unit in
+            !lane.contains { $0.unit.index == unit.index }
+                && !known.contains { $0.anchor.matches(unit.anchor) }
+        }
+        let tokens = ArrangementRoadmap.tokens(units)
+        let newIndices = Set(newParts.map(\.index))
+        groups = tokens.enumerated().map { offset, token in
+            let members = token.units.map { units[$0] }
+            return Group(
+                id: offset,
+                token: token,
+                units: members,
+                isNew: members.contains { newIndices.contains($0.index) },
+            )
+        }
+        chips = Self.chips(lane.map(\.pass), units: units, tokens: tokens)
     }
 
-    /// The arrangement these rows describe, every pass with the song's current fingerprint:
-    /// a played row is `plays` Full passes, a skipped row one Skip pass; every part of the
-    /// song is known.
+    /// The lane as passes, each with the song's current fingerprint.
+    var passes: [ArrangementPass] {
+        chips.map(Self.pass)
+    }
+
+    /// The lane as it would be saved: every part of the song known (R123).
     var arrangement: SlotArrangement {
-        SlotArrangement(
-            passes: rows.flatMap { row in
-                let pass = ArrangementPass(
-                    anchor: row.unit.anchor,
-                    fingerprint: row.unit.fingerprint,
-                    mode: row.isPlayed ? .full : .skip,
-                )
-                return Array(repeating: pass, count: max(row.plays, 1))
+        SlotArrangement(passes: passes, knownParts: KnownPart.all(units), length: length)
+    }
+
+    var playingCount: Int {
+        chips.count { $0.mode != .skip }
+    }
+
+    var skippedCount: Int {
+        chips.count { $0.mode == .skip }
+    }
+
+    /// The lane as a roadmap ("I:CH V1 C V2 C -B C O:1").
+    var roadmap: String {
+        ArrangementRoadmap.format(passes, units: units)
+    }
+
+    /// This song's tokens, for the roadmap's help line.
+    var partList: String {
+        groups.map(\.token.text).joined(separator: " ")
+    }
+
+    func parseRoadmap(_ text: String) -> Swift.Result<[ArrangementPass], RoadmapError> {
+        ArrangementRoadmap.parse(text, units: units)
+    }
+
+    /// The draft with `passes` in the lane (a roadmap being typed, before it is saved).
+    func with(passes: [ArrangementPass]) -> Self {
+        var copy = self
+        copy.chips = Self.chips(
+            passes.filter { ArrangementResolver.unit(for: $0, in: units) != nil },
+            units: units,
+            tokens: groups.map(\.token),
+        )
+        return copy
+    }
+
+    /// The part a palette group adds after lane position `after` (decision 10): the
+    /// occurrence after the nearest earlier chip of the group, capped at the last; the first
+    /// when there is none.
+    func occurrence(of group: Int, after: Int) -> SongSectionUnit? {
+        guard groups.indices.contains(group) else { return nil }
+        let members = groups[group].units
+        let end = min(max(after + 1, 0), chips.count)
+        let previous = chips[..<end].last { chip in
+            members.contains { $0.index == chip.unit.index }
+        }
+        let occurrence = ArrangementRoadmap.occurrence(
+            after: previous.flatMap { chip in
+                members.firstIndex { $0.index == chip.unit.index }.map { $0 + 1 }
             },
-            knownParts: KnownPart.all(units),
-            length: length,
+            count: members.count,
         )
+        return members[occurrence - 1]
     }
 
-    var playedCount: Int {
-        rows.count { $0.isPlayed && !$0.isAgain }
+    // MARK: Edits
+
+    /// Applies `edit` with the chip at `selection` selected. Refuses an edit that would leave
+    /// nothing to play, exceed `SlotArrangement.maxPasses`, or change nothing.
+    func apply(_ edit: Edit, selection: Int) -> Swift.Result<Result, Refusal> {
+        let start = Change(passes: passes, length: length, selection: selection, name: "")
+        guard let change = added(edit, start) ?? rearranged(edit, start) ?? restyled(edit, start)
+        else { return .failure(.nothingChanged) }
+        if change.passes.count > SlotArrangement.maxPasses, change.passes.count > chips.count {
+            return .failure(.tooManyPasses)
+        }
+        guard change.passes.contains(where: \.isShown) else { return .failure(.lastPlayingPass) }
+        return .success(Result(
+            arrangement: SlotArrangement(
+                passes: change.passes,
+                knownParts: KnownPart.all(units),
+                length: change.length,
+            ),
+            selection: max(change.selection, 0),
+            actionName: change.name,
+        ))
     }
 
-    /// The song's parts (a "Play Again Later" copy is not another part).
-    var partCount: Int {
-        rows.count { !$0.isAgain }
-    }
+    /// An edit's outcome before the invariants are checked.
+    private struct Change {
+        var passes: [ArrangementPass]
+        var length: TimeInterval?
+        var selection: Int
+        var name: String
 
-    var hasNewRows: Bool {
-        rows.contains(where: \.isNew)
-    }
-
-    /// The passes the stage shows.
-    var order: [PlayedPass] {
-        rows.filter(\.isPlayed).flatMap { row in
-            Array(repeating: PlayedPass(index: row.unit.index), count: row.plays)
+        /// `pass` inserted at `index` (clamped), selected.
+        func inserting(_ pass: ArrangementPass, at index: Int, name: String) -> Self {
+            var change = self
+            change.selection = min(max(index, 0), passes.count)
+            change.passes.insert(pass, at: change.selection)
+            change.name = name
+            return change
         }
     }
 
-    /// Whether row `index` can be skipped: at least one row must play.
-    func canToggleOff(_ index: Int) -> Bool {
-        guard rows.indices.contains(index), rows[index].isPlayed else { return false }
-        return rows[index].isAgain || rows.count(where: \.isPlayed) > 1
-    }
-
-    /// Plays or skips row `index`; unticking a "Play Again Later" copy removes it. Returns
-    /// false (nothing changed) when it would leave nothing to play.
-    @discardableResult
-    mutating func toggle(_ index: Int) -> Bool {
-        guard rows.indices.contains(index) else { return false }
-        if rows[index].isPlayed {
-            guard canToggleOff(index) else { return false }
-            if rows[index].isAgain {
-                rows.remove(at: index)
-                renumber()
-                return true
-            }
-            rows[index].plays = 0
-        } else {
-            rows[index].plays = 1
+    /// Insert, duplicate, copy and play again at end; nil for other edits or a bad index.
+    private func added(_ edit: Edit, _ start: Change) -> Change? {
+        let passes = start.passes
+        switch edit {
+        case let .insert(unit, at):
+            return units.first { $0.index == unit }
+                .map { start.inserting(Self.pass($0), at: at, name: "Add Pass") }
+        case let .insertGroup(group, after):
+            return occurrence(of: group, after: after)
+                .map { start.inserting(Self.pass($0), at: after + 1, name: "Add Pass") }
+        case let .duplicate(index):
+            guard passes.indices.contains(index) else { return nil }
+            return start.inserting(passes[index], at: index + 1, name: "Duplicate Pass")
+        case let .copy(index, to):
+            guard passes.indices.contains(index) else { return nil }
+            return start.inserting(passes[index], at: to, name: "Duplicate Pass")
+        case let .playAgainAtEnd(index):
+            guard passes.indices.contains(index) else { return nil }
+            var copy = passes[index]
+            copy.mode = copy.mode == .skip ? .full : copy.mode
+            return start.inserting(copy, at: passes.count, name: "Play Again at End")
+        default:
+            return nil
         }
-        rows[index].isNew = false
-        return true
     }
 
-    /// Sets row `index` to play `plays` times in a row (1 ... 9); a skipped row is ticked.
-    @discardableResult
-    mutating func setPlays(_ index: Int, _ plays: Int) -> Bool {
-        guard rows.indices.contains(index) else { return false }
-        let clamped = min(max(plays, 1), Self.maxPlays)
-        guard clamped != rows[index].plays else { return false }
-        rows[index].plays = clamped
-        rows[index].isNew = false
-        return true
-    }
-
-    /// Moves rows (drag, ⌥↑ / ⌥↓).
-    @discardableResult
-    mutating func move(fromOffsets source: IndexSet, toOffset destination: Int) -> Bool {
-        let before = rows.map(\.unit.index)
-        rows.move(fromOffsets: source, toOffset: destination)
-        for offset in rows.indices where rows[offset].isNew {
-            rows[offset].isNew = false
+    /// Remove and move; nil for other edits, a bad index or a move to the same place.
+    private func rearranged(_ edit: Edit, _ start: Change) -> Change? {
+        var change = start
+        switch edit {
+        case let .remove(index):
+            guard change.passes.indices.contains(index) else { return nil }
+            change.passes.remove(at: index)
+            change.selection = min(index, change.passes.count - 1)
+            change.name = "Remove Pass"
+        case let .move(from, to):
+            guard change.passes.indices.contains(from), (0 ... change.passes.count).contains(to)
+            else { return nil }
+            let destination = to > from ? to - 1 : to
+            guard destination != from else { return nil }
+            change.passes.insert(change.passes.remove(at: from), at: destination)
+            change.selection = destination
+            change.name = "Move Pass"
+        default:
+            return nil
         }
-        renumber()
-        return rows.map(\.unit.index) != before
+        return change
     }
 
-    /// Moves row `index` one place up (-1) or down (+1).
-    @discardableResult
-    mutating func move(_ index: Int, by delta: Int) -> Bool {
-        let target = index + delta
-        guard rows.indices.contains(index), rows.indices.contains(target) else { return false }
-        return move(
-            fromOffsets: IndexSet(integer: index),
-            toOffset: delta < 0 ? target : target + 1,
-        )
-    }
-
-    /// "Play Again Later" (R123): a played copy of row `index` right after it, to drag
-    /// anywhere.
-    mutating func playAgainLater(_ index: Int) {
-        guard rows.indices.contains(index) else { return }
-        var copy = rows[index]
-        copy.plays = 1
-        copy.isNew = false
-        copy.isAgain = true
-        rows.insert(copy, at: index + 1)
-        rows[index].isNew = false
-        renumber()
-    }
-
-    private mutating func renumber() {
-        for offset in rows.indices {
-            rows[offset].id = offset
+    /// Modes, the roadmap, Update and the length; nil for other edits or no change.
+    private func restyled(_ edit: Edit, _ start: Change) -> Change? {
+        var change = start
+        switch edit {
+        case let .setMode(index, mode):
+            guard change.passes.indices.contains(index), change.passes[index].mode != mode
+            else { return nil }
+            change.passes[index].mode = mode
+            change.selection = index
+            change.name = Self.modeActionName(mode)
+        case let .toggleSkip(index):
+            guard change.passes.indices.contains(index) else { return nil }
+            let skipping = change.passes[index].mode != .skip
+            change.passes[index].mode = skipping ? .skip : .full
+            change.selection = index
+            change.name = skipping ? "Skip Pass" : "Play Pass"
+        case let .replace(replacement):
+            guard replacement != change.passes else { return nil }
+            change.passes = replacement
+            change.selection = min(max(start.selection, 0), max(replacement.count - 1, 0))
+            change.name = "Edit Roadmap"
+        case .update:
+            change.name = "Update Arrangement"
+        case let .setLength(seconds):
+            guard seconds != change.length else { return nil }
+            change.length = seconds
+            change.name = "Set Slot Length"
+        default:
+            return nil
         }
-        // The first row of a part is never a copy (after a move a copy may come first).
-        var seen = Set<Int>()
-        for offset in rows.indices {
-            rows[offset].isAgain = !seen.insert(rows[offset].unit.index).inserted
+        return change
+    }
+
+    /// "Show Full", "Show Chords Only", "Show First Line", "Skip Pass".
+    static func modeActionName(_ mode: PassMode) -> String {
+        switch mode {
+        case .full: "Show Full"
+        case .chordsOnly: "Show Chords Only"
+        case .firstLine: "Show First Line"
+        case .skip: "Skip Pass"
         }
     }
 }
 
+// MARK: - Building chips
+
+private extension ArrangementDraft {
+    static func pass(_ unit: SongSectionUnit) -> ArrangementPass {
+        ArrangementPass(anchor: unit.anchor, fingerprint: unit.fingerprint)
+    }
+
+    static func pass(_ chip: Chip) -> ArrangementPass {
+        ArrangementPass(
+            anchor: chip.unit.anchor,
+            fingerprint: chip.unit.fingerprint,
+            mode: chip.mode,
+        )
+    }
+
+    static func chips(
+        _ passes: [ArrangementPass],
+        units: [SongSectionUnit],
+        tokens: [RoadmapToken],
+    ) -> [Chip] {
+        let names = PassNaming.names(passes, units: units)
+        let differing = differingGroups(units, tokens: tokens)
+        return passes.enumerated().compactMap { position, pass in
+            guard let unit = ArrangementResolver.unit(for: pass, in: units) else { return nil }
+            return Chip(
+                id: position,
+                unit: unit,
+                mode: pass.mode,
+                name: names[position],
+                showsOrdinal: differing.contains(unit.index),
+            )
+        }
+    }
+
+    /// The parts whose label group's occurrences differ in content (a `{chorus}` repeat
+    /// counts as the chorus it writes out, R158 P8-3 Q4).
+    static func differingGroups(
+        _ units: [SongSectionUnit],
+        tokens: [RoadmapToken],
+    ) -> Set<Int> {
+        var result = Set<Int>()
+        for token in tokens where token.units.count > 1 {
+            let contents = Set(token.units.map { content(of: $0, in: units) })
+            if contents.count > 1 {
+                result.formUnion(token.units.map { units[$0].index })
+            }
+        }
+        return result
+    }
+
+    /// A part's fingerprint, a `{chorus}` repeat mapped to the chorus it repeats (the
+    /// `SongSections.repeatTarget` rule, on parts).
+    static func content(of offset: Int, in units: [SongSectionUnit]) -> String {
+        let unit = units[offset]
+        guard unit.isRepeat else { return unit.fingerprint }
+        let key = unit.title.lowercased()
+        let choruses = units[..<offset].reversed().filter { $0.kind == .chorus && !$0.isRepeat }
+        let target = choruses.first { $0.title.lowercased() == key } ?? choruses.first
+        return target?.fingerprint ?? unit.fingerprint
+    }
+}
+
+// MARK: - Texts
+
 extension ArrangementDraft {
-    /// The slot row's mark: "Custom · 8 of 10 sections · Chorus 3rd x2".
+    /// The slot row's mark: "Custom · I:CH V1 C V2 C B C O:1".
     static func markText(_ arrangement: SlotArrangement, units: [SongSectionUnit]) -> String {
-        let draft = Self(arrangement: arrangement, units: units)
-        var text = "Custom · \(draft.playedCount) of \(draft.partCount) sections"
-        if let repeated = draft.rows.first(where: { $0.plays > 1 }) {
-            text += " · \(repeated.unit.name) x\(repeated.plays)"
+        "Custom · " + Self(arrangement: arrangement, units: units).roadmap
+    }
+
+    /// "9 passes, 1 skipped" / "1 pass" (the popover row and VoiceOver).
+    static func countsText(_ arrangement: SlotArrangement) -> String {
+        let total = arrangement.passes.count
+        let skipped = arrangement.passes.count { $0.mode == .skip }
+        var text = total == 1 ? "1 pass" : "\(total) passes"
+        if skipped > 0 {
+            text += ", \(skipped) skipped"
         }
         return text
     }
 
-    /// The missing rows by name: "Verse 3, After Bridge".
+    /// The slot popover's Sections row: "Full song…", "Custom: 9 passes, 1 skipped…" or
+    /// "Out of date: full song…".
+    static func popoverText(_ arrangement: SlotArrangement?, units: [SongSectionUnit]?) -> String {
+        guard let arrangement else { return "Full song…" }
+        guard let units else { return "Custom…" }
+        if ArrangementResolver.resolve(arrangement, units: units).isOutOfDate {
+            return "Out of date: full song…"
+        }
+        return "Custom: \(countsText(arrangement))…"
+    }
+
+    /// The footer: "8 passes play · 1 skipped".
+    var footerCounts: String {
+        var text = playingCount == 1 ? "1 pass plays" : "\(playingCount) passes play"
+        if skippedCount > 0 {
+            text += " · \(skippedCount) skipped"
+        }
+        return text
+    }
+
+    /// The missing passes by name: "Verse 3, After Bridge".
     var missingNames: String {
         missing.map(\.anchor.summaryName).joined(separator: ", ")
-    }
-}
-
-extension SlotArrangement? {
-    /// Interim (P8-2): whether a saved arrangement has Chords only or First line passes,
-    /// which the old editor cannot show (its sheet is then read-only).
-    var usesShowModes: Bool {
-        self?.passes.contains { $0.mode == .chordsOnly || $0.mode == .firstLine } ?? false
     }
 }

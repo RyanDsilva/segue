@@ -21,8 +21,9 @@
         }
     }
 
-    /// A set row's arrangement line (P3-16, R122, R123): "Custom · 8 of 10 sections · Chorus
-    /// x2", or in the cue colour the out-of-date note; a click opens Arrange Sections.
+    /// A set row's arrangement line (P3-16, P8-3, R122, R123): "Custom · " and the roadmap
+    /// ("Custom · I:CH V1 C V2 C B C O:1"), or in the cue colour the out-of-date note; a click
+    /// opens Arrange Sections.
     struct SlotArrangementMark: View {
         let entry: SetlistEntry
         let record: SongRecord?
@@ -48,7 +49,7 @@
                     : "Custom arrangement for this gig. Click to edit it.")
                 .accessibilityLabel(outOfDate
                     ? "Arrangement out of date. The full song will be shown on stage."
-                    : "Custom arrangement")
+                    : "Custom arrangement, " + ArrangementDraft.countsText(arrangement))
                 .accessibilityIdentifier(AccessibilityID.arrangementMark)
             }
         }

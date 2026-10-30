@@ -89,16 +89,12 @@
             .onDisappear(perform: saveNote)
         }
 
-        /// "Full song", "Custom: 6 of 8 sections" or "Out of date: full song".
+        /// "Full song…", "Custom: 9 passes, 1 skipped…" or "Out of date: full song…".
         private var arrangementText: String {
-            guard let arrangement = entry.arrangement else { return "Full song…" }
-            guard let record else { return "Custom…" }
-            let units = SongSections.units(of: record.document)
-            if ArrangementResolver.resolve(arrangement, units: units).isOutOfDate {
-                return "Out of date: full song…"
-            }
-            let draft = ArrangementDraft(arrangement: arrangement, units: units)
-            return "Custom: \(draft.playedCount) of \(draft.partCount) sections…"
+            ArrangementDraft.popoverText(
+                entry.arrangement,
+                units: record.map { SongSections.units(of: $0.document) },
+            )
         }
 
         private var display: SetlistEntryDisplay {
