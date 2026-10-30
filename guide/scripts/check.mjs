@@ -107,7 +107,9 @@ if (clipTotal > 5 * 1024) fail(`clips total ${Math.round(clipTotal)} KB (budget 
 const keyboard = JSON.parse(readFileSync(join(guide, 'src/data/keyboard.json'), 'utf8'));
 const liveCommand = readFileSync(join(root, 'Packages/SegueCore/Sources/Shows/LiveCommand.swift'), 'utf8');
 const enumBody = liveCommand.slice(liveCommand.indexOf('public enum LiveCommand'), liveCommand.indexOf('/// Who handles a command.'));
-const commandCount = [...enumBody.matchAll(/^\s+case [a-zA-Z]+$/gm)].length;
+// Numbered commands (jumpToPass1...9) share one row ("1-9"), so they count once.
+const commandNames = [...enumBody.matchAll(/^\s+case ([a-zA-Z0-9]+)$/gm)].map((m) => m[1].replace(/\d+$/, ''));
+const commandCount = new Set(commandNames).size;
 const stageRows = keyboard.stage.reduce((sum, group) => sum + group.rows.length, 0);
 if (stageRows !== commandCount) fail(`keyboard.json has ${stageRows} stage rows, LiveCommand has ${commandCount} cases (make guide-keys)`);
 if (!keyboard.menus.length) fail('keyboard.json has no menu shortcuts');
