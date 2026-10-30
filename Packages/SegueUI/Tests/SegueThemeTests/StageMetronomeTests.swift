@@ -341,6 +341,8 @@ struct MetronomeRun {
     let env: TestEnvironment
     let app: AppModel
     let outputs = ClickOutputs()
+    /// Heard-chord and walk-up outputs (P8-6), recorded.
+    let sounds = SoundOutputs()
     let setlist: Setlist
     /// The analytics the app recorded, when `recordsAnalytics`.
     let analytics: RecordingAnalytics?
@@ -360,6 +362,8 @@ struct MetronomeRun {
         let outputs = outputs
         let clock = env.clock
         dependencies.live.makeClickOutput = { outputs.make(clock) }
+        let sounds = sounds
+        dependencies.makeSoundOutput = { _ in sounds.make(clock) }
         app = AppModel(dependencies: dependencies)
         await app.start()
         let session = try #require(app.session)

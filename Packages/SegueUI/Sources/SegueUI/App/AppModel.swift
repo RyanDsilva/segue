@@ -4,6 +4,7 @@
     import Foundation
     import Library
     import Observation
+    import Playback
     import Services
     import Setlists
     import Shows
@@ -58,6 +59,13 @@
         /// AI providers, router and availability (P3-2, `AppModel+AI.swift`); the app target
         /// replaces the deterministic-only default with its providers.
         public var ai = AIServices.deterministicOnly()
+        /// The process's audio engine (P8-6): the rehearsal click and heard chords share it.
+        public var audio: AudioEngineHost = .shared
+        /// Where heard chords and walk-ups go (a recorder in tests). Called on the first
+        /// sound, never while a gig runs (P8-6 section 9).
+        public var makeSoundOutput: (@MainActor (AudioEngineHost) -> any SoundOutput) = {
+            AudioEngineSoundOutput(host: $0)
+        }
 
         public init(
             fileSystem: any FileSystem,
@@ -167,6 +175,8 @@
                 SegueTips.isPerforming = live != nil
                 // No model loads while a show runs (R65, R95).
                 dependencies.ai.gate.isShowRunning = live != nil
+                // No sound in a gig (R161, P8-6 section 9): before the stage is presented.
+                sound.stageChanged(kind: live?.kind)
             }
         }
 
@@ -180,11 +190,33 @@
 
         let dependencies: AppDependencies
         @ObservationIgnored private var activationObservers: [any NSObjectProtocol] = []
+        /// Heard chords and walk-ups (P8-6): the gate, Settings > Audio, the player.
+        public let sound: SoundSession
 
         public init(dependencies: AppDependencies) {
             self.dependencies = dependencies
+            let host = dependencies.audio
+            let makeOutput = dependencies.makeSoundOutput
+            sound = SoundSession(
+                host: host,
+                settings: AudioSettingsStore(defaults: dependencies.live.settings.defaults),
+                clock: dependencies.live.scrollClock,
+                makeOutput: { makeOutput(host) },
+            )
             dependencies.polish.router.app = self
             OpenDocuments.shared.app = self
+            observeAudio(host)
+        }
+
+        /// The engine's reports: an output change stops what was playing (and says so), a
+        /// bank fallback is recorded once per launch (P8-6 8.1).
+        private func observeAudio(_ host: AudioEngineHost) {
+            host.onConfigurationChange = { [weak self] in
+                Task { @MainActor in self?.sound.outputChanged() }
+            }
+            host.onBankFallback = { [weak self] in
+                Task { @MainActor in self?.services.record(.errorOccurred(.soundBankLoad)) }
+            }
         }
 
         /// Activation picks up edits made in other apps (A19, B-16); leaving the app saves the

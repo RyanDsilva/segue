@@ -59,7 +59,7 @@ final class TestEnvironment {
     func dependencies(location: LibraryLocation, override: URL?, remember: Bool)
         -> AppDependencies
     {
-        AppDependencies(
+        var dependencies = AppDependencies(
             fileSystem: fileSystem,
             clock: clock,
             ids: ids,
@@ -69,6 +69,11 @@ final class TestEnvironment {
             live: liveDependencies(),
             libraryLock: libraryLock,
         )
+        // In-process tests never make a sound: an engine of their own that is never built,
+        // and a recorder as the output (P8-6).
+        dependencies.audio = AudioEngineHost(bank: nil, systemBank: nil)
+        dependencies.makeSoundOutput = { _ in RecordingSoundOutput(clock: nil) }
+        return dependencies
     }
 
     /// Live mode with this environment's defaults, the manual clock, a charger that is

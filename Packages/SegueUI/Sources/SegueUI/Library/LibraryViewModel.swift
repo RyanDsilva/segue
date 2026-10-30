@@ -120,6 +120,8 @@ public final class LibraryViewModel {
     /// Settings > Instrument (P8-4): the song page and the editor preview show bass notes
     /// when its bass view is on. The session hands it over when the library opens.
     @ObservationIgnored var instrument: InstrumentProfileStore?
+    /// Heard chords and walk-up auditions (P8-6); the app hands it over with the services.
+    @ObservationIgnored var sound: SoundSession?
 
     /// The open editor: the new-song editor (`detail == .newSong`) or an edit of the
     /// selected song. Nil when the detail pane shows a rendered song or nothing.

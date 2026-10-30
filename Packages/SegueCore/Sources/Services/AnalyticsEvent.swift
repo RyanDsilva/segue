@@ -285,6 +285,9 @@ public enum ErrorCode: String, Sendable, CaseIterable {
     /// A section note edit whose note was no longer in the song (P3-17: stale edits after
     /// the move to stable IDs; should stay near zero).
     case sectionNoteGone
+    /// The bundled sound bank failed to load and a fallback played instead (P8-6 8.1;
+    /// once per launch).
+    case soundBankLoad
     case other
 }
 

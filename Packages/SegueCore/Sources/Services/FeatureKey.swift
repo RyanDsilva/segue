@@ -53,4 +53,14 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case arrangementMode
     case arrangementRoadmap
     case arrangementRehearse
+    /// P8-6 section 14: a chord heard (editor, library), a walk-up candidate auditioned
+    /// (editor, library), play-along started (editor, library, a rehearsal's stage) and its
+    /// timing changed, a non-default audio output chosen (never its name), the chord sound
+    /// set to clean guitar (Settings).
+    case hearChord
+    case walkUpAudition
+    case playAlong
+    case playAlongTiming
+    case audioOutput
+    case chordSoundGuitar
 }

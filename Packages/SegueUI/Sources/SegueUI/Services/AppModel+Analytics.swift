@@ -55,6 +55,8 @@
             TimeItModel.shared.services = services
             liveSettings.services = services
             instrumentProfile.services = services
+            sound.settings.services = services
+            session.library.sound = sound
             let songs = session.library.catalog
             let gigs = await session.stores.shows.gigLog().count
             diagnosticLog?.notice(.library, "opened", [
@@ -174,6 +176,7 @@
             case .shapeLibraryUnreadable: "shapeLibraryUnreadable"
             case .bindingsUnreadable: "bindingsUnreadable"
             case .sectionNoteGone: "sectionNoteGone"
+            case .soundBankLoad: "soundBankLoad"
             case .other: "other"
             }
         }

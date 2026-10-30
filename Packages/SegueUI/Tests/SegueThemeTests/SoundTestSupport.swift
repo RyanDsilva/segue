@@ -1,0 +1,85 @@
+import Foundation
+import Playback
+@testable import SegueUI
+import Support
+import Synchronization
+
+/// A recording `SoundOutput` (P8-6 section 15.2): what was scheduled, at what time on the
+/// test clock, and every `stopAll`.
+final class RecordingSoundOutput: SoundOutput, @unchecked Sendable {
+    struct Played: Equatable {
+        var event: NoteEvent
+        /// Seconds since the reference date on the test clock (0 without a clock).
+        var at: TimeInterval
+    }
+
+    enum Call: Equatable {
+        case prepare(ChordSound, BassSound)
+        case play(Played)
+        case stopAll
+    }
+
+    private let clock: (any Clock)?
+    private let state = Mutex<[Call]>([])
+    /// Runs on each `stopAll` (to observe what else was true at that moment).
+    let onStop: (@Sendable () -> Void)?
+
+    init(clock: (any Clock)?, onStop: (@Sendable () -> Void)? = nil) {
+        self.clock = clock
+        self.onStop = onStop
+    }
+
+    var calls: [Call] {
+        state.withLock { $0 }
+    }
+
+    /// Every event scheduled, in order.
+    var played: [Played] {
+        calls.compactMap {
+            if case let .play(played) = $0 {
+                played
+            } else {
+                nil
+            }
+        }
+    }
+
+    var stops: Int {
+        calls.count { $0 == .stopAll }
+    }
+
+    func prepare(chord: ChordSound, bass: BassSound) {
+        state.withLock { $0.append(.prepare(chord, bass)) }
+    }
+
+    func schedule(_ events: [NoteEvent], in delay: TimeInterval) {
+        let now = clock?.now().timeIntervalSinceReferenceDate ?? 0
+        state.withLock { calls in
+            calls += events.map { event in
+                .play(Played(event: event, at: now + delay + event.onset))
+            }
+        }
+    }
+
+    func stopAll() {
+        state.withLock { $0.append(.stopAll) }
+        onStop?()
+    }
+}
+
+/// Every sound output the app made.
+@MainActor
+final class SoundOutputs {
+    /// How many outputs the app made.
+    private(set) var made = 0
+    /// The latest, held weakly so a test can see the app release it.
+    private(set) weak var last: RecordingSoundOutput?
+    var onStop: (@Sendable () -> Void)?
+
+    func make(_ clock: any Clock) -> RecordingSoundOutput {
+        let output = RecordingSoundOutput(clock: clock, onStop: onStop)
+        made += 1
+        last = output
+        return output
+    }
+}
