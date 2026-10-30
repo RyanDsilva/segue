@@ -101,7 +101,8 @@ final class TestEnvironment {
             .split(separator: "\n").map(String.init)
     }
 
-    /// Polls `value` on the main actor until it is non-nil (a 30 s hang backstop, not pacing; await the real work where possible).
+    /// Polls `value` on the main actor until it is non-nil (a 30 s hang backstop, not
+    /// pacing; await the real work where possible).
     @discardableResult
     func waitFor<T>(_ value: () -> T?) async throws -> T {
         let deadline = ContinuousClock.now + .seconds(30)
