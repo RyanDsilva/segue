@@ -12,6 +12,15 @@ extension SongEditorViewModel {
         )
     }
 
+    /// The walk-up picker's and Walk-ups list's audition (nil without sound).
+    var walkUpAudition: WalkUpAudition? {
+        sound?.audition(
+            model: { [weak self] in self?.renderModel },
+            profile: { [weak self] in self?.instrument?.profile },
+            context: .editor,
+        )
+    }
+
     /// Plays a chord as written in the source (the canvas's ⌥-click), at sounding pitch.
     func hearChord(written original: String) {
         guard let renderModel else { return }

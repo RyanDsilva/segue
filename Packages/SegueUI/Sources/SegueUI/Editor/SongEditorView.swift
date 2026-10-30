@@ -149,6 +149,7 @@
             // Its own view, so only the preview depends on `renderModel`.
             EditorPreview(model: model, onCustomize: customize)
                 .environment(\.walkUpPicking, model.walkUpPicking)
+                .environment(\.walkUpAudition, model.walkUpAudition)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.color.ground)
                 .accessibilityElement(children: .contain)

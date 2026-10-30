@@ -137,5 +137,14 @@ enum SoundEntryPoints {
         hearing.play(chord)
         hearing.playConcert("G")
         hearing.playBass(31)
+        // The walk-up picker's and the Walk-ups list's play buttons.
+        for audition in [
+            library.walkUpAudition(render),
+            library.walkUpAudition(songID: record.id),
+        ] {
+            let audition = try #require(audition)
+            #expect(!audition.isEnabled)
+            #expect(audition.player() == nil)
+        }
     }
 }

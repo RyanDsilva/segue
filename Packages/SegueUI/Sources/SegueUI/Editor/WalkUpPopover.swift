@@ -30,96 +30,6 @@ extension EnvironmentValues {
     @Entry var walkUpPicking: WalkUpPicking?
 }
 
-/// A walk-up run in a preview: plain text, or a button that opens the picker.
-struct WalkUpRunView: View {
-    let run: ApproachRun
-    let size: CGFloat
-    /// Set by the line's VoiceOver action for this run: opens the picker too.
-    @Binding var requested: ChangeID?
-    @Environment(\.walkUpPicking) private var picking
-    @State private var isPresented = false
-    @State private var isHovered = false
-
-    var body: some View {
-        if let picking, picking.isEnabled {
-            Button {
-                isPresented = true
-            } label: {
-                label.underline(isHovered)
-            }
-            .buttonStyle(.plain)
-            .pointerStyle(.link)
-            .onHover { isHovered = $0 }
-            .help("Shows other walk-ups")
-            .accessibilityLabel(Self.spokenName(run))
-            .accessibilityHint("Shows other walk-ups")
-            .accessibilityIdentifier(AccessibilityID.sheetWalkUp)
-            .popover(isPresented: presented, arrowEdge: .bottom) {
-                WalkUpPopover(id: run.change, picking: picking) {
-                    presented.wrappedValue = false
-                }
-            }
-        } else {
-            label
-        }
-    }
-
-    /// Open from a click or from the line's VoiceOver action.
-    private var presented: Binding<Bool> {
-        Binding(
-            get: { isPresented || requested == run.change },
-            set: { isOn in
-                isPresented = isOn
-                if !isOn, requested == run.change {
-                    requested = nil
-                }
-            },
-        )
-    }
-
-    /// "Walk-up into C: A, B" (section 8.12), the run's button and the line's action.
-    static func spokenName(_ run: ApproachRun) -> String {
-        let parts = run.accessibility.components(separatedBy: " into ")
-        let notes = (parts.first ?? "")
-            .replacingOccurrences(of: "walk up ", with: "")
-            .replacingOccurrences(of: "walk down ", with: "")
-            .replacingOccurrences(of: "walk ", with: "")
-        guard parts.count == 2 else { return "Walk-up: \(run.accessibility)" }
-        return "Walk-up into \(parts[1]): \(notes)"
-    }
-
-    /// A pick reads as "yours": ink at 70% instead of muted.
-    private var label: some View {
-        Text(run.text)
-            .font(SchibstedGrotesk.medium.font(size: size))
-            .foregroundStyle(run.isPick ? Theme.color.ink.opacity(0.7) : Theme.color.muted)
-    }
-}
-
-extension View {
-    /// A lyric line is one VoiceOver element, so each walk-up run on it is reached as one of
-    /// the line's actions ("Walk-up into C: A, B"), which opens that run's picker.
-    func walkUpActions(_ runs: [ApproachRun], requested: Binding<ChangeID?>) -> some View {
-        modifier(WalkUpActions(runs: runs, requested: requested))
-    }
-}
-
-private struct WalkUpActions: ViewModifier {
-    let runs: [ApproachRun]
-    @Binding var requested: ChangeID?
-    @Environment(\.walkUpPicking) private var picking
-
-    func body(content: Content) -> some View {
-        content.accessibilityActions {
-            if picking?.isEnabled == true {
-                ForEach(runs, id: \.change) { run in
-                    Button(WalkUpRunView.spokenName(run)) { requested = run.change }
-                }
-            }
-        }
-    }
-}
-
 /// The ranked candidates (A-D), then "Nothing here", then "Reset to suggestion". Up and Down
 /// move, Return chooses, Esc closes; hovering a row with Option held shows its score
 /// breakdown (for tuning the weights, section 8.9).
@@ -131,6 +41,10 @@ struct WalkUpPopover: View {
     @State private var highlighted: Int?
     @State private var optionHeld = false
     @FocusState private var focused: Bool
+    /// Hearing the options (P8-6 10.2): the Loop switch and the option sounding now
+    /// (`options.count` is "Nothing here").
+    @Environment(\.walkUpAudition) private var audition
+    @State private var listening: WalkUpListening?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -140,13 +54,23 @@ struct WalkUpPopover: View {
                     .focusable()
                     .focusEffectDisabled()
                     .focused($focused)
-                    .onKeyPress(keys: [.upArrow, .downArrow, .return]) { press in
+                    .onKeyPress(keys: [.upArrow, .downArrow, .return, .space]) { press in
                         handle(press.key, change: details.change)
                     }
+                    .onKeyPress(characters: CharacterSet(charactersIn: "abcdABCD")) { press in
+                        letter(press.characters, change: details.change)
+                    }
+                    .onChange(of: highlighted) { _, new in
+                        switchWhileLooping(to: new, change: details.change)
+                    }
                     .onAppear {
+                        if listening == nil, let audition {
+                            listening = WalkUpListening(audition: audition)
+                        }
                         highlighted = highlighted ?? shownIndex(details.change)
                         focused = true
                     }
+                    .onDisappear { stopSound() }
             } else {
                 Text("This change is no longer in the song.")
                     .font(Theme.font.body)
@@ -154,7 +78,7 @@ struct WalkUpPopover: View {
             }
         }
         .padding(14)
-        .frame(width: 300, alignment: .leading)
+        .frame(width: audition == nil ? 300 : 350, alignment: .leading)
         #if os(macOS)
             .onModifierKeysChanged(mask: .option) { _, new in
                 optionHeld = new.contains(.option)
@@ -164,7 +88,7 @@ struct WalkUpPopover: View {
     }
 
     /// The options shown as rows (a `hold` is the "Nothing here" row).
-    private static func options(_ change: ChordChange) -> [WalkUpCandidate] {
+    static func options(_ change: ChordChange) -> [WalkUpCandidate] {
         change.candidates.filter { $0.kind != .hold }
     }
 
@@ -185,18 +109,45 @@ struct WalkUpPopover: View {
             highlighted = max(0, current - 1)
         case .downArrow:
             highlighted = min(last, current + 1)
+        case .space:
+            guard audition?.isEnabled == true else { return .ignored }
+            toggleSound(current, change: change)
         default:
-            picking.choose(change, current < last ? options[current] : nil)
-            dismiss()
+            pick(change, current < last ? options[current] : nil)
         }
         return .handled
     }
 
     private func header(_ details: WalkUpDetails) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("\(details.change.fromName) \u{2192} \(details.change.toName)")
-                .font(SchibstedGrotesk.bold.font(size: 15))
-                .foregroundStyle(Theme.color.ink)
+            HStack(alignment: .firstTextBaseline) {
+                Text("\(details.change.fromName) \u{2192} \(details.change.toName)")
+                    .font(SchibstedGrotesk.bold.font(size: 15))
+                    .foregroundStyle(Theme.color.ink)
+                Spacer(minLength: 8)
+                if let audition {
+                    Toggle("Loop", isOn: Binding(
+                        get: { listening?.looping ?? false },
+                        set: { isOn in
+                            listening?.setLooping(
+                                isOn,
+                                { candidate($0, change: details.change) },
+                                change: details.change,
+                            )
+                        },
+                    ))
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .font(SchibstedGrotesk.medium.font(size: 12))
+                    .disabled(!audition.isEnabled)
+                    .help(
+                        audition.isEnabled ? "Repeat the change; choose another option to switch"
+                            : SoundGate.offHelp,
+                    )
+                    .accessibilityLabel("Loop this change")
+                    .accessibilityIdentifier(AccessibilityID.walkUpLoop)
+                }
+            }
             Text([details.section, details.feel].compactMap(\.self).joined(separator: " \u{00B7} "))
                 .font(SchibstedGrotesk.medium.font(size: 12))
                 .foregroundStyle(Theme.color.muted)
@@ -228,7 +179,6 @@ struct WalkUpPopover: View {
                         highlighted = index
                     }
                 }
-                .accessibilityIdentifier(AccessibilityID.walkUpOption(index))
             }
             nothingRow(change, selected: shown.map { $0.kind == .hold } ?? true)
                 .background(highlight(options.count))
@@ -255,11 +205,36 @@ struct WalkUpPopover: View {
         selected: Bool,
     ) -> some View {
         let notes = candidate.notes.map(\.chartName)
+        let index = Int(letter.unicodeScalars.first?.value ?? 65) - 65
+        let spoken = "option \(letter), \(notes.joined(separator: ", ")) into \(change.toName)"
+        return HStack(spacing: 0) {
+            if audition != nil {
+                playButton(index, change: change, label: spoken)
+            }
+            rowButton(
+                letter: letter,
+                candidate: candidate,
+                change: change,
+                suggested: suggested,
+                selected: selected,
+            )
+            useButton(index, change: change)
+        }
+    }
+
+    private func rowButton(
+        letter: String,
+        candidate: WalkUpCandidate,
+        change: ChordChange,
+        suggested: Bool,
+        selected: Bool,
+    ) -> some View {
+        let notes = candidate.notes.map(\.chartName)
         let marked = zip(notes, candidate.chromatic).map { $0 + ($1 ? "\u{00B0}" : "") }
         let description = Self.describe(candidate, target: change.toName)
+        let index = Int(letter.unicodeScalars.first?.value ?? 65) - 65
         return Button {
-            picking.choose(change, candidate)
-            dismiss()
+            rowClicked(index, change: change)
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(letter)
@@ -302,12 +277,27 @@ struct WalkUpPopover: View {
             "Option \(letter), \(notes.joined(separator: ", ")), \(description.lowercased())"
                 + (suggested ? ", suggested" : "") + (selected ? ", selected" : ""),
         )
+        .accessibilityIdentifier(AccessibilityID.walkUpOption(index))
     }
 
     private func nothingRow(_ change: ChordChange, selected: Bool) -> some View {
+        let index = Self.options(change).count
+        return HStack(spacing: 0) {
+            if audition != nil {
+                playButton(
+                    index,
+                    change: change,
+                    label: "nothing here, \(change.fromName) into \(change.toName)",
+                )
+            }
+            nothingButton(change, selected: selected)
+            useButton(index, change: change)
+        }
+    }
+
+    private func nothingButton(_ change: ChordChange, selected: Bool) -> some View {
         Button {
-            picking.choose(change, nil)
-            dismiss()
+            rowClicked(Self.options(change).count, change: change)
         } label: {
             HStack {
                 Text("Nothing here")
@@ -334,7 +324,9 @@ struct WalkUpPopover: View {
         RoundedRectangle(cornerRadius: 6, style: .continuous)
             .fill(highlighted == index ? Theme.color.line : Color.clear)
     }
+}
 
+extension WalkUpPopover {
     /// "prior 3 + resolution 2 + direction 1.5 = 6.5": each weighted term, in the
     /// vocabulary's order, summing to the score.
     static func breakdown(_ candidate: WalkUpCandidate) -> String {
@@ -366,6 +358,87 @@ struct WalkUpPopover: View {
         case .doubleChromAbove: "Two half steps from above"
         case .octavePickup: "Octave pickup"
         case .hold: "Nothing - the chords already walk"
+        }
+    }
+}
+
+extension WalkUpPopover {
+    /// A-D highlight that option (switching what loops).
+    private func letter(_ characters: String, change: ChordChange) -> KeyPress.Result {
+        guard let scalar = characters.uppercased().unicodeScalars.first else { return .ignored }
+        let index = Int(scalar.value) - 65
+        guard Self.options(change).indices.contains(index) else { return .ignored }
+        highlighted = index
+        return .handled
+    }
+
+    /// Saves the pick (P8-4b) after stopping any sound, and closes.
+    private func pick(_ change: ChordChange, _ candidate: WalkUpCandidate?) {
+        stopSound()
+        picking.choose(change, candidate)
+        dismiss()
+    }
+
+    // MARK: Sound (P8-6 10.2)
+
+    /// The option at `index` (nil: "Nothing here").
+    private func candidate(_ index: Int, change: ChordChange) -> WalkUpCandidate? {
+        let options = Self.options(change)
+        return options.indices.contains(index) ? options[index] : nil
+    }
+
+    private func isSounding(_ index: Int) -> Bool {
+        listening?.isSounding(index) ?? false
+    }
+
+    private func toggleSound(_ index: Int, change: ChordChange) {
+        listening?.toggle(index, candidate(index, change: change), change: change)
+        highlighted = index
+    }
+
+    private func switchWhileLooping(to index: Int?, change: ChordChange) {
+        guard let index else { return }
+        let name = index < Self.options(change).count
+            ? "option \(String(UnicodeScalar(UInt8(65 + index))))" : "nothing here"
+        listening?.select(index, candidate(index, change: change), change: change, name: name)
+    }
+
+    private func stopSound() {
+        listening?.stop()
+    }
+
+    /// A click on a row picks it, except while a loop sounds, when it switches the option.
+    private func rowClicked(_ index: Int, change: ChordChange) {
+        if listening?.isLoopingSound == true {
+            highlighted = index
+        } else {
+            pick(change, candidate(index, change: change))
+        }
+    }
+
+    /// The ▶ / ■ button of a row (P8-6 10.2).
+    private func playButton(_ index: Int, change: ChordChange, label: String) -> some View {
+        WalkUpPlayButton(
+            playing: isSounding(index),
+            isEnabled: audition?.isEnabled == true,
+            letter: index < Self.options(change).count
+                ? String(UnicodeScalar(UInt8(65 + index))) : "nothing",
+            label: label,
+        ) {
+            toggleSound(index, change: change)
+        }
+    }
+
+    /// "Use this" on the highlighted row while hearing options.
+    @ViewBuilder
+    private func useButton(_ index: Int, change: ChordChange) -> some View {
+        if audition != nil, highlighted == index {
+            Button("Use this") {
+                pick(change, candidate(index, change: change))
+            }
+            .buttonStyle(.segueSecondary)
+            .controlSize(.mini)
+            .accessibilityIdentifier(AccessibilityID.walkUpUse)
         }
     }
 }

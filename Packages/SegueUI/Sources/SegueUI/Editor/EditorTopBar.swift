@@ -155,6 +155,7 @@
                         .accessibilityIdentifier(AccessibilityID.editorWalkUps)
                         .sheet(isPresented: $showsWalkUps) {
                             WalkUpsSheet(source: { model.walkUpsSource })
+                                .environment(\.walkUpAudition, model.walkUpAudition)
                         }
                 }
             }

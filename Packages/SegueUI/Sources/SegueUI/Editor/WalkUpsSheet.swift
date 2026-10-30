@@ -223,8 +223,36 @@ private struct WalkUpsRow: View {
     let picking: WalkUpPicking
     @State private var isPresented = false
     @State private var isHovered = false
+    @Environment(\.walkUpAudition) private var audition
 
     var body: some View {
+        HStack(spacing: 4) {
+            if let audition {
+                // Plays the walk-up the chart shows (P8-6 10.2).
+                Button {
+                    guard let player = audition.player(),
+                          let phrase = audition.phrase(change, Self.shown(change))
+                    else { return }
+                    player.play(phrase)
+                    audition.played()
+                } label: {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Theme.color.muted)
+                        .frame(width: 20, height: 20)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!audition.isEnabled)
+                .help(audition.isEnabled ? "Play this walk-up" : SoundGate.offHelp)
+                .accessibilityLabel("Play \(change.fromName) to \(change.toName)")
+                .accessibilityIdentifier(AccessibilityID.walkUpsPlay)
+            }
+            rowButton
+        }
+    }
+
+    private var rowButton: some View {
         Button {
             isPresented = true
         } label: {

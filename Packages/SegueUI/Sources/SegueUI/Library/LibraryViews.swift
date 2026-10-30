@@ -40,6 +40,7 @@
             )) {
                 if let id = model.walkUpsSongID {
                     WalkUpsSheet(source: { model.walkUpsSource(songID: id) })
+                        .environment(\.walkUpAudition, model.walkUpAudition(songID: id))
                 }
             }
             .navigationTitle(model.scope.title)
