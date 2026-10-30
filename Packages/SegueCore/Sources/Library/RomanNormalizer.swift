@@ -19,8 +19,8 @@ public enum RomanNormalizer {
     /// Bump on any change to `rules`, `words(_:)` or `looseWord(_:)`.
     ///
     /// History: 2 = phase 0 rules; 3 = the loose (vowel quality) form; 4 = short-word vowel
-    /// pairs (R157).
-    public static let version = 4
+    /// pairs (R157); 5 = those pairs fold only at the end of the word (R163).
+    public static let version = 5
 
     /// Shortest normalized word the loose form folds vowels in. Shorter words are mostly
     /// distinct English and Hindi words (`pen`/`pin`, `mere`/`meri`), so they stay apart.
@@ -39,9 +39,10 @@ public enum RomanNormalizer {
         /// Drop a word-final `n` that follows one of these vowels, only for words at least
         /// `minLength` long (nasalized long endings: `hain` -> `hai`, `nahin` -> `nahi`).
         case dropFinalN(after: Set<Character>, minLength: Int)
-        /// In a word of at most `maxLength` letters, replace each of `pairs` with `to`
-        /// (`mein` -> `mei` -> `mai`, `ae` -> `ai`): short romanized Hindi words are spelled
-        /// with either vowel pair (R157). Longer words keep theirs.
+        /// In a word of at most `maxLength` letters that ends in one of `pairs`, replace that
+        /// ending with `to` (`mein` -> `mei` -> `mai`, `ae` -> `ai`): short romanized Hindi
+        /// words end in either vowel pair (R157). Longer words, and a pair inside a word
+        /// (`heir`, `rein` before its `n` goes), keep theirs (R163).
         case foldShortVowelPair(_ pairs: [String], to: String, maxLength: Int)
     }
 
@@ -74,7 +75,8 @@ public enum RomanNormalizer {
         // `hain` -> `hai`, `mein` -> `mei`, `nahin` -> `nahi`, `kyun` -> `kyu`.
         .dropFinalN(after: ["i", "u"], minLength: 4),
         // R157: `mein`/`main`/`mai`, `ae`/`ai`, `hae`/`hai`, `nei`/`nai` (after the final
-        // `n` has gone, so `mein` arrives as `mei`).
+        // `n` has gone, so `mein` arrives as `mei`). Word end only (R163), so English
+        // `heir`/`hair` stay apart.
         .foldShortVowelPair(["ei", "ae"], to: "ai", maxLength: 4),
     ]
 
@@ -147,8 +149,10 @@ public enum RomanNormalizer {
         case let .dropH(consonants):
             return dropH(word, after: consonants)
         case let .foldShortVowelPair(pairs, replacement, maxLength):
-            guard word.count <= maxLength else { return word }
-            return pairs.reduce(word) { $0.replacingOccurrences(of: $1, with: replacement) }
+            guard word.count <= maxLength,
+                  let pair = pairs.first(where: { word.hasSuffix($0) })
+            else { return word }
+            return String(word.dropLast(pair.count)) + replacement
         case let .replace(target, replacement):
             return word.replacingOccurrences(of: target, with: replacement)
         case let .replaceSuffix(suffix, replacement, minLength):

@@ -90,7 +90,7 @@ struct RomanizedHindiSearchTests {
         #expect(RomanNormalizer.normalize(input) == expected)
     }
 
-    /// R157 (P8-5 section 6.8): in normalized words of at most 4 letters, `ei` and `ae`
+    /// R157 (P8-5 section 6.8): in normalized words of at most 4 letters, a final `ei` or `ae`
     /// fold to `ai`, so "tuj mai rab" finds "Tujh Mein Rab" and "ai dil" finds "Ae Dil".
     @Test(arguments: [
         ("mein", "mai"),
@@ -114,9 +114,29 @@ struct RomanizedHindiSearchTests {
         ("tin", "tin"),
         ("aid", "aid"),
         ("they", "tey"),
+        // R163: only a word-final pair folds, so a pair inside a word stays.
+        ("heir", "heir"),
+        ("hair", "hair"),
+        ("their", "teir"),
+        // `rain`/`rein` meet as `mein`/`main` do (final `n` dropped, then `ei` folds): no
+        // spelling rule can part one pair without the other.
+        ("rain", "rai"),
+        ("rein", "rai"),
+        ("eight", "eigt"),
     ])
     func `short words fold their vowel pairs`(input: String, expected: String) {
         #expect(RomanNormalizer.normalize(input) == expected)
+    }
+
+    /// R163: English words with an inner `ei` or `ae` stay apart, while the romanized
+    /// Hindi endings still meet.
+    @Test
+    func `only word-final vowel pairs fold`() {
+        let english = ["heir", "hair", "their", "rain", "eight"]
+        let normalized = english.map(RomanNormalizer.normalize)
+        #expect(Set(normalized).count == english.count)
+        #expect(RomanNormalizer.normalize("mein") == RomanNormalizer.normalize("main"))
+        #expect(RomanNormalizer.normalize("hai") == RomanNormalizer.normalize("hae"))
     }
 
     @Test
