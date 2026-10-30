@@ -96,7 +96,14 @@ public struct NoteEvent: Sendable, Hashable {
 public struct Phrase: Sendable, Hashable {
     public var events: [NoteEvent]  // sorted by onset
     public var length: TimeInterval // where a loop wraps
+    init(beats: [BeatNote], tempo: Double, lengthBeats: Double?) // beat-placed notes
 }
+
+/// A note on the beat grid (voice, pitch, start beat, beats, velocity): how a generated
+/// part such as a P8-7 fill is written before it meets a tempo (R166).
+public struct BeatNote: Sendable, Hashable { ... }
+
+public enum BassSound: String, Sendable, Hashable, Codable, CaseIterable { case finger, pick }
 
 /// Where notes go: the audio engine in the app, a recorder in tests. Only a `SoundPlayer`
 /// (SegueUI) ever holds one, and none exists while a gig runs (section 9).
@@ -122,14 +129,14 @@ public protocol SoundOutput: AnyObject, Sendable {
 
 - `PhraseBuilder.chord(_ chord:, sound:, style:, bass:) -> Phrase`: chord notes at onset 0 (block) or 25 ms apart low to high (strum), velocity 80, duration 1.6 s; the bass note at onset 0, velocity 96, duration 1.6 s; length 1.6 s.
 - `PhraseBuilder.bassNote(_:)`: the bass note alone, 1.2 s.
-- `PhraseBuilder.audition(_ change: ChordChange, candidate: WalkUpCandidate?, tempo: Double, meter: MetronomeMeter, sound:, style:) -> Phrase` [A3]: two bars. Bar 1: chord A struck on beat 1; bass A's note on beat 1 (and on the bar's middle strong beat in 4/4, unless a walk note takes that beat); the candidate's notes one per beat on the **last** beats of bar 1 (eighths on the last beat when there are more notes than free beats). Bar 2: chord B and bass B on beat 1, held to the bar's end. `candidate == nil` (or `hold`) plays the change with no walk-up. Tempo: the song's `{tempo}`, else 90. No click. Pitches of the walk-up notes: `b + offsets`, each placed in the octave nearest the previous bass note (a walk is stepwise).
+- `PhraseBuilder.audition(_ change: ChordChange, candidate: WalkUpCandidate?, tempo: Double?, meter: MetronomeMeter, voices: PlaybackVoices) -> Phrase` [A3] (`PlaybackVoices` = chord sound, style and `BassPlacement`): two bars. Bar 1: chord A struck on beat 1; bass A's note on beat 1 (and on the bar's middle strong beat in 4/4, unless a walk note takes that beat); the candidate's notes one per beat on the **last** beats of bar 1 (eighths on the last beat when there are more notes than free beats). Bar 2: chord B and bass B on beat 1, held to the bar's end. `candidate == nil` (or `hold`) plays the change with no walk-up. Tempo: the song's `{tempo}`, else 90. No click. Pitches of the walk-up notes: `b + offsets`, each placed in the octave nearest the previous bass note (a walk is stepwise), and after a walk bass B lands a step from the last walk note (so it may sit an octave from `Voicing.bass`); with no walk-up bass B is `Voicing.bass`.
 - `PhraseBuilder.playAlong(_ timeline: PlayAlongTimeline, voices: Set<VoiceToggle>, sound:, style:, countIn: Bool) -> Phrase` (section 7.5).
 
 All builders use `MetronomeTrack`'s beat arithmetic (`interval`, compound meters in dotted quarters, R118) so notes and the click share one beat model.
 
 ### 6.4 The cursor (`PhraseCursor.swift`)
 
-The pure half of `RehearsalClick.pump`, generalised to phrases: `PhraseCursor(phrase:start:loop:)` with `mutating func due(at now: Date, lookahead: TimeInterval) -> [(NoteEvent, delay: TimeInterval)]` returns every event (across loop wraps) whose time falls within `lookahead` and was not handed out yet, with its delay from `now`; `swap(to:at:)` replaces the phrase at the next wrap (for A/B and for timing edits during play-along). Tested with a scripted clock; the UI pump task only calls it (section 8.4).
+The pure half of `RehearsalClick.pump`, generalised to phrases: `PhraseCursor(phrase:start:loop:)` with `mutating func due(at now: Date, lookahead: TimeInterval) -> [(NoteEvent, delay: TimeInterval)]` returns every event (across loop wraps) whose time falls within `lookahead` and was not handed out yet, with its delay from `now`; `swap(to:)` replaces the phrase at the next wrap not yet handed out (for A/B and for timing edits during play-along). Tested with a scripted clock; the UI pump task only calls it (section 8.4).
 
 ## 7. The play-along timing model
 
@@ -284,6 +291,7 @@ New tab after Instrument: `Tab("Audio", systemImage: "speaker.wave.2", value: Pa
 - **USB hint** (P8-6c): when the device sound will actually use has a USB transport, a quiet `SettingsNote` under the picker: "<Name> is a USB audio interface. Sound goes wherever it is connected, such as an amp or PA." This note is the only USB hint (R162 Q10): no status line or dialog when sound plays. Nothing is shown for built-in, Bluetooth or HDMI outputs.
 - **Chord sound**: segmented Piano / Clean guitar (R161; default Piano). `segue.settings.audio.chordSound`.
 - **Chords play as**: segmented Strum / Block (default Strum). `segue.settings.audio.chordStyle`.
+- **Bass**: segmented Finger / Pick (default Finger; R166, the owner's A/B). `segue.settings.audio.bassSound`.
 - **Volume**: slider 0-100% (default 70%) with speaker glyphs, applied to `outputVolume`. `segue.settings.audio.volume`.
 - **Test**: plays a G chord with its bass through the chosen output (disabled during a gig).
 - Pane note: "Sound plays in the editor, the library and rehearsals. It never plays during a show."

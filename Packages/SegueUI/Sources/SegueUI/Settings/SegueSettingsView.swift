@@ -2,7 +2,8 @@
     import SwiftUI
 
     /// The app's Settings window (Segue > Settings…, WS2b 4.6): General, Appearance,
-    /// Instrument (P8-4), Live, AI (P3-3, R73), Privacy (WS3's view, hosted as is) and Data.
+    /// Instrument (P8-4), Audio (P8-6), Live, AI (P3-3, R73), Privacy (WS3's view, hosted as is)
+    /// and Data.
     /// The window title follows the pane, and the last pane comes back when Settings reopens
     /// (HIG).
     public struct SegueSettingsView: View {
@@ -17,6 +18,7 @@
             case general
             case appearance
             case instrument
+            case audio
             case live
             case ai
             case privacy
@@ -40,6 +42,10 @@
                 Tab("Instrument", systemImage: "guitars", value: Pane.instrument) {
                     InstrumentSettingsView(store: app.instrumentProfile)
                         .accessibilityIdentifier(AccessibilityID.settingsPane("instrument"))
+                }
+                Tab("Audio", systemImage: "speaker.wave.2", value: Pane.audio) {
+                    AudioSettingsView(sound: app.sound)
+                        .accessibilityIdentifier(AccessibilityID.settingsPane("audio"))
                 }
                 Tab("Live", systemImage: "music.mic", value: Pane.live) {
                     LiveSettingsView(

@@ -60,13 +60,15 @@
         }
 
         /// Data > Reset All Settings… (A17): Live settings, Appearance, the instrument profile
-        /// (P8-4), the default changeover, the AI toggle (R73), the last Settings pane and the
+        /// (P8-4), Settings > Audio (P8-6), the default changeover, the AI toggle (R73), the last
+        /// Settings pane and the
         /// tips. Never consent,
         /// the library, onboarding, What's New or the review counters, the shape library, the
         /// key bindings or downloaded AI models (R73).
         func resetAllSettings() {
             liveSettings.resetToDefaults()
             instrumentProfile.resetToDefaults()
+            sound.settings.resetToDefaults()
             polish.appearance.reset()
             ChangeoverSetting.reset()
             ai.preferences.reset()
