@@ -125,6 +125,17 @@ extension StageWindowSuites {
 @MainActor
 enum SoundEntryPoints {
     static func driveAll(_ app: AppModel) async throws {
+        // Settings > Audio "Test".
         app.sound.testSound()
+        // A library preview chord, a diagram cell's chord and a bass cell's note.
+        let library = try #require(app.session?.library)
+        let record = try #require(library.catalog.first)
+        let render = SongSummary.renderModel(record)
+        let hearing = try #require(library.chordHearing(render))
+        #expect(!hearing.isEnabled)
+        let chord = try #require(HearChordTests.chords(render).first)
+        hearing.play(chord)
+        hearing.playConcert("G")
+        hearing.playBass(31)
     }
 }

@@ -127,6 +127,8 @@ public final class SongEditorViewModel {
     /// Settings > Instrument (P8-4): the preview renders with its bass view; the visual
     /// canvas never does (decision 5). Observed, so a flip anywhere re-renders the preview.
     @ObservationIgnored let instrument: InstrumentProfileStore?
+    /// Heard chords and walk-up auditions (P8-6); the library hands it over.
+    @ObservationIgnored var sound: SoundSession?
     /// Records analytics events (WS3 spec 5); the library hands over the app's hub.
     @ObservationIgnored public var services: ServicesHub = .disabled
     @ObservationIgnored let save: (String) async throws -> SongRecord
@@ -408,15 +410,6 @@ public final class SongEditorViewModel {
         }
     #endif
 
-    /// Clears the keystroke statistics (E2E measures a fresh run).
-    func resetKeystrokeStats() {
-        keystrokes = KeystrokeStats()
-        keystrokeSummary = ""
-        #if os(macOS) && DEBUG
-            hitches.reset()
-        #endif
-    }
-
     /// Placeholder shown in an empty editor.
     public static let placeholder = """
     {title: Song title}
@@ -432,6 +425,15 @@ public final class SongEditorViewModel {
 // MARK: - Caret
 
 extension SongEditorViewModel {
+    /// Clears the keystroke statistics (E2E measures a fresh run).
+    func resetKeystrokeStats() {
+        keystrokes = KeystrokeStats()
+        keystrokeSummary = ""
+        #if os(macOS) && DEBUG
+            hitches.reset()
+        #endif
+    }
+
     /// Updates the status bar's line and column for a source offset.
     func sourceCaretDidMove(to offset: Int) {
         #if os(macOS)

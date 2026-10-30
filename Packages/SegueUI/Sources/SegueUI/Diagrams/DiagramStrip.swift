@@ -57,11 +57,37 @@ struct DiagramStripContent: View {
         }
     }
 
+    @Environment(\.chordHearing) private var hearing
+
     @ViewBuilder
     private func cell(for diagram: RenderDiagram) -> some View {
-        if let onCustomize, diagram.bass == nil {
+        if let hearing, let bass = diagram.bass {
+            // A bass cell plays its note, ⌥-click the chord with it (P8-6 10.1).
             Button {
-                onCustomize(diagram)
+                DiagramCellSound.play(diagram, bass: bass, hearing: hearing)
+            } label: {
+                DiagramStripCell(
+                    diagram: diagram,
+                    instrument: instrument,
+                    tuning: tuning,
+                    size: size,
+                )
+            }
+            .buttonStyle(DiagramCellButtonStyle())
+            .disabled(!hearing.isEnabled)
+            .help(hearing.isEnabled ? "Play \(bass.note); ⌥-click plays \(bass.chordName)"
+                : SoundGate.offHelp)
+            .accessibilityAction(named: "Play chord \(bass.chordName)") {
+                hearing.playConcert(bass.chordName)
+            }
+        } else if let onCustomize, diagram.bass == nil {
+            Button {
+                // ⌥-click plays the chord (P8-6 10.1); a plain click customises it.
+                if let hearing, hearing.isEnabled, NSEvent.modifierFlags.contains(.option) {
+                    hearing.playConcert(diagram.concertName)
+                } else {
+                    onCustomize(diagram)
+                }
             } label: {
                 DiagramStripCell(
                     diagram: diagram,
@@ -167,5 +193,18 @@ private struct DiagramCellButton: View {
             .contentShape(Rectangle())
             .onHover { isHovered = $0 }
             .opacity(configuration.isPressed ? 0.8 : 1)
+    }
+}
+
+/// What a strip cell plays (P8-6 10.1).
+@MainActor
+enum DiagramCellSound {
+    static func play(_ diagram: RenderDiagram, bass: BassDiagram, hearing: ChordHearing) {
+        guard hearing.isEnabled else { return }
+        if NSEvent.modifierFlags.contains(.option) {
+            hearing.playConcert(bass.chordName)
+        } else if let position = bass.suggested {
+            hearing.playBass(BassFretboard.pitch(position, tuning: bass.tuning))
+        }
     }
 }

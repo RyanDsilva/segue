@@ -6,8 +6,8 @@
 
     /// Canvas gestures (phase 1 spec, "Visual mode"): click a chord slot to add a chord
     /// (popover with autocomplete, or drop the armed palette chord), drag a pill to move it
-    /// with snapping, Option-drag to duplicate, Backspace to delete, double-click or Return
-    /// to edit, ← → to nudge.
+    /// with snapping, Option-drag to duplicate, Option-click to hear it (P8-6), Backspace to
+    /// delete, double-click or Return to edit, ← → to nudge.
     extension VisualEditorController: CanvasGestureHandling {
         private func point(of event: NSEvent) -> CGPoint {
             textView.convert(event.locationInWindow, from: nil)
@@ -89,6 +89,11 @@
             guard let finished = drag else { return false }
             drag = nil
             defer { redrawOverlay() }
+            // ⌥-click (no drag) plays the chord (P8-6 10.1); a plain click selects it.
+            if !finished.isDragging, finished.duplicate {
+                model.hearChord(written: finished.pill.chord.original)
+                return true
+            }
             guard finished.isDragging, let target = finished.target else { return true }
             let pill = finished.pill
             let position = LyricPosition(line: target.path, offset: target.offset)

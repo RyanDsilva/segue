@@ -1,6 +1,7 @@
 import Foundation
 import Playback
 @testable import SegueUI
+import Services
 import Support
 import Synchronization
 
@@ -81,5 +82,30 @@ final class SoundOutputs {
         made += 1
         last = output
         return output
+    }
+}
+
+/// A sound session for a view model under test: a never-built engine and recorded outputs.
+@MainActor
+struct SoundRig {
+    let session: SoundSession
+    let outputs = SoundOutputs()
+
+    init(_ env: TestEnvironment, services: ServicesHub = .disabled) {
+        let outputs = outputs
+        let clock = env.clock
+        let settings = AudioSettingsStore(defaults: env.defaults)
+        settings.services = services
+        session = SoundSession(
+            host: AudioEngineHost(bank: nil, systemBank: nil),
+            settings: settings,
+            clock: clock,
+            makeOutput: { outputs.make(clock) },
+        )
+    }
+
+    /// The notes of `voice` the latest output was handed, in order.
+    func notes(_ voice: Voice) -> [Int] {
+        outputs.last?.played.filter { $0.event.voice == voice }.map { Int($0.event.note) } ?? []
     }
 }

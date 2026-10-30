@@ -236,6 +236,7 @@
                     SongSheetView(sections: render.sections, style: .preview)
                         // A walk-up run opens the picker (P8-4b 8.9); no undo here.
                         .environment(\.walkUpPicking, model.walkUpPicking(songID: record.id))
+                        .environment(\.chordHearing, model.chordHearing(render))
                 }
                 if !render.diagrams.isEmpty {
                     StripSnapshot(

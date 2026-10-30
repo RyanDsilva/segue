@@ -220,6 +220,7 @@ extension LibraryViewModel {
             save: save,
         )
         editor.librarySectionKinds = librarySectionKinds
+        editor.sound = sound
         editor.attachBassPrefs(record.sidecar.bass, persist: persistBassPrefs(following: base))
         closeEditor()
         selection = id
@@ -252,6 +253,7 @@ extension LibraryViewModel {
             },
         )
         editor.librarySectionKinds = librarySectionKinds
+        editor.sound = sound
         closeEditor()
         selection = nil
         detail = .newSong

@@ -164,6 +164,7 @@
                     size: .compact,
                     onCustomize: customize,
                 )
+                .environment(\.chordHearing, model.chordHearing)
                 .padding(.horizontal, 24)
                 .padding(.vertical, 12)
             }
@@ -195,6 +196,7 @@
             ScrollView {
                 if let renderModel = model.renderModel {
                     SongPageView(model: renderModel, selectable: false, onCustomize: onCustomize)
+                        .environment(\.chordHearing, model.chordHearing)
                         .padding(.horizontal, 40)
                         .padding(.vertical, 24)
                 }
