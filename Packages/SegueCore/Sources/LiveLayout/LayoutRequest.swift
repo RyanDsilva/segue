@@ -306,7 +306,7 @@ public struct LayoutRequest: Sendable {
     public var notes: [String]
     /// A slot's arrangement (R122), resolved against `model.sections`
     /// (`ArrangementResolver`): the sections to play, in order; nil = the full song.
-    public var arrangement: [PlayedSection]?
+    public var arrangement: [PlayedPass]?
     public var style: LayoutStyle
 
     public init(
@@ -318,7 +318,7 @@ public struct LayoutRequest: Sendable {
         columns: Int? = nil,
         cues: [SongCue] = [],
         notes: [String] = [],
-        arrangement: [PlayedSection]? = nil,
+        arrangement: [PlayedPass]? = nil,
         style: LayoutStyle = .stage,
     ) {
         self.model = model

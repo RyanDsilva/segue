@@ -21,7 +21,7 @@ struct SongPreparation {
         if let order = request.arrangement {
             let arranged = ArrangedSections.build(original, order: order)
             sections = arranged.map(\.section)
-            cues = arranged.map { $0.isFirstPlay ? pinned[$0.source] : [] }
+            cues = arranged.map { $0.isFirstShown ? pinned[$0.source] : [] }
         } else {
             sections = original
             cues = pinned

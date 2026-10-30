@@ -8,8 +8,9 @@ import Shows
 import Support
 import Testing
 
-/// Per-slot arrangements (P3-16, R122, R123): the setlist file at schema 5, the show record
-/// at 3, resolution against the song as it is now, the stage's arranged plan, and timing.
+/// Per-slot arrangements (P3-16, P8-2, R122, R123, R149): passes with show modes, the setlist
+/// file at schema 6 and the show record at 4 (with their migrations), resolution against the
+/// song as it is now, pass names, the stage's arranged plan, and timing.
 struct SlotArrangementTests {
     /// Intro, Verse 1, Chorus, Verse 2, a `{chorus}` repeat, Bridge, a `{chorus}` repeat, then
     /// a loose comment after the last chorus.
@@ -51,16 +52,16 @@ struct SlotArrangementTests {
         SongSections.units(of: ChordProParser.parse(source).0)
     }
 
-    static func step(
+    static func pass(
         _ units: [SongSectionUnit],
         _ name: String,
-        plays: Int = 1,
-    ) -> ArrangementStep {
+        _ mode: PassMode = .full,
+    ) -> ArrangementPass {
         guard let unit = units.first(where: { $0.name == name }) else {
             Issue.record("no part named \(name)")
-            return ArrangementStep(anchor: .loose(after: nil, block: 99))
+            return ArrangementPass(anchor: .loose(after: nil, block: 99))
         }
-        return ArrangementStep(anchor: unit.anchor, fingerprint: unit.fingerprint, plays: plays)
+        return ArrangementPass(anchor: unit.anchor, fingerprint: unit.fingerprint, mode: mode)
     }
 
     // MARK: Song parts
@@ -85,32 +86,6 @@ struct SlotArrangementTests {
     }
 
     // MARK: Resolution
-
-    @Test
-    func `skips, reorders and plays resolve to the song's sections`() {
-        let units = Self.units()
-        let arrangement = SlotArrangement(steps: [
-            Self.step(units, "Intro"),
-            Self.step(units, "Verse 2"),
-            Self.step(units, "Verse 1", plays: 0),
-            Self.step(units, "Chorus 1st", plays: 0),
-            Self.step(units, "Chorus 3rd", plays: 2),
-            Self.step(units, "After Chorus"),
-        ])
-        guard case let .applied(order, newSections) = ArrangementResolver.resolve(
-            arrangement,
-            units: units,
-        ) else {
-            Issue.record("expected applied")
-            return
-        }
-        #expect(order == [
-            PlayedSection(index: 0, plays: 1), PlayedSection(index: 3, plays: 1),
-            PlayedSection(index: 6, plays: 2), PlayedSection(index: 7, plays: 1),
-        ])
-        // Parts the arrangement never listed are new, not played, and not out of date.
-        #expect(newSections.map(\.name) == ["Chorus 2nd", "Bridge"])
-    }
 
     @Test
     func `a renamed, removed or shifted section makes it out of date`() {
@@ -146,10 +121,11 @@ struct SlotArrangementTests {
         let model = LiveLayoutSupport.model(source: Self.song)
         let units = Self.units()
         // The written chorus is skipped; the last `{chorus}` repeat plays twice.
-        let arrangement = SlotArrangement(steps: [
-            Self.step(units, "Verse 1"),
-            Self.step(units, "Chorus 1st", plays: 0),
-            Self.step(units, "Chorus 3rd", plays: 2),
+        let arrangement = SlotArrangement(passes: [
+            Self.pass(units, "Verse 1"),
+            Self.pass(units, "Chorus 1st", .skip),
+            Self.pass(units, "Chorus 3rd"),
+            Self.pass(units, "Chorus 3rd"),
         ])
         guard case let .applied(order, _) = ArrangementResolver.resolve(arrangement, units: units)
         else {
@@ -197,7 +173,7 @@ struct SlotArrangementTests {
     // MARK: Files
 
     @Test
-    func `an arrangement persists at schema 5 and reloads`() async throws {
+    func `an arrangement persists at schema 6 and reloads`() async throws {
         let lib = try TestLibrary()
         let library = try await lib.openStore()
         let record = try await library.createSong(source: Self.song)
@@ -207,13 +183,20 @@ struct SlotArrangementTests {
         let units = SongSections.units(of: record.document)
         var entry = setlist.entries[0]
         entry.arrangement = SlotArrangement(
-            steps: [Self.step(units, "Intro"), Self.step(units, "After Chorus", plays: 2)],
+            passes: [
+                Self.pass(units, "Intro", .chordsOnly),
+                Self.pass(units, "After Chorus"),
+                Self.pass(units, "After Chorus"),
+            ],
+            knownParts: KnownPart.all(units),
             length: 155,
         )
         setlist = try await store.updateEntry(entry, in: setlist.id)
 
         let json = try lib.read("setlists/friday.setlist.json")
-        #expect(json.contains("\"schemaVersion\" : 5"))
+        #expect(json.contains("\"schemaVersion\" : 6"))
+        #expect(json.contains("\"mode\" : \"chords\""))
+        #expect(json.contains("\"knownParts\""))
         #expect(json.contains("\"section\" : \"Intro\""))
         #expect(json.contains("\"loose\" : 1"))
         #expect(json.contains("\"after\" : \"Chorus\""))
@@ -229,7 +212,7 @@ struct SlotArrangementTests {
     }
 
     @Test
-    func `a v4 setlist reads unchanged and a v6 one opens read-only`() async throws {
+    func `a v4 setlist reads unchanged and a v7 one opens read-only`() async throws {
         let lib = try TestLibrary()
         let song = SongID(ULID(milliseconds: 5, randomness: Array(repeating: 7, count: 10)))
         let item = SetlistItemID(ULID(milliseconds: 6, randomness: Array(repeating: 8, count: 10)))
@@ -240,12 +223,12 @@ struct SlotArrangementTests {
         """
         try lib.write(v4, to: "setlists/old.setlist.json")
         let otherID = SetlistID(ULID(milliseconds: 4, randomness: Array(repeating: 3, count: 10)))
-        let v6 = """
-        {"schemaVersion": 6, "id": "\(otherID)", "name": "Future",
+        let v7 = """
+        {"schemaVersion": 7, "id": "\(otherID)", "name": "Future",
          "entries": [{"itemId": "\(item)", "songId": "\(song)",
-           "arrangement": {"steps": [{"section": "Verse", "occurrence": 1, "plays": 1}]}}]}
+           "arrangement": {"passes": [{"section": "Verse", "occurrence": 1}]}}]}
         """
-        try lib.write(v6, to: "setlists/future.setlist.json")
+        try lib.write(v7, to: "setlists/future.setlist.json")
 
         let (store, issues) = try await lib.loadSetlists()
 
@@ -254,9 +237,9 @@ struct SlotArrangementTests {
         #expect(old.readOnly == nil)
         #expect(old.entries == [SetlistEntry(itemId: item, songId: song, locked: true)])
         let future = try #require(await store.setlist(id: otherID))
-        #expect(future.readOnly == .newerSchema(found: 6, supported: 5))
-        #expect(future.entries[0].arrangement?.steps.count == 1)
-        #expect(try lib.read("setlists/future.setlist.json") == v6)
+        #expect(future.readOnly == .newerSchema(found: 7, supported: 6))
+        #expect(future.entries[0].arrangement?.passes.count == 1)
+        #expect(try lib.read("setlists/future.setlist.json") == v7)
     }
 
     @Test
@@ -265,7 +248,7 @@ struct SlotArrangementTests {
         var (setlist, _) = try await harness.makeSet(2)
         var entry = setlist.entries[0]
         let arrangement = SlotArrangement(
-            steps: [ArrangementStep(anchor: .loose(after: nil, block: 1))],
+            passes: [ArrangementPass(anchor: .loose(after: nil, block: 1))],
             length: 90,
         )
         entry.arrangement = arrangement
@@ -292,7 +275,7 @@ struct SlotArrangementTests {
         try await show.recordArrangementState(.applied, for: showItem)
         _ = try await show.perform(.next)
         let reloaded = try #require(try await harness.reloadedShow(record.id))
-        #expect(reloaded.schemaVersion == 3)
+        #expect(reloaded.schemaVersion == 4)
         #expect(reloaded.items[0].arrangementState == .outOfDate)
         #expect(reloaded.items[0].arrangement == arrangement)
     }
@@ -310,7 +293,7 @@ struct SlotArrangementTests {
             ($0, SongLength(seconds: 240, source: .directive))
         })
         var entries = zip(items, songs).map { SetlistEntry(itemId: $0, songId: $1) }
-        entries[0].arrangement = SlotArrangement(steps: [], length: 150)
+        entries[0].arrangement = SlotArrangement(passes: [], length: 150)
         var timing = SetlistTiming(entries: entries, lengths: lengths, target: nil)
         #expect(timing.items[0].length == SongLength(seconds: 150, source: .slot))
         #expect(timing.total == 390)

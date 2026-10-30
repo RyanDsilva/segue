@@ -296,8 +296,9 @@ public enum ShowClosure: String, Sendable, Hashable, Codable {
 public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
     /// History: 1 = phase 2; 2 = phase 3 (`planned` may hold break rows, `breakId`, the
     /// `breakStarted` / `breakEnded` events); 3 = per-slot arrangements (`ShowItem.arrangement`,
-    /// `arrangementState`, R122). An older build opens a newer file read-only.
-    public static let currentSchemaVersion = 3
+    /// `arrangementState`, R122); 4 = arrangement passes with show modes (R149). An older
+    /// build opens a newer file read-only.
+    public static let currentSchemaVersion = 4
 
     public var id: ShowID
     public var schemaVersion: Int

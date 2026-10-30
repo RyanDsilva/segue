@@ -486,15 +486,11 @@ private extension SetlistStore {
                     return entry
                 }
             },
-            // v2 -> v3: break rows and `changeoverSeconds` are new, optional shapes; a v2
-            // file reads unchanged.
-            2: { _ in },
-            // v3 -> v4: song slots gain an optional `locked` flag (R115); a v3 file reads
-            // unchanged.
-            3: { _ in },
-            // v4 -> v5: song slots gain an optional `arrangement` (R122); a v4 file reads
-            // unchanged.
-            4: { _ in },
+            // v2 -> v3 (break rows, `changeoverSeconds`), v3 -> v4 (`locked`, R115) and
+            // v4 -> v5 (`arrangement`, R122) add optional shapes: older files read unchanged.
+            2: { _ in }, 3: { _ in }, 4: { _ in },
+            // v5 -> v6: arrangement `steps` become `passes` (R149, `migrateV5`).
+            5: { SlotArrangement.migrateV5(arrangementsIn: &$0, key: "entries") },
         ],
     )
 }

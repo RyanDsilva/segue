@@ -83,7 +83,7 @@
             let resolution = Self.resolution(slot.item, song: song)
             currentArrangement = resolution.map { $0.isOutOfDate ? .outOfDate : .applied }
             recordArrangement(currentArrangement, for: slot.item)
-            var order: [PlayedSection]?
+            var order: [PlayedPass]?
             if case let .applied(played, _) = resolution {
                 order = played
             }

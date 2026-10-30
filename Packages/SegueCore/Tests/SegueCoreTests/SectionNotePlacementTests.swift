@@ -248,8 +248,8 @@ struct SectionNotePlacementTests {
         // An arrangement saved before R146 carries comment-including fingerprints.
         let old = units(noted.text)
         #expect(old[0].legacyFingerprint != old[0].fingerprint)
-        let saved = SlotArrangement(steps: old.map {
-            ArrangementStep(anchor: $0.anchor, fingerprint: $0.legacyFingerprint)
+        let saved = SlotArrangement(passes: old.map {
+            ArrangementPass(anchor: $0.anchor, fingerprint: $0.legacyFingerprint)
         })
         guard case .applied = ArrangementResolver.resolve(saved, units: old) else {
             Issue.record("an older arrangement reads out of date")

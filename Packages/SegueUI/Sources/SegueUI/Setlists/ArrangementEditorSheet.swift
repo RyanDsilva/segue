@@ -6,11 +6,10 @@
     import Setlists
     import SwiftUI
 
-    /// "Arrange Sections" (P3-16, R122, R123 design B): which parts of the song this slot
-    /// plays for this gig, in which order and how many times, with a live miniature of the
-    /// stage. Each change saves at once as one undo step; the `.cho` is never changed.
-    /// Opened from the slot popover's Arrangement row, the slot context menu and Setlist >
-    /// Arrange Sections....
+    /// "Arrange Sections" (P3-16, R122, R123 design B): which parts of the song this slot plays
+    /// for this gig, in which order and how many times, with a live miniature of the stage. Each
+    /// change saves at once as one undo step; the `.cho` is never changed. Opened from the slot
+    /// popover's Arrangement row, the slot context menu and Setlist > Arrange Sections....
     struct ArrangementEditorSheet: View {
         let slot: ArrangingSlot
         let model: SetlistsViewModel
@@ -30,7 +29,7 @@
                     record: record,
                     units: units,
                     draft: ArrangementDraft(arrangement: entry.arrangement, units: units),
-                    isReadOnly: setlist.readOnly != nil,
+                    isReadOnly: setlist.readOnly != nil || entry.arrangement.usesShowModes,
                     focusedRow: $focusedRow,
                     save: { arrangement, name in
                         Task {
@@ -71,7 +70,9 @@
         var body: some View {
             VStack(spacing: 0) {
                 header
-                if !draft.missing.isEmpty {
+                if draft.usesShowModes {
+                    ShowModesBanner()
+                } else if !draft.missing.isEmpty {
                     missingBanner
                 }
                 Rule()
@@ -277,8 +278,7 @@
         }
     }
 
-    /// One part: checkbox, kind colour, name (ordinal when the title repeats), first line,
-    /// and the play count.
+    /// One part: checkbox, kind colour, name (ordinal when the title repeats), first line, count.
     private struct ArrangementRowView: View {
         let row: ArrangementDraft.Row
         let isFocused: Bool
@@ -390,7 +390,7 @@
                 Button { setPlays(row.plays + 1) } label: {
                     Image(systemName: "plus").frame(width: 18, height: 18)
                 }
-                .disabled(isReadOnly || row.plays >= SlotArrangement.maxPlays)
+                .disabled(isReadOnly || row.plays >= ArrangementDraft.maxPlays)
                 .accessibilityLabel("Play once more")
                 .accessibilityIdentifier(AccessibilityID.arrangementCountUp(row.id))
             }
@@ -431,7 +431,7 @@
     private struct ArrangementPreview: View {
         let entry: SetlistEntry
         let record: SongRecord
-        let order: [PlayedSection]
+        let order: [PlayedPass]
 
         private static let stage = LayoutSize(width: 1024, height: 640)
 

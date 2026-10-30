@@ -280,10 +280,11 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
 /// History: 0 = pre-versioned; 1 = phase 0 (`entries: [{songId}]`); 2 = phase 2 (entries gain
 /// `itemId`, `overrides`, `note`; the setlist gains timestamps, venue, date, target length);
 /// 3 = phase 3 (break rows, `changeoverSeconds`); 4 = locked song slots (R115); 5 = per-slot
-/// arrangements (R122). An older build opens a newer file read-only.
+/// arrangements (R122); 6 = arrangement passes with show modes (R149). An older build opens
+/// a newer file read-only.
 public struct Setlist: Sendable, Equatable, Identifiable, Codable {
     /// The schema version this build reads and writes.
-    public static let currentSchemaVersion = 5
+    public static let currentSchemaVersion = 6
 
     public var id: SetlistID
     public var schemaVersion: Int

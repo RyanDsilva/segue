@@ -1,31 +1,38 @@
-// Owner: P3-16. Checking a slot's arrangement against the song as it is now (R122, R123),
-// and the sections an arranged slot plays, for live layout.
+// Owner: P3-16, P8-2. Checking a slot's arrangement against the song as it is now (R122,
+// R123, R149), and the passes an arranged slot shows, for live layout.
 
+import ChordPro
 import Editing
 import Foundation
 
 // MARK: - Resolution
 
-/// One played row: a section of the song and how many times in a row.
-public struct PlayedSection: Sendable, Hashable {
-    /// Index into the song's `RenderModel.sections`.
+/// One shown pass: a part of the song and how it is shown.
+public struct PlayedPass: Sendable, Hashable {
+    /// The part: index into the song's `RenderModel.sections`.
     public var index: Int
-    public var plays: Int
+    /// Never `.skip`.
+    public var mode: PassMode
+    /// Index into `SlotArrangement.passes`; nil for the full song.
+    public var position: Int?
 
-    public init(index: Int, plays: Int) {
+    public init(index: Int, mode: PassMode = .full, position: Int? = nil) {
         self.index = index
-        self.plays = plays
+        self.mode = mode
+        self.position = position
     }
 }
 
 /// An arrangement checked against the song as it is now.
 public enum ArrangementResolution: Sendable, Equatable {
-    /// Every row still names a part of the song: the parts to play, in order, plus the parts
-    /// the arrangement does not list (added to the song since; not played, not out of date).
-    case applied(order: [PlayedSection], newSections: [SongSectionUnit])
-    /// Some row no longer names a part (its label or occurrence is gone, or the content
-    /// fingerprint changed): the stage shows the full song (R122).
-    case outOfDate(missing: [ArrangementStep])
+    /// Every pass still names a part of the song: the shown passes, in order, plus the parts
+    /// the arrangement neither plays nor knew (added to the song since; not played, not out
+    /// of date).
+    case applied(order: [PlayedPass], newSections: [SongSectionUnit])
+    /// Some pass no longer names a part (its label or occurrence is gone, or the content
+    /// fingerprint changed), or the arrangement breaks an invariant (`problems`): the stage
+    /// shows the full song (R122).
+    case outOfDate(missing: [ArrangementPass])
 
     public var isOutOfDate: Bool {
         if case .outOfDate = self {
@@ -36,93 +43,125 @@ public enum ArrangementResolution: Sendable, Equatable {
 }
 
 public enum ArrangementResolver {
-    /// Checks `arrangement` against the song's parts (`SongSections.units`).
+    /// Checks `arrangement` against the song's parts (`SongSections.units`). Skip passes are
+    /// resolved (an unresolvable one still makes the arrangement out of date) but left out
+    /// of `order`.
     public static func resolve(
         _ arrangement: SlotArrangement,
         units: [SongSectionUnit],
     ) -> ArrangementResolution {
-        var order: [PlayedSection] = []
-        var missing: [ArrangementStep] = []
+        var order: [PlayedPass] = []
+        var missing: [ArrangementPass] = []
         var listed = Set<Int>()
-        for step in arrangement.steps {
-            guard let unit = unit(for: step, in: units) else {
-                missing.append(step)
+        for (position, pass) in arrangement.passes.enumerated() {
+            guard let unit = unit(for: pass, in: units) else {
+                missing.append(pass)
                 continue
             }
             listed.insert(unit.index)
-            if !step.isSkipped {
-                order.append(PlayedSection(
-                    index: unit.index,
-                    plays: min(step.plays, SlotArrangement.maxPlays),
-                ))
+            if pass.isShown {
+                order.append(PlayedPass(index: unit.index, mode: pass.mode, position: position))
             }
         }
-        guard missing.isEmpty, !order.isEmpty else {
+        guard missing.isEmpty, !order.isEmpty, arrangement.problems.isEmpty else {
             return .outOfDate(missing: missing)
         }
-        return .applied(order: order, newSections: units.filter { !listed.contains($0.index) })
+        let known = arrangement.effectiveKnownParts
+        let new = units.filter { unit in
+            !listed.contains(unit.index) && !known.contains { $0.anchor.matches(unit.anchor) }
+        }
+        return .applied(order: order, newSections: new)
     }
 
-    /// The song's part a row names, when its anchor and fingerprint still match.
+    /// The song's part a pass names, when its anchor and fingerprint still match.
     public static func unit(
-        for step: ArrangementStep,
+        for pass: ArrangementPass,
         in units: [SongSectionUnit],
     ) -> SongSectionUnit? {
-        guard let unit = units.first(where: { $0.anchor.matches(step.anchor) }) else {
+        guard let unit = units.first(where: { $0.anchor.matches(pass.anchor) }) else {
             return nil
         }
-        // A row saved before R146 carries the comment-including fingerprint.
-        if let fingerprint = step.fingerprint, fingerprint != unit.fingerprint,
+        // A pass saved before R146 carries the comment-including fingerprint.
+        if let fingerprint = pass.fingerprint, fingerprint != unit.fingerprint,
            fingerprint != unit.legacyFingerprint
         {
             return nil
         }
         return unit
     }
+
+    /// The song as written: every part once, Full, in song order.
+    public static func fullSong(_ units: [SongSectionUnit]) -> [PlayedPass] {
+        units.map { PlayedPass(index: $0.index) }
+    }
 }
 
 // MARK: - Arranged sections (live layout)
 
-/// One section as an arranged slot plays it.
+/// One shown pass as the stage lays it out.
 public struct ArrangedSection: Sendable, Equatable {
-    /// The section to lay out: a `{chorus}` repeat is written out with its chorus's lines (so
-    /// skipping the written chorus never leaves a dangling "Repeat chorus"); `id` is the
-    /// position in the arranged list (unique even when a section plays twice).
+    /// The section to lay out: a `{chorus}` repeat is written out with its chorus's lines
+    /// (so skipping the written chorus never leaves a dangling "Repeat chorus"); a repeat
+    /// with no chorus to write out holds one "Repeat chorus" comment. `id` is the shown
+    /// pass's index (unique even when a part plays twice).
     public var section: RenderSection
-    /// Index into the song's `RenderModel.sections`.
+    /// The part: index into the song's `RenderModel.sections`.
     public var source: Int
-    /// The first time this source section is played (cues show here only).
-    public var isFirstPlay: Bool
+    /// Never `.skip`.
+    public var mode: PassMode
+    /// The first shown pass of this part (cues show here only).
+    public var isFirstShown: Bool
+    /// Index into `SlotArrangement.passes`; nil for the full song.
+    public var position: Int?
 }
 
 public enum ArrangedSections {
-    /// The sections in played order, each played section repeated `plays` times.
+    /// The shown passes in played order (Skip passes, if any, are left out).
     public static func build(
         _ sections: [RenderSection],
-        order: [PlayedSection],
+        order: [PlayedPass],
     ) -> [ArrangedSection] {
         var result: [ArrangedSection] = []
-        var played = Set<Int>()
-        for step in order where sections.indices.contains(step.index) {
-            var section = sections[step.index]
-            if section.isRepeat, let target = SongSections.repeatTarget(
-                of: step.index,
-                in: sections,
-            ) {
-                section.items = sections[target].items
+        var shown = Set<Int>()
+        for pass in order where sections.indices.contains(pass.index) && pass.mode != .skip {
+            var section = sections[pass.index]
+            if section.isRepeat {
+                if let target = SongSections.repeatTarget(of: pass.index, in: sections) {
+                    section.items = sections[target].items
+                } else {
+                    section.items = [.comment(
+                        text: repeatText(section),
+                        style: .plain,
+                        path: repeatPath(pass.index, in: sections),
+                    )]
+                }
                 section.isRepeat = false
                 section.kind = section.kind ?? .chorus
             }
-            for _ in 0 ..< max(step.plays, 1) {
-                var copy = section
-                copy.id = result.count
-                result.append(ArrangedSection(
-                    section: copy,
-                    source: step.index,
-                    isFirstPlay: played.insert(step.index).inserted,
-                ))
-            }
+            section.id = result.count
+            result.append(ArrangedSection(
+                section: section,
+                source: pass.index,
+                mode: pass.mode,
+                isFirstShown: shown.insert(pass.index).inserted,
+                position: pass.position,
+            ))
         }
         return result
+    }
+
+    /// "Repeat chorus", or "Repeat <label>" for a differently named repeat.
+    public static func repeatText(_ section: RenderSection) -> String {
+        let label = SectionNotes.label(of: section) ?? "Chorus"
+        if label.caseInsensitiveCompare("Chorus") == .orderedSame {
+            return "Repeat chorus"
+        }
+        return "Repeat \(label)"
+    }
+
+    /// A `{chorus}` section carries no path of its own: its row borrows the closest earlier
+    /// section's header (the row's source is informational only).
+    private static func repeatPath(_ index: Int, in sections: [RenderSection]) -> BlockPath {
+        sections[..<index].reversed().lazy.compactMap(\.path).first ?? BlockPath(block: 0)
     }
 }

@@ -59,7 +59,15 @@ public actor ShowStore {
         currentVersion: ShowRecord.currentSchemaVersion,
         // v1 -> v2: break rows, `breakId` and the break events are new, optional shapes.
         // v2 -> v3: items gain an optional `arrangement` and `arrangementState` (R122).
-        steps: [1: { _ in }, 2: { _ in }],
+        // v3 -> v4: arrangements' `steps` become `passes` (R149, `SlotArrangement.migrateV5`).
+        steps: [
+            1: { _ in },
+            2: { _ in },
+            3: { object in
+                SlotArrangement.migrateV5(arrangementsIn: &object, key: "items")
+                SlotArrangement.migrateV5(arrangementsIn: &object, key: "planned")
+            },
+        ],
     )
 
     public init(

@@ -134,15 +134,15 @@ struct ArrangementEditorTests {
         #expect(try ArrangementDraft.markText(saved, units: units(fix))
             == "Custom · 5 of 6 sections · Chorus 3rd x2")
         let json = try fix.env.read("setlists/friday.setlist.json")
-        #expect(json.contains("\"schemaVersion\" : 5"))
+        #expect(json.contains("\"schemaVersion\" : 6"))
         #expect(json.contains("\"arrangement\""))
         // The song file is never changed.
         #expect(try fix.env.read("songs/soundcheck.cho") == cho)
 
         // At least one section plays: the last played row cannot be skipped.
         var lone = try ArrangementDraft(
-            arrangement: SlotArrangement(steps: [
-                ArrangementStep(
+            arrangement: SlotArrangement(passes: [
+                ArrangementPass(
                     anchor: units(fix)[0].anchor,
                     fingerprint: units(fix)[0].fingerprint,
                 ),
@@ -169,6 +169,42 @@ struct ArrangementEditorTests {
         #expect(entry(fix)?.arrangement == nil)
         #expect(fix.manager.undoActionName == "Reset to Full Song")
         #expect(try !fix.env.read("setlists/friday.setlist.json").contains("\"arrangement\""))
+    }
+
+    /// The interim adapter (P8-2 section 5) until P8-3 rebuilds the sheet on passes.
+    @Test
+    func `the old editor folds passes into rows and refuses show modes it cannot show`(
+    ) async throws {
+        let fix = try await Self.open()
+        let units = try units(fix)
+        func pass(_ index: Int, _ mode: PassMode = .full) -> ArrangementPass {
+            ArrangementPass(
+                anchor: units[index].anchor,
+                fingerprint: units[index].fingerprint,
+                mode: mode,
+            )
+        }
+        // Two Full passes in a row are one row played twice; Skip is a skipped row; a part
+        // the arrangement knew but never plays is skipped, not new.
+        let saved = SlotArrangement(
+            passes: [pass(0), pass(0), pass(1, .skip), pass(2)],
+            knownParts: KnownPart.all(Array(units.prefix(4))),
+        )
+        let draft = ArrangementDraft(arrangement: saved, units: units)
+        #expect(!draft.usesShowModes)
+        #expect(draft.rows.map(\.plays) == [2, 0, 1, 0, 0, 0])
+        #expect(draft.rows.map(\.isNew) == [false, false, false, false, true, true])
+        // Saving expands rows back into passes and knows every part.
+        let resaved = draft.arrangement
+        #expect(resaved.passes.map(\.mode) == [.full, .full, .skip, .full, .skip, .skip, .skip])
+        #expect(resaved.knownParts == KnownPart.all(units))
+        #expect(draft.order == [PlayedPass(index: 0), PlayedPass(index: 0), PlayedPass(index: 2)])
+
+        let moded = ArrangementDraft(
+            arrangement: SlotArrangement(passes: [pass(0, .chordsOnly), pass(1)]),
+            units: units,
+        )
+        #expect(moded.usesShowModes)
     }
 
     @Test
@@ -228,9 +264,10 @@ struct ArrangementEditorTests {
             songId: SongID(ULID(milliseconds: 1, randomness: Array(repeating: 2, count: 10))),
             title: "Soundcheck",
             origin: .setlist,
-            arrangement: SlotArrangement(steps: [
-                ArrangementStep(anchor: .loose(after: nil, block: 1)),
-                ArrangementStep(anchor: anchor, plays: 2),
+            arrangement: SlotArrangement(passes: [
+                ArrangementPass(anchor: .loose(after: nil, block: 1)),
+                ArrangementPass(anchor: anchor),
+                ArrangementPass(anchor: anchor),
             ]),
         )
         item.arrangementState = .applied

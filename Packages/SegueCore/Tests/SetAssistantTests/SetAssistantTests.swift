@@ -215,12 +215,12 @@ struct SetAssistantTests {
         var entries = first.entries
         let anchor = SectionAnchor.section(SectionRef(label: "Chorus", occurrence: 1))
         entries[1].arrangement = SlotArrangement(
-            steps: [ArrangementStep(anchor: anchor, plays: 2)],
+            passes: [ArrangementPass(anchor: anchor), ArrangementPass(anchor: anchor)],
             length: 95,
         )
         entries[1].locked = true
         // An unlocked arranged slot with no slot length has no length for the packer.
-        entries[2].arrangement = SlotArrangement(steps: [ArrangementStep(anchor: anchor)])
+        entries[2].arrangement = SlotArrangement(passes: [ArrangementPass(anchor: anchor)])
         let (_, rebuilt) = Self.build(
             "an hour, songs I know well",
             seed: 5,

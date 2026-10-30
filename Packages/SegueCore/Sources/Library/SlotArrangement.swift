@@ -1,7 +1,7 @@
-// Owner: P3-16. Per-slot arrangements (R122, R123): which sections of a song a setlist slot
-// plays for one gig, in which order and how many times. The `.cho` is never changed. The
-// types live here (not in Setlists) because live layout applies them and depends on Library
-// only.
+// Owner: P3-16, P8-2. Per-slot arrangements (R122, R123, R149): which parts of a song a
+// setlist slot plays for one gig, in which order, and how each pass is shown. The `.cho` is
+// never changed. The types live here (not in Setlists) because live layout applies them and
+// depends on Library only.
 
 import ChordPro
 import Editing
@@ -51,134 +51,202 @@ public enum SectionAnchor: Sendable, Hashable {
     }
 }
 
-/// One row of an arrangement.
-public struct ArrangementStep: Sendable, Hashable, Codable {
-    public var anchor: SectionAnchor
-    /// The section's content fingerprint when the row was saved (`SongSections`); a
-    /// mismatch marks the arrangement out of date (R123). Nil when not recorded.
-    public var fingerprint: String?
-    /// 0 = skipped, else how many times in a row it is played (1 ... `maxPlays`).
-    public var plays: Int
+/// How a pass is shown on stage (R149). The coded values are stable.
+public enum PassMode: String, Sendable, Hashable, Codable, CaseIterable {
+    /// Every line, as written (the default).
+    case full
+    /// The chord row of each lyric line, no lyrics.
+    case chordsOnly = "chords"
+    /// The first lyric line, then "+ N more lines".
+    case firstLine = "first"
+    /// Kept in the arrangement for the editor; never on stage or in the map.
+    case skip
+}
 
-    public init(anchor: SectionAnchor, fingerprint: String? = nil, plays: Int = 1) {
+/// One pass of a slot arrangement (R149): a part of the song and how it is shown. "x2" is
+/// two consecutive passes.
+public struct ArrangementPass: Sendable, Hashable, Codable {
+    public var anchor: SectionAnchor
+    /// The part's content fingerprint when the pass was saved (`SongSections`, R123, R146);
+    /// a mismatch marks the arrangement out of date. Nil when not recorded.
+    public var fingerprint: String?
+    public var mode: PassMode
+
+    public init(anchor: SectionAnchor, fingerprint: String? = nil, mode: PassMode = .full) {
         self.anchor = anchor
         self.fingerprint = fingerprint
-        self.plays = plays
+        self.mode = mode
     }
 
-    public var isSkipped: Bool {
-        plays <= 0
+    /// Whether the pass is on stage (every mode but Skip).
+    public var isShown: Bool {
+        mode != .skip
     }
 
-    /// `{"section": "Chorus", "occurrence": 2, "fp": "...", "plays": 1}`, or for loose
+    /// `{"section": "Chorus", "occurrence": 2, "fp": "...", "mode": "chords"}`, or for loose
     /// lines `{"loose": 1, "after": "Verse 2", "afterOccurrence": 1, ...}` (`after` absent for
-    /// the lead-in).
-    private enum CodingKeys: String, CodingKey {
-        case section
-        case occurrence
-        case loose
-        case after
-        case afterOccurrence
-        case fingerprint = "fp"
-        case plays
-    }
-
+    /// the lead-in). `mode` is omitted for Full; an unknown mode reads as Full; a v5 `plays`
+    /// key is ignored.
     public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        if let block = try container.decodeIfPresent(Int.self, forKey: .loose) {
-            let after = try container.decodeIfPresent(String.self, forKey: .after).map { label in
-                try SectionRef(
-                    label: label,
-                    occurrence: container.decodeIfPresent(Int.self, forKey: .afterOccurrence) ?? 1,
-                )
-            }
-            anchor = .loose(after: after, block: max(block, 1))
-        } else {
-            anchor = try .section(SectionRef(
-                label: container.decode(String.self, forKey: .section),
-                occurrence: container.decodeIfPresent(Int.self, forKey: .occurrence) ?? 1,
-            ))
-        }
+        let container = try decoder.container(keyedBy: AnchorCodingKeys.self)
+        anchor = try SectionAnchor.decode(from: container)
         fingerprint = try container.decodeIfPresent(String.self, forKey: .fingerprint)
-        plays = try container.decodeIfPresent(Int.self, forKey: .plays) ?? 1
+        mode = try container.decodeIfPresent(String.self, forKey: .mode)
+            .flatMap(PassMode.init(rawValue:)) ?? .full
     }
 
     public func encode(to encoder: any Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        switch anchor {
-        case let .section(ref):
-            try container.encode(ref.label, forKey: .section)
-            try container.encode(ref.occurrence, forKey: .occurrence)
-        case let .loose(after, block):
-            try container.encode(block, forKey: .loose)
-            if let after {
-                try container.encode(after.label, forKey: .after)
-                try container.encode(after.occurrence, forKey: .afterOccurrence)
-            }
-        }
+        var container = encoder.container(keyedBy: AnchorCodingKeys.self)
+        try anchor.encode(to: &container)
         try container.encodeIfPresent(fingerprint, forKey: .fingerprint)
-        try container.encode(plays, forKey: .plays)
+        if mode != .full {
+            try container.encode(mode.rawValue, forKey: .mode)
+        }
     }
 }
 
-/// A setlist slot's arrangement for this gig only (R122). Saved in the setlist entry as
-/// `"arrangement": {"steps": [...], "length": 215}`.
-public struct SlotArrangement: Sendable, Hashable, Codable {
-    /// The most times a row can be played in a row.
-    public static let maxPlays = 9
+/// A part the arrangement knew when it was saved: the song's parts in neither this list nor
+/// the passes are "New in the song" (R123).
+public struct KnownPart: Sendable, Hashable, Codable {
+    public var anchor: SectionAnchor
+    public var fingerprint: String?
 
-    /// Every part of the song, in played order. Skipped rows stay (plays 0) so a section
-    /// added to the song later is recognisable as new; "Play Again Later" rows repeat an
-    /// anchor.
-    public var steps: [ArrangementStep]
+    public init(anchor: SectionAnchor, fingerprint: String? = nil) {
+        self.anchor = anchor
+        self.fingerprint = fingerprint
+    }
+
+    /// Every part of the song as it is now (what an editor writes on every save).
+    public static func all(_ units: [SongSectionUnit]) -> [Self] {
+        units.map { Self(anchor: $0.anchor, fingerprint: $0.fingerprint) }
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: AnchorCodingKeys.self)
+        anchor = try SectionAnchor.decode(from: container)
+        fingerprint = try container.decodeIfPresent(String.self, forKey: .fingerprint)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: AnchorCodingKeys.self)
+        try anchor.encode(to: &container)
+        try container.encodeIfPresent(fingerprint, forKey: .fingerprint)
+    }
+}
+
+/// Why an arrangement cannot be played as saved (`SlotArrangement.problems`).
+public enum ArrangementProblem: Sendable, Hashable {
+    /// Every pass is Skip, or there are no passes.
+    case noShownPass
+    /// More than `SlotArrangement.maxPasses` passes.
+    case tooManyPasses
+}
+
+/// A setlist slot's arrangement for this gig only (R122, R149): an ordered list of passes.
+/// Saved in the setlist entry as `"arrangement": {"passes": [...], "knownParts": [...],
+/// "length": 215}`.
+public struct SlotArrangement: Sendable, Hashable, Codable {
+    /// The most passes an arrangement may hold.
+    public static let maxPasses = 48
+
+    /// The passes in played order (Skip passes included).
+    public var passes: [ArrangementPass]
+    /// Every part of the song when the arrangement was last saved. Empty means "the parts
+    /// named in `passes`" (a hand-written or migrated file).
+    public var knownParts: [KnownPart]
     /// The slot's length in seconds (typed or timed); nil = unknown, flagged in totals. Never
     /// derived from the song's `{duration}` (R122).
     public var length: TimeInterval?
 
-    public init(steps: [ArrangementStep], length: TimeInterval? = nil) {
-        self.steps = steps
+    public init(
+        passes: [ArrangementPass],
+        knownParts: [KnownPart] = [],
+        length: TimeInterval? = nil,
+    ) {
+        self.passes = passes
+        self.knownParts = knownParts
         self.length = length
     }
 
-    /// The song as written: every part once, in song order.
+    /// The song as written: every part once, Full, in song order; every part known.
     public static func fullSong(_ units: [SongSectionUnit]) -> Self {
-        Self(steps: units.map { ArrangementStep(anchor: $0.anchor, fingerprint: $0.fingerprint) })
+        Self(
+            passes: units.map { ArrangementPass(anchor: $0.anchor, fingerprint: $0.fingerprint) },
+            knownParts: KnownPart.all(units),
+        )
     }
 
-    /// Rows that are played.
-    public var playedSteps: [ArrangementStep] {
-        steps.filter { !$0.isSkipped }
+    /// The passes shown on stage (every mode but Skip).
+    public var shownPasses: [ArrangementPass] {
+        passes.filter(\.isShown)
     }
 
-    /// The played rows by name, in order: "Intro, Verse 1, Chorus 3rd x2, After Chorus"
-    /// (the gig log's line; read from the saved anchors, so it needs no song).
+    /// The known parts, or the parts named in `passes` when none were saved.
+    public var effectiveKnownParts: [KnownPart] {
+        guard knownParts.isEmpty else { return knownParts }
+        var result: [KnownPart] = []
+        for pass in passes where !result.contains(where: { $0.anchor.matches(pass.anchor) }) {
+            result.append(KnownPart(anchor: pass.anchor, fingerprint: pass.fingerprint))
+        }
+        return result
+    }
+
+    /// What keeps the arrangement from being played as saved (the validator). The editor
+    /// refuses edits that would create one; a file that has one still loads and reads out
+    /// of date.
+    public var problems: [ArrangementProblem] {
+        var problems: [ArrangementProblem] = []
+        if !passes.contains(where: \.isShown) {
+            problems.append(.noShownPass)
+        }
+        if passes.count > Self.maxPasses {
+            problems.append(.tooManyPasses)
+        }
+        return problems
+    }
+
+    /// The shown passes by name, in order, a run of the same part and mode merged:
+    /// "Intro (chords), Verse 1, Chorus, Chorus 3rd x2, Outro (first line)" (the gig log's
+    /// line; read from the saved anchors, so it needs no song).
     public var playedSummary: String {
-        playedSteps.map { step in
-            let name = switch step.anchor {
-            case let .section(ref):
-                ref.occurrence > 1
-                    ? "\(ref.label) \(SongSections.ordinal(ref.occurrence))" : ref.label
-            case let .loose(after, _):
-                after.map { "After \($0.label)" } ?? "Lead-in"
+        var runs: [(pass: ArrangementPass, count: Int)] = []
+        for pass in shownPasses {
+            if let last = runs.last, last.pass.anchor == pass.anchor, last.pass.mode == pass.mode {
+                runs[runs.count - 1].count += 1
+            } else {
+                runs.append((pass, 1))
             }
-            return step.plays > 1 ? "\(name) x\(step.plays)" : name
+        }
+        return runs.map { run in
+            var name = run.pass.anchor.summaryName
+            switch run.pass.mode {
+            case .chordsOnly: name += " (chords)"
+            case .firstLine: name += " (first line)"
+            case .full, .skip: break
+            }
+            return run.count > 1 ? "\(name) x\(run.count)" : name
         }.joined(separator: ", ")
     }
 
     private enum CodingKeys: String, CodingKey {
-        case steps
+        case passes
+        case knownParts
         case length
     }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        steps = try container.decodeIfPresent([ArrangementStep].self, forKey: .steps) ?? []
+        passes = try container.decodeIfPresent([ArrangementPass].self, forKey: .passes) ?? []
+        knownParts = try container.decodeIfPresent([KnownPart].self, forKey: .knownParts) ?? []
         length = try container.decodeIfPresent(TimeInterval.self, forKey: .length)
     }
 
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(steps, forKey: .steps)
+        try container.encode(passes, forKey: .passes)
+        if !knownParts.isEmpty {
+            try container.encode(knownParts, forKey: .knownParts)
+        }
         if let length, length > 0 {
             try container.encode(length, forKey: .length)
         }
