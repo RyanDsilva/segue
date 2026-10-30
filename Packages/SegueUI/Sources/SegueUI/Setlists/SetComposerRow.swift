@@ -137,7 +137,7 @@
                 }
                 // The field has no text baseline for SwiftUI: its text starts at the top, so
                 // the baseline is the face's ascender down (aligns # and the cells with it).
-                .alignmentGuide(.firstTextBaseline) { _ in ceil(Self.fieldFont.ascender) - 2 }
+                .alignmentGuide(.firstTextBaseline) { [baseline = Self.fieldBaseline] _ in baseline }
                 if let status = state.status {
                     statusLine(status, state: state)
                 }
@@ -390,6 +390,11 @@
             return NSFont(name: SchibstedGrotesk.semiBold.rawValue, size: 16)
                 ?? .systemFont(ofSize: 16, weight: .semibold)
         }()
+
+        /// The field's first text baseline from its top: the face's ascender, nudged up 2 pt.
+        /// Read on the main actor and captured by value, since the alignment guide closure
+        /// is Sendable.
+        static var fieldBaseline: CGFloat { ceil(fieldFont.ascender) - 2 }
 
         static let swiftUIFieldFont = SchibstedGrotesk.semiBold.font(size: 16)
 
