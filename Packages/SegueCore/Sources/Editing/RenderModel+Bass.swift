@@ -24,7 +24,7 @@ public struct ChangeID: Sendable, Hashable, CustomStringConvertible {
 }
 
 /// The small run of approach notes drawn after a departing chord (section 8.8).
-public struct ApproachRun: Sendable, Equatable {
+public struct ApproachRun: Sendable, Hashable {
     /// Opens the popover (editor, library).
     public var change: ChangeID
     /// "A", "B" (or degrees "2", "3" with the song's Nashville toggle on).
@@ -35,6 +35,10 @@ public struct ApproachRun: Sendable, Equatable {
     public var isPick: Bool
     /// "walk up A, B into C".
     public var accessibility: String
+    /// The notes at concert pitch, played order (the stage neck's numbered path, R166).
+    public var pitches: [PitchClass]
+    /// Up or down from the departing chord; nil for a fifth or an octave pickup.
+    public var ascending: Bool?
 
     public init(
         change: ChangeID,
@@ -42,12 +46,16 @@ public struct ApproachRun: Sendable, Equatable {
         chromatic: [Bool],
         isPick: Bool,
         accessibility: String,
+        pitches: [PitchClass] = [],
+        ascending: Bool? = nil,
     ) {
         self.change = change
         self.notes = notes
         self.chromatic = chromatic
         self.isPick = isPick
         self.accessibility = accessibility
+        self.pitches = pitches
+        self.ascending = ascending
     }
 
     /// The run as drawn: "A B ›", chromatic notes with a trailing "°" ("A B C#° ›").
@@ -67,8 +75,9 @@ public struct BassDiagram: Sendable, Equatable {
     public var positions: [FretPosition]
     /// The one suggested position (filled).
     public var suggested: FretPosition?
-    /// Fifth and octave positions around the suggested one (octave only for slash chords).
-    public var shape: [FretPosition]
+    /// Every chord tone on frets 0 ... 12 with its degree (R166): the note to play, the root
+    /// of a slash chord, the third, fifth, seventh and any extension.
+    public var tones: [NeckTone]
     /// The tuning drawn (the profile's).
     public var tuning: Tuning
 
@@ -77,14 +86,14 @@ public struct BassDiagram: Sendable, Equatable {
         chordName: String,
         positions: [FretPosition],
         suggested: FretPosition?,
-        shape: [FretPosition],
+        tones: [NeckTone],
         tuning: Tuning,
     ) {
         self.note = note
         self.chordName = chordName
         self.positions = positions
         self.suggested = suggested
-        self.shape = shape
+        self.tones = tones
         self.tuning = tuning
     }
 
@@ -112,11 +121,6 @@ public struct BassDiagram: Sendable, Equatable {
             let symbol = chord.symbol
             let note = symbol.bass ?? symbol.root
             let suggested = BassFretboard.suggested(note.pitchClass, home: home, tuning: tuning)
-            let isSlash = symbol.bass.map { $0.pitchClass != symbol.root.pitchClass } ?? false
-            let fifth = isSlash ? nil : BassFretboard.fifthInterval(of: symbol.formula)
-            let shape = suggested.map { root in
-                BassFretboard.shape(around: root, fifth: fifth, home: home, tuning: tuning)
-            } ?? []
             var diagram = RenderDiagram(
                 name: chord.original,
                 concertName: chord.original,
@@ -129,7 +133,11 @@ public struct BassDiagram: Sendable, Equatable {
                 chordName: chord.original,
                 positions: BassFretboard.positions(of: note.pitchClass, tuning: tuning),
                 suggested: suggested,
-                shape: shape,
+                tones: BassFretboard.tones(
+                    of: symbol,
+                    frets: 0 ... BassFretboard.maxFret,
+                    tuning: tuning,
+                ),
                 tuning: tuning,
             )
             return diagram

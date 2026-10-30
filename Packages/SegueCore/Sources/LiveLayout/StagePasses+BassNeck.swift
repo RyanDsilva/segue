@@ -1,6 +1,7 @@
 // P8-4a (docs/phases/8-workstreams/P8-4-bass.md section 7.3): which chord the stage mini neck
 // shows. Pure, from the plan and the scroll offset, on P8-2's reading line and current pass.
 
+import Editing
 import Foundation
 
 /// A chord placed in the plan, as the mini neck reads it.
@@ -15,13 +16,27 @@ public struct PlacedChordRef: Sendable, Hashable {
     /// The chord at the reading line is `N.C.` or unknown: this is the last real chord before
     /// it, to be drawn dimmed.
     public var dimmed = false
+    /// The chord token as written (its tones on the neck) and the walk-up drawn after it
+    /// (its numbered path), R166.
+    public var written: String?
+    public var walkUp: ApproachRun?
 
-    public init(pass: Int, text: String, kind: ChordKind, y: Double, dimmed: Bool = false) {
+    public init(
+        pass: Int,
+        text: String,
+        kind: ChordKind,
+        y: Double,
+        dimmed: Bool = false,
+        written: String? = nil,
+        walkUp: ApproachRun? = nil,
+    ) {
         self.pass = pass
         self.text = text
         self.kind = kind
         self.y = y
         self.dimmed = dimmed
+        self.written = written
+        self.walkUp = walkUp
     }
 
     /// The note without a Nashville prefix ("3 · B" -> "B").
@@ -77,6 +92,8 @@ public extension StagePasses {
                             text: run.text,
                             kind: run.chordKind ?? .chord,
                             y: block.y + row.y,
+                            written: run.written,
+                            walkUp: run.walkUp,
                         ))
                     }
                 }

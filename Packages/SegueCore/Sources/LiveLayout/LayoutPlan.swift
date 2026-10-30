@@ -67,6 +67,10 @@ public struct PlacedText: Sendable, Hashable {
     public var chordKind: ChordKind?
     /// Point size to draw at: `StageTypography.font(role, size: size)`.
     public var size: Double
+    /// A chord run's token as written and the walk-up drawn after its unit: the stage mini
+    /// neck shows the chord's tones and the walk-up's path from them (R166).
+    public var written: String?
+    public var walkUp: ApproachRun?
 
     public init(
         text: String,
@@ -75,6 +79,8 @@ public struct PlacedText: Sendable, Hashable {
         role: TextRole,
         chordKind: ChordKind? = nil,
         size: Double = 0,
+        written: String? = nil,
+        walkUp: ApproachRun? = nil,
     ) {
         self.text = text
         self.x = x
@@ -82,6 +88,8 @@ public struct PlacedText: Sendable, Hashable {
         self.role = role
         self.chordKind = chordKind
         self.size = size
+        self.written = written
+        self.walkUp = walkUp
     }
 }
 

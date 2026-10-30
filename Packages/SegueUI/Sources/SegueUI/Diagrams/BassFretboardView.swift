@@ -1,6 +1,6 @@
-// P8-4b (docs/phases/8-workstreams/P8-4-bass.md section 7.2). A bass fretboard cell for the
-// editor's diagram strip: the bass note's positions on frets 0-12, the suggested one filled,
-// root-fifth-octave around it.
+// P8-4b (docs/phases/8-workstreams/P8-4-bass.md section 7.2, R166). A bass fretboard cell for
+// the editor's diagram strip: every chord tone on frets 0-12 labelled by degree, the note to
+// play strongest and its suggested position filled.
 
 import Diagrams
 import Editing
@@ -13,12 +13,17 @@ struct BassFretboardView: View {
     let size: DiagramSize
 
     private var fretWidth: CGFloat {
-        size == .compact ? 9 : 12
+        size == .compact ? 15 : 19
     }
 
+    /// Far enough apart that labelled dots on neighbouring strings never touch.
     private var stringGap: CGFloat {
-        let strings = diagram.tuning.strings.count
-        return (size == .compact ? 22 : 30) / CGFloat(max(strings - 1, 1))
+        let five = diagram.tuning.strings.count == 5
+        return size == .compact ? (five ? 9 : 10) : (five ? 11 : 12)
+    }
+
+    private var dotSize: CGFloat {
+        stringGap - 1
     }
 
     private var neckWidth: CGFloat {
@@ -40,7 +45,7 @@ struct BassFretboardView: View {
             Canvas { context, _ in
                 draw(in: &context)
             }
-            .frame(width: neckWidth + 8, height: neckHeight + 22)
+            .frame(width: neckWidth + 8, height: neckHeight + dotSize + 22)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Self.spoken(diagram))
@@ -74,35 +79,58 @@ struct BassFretboardView: View {
             context.stroke(wire, with: .color(Theme.color.line), lineWidth: fret == 1 ? 2 : 1)
         }
         // Inlay dots under the neck: 3, 5, 7, 9 and a double at 12.
-        let inlayY = y(0) + 7
+        let inlayY = y(0) + dotSize / 2 + 4
         for fret in [3, 5, 7, 9] {
             dot(&context, at: CGPoint(x: x(fret), y: inlayY), diameter: 3, color: Theme.color.line)
         }
         dot(&context, at: CGPoint(x: x(12) - 2.5, y: inlayY), diameter: 3, color: Theme.color.line)
         dot(&context, at: CGPoint(x: x(12) + 2.5, y: inlayY), diameter: 3, color: Theme.color.line)
-        // Fifth and octave: small filled dots.
-        // (An octave on one of the note's own positions is already its ring.)
-        for position in diagram.shape where !diagram.positions.contains(position) {
-            dot(&context, at: point(position), diameter: 4, color: Theme.color.muted)
-        }
-        // Every position of the note: hollow rings; the suggested one filled.
-        let ring = size == .compact ? 6.0 : 8.0
-        for position in diagram.positions where position != diagram.suggested {
-            let rect = CGRect(
-                x: point(position).x - ring / 2,
-                y: point(position).y - ring / 2,
-                width: ring,
-                height: ring,
-            )
-            context.stroke(Path(ellipseIn: rect), with: .color(Theme.color.muted), lineWidth: 1)
+        // Every chord tone labelled by degree; the note to play strongest (R166).
+        for tone in diagram.tones {
+            mark(&context, tone)
         }
         if let suggested = diagram.suggested {
-            dot(&context, at: point(suggested), diameter: ring + 1, color: Theme.color.cue)
             let label = Text("\(suggested.fret)")
                 .font(SchibstedGrotesk.semiBold.font(size: 9))
                 .foregroundStyle(Theme.color.muted)
             context.draw(label, at: CGPoint(x: x(suggested.fret), y: inlayY + 8))
         }
+    }
+
+    /// One tone: the suggested place filled cue, the note's other places cue rings, a slash
+    /// chord's root an ink ring, other tones muted rings; the degree centred in each.
+    private func mark(_ context: inout GraphicsContext, _ tone: NeckTone) {
+        let center = point(tone.position)
+        let rect = CGRect(
+            x: center.x - dotSize / 2,
+            y: center.y - dotSize / 2,
+            width: dotSize,
+            height: dotSize,
+        )
+        let played = tone.position == diagram.suggested
+        let (stroke, text): (Color, Color) = switch tone.role {
+        case .bass: (Theme.color.cue, played ? Theme.color.ground : Theme.color.cueText)
+        case .root: (Theme.color.ink, Theme.color.ink)
+        case .tone: (Theme.color.muted, Theme.color.muted)
+        }
+        if played {
+            context.fill(Path(ellipseIn: rect), with: .color(Theme.color.cue))
+        } else {
+            context.fill(Path(ellipseIn: rect), with: .color(Theme.color.ground))
+            context.stroke(
+                Path(ellipseIn: rect.insetBy(dx: 0.5, dy: 0.5)),
+                with: .color(stroke),
+                lineWidth: 1,
+            )
+        }
+        let size = dotSize * 0.68 - (tone.degree.count > 2 ? 1 : 0)
+        context.draw(
+            Text(tone.degree)
+                .font(SchibstedGrotesk.bold.font(size: size))
+                .foregroundStyle(text),
+            at: CGPoint(x: center.x, y: center.y + 0.3),
+            anchor: .center,
+        )
     }
 
     private func point(_ position: FretPosition) -> CGPoint {
@@ -124,8 +152,8 @@ struct BassFretboardView: View {
         context.fill(Path(ellipseIn: rect), with: .color(color))
     }
 
-    /// "B, play on the A string, fret 2; also E string fret 7, G string fret 4; fifth F
-    /// sharp on the D string fret 4".
+    /// "B, play on the A string fret 2; also E string fret 7, G string fret 4; chord tones
+    /// R, 5".
     static func spoken(_ diagram: BassDiagram) -> String {
         func string(_ position: FretPosition) -> String {
             let open = diagram.tuning.openStringName(position.string)
@@ -138,6 +166,13 @@ struct BassFretboardView: View {
         let others = diagram.positions.filter { $0 != diagram.suggested }.map(string)
         if !others.isEmpty {
             parts.append("also " + others.joined(separator: ", "))
+        }
+        var degrees: [String] = []
+        for tone in diagram.tones where tone.role != .bass && !degrees.contains(tone.degree) {
+            degrees.append(tone.degree)
+        }
+        if !degrees.isEmpty {
+            parts.append("chord tones " + degrees.joined(separator: ", "))
         }
         return parts.joined(separator: "; ")
     }

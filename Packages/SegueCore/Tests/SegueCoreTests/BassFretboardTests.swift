@@ -57,31 +57,58 @@ struct BassFretboardTests {
     }
 
     @Test
-    func `root fifth octave around a root`() throws {
-        let root = Pos(string: 0, fret: 3) // G on the E string, key G
-        let shape = BassFretboard.shape(around: root, fifth: 7, home: 3, tuning: .bassStandard4)
-        // Fifth D at A5 (and the open D); no fifth below (no lower string); octave G at D5
-        // and the open G string.
-        #expect(shape.contains(Pos(string: 1, fret: 5)))
-        #expect(shape.contains(Pos(string: 2, fret: 5)))
-        #expect(shape.contains(Pos(string: 3, fret: 0)))
-        #expect(shape.allSatisfy { BassFretboard.pitch($0, tuning: .bassStandard4) >= 31 })
+    func `every chord tone in the window with its degree`() throws {
+        let tones = { (chord: String, frets: ClosedRange<Int>) throws -> Set<String> in
+            let symbol = try #require(ChordSymbol(parsing: chord))
+            return Set(BassFretboard.tones(of: symbol, frets: frets, tuning: .bassStandard4)
+                .map { "\($0.position) \($0.degree) \($0.role)" })
+        }
+        // G in key G, the window 2 ... 6: the two Gs, both Bs and the D on the A string.
+        #expect(try tones("G", 2 ... 6) == [
+            "0:3 R bass", "2:5 R bass", "1:2 3 tone", "3:4 3 tone", "1:5 5 tone",
+        ])
+        // G/B: B is the note to play (the third), G is the root.
+        #expect(try tones("G/B", 2 ... 6) == [
+            "0:3 R root", "2:5 R root", "1:2 3 bass", "3:4 3 bass", "1:5 5 tone",
+        ])
+        // Am7 in the open position: R, b3, 5, b7.
+        #expect(try tones("Am7", 0 ... 4) == [
+            "0:0 5 tone", "0:3 b7 tone", "1:0 R bass", "1:3 b3 tone", "2:2 5 tone",
+            "3:0 b7 tone", "3:2 R bass",
+        ])
+        // A slash bass outside the chord is named from the root (C/D: 9 as "2").
+        #expect(try tones("C/D", 0 ... 0).contains("2:0 2 bass"))
+        #expect(BassFretboard.degree(14) == "9")
+        #expect(BassFretboard.degree(10) == "b7")
+        #expect(BassFretboard.degree(6) == "b5")
+    }
 
-        let bdim = try #require(ChordSymbol(parsing: "Bdim"))
-        #expect(BassFretboard.fifthInterval(of: bdim.formula) == 6)
-        let augmented = try #require(ChordSymbol(parsing: "Caug"))
-        #expect(BassFretboard.fifthInterval(of: augmented.formula) == 8)
-        let major = try #require(ChordSymbol(parsing: "Gmaj7"))
-        #expect(BassFretboard.fifthInterval(of: major.formula) == 7)
-
-        // G/B: the octave only.
-        let slash = BassFretboard.shape(
-            around: Pos(string: 1, fret: 2),
-            fifth: nil,
-            home: 3,
+    @Test
+    func `a walk-up path falls on the window near the chord`() {
+        let start = Pos(string: 0, fret: 3) // G, key G
+        // G walks up A B into C: A on the E string, B on the A string.
+        #expect(BassFretboard.walkPath(
+            [Self.pc("A"), Self.pc("B")],
+            ascending: true,
+            from: start,
+            frets: 2 ... 6,
             tuning: .bassStandard4,
-        )
-        #expect(slash == [Pos(string: 3, fret: 4)])
+        ) == [Pos(string: 0, fret: 5), Pos(string: 1, fret: 2)])
+        // G walks down F# E into D: E is the open string, outside frets 2 ... 6.
+        #expect(BassFretboard.walkPath(
+            [Self.pc("F#"), Self.pc("E")],
+            ascending: false,
+            from: start,
+            frets: 2 ... 6,
+            tuning: .bassStandard4,
+        ) == [Pos(string: 0, fret: 2), nil])
+        #expect(BassFretboard.walkPath(
+            [Self.pc("F#"), Self.pc("E")],
+            ascending: false,
+            from: start,
+            frets: 0 ... 4,
+            tuning: .bassStandard4,
+        ) == [Pos(string: 0, fret: 2), Pos(string: 0, fret: 0)])
     }
 
     @Test

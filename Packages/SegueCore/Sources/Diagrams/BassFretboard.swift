@@ -19,7 +19,8 @@ public struct FretPosition: Sendable, Hashable, CustomStringConvertible {
 }
 
 /// Where to play a note on a bass: every position, the hand position for a song, the
-/// suggested position in the box around it, and root-fifth-octave around a root.
+/// suggested position in the box around it, every chord tone on a range of frets (R166) and
+/// where a walk-up's notes fall.
 ///
 /// The box is the fixed window `max(0, home - 1) ... home + 3` around the song's home fret,
 /// with open strings always candidates; the lowest sounding pitch wins (R158 Q12).
@@ -80,40 +81,6 @@ public enum BassFretboard {
         }
     }
 
-    /// Fifth (above and below) and octave positions around `root`, inside the box (open
-    /// strings included): the exact pitches `root + fifth`, `root + fifth - 12` and
-    /// `root + 12`. `fifth` is the chord's fifth in semitones (`fifthInterval(of:)`); pass
-    /// nil for slash chords, which get the octave only.
-    public static func shape(
-        around root: FretPosition,
-        fifth: Int?,
-        home: Int,
-        tuning: Tuning,
-    ) -> [FretPosition] {
-        guard tuning.strings.indices.contains(root.string) else { return [] }
-        let rootPitch = pitch(root, tuning: tuning)
-        var targets: [Int] = []
-        if let fifth {
-            targets += [rootPitch + fifth, rootPitch + fifth - 12]
-        }
-        targets.append(rootPitch + 12)
-        return targets.flatMap { target in
-            tuning.strings.indices.compactMap { string -> FretPosition? in
-                let position = FretPosition(string: string, fret: target - tuning.strings[string])
-                guard position.fret >= 0, position.fret <= maxFret,
-                      isInBox(position, home: home)
-                else { return nil }
-                return position
-            }
-        }
-    }
-
-    /// The fifth a chord formula implies: 7 if present, else 6 (b5) or 8 (#5), else nil.
-    public static func fifthInterval(of formula: ChordFormula) -> Int? {
-        let classes = Set(formula.intervals.map { $0 % 12 })
-        return [7, 6, 8].first(where: classes.contains)
-    }
-
     /// The frets the stage neck draws: `windowFrets` frets from `max(0, home - 1)`, shifted
     /// so `position` (the suggested one) is inside.
     public static func window(home: Int, including position: FretPosition?) -> ClosedRange<Int> {
@@ -135,5 +102,114 @@ public enum BassFretboard {
 
     private static func isInBox(_ position: FretPosition, home: Int) -> Bool {
         position.fret == 0 || box(home: home).contains(position.fret)
+    }
+
+    // MARK: Chord tones and the walk-up path (R166)
+
+    /// Every chord tone of `symbol` on `frets`, low string first, then by fret: the bass note
+    /// to play (the slash bass, else the root), the root when a slash bass differs, and each
+    /// other tone of the formula (third, fifth, seventh, extensions), each with its degree
+    /// from the root.
+    public static func tones(
+        of symbol: ChordSymbol,
+        frets: ClosedRange<Int>,
+        tuning: Tuning,
+    ) -> [NeckTone] {
+        let root = symbol.root.pitchClass
+        let bass = (symbol.bass ?? symbol.root).pitchClass
+        var degrees: [PitchClass: String] = [:]
+        // Formula order: lower intervals name a pitch class first (a 9 never renames the 2).
+        for interval in symbol.formula.intervals.sorted() {
+            let pitch = root.transposed(by: interval)
+            if degrees[pitch] == nil {
+                degrees[pitch] = degree(interval)
+            }
+        }
+        if degrees[bass] == nil {
+            degrees[bass] = degree(root.semitones(to: bass))
+        }
+        degrees[root] = "R"
+        return tuning.strings.indices.flatMap { string in
+            frets.compactMap { fret -> NeckTone? in
+                let position = FretPosition(string: string, fret: fret)
+                let pitch = PitchClass(midi: Self.pitch(position, tuning: tuning))
+                guard let name = degrees[pitch] else { return nil }
+                let role: NeckTone.Role = pitch == bass ? .bass : (pitch == root ? .root : .tone)
+                return NeckTone(position: position, degree: name, role: role)
+            }
+        }
+    }
+
+    /// The degree name of an interval above the root: "R", "b3", "3", "5", "b7", "7", and
+    /// "9", "#11", "13" above the octave.
+    public static func degree(_ interval: Int) -> String {
+        let names = [
+            0: "R", 1: "b2", 2: "2", 3: "b3", 4: "3", 5: "4", 6: "b5", 7: "5", 8: "#5", 9: "6",
+            10: "b7", 11: "7", 13: "b9", 14: "9", 15: "#9", 17: "11", 18: "#11", 20: "b13",
+            21: "13",
+        ]
+        let normalized = interval > 21 || interval < 0 ? ((interval % 12) + 12) % 12 : interval
+        return names[normalized] ?? names[normalized % 12] ?? "\(normalized)"
+    }
+
+    /// Where a walk-up's notes fall when it starts from `start` (the chord's suggested
+    /// position): each note at the nearest pitch in its direction from the one before (up,
+    /// down, or nearest either way when `ascending` is nil), then the position on `frets`
+    /// that plays that pitch closest to the previous one by fret. nil for a note with no
+    /// such position on `frets`.
+    public static func walkPath(
+        _ notes: [PitchClass],
+        ascending: Bool?,
+        from start: FretPosition,
+        frets: ClosedRange<Int>,
+        tuning: Tuning,
+    ) -> [FretPosition?] {
+        guard tuning.strings.indices.contains(start.string) else {
+            return notes.map { _ in nil }
+        }
+        var previousPitch = pitch(start, tuning: tuning)
+        var previousFret = start.fret
+        return notes.map { note in
+            let up = PitchClass(midi: previousPitch).semitones(to: note)
+            let step = switch ascending {
+            case true?: up == 0 ? 12 : up
+            case false?: up == 0 ? -12 : up - 12
+            case nil: up <= 6 ? up : up - 12
+            }
+            let target = previousPitch + step
+            previousPitch = target
+            let found = tuning.strings.indices.compactMap { string -> FretPosition? in
+                let fret = target - tuning.strings[string]
+                return frets.contains(fret) ? FretPosition(string: string, fret: fret) : nil
+            }.min { abs($0.fret - previousFret) < abs($1.fret - previousFret) }
+            if let found {
+                previousFret = found.fret
+            }
+            return found
+        }
+    }
+}
+
+/// One chord tone on the neck (R166): where, its degree from the root, and how strongly it
+/// is drawn.
+public struct NeckTone: Sendable, Hashable {
+    public enum Role: Sendable, Hashable {
+        /// The note to play: the slash bass, else the root (strongest).
+        case bass
+        /// The chord's root when a slash bass differs.
+        case root
+        /// Any other chord tone.
+        case tone
+    }
+
+    public var position: FretPosition
+    /// "R", "3", "b3", "5", "b7", "7", "9".
+    public var degree: String
+    public var role: Role
+
+    public init(position: FretPosition, degree: String, role: Role) {
+        self.position = position
+        self.degree = degree
+        self.role = role
     }
 }

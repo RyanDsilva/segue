@@ -39,9 +39,42 @@ struct StageBassNeckTests {
         #expect(state.note == "C#")
         #expect(state.suggested == FretPosition(string: 1, fret: 4))
         #expect(state.positionText == "A4")
-        #expect(state.accessibilityValue == "C#, A string fret 4")
+        #expect(state.accessibilityValue == "C#, A string fret 4; tones R, 3, 5")
         #expect(state.window == 4 ... 8)
-        #expect(state.others == [FretPosition(string: 3, fret: 6)])
+        // R166: every tone of A/C# in the window, the note to play (C#) strongest.
+        #expect(Set(state.tones.map { "\($0.position) \($0.degree) \($0.role)" }) == [
+            "0:5 R root", "1:4 3 bass", "1:7 5 tone", "2:7 R root", "3:6 3 bass",
+        ])
+    }
+
+    @Test
+    func `the walk-up out of the chord is numbered on the neck`() throws {
+        let transform = Self.transform(key: "G", capo: nil)
+        let state = try #require(StageBassNeckState.make(
+            chord: "G",
+            transform: transform,
+            home: 3,
+            tuning: .bassStandard4,
+        ))
+        let run = ApproachRun(
+            change: ChangeID(from: ChordPosition(section: 0, chord: 0), toBass: PitchClass(0)),
+            notes: ["A", "B"],
+            chromatic: [false, false],
+            isPick: false,
+            accessibility: "walk up A, B into C",
+            pitches: [PitchClass(9), PitchClass(11)],
+            ascending: true,
+        )
+        let walked = state.with(walkUp: run)
+        #expect(walked.walkUp == [
+            .init(number: 1, position: FretPosition(string: 0, fret: 5)),
+            .init(number: 2, position: FretPosition(string: 1, fret: 2)),
+        ])
+        #expect(walked.accessibilityValue == "G, E string fret 3; tones R, 3, 5; walk-up 2 notes")
+        #expect(state.with(walkUp: nil) == state)
+        var dimmed = state
+        dimmed.dimmed = true
+        #expect(dimmed.with(walkUp: run).walkUp.isEmpty)
     }
 
     @Test
@@ -97,8 +130,22 @@ struct StageBassNeckTests {
             home: 3,
             tuning: .bassStandard4,
         )
-        #expect(open?.accessibilityValue == "E, E string open")
+        #expect(open?.accessibilityValue == "E, E string open; tones R, b3, 5")
         #expect(open?.window == 0 ... 4)
+    }
+
+    /// A walk up from the root by two whole steps (G: A B; Am7: B C#).
+    static func walkUpTwoSteps(_ chord: String) throws -> ApproachRun {
+        let root = try #require(ChordSymbol(parsing: chord)).root.pitchClass
+        return ApproachRun(
+            change: ChangeID(from: ChordPosition(section: 0, chord: 0), toBass: root),
+            notes: [],
+            chromatic: [],
+            isPick: false,
+            accessibility: "",
+            pitches: [root.transposed(by: 2), root.transposed(by: 4)],
+            ascending: true,
+        )
     }
 
     @Test
@@ -113,6 +160,8 @@ struct StageBassNeckTests {
             Case(name: "b-eadg", chord: "G/B", tuning: .bassStandard4),
             Case(name: "em-open", chord: "Em", tuning: .bassStandard4),
             Case(name: "d-beadg", chord: "D", tuning: .bassStandard5),
+            Case(name: "g7-walk", chord: "G7", tuning: .bassStandard4),
+            Case(name: "am7-beadg-walk", chord: "Am7", tuning: .bassStandard5),
         ]
         for item in cases {
             var state = try #require(StageBassNeckState.make(
@@ -121,19 +170,20 @@ struct StageBassNeckTests {
                 home: 3,
                 tuning: item.tuning,
             ))
+            if item.name.hasSuffix("-walk") {
+                state = try state.with(walkUp: Self.walkUpTwoSteps(item.chord))
+            }
             for dimmed in [false, true] {
                 state.dimmed = dimmed
                 for dark in [false, true] {
-                    let view = StageBassNeck(state: state)
+                    let renderer = ImageRenderer(content: StageBassNeck(state: state)
                         .padding(12)
+                        .frame(width: StageBassNeck.width + 24, height: StageBassNeck.height + 24)
                         .background(Theme.color.ground)
-                    let host = NSHostingView(rootView: view)
-                    host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-                    host.frame = NSRect(x: 0, y: 0, width: StageBassNeck.width + 24, height: 58)
-                    host.layoutSubtreeIfNeeded()
-                    let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-                    host.cacheDisplay(in: host.bounds, to: rep)
-                    let image = try #require(rep.cgImage)
+                        .environment(\.colorScheme, dark ? .dark : .light))
+                    // The stage's Retina scale, so the labels are judged as drawn.
+                    renderer.scale = 2
+                    let image = try #require(renderer.cgImage)
                     let suffix = (dimmed ? "-dimmed" : "") + (dark ? "-dark" : "-light")
                     try DiagramSnapshotTests.writePNG(
                         image,
@@ -233,7 +283,7 @@ extension StageWindowSuites {
             // Verse 1 on G sounds A; EADG home is A on the E string, fret 5.
             let first = try #require(live.bassNeck(at: now))
             #expect(first.note == "A")
-            #expect(first.accessibilityValue == "A, E string fret 5")
+            #expect(first.accessibilityValue == "A, E string fret 5; tones R, 3, 5")
             #expect(first.tuning == .bassStandard4)
 
             // Page down chord by chord: the neck follows the reading line.

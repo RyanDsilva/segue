@@ -118,6 +118,8 @@ public enum BassLine {
             chromatic: candidate.chromatic,
             isPick: change.pick != nil,
             accessibility: spoken(candidate, names: names, into: target),
+            pitches: candidate.notes.map(\.pitchClass),
+            ascending: candidate.direction == .neither ? nil : candidate.direction == .up,
         )
     }
 

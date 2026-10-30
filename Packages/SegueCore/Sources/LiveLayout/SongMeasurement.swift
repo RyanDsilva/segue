@@ -34,6 +34,9 @@ struct MeasuredChord {
     /// The walk-up run after the unit (P8-4b: "A B ›") and its width at the detail size.
     var approach: String?
     var approachWidth = 0.0
+    /// The token as written and the walk-up run, carried to the chord run for the neck.
+    var written: String?
+    var walkUp: ApproachRun?
 
     /// The whole chord unit at the reference size: the chord, the detail after a gap, then
     /// the walk-up run after another.
@@ -57,6 +60,8 @@ struct MeasuredChord {
             role: .chord,
             chordKind: kind,
             size: size,
+            written: written,
+            walkUp: walkUp,
         )]
         if let detail {
             runs.append(PlacedText(
@@ -234,6 +239,8 @@ struct Measurer {
                     size: referenceSize * ChordUnit.detailScale,
                 )
             } ?? 0,
+            written: chord.original,
+            walkUp: chord.approach,
         )
     }
 

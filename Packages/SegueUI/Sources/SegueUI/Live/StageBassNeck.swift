@@ -4,22 +4,31 @@
     import MusicTheory
     import SwiftUI
 
-    /// What the stage mini neck shows (P8-4 7.3, R158 Q6): the bass note of the chord at the
-    /// reading line, where to play it in the box around the song's home fret, and the other
-    /// places of the same note inside the drawn window. A value, so the `Canvas` redraws only
-    /// when it changes.
+    /// What the stage mini neck shows (P8-4 7.3, R158 Q6, R166): the bass note of the chord at
+    /// the reading line and where to play it in the box around the song's home fret, every
+    /// tone of that chord inside the drawn window labelled by degree, and the walk-up out of
+    /// it as numbered notes. A value, so the `Canvas` redraws only when it changes.
     struct StageBassNeckState: Equatable {
         /// The note big ("B"), at sounding pitch; never the Nashville number.
         var note: String
         var suggested: FretPosition
-        /// The other positions of the note inside `window` (hollow rings).
-        var others: [FretPosition]
+        /// Every chord tone inside `window` (the suggested position among them), R166.
+        var tones: [NeckTone]
+        /// The walk-up shown after the chord, numbered 1, 2, 3 in played order; a note with
+        /// no place in the window is left out (its number is kept on the others).
+        var walkUp: [WalkStep] = []
         /// The frets drawn: `BassFretboard.windowFrets` frets.
         var window: ClosedRange<Int>
         var tuning: Tuning
         /// The chord at the reading line is `N.C.` or unknown: the last real chord stays,
-        /// dimmed.
+        /// dimmed (and without its walk-up).
         var dimmed = false
+
+        /// One note of the walk-up path.
+        struct WalkStep: Equatable {
+            var number: Int
+            var position: FretPosition
+        }
 
         /// The note's pitch class (where it was suggested).
         var pitchClass: PitchClass {
@@ -31,11 +40,50 @@
             tuning.openStringName(suggested.string) + "\(suggested.fret)"
         }
 
-        /// "B, A string fret 2" ("E string open" for fret 0).
+        /// "B, A string fret 2" ("E string open" for fret 0), then the chord's degrees in
+        /// the window and the walk-up's length: "B, A string fret 2; tones R, 3, 5; walk-up 2
+        /// notes".
         var accessibilityValue: String {
             let string = "\(tuning.openStringName(suggested.string)) string"
             let fret = suggested.fret == 0 ? "open" : "fret \(suggested.fret)"
-            return "\(note), \(string) \(fret)"
+            var parts = ["\(note), \(string) \(fret)"]
+            var degrees: [String] = []
+            for tone in tones.sorted(by: { Self.order($0.degree) < Self.order($1.degree) })
+                where !degrees.contains(tone.degree)
+            {
+                degrees.append(tone.degree)
+            }
+            if degrees.count > 1 {
+                parts.append("tones " + degrees.joined(separator: ", "))
+            }
+            if !walkUp.isEmpty {
+                parts.append("walk-up \(walkUp.count) note" + (walkUp.count == 1 ? "" : "s"))
+            }
+            return parts.joined(separator: "; ")
+        }
+
+        /// Degrees in chord order (R before 3 before 5 before 7 before extensions).
+        private static func order(_ degree: String) -> Int {
+            let digits = degree.filter(\.isNumber)
+            return degree == "R" ? 0 : Int(digits) ?? 99
+        }
+
+        /// The same neck with the walk-up `run` drawn as numbered notes from the suggested
+        /// position (none while dimmed).
+        func with(walkUp run: ApproachRun?) -> Self {
+            guard let run, !dimmed else { return self }
+            var state = self
+            let path = BassFretboard.walkPath(
+                run.pitches,
+                ascending: run.ascending,
+                from: suggested,
+                frets: window,
+                tuning: tuning,
+            )
+            state.walkUp = path.enumerated().compactMap { index, position in
+                position.map { WalkStep(number: index + 1, position: $0) }
+            }
+            return state
         }
 
         /// The neck for `chord` (a chord token's text as written) in a song rendered with
@@ -70,13 +118,10 @@
                 tuning: tuning,
             ) else { return nil }
             let window = BassFretboard.window(home: home, including: suggested)
-            let others = BassFretboard.positions(of: note.pitchClass, tuning: tuning).filter {
-                $0 != suggested && window.contains($0.fret)
-            }
             return Self(
                 note: note.chartName,
                 suggested: suggested,
-                others: others,
+                tones: BassFretboard.tones(of: symbol, frets: window, tuning: tuning),
                 window: window,
                 tuning: tuning,
             )
@@ -95,17 +140,19 @@
         }
     }
 
-    /// The stage mini neck at the left end of the status band (P8-4 7.3): the note and its
-    /// position ("B" with "A2"), then a 5-fret window of the neck in tab orientation (lowest
-    /// string at the bottom), the suggested place a filled cue dot and the note's other places
-    /// in the window hollow rings. Quiet: no animation, no clicks, no focus.
+    /// The stage mini neck at the left end of the status band (P8-4 7.3, R166): the note and
+    /// its position ("B" with "A2"), then a 5-fret window of the neck in tab orientation
+    /// (lowest string at the bottom). Every chord tone in the window is a small dot labelled
+    /// by degree: the suggested place filled cue, the note's other places cue rings, a slash
+    /// chord's root an ink ring, the other tones muted rings; the walk-up's notes are dashed
+    /// rings numbered 1, 2, 3. Quiet: no animation, no clicks, no focus.
     struct StageBassNeck: View, Equatable {
         let state: StageBassNeckState
 
-        /// The neck's height: the 30 pt status line plus room for the fret number under the
-        /// strings (the status band has 8 pt above and below the line).
-        static let height: CGFloat = 34
-        static let fretWidth: CGFloat = 22
+        /// The neck's height: labelled tone dots on the strings plus the fret number under
+        /// them, the full 46 pt status band (R166 grew it from 34).
+        static let height: CGFloat = 46
+        static let fretWidth: CGFloat = 24
         static let labelGap: CGFloat = 8
         /// Width of the note and position label.
         static let labelWidth: CGFloat = 42
@@ -145,16 +192,23 @@
         }
     }
 
-    /// The neck drawing: strings, fret wires, the nut, the first fret number and the dots.
+    /// The neck drawing: strings, fret wires, the nut, the first fret number, the chord tones
+    /// and the walk-up path.
     private struct NeckCanvas: View {
         let state: StageBassNeckState
+
+        /// 4 strings: 9.5 pt apart with 10 pt dots; 5 strings: 7.5 pt apart with 9 pt dots (a
+        /// ground-coloured edge keeps touching dots apart).
+        private var fiveStrings: Bool {
+            state.tuning.strings.count == 5
+        }
 
         var body: some View {
             Canvas { context, size in
                 let strings = state.tuning.strings.count
-                let spacing: CGFloat = strings == 5 ? 5.5 : 7
+                let spacing: CGFloat = fiveStrings ? 7.5 : 9.5
                 let span = spacing * CGFloat(strings - 1)
-                let top: CGFloat = 4
+                let top: CGFloat = 5.5
                 let fret = StageBassNeck.fretWidth
                 let frets = BassFretboard.windowFrets
                 let lower = state.window.lowerBound
@@ -188,36 +242,90 @@
                 // The first fretted fret's number under its slot.
                 let firstSlot = lower == 0 ? 1 : 0
                 let number = Text("\(lower + firstSlot)")
-                    .font(SchibstedGrotesk.semiBold.font(size: 9))
+                    .font(SchibstedGrotesk.semiBold.font(size: 8.5))
                     .foregroundStyle(Theme.color.muted)
                 context.draw(
                     number,
-                    at: CGPoint(x: (CGFloat(firstSlot) + 0.5) * fret, y: size.height - 1),
+                    at: CGPoint(x: (CGFloat(firstSlot) + 0.5) * fret, y: size.height),
                     anchor: .bottom,
                 )
                 func center(_ position: FretPosition) -> CGPoint {
                     let slot = CGFloat(position.fret - lower)
                     return CGPoint(x: (slot + 0.5) * fret, y: stringY(position.string))
                 }
-                for position in state.others {
-                    let point = center(position)
-                    let ring = Path(ellipseIn: CGRect(
-                        x: point.x - 3,
-                        y: point.y - 3,
-                        width: 6,
-                        height: 6,
-                    ))
-                    context.stroke(ring, with: .color(Theme.color.muted), lineWidth: 1.2)
+                let walked = Set(state.walkUp.map(\.position))
+                for tone in state.tones where !walked.contains(tone.position) {
+                    let point = center(tone.position)
+                    mark(&context, at: point, style: style(tone), label: tone.degree)
                 }
-                let point = center(state.suggested)
-                let dot = Path(ellipseIn: CGRect(
-                    x: point.x - 3.5,
-                    y: point.y - 3.5,
-                    width: 7,
-                    height: 7,
-                ))
-                context.fill(dot, with: .color(Theme.color.cue))
+                for step in state.walkUp {
+                    mark(&context, at: center(step.position), style: .walk, label: "\(step.number)")
+                }
             }
+        }
+
+        private enum MarkStyle {
+            /// The suggested place of the note to play.
+            case played
+            /// The note to play elsewhere in the window.
+            case bass
+            /// A slash chord's root.
+            case root
+            case tone
+            /// A walk-up note: dashed and quieter.
+            case walk
+        }
+
+        private func style(_ tone: NeckTone) -> MarkStyle {
+            switch tone.role {
+            case .bass: tone.position == state.suggested ? .played : .bass
+            case .root: .root
+            case .tone: .tone
+            }
+        }
+
+        /// A dot with its label centred: filled for the played note, otherwise a ring on the
+        /// ground colour so the string does not run through the label.
+        private func mark(
+            _ context: inout GraphicsContext,
+            at point: CGPoint,
+            style: MarkStyle,
+            label: String,
+        ) {
+            let diameter: CGFloat = fiveStrings ? 9 : 10
+            let rect = CGRect(
+                x: point.x - diameter / 2,
+                y: point.y - diameter / 2,
+                width: diameter,
+                height: diameter,
+            )
+            let circle = Path(ellipseIn: rect)
+            let (stroke, text): (Color, Color) = switch style {
+            case .played: (Theme.color.cue, Theme.color.ground)
+            case .bass: (Theme.color.cue, Theme.color.cueText)
+            case .root: (Theme.color.ink, Theme.color.ink)
+            case .tone: (Theme.color.muted, Theme.color.muted)
+            case .walk: (Theme.color.indicatorOff, Theme.color.muted)
+            }
+            context.fill(
+                Path(ellipseIn: rect.insetBy(dx: -0.75, dy: -0.75)),
+                with: .color(Theme.color.ground),
+            )
+            if style == .played {
+                context.fill(circle, with: .color(Theme.color.cue))
+            } else {
+                context.fill(circle, with: .color(Theme.color.ground))
+                context.stroke(
+                    Path(ellipseIn: rect.insetBy(dx: 0.5, dy: 0.5)),
+                    with: .color(stroke),
+                    style: StrokeStyle(lineWidth: 1, dash: style == .walk ? [1.6, 1.2] : []),
+                )
+            }
+            let size: CGFloat = (fiveStrings ? 6.5 : 7) - (label.count > 2 ? 1 : 0)
+            let glyphs = Text(label)
+                .font(SchibstedGrotesk.bold.font(size: size))
+                .foregroundStyle(text)
+            context.draw(glyphs, at: CGPoint(x: point.x, y: point.y + 0.3), anchor: .center)
         }
     }
 #endif

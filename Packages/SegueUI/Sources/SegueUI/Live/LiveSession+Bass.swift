@@ -48,9 +48,17 @@
                 BassFretboard.homeFret(tonic: key.tonic.pitchClass, tuning: tuning)
             } ?? first.flatMap { StageBassNeckState.make(drawn: $0.text, home: 0, tuning: tuning) }
                 .map { BassFretboard.homeFret(tonic: $0.pitchClass, tuning: tuning) } ?? 0
-            var state = StageBassNeckState.make(drawn: chord.text, home: home, tuning: tuning)
+            // The chord as written gives its tones (R166); the drawn note is the fallback.
+            var state = chord.written.flatMap { written in
+                StageBassNeckState.make(
+                    chord: written,
+                    transform: model.transform,
+                    home: home,
+                    tuning: tuning,
+                )
+            } ?? StageBassNeckState.make(drawn: chord.text, home: home, tuning: tuning)
             state?.dimmed = chord.dimmed
-            return state
+            return state?.with(walkUp: chord.walkUp)
         }
 
         /// `bassNeck` once per stage session, when the neck first shows (P8-4 6.6).
