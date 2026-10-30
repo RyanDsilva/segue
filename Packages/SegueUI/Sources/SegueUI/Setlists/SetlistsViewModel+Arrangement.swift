@@ -12,8 +12,8 @@ public struct ArrangingSlot: Identifiable, Hashable, Sendable {
     }
 }
 
-/// Per-slot arrangements (P3-16, R122, R123): open the sheet, save each change as one undo
-/// step (R16), reset to the full song.
+/// Per-slot arrangements (P3-16, P8-3, R122, R123): open the sheet, save each change as one
+/// undo step (R16), reset to the full song.
 public extension SetlistsViewModel {
     /// Opens the Arrange Sections sheet for song slot `item` of setlist `id`.
     func openArrangement(_ item: SetlistItemID, in id: SetlistID) {
@@ -42,20 +42,35 @@ public extension SetlistsViewModel {
     }
 
     /// Saves slot `item`'s arrangement (nil = Reset to Full Song) as one undo step named
-    /// `actionName`. The song's `.cho` is never touched.
+    /// `actionName`; nothing when it is unchanged. The entry is read inside the serialized
+    /// write, so a save queued behind another edit of the slot never writes back a stale
+    /// copy of it (R154). The song's `.cho` is never touched.
     func setArrangement(
         _ arrangement: SlotArrangement?,
         of item: SetlistItemID,
         in id: SetlistID,
         actionName: String,
     ) async {
-        guard var entry = await store.setlist(id: id)?.entry(item), entry.songId != nil,
-              entry.arrangement != arrangement
-        else { return }
-        entry.arrangement = arrangement
+        let changed = ChangeFlag()
         await mutate(undo: (id, actionName)) { store in
-            try await store.updateEntry(entry, in: id)
+            guard let setlist = await store.setlist(id: id) else {
+                throw SetlistError.setlistNotFound(id)
+            }
+            guard var entry = setlist.entry(item), entry.songId != nil,
+                  entry.arrangement != arrangement
+            else { return setlist }
+            entry.arrangement = arrangement
+            changed.isSet = true
+            return try await store.updateEntry(entry, in: id)
         }
-        services.record(.featureUsed(.setlistEdit, .builder))
+        if changed.isSet {
+            services.record(.featureUsed(.setlistEdit, .builder))
+        }
     }
+}
+
+/// Whether a serialized write changed anything (set inside the write, read after it).
+@MainActor
+private final class ChangeFlag {
+    var isSet = false
 }

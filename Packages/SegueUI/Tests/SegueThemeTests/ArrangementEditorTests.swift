@@ -160,6 +160,58 @@ struct ArrangementEditorTests {
         #expect(try fix.env.read("songs/soundcheck.cho") == cho)
     }
 
+    /// The sheet's editor, each save in its own undo group (as the app's event grouping).
+    private func editor(_ fix: Fixture) -> ArrangementEditor {
+        ArrangementEditor(
+            slot: ArrangingSlot(setlist: fix.friday, item: fix.item),
+            services: .disabled,
+        ) { arrangement, name in
+            fix.manager.beginUndoGrouping()
+            await fix.session.setlists.setArrangement(
+                arrangement,
+                of: fix.item,
+                in: fix.friday,
+                actionName: name,
+            )
+            fix.manager.endUndoGrouping()
+        }
+    }
+
+    @Test
+    func `rapid edits apply to the newest draft and land as ordered undo steps`() async throws {
+        let fix = try await Self.open()
+        let units = try units(fix)
+        let editor = editor(fix)
+        func draft() -> ArrangementDraft {
+            editor.draft(saved: entry(fix)?.arrangement, units: units)
+        }
+        // 1, C then ⌘D on the first chip, none awaited: each starts from the one before.
+        #expect(editor.perform(.setMode(0, .firstLine), on: draft()) == nil)
+        #expect(editor.perform(.setMode(0, .chordsOnly), on: draft()) == nil)
+        #expect(editor.perform(.duplicate(0), on: draft()) == nil)
+        #expect(editor.isSaving)
+        #expect(editor.selection == 1)
+        #expect(draft().roadmap == "V1:CH V1:CH C V2 C B C")
+        await editor.settle()
+        #expect(!editor.isSaving)
+        #expect(try lane(fix) == "Custom · V1:CH V1:CH C V2 C B C")
+
+        #expect(fix.manager.undoActionName == "Duplicate Pass")
+        fix.manager.undo()
+        try await fix.env.waitFor { (try? lane(fix)) == "Custom · V1:CH C V2 C B C" ? true : nil }
+        #expect(fix.manager.undoActionName == "Show Chords Only")
+        fix.manager.undo()
+        try await fix.env.waitFor { (try? lane(fix)) == "Custom · V1:1 C V2 C B C" ? true : nil }
+        #expect(fix.manager.undoActionName == "Show First Line")
+        fix.manager.undo()
+        try await fix.env.waitFor { entry(fix)?.arrangement == nil ? true : nil }
+        // After undo the lane is the model's again and the selection is clamped to it.
+        editor.clampSelection(count: draft().chips.count)
+        #expect(editor.selection == 1)
+        editor.clampSelection(count: 1)
+        #expect(editor.selection == 0)
+    }
+
     @Test
     func `a roadmap commit is one undo step and an invalid roadmap saves nothing`() async throws {
         let fix = try await Self.open()

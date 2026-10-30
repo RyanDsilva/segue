@@ -43,4 +43,9 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case bassProfile
     case bassNotes
     case bassNeck
+    /// P8-3 section 9: a pass's show mode set in Arrange Sections (no song data), a roadmap
+    /// committed, "Rehearse this" started.
+    case arrangementMode
+    case arrangementRoadmap
+    case arrangementRehearse
 }
