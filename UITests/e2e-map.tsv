@@ -138,3 +138,8 @@ UITests/SeguePasteE2ETests.swift	SeguePasteE2ETests
 UITests/SegueAISettingsE2ETests.swift	SegueAISettingsE2ETests
 Packages/SegueUI/Sources/SegueUI/Paste/*	SeguePasteE2ETests SegueCoreUXE2ETests
 Packages/SegueCore/Sources/Ingest/*	SeguePasteE2ETests
+UITests/SegueBassE2ETests.swift	SegueBassE2ETests
+Packages/SegueUI/Sources/SegueUI/Live/*Bass*	SegueBassE2ETests
+Packages/SegueUI/Sources/SegueUI/Settings/Instrument*	SegueBassE2ETests
+Packages/SegueUI/Sources/SegueUI/Editor/*Bass*	SegueBassE2ETests
+Packages/SegueCore/Sources/Editing/InstrumentProfile.swift	SegueBassE2ETests
