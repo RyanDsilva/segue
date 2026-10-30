@@ -1,25 +1,87 @@
 ---
 title: Arrange sections for one gig
-description: Skip a verse, repeat a chorus or change the order for one setlist only. The song file never changes.
+description: Build the order you'll play for one setlist slot - repeat a chorus, skip a verse, chords only. The song file never changes.
 ---
 import Shot from '../../components/Shot.astro';
 import Steps from '../../components/Steps.astro';
 
 <Steps>
 1. Select a song in the setlist and choose **Setlist > Arrange Sections…** (<kbd>⇧⌘A</kbd>), or use the Arrangement row in its details.
-2. Untick the sections to skip, change how many times a section plays, and drag sections into a new order. The preview shows the song as it will look on stage.
+2. Click song parts to add them to the sequence, and change how each pass shows. The preview on the right is what the stage will draw.
 3. Click **Done**.
 </Steps>
 
-<Shot id="arrange-sheet" alt="The Arrange Sections sheet with ticked sections and a stage preview" />
+<Shot id="arrange-sheet" alt="The Arrange Sections sheet: song parts on top, the sequence of passes, the inspector, the roadmap and the stage preview" />
 
-## The song stays as it is {#reset}
+## This gig only {#this-gig}
 
-An arrangement belongs to this slot in this setlist. The song's file never changes. **Reset to Full Song** removes the arrangement.
+An arrangement belongs to this slot in this setlist. The song's file never changes, and the same song in another setlist still plays in full. The footer counts the passes, like "9 passes play · 1 skipped".
 
-## Play a section again later {#play-again}
+## Song parts {#parts}
 
-**Play Again Later** adds a copy of a section that you can drag anywhere, for a final chorus after the solo.
+The buttons along the top are the song's parts, in the order they first appear: Intro, Verse 1, Chorus and so on. Click one to add it right after the selected pass, so clicking several in a row builds the sequence in order. Or drag a part into the sequence to drop it exactly where you want.
+
+Segue picks which Chorus you mean: a Chorus added after Verse 2 is the song's second chorus. To pick one yourself, right-click the button (or click its ▾) and choose by its first line. A part marked **New** was added to the song since you last arranged it.
+
+## The sequence {#sequence}
+
+Each chip in the sequence is one pass, in the order you'll play it. A chorus played three times is three chips, marked "1 of 3", "2 of 3" and "3 of 3", the same numbers the stage uses.
+
+- Hover a chip and click **+** to play it again right after, or **×** to remove it.
+- Drag a chip to move it; <kbd>⌥</kbd>-drag to copy it.
+- <kbd>⌥</kbd>-click a chip to skip it or play it again.
+- Right-click for every option, including **Play Again at End** and **Move to Start**.
+
+At least one pass always plays, and a slot can have up to 48 passes.
+
+## Show modes {#modes}
+
+Each pass shows in one of four ways. Pick one in the inspector under the sequence, or press its key.
+
+- **Full** (<kbd>F</kbd>): lyrics and chords.
+- **Chords only** (<kbd>C</kbd>): just the chords, for an intro or a solo.
+- **First line** (<kbd>1</kbd>): only the first line, as a reminder.
+- **Skip** (<kbd>S</kbd>): the pass stays in the sequence, dashed and struck through, but never reaches the stage or the section map.
+
+## Common edits, one gesture each {#common}
+
+| Edit | Gesture |
+| --- | --- |
+| Play a chorus again (right after) | Hover the chorus chip, click **+** (or <kbd>⌘D</kbd>) |
+| Play a chorus again later | <kbd>⌥</kbd>-drag the chorus chip to the spot, or drag **Chorus** from the parts |
+| Extend the ending with a chorus | Right-click the chorus chip > **Play Again at End** (or <kbd>⇧⌘D</kbd>) |
+| Skip a verse | <kbd>⌥</kbd>-click the verse chip (or select it and press <kbd>S</kbd>) |
+| Extend the outro | Hover the outro chip, click **+** |
+| Chords only for the intro | Select it and press <kbd>C</kbd> (or right-click > **Chords Only**) |
+| Reset to the full song | **Reset to Full Song** at the top |
+| Type a whole arrangement | The roadmap field, then <kbd>Return</kbd> |
+
+## The roadmap {#roadmap}
+
+The roadmap is the sequence written as text, like `I:CH V1 C V2 C B C O:1`. It's optional: everything it does, you can do with clicks. Edit the sequence and the roadmap follows; type in the roadmap and the sequence and preview follow as you go. <kbd>Return</kbd> saves it, <kbd>Esc</kbd> puts it back.
+
+| Write | Means |
+| --- | --- |
+| `I V1 C V2 B O` | The song's parts: the first letters of each name, with the number kept (Pre-Chorus is `PC`). The line under the field lists this song's parts. |
+| `:ch` | Chords only, as in `I:ch` |
+| `:1` | First line only |
+| `-V2` | Skip Verse 2 |
+| `x2` | Play it twice, as in `Cx2` |
+| `C#3` | The third chorus, when you want a particular one |
+
+If something doesn't read, the field turns red and says why, like `"Q" is not a part.`, and the sequence keeps its last good version.
+
+## The stage preview {#preview}
+
+The right side shows the song exactly as the stage will draw it, with your lyric size, columns and zoom from **Settings > Live**, the slot's key and capo, and your notes. The section map along its top leaves out skipped passes. Select a chip and the preview scrolls to that pass.
+
+## Rehearse this {#rehearse}
+
+**Rehearse this** (<kbd>⌥⌘↩</kbd>) plays this slot as arranged, in its key and capo. It isn't logged. When you end it, the Arrange Sections sheet opens again, so you can tweak and try again.
+
+## Reset to Full Song {#reset}
+
+**Reset to Full Song** removes the arrangement and the slot plays the whole song again. There's no confirmation: <kbd>⌘Z</kbd> brings the arrangement back.
 
 ## Length for this gig {#slot-length}
 
@@ -27,4 +89,25 @@ An arranged song is shorter or longer than the full song, so it gets its own len
 
 ## Out of date {#out-of-date}
 
-If you edit the song and a section in the arrangement no longer exists, the arrangement is marked out of date, and the stage shows the full song until you fix it. New sections in the song appear unticked under "New in the song".
+If you edit the song and a part in the arrangement no longer exists, a banner says which, and the stage shows the full song until you fix it. Click **Update** to keep the passes that still match and drop the rest.
+
+## Keyboard {#keyboard}
+
+With the sequence selected:
+
+| Key | Does |
+| --- | --- |
+| <kbd>←</kbd> <kbd>→</kbd> | Select the previous or next pass |
+| <kbd>Home</kbd> <kbd>End</kbd> (or <kbd>⌘←</kbd> <kbd>⌘→</kbd>) | Select the first or last pass |
+| <kbd>⌥←</kbd> <kbd>⌥→</kbd> (or <kbd>⌥↑</kbd> <kbd>⌥↓</kbd>) | Move the pass one place |
+| <kbd>F</kbd> <kbd>C</kbd> <kbd>1</kbd> | Full, Chords only, First line |
+| <kbd>S</kbd> | Skip, or play again |
+| <kbd>⌘D</kbd> | Play again right after |
+| <kbd>⇧⌘D</kbd> | Play again at the end |
+| <kbd>⌫</kbd> | Remove the pass |
+| <kbd>⌘Z</kbd> <kbd>⇧⌘Z</kbd> | Undo, redo |
+| <kbd>Tab</kbd> | Move between the sequence, inspector, roadmap and buttons |
+| <kbd>⌥⌘↩</kbd> | Rehearse this |
+| <kbd>Return</kbd> or <kbd>Esc</kbd> | Done |
+
+Every edit saves at once and is one step on Edit > Undo.
