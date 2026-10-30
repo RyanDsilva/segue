@@ -30,7 +30,8 @@ public enum SetComposerLine: Sendable, Equatable {
         return .song(query: line, key: nil, keyToken: nil)
     }
 
-    /// Only dashes (hyphen 1, en dash 2, em dash 3) weighing at least 3: "---", "–-", "—".
+    /// Only dashes (hyphen 1, en dash U+2013 2, em dash U+2014 3) weighing at least 3:
+    /// "---", an en dash plus a hyphen, or one em dash.
     /// A pasted or system-substituted dash still counts, although substitution is off.
     static func isBreak(_ line: String) -> Bool {
         var weight = 0
