@@ -82,7 +82,7 @@ struct TuningBassTests {
     }
 
     @Test
-    func `the view uses the profile tuning only for a bassist`() {
+    func `the view uses the profile tuning with or without the bass profile`() {
         let bassist = InstrumentProfile(
             playsBass: true,
             strings: 5,
@@ -97,7 +97,8 @@ struct TuningBassTests {
             bassNotes: true,
             stageNeck: false,
         )
-        #expect(anyone.bassView?.tuning == .bassStandard4)
+        // R163: the Settings tuning applies with or without "I play bass".
+        #expect(anyone.bassView?.tuning == .bassStandard5)
         #expect(anyone.bassView?.neck == false)
     }
 }
