@@ -22,15 +22,22 @@ extension StageWindowSuites {
 
         @Test(arguments: [ShowKind.gig, .rehearsal])
         func `one song plays with no checklist and leaves no trace`(kind: ShowKind) async throws {
-            let run = try await MetronomeRun(songs: [MapSong.source(), "{title: Two}\n[G]La\n"])
+            let run = try await MetronomeRun(
+                songs: [MapSong.source(), "{title: Two}\n[G]La\n"],
+                recordsAnalytics: true,
+            )
             // The checklist would show for a setlist run; a single song never shows it.
             run.app.liveSettings.settings.hiddenChecklistItems = []
             let session = try #require(run.app.session)
             let song = try #require(run.setlist.entries[0].songId)
             let gigsBefore = run.app.polish.review.completedGigs
+            let analytics = try #require(run.analytics)
             var ended = false
 
             #expect(await run.app.startSongSession(song, kind: kind, onEnd: { ended = true }))
+            // One feature key per kind (R163).
+            #expect(analytics.features.filter { $0.hasPrefix("singleSong") }
+                == [kind == .gig ? "singleSongLive" : "singleSongRehearse"])
             #expect(run.app.preShow == nil)
             let live = try #require(run.app.live)
             #expect(live.scope == .song)

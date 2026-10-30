@@ -71,7 +71,10 @@
                         durations: nil,
                     ),
                 )
-                services.record(.featureUsed(.singleSongSession, .library))
+                services.record(.featureUsed(
+                    kind == .rehearsal ? .singleSongRehearse : .singleSongLive,
+                    .library,
+                ))
                 await presentSongStage(controller, kind: kind, session: session, onEnd: onEnd)
                 return true
             } catch {

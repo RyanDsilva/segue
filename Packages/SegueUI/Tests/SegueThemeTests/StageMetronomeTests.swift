@@ -342,8 +342,10 @@ struct MetronomeRun {
     let app: AppModel
     let outputs = ClickOutputs()
     let setlist: Setlist
+    /// The analytics the app recorded, when `recordsAnalytics`.
+    let analytics: RecordingAnalytics?
 
-    init(songs: [String], breakBefore: Int? = nil) async throws {
+    init(songs: [String], breakBefore: Int? = nil, recordsAnalytics: Bool = false) async throws {
         _ = NSApplication.shared
         env = try TestEnvironment()
         var dependencies = env.dependencies(
@@ -351,6 +353,10 @@ struct MetronomeRun {
             override: env.libraryURL,
             remember: false,
         )
+        analytics = recordsAnalytics ? RecordingAnalytics(env) : nil
+        if let analytics {
+            dependencies.services = analytics.hub
+        }
         let outputs = outputs
         let clock = env.clock
         dependencies.live.makeClickOutput = { outputs.make(clock) }

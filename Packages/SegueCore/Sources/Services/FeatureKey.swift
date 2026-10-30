@@ -31,10 +31,13 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     /// The stage metronome was switched on (R90, P3-14).
     case metronome
     /// P8-2 (R148, R150): a stage section jump (once per session), the rehearsal loop
-    /// switched on, a single-song session started from the library.
+    /// switched on.
     case sectionJump
     case sectionLoop
-    case singleSongSession
+    /// R163: a single-song Rehearse or Live session started from the library, one key per
+    /// kind (replacing P8-2's `singleSongSession`).
+    case singleSongRehearse
+    case singleSongLive
     /// P8-4 6.6: "I play bass" turned on, the bass-note view toggled (editor or stage), the
     /// stage mini neck shown (once per run).
     case bassProfile
