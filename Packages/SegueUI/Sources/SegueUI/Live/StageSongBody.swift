@@ -132,7 +132,8 @@
                             x: lyricOrigin + row.chords[chord].x,
                             baseline: row.y + chordBaseline,
                         )
-                        .accessibilityIdentifier(AccessibilityID.sheetChord)
+                        .accessibilityIdentifier(row.chords[chord].role == .chordDetail
+                            ? AccessibilityID.liveChordDetail : AccessibilityID.sheetChord)
                     }
                 }
                 ForEach(row.text.indices, id: \.self) { run in
@@ -184,6 +185,7 @@
         private func size(_ role: TextRole) -> Double {
             switch role {
             case .chord, .chordSeparator: plan.chordSize
+            case .chordDetail: plan.chordSize * ChordUnit.detailScale
             case .lyric: plan.lyricSize
             case .comment: plan.lyricSize * style.commentScale
             case .moreLines: plan.lyricSize * style.moreLinesScale
@@ -208,7 +210,8 @@
             case .chord:
                 run.chordKind == .chord || run.chordKind == nil
                     ? Theme.color.cueText : Theme.color.muted
-            case .comment, .labelDetail, .modeTag, .moreLines, .note, .sectionLabel:
+            case .chordDetail, .comment, .labelDetail, .modeTag, .moreLines, .note,
+                 .sectionLabel:
                 Theme.color.muted
             case .chordSeparator:
                 Theme.color.indicatorOff

@@ -26,21 +26,14 @@ extension SectionLayout {
         var runs = [bar(at: 0)]
         var x = separator + gap
         for chord in chords {
-            let chordWidth = chord.width * scale
+            let chordWidth = chord.unitWidth * scale
             let slot = max(chordWidth, style.chordRunMinimum * size)
             if x + slot + gap + separator > width, runs.count > 1 {
                 rows.append(runs)
                 runs = [bar(at: 0)]
                 x = separator + gap
             }
-            runs.append(PlacedText(
-                text: chord.text,
-                x: x,
-                width: chordWidth,
-                role: .chord,
-                chordKind: chord.kind,
-                size: size,
-            ))
+            runs += chord.runs(at: x, size: size, scale: scale)
             x += slot + gap
             runs.append(bar(at: x))
             x += separator + gap

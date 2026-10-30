@@ -27,6 +27,45 @@ struct MeasuredChord {
     var offset: Int
     var width: Double
     var kind: ChordKind
+    /// The small run after the chord (P8-4: the concert chord beside a bass note) and its
+    /// width at `ChordUnit.detailScale` x the reference size.
+    var detail: String?
+    var detailWidth = 0.0
+
+    /// The whole chord unit at the reference size: the chord, then the detail after a gap.
+    /// Built so P8-4b can append its approach run the same way.
+    var unitWidth: Double {
+        detail == nil ? width : width + ChordUnit.detailGap * referenceSize + detailWidth
+    }
+
+    /// The unit's runs at `x` for a chord drawn at `size` (`scale` = size / reference).
+    func runs(at x: Double, size: Double, scale: Double) -> [PlacedText] {
+        var runs = [PlacedText(
+            text: text,
+            x: x,
+            width: width * scale,
+            role: .chord,
+            chordKind: kind,
+            size: size,
+        )]
+        if let detail {
+            runs.append(PlacedText(
+                text: detail,
+                x: x + (width + ChordUnit.detailGap * referenceSize) * scale,
+                width: detailWidth * scale,
+                role: .chordDetail,
+                size: size * ChordUnit.detailScale,
+            ))
+        }
+        return runs
+    }
+}
+
+/// The chord unit's proportions (P8-4 6.7): a detail run at 0.6 x the chord size, a third of
+/// an em (about a space) after the chord.
+public enum ChordUnit {
+    public static let detailScale = 0.6
+    public static let detailGap = 0.3
 }
 
 /// A lyric line split into pieces, chords attached to lyric offsets.
@@ -139,14 +178,7 @@ struct Measurer {
                 endsWord: bound.endsWord,
             )
         }
-        let chords = line.chords.map { chord in
-            MeasuredChord(
-                text: chord.text,
-                offset: min(max(chord.offset, 0), count),
-                width: metrics.width(of: chord.text, role: .chord, size: referenceSize),
-                kind: ChordKind(chord.kind),
-            )
-        }
+        let chords = line.chords.map { measuredChord($0, count: count) }
         let text = Self.untabbed(line.lyrics)
         let ink = text.allSatisfy(\.isWhitespace) ? nil : metrics.inkExtents(of: text, role: .lyric)
         return MeasuredLine(
@@ -155,6 +187,25 @@ struct Measurer {
             lyricCount: count,
             path: line.path,
             ink: ink,
+        )
+    }
+
+    /// A chord unit at the reference size: the chord, and the small chord beside a bass
+    /// note (P8-4) at `ChordUnit.detailScale` of it.
+    private func measuredChord(_ chord: RenderChord, count: Int) -> MeasuredChord {
+        MeasuredChord(
+            text: chord.text,
+            offset: min(max(chord.offset, 0), count),
+            width: metrics.width(of: chord.text, role: .chord, size: referenceSize),
+            kind: ChordKind(chord.kind),
+            detail: chord.detail,
+            detailWidth: chord.detail.map { detail in
+                metrics.width(
+                    of: detail,
+                    role: .chordDetail,
+                    size: referenceSize * ChordUnit.detailScale,
+                )
+            } ?? 0,
         )
     }
 

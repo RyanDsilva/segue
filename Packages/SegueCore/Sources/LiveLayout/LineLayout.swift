@@ -72,7 +72,7 @@ struct RowDraft {
     /// after it.
     mutating func place(_ chords: [MeasuredChord], context: SizeContext) {
         for (index, chord) in chords.enumerated() {
-            let width = chord.width * context.chordScale
+            let width = chord.unitWidth * context.chordScale
             var x = cursor
             if index == 0 {
                 if chordEnd.isFinite, cursor < chordEnd + context.chordGap {
@@ -82,14 +82,7 @@ struct RowDraft {
             } else {
                 x = chordEnd + context.chordGap
             }
-            self.chords.append(PlacedText(
-                text: chord.text,
-                x: x,
-                width: width,
-                role: .chord,
-                chordKind: chord.kind,
-                size: context.chordSize,
-            ))
+            self.chords += chord.runs(at: x, size: context.chordSize, scale: context.chordScale)
             chordEnd = x + width
         }
     }

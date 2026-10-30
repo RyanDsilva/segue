@@ -21,6 +21,9 @@ public enum TextRole: Sendable, Hashable {
     case lyric
     /// Chord symbol: bold, `chordSize` (0.82 x lyric), `cueText`.
     case chord
+    /// The small concert chord beside a bass note (P8-4): medium, `ChordUnit.detailScale` x
+    /// `chordSize`, muted, on the chord's baseline.
+    case chordDetail
     /// Section label in the gutter: bold, `LayoutStyle.labelSize` (fixed, never below
     /// `minLabelSize`).
     case sectionLabel
