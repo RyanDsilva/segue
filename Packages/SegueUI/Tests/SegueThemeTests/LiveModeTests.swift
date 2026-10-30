@@ -63,7 +63,9 @@ extension StageWindowSuites {
             (UInt16(0), "a", NSEvent.ModifierFlags(), LiveCommand.toggleAutoScroll),
             (UInt16(30), "]", NSEvent.ModifierFlags(), LiveCommand.scrollFaster),
             (UInt16(8), "c", NSEvent.ModifierFlags(), LiveCommand.cycleColumns),
-            (UInt16(31), "o", NSEvent.ModifierFlags(), LiveCommand.toggleCollapseRepeats),
+            (UInt16(18), "1", NSEvent.ModifierFlags(), LiveCommand.jumpToPass1),
+            (UInt16(25), "9", NSEvent.ModifierFlags(), LiveCommand.jumpToPass9),
+            (UInt16(37), "l", NSEvent.ModifierFlags(), LiveCommand.toggleLoop),
         ])
         func `key events map to live commands through the default bindings`(
             keyCode: UInt16,

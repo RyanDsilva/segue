@@ -230,7 +230,6 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case requests
     case columnsCycle
     case stageZoom
-    case collapseRepeats
     case gigLogEdit
     case liveSettings
     case shapeEditor
@@ -240,6 +239,11 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case timeIt
     /// The stage metronome was switched on (R90, P3-14).
     case metronome
+    /// P8-2 (R148, R150): a stage section jump (once per session), the rehearsal loop
+    /// switched on, a single-song session started from the library.
+    case sectionJump
+    case sectionLoop
+    case singleSongSession
 }
 
 public enum FeatureContext: String, Sendable, CaseIterable {

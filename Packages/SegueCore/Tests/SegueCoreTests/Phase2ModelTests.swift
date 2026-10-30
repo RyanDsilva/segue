@@ -108,7 +108,6 @@ struct Phase2ModelTests {
         #expect(record.readOnly == nil)
         #expect(record.sidecar.cues.isEmpty)
         #expect(record.sidecar.live == LivePrefs())
-        #expect(record.sidecar.live.collapseRepeats)
     }
 
     @Test
@@ -117,7 +116,10 @@ struct Phase2ModelTests {
         {"zoom": 1.2, "columns": "two", "collapseRepeats": false}
         """
         let prefs = try SegueJSON.decode(LivePrefs.self, from: Data(json.utf8))
-        #expect(prefs == LivePrefs(zoom: 1.2, collapseRepeats: false))
+        #expect(prefs == LivePrefs(zoom: 1.2))
+        // The removed collapse toggle (R147) is read past and never written back.
+        let written = try #require(String(bytes: SegueJSON.encode(prefs), encoding: .utf8))
+        #expect(!written.contains("collapseRepeats"))
     }
 
     @Test

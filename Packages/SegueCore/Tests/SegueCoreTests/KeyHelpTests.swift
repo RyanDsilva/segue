@@ -7,9 +7,12 @@ import Testing
 struct KeyHelpTests {
     @Test
     func `the default help lists every command exactly once`() {
-        let rows = KeyHelp.groups(.defaults).flatMap(\.rows)
-        #expect(rows.map(\.command).sorted { $0.rawValue < $1.rawValue }
+        let laid = KeyHelp.layout.flatMap(\.commands)
+        #expect(laid.sorted { $0.rawValue < $1.rawValue }
             == LiveCommand.allCases.sorted { $0.rawValue < $1.rawValue })
+        let rows = KeyHelp.groups(.defaults).flatMap(\.rows)
+        // The nine jumps on their default digits are one row.
+        #expect(rows.count == LiveCommand.allCases.count - 8)
         let byCommand = Dictionary(uniqueKeysWithValues: rows.map { ($0.command, $0.keys) })
         #expect(byCommand[.showKeys] == ["?"])
         #expect(byCommand[.next] == ["→", "Space"])
@@ -24,10 +27,41 @@ struct KeyHelpTests {
     }
 
     @Test
+    func `the sections group shows the jumps as 1-9 and the loop, after scrolling`() throws {
+        let groups = KeyHelp.groups(.defaults)
+        let titles = groups.map(\.title)
+        let sections = try #require(groups.first { $0.title == "Sections" })
+        #expect(titles.firstIndex(of: "Sections") == titles.firstIndex(of: "Scrolling")
+            .map { $0 + 1 })
+        #expect(sections.rows.map(\.title) == ["Jump to Section", "Loop Section (Rehearsal)"])
+        #expect(sections.rows.map(\.keys) == [["1-9"], ["L"]])
+        #expect(!groups.flatMap(\.rows).contains { $0.title == "Collapse Repeats" })
+        #expect(LiveCommand.jumpToPass4.title == "Jump to Section 4")
+        #expect(LiveCommand.jumpToPass4.jumpIndex == 3)
+        #expect(LiveCommand.jumps.allSatisfy { $0.scope == .viewport && !$0.repeatsWhenHeld })
+        #expect(LiveCommand.toggleLoop.scope == .viewport)
+        #expect(!LiveCommand.toggleLoop.repeatsWhenHeld)
+        #expect(InputBindingTable.defaults.command(for: .key(KeyStroke("o"))) == nil)
+
+        // Rebound digits show one row each.
+        let rebound = InputBindingTable.defaults.merged(with: [
+            InputBinding(.key(KeyStroke("3")), .next),
+        ])
+        let rows = try #require(KeyHelp.groups(rebound).first { $0.title == "Sections" }).rows
+        #expect(rows.count == 10)
+        #expect(rows[2].keys.isEmpty)
+        #expect(!KeyHelp.statusHints(rebound).contains("1-9 sections"))
+    }
+
+    @Test
     func `the status line hints keep their old wording and add the help key`() {
         #expect(KeyHelp.statusHints(.defaults) == [
-            "← → songs", "A scroll", "C columns", "⌘K search", "S set order", "Q requests",
-            "⌘. end", "? keys",
+            "← → songs", "A scroll", "1-9 sections", "C columns", "⌘K search", "S set order",
+            "Q requests", "⌘. end", "? keys",
+        ])
+        // A rehearsal names its loop key.
+        #expect(KeyHelp.statusHints(.defaults, kind: .rehearsal).prefix(4) == [
+            "← → songs", "A scroll", "1-9 sections", "L loop",
         ])
     }
 

@@ -120,8 +120,8 @@ public extension LibraryStore {
         return song.record
     }
 
-    /// Replaces the song's live-mode memory (zoom, columns, scroll speed, collapse, auto
-    /// start) in its sidecar only, like `updateDisplayPrefs`. Throws `LibraryError.readOnly`
+    /// Replaces the song's live-mode memory (zoom, columns, scroll speed, auto start) in its
+    /// sidecar only, like `updateDisplayPrefs`. Throws `LibraryError.readOnly`
     /// for read-only songs (the live view then keeps the change in memory only).
     @discardableResult
     func updateLivePrefs(id: SongID, _ prefs: LivePrefs) throws -> SongRecord {

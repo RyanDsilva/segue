@@ -102,7 +102,6 @@ final class TestLibrary: Sendable {
           "id" : "\(id)",
           "live" : {
             "autoStartScroll" : false,
-            "collapseRepeats" : true,
             "scrollSpeedFactor" : 1,
             "zoom" : 1
           },

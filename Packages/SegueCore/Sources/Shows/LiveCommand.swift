@@ -34,8 +34,6 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
     case zoomIn
     case zoomOut
     case resetZoom
-    /// The per-song "collapse repeated sections" toggle (saved to the sidecar).
-    case toggleCollapseRepeats
     /// Cycles the current song's columns Auto -> 1 -> 2 -> 3 -> Auto (saved to the sidecar
     /// as `LivePrefs.columns`).
     case cycleColumns
@@ -47,6 +45,18 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
     case toggleMetronome
     /// The metronome's click on or off: rehearsals only, never a sound in a gig (`K`, R118).
     case toggleMetronomeClick
+    /// Jump to the n-th shown pass of the song (keys 1-9, R148).
+    case jumpToPass1
+    case jumpToPass2
+    case jumpToPass3
+    case jumpToPass4
+    case jumpToPass5
+    case jumpToPass6
+    case jumpToPass7
+    case jumpToPass8
+    case jumpToPass9
+    /// Loop the current pass with a one-bar count-in: rehearsals only (`L`, R148).
+    case toggleLoop
 
     /// Who handles a command.
     public enum Scope: Sendable, Hashable {
@@ -64,7 +74,10 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
             .show
         case .cycleColumns, .pageBack, .pageForward, .resetZoom, .restartScroll,
              .scrollFaster, .scrollPageDown, .scrollPageUp, .scrollSlower, .toggleAutoScroll,
-             .toggleCollapseRepeats, .zoomIn, .zoomOut:
+             .zoomIn, .zoomOut:
+            .viewport
+        case .jumpToPass1, .jumpToPass2, .jumpToPass3, .jumpToPass4, .jumpToPass5,
+             .jumpToPass6, .jumpToPass7, .jumpToPass8, .jumpToPass9, .toggleLoop:
             .viewport
         case .endShow, .openSearch, .showKeys, .toggleMetronome, .toggleMetronomeClick,
              .toggleRequests, .toggleSidebar:
@@ -81,6 +94,21 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
         default:
             false
         }
+    }
+
+    /// Commands that existed once and were removed: a current `bindings.json` naming one
+    /// still loads, the binding skipped (R147 removed the collapse toggle).
+    public static let retired: Set = ["toggleCollapseRepeats"]
+
+    /// The nine jump commands, for keys 1-9.
+    public static let jumps: [Self] = [
+        .jumpToPass1, .jumpToPass2, .jumpToPass3, .jumpToPass4, .jumpToPass5, .jumpToPass6,
+        .jumpToPass7, .jumpToPass8, .jumpToPass9,
+    ]
+
+    /// The 0-based shown pass a jump command goes to; nil for the others.
+    public var jumpIndex: Int? {
+        Self.jumps.firstIndex(of: self)
     }
 
     /// The engine action for a `.show` command; nil for the others.
@@ -115,12 +143,15 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
         case .zoomIn: "Zoom In"
         case .zoomOut: "Zoom Out"
         case .resetZoom: "Actual Size"
-        case .toggleCollapseRepeats: "Collapse Repeats"
         case .cycleColumns: "Columns"
         case .endShow: "End Show"
         case .showKeys: "Keyboard Shortcuts"
         case .toggleMetronome: "Metronome"
         case .toggleMetronomeClick: "Metronome Click (Rehearsal)"
+        case .jumpToPass1, .jumpToPass2, .jumpToPass3, .jumpToPass4, .jumpToPass5,
+             .jumpToPass6, .jumpToPass7, .jumpToPass8, .jumpToPass9:
+            "Jump to Section \((jumpIndex ?? 0) + 1)"
+        case .toggleLoop: "Loop Section (Rehearsal)"
         }
     }
 }

@@ -25,17 +25,25 @@ public enum KeyHelp {
             .pageForward, .pageBack, .scrollPageDown, .scrollPageUp, .toggleAutoScroll,
             .scrollFaster, .scrollSlower, .restartScroll,
         ]),
-        ("View", [.zoomIn, .zoomOut, .resetZoom, .cycleColumns, .toggleCollapseRepeats]),
+        ("Sections", LiveCommand.jumps + [.toggleLoop]),
+        ("View", [.zoomIn, .zoomOut, .resetZoom, .cycleColumns]),
         ("Metronome", [.toggleMetronome, .toggleMetronomeClick]),
         ("Panels", [.openSearch, .toggleRequests, .toggleSidebar, .showKeys]),
         ("Show", [.endShow]),
     ]
 
-    /// The help groups for `table`.
+    /// The help groups for `table`. The nine jump commands on their default digits show as
+    /// one row, "Jump to Section" on "1-9"; rebound, they show one row each.
     public static func groups(_ table: InputBindingTable) -> [Group] {
-        layout.map { title, commands in
-            Group(title: title, rows: commands.map { command in
-                Row(
+        let digits = hasDefaultDigits(table)
+        return layout.map { title, commands in
+            Group(title: title, rows: commands.compactMap { command in
+                if digits, let index = command.jumpIndex {
+                    return index == 0
+                        ? Row(command: command, title: "Jump to Section", keys: ["1-9"])
+                        : nil
+                }
+                return Row(
                     command: command,
                     title: command.title,
                     keys: table.triggers(for: command).map(keycap),
@@ -44,9 +52,17 @@ public enum KeyHelp {
         }
     }
 
+    /// Whether keys 1-9 (no modifiers) jump to sections 1-9.
+    public static func hasDefaultDigits(_ table: InputBindingTable) -> Bool {
+        LiveCommand.jumps.enumerated().allSatisfy { index, command in
+            table.command(for: .key(KeyStroke("\(index + 1)"))) == command
+        }
+    }
+
     /// The status line's key hints: the first key of each main command, as before the
-    /// table existed ("← → songs  ·  A scroll  ·  ..."), ending with "? keys".
-    public static func statusHints(_ table: InputBindingTable) -> [String] {
+    /// table existed ("← → songs  ·  A scroll  ·  1-9 sections  ·  ..."), ending with
+    /// "? keys"; a rehearsal also names its loop key ("L loop").
+    public static func statusHints(_ table: InputBindingTable, kind: ShowKind = .gig) -> [String] {
         func first(_ command: LiveCommand) -> String? {
             table.triggers(for: command).first.map(keycap)
         }
@@ -63,6 +79,14 @@ public enum KeyHelp {
         for (command, label) in main {
             if let key = first(command) {
                 hints.append("\(key) \(label)")
+            }
+            if command == .toggleAutoScroll {
+                if hasDefaultDigits(table) {
+                    hints.append("1-9 sections")
+                }
+                if kind == .rehearsal, let key = first(.toggleLoop) {
+                    hints.append("\(key) loop")
+                }
             }
         }
         return hints

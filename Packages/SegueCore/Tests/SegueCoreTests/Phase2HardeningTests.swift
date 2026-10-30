@@ -321,6 +321,19 @@ struct Phase2HardeningTests {
         #expect(newer.skipped == 2)
         #expect(newer.table.command(for: .key(KeyStroke(KeyStroke.pageDown))) == .next)
 
+        // A current file naming a retired command (R147's collapse toggle) still loads: that
+        // binding is skipped, the others apply.
+        try lib.write("""
+        {"schemaVersion": 1, "bindings": [
+          {"trigger": {"key": "o"}, "command": "toggleCollapseRepeats"},
+          {"trigger": {"key": "pageDown"}, "command": "next"}
+        ]}
+        """, to: "bindings.json")
+        let retired = try InputBindingTable.loadReporting(from: url, fileSystem: LiveFileSystem())
+        #expect(retired.skipped == 0)
+        #expect(retired.table.command(for: .key(KeyStroke(KeyStroke.pageDown))) == .next)
+        #expect(retired.table.command(for: .key(KeyStroke("o"))) == nil)
+
         // The current version stays strict: a malformed binding is an error.
         try lib.write("""
         {"schemaVersion": 1, "bindings": [{"trigger": {"key": "z"}, "command": "teleport"}]}

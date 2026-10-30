@@ -279,7 +279,7 @@
 
         /// Generated from the live bindings, so custom keys show truthfully.
         private var summary: String {
-            (["Song \(session.positionText)"] + KeyHelp.statusHints(session.context.bindings))
+            (["Song \(session.positionText)"] + KeyHelp.statusHints(session.context.bindings, kind: session.kind))
                 .joined(separator: "  ·  ")
         }
     }

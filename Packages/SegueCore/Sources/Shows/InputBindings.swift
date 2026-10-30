@@ -183,7 +183,8 @@ public struct InputBindingTable: Sendable, Hashable {
 
     /// Defaults plus the file at `url`, honouring its `schemaVersion`: the current version
     /// (or a file without one, the pre-versioned format) decodes strictly and a malformed
-    /// file throws; a newer version is read best effort (bindings with triggers or commands
+    /// file throws, except that a binding to a retired command (`LiveCommand.retired`) is
+    /// skipped silently; a newer version is read best effort (bindings with triggers or commands
     /// this version does not know are skipped and counted), never rewritten.
     public static func loadReporting(from url: URL?, fileSystem: any FileSystem) throws
         -> Loaded
@@ -195,7 +196,8 @@ public struct InputBindingTable: Sendable, Hashable {
         switch try migrator.migrate(data) {
         case let .current(json), let .migrated(json, _):
             let file = try SegueJSON.decode(File.self, from: json)
-            return Loaded(table: defaults.merged(with: file.bindings), newerSchema: nil, skipped: 0)
+            let bindings = file.bindings.compactMap(\.binding)
+            return Loaded(table: defaults.merged(with: bindings), newerSchema: nil, skipped: 0)
         case let .newer(found):
             let file = try SegueJSON.decode(LenientFile.self, from: data)
             let bindings = file.bindings.compactMap(\.binding)
@@ -213,9 +215,24 @@ public struct InputBindingTable: Sendable, Hashable {
         steps: [0: { _ in }],
     )
 
-    private struct File: Codable {
+    private struct File: Decodable {
         var schemaVersion: Int
-        var bindings: [InputBinding]
+        var bindings: [StrictBinding]
+    }
+
+    /// A current-version binding: strict, but nil for a retired command.
+    private struct StrictBinding: Decodable {
+        var binding: InputBinding?
+
+        private enum CodingKeys: String, CodingKey {
+            case command
+        }
+
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let command = try container.decode(String.self, forKey: .command)
+            binding = LiveCommand.retired.contains(command) ? nil : try InputBinding(from: decoder)
+        }
     }
 
     /// A newer file: each binding decoded on its own.
@@ -254,7 +271,6 @@ public struct InputBindingTable: Sendable, Hashable {
             key("x", .skipCurrent),
             key("s", .toggleSidebar),
             key("c", .cycleColumns),
-            key("o", .toggleCollapseRepeats),
             key("=", .zoomIn, [.command]),
             key("+", .zoomIn, [.command]),
             key("-", .zoomOut, [.command]),
@@ -264,6 +280,17 @@ public struct InputBindingTable: Sendable, Hashable {
             key("m", .toggleMetronome),
             // Rehearsals only; does nothing in a show (R118).
             key("k", .toggleMetronomeClick),
+            // Sections (R148): 1-9 jump to a shown pass; L loops one (rehearsals only).
+            key("1", .jumpToPass1),
+            key("2", .jumpToPass2),
+            key("3", .jumpToPass3),
+            key("4", .jumpToPass4),
+            key("5", .jumpToPass5),
+            key("6", .jumpToPass6),
+            key("7", .jumpToPass7),
+            key("8", .jumpToPass8),
+            key("9", .jumpToPass9),
+            key("l", .toggleLoop),
         ],
     )
 

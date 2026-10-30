@@ -305,13 +305,6 @@
             }
         }
 
-        func toggleCollapseRepeats() {
-            updatePrefs { $0.collapseRepeats.toggle() }
-            if let prefs = currentPrefs {
-                flash(prefs.collapseRepeats ? "Repeats collapsed" : "Repeats in full")
-            }
-        }
-
         /// C: Auto -> 1 -> 2 -> 3 -> Auto for the current song, saved to its sidecar.
         func cycleColumns() {
             updatePrefs { prefs in

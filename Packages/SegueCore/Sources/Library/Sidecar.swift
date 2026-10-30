@@ -173,7 +173,8 @@ public struct SongCue: Sendable, Hashable, Codable {
 /// Per-song live-mode memory, persisted in the sidecar as `live`. Phase 2 frozen interface.
 ///
 /// Decoding is per field and lenient, like `DisplayPrefs`: a missing or unreadable field
-/// takes its default (so `collapseRepeats` reads as true when absent).
+/// takes its default; a key this build no longer has (`collapseRepeats`, removed by R147) is
+/// ignored and not written back.
 public struct LivePrefs: Sendable, Hashable, Codable {
     /// Multiplier on the auto-fit lyric size (Cmd +/-, pinch); 1 = as fitted. The result is
     /// never below the user's minimum lyric size.
@@ -182,8 +183,6 @@ public struct LivePrefs: Sendable, Hashable, Codable {
     public var columns: Int?
     /// Multiplier on the derived auto-scroll speed ([ and ] nudges); 1 = as derived.
     public var scrollSpeedFactor: Double
-    /// Collapse later repeats of an identical section into a one-line reference.
-    public var collapseRepeats: Bool
     /// Start auto-scroll on the first advance into this song instead of waiting for `A`.
     public var autoStartScroll: Bool
 
@@ -191,13 +190,11 @@ public struct LivePrefs: Sendable, Hashable, Codable {
         zoom: Double = 1,
         columns: Int? = nil,
         scrollSpeedFactor: Double = 1,
-        collapseRepeats: Bool = true,
         autoStartScroll: Bool = false,
     ) {
         self.zoom = zoom
         self.columns = columns
         self.scrollSpeedFactor = scrollSpeedFactor
-        self.collapseRepeats = collapseRepeats
         self.autoStartScroll = autoStartScroll
     }
 
@@ -205,7 +202,6 @@ public struct LivePrefs: Sendable, Hashable, Codable {
         case zoom
         case columns
         case scrollSpeedFactor
-        case collapseRepeats
         case autoStartScroll
     }
 
@@ -218,7 +214,6 @@ public struct LivePrefs: Sendable, Hashable, Codable {
         zoom = field(.zoom, defaults.zoom)
         columns = (try? container.decodeIfPresent(Int.self, forKey: .columns))
         scrollSpeedFactor = field(.scrollSpeedFactor, defaults.scrollSpeedFactor)
-        collapseRepeats = field(.collapseRepeats, defaults.collapseRepeats)
         autoStartScroll = field(.autoStartScroll, defaults.autoStartScroll)
     }
 }

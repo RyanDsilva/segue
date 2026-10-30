@@ -149,7 +149,6 @@ struct LibraryMetadataTests {
             zoom: 1.2,
             columns: 2,
             scrollSpeedFactor: 1.1,
-            collapseRepeats: false,
             autoStartScroll: true,
         )
         let updated = try await store.updateLivePrefs(id: song.id, prefs)

@@ -45,7 +45,6 @@
             case .playNextRequest, .toggleRequests: .requests
             case .cycleColumns: .columnsCycle
             case .resetZoom, .zoomIn, .zoomOut: .stageZoom
-            case .toggleCollapseRepeats: .collapseRepeats
             default: nil
             }
             if command == .toggleAutoScroll {
@@ -66,7 +65,6 @@
             case .scrollFaster: nudgeScrollSpeed(faster: true)
             case .scrollSlower: nudgeScrollSpeed(faster: false)
             case .restartScroll: restartScroll()
-            case .toggleCollapseRepeats: toggleCollapseRepeats()
             default: dispatchZoom(command)
             }
         }
