@@ -91,6 +91,13 @@ enum VocabularySample {
                         outcome: outcome,
                         nonUTF8: false,
                     ))
+                    events.append(.songImported(
+                        method: method,
+                        files: files,
+                        outcome: outcome,
+                        nonUTF8: false,
+                        nearDuplicate: true,
+                    ))
                 }
             }
         }

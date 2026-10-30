@@ -115,7 +115,7 @@
             switch review.selected?.source {
             case .clipboard, .emptyState, .listPaste: return "from the clipboard"
             case .newSong: return "new song"
-            case .fileCrd, .fileTxt, nil: return review.selected?.fileName ?? ""
+            case .fileCho, .fileCrd, .fileTxt, nil: return review.selected?.fileName ?? ""
             }
         }
 

@@ -50,6 +50,9 @@ public enum PasteSource: String, Sendable, CaseIterable {
     case listPaste
     case fileTxt
     case fileCrd
+    /// An already-ChordPro file that looks like a library song, reviewed for its warning
+    /// (P8-1, R158 Q4).
+    case fileCho
 }
 
 /// Which provider answered (shared by rows 19 and 21).

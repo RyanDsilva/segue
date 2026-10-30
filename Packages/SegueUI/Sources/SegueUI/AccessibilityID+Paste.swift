@@ -34,6 +34,8 @@ public extension AccessibilityID {
     /// Accept / Import N Songs.
     static let pasteAccept = "segue.paste.accept"
     static let pasteCancel = "segue.paste.cancel"
+    /// "Looks like ... in your library" / "Already in your library as ..." beside the card.
+    static let pasteNearDuplicate = "segue.paste.nearDuplicate"
     /// One batch file row (label = file name).
     static let pasteBatchRow = "segue.paste.batchRow"
     /// A batch file's checkbox (label = file name).

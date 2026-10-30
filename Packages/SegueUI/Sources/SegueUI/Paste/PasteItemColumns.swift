@@ -159,6 +159,9 @@
                         .accessibilityElement(children: .combine)
                     }
                 }
+                if let lookalike = item.nearDuplicateText {
+                    NearDuplicateCallout(text: lookalike)
+                }
             }
         }
 
@@ -187,6 +190,27 @@
                 .foregroundStyle(Theme.color.muted)
                 .lineLimit(1)
                 .accessibilityAddTraits(.isHeader)
+        }
+    }
+
+    /// "Looks like “Deewana” by Kumar Sanu in your library." under the song card: a hint,
+    /// never blocking Accept (R154, R158 Q10: text only).
+    struct NearDuplicateCallout: View {
+        let text: String
+
+        var body: some View {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Image(systemName: "exclamationmark.circle")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Theme.color.cueText)
+                    .accessibilityHidden(true)
+                Text(text)
+                    .font(SchibstedGrotesk.medium.font(size: 12))
+                    .foregroundStyle(Theme.color.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier(AccessibilityID.pasteNearDuplicate)
         }
     }
 
@@ -404,6 +428,14 @@
                     ProgressView().controlSize(.mini)
                         .accessibilityLabel("Refining")
                 }
+                if item.nearDuplicate != nil {
+                    Circle()
+                        .fill(Theme.color.cue)
+                        .frame(width: 6, height: 6)
+                        .padding(.top, 5)
+                        .help("Looks like a song in your library")
+                        .accessibilityHidden(true)
+                }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -411,7 +443,8 @@
             .contentShape(Rectangle())
             .onTapGesture { review.selectedID = item.id }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel(item.fileName ?? "Song")
+            .accessibilityLabel((item.fileName ?? "Song")
+                + (item.nearDuplicate == nil ? "" : ", looks like a song in your library"))
             .accessibilityIdentifier(AccessibilityID.pasteBatchRow)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
         }

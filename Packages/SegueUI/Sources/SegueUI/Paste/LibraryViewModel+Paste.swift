@@ -29,7 +29,7 @@ public extension LibraryViewModel {
             return
         }
         guard pasteReview == nil else { return }
-        pasteReview = makeReview(items: [])
+        pasteReview = makeReview(items: [], nearDuplicates: NearDuplicateIndex(catalog))
     }
 
     /// Opens the review sheet on pasted `text` (File > New Song from Clipboard, the empty
@@ -40,7 +40,7 @@ public extension LibraryViewModel {
             return
         }
         let item = PasteReviewItem(source: source, original: text, origin: .paste)
-        pasteReview = makeReview(items: [item])
+        pasteReview = makeReview(items: [item], nearDuplicates: NearDuplicateIndex(catalog))
         SegueTips.donate(SegueTips.pasteReviewed)
         PasteSongTip().invalidate(reason: .actionPerformed)
     }
@@ -64,7 +64,8 @@ public extension LibraryViewModel {
         pasteReview = nil
         if let method = review.importMethod {
             let files = review.items.count + review.directFiles.count + review.preSkipped.count
-            await finishImport(summary, files: files, method: method)
+            let lookalike = review.items.contains { $0.isTicked && $0.nearDuplicate != nil }
+            await finishImport(summary, files: files, method: method, nearDuplicate: lookalike)
         } else {
             await reload()
             if !summary.imported.isEmpty {
@@ -99,6 +100,9 @@ public extension LibraryViewModel {
     /// Import with review (R96, A29, R109): files that are already ChordPro import directly
     /// (one undoable import); files that need conversion open ONE review sheet listing
     /// every one of them. During a show conversion files are left out with the reason.
+    /// An already-ChordPro file that looks like a library song goes through the sheet too,
+    /// kept exactly as read, so its warning sits beside it (R154, R158 Q4); during a show
+    /// it imports directly, without the warning.
     func importWithReview(_ urls: [URL], method: ImportMethod = .dragDrop) async {
         guard canImport, !urls.isEmpty, pasteReview == nil else { return }
         await flushEditor()
@@ -110,29 +114,12 @@ public extension LibraryViewModel {
             services.record(.errorOccurred(.importFailed))
             return
         }
-        var direct: [ImportCandidate] = []
-        var review: [PasteReviewItem] = []
-        var skipped = prepared.1
-        for candidate in prepared.0 {
-            let ext = candidate.source.pathExtension.lowercased()
-            let result = IngestPipeline.ingest(candidate.text, origin: .file(extension: ext))
-            if result.isAlreadyChordPro {
-                direct.append(candidate)
-            } else if isPerforming {
-                skipped.append(ImportSkip(
-                    fileName: candidate.fileName,
-                    reason: Self.pasteDuringShowReason,
-                ))
-            } else {
-                review.append(PasteReviewItem(
-                    source: ext == "crd" ? .fileCrd : .fileTxt,
-                    original: candidate.text,
-                    fileName: candidate.fileName,
-                    candidate: candidate,
-                    origin: .file(extension: ext),
-                ))
-            }
-        }
+        // Built once per batch; nil during a show (no sheet) or when the library is unread.
+        let lookalikes = isPerforming ? nil : try? await store.nearDuplicateIndex()
+        let routed = route(prepared.0, lookalikes: lookalikes)
+        let direct = routed.direct
+        let review = routed.review
+        let skipped = prepared.1 + routed.skipped
         guard !review.isEmpty else {
             // Nothing to review: the ChordPro files import at once (A29).
             var summary = ImportSummary(skipped: skipped)
@@ -150,7 +137,64 @@ public extension LibraryViewModel {
             method: method,
             direct: direct,
             skipped: skipped,
+            nearDuplicates: lookalikes,
         )
+    }
+
+    /// Sorts prepared files: already-ChordPro ones import directly unless they look like a
+    /// library song; the rest are reviewed, or left out during a show.
+    private func route(
+        _ candidates: [ImportCandidate],
+        lookalikes: NearDuplicateIndex?,
+    ) -> RoutedImport {
+        var direct: [ImportCandidate] = []
+        var review: [PasteReviewItem] = []
+        var skipped: [ImportSkip] = []
+        for candidate in candidates {
+            let ext = candidate.source.pathExtension.lowercased()
+            let result = IngestPipeline.ingest(candidate.text, origin: .file(extension: ext))
+            if result.isAlreadyChordPro {
+                if let lookalikes, Self.looksLikeLibrarySong(result, candidate, in: lookalikes) {
+                    review.append(PasteReviewItem(
+                        source: .fileCho,
+                        original: candidate.text,
+                        fileName: candidate.fileName,
+                        candidate: candidate,
+                        origin: .file(extension: ext),
+                    ))
+                } else {
+                    direct.append(candidate)
+                }
+            } else if isPerforming {
+                skipped.append(ImportSkip(
+                    fileName: candidate.fileName,
+                    reason: Self.pasteDuringShowReason,
+                ))
+            } else {
+                review.append(PasteReviewItem(
+                    source: ext == "crd" ? .fileCrd : .fileTxt,
+                    original: candidate.text,
+                    fileName: candidate.fileName,
+                    candidate: candidate,
+                    origin: .file(extension: ext),
+                ))
+            }
+        }
+        return RoutedImport(direct: direct, review: review, skipped: skipped)
+    }
+
+    /// Whether an already-ChordPro file looks like a song in the library.
+    private static func looksLikeLibrarySong(
+        _ result: IngestResult,
+        _ candidate: ImportCandidate,
+        in index: NearDuplicateIndex,
+    ) -> Bool {
+        index.match(
+            title: result.document.metadata.title,
+            artists: result.document.metadata.artists,
+            lyrics: result.document.plainLyrics,
+            contentHash: NearDuplicateIndex.contentHash(of: candidate.text),
+        ) != nil
     }
 }
 
@@ -160,12 +204,14 @@ extension LibraryViewModel {
         method: ImportMethod? = nil,
         direct: [ImportCandidate] = [],
         skipped: [ImportSkip] = [],
+        nearDuplicates: NearDuplicateIndex? = nil,
     ) -> PasteReviewModel {
         PasteReviewModel(
             items: items,
             importMethod: method,
             directFiles: direct,
             preSkipped: skipped,
+            nearDuplicates: nearDuplicates,
             router: aiRouter,
             services: services,
         ) { [weak self] candidates in
@@ -183,4 +229,15 @@ extension LibraryViewModel {
             return nil
         }
     }
+}
+
+/// Prepared import files sorted by `route`.
+@MainActor
+struct RoutedImport {
+    /// Already ChordPro and not a lookalike: written at once (or with the reviewed ones).
+    var direct: [ImportCandidate]
+    /// Shown in the review sheet.
+    var review: [PasteReviewItem]
+    /// Left out (conversion files during a show).
+    var skipped: [ImportSkip]
 }

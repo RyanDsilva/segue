@@ -53,6 +53,17 @@ public final class PasteReviewItem: Identifiable {
     /// The romanized-Hindi detection fired (R98).
     public let isRomanizedHindi: Bool
 
+    /// The library song this one looks like (title, artist and content, R154), or the one
+    /// with exactly its bytes (`isAlreadyInLibrary`); nil when neither. Shown beside the
+    /// card, never blocking Accept; re-checked whenever the text changes.
+    public private(set) var nearDuplicate: NearDuplicateIndex.Match?
+    /// `nearDuplicate` has exactly this song's bytes (a byte-identical paste, R158 Q9).
+    public private(set) var isAlreadyInLibrary = false
+    /// The library to check against (set by the review when it opens).
+    @ObservationIgnored var nearDuplicates: NearDuplicateIndex? {
+        didSet { refreshNearDuplicate() }
+    }
+
     /// How long the refinement ran, once it finished (nil: no model was asked).
     var refinementSeconds: TimeInterval?
     let candidate: ImportCandidate?
@@ -72,10 +83,46 @@ public final class PasteReviewItem: Identifiable {
         let result = IngestPipeline.ingest(original, origin: origin)
         base = result
         proposal = result
-        text = result.text
+        // An already-ChordPro lookalike is kept exactly as read: no model runs and Accept
+        // writes its bytes unchanged (R158 Q4).
+        text = source == .fileCho ? original : result.text
         metadata = candidate?.metadata.map(SongMetadata.init) ?? SongMetadata()
         isRomanizedHindi = RomanizedHindi.isDetected(in: result)
-        status = Self.needsRefinement(result) ? .queued : .notNeeded
+        status = source != .fileCho && Self.needsRefinement(result) ? .queued : .notNeeded
+    }
+
+    /// The callout beside the card, or nil.
+    public var nearDuplicateText: String? {
+        guard let match = nearDuplicate else { return nil }
+        if isAlreadyInLibrary {
+            return "Already in your library as “\(match.title)”."
+        }
+        let artist = match.artist.map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+        return artist.isEmpty ? "Looks like “\(match.title)” in your library."
+            : "Looks like “\(match.title)” by \(artist) in your library."
+    }
+
+    /// Re-checks the text as it is now against the library.
+    private func refreshNearDuplicate() {
+        guard let index = nearDuplicates else {
+            nearDuplicate = nil
+            isAlreadyInLibrary = false
+            return
+        }
+        let hash = NearDuplicateIndex.contentHash(of: text)
+        if let identical = index.identical(contentHash: hash) {
+            nearDuplicate = identical
+            isAlreadyInLibrary = true
+            return
+        }
+        let document = SourceSnapshot(text: text).document
+        isAlreadyInLibrary = false
+        nearDuplicate = index.match(
+            title: document.metadata.title,
+            artists: document.metadata.artists,
+            lyrics: document.plainLyrics,
+            contentHash: hash,
+        )
     }
 
     /// Whether any model question exists for `result`.
@@ -93,6 +140,7 @@ public final class PasteReviewItem: Identifiable {
         text = newText
         isEdited = true
         stopRefinement()
+        refreshNearDuplicate()
     }
 
     /// Swaps `{title}` and `{artist}` (some sites write "Artist - Title"; the converter keeps
@@ -197,6 +245,7 @@ public final class PasteReviewItem: Identifiable {
         guard !isEdited, status != .stopped else { return }
         proposal = update.result
         text = update.result.text
+        refreshNearDuplicate()
     }
 
     func refinementStarted(_ provider: ProviderKind?) {

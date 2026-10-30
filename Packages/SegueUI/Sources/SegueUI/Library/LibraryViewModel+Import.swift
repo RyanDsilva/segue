@@ -25,9 +25,14 @@ public extension LibraryViewModel {
 
     /// After an import wrote its songs: reload, the summary bar, analytics, the first song
     /// selected and Edit > Undo Import.
-    func finishImport(_ summary: ImportSummary, files: Int, method: ImportMethod) async {
+    func finishImport(
+        _ summary: ImportSummary,
+        files: Int,
+        method: ImportMethod,
+        nearDuplicate: Bool = false,
+    ) async {
         await reload()
-        recordImport(summary, files: files, method: method)
+        recordImport(summary, files: files, method: method, nearDuplicate: nearDuplicate)
         showImported(summary, bar: true)
     }
 

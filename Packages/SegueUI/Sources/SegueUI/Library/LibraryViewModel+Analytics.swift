@@ -13,7 +13,13 @@ extension LibraryViewModel {
     }
 
     /// Row 6 (and row 5 / 13 when songs came in) for one import operation.
-    func recordImport(_ summary: ImportSummary, files: Int, method: ImportMethod) {
+    /// `nearDuplicate`: at least one imported song carried the lookalike warning.
+    func recordImport(
+        _ summary: ImportSummary,
+        files: Int,
+        method: ImportMethod,
+        nearDuplicate: Bool = false,
+    ) {
         let outcome: ImportOutcome = if summary.imported.isEmpty {
             .nothingImported
         } else if summary.skipped.isEmpty {
@@ -26,6 +32,7 @@ extension LibraryViewModel {
             files: SmallBucket(max(files, summary.imported.count + summary.skipped.count)),
             outcome: outcome,
             nonUTF8: !summary.converted.isEmpty,
+            nearDuplicate: nearDuplicate,
         ))
         guard !summary.imported.isEmpty else { return }
         services.record(.milestoneReached(.firstImport, daysSinceFirstLaunch: daysSinceFirstLaunch))

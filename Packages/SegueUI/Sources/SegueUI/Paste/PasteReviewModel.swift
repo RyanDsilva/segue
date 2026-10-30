@@ -38,6 +38,8 @@ public final class PasteReviewModel {
     /// Files the import left out before review (not songs, duplicates, during a show).
     public let preSkipped: [ImportSkip]
 
+    /// The library the songs are checked against for lookalikes (R154).
+    @ObservationIgnored let nearDuplicates: NearDuplicateIndex?
     @ObservationIgnored private let router: Router
     @ObservationIgnored private let services: ServicesHub
     @ObservationIgnored private let commit: ([ImportCandidate]) async -> ImportSummary?
@@ -48,6 +50,7 @@ public final class PasteReviewModel {
     ///   - importMethod: how the files came in (nil for a paste).
     ///   - directFiles: already-ChordPro files of the same import.
     ///   - preSkipped: files the import left out before review.
+    ///   - nearDuplicates: the library the songs are checked against for lookalikes.
     ///   - router: the AI router (`AIServices.router`).
     ///   - services: the analytics hub.
     ///   - commit: writes the accepted songs as one import; nil when it failed.
@@ -56,6 +59,7 @@ public final class PasteReviewModel {
         importMethod: ImportMethod? = nil,
         directFiles: [ImportCandidate] = [],
         preSkipped: [ImportSkip] = [],
+        nearDuplicates: NearDuplicateIndex? = nil,
         router: Router,
         services: ServicesHub,
         commit: @escaping ([ImportCandidate]) async -> ImportSummary?,
@@ -66,6 +70,10 @@ public final class PasteReviewModel {
         self.importMethod = importMethod
         self.directFiles = directFiles
         self.preSkipped = preSkipped
+        self.nearDuplicates = nearDuplicates
+        for item in items {
+            item.nearDuplicates = nearDuplicates
+        }
         self.router = router
         self.services = services
         self.commit = commit
@@ -104,6 +112,7 @@ public final class PasteReviewModel {
         guard phase == .input, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else { return }
         let item = PasteReviewItem(source: source, original: text, origin: .paste)
+        item.nearDuplicates = nearDuplicates
         items = [item]
         selectedID = item.id
         phase = .review
