@@ -5,6 +5,7 @@
     import Library
     import LiveLayout
     import Setlists
+    import Shows
     import SwiftUI
 
     /// "Arrange Sections" (P3-16, R122, R123 design B): which parts of the song this slot plays
@@ -71,6 +72,7 @@
         /// Saves an arrangement (nil = full song) under an undo name.
         let save: (SlotArrangement?, String) -> Void
         let done: () -> Void
+        @Environment(\.arrangementStage) private var stage
 
         var body: some View {
             VStack(spacing: 0) {
@@ -85,8 +87,14 @@
                     rowList
                         .frame(width: 470)
                     Rule(axis: .vertical)
-                    ArrangementPreview(entry: entry, record: record, order: draft.order)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    ArrangementPreview(
+                        record: record,
+                        entry: entry,
+                        arrangement: draft.arrangement,
+                        settings: stage?.settings.settings ?? LiveSettings(),
+                        bass: stage?.instrument?.bassView,
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 Rule()
                 footer
@@ -428,77 +436,6 @@
             case 2: "playing twice"
             default: "playing \(row.plays) times"
             }
-        }
-    }
-
-    /// The song as the stage will lay it out with this arrangement, scaled down: the real
-    /// layout engine and stage faces at a 1024 x 640 stage.
-    private struct ArrangementPreview: View {
-        let entry: SetlistEntry
-        let record: SongRecord
-        let order: [PlayedPass]
-
-        private static let stage = LayoutSize(width: 1024, height: 640)
-
-        var body: some View {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("On stage")
-                    .font(SchibstedGrotesk.bold.font(size: 12))
-                    .foregroundStyle(Theme.color.muted)
-                GeometryReader { proxy in
-                    let plan = plan
-                    let scale = min(max(proxy.size.width - 24, 1) / Self.stage.width, 1)
-                    ScrollView(.vertical) {
-                        // The miniature sits in an overlay so the full-size plan never
-                        // widens the panel; only its scaled box takes space.
-                        Color.clear
-                            .frame(
-                                width: plan.viewport.width * scale,
-                                height: max(plan.contentHeight, 1) * scale,
-                            )
-                            .overlay(alignment: .topLeading) {
-                                StagePlanView(plan: plan)
-                                    .scaleEffect(scale, anchor: .topLeading)
-                                    .frame(
-                                        width: plan.viewport.width * scale,
-                                        height: max(plan.contentHeight, 1) * scale,
-                                        alignment: .topLeading,
-                                    )
-                            }
-                            .clipped()
-                            .padding(12)
-                    }
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10).fill(Theme.color.ground),
-                    )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.color.line)
-                    }
-                }
-            }
-            .padding(14)
-            .background(Theme.color.surfaceAlt)
-            .accessibilityElement(children: .ignore)
-            // One spoken label: static text exposes its words as the value.
-            .accessibilityLabel(
-                "Stage preview, " + (order.isEmpty ? "nothing plays" : "\(order.count) sections"),
-            )
-            .accessibilityAddTraits(.isStaticText)
-            .accessibilityIdentifier(AccessibilityID.arrangementPreview)
-        }
-
-        private var plan: LayoutPlan {
-            let prefs = record.sidecar.live
-            let request = LayoutRequest(
-                model: StageRequest.renderModel(record, overrides: entry.overrides),
-                viewport: Self.stage,
-                minLyricSize: 22,
-                columns: prefs.columns,
-                cues: record.sidecar.cues,
-                passes: order.isEmpty ? nil : order,
-            )
-            return LayoutEngine.plan(request, metrics: StageTextMetrics())
         }
     }
 

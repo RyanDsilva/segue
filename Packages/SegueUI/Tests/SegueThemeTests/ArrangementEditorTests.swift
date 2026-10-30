@@ -1,5 +1,6 @@
 import Foundation
 import Library
+import LiveLayout
 @testable import SegueUI
 import Setlists
 import Shows
@@ -10,7 +11,7 @@ import Testing
 /// (each one undo step, the `.cho` never touched), the roadmap, the slot mark, the
 /// missing-lengths row of an arranged slot, the gig log line and Time it for a slot.
 @MainActor
-struct ArrangementEditorTests {
+struct ArrangementEditorTests { // swiftlint:disable:this type_body_length
     private static let fridayID = "01JC0000000000000000000F01"
     private static let songID = "01JC0000000000000000000A00"
     private static let itemID = "01JC0000000000000000000T00"
@@ -210,6 +211,60 @@ struct ArrangementEditorTests {
         #expect(editor.selection == 1)
         editor.clampSelection(count: 1)
         #expect(editor.selection == 0)
+    }
+
+    /// The section 3.1 bug: the preview hard-coded 22 pt and the song's own columns only.
+    @Test
+    func `the preview builds the stage's request from Settings, the song and the slot`(
+    ) async throws {
+        let fix = try await Self.open()
+        let songID = try SongID(#require(ULID(string: Self.songID)))
+        var record = try #require(fix.session.library.song(id: songID))
+        record.sidecar.notes = "Count in four"
+        record.sidecar.live.zoom = 1.25
+        record.sidecar.live.columns = nil
+        var entry = try #require(entry(fix))
+        entry.note = "Start soft"
+        let units = SongSections.units(of: record.document)
+        let arrangement = SlotArrangement(passes: [
+            ArrangementPass(anchor: units[1].anchor, fingerprint: units[1].fingerprint),
+            ArrangementPass(
+                anchor: units[0].anchor,
+                fingerprint: units[0].fingerprint,
+                mode: .chordsOnly,
+            ),
+        ])
+        let request = ArrangementPreview.request(
+            record: record,
+            entry: entry,
+            arrangement: arrangement,
+            settings: LiveSettings(minLyricSize: 30, defaultColumns: 2),
+        )
+        #expect(request.minLyricSize == 30)
+        #expect(request.columns == 2)
+        #expect(request.zoom == 1.25)
+        #expect(request.notes == ["Count in four", "Start soft"])
+        #expect(request.viewport == ArrangementPreview.stage)
+        #expect(request.passes == [
+            PlayedPass(index: 1, mode: .full, position: 0),
+            PlayedPass(index: 0, mode: .chordsOnly, position: 1),
+        ])
+        // The same request the stage builds for the slot.
+        var slot = StageSlot(entry)
+        slot.arrangement = arrangement
+        let stage = StageRequest.make(
+            song: record,
+            slot: slot,
+            prefs: record.sidecar.live,
+            settings: LiveSettings(minLyricSize: 30, defaultColumns: 2),
+            minLyricSize: 30,
+            viewport: ArrangementPreview.stage,
+        ).request
+        #expect(stage.minLyricSize == request.minLyricSize)
+        #expect(stage.columns == request.columns)
+        #expect(stage.zoom == request.zoom)
+        #expect(stage.notes == request.notes)
+        #expect(stage.passes == request.passes)
     }
 
     @Test

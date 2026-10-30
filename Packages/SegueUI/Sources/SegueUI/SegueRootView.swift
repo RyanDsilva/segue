@@ -283,6 +283,10 @@
                         },
                     )
                     .environment(\.smartFilterList, session.smartFilters.filters)
+                    .environment(\.arrangementStage, ArrangementStage(
+                        settings: app.liveSettings,
+                        instrument: app.instrumentProfile,
+                    ))
                     .environment(\.openSongForLength, OpenSongAction { song in
                         // The missing-lengths list's Open Song: the song's card in the
                         // Library with its Length field focused (R88).
