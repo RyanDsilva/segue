@@ -1,23 +1,29 @@
-// swiftlint:disable file_length
 #if os(macOS)
     import AppKit
-    import ChordPro
     import Library
-    import LiveLayout
     import Setlists
     import Shows
     import SwiftUI
 
-    /// "Arrange Sections" (P3-16, R122, R123 design B): which parts of the song this slot plays
-    /// for this gig, in which order and how many times, with a live miniature of the stage. Each
-    /// change saves at once as one undo step; the `.cho` is never changed. Opened from the slot
-    /// popover's Arrangement row, the slot context menu and Setlist > Arrange Sections....
+    /// "Arrange Sections" (P8-3, R149, design B1): the song's parts in a palette, the slot's
+    /// passes as a lane of chips with a show mode each, the selected pass's inspector, an
+    /// optional typed roadmap, and the live stage preview. Each edit saves at once as one
+    /// builder undo step; the `.cho` is never changed. Opened from the slot popover's Sections
+    /// row, the slot context menu, Setlist > Arrange Sections… and the pre-show checklist.
     struct ArrangementEditorSheet: View {
         let slot: ArrangingSlot
         let model: SetlistsViewModel
         let library: LibraryViewModel
         @Environment(\.dismiss) private var dismiss
-        @State private var focusedRow: Int?
+        @Environment(\.arrangementStage) private var stage
+        @State private var editor: ArrangementEditor
+
+        init(slot: ArrangingSlot, model: SetlistsViewModel, library: LibraryViewModel) {
+            self.slot = slot
+            self.model = model
+            self.library = library
+            _editor = State(initialValue: ArrangementEditor(slot: slot, model: model))
+        }
 
         var body: some View {
             if let setlist = model.setlist(slot.setlist),
@@ -25,25 +31,16 @@
                let songID = entry.songId,
                let record = library.song(id: songID)
             {
-                let units = SongSections.units(of: record.document)
                 ArrangementEditorContent(
+                    setlist: setlist,
                     entry: entry,
                     record: record,
-                    units: units,
-                    draft: draft(entry, units),
-                    isReadOnly: setlist.readOnly != nil || draft(entry, units).usesShowModes,
-                    focusedRow: $focusedRow,
-                    save: { arrangement, name in
-                        Task {
-                            await model.setArrangement(
-                                arrangement,
-                                of: slot.item,
-                                in: slot.setlist,
-                                actionName: name,
-                            )
-                        }
-                    },
+                    units: SongSections.units(of: record.document),
+                    editor: editor,
+                    isReadOnly: setlist.readOnly != nil || library.isPerforming,
+                    stage: stage,
                     done: { dismiss() },
+                    rehearse: { rehearse(songID) },
                 )
             } else {
                 VStack(spacing: 14) {
@@ -57,232 +54,305 @@
             }
         }
 
-        private func draft(_ entry: SetlistEntry, _ units: [SongSectionUnit]) -> LegacyRows {
-            LegacyRows(arrangement: entry.arrangement, units: units)
+        /// "Rehearse this" (R156): waits for the queued saves, closes the sheet and plays this
+        /// slot (its key, capo and arrangement) as an unlogged one-song rehearsal; when that
+        /// ends the sheet opens again for the same slot.
+        private func rehearse(_ song: SongID) {
+            guard let stage else { return }
+            let editor = editor
+            let model = model
+            let slot = slot
+            Task {
+                await editor.settle()
+                guard let entry = model.setlist(slot.setlist)?.entry(slot.item) else { return }
+                model.services.record(.featureUsed(.arrangementRehearse, .builder))
+                model.arranging = nil
+                stage.rehearse(song, StageSlot(entry)) { model.arranging = slot }
+            }
         }
     }
 
     private struct ArrangementEditorContent: View {
+        let setlist: Setlist
         let entry: SetlistEntry
         let record: SongRecord
         let units: [SongSectionUnit]
-        let draft: LegacyRows
+        let editor: ArrangementEditor
         let isReadOnly: Bool
-        @Binding var focusedRow: Int?
-        /// Saves an arrangement (nil = full song) under an undo name.
-        let save: (SlotArrangement?, String) -> Void
+        let stage: ArrangementStage?
         let done: () -> Void
-        @Environment(\.arrangementStage) private var stage
+        let rehearse: () -> Void
+
+        @State private var dragging: ArrangementDrag?
+        @State private var roadmapText = ""
+        @State private var roadmapError: String?
+        @FocusState private var laneFocused: Bool
+        @FocusState private var roadmapFocused: Bool
+
+        /// The lane as saved (or pending), without a roadmap being typed.
+        private var base: ArrangementDraft {
+            ArrangementDraft(
+                arrangement: editor.arrangement(saved: entry.arrangement),
+                units: units,
+            )
+        }
+
+        /// The lane as shown: a valid roadmap being typed replaces the passes.
+        private var draft: ArrangementDraft {
+            let base = base
+            return editor.roadmapPreview.map(base.with(passes:)) ?? base
+        }
+
+        private var selection: Int {
+            min(editor.selection, max(draft.chips.count - 1, 0))
+        }
 
         var body: some View {
+            let draft = draft
             VStack(spacing: 0) {
-                header
-                if draft.usesShowModes {
-                    ShowModesBanner()
-                } else if !draft.missing.isEmpty {
-                    missingBanner
+                header(draft)
+                if draft.isOutOfDate {
+                    missingBanner(draft)
                 }
                 Rule()
                 HStack(spacing: 0) {
-                    rowList
-                        .frame(width: 470)
+                    leftPane(draft)
+                        .frame(width: 640)
+                        .background(Theme.color.surfaceAlt.opacity(0.35))
                     Rule(axis: .vertical)
                     ArrangementPreview(
                         record: record,
                         entry: entry,
-                        arrangement: draft.arrangement,
+                        arrangement: previewArrangement(draft),
                         settings: stage?.settings.settings ?? LiveSettings(),
                         bass: stage?.instrument?.bassView,
+                        selection: draft.chips.indices.contains(selection) ? selection : nil,
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 Rule()
-                footer
+                footer(draft)
             }
-            .frame(width: 920, height: 640)
+            .frame(width: 1200, height: 760)
             .background(Theme.color.ground)
+            .onAppear {
+                roadmapText = draft.roadmap
+                laneFocused = true
+            }
+            .onChange(of: draft.roadmap) { _, roadmap in
+                if !roadmapFocused {
+                    roadmapText = roadmap
+                }
+            }
+            .onChange(of: draft.chips.count) { _, count in editor.clampSelection(count: count) }
+            .onChange(of: roadmapFocused) { _, focused in
+                if !focused {
+                    commitRoadmap()
+                }
+            }
+            .onExitCommand(perform: finish)
+        }
+
+        /// What the stage would show now: the lane (the full song's passes for a slot without
+        /// an arrangement, so the selection maps to a pass); out of date stays out of date.
+        private func previewArrangement(_ draft: ArrangementDraft) -> SlotArrangement? {
+            if draft.isOutOfDate, editor.roadmapPreview == nil {
+                return editor.arrangement(saved: entry.arrangement)
+            }
+            return draft.arrangement
         }
 
         // MARK: Header
 
-        private var header: some View {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
+        private func header(_ draft: ArrangementDraft) -> some View {
+            HStack(spacing: 12) {
                 Text("Arrange Sections")
                     .font(SchibstedGrotesk.extraBold.font(size: 17))
                     .foregroundStyle(Theme.color.ink)
+                    .fixedSize()
                     .accessibilityAddTraits(.isHeader)
                     // On the title, not the sheet: an identifier on a container would replace
                     // every control's own.
                     .accessibilityIdentifier(AccessibilityID.arrangementSheet)
-                Text("\(SongSummary.title(record)) · this gig only, the song is not changed")
+                Text(subtitle)
                     .font(SchibstedGrotesk.medium.font(size: 13))
                     .foregroundStyle(Theme.color.muted)
                     .lineLimit(1)
-                Spacer()
-                Text(draft.isCustom
-                    ? "\(draft.playedCount) of \(draft.partCount) sections play"
-                    : "Full song")
-                    .font(SchibstedGrotesk.medium.font(size: 13))
-                    .foregroundStyle(Theme.color.muted)
+                    .truncationMode(.tail)
+                Spacer(minLength: 8)
+                Button(action: rehearse) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "play.fill").font(.system(size: 10))
+                        Text("Rehearse this")
+                        Text("⌥⌘↩").foregroundStyle(Theme.color.muted).fontWeight(.medium)
+                    }
+                }
+                .buttonStyle(.segueSecondary)
+                .keyboardShortcut(.return, modifiers: [.command, .option])
+                .disabled(!canRehearse(draft))
+                .help(rehearseHelp(draft))
+                .accessibilityIdentifier(AccessibilityID.arrangementRehearse)
+                Button("Reset to Full Song") {
+                    editor.roadmapPreview = nil
+                    editor.reset()
+                }
+                .buttonStyle(.segueSecondary)
+                .disabled(!draft.isCustom || isReadOnly)
+                .accessibilityIdentifier(AccessibilityID.arrangementReset)
+                Button("Done", action: finish)
+                    .buttonStyle(.seguePrimary)
+                    .keyboardShortcut(roadmapFocused ? nil : .defaultAction)
+                    .accessibilityIdentifier(AccessibilityID.arrangementDone)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 18)
+            .frame(height: 52)
         }
 
-        private var missingBanner: some View {
+        /// "Harbor Lights · Friday · slot 4".
+        private var subtitle: String {
+            let songs = setlist.entries.filter { $0.songId != nil }
+            let number = (songs.firstIndex { $0.itemId == entry.itemId } ?? 0) + 1
+            return "\(SongSummary.title(record)) · \(setlist.name) · slot \(number)"
+        }
+
+        private func canRehearse(_ draft: ArrangementDraft) -> Bool {
+            guard let stage else { return false }
+            return stage.canRehearse && !draft.isOutOfDate
+        }
+
+        private func rehearseHelp(_ draft: ArrangementDraft) -> String {
+            if draft.isOutOfDate {
+                return "Update the arrangement first"
+            }
+            return "Rehearse this slot as arranged, in its key and capo (not logged)"
+        }
+
+        private func missingBanner(_ draft: ArrangementDraft) -> some View {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(Theme.color.cueText)
                     .accessibilityHidden(true)
-                Text("""
-                Out of date: no longer in the song: \(draft.missingNames). \
-                The stage shows the full song until you update.
-                """)
-                .font(SchibstedGrotesk.medium.font(size: 13))
-                .foregroundStyle(Theme.color.cueText)
-                .fixedSize(horizontal: false, vertical: true)
+                Text(Self.missingText(draft))
+                    .font(SchibstedGrotesk.medium.font(size: 13))
+                    .foregroundStyle(Theme.color.cueText)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer()
-                Button("Update") { save(draft.arrangement, "Update Arrangement") }
+                Button("Update") { perform(.update) }
                     .buttonStyle(.segueSecondary)
                     .disabled(isReadOnly)
-                    .help("Keep the choices that still match the song and drop the rest")
+                    .help("Keep the passes that still match the song and drop the rest")
                     .accessibilityIdentifier(AccessibilityID.arrangementUpdate)
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 18)
             .padding(.vertical, 10)
             .background(Theme.color.cue.opacity(0.08))
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.arrangementMissing)
         }
 
-        // MARK: Rows
+        static func missingText(_ draft: ArrangementDraft) -> String {
+            let what = draft.missing.isEmpty
+                ? "this arrangement can't be played as saved."
+                : "no longer in the song: \(draft.missingNames)."
+            return "Out of date: \(what) The stage shows the full song until you update."
+        }
 
-        private var rowList: some View {
-            let listed = draft.rows.filter { !$0.isNew }
-            let new = draft.rows.filter(\.isNew)
-            return VStack(spacing: 0) {
-                List(selection: $focusedRow) {
-                    Section {
-                        ForEach(listed) { row in
-                            rowView(row).tag(row.id)
-                        }
-                        .onMove { source, destination in
-                            edit("Move Section") { draft in
-                                draft.move(fromOffsets: source, toOffset: destination)
-                            }
-                        }
+        // MARK: Left pane
+
+        private func leftPane(_ draft: ArrangementDraft) -> some View {
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        eyebrow("Song parts - click or drag into the sequence")
+                        ArrangementPalette(
+                            draft: draft,
+                            selection: selection,
+                            isReadOnly: isReadOnly,
+                            dragging: $dragging,
+                            perform: perform,
+                        )
                     }
-                    if !new.isEmpty {
-                        Section("New in the song") {
-                            ForEach(new) { row in
-                                rowView(row).tag(row.id)
-                            }
-                        }
+                    VStack(alignment: .leading, spacing: 8) {
+                        eyebrow("Sequence")
+                        lane(draft)
                     }
+                    ArrangementInspector(
+                        chip: draft.chips.indices.contains(selection) ? draft
+                            .chips[selection] : nil,
+                        isReadOnly: isReadOnly,
+                        canAppend: draft.chips.count < SlotArrangement.maxPasses,
+                        perform: perform,
+                    )
+                    ArrangementRoadmapField(
+                        draft: base,
+                        isReadOnly: isReadOnly,
+                        text: $roadmapText,
+                        error: roadmapError,
+                        isFocused: $roadmapFocused,
+                        onEdit: editRoadmap,
+                        onCommit: commitRoadmap,
+                        onRevert: revertRoadmap,
+                    )
+                    Text("← → select · ⌥← ⌥→ move · F C 1 S mode · ⌫ remove · ⌘D duplicate")
+                        .font(SchibstedGrotesk.medium.font(size: 12))
+                        .foregroundStyle(Theme.color.muted)
                 }
-                .listStyle(.inset)
-                .scrollContentBackground(.hidden)
-                .onKeyPress(keys: [.space, .upArrow, .downArrow, "+", "=", "-", "d"]) { press in
-                    keyPress(press)
-                }
-                Text("Space plays or skips · ⌥↑ ⌥↓ move · − + play count · ⌘D play again later")
-                    .font(SchibstedGrotesk.medium.font(size: 12))
-                    .foregroundStyle(Theme.color.muted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                .padding(.vertical, 18)
+                .padding(.horizontal, 20)
             }
         }
 
-        private func rowView(_ row: LegacyRows.Row) -> some View {
-            ArrangementRowView(
-                row: row,
-                isFocused: focusedRow == row.id,
+        private func eyebrow(_ text: String) -> some View {
+            Text(text.uppercased())
+                .font(SchibstedGrotesk.bold.font(size: 11))
+                .tracking(0.08 * 11)
+                .foregroundStyle(Theme.color.muted)
+        }
+
+        private func lane(_ draft: ArrangementDraft) -> some View {
+            ArrangementLane(
+                draft: draft,
+                selection: selection,
                 isReadOnly: isReadOnly,
-                canSkip: draft.canToggleOff(row.id),
-                isFirst: row.id == 0,
-                isLast: row.id == draft.rows.count - 1,
-                toggle: {
-                    edit(row.isPlayed ? "Skip Section" : "Play Section") { $0.toggle(row.id) }
+                dragging: $dragging,
+                select: { index in
+                    editor.select(index, count: draft.chips.count)
+                    laneFocused = true
                 },
-                setPlays: { plays in edit("Change Play Count") { $0.setPlays(row.id, plays) } },
-                move: { delta in edit("Move Section") { $0.move(row.id, by: delta) } },
-                playAgain: {
-                    edit("Play Again Later") { draft in
-                        draft.playAgainLater(row.id)
-                        return true
-                    }
-                },
+                perform: perform,
             )
-        }
-
-        private func keyPress(_ press: KeyPress) -> KeyPress.Result {
-            guard let index = focusedRow, draft.rows.indices.contains(index), !isReadOnly else {
-                return .ignored
-            }
-            let row = draft.rows[index]
-            switch press.key {
-            case .space:
-                edit(row.isPlayed ? "Skip Section" : "Play Section") { $0.toggle(index) }
-            case .downArrow, .upArrow:
-                guard press.modifiers.contains(.option) else { return .ignored }
-                let delta = press.key == .upArrow ? -1 : 1
-                edit("Move Section") { $0.move(index, by: delta) }
-                focusedRow = min(max(index + delta, 0), draft.rows.count - 1)
-            case "+", "=":
-                edit("Change Play Count") { $0.setPlays(index, max(row.plays, 0) + 1) }
-            case "-":
-                edit("Change Play Count") { $0.setPlays(index, row.plays - 1) }
-            case "d":
-                guard press.modifiers.contains(.command) else { return .ignored }
-                edit("Play Again Later") { draft in
-                    draft.playAgainLater(index)
-                    return true
-                }
-            default:
-                return .ignored
-            }
-            return .handled
-        }
-
-        /// Applies `change` to the current rows and saves the result when it changed.
-        private func edit(_ name: String, _ change: (inout LegacyRows) -> Bool) {
-            guard !isReadOnly else { return }
-            var next = draft
-            guard change(&next) else { return }
-            save(next.arrangement, name)
+            .focusable()
+            .focusEffectDisabled()
+            .focused($laneFocused)
+            .onKeyPress(phases: .down) { press in keyPress(press) }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(
+                "Sequence, " + ArrangementPreview.spokenCount(draft.chips.count)
+                    + (draft.skippedCount > 0 ? ", \(draft.skippedCount) skipped" : ""),
+            )
+            .accessibilityIdentifier(AccessibilityID.arrangementLane)
         }
 
         // MARK: Footer
 
-        private var footer: some View {
+        private func footer(_ draft: ArrangementDraft) -> some View {
             HStack(spacing: 10) {
                 GuideHelpButton(.arrangeSections)
                 Text("Length for this gig")
-                    .font(SchibstedGrotesk.semiBold.font(size: 13))
-                    .foregroundStyle(Theme.color.muted)
                 LengthField(target: .slot(entry.itemId), length: draft.length) { seconds in
-                    var next = draft
-                    next.length = seconds
-                    save(next.arrangement, "Set Slot Length")
+                    perform(.setLength(seconds))
                 }
                 .disabled(isReadOnly)
                 Text(songLengthHint)
-                    .font(SchibstedGrotesk.medium.font(size: 12))
-                    .foregroundStyle(Theme.color.muted)
                     .help("The song's own length stays in the song; this slot has its own.")
                 Spacer()
-                Button("Reset to Full Song") { save(nil, "Reset to Full Song") }
-                    .buttonStyle(.segueSecondary)
-                    .disabled(!draft.isCustom || isReadOnly)
-                    .accessibilityIdentifier(AccessibilityID.arrangementReset)
-                Button("Done", action: done)
-                    .buttonStyle(.seguePrimary)
-                    .keyboardShortcut(.defaultAction)
-                    .accessibilityIdentifier(AccessibilityID.arrangementDone)
+                Text(draft.footerCounts + " · this gig only, the song is not changed")
+                    .lineLimit(1)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+            .font(SchibstedGrotesk.medium.font(size: 13))
+            .foregroundStyle(Theme.color.muted)
+            .padding(.horizontal, 18)
+            .frame(height: 52)
         }
 
         private var songLengthHint: String {
@@ -291,378 +361,122 @@
         }
     }
 
-    /// One part: checkbox, kind colour, name (ordinal when the title repeats), first line, count.
-    private struct ArrangementRowView: View {
-        let row: LegacyRows.Row
-        let isFocused: Bool
-        let isReadOnly: Bool
-        let canSkip: Bool
-        let isFirst: Bool
-        let isLast: Bool
-        let toggle: () -> Void
-        let setPlays: (Int) -> Void
-        let move: (Int) -> Void
-        let playAgain: () -> Void
-        @State private var isHovered = false
+    extension ArrangementEditorContent {
+        // MARK: Edits
 
-        var body: some View {
-            HStack(spacing: 9) {
-                Toggle(isOn: Binding(get: { row.isPlayed }, set: { _ in toggle() })) {
-                    EmptyView()
-                }
-                .toggleStyle(.checkbox)
-                .labelsHidden()
-                .disabled(isReadOnly || (row.isPlayed && !canSkip))
-                .help(row.isPlayed && !canSkip ? "At least one section plays" : "")
-                .accessibilityLabel(row.isPlayed ? "Playing" : "Skipped")
-                .accessibilityIdentifier(AccessibilityID.arrangementPlay(row.id))
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(kindColor)
-                    .frame(width: 4, height: 18)
-                    .opacity(row.isPlayed ? 1 : 0.35)
-                    .accessibilityHidden(true)
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(row.unit.title)
-                        .font(SchibstedGrotesk.semiBold.font(size: 14))
-                        .foregroundStyle(row.isPlayed ? Theme.color.ink : Theme.color.muted)
-                        .strikethrough(!row.isPlayed, color: Theme.color.muted)
-                    if let ordinal = row.unit.ordinal {
-                        Text(ordinal)
-                            .font(SchibstedGrotesk.medium.font(size: 12))
-                            .foregroundStyle(Theme.color.muted)
-                    }
-                    if row.isAgain {
-                        Text("again")
-                            .font(SchibstedGrotesk.medium.font(size: 12))
-                            .foregroundStyle(Theme.color.muted)
-                    }
-                }
-                .fixedSize()
-                Text(row.unit.firstLine ?? "")
-                    .font(SchibstedGrotesk.medium.font(size: 12))
-                    .foregroundStyle(Theme.color.muted)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .opacity(row.isPlayed ? 1 : 0.6)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if row.plays > 1 || ((isFocused || isHovered) && row.isPlayed) {
-                    stepper
-                }
-            }
-            .padding(.vertical, 3)
-            .contentShape(Rectangle())
-            .onHover { isHovered = $0 }
-            .contextMenu {
-                Button(row.isPlayed ? "Skip" : "Play", action: toggle)
-                    .disabled(isReadOnly || (row.isPlayed && !canSkip))
-                Button("Play Again Later", action: playAgain)
-                    .disabled(isReadOnly)
-                Divider()
-                Button("Move Up") { move(-1) }
-                    .disabled(isReadOnly || isFirst)
-                Button("Move Down") { move(1) }
-                    .disabled(isReadOnly || isLast)
-            }
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel(spokenName)
-            .accessibilityValue(spokenState)
-            .accessibilityIdentifier(AccessibilityID.arrangementRow(row.id))
-            .accessibilityActions {
-                if !isReadOnly {
-                    Button(row.isPlayed ? "Skip" : "Play", action: toggle)
-                    if row.isPlayed {
-                        Button("Play once more") { setPlays(row.plays + 1) }
-                        if row.plays > 1 {
-                            Button("Play once less") { setPlays(row.plays - 1) }
-                        }
-                    }
-                    Button("Play Again Later", action: playAgain)
-                    if !isFirst {
-                        Button("Move up") { move(-1) }
-                    }
-                    if !isLast {
-                        Button("Move down") { move(1) }
-                    }
+        /// Applies an edit to the newest draft and queues its save; a refused edit beeps.
+        private func perform(_ edit: ArrangementDraft.Edit) {
+            guard !isReadOnly else { return }
+            let draft = draft
+            editor.roadmapPreview = nil
+            if let refusal = editor.perform(edit, on: draft), refusal != .nothingChanged {
+                NSSound.beep()
+                if let message = refusal.message {
+                    AccessibilityNotification.Announcement(message).post()
                 }
             }
         }
 
-        private var stepper: some View {
-            HStack(spacing: 0) {
-                Button { setPlays(row.plays - 1) } label: {
-                    Image(systemName: "minus").frame(width: 18, height: 18)
+        private func finish() {
+            commitRoadmap()
+            done()
+        }
+
+        /// The lane's keys (P8-3 section 6.6); never while typing in a field.
+        private func keyPress(_ press: KeyPress) -> KeyPress.Result {
+            let count = draft.chips.count
+            guard count > 0 else { return .ignored }
+            let index = selection
+            let modifiers = press.modifiers
+            switch press.key {
+            case .downArrow, .leftArrow, .rightArrow, .upArrow:
+                let forward = press.key == .rightArrow || press.key == .downArrow
+                if modifiers.contains(.option) {
+                    perform(.move(from: index, to: forward ? index + 2 : index - 1))
+                } else if modifiers.contains(.command) {
+                    editor.select(forward ? count - 1 : 0, count: count)
+                } else if press.key == .leftArrow || press.key == .rightArrow {
+                    editor.select(index + (forward ? 1 : -1), count: count)
+                } else {
+                    return .ignored
                 }
-                .disabled(isReadOnly || row.plays <= 1)
-                .accessibilityLabel("Play once less")
-                .accessibilityIdentifier(AccessibilityID.arrangementCountDown(row.id))
-                Text("x\(row.plays)")
-                    .font(SchibstedGrotesk.bold.font(size: 12).monospacedDigit())
-                    .foregroundStyle(Theme.color.ink)
-                    .frame(minWidth: 22)
-                    .accessibilityIdentifier(AccessibilityID.arrangementCount(row.id))
-                Button { setPlays(row.plays + 1) } label: {
-                    Image(systemName: "plus").frame(width: 18, height: 18)
+            case .home:
+                editor.select(0, count: count)
+            case .end:
+                editor.select(count - 1, count: count)
+            case .delete, .deleteForward:
+                perform(.remove(index))
+            default:
+                return modeKey(press, index: index)
+            }
+            return .handled
+        }
+
+        /// F, C, 1, S (ignoring ⌘ and ⌃), ⌘D and ⇧⌘D.
+        private func modeKey(_ press: KeyPress, index: Int) -> KeyPress.Result {
+            let character = press.characters.lowercased()
+            if press.modifiers.contains(.command) {
+                guard character == "d" else { return .ignored }
+                perform(press.modifiers.contains(.shift)
+                    ? .playAgainAtEnd(index)
+                    : .duplicate(index))
+                return .handled
+            }
+            guard !press.modifiers.contains(.control) else { return .ignored }
+            switch character {
+            case "f": perform(.setMode(index, .full))
+            case "c": perform(.setMode(index, .chordsOnly))
+            case "1": perform(.setMode(index, .firstLine))
+            case "s": perform(.toggleSkip(index))
+            default: return .ignored
+            }
+            return .handled
+        }
+
+        // MARK: Roadmap
+
+        private func editRoadmap(_ text: String) {
+            switch base.parseRoadmap(text) {
+            case let .success(passes):
+                editor.roadmapPreview = passes
+                roadmapError = nil
+            case .failure(.empty):
+                editor.roadmapPreview = nil
+                roadmapError = nil
+            case let .failure(error):
+                if roadmapError != error.message {
+                    AccessibilityNotification.Announcement(error.message).post()
                 }
-                .disabled(isReadOnly || row.plays >= LegacyRows.maxPlays)
-                .accessibilityLabel("Play once more")
-                .accessibilityIdentifier(AccessibilityID.arrangementCountUp(row.id))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Theme.color.muted)
-            .padding(.horizontal, 4)
-            .frame(height: 22)
-            .overlay {
-                RoundedRectangle(cornerRadius: 6)
-                    .strokeBorder(
-                        row.plays > 1 ? Theme.color.ink.opacity(0.55) : Theme.color.controlBorder,
-                        lineWidth: 1,
-                    )
+                roadmapError = error.message
             }
         }
 
-        private var kindColor: Color {
-            guard let kind = row.unit.kind else { return Theme.color.muted }
-            return Color(nsColor: SectionBandStyle.dynamicColor(for: kind))
-        }
-
-        private var spokenName: String {
-            row.isAgain ? "\(row.unit.name), again" : row.unit.name
-        }
-
-        private var spokenState: String {
-            switch row.plays {
-            case 0: "skipped"
-            case 1: "playing"
-            case 2: "playing twice"
-            default: "playing \(row.plays) times"
-            }
-        }
-    }
-
-    /// Interim (until P8-3 step 5 rebuilds the sheet): the row model of the P3-16 sheet.
-    ///
-    /// The Arrange Sections sheet's rows (P3-16, R122, R123), derived from a slot's saved
-    /// arrangement and the song as it is now. Pure: every edit returns the arrangement to save,
-    /// and the sheet re-derives its rows from the saved value (so undo shows at once).
-    ///
-    /// Interim adapter (P8-2 section 5) until P8-3 rebuilds the sheet on passes: loading folds
-    /// consecutive Full passes of one part into a row with that play count and a Skip pass into
-    /// a skipped row; saving expands rows back into passes and writes `knownParts`. An
-    /// arrangement using any other show mode is not loaded into rows (`usesShowModes`), so the
-    /// old editor can never drop a mode.
-    private struct LegacyRows: Equatable {
-        /// The most times a row can be played in a row.
-        static let maxPlays = 9
-
-        struct Row: Equatable, Identifiable {
-            /// Position in `rows`.
-            var id: Int
-            var unit: SongSectionUnit
-            /// 0 = skipped.
-            var plays: Int
-            /// A part added to the song since the arrangement was saved ("New in the song").
-            var isNew: Bool
-            /// A "Play Again Later" copy: unticking removes it.
-            var isAgain: Bool
-
-            var isPlayed: Bool {
-                plays > 0
-            }
-        }
-
-        private(set) var rows: [Row]
-        /// Saved rows that no longer match the song (out of date).
-        private(set) var missing: [ArrangementPass]
-        /// The saved arrangement uses Chords only or First line passes, which this editor cannot
-        /// show: the sheet is read-only.
-        let usesShowModes: Bool
-        var length: TimeInterval?
-        /// Whether the slot has a saved arrangement (else the rows are the full song).
-        let isCustom: Bool
-        /// The song's parts as they are now (every one is known on save).
-        private let units: [SongSectionUnit]
-
-        init(arrangement: SlotArrangement?, units: [SongSectionUnit]) {
-            isCustom = arrangement != nil
-            self.units = units
-            length = arrangement?.length
-            usesShowModes = arrangement?.passes
-                .contains { $0.mode == .chordsOnly || $0.mode == .firstLine } ?? false
-            guard let arrangement else {
-                rows = units.enumerated().map { offset, unit in
-                    Row(id: offset, unit: unit, plays: 1, isNew: false, isAgain: false)
+        /// Return or leaving the field: one undo step "Edit Roadmap"; an invalid or empty
+        /// roadmap saves nothing.
+        private func commitRoadmap() {
+            guard let passes = editor.roadmapPreview else {
+                if roadmapText.trimmingCharacters(in: .whitespaces).isEmpty {
+                    revertRoadmap()
                 }
-                missing = []
                 return
             }
-            var rows: [Row] = []
-            var missing: [ArrangementPass] = []
-            var listed = Set<Int>()
-            var previous: ArrangementPass?
-            for pass in arrangement.passes {
-                defer { previous = pass }
-                guard let unit = ArrangementResolver.unit(for: pass, in: units) else {
-                    missing.append(pass)
-                    continue
-                }
-                // A Full pass right after a Full pass of the same part is one more play.
-                if pass.isShown, let last = previous, last.isShown, last.anchor == pass.anchor,
-                   let row = rows.last, row.unit.index == unit.index,
-                   row.plays < Self.maxPlays
-                {
-                    rows[rows.count - 1].plays += 1
-                    continue
-                }
-                let isAgain = listed.contains(unit.index)
-                if isAgain, !pass.isShown {
-                    continue
-                }
-                listed.insert(unit.index)
-                rows.append(Row(
-                    id: rows.count,
-                    unit: unit,
-                    plays: pass.isShown ? 1 : 0,
-                    isNew: false,
-                    isAgain: isAgain,
-                ))
-            }
-            // A part the arrangement knew but plays nowhere is a skipped row; only a part it
-            // never knew is new.
-            let known = arrangement.effectiveKnownParts
-            for unit in units where !listed.contains(unit.index) {
-                let isNew = !known.contains { $0.anchor.matches(unit.anchor) }
-                rows.append(Row(id: rows.count, unit: unit, plays: 0, isNew: isNew, isAgain: false))
-            }
-            self.rows = rows
-            self.missing = missing
-        }
-
-        /// The arrangement these rows describe, every pass with the song's current fingerprint:
-        /// a played row is `plays` Full passes, a skipped row one Skip pass; every part of the
-        /// song is known.
-        var arrangement: SlotArrangement {
-            SlotArrangement(
-                passes: rows.flatMap { row in
-                    let pass = ArrangementPass(
-                        anchor: row.unit.anchor,
-                        fingerprint: row.unit.fingerprint,
-                        mode: row.isPlayed ? .full : .skip,
-                    )
-                    return Array(repeating: pass, count: max(row.plays, 1))
-                },
-                knownParts: KnownPart.all(units),
-                length: length,
-            )
-        }
-
-        var playedCount: Int {
-            rows.count { $0.isPlayed && !$0.isAgain }
-        }
-
-        /// The song's parts (a "Play Again Later" copy is not another part).
-        var partCount: Int {
-            rows.count { !$0.isAgain }
-        }
-
-        var hasNewRows: Bool {
-            rows.contains(where: \.isNew)
-        }
-
-        /// The passes the stage shows.
-        var order: [PlayedPass] {
-            rows.filter(\.isPlayed).flatMap { row in
-                Array(repeating: PlayedPass(index: row.unit.index), count: row.plays)
+            let base = base
+            editor.roadmapPreview = nil
+            roadmapError = nil
+            guard !isReadOnly else { return }
+            if let refusal = editor.perform(.replace(passes), on: base),
+               refusal != .nothingChanged
+            {
+                NSSound.beep()
+                roadmapError = refusal.message
             }
         }
 
-        /// Whether row `index` can be skipped: at least one row must play.
-        func canToggleOff(_ index: Int) -> Bool {
-            guard rows.indices.contains(index), rows[index].isPlayed else { return false }
-            return rows[index].isAgain || rows.count(where: \.isPlayed) > 1
-        }
-
-        /// Plays or skips row `index`; unticking a "Play Again Later" copy removes it. Returns
-        /// false (nothing changed) when it would leave nothing to play.
-        @discardableResult
-        mutating func toggle(_ index: Int) -> Bool {
-            guard rows.indices.contains(index) else { return false }
-            if rows[index].isPlayed {
-                guard canToggleOff(index) else { return false }
-                if rows[index].isAgain {
-                    rows.remove(at: index)
-                    renumber()
-                    return true
-                }
-                rows[index].plays = 0
-            } else {
-                rows[index].plays = 1
-            }
-            rows[index].isNew = false
-            return true
-        }
-
-        /// Sets row `index` to play `plays` times in a row (1 ... 9); a skipped row is ticked.
-        @discardableResult
-        mutating func setPlays(_ index: Int, _ plays: Int) -> Bool {
-            guard rows.indices.contains(index) else { return false }
-            let clamped = min(max(plays, 1), Self.maxPlays)
-            guard clamped != rows[index].plays else { return false }
-            rows[index].plays = clamped
-            rows[index].isNew = false
-            return true
-        }
-
-        /// Moves rows (drag, ⌥↑ / ⌥↓).
-        @discardableResult
-        mutating func move(fromOffsets source: IndexSet, toOffset destination: Int) -> Bool {
-            let before = rows.map(\.unit.index)
-            rows.move(fromOffsets: source, toOffset: destination)
-            for offset in rows.indices where rows[offset].isNew {
-                rows[offset].isNew = false
-            }
-            renumber()
-            return rows.map(\.unit.index) != before
-        }
-
-        /// Moves row `index` one place up (-1) or down (+1).
-        @discardableResult
-        mutating func move(_ index: Int, by delta: Int) -> Bool {
-            let target = index + delta
-            guard rows.indices.contains(index), rows.indices.contains(target) else { return false }
-            return move(
-                fromOffsets: IndexSet(integer: index),
-                toOffset: delta < 0 ? target : target + 1,
-            )
-        }
-
-        /// "Play Again Later" (R123): a played copy of row `index` right after it, to drag
-        /// anywhere.
-        mutating func playAgainLater(_ index: Int) {
-            guard rows.indices.contains(index) else { return }
-            var copy = rows[index]
-            copy.plays = 1
-            copy.isNew = false
-            copy.isAgain = true
-            rows.insert(copy, at: index + 1)
-            rows[index].isNew = false
-            renumber()
-        }
-
-        private mutating func renumber() {
-            for offset in rows.indices {
-                rows[offset].id = offset
-            }
-            // The first row of a part is never a copy (after a move a copy may come first).
-            var seen = Set<Int>()
-            for offset in rows.indices {
-                rows[offset].isAgain = !seen.insert(rows[offset].unit.index).inserted
-            }
-        }
-    }
-
-    extension LegacyRows {
-        var missingNames: String {
-            missing.map(\.anchor.summaryName).joined(separator: ", ")
+        /// Esc in the field: back to the saved roadmap.
+        private func revertRoadmap() {
+            editor.roadmapPreview = nil
+            roadmapError = nil
+            roadmapText = base.roadmap
         }
     }
 #endif

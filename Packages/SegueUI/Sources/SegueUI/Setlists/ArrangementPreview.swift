@@ -7,11 +7,18 @@
     import SwiftUI
 
     /// What Arrange Sections needs from the app (P8-3 sections 6.4 and 6.7): Settings > Live
-    /// and the instrument profile, so its preview lays the song out as the stage does.
+    /// and the instrument profile, so its preview lays the song out as the stage does, and
+    /// the one-song rehearsal entry point.
     /// Injected where the builder is shown.
     struct ArrangementStage {
         var settings: LiveSettingsStore
         var instrument: InstrumentProfileStore?
+        /// Whether a one-song rehearsal can start now (nothing performing or starting).
+        var canRehearse = false
+        /// "Rehearse this" (R156): an unlogged one-song rehearsal of the slot; `onEnd` runs
+        /// when it ends.
+        var rehearse: @MainActor (SongID, StageSlot, @escaping @MainActor () -> Void)
+            -> Void = { _, _, _ in }
     }
 
     extension EnvironmentValues {

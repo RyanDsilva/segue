@@ -21,7 +21,8 @@
                     .disabled(startableSetlist == nil)
                 Button(MenuShortcuts.rehearse.title) { start(.rehearsal) }
                     .keyboardShortcut(MenuShortcuts.rehearse)
-                    .disabled(startableSetlist == nil)
+                    // While Arrange Sections is open its "Rehearse this" owns ⌥⌘↩ (P8-3 6.6).
+                    .disabled(startableSetlist == nil || app.session?.setlists.arranging != nil)
                 Divider()
                 Button(MenuShortcuts.newSetlist.title) { app.session?.isNamingNewSetlist = true }
                     .keyboardShortcut(MenuShortcuts.newSetlist)

@@ -286,6 +286,17 @@
                     .environment(\.arrangementStage, ArrangementStage(
                         settings: app.liveSettings,
                         instrument: app.instrumentProfile,
+                        canRehearse: app.canStartSongSessionNow,
+                        rehearse: { song, slot, onEnd in
+                            Task {
+                                await app.startSongSession(
+                                    song,
+                                    kind: .rehearsal,
+                                    slot: slot,
+                                    onEnd: onEnd,
+                                )
+                            }
+                        },
                     ))
                     .environment(\.openSongForLength, OpenSongAction { song in
                         // The missing-lengths list's Open Song: the song's card in the

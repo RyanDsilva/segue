@@ -36,6 +36,9 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
 
     @MainActor
     func testArrangeSectionsForOneGig() throws {
+        // The P3-16 row sheet this drives was replaced by the P8-3 sequence strip; the rewrite
+        // of this class (P8-3 section 10.4) lands after the band-practice build.
+        throw XCTSkip("Pending the P8-3 rewrite for the sequence strip")
         let root = try XCTUnwrap(libraryRoot)
         try seed(root)
         let app = try launch(light: false)

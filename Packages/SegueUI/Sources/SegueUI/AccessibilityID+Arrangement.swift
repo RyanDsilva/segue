@@ -1,4 +1,4 @@
-// P3-16: accessibility identifiers of per-slot arrangements (R122, R123).
+// P3-16, P8-3: accessibility identifiers of per-slot arrangements (R122, R123, R149).
 // Mirror new IDs in the UITests target (it cannot import SegueUI).
 
 public extension AccessibilityID {
@@ -19,24 +19,34 @@ public extension AccessibilityID {
     /// The pre-show checklist row for out-of-date arrangements.
     static let checklistArrangements = "segue.checklist.arrangements"
 
-    /// Row `index` (0-based, in the sheet's order) and its controls.
-    static func arrangementRow(_ index: Int) -> String {
-        "segue.setlist.arrangement.row.\(index)"
+    /// The lane of pass chips (P8-3).
+    static let arrangementLane = "segue.setlist.arrangement.lane"
+    /// The inspector's mode picker segments: full, chords, first, skip.
+    static func arrangementMode(_ mode: String) -> String {
+        "segue.setlist.arrangement.mode.\(mode)"
     }
 
-    static func arrangementPlay(_ index: Int) -> String {
-        "segue.setlist.arrangement.play.\(index)"
+    static let arrangementDuplicate = "segue.setlist.arrangement.duplicate"
+    static let arrangementRemove = "segue.setlist.arrangement.remove"
+    static let arrangementRoadmap = "segue.setlist.arrangement.roadmap"
+    static let arrangementRoadmapError = "segue.setlist.arrangement.roadmapError"
+    static let arrangementRehearse = "segue.setlist.arrangement.rehearse"
+
+    /// Chip `index` (0-based lane position) and its hover buttons.
+    static func arrangementChip(_ index: Int) -> String {
+        "segue.setlist.arrangement.chip.\(index)"
     }
 
-    static func arrangementCount(_ index: Int) -> String {
-        "segue.setlist.arrangement.count.\(index)"
+    static func arrangementChipDuplicate(_ index: Int) -> String {
+        "segue.setlist.arrangement.chip.\(index).duplicate"
     }
 
-    static func arrangementCountUp(_ index: Int) -> String {
-        "segue.setlist.arrangement.count.\(index).up"
+    static func arrangementChipRemove(_ index: Int) -> String {
+        "segue.setlist.arrangement.chip.\(index).remove"
     }
 
-    static func arrangementCountDown(_ index: Int) -> String {
-        "segue.setlist.arrangement.count.\(index).down"
+    /// Palette button `index` (label group, 0-based).
+    static func arrangementPalette(_ index: Int) -> String {
+        "segue.setlist.arrangement.palette.\(index)"
     }
 }
