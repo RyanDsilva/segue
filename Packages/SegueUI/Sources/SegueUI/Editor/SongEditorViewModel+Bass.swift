@@ -13,6 +13,7 @@ extension SongEditorViewModel {
     /// The editor's Bass segment: flips the user-level bass-note view for every song and
     /// the stage. The song's sidecar is never written.
     func toggleBassNotes() {
+        // The observation (`observeInstrument`) re-renders this and every other open editor.
         instrument?.toggleBassNotes(from: .editor)
     }
 

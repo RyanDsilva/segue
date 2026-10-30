@@ -210,48 +210,6 @@ public enum ImportOutcome: String, Sendable, CaseIterable {
     case nothingImported = "none"
 }
 
-/// Row 8 `segue.feature`. Chord palette use is row 18, not a key here.
-public enum FeatureKey: String, Sendable, CaseIterable {
-    case transpose
-    case capo
-    case nashville
-    case diagrams
-    case instrumentPiano
-    case tuningChange
-    case applyTransposeToSource
-    case editorModeSwitch
-    case search
-    case filterChips
-    case setlistEdit
-    case setlistTarget
-    case autoScroll
-    case stageSearch
-    case playNow
-    case requests
-    case columnsCycle
-    case stageZoom
-    case gigLogEdit
-    case liveSettings
-    case shapeEditor
-    case showInFinder
-    case undoInBuilder
-    /// The song card's Time it timer was stopped into a length (R91).
-    case timeIt
-    /// The stage metronome was switched on (R90, P3-14).
-    case metronome
-    /// P8-2 (R148, R150): a stage section jump (once per session), the rehearsal loop
-    /// switched on, a single-song session started from the library.
-    case sectionJump
-    case sectionLoop
-    case singleSongSession
-    /// Settings > Instrument: "I play bass" was turned on (P8-4 6.6).
-    case bassProfile
-    /// The bass-note view was toggled from the editor or the stage (P8-4 6.6).
-    case bassNotes
-    /// The stage mini neck was shown, once per stage session (P8-4 6.6).
-    case bassNeck
-}
-
 public enum FeatureContext: String, Sendable, CaseIterable {
     case library
     case editor

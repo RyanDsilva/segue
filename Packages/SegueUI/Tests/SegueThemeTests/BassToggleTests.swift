@@ -59,7 +59,10 @@ struct BassToggleTests {
         model.toggleBassNotes()
         #expect(store.profile.bassNotes)
         #expect(!store.profile.playsBass)
-        try await AISettingsTests.waitUntil { Self.chords(model.renderModel) == ["A", "C#", "D"] }
+        // Generous deadline: a hang backstop under a loaded parallel run, not pacing.
+        try await AISettingsTests.waitUntil(timeout: .seconds(30)) {
+            Self.chords(model.renderModel) == ["A", "C#", "D"]
+        }
         #expect(model.renderModel?.header.key == "A")
         #expect(model.renderModel?.header.scale == "A major: A B C# D E F# G#")
         // The song's own prefs are untouched.
@@ -68,7 +71,9 @@ struct BassToggleTests {
 
         // A flip from anywhere else (the stage, Settings) re-renders too.
         store.toggleBassNotes(from: .stage)
-        try await AISettingsTests.waitUntil { Self.chords(model.renderModel) == ["G", "G/B", "C"] }
+        try await AISettingsTests.waitUntil(timeout: .seconds(30)) {
+            Self.chords(model.renderModel) == ["G", "G/B", "C"]
+        }
     }
 
     @Test
