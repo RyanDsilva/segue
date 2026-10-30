@@ -1,4 +1,5 @@
 import Foundation
+import Library
 
 /// Editing one slot, break rows and changeover (R85, R86, R105).
 public extension SetlistStore {
@@ -39,6 +40,32 @@ public extension SetlistStore {
             {
                 setlist.entries[index].locked = locked
             }
+        }
+    }
+
+    /// Inserts `songID` with `overrides` at `offset` (nil = append) and saves: one write, so
+    /// the set composer's "kesariya in A" is one undo step. A song already in the setlist is
+    /// skipped and nothing is written (the `insertSongs` rule). Throws `invalidOffsets` when
+    /// `offset` is outside `0 ... entries.count`.
+    @discardableResult
+    func insertSong(
+        _ songID: SongID,
+        overrides: SetlistOverrides,
+        into id: SetlistID,
+        at offset: Int? = nil,
+    ) throws -> Setlist {
+        try mutateSetlist(id, writesUnchanged: false) { setlist in
+            let position = offset ?? setlist.entries.count
+            guard (0 ... setlist.entries.count).contains(position) else {
+                throw SetlistError.invalidOffsets(id)
+            }
+            guard !setlist.contains(songID) else { return }
+            let entry = SetlistEntry(
+                itemId: SetlistItemID(ids.next()),
+                songId: songID,
+                overrides: overrides,
+            )
+            setlist.entries.insert(entry, at: position)
         }
     }
 

@@ -80,6 +80,33 @@ public struct SongKey: Sendable, Hashable, Codable {
         return Self(tonic: NoteClass(letter, accidental: accidental), mode: .major)
     }
 
+    /// The key with the same signature in the other mode: the relative major of a minor key
+    /// (`Am` -> `C`), the relative minor of a major key (`G` -> `Em`, `Eb` -> `Cm`).
+    public var relative: Self {
+        switch mode {
+        case .minor:
+            return relativeMajor
+        case .major:
+            let target = tonic.pitchClass.transposed(by: -3)
+            // Keep the letter a third down (Eb -> C, F# -> D#) unless that needs a double
+            // accidental or a white-key enharmonic.
+            let letter = Letter(rawValue: (tonic.letter.rawValue + 5) % 7) ?? .A
+            let offset = NoteClass(letter).pitchClass.semitones(to: target)
+            let accidental: Accidental? = switch offset {
+            case 0: .natural
+            case 1: .sharp
+            case 11: .flat
+            default: nil
+            }
+            guard let accidental, accidental == .natural || !NoteClass(letter)
+                .isWhiteKeyNeighbour(accidental)
+            else {
+                return Self(canonical: target, mode: .minor)
+            }
+            return Self(tonic: NoteClass(letter, accidental: accidental), mode: .minor)
+        }
+    }
+
     /// Tonic's equivalent key (major or natural minor scale).
     public var tonicKey: Key {
         Key(root: tonic, scale: mode == .major ? .major : .minor)

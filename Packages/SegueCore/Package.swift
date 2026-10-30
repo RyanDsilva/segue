@@ -82,7 +82,7 @@ let package = Package(
         ),
         .target(
             name: "Setlists",
-            dependencies: ["Editing", "Library", "Support"],
+            dependencies: ["Editing", "Library", "MusicTheory", "Support"],
             swiftSettings: strictSettings,
         ),
         // Phase 2 unit A: show engine, show store, gig log, reorder diff, command layer.

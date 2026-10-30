@@ -94,10 +94,7 @@ struct LoadedSong: Sendable, Equatable {
     var indexed: IndexedSong {
         let metadata = record.document.metadata
         let lyrics = record.document.plainLyrics
-        let firstLine = lyrics.split(whereSeparator: \.isNewline)
-            .lazy
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .first { !$0.isEmpty } ?? ""
+        let firstLine = record.document.firstLyricLine
         return IndexedSong(
             id: record.id.description,
             path: record.relativePath,

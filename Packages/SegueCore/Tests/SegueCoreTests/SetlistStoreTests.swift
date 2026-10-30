@@ -195,4 +195,44 @@ struct SetlistStoreTests {
             try await store.addSong(SongID(lib.ids.next()), to: missing)
         }
     }
+
+    /// The set composer's "kesariya in A": one write carries the song and its key (P8-5
+    /// section 8.1); a song already in the set is skipped without writing.
+    @Test
+    func `insertSong writes its overrides once and skips a song already present`() async throws {
+        let lib = try TestLibrary()
+        let library = try await lib.openStore()
+        let songs = try await ["Alpha", "Bravo"].asyncMap { title in
+            try await library.createSong(source: "{title: \(title)}\nLa la\n").id
+        }
+        let (store, _) = try await lib.loadSetlists()
+        let created = try await store.create(name: "Keys")
+        let path = "setlists/keys.setlist.json"
+
+        let keyed = SetlistOverrides(transpose: 2)
+        var setlist = try await store.insertSong(songs[0], overrides: keyed, into: created.id)
+        setlist = try await store.insertSong(
+            songs[1],
+            overrides: SetlistOverrides(),
+            into: created.id,
+        )
+        #expect(setlist.entries.map(\.songId) == songs)
+        #expect(setlist.entries.map(\.overrides) == [keyed, SetlistOverrides()])
+
+        let (reloaded, _) = try await lib.loadSetlists()
+        #expect(await reloaded.setlist(id: created.id) == setlist)
+
+        let before = try lib.read(path)
+        lib.clock.advance(by: 60)
+        let same = try await store.insertSong(
+            songs[1],
+            overrides: SetlistOverrides(transpose: 5),
+            into: created.id,
+        )
+        #expect(same == setlist)
+        #expect(try lib.read(path) == before)
+        await #expect(throws: SetlistError.invalidOffsets(created.id)) {
+            try await store.insertSong(songs[0], overrides: keyed, into: created.id, at: 9)
+        }
+    }
 }

@@ -106,3 +106,27 @@ public struct SongRecord: Sendable, Equatable, Identifiable {
         readOnly != nil
     }
 }
+
+public extension SongRecord {
+    /// The title to show and match: `{title}` (trimmed), else the file name without its
+    /// extension.
+    var displayTitle: String {
+        if let title = document.metadata.title?.trimmingCharacters(in: .whitespaces),
+           !title.isEmpty
+        {
+            return title
+        }
+        return URL(filePath: relativePath).deletingPathExtension().lastPathComponent
+    }
+}
+
+public extension SongDocument {
+    /// The first non-blank line of `plainLyrics`, trimmed; "" when there is none. The
+    /// index's `first_line` and the set composer's first-line match both use it.
+    var firstLyricLine: String {
+        plainLyrics.split(whereSeparator: \.isNewline)
+            .lazy
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .first { !$0.isEmpty } ?? ""
+    }
+}
