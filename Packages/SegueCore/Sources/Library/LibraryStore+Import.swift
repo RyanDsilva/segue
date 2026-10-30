@@ -58,11 +58,18 @@ public enum SongImport {
     public static let maxFiles = 500
     /// Bigger files are not songs.
     public static let maxBytes = 1_048_576
+    /// Folders nested deeper than this (the dropped folder is 1) are not read.
+    public static let maxFolderDepth = 16
 
     static let notAccepted = "Not a ChordPro or text file"
     static let limitReached = "Import limit of 500 files reached"
     static let tooLarge = "Too large to be a song"
     static let notText = "Not a text file"
+    static let nestedTooDeeply = "Folder nested too deeply"
+
+    static func limitReached(in folder: String) -> String {
+        "\(limitReached); the rest of \(folder) was not read"
+    }
 
     static func unreadable(_ error: any Error) -> String {
         "Could not be read: \(SongFiles.describe(error))"
@@ -98,7 +105,9 @@ public extension LibraryStore {
         var candidates: [ImportCandidate] = []
         var skipped: [ImportSkip] = []
         var seen = 0
-        for url in expand(urls) {
+        let (files, walkSkips) = expand(urls)
+        skipped += walkSkips
+        for url in files {
             let name = url.lastPathComponent
             // A sidecar travels with its song (copied below); it is not a skipped file.
             if name.hasSuffix(LibraryRoot.sidecarSuffix) {
@@ -175,19 +184,67 @@ extension LibraryStore {
     }
 
     /// `urls` with folders expanded (recursively, sorted by path, hidden files and packages
-    /// left out). Order is kept otherwise.
-    private func expand(_ urls: [URL]) -> [URL] {
-        var files: [URL] = []
+    /// left out), plus the skips the walk itself reports. Order is kept otherwise. The walk
+    /// follows a symlinked folder only once (a loop or diamond is read once, silently),
+    /// stops below `SongImport.maxFolderDepth`, and stops reading folders once it has
+    /// found more importable files than an import takes, so a huge folder is never
+    /// enumerated in full (R154, R158 Q6 and Q7). Stat-only, like `isPackage`.
+    private func expand(_ urls: [URL]) -> (files: [URL], skips: [ImportSkip]) {
+        var walk = FolderWalk()
         for url in urls {
             if fileSystem.directoryExists(at: url) {
-                guard !Self.isPackage(url) else { continue }
-                let children = (try? fileSystem.contentsOfDirectory(at: url)) ?? []
-                files += expand(children)
+                walk.top = url.lastPathComponent
+                walkFolder(url, depth: 1, into: &walk)
             } else if !url.lastPathComponent.hasPrefix(".") {
-                files.append(url)
+                walk.files.append(url)
             }
         }
-        return files
+        return (walk.files, walk.skips)
+    }
+
+    private func walkFolder(_ folder: URL, depth: Int, into walk: inout FolderWalk) {
+        guard !walk.full, !Self.isPackage(folder) else {
+            if walk.full, depth == 1 {
+                walk.skips.append(ImportSkip(
+                    fileName: folder.lastPathComponent,
+                    reason: SongImport.limitReached(in: folder.lastPathComponent),
+                ))
+            }
+            return
+        }
+        guard depth <= SongImport.maxFolderDepth else {
+            walk.skips.append(ImportSkip(
+                fileName: folder.lastPathComponent,
+                reason: SongImport.nestedTooDeeply,
+            ))
+            return
+        }
+        guard walk.visited.insert(folder.resolvingSymlinksInPath().path(percentEncoded: false))
+            .inserted
+        else { return }
+        let children = (try? fileSystem.contentsOfDirectory(at: folder)) ?? []
+        for child in children {
+            if fileSystem.directoryExists(at: child) {
+                walkFolder(child, depth: depth + 1, into: &walk)
+            } else if !child.lastPathComponent.hasPrefix(".") {
+                let name = child.lastPathComponent
+                if SongFileTypes.isImportable(child), !name.hasSuffix(LibraryRoot.sidecarSuffix) {
+                    guard walk.importable < SongImport.maxFiles else {
+                        walk.full = true
+                        walk.skips.append(ImportSkip(
+                            fileName: walk.top,
+                            reason: SongImport.limitReached(in: walk.top),
+                        ))
+                        return
+                    }
+                    walk.importable += 1
+                }
+                walk.files.append(child)
+            }
+            if walk.full {
+                return
+            }
+        }
     }
 
     /// Whether `url` is a package (an app, a bundle): imported as nothing, like Finder shows
@@ -208,12 +265,17 @@ extension LibraryStore {
         guard data.count <= SongImport.maxBytes else {
             return .failure(ImportSkip(fileName: name, reason: SongImport.tooLarge))
         }
-        guard !data.contains(0) else {
+        // UTF-16 (Windows Notepad) has NUL bytes in every ASCII character: with its byte
+        // order mark it is decoded, BOM included; without one it stays "not text" (R154).
+        let isUTF16 = data.starts(with: [0xFF, 0xFE]) || data.starts(with: [0xFE, 0xFF])
+        guard isUTF16 || !data.contains(0) else {
             return .failure(ImportSkip(fileName: name, reason: SongImport.notText))
         }
         let body = data.starts(with: SongImport.bom) ? data
             .dropFirst(SongImport.bom.count) : data[...]
-        let (text, readOnly) = SongFiles.decodeText(Data(body))
+        let (decoded, readOnly) = SongFiles.decodeText(Data(body))
+        // No leading U+FEFF, so `{title}` on line one is still found.
+        let text = decoded.hasPrefix("\u{FEFF}") ? String(decoded.dropFirst()) : decoded
         let convertedFrom: String? = if case let .notUTF8(encoding) = readOnly {
             encoding
         } else {
@@ -273,4 +335,18 @@ public extension ImportCandidate {
             metadata: sidecar,
         )
     }
+}
+
+/// The state of one import's folder walk (`expand`).
+private struct FolderWalk {
+    var files: [URL] = []
+    var skips: [ImportSkip] = []
+    /// Resolved paths of the folders read, so a symlinked folder is read once.
+    var visited: Set<String> = []
+    /// Importable files found so far (sidecars do not count).
+    var importable = 0
+    /// The import limit was reached: no more folders are read.
+    var full = false
+    /// The dropped folder being walked, named in the limit skip.
+    var top = ""
 }

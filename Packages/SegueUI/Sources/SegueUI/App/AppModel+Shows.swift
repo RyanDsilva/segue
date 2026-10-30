@@ -178,8 +178,9 @@
         func endPendingShow() async {
             guard let record = pendingResume, let session else { return }
             pendingResume = nil
+            var controller: ShowController?
             do {
-                let controller = try await ShowController.resume(
+                let resumed = try await ShowController.resume(
                     record,
                     environment: showEnvironment(
                         session,
@@ -188,14 +189,20 @@
                         setlistName: record.setlistName,
                     ),
                 )
-                let ending = try await controller.end()
+                controller = resumed
+                let ending = try await resumed.end()
                 recordShowEnded(ending.record, autoScrollUsed: false, endedBy: .closedOnRelaunch)
                 countCompletedShow(kind: record.kind, quitsAfterEnding: false)
                 await reloadPendingReviews()
                 await session.library.reload()
             } catch {
-                session.library.errorMessage = "The show could not be ended "
-                    + "(\(UserMessage.describe(error)))."
+                await controller?.relinquish()
+                // Offered again at once, so End Show can be retried (R154).
+                session.library.errorMessage = if await reofferUnended(record.id) {
+                    Self.unclosedShowMessage(error)
+                } else {
+                    "The show could not be ended (\(UserMessage.describe(error)))."
+                }
             }
             // Gig Mode is likely still on from the interrupted show.
             await runEndShortcut(kind: record.kind)
@@ -398,9 +405,19 @@
                 )
                 countCompletedShow(kind: live.kind, quitsAfterEnding: live.quitsAfterEnding)
             } catch {
-                session?.library.errorMessage = "The show could not be closed "
-                    + "(\(UserMessage.describe(error))). It will be offered again at next launch."
                 await live.context.controller.relinquish()
+                // The controller's in-memory record is already marked finished: offer the
+                // record as it is on disk, through the resume prompt, as soon as the stage
+                // closes (R154). When quitting, the launch check offers it next time.
+                let showId = live.state.record.id
+                session?.library.errorMessage = if !live.quitsAfterEnding,
+                                                   await reofferUnended(showId)
+                {
+                    Self.unclosedShowMessage(error)
+                } else {
+                    "The show could not be closed (\(UserMessage.describe(error))). "
+                        + "It will be offered again at next launch."
+                }
             }
             StageWindowController.shared.close()
             services.record(LifecycleCrumb.stageExited)
@@ -415,6 +432,23 @@
             if live.quitsAfterEnding {
                 NSApp.terminate(nil)
             }
+        }
+
+        /// After a failed End Show: re-reads the show from disk and, when it is still open
+        /// and writable, offers it in the resume prompt (Resume / End Show). False when
+        /// there is nothing usable to offer.
+        private func reofferUnended(_ showId: ShowID) async -> Bool {
+            guard let session,
+                  let record = await session.stores.shows.reloaded(showId),
+                  !record.isFinished, record.readOnly == nil
+            else { return false }
+            pendingResume = record
+            return true
+        }
+
+        private static func unclosedShowMessage(_ error: any Error) -> String {
+            "The show could not be closed (\(UserMessage.describe(error))). It is still open: "
+                + "Resume it, or try End Show again."
         }
 
         /// Shows the checklist (when it has anything to show) and waits for the answer. A

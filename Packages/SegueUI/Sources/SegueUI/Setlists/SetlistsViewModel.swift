@@ -43,8 +43,10 @@ public final class SetlistsViewModel {
     /// Each setlist as Segue last loaded or wrote it: a reload that finds another value was
     /// edited in another app, and its undo actions go (B-16).
     var known: [SetlistID: Setlist] = [:]
-    /// Undo and redo file work, run in order.
-    var undoWork: Task<Void, Never>?
+    /// Every setlist write (edits, undo and redo), run one after another so each edit's
+    /// before-snapshot is read after the previous write lands and undo steps register in
+    /// the order the user acted (R154).
+    var writeWork: Task<Void, Never>?
     /// Records analytics events (WS3 spec 5); the session hands over the app's hub.
     @ObservationIgnored public var services: ServicesHub = .disabled
     /// Days since the first launch, set by the session (milestones).
@@ -228,30 +230,39 @@ public final class SetlistsViewModel {
     /// Runs `operation` through the store, then reloads. With `undo`, the setlist's value
     /// before (from the store, not any optimistic local change) and after are registered
     /// as one undoable step named `undo.name`, unless the operation changed nothing (an add
-    /// of songs already in the setlist).
+    /// of songs already in the setlist). The whole step runs on the write queue, after any
+    /// write still in flight; `operation` must not call `mutate` itself (it would wait on
+    /// its own queue).
     @discardableResult
     func mutate(
         undo: (id: SetlistID, name: String)? = nil,
-        _ operation: (SetlistStore) async throws -> Setlist,
-        then: (Setlist) -> Void = { _ in },
+        _ operation: @escaping @MainActor (SetlistStore) async throws -> Setlist,
+        then: @escaping @MainActor (Setlist) -> Void = { _ in },
     ) async -> Setlist? {
-        let before: Setlist? = if let undo {
-            await store.setlist(id: undo.id)
-        } else {
-            nil
-        }
-        do {
-            let updated = try await operation(store)
-            await reload()
-            then(updated)
-            if let undo, let before, before != updated {
-                registerSnapshotUndo(undo.id, actionName: undo.name, before: before, after: updated)
+        await serialized { [self] in
+            let before: Setlist? = if let undo {
+                await store.setlist(id: undo.id)
+            } else {
+                nil
             }
-            return updated
-        } catch {
-            errorMessage = UserMessage.describe(error)
-            await reload()
-            return nil
+            do {
+                let updated = try await operation(store)
+                await reload()
+                then(updated)
+                if let undo, let before, before != updated {
+                    registerSnapshotUndo(
+                        undo.id,
+                        actionName: undo.name,
+                        before: before,
+                        after: updated,
+                    )
+                }
+                return updated
+            } catch {
+                errorMessage = UserMessage.describe(error)
+                await reload()
+                return nil
+            }
         }
     }
 }

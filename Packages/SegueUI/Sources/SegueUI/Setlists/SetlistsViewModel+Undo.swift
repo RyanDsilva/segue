@@ -27,12 +27,25 @@ public extension SetlistsViewModel {
 
     /// Show end "Save to Setlist" (`replaceEntries`), undoable afterwards as "Save Show Order".
     func saveShowOrder(_ entries: [SetlistEntry], in id: SetlistID) async throws {
-        let before = await store.setlist(id: id)
-        let updated = try await store.replaceEntries(entries, in: id)
-        await reload()
-        if let before {
-            registerSnapshotUndo(id, actionName: "Save Show Order", before: before, after: updated)
+        let result: Result<Void, any Error> = await serialized { [self] in
+            let before = await store.setlist(id: id)
+            do {
+                let updated = try await store.replaceEntries(entries, in: id)
+                await reload()
+                if let before {
+                    registerSnapshotUndo(
+                        id,
+                        actionName: "Save Show Order",
+                        before: before,
+                        after: updated,
+                    )
+                }
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
         }
+        try result.get()
     }
 }
 
@@ -114,13 +127,27 @@ extension SetlistsViewModel {
         }
     }
 
-    /// Runs `work` after the undo work queued before it.
+    /// Queues `work` (an undo or redo write) after every setlist write queued before it.
     private func chain(_ work: @escaping @MainActor () async -> Void) {
-        let previous = undoWork
-        undoWork = Task { @MainActor in
+        let previous = writeWork
+        writeWork = Task { @MainActor in
             await previous?.value
             await work()
         }
+    }
+
+    /// Runs `work` on the write queue after every setlist write queued before it, and
+    /// returns its result.
+    func serialized<T: Sendable>(_ work: @escaping @MainActor () async -> T) async -> T {
+        let previous = writeWork
+        let task = Task { @MainActor in
+            await previous?.value
+            return await work()
+        }
+        writeWork = Task { @MainActor in
+            _ = await task.value
+        }
+        return await task.value
     }
 }
 
