@@ -31,11 +31,21 @@ struct MeasuredChord {
     /// width at `ChordUnit.detailScale` x the reference size.
     var detail: String?
     var detailWidth = 0.0
+    /// The walk-up run after the unit (P8-4b: "A B ›") and its width at the detail size.
+    var approach: String?
+    var approachWidth = 0.0
 
-    /// The whole chord unit at the reference size: the chord, then the detail after a gap.
-    /// Built so P8-4b can append its approach run the same way.
+    /// The whole chord unit at the reference size: the chord, the detail after a gap, then
+    /// the walk-up run after another.
     var unitWidth: Double {
-        detail == nil ? width : width + ChordUnit.detailGap * referenceSize + detailWidth
+        var total = width
+        if detail != nil {
+            total += ChordUnit.detailGap * referenceSize + detailWidth
+        }
+        if approach != nil {
+            total += ChordUnit.detailGap * referenceSize + approachWidth
+        }
+        return total
     }
 
     /// The unit's runs at `x` for a chord drawn at `size` (`scale` = size / reference).
@@ -54,6 +64,16 @@ struct MeasuredChord {
                 x: x + (width + ChordUnit.detailGap * referenceSize) * scale,
                 width: detailWidth * scale,
                 role: .chordDetail,
+                size: size * ChordUnit.detailScale,
+            ))
+        }
+        if let approach {
+            let before = unitWidth - approachWidth
+            runs.append(PlacedText(
+                text: approach,
+                x: x + before * scale,
+                width: approachWidth * scale,
+                role: .approach,
                 size: size * ChordUnit.detailScale,
             ))
         }
@@ -203,6 +223,14 @@ struct Measurer {
                 metrics.width(
                     of: detail,
                     role: .chordDetail,
+                    size: referenceSize * ChordUnit.detailScale,
+                )
+            } ?? 0,
+            approach: chord.approach?.text,
+            approachWidth: chord.approach.map { run in
+                metrics.width(
+                    of: run.text,
+                    role: .approach,
                     size: referenceSize * ChordUnit.detailScale,
                 )
             } ?? 0,

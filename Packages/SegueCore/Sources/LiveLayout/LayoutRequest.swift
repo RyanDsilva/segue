@@ -24,6 +24,9 @@ public enum TextRole: Sendable, Hashable {
     /// The small concert chord beside a bass note (P8-4): medium, `ChordUnit.detailScale` x
     /// `chordSize`, muted, on the chord's baseline.
     case chordDetail
+    /// A walk-up run after the chord unit (P8-4b section 8.8): medium,
+    /// `ChordUnit.detailScale` x `chordSize`, muted, on the chord's baseline.
+    case approach
     /// Section label in the gutter: bold, `LayoutStyle.labelSize` (fixed, never below
     /// `minLabelSize`).
     case sectionLabel
@@ -354,6 +357,9 @@ public struct LayoutRequest: Sendable {
     /// is laid out in full (no repeat is ever collapsed).
     public var passes: [PlayedPass]?
     public var style: LayoutStyle
+    /// Walk-ups for the played passes (P8-4b section 8.6): the bass-note view with
+    /// walk-ups on; nil otherwise.
+    public var walkUps: BassLineContext?
 
     public init(
         model: RenderModel,
@@ -365,6 +371,7 @@ public struct LayoutRequest: Sendable {
         notes: [String] = [],
         passes: [PlayedPass]? = nil,
         style: LayoutStyle = .stage,
+        walkUps: BassLineContext? = nil,
     ) {
         self.model = model
         self.viewport = viewport
@@ -375,5 +382,6 @@ public struct LayoutRequest: Sendable {
         self.notes = notes
         self.passes = passes
         self.style = style
+        self.walkUps = walkUps
     }
 }

@@ -19,7 +19,18 @@ struct SongPreparation {
         // a part that is only skipped is simply not played (not "unmatched").
         let (pinned, unmatched) = pinCues(original)
         let order = request.passes ?? ArrangementResolver.fullSong(units)
-        let arranged = ArrangedSections.build(original, order: order)
+        var arranged = ArrangedSections.build(original, order: order)
+        if let walkUps = request.walkUps {
+            // Each pass gets the walk-up into what actually follows it (P8-4b section 8.6).
+            let annotated = BassLine.annotate(
+                arranged.map(\.section),
+                origins: arranged.map(\.source),
+                context: walkUps,
+            )
+            for index in arranged.indices {
+                arranged[index].section = annotated[index]
+            }
+        }
         let titles = arranged.map { pass in
             units.first { $0.index == pass.source }?.title ?? ""
         }

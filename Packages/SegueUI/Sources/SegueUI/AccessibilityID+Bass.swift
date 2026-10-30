@@ -6,6 +6,8 @@ public extension AccessibilityID {
     static let editorBass = "segue.editor.bass"
     /// The small concert chord beside a bass note on stage.
     static let liveChordDetail = "segue.live.chordDetail"
+    /// A walk-up run on stage (P8-4b section 8.8).
+    static let liveWalkUp = "segue.live.walkUp"
     /// The stage mini neck.
     static let liveBassNeck = "segue.live.bassNeck"
     /// The stage header's scale line.

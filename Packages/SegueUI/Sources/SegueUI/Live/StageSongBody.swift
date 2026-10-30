@@ -136,8 +136,7 @@
                             x: lyricOrigin + row.chords[chord].x,
                             baseline: row.y + chordBaseline,
                         )
-                        .accessibilityIdentifier(row.chords[chord].role == .chordDetail
-                            ? AccessibilityID.liveChordDetail : AccessibilityID.sheetChord)
+                        .accessibilityIdentifier(Self.identifier(row.chords[chord].role))
                     }
                 }
                 ForEach(row.text.indices, id: \.self) { run in
@@ -176,6 +175,15 @@
             .accessibilityIdentifier(AccessibilityID.liveCue)
         }
 
+        /// The chord row's identifiers: chord, the chord beside a bass note, a walk-up run.
+        private static func identifier(_ role: TextRole) -> String {
+            switch role {
+            case .chordDetail: AccessibilityID.liveChordDetail
+            case .approach: AccessibilityID.liveWalkUp
+            default: AccessibilityID.sheetChord
+            }
+        }
+
         private func text(_ run: PlacedText, color: Color? = nil) -> Text {
             let size = run.size > 0 ? run.size : size(run.role)
             return Text(run.text)
@@ -189,7 +197,7 @@
         private func size(_ role: TextRole) -> Double {
             switch role {
             case .chord, .chordSeparator: plan.chordSize
-            case .chordDetail: plan.chordSize * ChordUnit.detailScale
+            case .approach, .chordDetail: plan.chordSize * ChordUnit.detailScale
             case .lyric: plan.lyricSize
             case .comment: plan.lyricSize * style.commentScale
             case .moreLines: plan.lyricSize * style.moreLinesScale
@@ -214,7 +222,7 @@
             case .chord:
                 run.chordKind == .chord || run.chordKind == nil
                     ? Theme.color.cueText : Theme.color.muted
-            case .chordDetail, .comment, .labelDetail, .modeTag, .moreLines, .note,
+            case .approach, .chordDetail, .comment, .labelDetail, .modeTag, .moreLines, .note,
                  .sectionLabel:
                 Theme.color.muted
             case .chordSeparator:

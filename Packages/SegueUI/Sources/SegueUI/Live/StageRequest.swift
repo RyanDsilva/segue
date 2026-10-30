@@ -59,8 +59,9 @@
             let notes = [song.sidecar.notes, slot.note]
                 .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
+            let model = renderModel(song, overrides: slot.overrides, bass: bass)
             let request = LayoutRequest(
-                model: renderModel(song, overrides: slot.overrides, bass: bass),
+                model: model,
                 viewport: viewport,
                 minLyricSize: minLyricSize,
                 zoom: prefs.zoom,
@@ -68,8 +69,23 @@
                 cues: song.sidecar.cues,
                 notes: notes,
                 passes: passes,
+                walkUps: walkUps(model, song: song),
             )
             return (request, resolution)
+        }
+
+        /// Walk-ups on stage (P8-4b): only in the bass-note view with walk-ups on, the song's
+        /// pick else the top candidate, never alternates.
+        static func walkUps(_ model: RenderModel, song: SongRecord) -> BassLineContext? {
+            guard model.transform.options.bass?.notes == true,
+                  let context = BassLine.context(
+                      for: model,
+                      document: song.document,
+                      prefs: song.sidecar.bass,
+                  ),
+                  context.density != .off
+            else { return nil }
+            return context
         }
 
         /// The song in a slot as it renders there: sidecar view options with the setlist
