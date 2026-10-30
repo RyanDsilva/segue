@@ -164,6 +164,15 @@ enum VocabularySample {
             )))
         }
         events += composerEvents
+        let pickKinds = WalkUpPickKind.allCases, ranks = WalkUpRank.allCases
+        let feels = WalkUpFeel.allCases
+        events += (0 ..< max(pickKinds.count, ranks.count, feels.count)).map { row in
+            .walkUpPicked(WalkUpPickSummary(
+                kind: pickKinds[row % pickKinds.count],
+                rank: ranks[row % ranks.count],
+                genre: feels[row % feels.count],
+            ))
+        }
         return events
     }
 

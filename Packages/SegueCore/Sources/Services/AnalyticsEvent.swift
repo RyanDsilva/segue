@@ -79,6 +79,8 @@ public enum AnalyticsEvent: Sendable, Hashable {
     /// Row 24 (P8-5): a Return in the set composer, and a composer session that added rows.
     case setlistComposed(ComposerSummary)
     case setlistComposerSession(songs: SmallBucket, cycles: SmallBucket)
+    /// Row 25 (P8-4b 8.12): a walk-up chosen in the picker (daily per kind, rank and feel).
+    case walkUpPicked(WalkUpPickSummary)
 }
 
 // MARK: - Grouped parameters (cases with more than four values)
@@ -338,6 +340,7 @@ extension AnalyticsEvent {
         case .searchPerformed: "Search"
         case .aiAssistantUsed, .aiModelDownload, .aiPasteFinished, .aiSmartFilterUsed: "AI"
         case .notesEdited: "Notes"
+        case .walkUpPicked: "Bass"
         }
     }
 
@@ -365,6 +368,7 @@ extension AnalyticsEvent {
         case .notesEdited: "edited"
         case .setlistComposed: "composed"
         case .setlistComposerSession: "composerSession"
+        case .walkUpPicked: "walkUpPicked"
         }
     }
 
@@ -461,6 +465,12 @@ extension AnalyticsEvent {
                 "segue.repeatHint": String(summary.repeatHint),
             ]
         case .setlistComposed, .setlistComposerSession: composerParams
+        case let .walkUpPicked(summary):
+            [
+                "segue.kind": summary.kind.rawValue,
+                "segue.rank": summary.rank.rawValue,
+                "segue.genre": summary.genre.rawValue,
+            ]
         }
     }
 }

@@ -3,6 +3,7 @@ import Editing
 import Foundation
 import Library
 import MusicTheory
+import Services
 import Testing
 
 /// Walk-ups (P8-4 sections 8.3, 8.13): the golden corpus, the legacy rows and the score
@@ -42,6 +43,12 @@ struct WalkUpTests {
         }
         return (try? JSONDecoder().decode(File.self, from: data).cases) ?? []
     }()
+
+    @Test
+    func `the analytics kinds and feels mirror the walk-up vocabulary`() {
+        #expect(WalkUpPickKind.allCases.map(\.rawValue) == WalkUpKind.allCases.map(\.rawValue))
+        #expect(WalkUpFeel.allCases.map(\.rawValue) == BassGenre.allCases.map(\.rawValue))
+    }
 
     @Test
     func `the corpus has about sixty cases`() {

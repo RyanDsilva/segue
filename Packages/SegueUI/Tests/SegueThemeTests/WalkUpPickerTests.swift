@@ -81,6 +81,8 @@ struct WalkUpPickerTests {
     func `nothing here hides the run and reset brings the suggestion back`() async throws {
         let env = try TestEnvironment()
         let editor = try await open(env).editor
+        let recorder = RecordingAnalytics(env)
+        editor.services = recorder.hub
         let run = try #require(Self.runs(editor.renderModel).first)
         let details = try #require(editor.walkUpDetails(run.change))
         editor.pickWalkUp(details.change, nil)
@@ -93,6 +95,20 @@ struct WalkUpPickerTests {
         try await AISettingsTests.waitUntil(timeout: .seconds(30)) {
             Self.runs(editor.renderModel).first?.notes == ["A", "B"]
         }
+        // Row 25: one walkUpPicked per (kind, rank, feel) a day, no song data.
+        let picked = recorder.log.entries().filter {
+            $0["name"] as? String == "Segue.Bass.walkUpPicked"
+        }.compactMap { $0["params"] as? [String: String] }
+        #expect(picked == [
+            ["segue.kind": "hold", "segue.rank": "nothing", "segue.genre": "pop"],
+            ["segue.kind": "scaleWalk", "segue.rank": "reset", "segue.genre": "pop"],
+        ])
+        #expect(recorder.features == ["walkUpPick"])
+        // The same choice again the same day is throttled.
+        editor.pickWalkUp(details.change, nil)
+        #expect(recorder.log.entries().count(where: {
+            $0["name"] as? String == "Segue.Bass.walkUpPicked"
+        }) == 2)
     }
 
     @Test

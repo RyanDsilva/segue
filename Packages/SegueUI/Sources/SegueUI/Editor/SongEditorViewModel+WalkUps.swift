@@ -2,6 +2,7 @@ import Editing
 import Foundation
 import Library
 import MusicTheory
+import Services
 
 /// Picking a walk-up in the editor (P8-4b section 8.9): picks live in the song's sidecar,
 /// never the `.cho`; every pick and reset is one undo step.
@@ -21,8 +22,7 @@ extension SongEditorViewModel {
         guard let change = changes.first(where: { $0.id == id }) else { return nil }
         let section = renderModel.sections.indices.contains(change.section)
             ? SectionNotes.label(of: renderModel.sections[change.section]) : nil
-        let feel = bassPrefs.genre ?? instrument?.profile.genre ?? .pop
-        return WalkUpDetails(change: change, section: section, feel: feel.title)
+        return WalkUpDetails(change: change, section: section, feel: songFeel.title)
     }
 
     /// Saves `candidate` (nil: "Nothing here") as the pick for `change`.
@@ -42,6 +42,12 @@ extension SongEditorViewModel {
         )
         setBassPrefs(bassPrefs.saving(pick), actionName: "Choose Walk-up")
         services.record(.featureUsed(.walkUpPick, .editor))
+        services.record(.walkUpPicked(.choosing(candidate, on: change, feel: songFeel)))
+    }
+
+    /// The song's feel, else the profile's default (Pop).
+    var songFeel: BassGenre {
+        bassPrefs.genre ?? instrument?.profile.genre ?? .pop
     }
 
     /// Removes the pick on `change`: the chart shows the suggestion again.
@@ -51,6 +57,7 @@ extension SongEditorViewModel {
             bassPrefs.removing(anchor: pick.anchor, to: pick.to),
             actionName: "Reset Walk-up",
         )
+        services.record(.walkUpPicked(.resetting(change, feel: songFeel)))
     }
 
     /// Replaces the bass prefs, registers the inverse on the editor's undo stack, redraws

@@ -49,6 +49,9 @@ public extension AnalyticsEvent {
         case let .setlistComposed(summary):
             return .daily(key: "\(name)|\(summary.action.rawValue)|\(summary.tier.rawValue)|"
                 + String(summary.alternative))
+        case let .walkUpPicked(summary):
+            return .daily(key: "\(name)|\(summary.kind.rawValue)|\(summary.rank.rawValue)|"
+                + summary.genre.rawValue)
         }
     }
 }
