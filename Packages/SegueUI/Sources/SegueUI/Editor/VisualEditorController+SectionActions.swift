@@ -195,9 +195,7 @@
             let alert = NSAlert()
             alert.messageText = "Custom Section"
             alert.informativeText = "Name the section, for example Pre-Chorus or Solo."
-            let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 24))
-            field.placeholderString = "Section name"
-            field.setAccessibilityIdentifier(AccessibilityID.sectionBandCustomField)
+            let field = sectionNameField()
             alert.accessoryView = field
             alert.addButton(withTitle: "Make Section")
             alert.addButton(withTitle: "Cancel")
@@ -205,6 +203,30 @@
             guard alert.runModal() == .alertFirstButtonReturn else { return nil }
             let name = field.stringValue.trimmingCharacters(in: .whitespaces)
             return name.isEmpty ? nil : name
+        }
+
+        /// Custom...'s name field: a combo box suggesting the custom names this song and the
+        /// library use (R159), this song's first, completing inline as you type. Any new
+        /// name can still be typed, and nothing corrects it (names are often romanized
+        /// Hindi, "Antara", "Mukhda").
+        func sectionNameField() -> NSComboBox {
+            let field = SectionNameComboBox(frame: NSRect(x: 0, y: 0, width: 240, height: 24))
+            field.placeholderString = "Section name"
+            field.setAccessibilityIdentifier(AccessibilityID.sectionBandCustomField)
+            field.completes = true
+            field.usesDataSource = false
+            field.addItems(withObjectValues: sectionNameSuggestions())
+            return field
+        }
+
+        /// This song's custom names, then the library's (most used first), without repeats.
+        func sectionNameSuggestions() -> [String] {
+            let kinds = SectionLabels.customKinds(in: model.snapshot.document)
+                + model.librarySectionKinds()
+            var seen: Set<String> = []
+            return kinds.map(SectionLabels.displayName).filter {
+                seen.insert($0.lowercased()).inserted
+            }
         }
 
         // MARK: Section menu
@@ -220,7 +242,7 @@
                 lineSelection = band.paragraphs
                 redrawOverlay()
                 let menu = NSMenu(title: "Section")
-                for chip in SectionChip.all {
+                for chip in sectionOffers {
                     menu.addItem(item("Make \(chip.title)") { [weak self] in
                         self?.applySection(chip.kind)
                     })
@@ -285,7 +307,7 @@
 
         private func kindMenu(_ path: BlockPath) -> NSMenu {
             let menu = NSMenu(title: "Change Kind")
-            for chip in SectionChip.all + [SectionChip(key: "", title: "Tab", kind: .tab)] {
+            for chip in sectionOffers + [SectionChip(key: "", title: "Tab", kind: .tab)] {
                 menu.addItem(item(chip.title) { [weak self] in
                     self?.model.perform(.changeSectionKind(path, to: chip.kind))
                 })
@@ -398,6 +420,30 @@
 
         @objc private func run() {
             handler()
+        }
+    }
+
+    /// The Custom... name field: spelling correction, text replacement and automatic
+    /// capitalisation off on its field editor, so no step "corrects" a typed name.
+    final class SectionNameComboBox: NSComboBox {
+        override func becomeFirstResponder() -> Bool {
+            let became = super.becomeFirstResponder()
+            if became, let editor = currentEditor() as? NSTextView {
+                Self.disableCorrection(editor)
+            }
+            return became
+        }
+
+        static func disableCorrection(_ editor: NSTextView) {
+            // Automatic capitalisation is a text-checking pass on macOS (NSSpellChecker):
+            // no checking types, no capitalisation, correction or replacement.
+            editor.enabledTextCheckingTypes = 0
+            editor.isAutomaticSpellingCorrectionEnabled = false
+            editor.isAutomaticTextReplacementEnabled = false
+            editor.isAutomaticQuoteSubstitutionEnabled = false
+            editor.isAutomaticDashSubstitutionEnabled = false
+            editor.isContinuousSpellCheckingEnabled = false
+            editor.isAutomaticTextCompletionEnabled = false
         }
     }
 #endif

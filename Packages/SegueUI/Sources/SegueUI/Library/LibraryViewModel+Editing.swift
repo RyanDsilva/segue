@@ -1,3 +1,5 @@
+import ChordPro
+import Editing
 import Foundation
 import Library
 
@@ -216,6 +218,7 @@ extension LibraryViewModel {
             autosave: autosave,
             save: save,
         )
+        editor.librarySectionKinds = librarySectionKinds
         closeEditor()
         selection = id
         detail = .song(id)
@@ -245,6 +248,7 @@ extension LibraryViewModel {
                 return try await saveNewSong(source, created: created, base: base)
             },
         )
+        editor.librarySectionKinds = librarySectionKinds
         closeEditor()
         selection = nil
         detail = .newSong
@@ -408,6 +412,16 @@ extension LibraryViewModel {
         case .orderedAscending: true
         case .orderedDescending: false
         case .orderedSame: lhs.id < rhs.id
+        }
+    }
+}
+
+extension LibraryViewModel {
+    /// Custom...'s library suggestions (R159): one pass over the in-memory catalog when it
+    /// opens, no store call.
+    var librarySectionKinds: () -> [SectionKind] {
+        { [weak self] in
+            SectionLabels.customKinds(in: (self?.catalog ?? []).map(\.document))
         }
     }
 }

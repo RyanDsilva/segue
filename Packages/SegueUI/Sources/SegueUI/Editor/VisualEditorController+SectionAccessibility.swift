@@ -45,7 +45,7 @@
                     element.setAccessibilityIdentifier(AccessibilityID.sectionBandSlot)
                     element.setAccessibilityLabel("Lines outside a section")
                     element.setAccessibilityValue("\(lines) \(lines == 1 ? "line" : "lines")")
-                    element.setAccessibilityCustomActions(SectionChip.all.map { chip in
+                    element.setAccessibilityCustomActions(sectionOffers.map { chip in
                         NSAccessibilityCustomAction(name: "Make \(chip.title)") { [weak self] in
                             guard let self else { return false }
                             lineSelection = band.paragraphs
@@ -72,7 +72,7 @@
                     return true
                 },
             ]
-            actions += SectionChip.all.map { chip in
+            actions += sectionOffers.map { chip in
                 NSAccessibilityCustomAction(name: "Change to \(chip.title)") { [weak self] in
                     self?.model.perform(.changeSectionKind(path, to: chip.kind)) ?? false
                 }

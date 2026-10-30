@@ -112,6 +112,9 @@ public final class SongEditorViewModel {
     @ObservationIgnored public private(set) var snapshot: SourceSnapshot
     /// Visual mode's render model (no diagrams), rebuilt synchronously on every change while
     /// the canvas is up, so a gesture's result is on screen before the next event.
+    /// The custom section kinds the library uses, most used first (R159): Custom...'s
+    /// suggestions. Called only when Custom... opens; the library sets it.
+    @ObservationIgnored var librarySectionKinds: () -> [SectionKind] = { [] }
     @ObservationIgnored var canvasModel: RenderModel?
     /// The lyric line the edit being applied touches (`editLyrics`), for the canvas fast
     /// path. Cleared once the change lands.

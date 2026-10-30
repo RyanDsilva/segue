@@ -24,13 +24,13 @@ struct SectionBandTests {
 
     """
 
-    private struct Hosted {
+    struct Hosted {
         let model: SongEditorViewModel
         let canvas: VisualEditorController
         let window: NSWindow
     }
 
-    private func host(_ source: String = Self.song) -> Hosted {
+    func host(_ source: String = Self.song) -> Hosted {
         #expect(Theme.registerFonts())
         let model = SongEditorViewModel(mode: .create, source: source) { _ in
             throw CancellationError()

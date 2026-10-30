@@ -106,6 +106,72 @@ public enum SectionLabels {
         return SectionLabelProposal(label: label, renames: renames)
     }
 
+    // MARK: - Custom names offered again (R159)
+
+    /// The custom section kinds used in `document`, de-duplicated (case-insensitively, as
+    /// directives compare), in order of first appearance and spelled as first written. Not
+    /// listed: the built-in kinds, Intro and Outro (already chips), Grid (a verbatim block)
+    /// and labels (`{start_of_verse: Hook}` is a verse: a chip applies a kind).
+    public static func customKinds(in document: SongDocument) -> [SectionKind] {
+        var seen: Set<String> = []
+        var kinds: [SectionKind] = []
+        for block in document.blocks {
+            guard case let .section(section) = block, isOfferedCustom(section.kind),
+                  seen.insert(directiveKey(section.kind)).inserted
+            else { continue }
+            kinds.append(section.kind)
+        }
+        return kinds
+    }
+
+    /// The custom section kinds used across `documents` (the library), most used first:
+    /// ranked by the number of songs using each (a one-off typo sinks to the bottom), then
+    /// by display name; at most `limit`. Each kind is spelled as first seen.
+    public static func customKinds(
+        in documents: some Sequence<SongDocument>,
+        limit: Int = 20,
+    ) -> [SectionKind] {
+        var counts: [String: Int] = [:]
+        var spelling: [String: SectionKind] = [:]
+        for document in documents {
+            for kind in customKinds(in: document) {
+                let key = directiveKey(kind)
+                counts[key, default: 0] += 1
+                if spelling[key] == nil {
+                    spelling[key] = kind
+                }
+            }
+        }
+        let ranked = spelling.sorted { lhs, rhs in
+            let left = counts[lhs.key] ?? 0
+            let right = counts[rhs.key] ?? 0
+            if left != right {
+                return left > right
+            }
+            return displayName(lhs.value).localizedStandardCompare(displayName(rhs.value))
+                == .orderedAscending
+        }
+        return ranked.prefix(limit).map(\.value)
+    }
+
+    /// Kinds never offered as extra names: the fixed chips and menu items, and Grid.
+    private static let fixedKinds: [SectionKind] = [
+        .verse, .chorus, .bridge, .tab, .custom("intro"), .custom("outro"),
+    ]
+
+    /// How directives compare a custom kind: its name, case-insensitively.
+    private static func directiveKey(_ kind: SectionKind) -> String {
+        if case let .custom(name) = kind {
+            return name.lowercased()
+        }
+        return displayName(kind).lowercased()
+    }
+
+    private static func isOfferedCustom(_ kind: SectionKind) -> Bool {
+        guard case .custom = kind, !DirectiveLine.isVerbatimSection(kind) else { return false }
+        return !fixedKinds.contains { DirectiveLine.sameSectionKind($0, kind) }
+    }
+
     // MARK: - Helpers
 
     private struct Entry {

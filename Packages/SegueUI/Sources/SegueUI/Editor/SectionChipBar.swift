@@ -57,11 +57,27 @@
         }
     }
 
-    /// The chip bar: "4 lines", V Verse, C Chorus, B Bridge, I Intro | Outro, Custom...
+    /// The chip bar: "4 lines", V Verse, C Chorus, B Bridge, I Intro | Outro, the song's own
+    /// custom names (R159, up to four), Custom...
     struct SectionChipBar: View {
         var lines: Int
+        /// The custom section names this song already uses, in first-appearance order.
+        var extras: [SectionChip] = []
         var apply: (SectionKind) -> Void
         var custom: () -> Void
+
+        /// Extras drawn in the bar (it floats over the text); the rest stay in the menus
+        /// and Custom...'s suggestions.
+        static let maxExtras = 4
+
+        var shownExtras: [SectionChip] {
+            Array(extras.prefix(Self.maxExtras))
+        }
+
+        /// The chips' titles in order (tests).
+        var chipTitles: [String] {
+            (SectionChip.all + shownExtras).map(\.title) + ["Custom..."]
+        }
 
         var body: some View {
             HStack(spacing: 6) {
@@ -74,6 +90,9 @@
                 }
                 Divider().frame(height: 18)
                 chipButton(SectionChip.outro, showsKey: false)
+                ForEach(shownExtras) { chip in
+                    chipButton(chip, showsKey: false)
+                }
                 Button("Custom...", action: custom)
                     .buttonStyle(SectionChipStyle(color: nil))
                     .accessibilityIdentifier("\(AccessibilityID.sectionBandChip).custom")
@@ -156,19 +175,30 @@
         private weak var controller: VisualEditorController?
         private var host: NSHostingView<SectionChipBar>?
 
+        /// The bar on screen, nil when hidden (tests).
+        var shown: SectionChipBar? {
+            host?.isHidden == false ? host?.rootView : nil
+        }
+
         init(controller: VisualEditorController) {
             self.controller = controller
         }
 
         /// Shows the bar for `lines` selected lines with its top-left at `origin` (container
         /// coordinates, flipped), or hides it.
-        func show(lines: Int?, at origin: CGPoint, in container: NSView) {
+        func show(
+            lines: Int?,
+            extras: [SectionChip] = [],
+            at origin: CGPoint,
+            in container: NSView,
+        ) {
             guard let lines, let controller else {
                 host?.isHidden = true
                 return
             }
             let bar = SectionChipBar(
                 lines: lines,
+                extras: extras,
                 apply: { [weak controller] kind in controller?.applySection(kind) },
                 custom: { [weak controller] in controller?.applyCustomSection() },
             )
@@ -240,7 +270,21 @@
                 to: container.overlay,
             )
             let origin = below.y + 44 > container.overlay.bounds.height ? above : below
-            chipBar.show(lines: max(lines, 1), at: origin, in: container)
+            chipBar.show(lines: max(lines, 1), extras: songSectionChips, at: origin, in: container)
+        }
+
+        /// Chips for the custom section names this song already uses (R159), in
+        /// first-appearance order, kind-coloured, without a key.
+        var songSectionChips: [SectionChip] {
+            SectionLabels.customKinds(in: model.snapshot.document).map { kind in
+                SectionChip(key: "", title: SectionLabels.displayName(kind), kind: kind)
+            }
+        }
+
+        /// Every kind the section menus and VoiceOver offer: the fixed chips, then all of
+        /// the song's custom names (not capped like the bar).
+        var sectionOffers: [SectionChip] {
+            SectionChip.all + songSectionChips
         }
     }
 #endif
