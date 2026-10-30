@@ -77,6 +77,16 @@ final class TestLibrary: Sendable {
     static func expectedSidecar(id: SongID, created: String, updated: String) -> String {
         """
         {
+          "bass" : {
+            "timing" : {
+              "chords" : [
+
+              ]
+            },
+            "walkUps" : [
+
+            ]
+          },
           "createdAt" : "\(created)",
           "cues" : [
 

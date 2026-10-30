@@ -11,7 +11,8 @@ public struct RenderModel: Sendable, Equatable {
     public var header: RenderHeader
     public var sections: [RenderSection]
     /// Unique chords in order of first appearance with resolved diagrams; empty when
-    /// `options.showDiagrams` is off. Unknown chords and `N.C.` are excluded.
+    /// `options.showDiagrams` is off and the bassist's fretboard (`options.bass?.fretboard`,
+    /// P8-4 section 7.2) is too. Unknown chords and `N.C.` are excluded.
     public var diagrams: [RenderDiagram]
     public var transform: DisplayTransform
     /// The tuning diagrams use: `{meta: tuning ...}` from the song, else `options.tuning`.
@@ -86,17 +87,21 @@ public struct RenderModel: Sendable, Equatable {
                 scale: bassView ? transform.concertKey.map(RenderHeader.scaleText) : nil,
             ),
             sections: RenderSectionBuilder(transform: transform).sections(of: document),
-            diagrams: options.showDiagrams
-                ? Self.diagrams(
-                    document: document,
-                    transform: transform,
-                    tuning: tuning,
-                    userShapes: userShapes,
-                )
-                : [],
+            diagrams: Self.diagrams(
+                document: document,
+                transform: transform,
+                tuning: tuning,
+                userShapes: userShapes,
+            ),
             transform: transform,
             tuning: tuning,
         )
+    }
+
+    /// Whether a model built with `options` has a diagram strip: the song's `showDiagrams`,
+    /// or the bassist's fretboard (P8-4 section 7.2), which then replaces guitar and piano.
+    public static func showsDiagrams(_ options: DisplayOptions) -> Bool {
+        options.showDiagrams || options.bass?.fretboard == true
     }
 
     private static func diagrams(
@@ -105,6 +110,10 @@ public struct RenderModel: Sendable, Equatable {
         tuning: Tuning,
         userShapes: UserShapeLibrary,
     ) -> [RenderDiagram] {
+        if let bass = transform.options.bass, bass.fretboard {
+            return BassDiagram.cells(document: document, transform: transform, tuning: bass.tuning)
+        }
+        guard transform.options.showDiagrams else { return [] }
         var seen = Set<String>()
         var entries: [(displayed: ChartChord, concert: ChartChord)] = []
         for token in document.chordTokens {
@@ -323,6 +332,9 @@ public struct RenderChord: Sendable, Equatable {
     /// Small text drawn after `text`: the concert chord beside a bass note (P8-4 section
     /// 6.2); nil otherwise.
     public var detail: String?
+    /// The walk-up drawn after the chord unit into the next chord (P8-4 section 8.8); set by
+    /// `BassLine.annotate`, nil otherwise.
+    public var approach: ApproachRun?
 
     public init(
         ref: ChordRef,
@@ -331,6 +343,7 @@ public struct RenderChord: Sendable, Equatable {
         original: String,
         kind: Kind,
         detail: String? = nil,
+        approach: ApproachRun? = nil,
     ) {
         self.ref = ref
         self.offset = offset
@@ -338,6 +351,7 @@ public struct RenderChord: Sendable, Equatable {
         self.original = original
         self.kind = kind
         self.detail = detail
+        self.approach = approach
     }
 }
 
@@ -358,6 +372,9 @@ public struct RenderDiagram: Sendable, Equatable, Identifiable {
     public var piano: PianoVoicing?
     /// Capo fret to draw on guitar diagrams: the song's capo in `.shapes` mode, else nil.
     public var capoFret: Int?
+    /// A bass fretboard cell (P8-4 section 7.2), present instead of guitar and piano when
+    /// the bassist's fretboard strip is on.
+    public var bass: BassDiagram?
 
     public init(
         name: String,

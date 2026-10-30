@@ -73,7 +73,8 @@ struct TuningBassTests {
         profile.setPlaysBass(true)
         #expect(profile.bassNotes)
         profile.bassNotes = false
-        #expect(profile.bassView == nil)
+        // The bassist's fretboard strip keeps a bass view, with notes off (P8-4b).
+        #expect(profile.bassView?.notes == false)
         profile.setPlaysBass(false)
         #expect(!profile.bassNotes)
         profile.setPlaysBass(true)

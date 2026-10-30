@@ -1,4 +1,7 @@
+import ChordPro
+import Editing
 import Foundation
+import Library
 import MusicTheory
 import Testing
 
@@ -63,7 +66,7 @@ struct WalkUpTests {
     }
 
     /// The ranked candidates as text ("A B", "hold"). A target that is not a chord (N.C.,
-    /// none) has nothing to walk into.
+    /// none) runs through `BassLine` on a one-line song, as charts do.
     static func texts(_ row: Case) throws -> [String] {
         let key = row.key.flatMap(SongKey.init(parsing:))
         guard let to = row.to, let arriving = ChordSymbol(parsing: to) else {
@@ -93,9 +96,13 @@ struct WalkUpTests {
         ).map(text)
     }
 
-    /// No chord to walk into (`N.C.`, or A is the last chord): rule S3, nothing.
-    static func chain(_: Case) throws -> [String] {
-        []
+    static func chain(_ row: Case) throws -> [String] {
+        let chords = [row.from] + (row.to.map { [$0] } ?? [])
+        let source = "{key: \(row.key ?? "C")}\n"
+            + chords.map { "[\($0)]word " }.joined() + "\n"
+        let model = renderBass(source)
+        let changes = BassLine.changes(model.sections, origins: [0], context: context(model))
+        return changes.compactMap(\.shown).map(text)
     }
 
     static func bass(_ chord: String) -> PitchClass? {
@@ -104,6 +111,23 @@ struct WalkUpTests {
 
     static func text(_ candidate: WalkUpCandidate) -> String {
         candidate.kind == .hold ? "hold" : candidate.notes.map(\.chartName).joined(separator: " ")
+    }
+
+    static func renderBass(_ source: String, nashville: Bool = false) -> RenderModel {
+        let (document, _) = ChordProParser.parse(source)
+        let options = DisplayOptions(nashville: nashville)
+            .withBass(InstrumentProfile(bassNotes: true, walkUps: .everyChange))
+        return RenderModel(document: document, options: options)
+    }
+
+    static func context(_ model: RenderModel, genre: BassGenre = .pop) -> BassLineContext {
+        BassLineContext(
+            transform: model.transform,
+            genre: genre,
+            density: .everyChange,
+            tempo: model.header.tempo,
+            time: model.header.time,
+        )
     }
 
     // MARK: Legacy rows (the pre-research rule, `WalkUp.notes`)

@@ -1,6 +1,7 @@
 // P8-4a (docs/phases/8-workstreams/P8-4-bass.md section 6.1, R152, R158 Q7).
 
 import Diagrams
+import MusicTheory
 
 /// The user's instrument (Settings > Instrument, R152). App-level: never in a sidecar or a
 /// `.cho`. Decoded leniently per field: a missing or unreadable field keeps its default.
@@ -19,6 +20,10 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
     public var stageNeck: Bool
     /// The editor's fretboard strip (P8-4b; needs `playsBass`).
     public var fretboard: Bool
+    /// Walk-ups on charts (P8-4b section 8.7; default off).
+    public var walkUps: WalkUpDensity
+    /// The default feel for songs without their own (P8-4b section 8.7; default Pop).
+    public var genre: BassGenre
 
     public init(
         playsBass: Bool = false,
@@ -28,6 +33,8 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
         chordBeside: Bool = false,
         stageNeck: Bool = true,
         fretboard: Bool = true,
+        walkUps: WalkUpDensity = .off,
+        genre: BassGenre = .pop,
     ) {
         self.playsBass = playsBass
         self.strings = strings
@@ -36,20 +43,25 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
         self.chordBeside = chordBeside
         self.stageNeck = stageNeck
         self.fretboard = fretboard
+        self.walkUps = walkUps
+        self.genre = genre
         normalize()
     }
 
-    /// What renderers get (`DisplayOptions.bass`): nil unless the bass-note view is on.
-    /// P8-4b widens this to `playsBass` for its fretboard strip.
+    /// What renderers get (`DisplayOptions.bass`): nil unless the bass-note view is on or
+    /// the bassist's fretboard strip is (P8-4b; `notes` is false then, so charts keep their
+    /// chords).
     public var bassView: BassView? {
-        guard bassNotes else { return nil }
+        guard bassNotes || (playsBass && fretboard) else { return nil }
         return BassView(
-            notes: true,
+            notes: bassNotes,
             chordBeside: chordBeside,
             // The Settings strings and tuning, with or without "I play bass" (R163).
             tuning: tuning,
-            neck: stageNeck,
+            neck: bassNotes && stageNeck,
             fretboard: playsBass && fretboard,
+            walkUps: walkUps,
+            genre: genre,
         )
     }
 
@@ -89,6 +101,8 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
         case chordBeside
         case stageNeck
         case fretboard
+        case walkUps
+        case genre
     }
 
     public init(from decoder: any Decoder) throws {
@@ -104,6 +118,8 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
         chordBeside = field(.chordBeside, defaults.chordBeside)
         stageNeck = field(.stageNeck, defaults.stageNeck)
         fretboard = field(.fretboard, defaults.fretboard)
+        walkUps = field(.walkUps, defaults.walkUps)
+        genre = field(.genre, defaults.genre)
         normalize()
     }
 }
@@ -121,6 +137,10 @@ public struct BassView: Sendable, Hashable {
     public var neck: Bool
     /// The editor fretboard strip (P8-4b; `playsBass && fretboard`).
     public var fretboard: Bool
+    /// Walk-ups on charts (P8-4b): drawn only in the bass-note view (R162 Q4).
+    public var walkUps: WalkUpDensity
+    /// The default feel for songs without their own (P8-4b).
+    public var genre: BassGenre
 
     public init(
         notes: Bool = true,
@@ -128,12 +148,16 @@ public struct BassView: Sendable, Hashable {
         tuning: Tuning = .bassStandard4,
         neck: Bool = false,
         fretboard: Bool = false,
+        walkUps: WalkUpDensity = .off,
+        genre: BassGenre = .pop,
     ) {
         self.notes = notes
         self.chordBeside = chordBeside
         self.tuning = tuning
         self.neck = neck
         self.fretboard = fretboard
+        self.walkUps = walkUps
+        self.genre = genre
     }
 }
 

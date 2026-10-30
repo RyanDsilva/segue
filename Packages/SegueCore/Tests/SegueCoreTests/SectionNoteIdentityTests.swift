@@ -222,7 +222,7 @@ struct SectionNoteSidecarTests {
         // Saving writes schema 4 with those IDs.
         _ = try await store.updateSectionNotes(id: id, source: nil, cues: record.sidecar.cues)
         let saved = try lib.read("songs/placement.segue.json")
-        #expect(saved.contains("\"schemaVersion\" : 4"))
+        #expect(saved.contains("\"schemaVersion\" : \(Sidecar.currentSchemaVersion)"))
         for cueID in ids {
             #expect(saved.contains("\"id\" : \"\(cueID)\""))
         }
@@ -259,14 +259,14 @@ struct SectionNoteSidecarTests {
         let lib = try TestLibrary()
         let id = SongID(lib.ids.next())
         let v5 = """
-        {"schemaVersion": 5, "id": "\(id)", "tags": [],
+        {"schemaVersion": 6, "id": "\(id)", "tags": [],
          "cues": [{"id": "\(CueID(lib.ids.next()))", "section": "Chorus", "text": "A", "glow": 1}],
          "createdAt": "2025-06-01T10:00:00.000Z", "updatedAt": "2025-06-02T10:00:00.000Z"}
         """
         try lib.write(NoteFix.song, to: "songs/placement.cho")
         try lib.write(v5, to: "songs/placement.segue.json")
         let record = try #require(try await lib.openStore().song(id: id))
-        #expect(record.readOnly == .newerSchema(found: 5, supported: 4))
+        #expect(record.readOnly == .newerSchema(found: 6, supported: 5))
         #expect(record.sidecar.cues.map(\.text) == ["A"])
     }
 }

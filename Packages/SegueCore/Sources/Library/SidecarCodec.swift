@@ -44,6 +44,8 @@ enum SidecarCodec {
             // optional `fp`). The IDs are derived on decode (`PartialSidecar.repairCueIDs`), the
             // same path that repairs a hand-edited v4 file, so nothing changes here.
             3: { _ in },
+            // v4 -> v5: `bass` is new (P8-4b); an absent one decodes as empty.
+            4: { _ in },
         ],
     )
 
@@ -144,6 +146,7 @@ private struct PartialSidecar: Decodable {
     var cues: [SongCue]?
     var displayPrefs: DisplayPrefs?
     var live: LivePrefs?
+    var bass: BassPrefs?
     var createdAt: Date?
     var updatedAt: Date?
 
@@ -155,6 +158,7 @@ private struct PartialSidecar: Decodable {
         case cues
         case displayPrefs
         case live
+        case bass
         case createdAt
         case updatedAt
     }
@@ -168,6 +172,7 @@ private struct PartialSidecar: Decodable {
         cues = Self.lenientCues(container)
         displayPrefs = try? container.decodeIfPresent(DisplayPrefs.self, forKey: .displayPrefs)
         live = try? container.decodeIfPresent(LivePrefs.self, forKey: .live)
+        bass = try? container.decodeIfPresent(BassPrefs.self, forKey: .bass)
         createdAt = try? container.decodeIfPresent(Date.self, forKey: .createdAt)
         updatedAt = try? container.decodeIfPresent(Date.self, forKey: .updatedAt)
     }
@@ -184,6 +189,7 @@ private struct PartialSidecar: Decodable {
             cues: cues ?? [],
             displayPrefs: displayPrefs ?? DisplayPrefs(),
             live: live ?? LivePrefs(),
+            bass: bass ?? BassPrefs(),
             createdAt: created,
             updatedAt: updatedAt ?? created,
         )
