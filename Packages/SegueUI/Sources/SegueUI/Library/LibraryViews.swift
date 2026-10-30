@@ -104,7 +104,11 @@
                     selection: $model.multiSelection,
                     allowsMultiple: true,
                 ) { record in
-                    SongRow(record: record, stats: model.playStats[record.id])
+                    SongRow(
+                        record: record,
+                        stats: model.playStats[record.id],
+                        isSelected: model.listSelection == record.id,
+                    )
                 } menu: { record in
                     // A right-click inside a multi-selection adds the whole selection.
                     SongActions(
@@ -273,8 +277,16 @@
         let songID: SongID
         /// The songs Add to Setlist adds (the multi-selection); just `songID` by default.
         var selection: [SongID] = []
+        @Environment(\.songSession) private var songSession
 
         var body: some View {
+            if selection.count <= 1, let songSession {
+                Button("Rehearse Song") { songSession.start(songID, .rehearsal) }
+                    .disabled(!songSession.isEnabled)
+                Button("Play Song Live") { songSession.start(songID, .gig) }
+                    .disabled(!songSession.isEnabled)
+                Divider()
+            }
             if selection.count > 1 {
                 AddSongsToSetlistMenu(session: session, songIDs: selection)
             } else {
@@ -326,8 +338,19 @@
     private struct SongRow: View {
         let record: SongRecord
         let stats: PlayStats?
+        /// The selected row also offers Rehearse and Live (R150).
+        var isSelected = false
 
         var body: some View {
+            HStack(spacing: 10) {
+                content
+                if isSelected {
+                    SongSessionButtons(songID: record.id, size: .small)
+                }
+            }
+        }
+
+        private var content: some View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {

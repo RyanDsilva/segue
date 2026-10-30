@@ -256,6 +256,12 @@
             switch session.section {
             case .library, .missingEssentials, nil, .smartFilter:
                 LibraryPane(session: session)
+                    .environment(\.songSession, SongSessionAction(
+                        isEnabled: app.canStartSongSessionNow,
+                        start: { song, kind in
+                            Task { await app.startSongSession(song, kind: kind) }
+                        },
+                    ))
             case .gigLog:
                 GigLogPane(model: session.gigLog) { id in
                     Task { await session.revealGig(id) }

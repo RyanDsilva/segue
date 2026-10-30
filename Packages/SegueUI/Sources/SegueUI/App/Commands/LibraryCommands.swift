@@ -1,10 +1,13 @@
 #if os(macOS)
+    import Library
+    import Shows
     import SwiftUI
 
-    /// Library (WS2a 3.5.4): Refresh, Rebuild Index, Show Library in Finder, Choose Library
-    /// Folder….
+    /// Library (WS2a 3.5.4): Refresh, Rehearse Song and Play Song Live (R150), Rebuild Index,
+    /// Show Library in Finder, Choose Library Folder….
     struct LibraryCommands: Commands {
         let app: AppModel
+        @FocusedValue(\.focusedSongID) private var focusedSongID
 
         var body: some Commands {
             CommandMenu("Library") {
@@ -14,6 +17,15 @@
                 }
                 .keyboardShortcut(MenuShortcuts.refresh)
                 .disabled(app.session == nil || app.isPerforming)
+                Divider()
+                // One song on stage, never logged (R150, R158 Q5).
+                Button(MenuShortcuts.rehearseSong.title) { startSong(.rehearsal) }
+                    .keyboardShortcut(MenuShortcuts.rehearseSong)
+                    .disabled(!app.canStartSongSession(focusedSongID))
+                Button(MenuShortcuts.playSongLive.title) { startSong(.gig) }
+                    .keyboardShortcut(MenuShortcuts.playSongLive)
+                    .disabled(!app.canStartSongSession(focusedSongID))
+                Divider()
                 Button("Rebuild Index") {
                     guard let session = app.session else { return }
                     Task { await session.library.rebuildIndex() }
@@ -34,6 +46,11 @@
                 .disabled(!app.canSwitchLibrary)
                 .help(app.canSwitchLibrary ? "" : "End the show before switching libraries.")
             }
+        }
+
+        private func startSong(_ kind: ShowKind) {
+            guard let song = focusedSongID, app.canStartSongSession(song) else { return }
+            Task { await app.startSongSession(song, kind: kind) }
         }
     }
 #endif

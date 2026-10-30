@@ -137,7 +137,9 @@ public enum ShowError: Error, Equatable {
 
 /// Injected dependencies of a show run.
 public struct ShowEnvironment: Sendable {
-    public var store: ShowStore
+    /// Where the run is written; nil for an unsaved run (a single-song session, R150): it is
+    /// never claimed or written, so nothing reaches `shows/`, the gig log or play stats.
+    public var store: ShowStore?
     public var songs: any ShowSongSource
     public var clock: any Clock
     public var ids: any IDGenerator
@@ -149,7 +151,7 @@ public struct ShowEnvironment: Sendable {
     public var scrollWriteInterval: TimeInterval
 
     public init(
-        store: ShowStore,
+        store: ShowStore?,
         songs: any ShowSongSource,
         clock: any Clock,
         ids: any IDGenerator,

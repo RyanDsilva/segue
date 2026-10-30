@@ -373,7 +373,7 @@
         /// The key bindings: defaults plus `bindings.json`; a malformed file is reported and
         /// the defaults are used, and a file from a newer Segue is applied as far as this
         /// version understands it (reported).
-        private func loadBindings(_ session: LibrarySession) -> InputBindingTable {
+        func loadBindings(_ session: LibrarySession) -> InputBindingTable {
             do {
                 let loaded = try InputBindingTable.loadReporting(
                     from: dependencies.live.bindingsURL,

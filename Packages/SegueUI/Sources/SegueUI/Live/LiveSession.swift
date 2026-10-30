@@ -8,6 +8,15 @@
     import Shows
     import Support
 
+    /// What a stage run covers (P8-2 section 13).
+    public enum StageScope: Sendable, Hashable {
+        /// A setlist (or a resumed show): logged as today.
+        case setlist
+        /// One song started from the library or "Rehearse this" (R150, R156): no progress
+        /// dots, "End of song", never in `shows/`, the gig log or play stats.
+        case song
+    }
+
     /// One run on stage (a gig or a rehearsal): owns the `ShowController`, the current
     /// `LayoutPlan` and the `AutoScroller`, and is the single dispatcher of `LiveCommand`s.
     /// `.show` commands go to the engine, `.viewport` commands drive scroll and zoom (saved
@@ -41,6 +50,8 @@
 
             /// Called once the performer confirmed ending the run.
             var onEnd: @MainActor (LiveSession) async -> Void
+            /// A setlist run, or one song from the library (R150, never logged).
+            var scope: StageScope = .setlist
         }
 
         public let kind: ShowKind
@@ -162,6 +173,11 @@
 
         public var setlistName: String {
             state.record.setlistName
+        }
+
+        /// A setlist run or a single song (R150).
+        public var scope: StageScope {
+            context.scope
         }
 
         /// The minimum lyric size in force (Settings > Live).

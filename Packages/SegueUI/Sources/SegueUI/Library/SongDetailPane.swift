@@ -53,6 +53,7 @@
                         .frame(maxWidth: .infinity, alignment: .leading)
                     HStack(spacing: 8) {
                         moreMenu
+                        SongSessionButtons(songID: record.id)
                         Button("Edit") { model.beginEditing(record) }
                             .buttonStyle(.segueSecondary)
                             .help(record.isReadOnly ? "This song is read-only" : "Edit ChordPro")

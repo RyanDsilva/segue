@@ -47,10 +47,10 @@ public actor ShowController {
     private var writeTask: Task<Void, any Error>?
     private var pendingSamples: [DurationSample] = []
     private var sendingSamples = false
-    /// This run's hold on the show (released when it ends).
-    private let claim: ShowClaim
+    /// This run's hold on the show (released when it ends); nil for an unsaved run.
+    private let claim: ShowClaim?
 
-    private init(record: ShowRecord, environment: ShowEnvironment, claim: ShowClaim) {
+    private init(record: ShowRecord, environment: ShowEnvironment, claim: ShowClaim?) {
         self.record = record
         self.environment = environment
         self.claim = claim
@@ -119,14 +119,15 @@ public actor ShowController {
                 date: setlist.date ?? CalendarDay(now),
             ),
         )
-        let claim = try await environment.store.claim(record.id)
+        // An unsaved run (no store) is never claimed: nothing reaches `shows/` (R150).
+        let claim = try await environment.store?.claim(record.id)
         let controller = ShowController(record: record, environment: environment, claim: claim)
         await controller.takeSnapshotOfCurrent()
         await controller.refreshState()
         do {
             try await controller.persist()
         } catch {
-            claim.release()
+            claim?.release()
             throw error
         }
         return controller
@@ -144,9 +145,12 @@ public actor ShowController {
         guard !record.isFinished else { throw ShowError.finished(record.id) }
         // Only one run may hold a show: a second window or process resuming it would
         // overwrite this one's writes.
-        let claim = try await environment.store.claim(record.id)
+        guard let store = environment.store else {
+            throw ShowError.writeFailed("an unsaved run cannot be resumed")
+        }
+        let claim = try await store.claim(record.id)
         // The latest record on disk (the one offered may predate a write by another run).
-        let latest = await environment.store.reloaded(record.id) ?? record
+        let latest = await store.reloaded(record.id) ?? record
         if latest.isFinished || latest.readOnly != nil {
             claim.release()
             if let reason = latest.readOnly {
@@ -276,6 +280,10 @@ public actor ShowController {
             throw ShowError.finished(record.id)
         }
         try await persistAndSendSamples()
+        guard let claim else {
+            // An unsaved run: no file, no diff, no gig log entry (R150).
+            return ShowEnding(record: record, diff: nil, gigLogEntry: nil)
+        }
         claim.release(removingFile: true)
         return ShowEnding(
             record: record,
@@ -287,7 +295,7 @@ public actor ShowController {
     /// Lets go of the show without ending it (the stage went away; the show stays
     /// resumable). The controller must not be used afterwards.
     public func relinquish() {
-        claim.release()
+        claim?.release()
     }
 
     // MARK: - Songs
@@ -418,8 +426,13 @@ extension ShowController {
         while needsWrite {
             needsWrite = false
             let snapshot = record
+            // An unsaved run records the write as done without touching disk.
+            guard let store = environment.store else {
+                lastWrite = snapshot.updatedAt
+                continue
+            }
             do {
-                try await environment.store.save(snapshot)
+                try await store.save(snapshot)
                 lastWrite = snapshot.updatedAt
             } catch {
                 needsWrite = true

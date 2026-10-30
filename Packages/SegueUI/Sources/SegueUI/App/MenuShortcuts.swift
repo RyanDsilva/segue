@@ -108,6 +108,21 @@
         static let redo = MenuShortcut("Edit", "Redo", "z", [.command, .shift], system: true)
         // Library
         static let refresh = MenuShortcut("Library", "Refresh", "r")
+        /// R150, R158 Q5: one song on stage, never logged. ⌥⌘↩ is also Setlist > Rehearse,
+        /// which needs a shown setlist, so the two are never enabled together (the one
+        /// documented exception to the clash test, `sharedChords`).
+        static let rehearseSong = MenuShortcut(
+            "Library",
+            "Rehearse Song",
+            .return,
+            [.command, .option],
+        )
+        static let playSongLive = MenuShortcut(
+            "Library",
+            "Play Song Live",
+            .return,
+            [.command, .shift],
+        )
         // Setlist
         static let startShow = MenuShortcut("Setlist", "Start Show", .return)
         static let rehearse = MenuShortcut("Setlist", "Rehearse", .return, [.command, .option])
@@ -130,11 +145,17 @@
         static let help = MenuShortcut("Help", "Segue Help", "?")
         static let keyboardShortcuts = MenuShortcut("Help", "Keyboard Shortcuts", "/")
 
+        /// Items that share a chord and are never enabled together.
+        static let sharedChords: [(MenuShortcut, MenuShortcut)] = [
+            (rehearseSong, rehearse),
+        ]
+
         /// All of them, in menu order.
         public static let all: [MenuShortcut] = [
             settings, newSong, newSongFromClipboard, importSongs, showInFinder, moveToTrash, close,
             save, undo, redo,
-            refresh, startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak,
+            refresh, rehearseSong, playSongLive,
+            startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak,
             arrangeSections, moveUp, moveDown, mainWindow, help, keyboardShortcuts,
         ]
     }

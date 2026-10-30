@@ -9,8 +9,13 @@ import Testing
 struct MenuShortcutsTests {
     @Test
     func `no two menu items share a key equivalent`() {
-        let chords = MenuShortcuts.all.map(\.chord)
+        // The one documented exception (R158 Q5): Library > Rehearse Song shares ⌥⌘↩ with
+        // Setlist > Rehearse; they are never enabled together (`SingleSongSessionTests`).
+        let shared = Set(MenuShortcuts.sharedChords.map(\.0.id))
+        #expect(MenuShortcuts.sharedChords.allSatisfy { $0.0.chord == $0.1.chord })
+        let chords = MenuShortcuts.all.filter { !shared.contains($0.id) }.map(\.chord)
         #expect(Set(chords).count == chords.count, "\(MenuShortcuts.all.map(\.displayText))")
+        #expect(MenuShortcuts.playSongLive.displayText == "⇧⌘↩")
     }
 
     @Test
@@ -48,7 +53,7 @@ struct MenuShortcutsTests {
         let names = [
             "newSong", "newSongFromClipboard", "importSongs", "showInFinder", "moveToTrash",
             "close",
-            "save", "refresh",
+            "save", "refresh", "rehearseSong", "playSongLive",
             "startShow", "rehearse", "newSetlist", "pickSongs", "arrangeSet", "insertBreak",
             "arrangeSections",
             "moveUp", "moveDown", "mainWindow", "help", "keyboardShortcuts",

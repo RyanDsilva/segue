@@ -345,11 +345,19 @@
         /// The reserved band under the song: the status line fades in here, so it never
         /// covers the last lyric line (and showing it never changes the layout).
         private var statusBand: some View {
-            ZStack {
+            // The mini neck (P8-4 7.3) takes the band's left end; the status line then
+            // starts 16 pt after it so the two never overlap.
+            let neck = session.showsBassNeck && !session.showsRequests
+            return ZStack {
+                if neck {
+                    StageBassNeckBand(session: session)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 if statusVisible || session.notice != nil {
                     StageStatusLine(session: session)
                         .frame(height: Self.statusLineHeight)
                         .padding(.horizontal, Self.horizontalPadding)
+                        .padding(.leading, neck ? StageBassNeck.width + 16 : 0)
                         .transition(.opacity)
                 }
             }
@@ -381,17 +389,13 @@
             ZStack {
                 Theme.color.ground.opacity(0.7)
                 VStack(alignment: .leading, spacing: 14) {
-                    Text(quitting ? "End the \(noun) and quit Segue?" : "End the \(noun)?")
+                    Text(title(noun: noun, quitting: quitting))
                         .font(Theme.font.sectionHeading)
                         .foregroundStyle(Theme.color.ink)
-                    Text(
-                        session.kind == .gig
-                            ? "The set is saved to the gig log. You can review any reordering next."
-                            : "Song timings are kept. Rehearsals never go in the gig log.",
-                    )
-                    .font(Theme.font.body)
-                    .foregroundStyle(Theme.color.muted)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text(detail)
+                        .font(Theme.font.body)
+                        .foregroundStyle(Theme.color.muted)
+                        .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 10) {
                         Spacer()
                         Button("Keep Playing (Esc)") { session.cancelEnd() }
@@ -410,6 +414,24 @@
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.liveEndDialog)
+        }
+    }
+
+    private extension EndShowConfirmation {
+        func title(noun: String, quitting: Bool) -> String {
+            if session.scope == .song {
+                return quitting ? "End this song and quit Segue?" : "End this song?"
+            }
+            return quitting ? "End the \(noun) and quit Segue?" : "End the \(noun)?"
+        }
+
+        var detail: String {
+            if session.scope == .song {
+                return "A single song is never added to the gig log."
+            }
+            return session.kind == .gig
+                ? "The set is saved to the gig log. You can review any reordering next."
+                : "Song timings are kept. Rehearsals never go in the gig log."
         }
     }
 

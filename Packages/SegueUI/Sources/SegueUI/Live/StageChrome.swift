@@ -49,7 +49,9 @@
                     StageChip(text: "Rehearsal")
                         .accessibilityIdentifier(AccessibilityID.liveRehearsal)
                 }
-                ProgressDots(items: session.state.record.items, position: session.positionText)
+                if session.scope == .setlist {
+                    ProgressDots(items: session.state.record.items, position: session.positionText)
+                }
                 ElapsedTime(session: session)
                     .padding(.leading, 6)
             }
@@ -227,6 +229,9 @@
                         .truncationMode(.tail)
                         .layoutPriority(-1)
                 }
+            case nil where session.scope == .song:
+                label("End of song", color: Theme.color.muted)
+                detail(session.kind == .gig ? "Cmd-. ends" : "Cmd-. ends the rehearsal")
             case nil:
                 label("End of set", color: Theme.color.muted)
                 detail("Cmd-. ends the \(session.kind == .gig ? "show" : "rehearsal")")
