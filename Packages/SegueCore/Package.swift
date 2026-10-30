@@ -23,7 +23,7 @@ let package = Package(
             targets: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
                 "Shows", "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
-                "SetAssistant",
+                "SetAssistant", "Playback",
             ],
         ),
     ],
@@ -132,12 +132,19 @@ let package = Package(
             ],
             swiftSettings: strictSettings,
         ),
+        // P8-6: sound as pure note events (voicings, phrases, the lookahead cursor) behind
+        // the `SoundOutput` port; the AVFoundation adapter lives in SegueUI.
+        .target(
+            name: "Playback",
+            dependencies: ["Diagrams", "Editing", "Library", "MusicTheory", "Shows", "Support"],
+            swiftSettings: strictSettings,
+        ),
         .testTarget(
             name: "SegueCoreTests",
             dependencies: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
                 "Shows", "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
-                "SetAssistant",
+                "SetAssistant", "Playback",
                 .product(name: "Tonic", package: "Tonic"),
             ],
             path: "Tests",
