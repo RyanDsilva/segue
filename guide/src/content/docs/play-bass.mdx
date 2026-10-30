@@ -1,0 +1,76 @@
+---
+title: Playing bass
+description: See the note to play instead of the chord, at sounding pitch, with a mini neck on stage and walk-ups into the next chord.
+---
+import Shot from '../../components/Shot.astro';
+import Steps from '../../components/Steps.astro';
+
+<Steps>
+1. Open **Settings > Instrument** and turn on **I play bass**.
+2. Pick **4** or **5** strings and your **Tuning**.
+3. Open any song or go on stage: each chord now shows the bass note to play.
+</Steps>
+
+<Shot id="bass-stage" alt="The stage in the bass-note view, with the scale line in the header and the mini neck at the bottom left" />
+
+## Bass notes {#bass-notes}
+
+In the bass-note view each chord shows the note to play: the slash bass if there is one, else the root, so `G/B` shows B. You don't need to be a bassist to use it: a keyboard player covering bass can turn it on too.
+
+- In the editor, click **Bass** in the bar above the song. The visual editor keeps the chord pills, so the notes show in the preview and on stage.
+- On stage, press <kbd>B</kbd> to switch between bass notes and chords.
+
+Both switch every song at once, and so does **Show bass notes instead of chords** in **Settings > Instrument**.
+
+## Sounding pitch {#sounding-pitch}
+
+Bass notes are always the pitch that sounds, whatever capo the guitar chart uses, so a chart in G shapes with capo 2 shows A. A key or capo you set for a setlist slot is included too. **Shapes** and **Concert** are greyed out while bass notes show.
+
+## Nashville numbers and the full chord {#nashville}
+
+With the song's **Nashville** switch on, each note carries its number, like "5 · D". Turn it off and you see "D". Turn on **Show the full chord beside the note** to see the chord small beside it.
+
+On stage the header also shows the key's scale, like "Sounding A major: A B C# D E F# G#".
+
+## The mini neck on stage {#mini-neck}
+
+With **Mini neck on stage** on, a small neck at the bottom left of the stage shows the chord you're reading. Every note of the chord is a dot labelled by its degree (R, 3, 5, b7 and so on), and the note to play is the strongest one. When a walk-up is coming, its notes show as dashed rings numbered 1, 2, 3 in the order you play them. The neck follows **Strings** and **Tuning** in Settings, and never takes a click.
+
+## The fretboard in the editor {#fretboard}
+
+With **I play bass** and **Fretboard in the editor** on, the strip under the song becomes a bass fretboard, one cell per chord: every chord tone by degree, with the note to play filled in. While you play bass, the bar above the song shows **Fretboard** in place of Diagrams, and a "Bass, BEADG" menu with **Instrument Settings…** to change strings or tuning. The song's own guitar or piano setting is kept for when you turn it off.
+
+## Walk-ups {#walk-ups}
+
+A walk-up is a short run of notes after a chord that leads into the next one, like `G A B ›` then `C`. A note outside the key is marked "°", as in `A B C#° ›`.
+
+Turn them on in **Settings > Instrument** with **Walk-ups on charts**: **Into sections** for just the changes into a new section, or **Every change**. They show only in the bass-note view.
+
+<Shot id="walk-up-popover" alt="The walk-up popover: ranked walk-ups for G to C, with Nothing here at the bottom" />
+
+### Pick a different walk-up {#pick}
+
+In the editor preview or a library song's preview, click a walk-up to see the other options, best first, or **Nothing here** to leave that change plain. Use <kbd>↑</kbd> and <kbd>↓</kbd> to move and <kbd>Return</kbd> to choose. **Reset to suggestion** goes back to Segue's pick.
+
+Your picks are saved in the song's small `.segue.json` file, never in its `.cho` file. The stage shows your pick, else the top suggestion, and never offers options or plays a sound.
+
+### The Walk-ups list {#walk-ups-list}
+
+Choose **Walk-ups…** in the editor's top bar, or right-click a song in the library, to see every change in the song, grouped by section. Click a row to pick for that change.
+
+At the top, **Feel** sets the style for this song: **Default**, **Pop**, **Rock**, **Worship**, **Country / gospel** or **Bollywood**. The feel only changes which walk-ups come first. Default uses **Default feel** from Settings.
+
+If you edit the song and some saved walk-ups no longer match, the list's footer shows them with a **Remove** button each, and **Remove All**.
+
+## Settings > Instrument {#settings}
+
+| Setting | Does |
+| --- | --- |
+| Show bass notes instead of chords | The bass-note view, for every song and the stage |
+| Show the full chord beside the note | The chord small beside each note |
+| Mini neck on stage | The neck at the bottom left of the stage |
+| I play bass | Your bass profile; also turns bass notes on |
+| Strings, Tuning | 4 or 5 strings, a preset or **Custom…** (type "BEADG") |
+| Fretboard in the editor | A bass fretboard under the song |
+| Walk-ups on charts | Off, Into sections or Every change |
+| Default feel | The feel for songs that have none of their own |

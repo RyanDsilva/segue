@@ -25,6 +25,7 @@ const sidebar = [
       page('section-notes', 'Section notes'),
       page('text-mode', 'Text mode'),
       page('transpose', 'Transpose and capo'),
+      page('play-bass', 'Playing bass'),
     ],
   },
   {
