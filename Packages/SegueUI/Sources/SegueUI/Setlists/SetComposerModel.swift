@@ -38,6 +38,8 @@ public final class SetComposerModel {
     @ObservationIgnored private(set) var sessionSongs = 0
     @ObservationIgnored private(set) var sessionCycles = 0
     @ObservationIgnored private var sessionReturns = 0
+    /// The Return in flight: the set write runs after the key handler returns.
+    @ObservationIgnored private var acceptInFlight: Task<Void, Never>?
 
     public init() {}
 
@@ -171,6 +173,17 @@ public final class SetComposerModel {
     }
 
     /// A Return was handled with `outcome`.
+    /// Keeps the Return's write task so it can be awaited.
+    func track(accept task: Task<Void, Never>) {
+        acceptInFlight = task
+    }
+
+    /// Returns once the last Return has been written and applied (tests await this
+    /// instead of polling the setlist against a wall-clock deadline).
+    func awaitAccept() async {
+        await acceptInFlight?.value
+    }
+
     func noteReturn(_ outcome: ComposeOutcome) {
         switch outcome {
         case .added:

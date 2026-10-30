@@ -318,7 +318,7 @@
             let typed = composer.text
             let choice = composer.choice
             let setlistID = setlist.id
-            Task {
+            composer.track(accept: Task {
                 let outcome = await model.compose(
                     resolution,
                     choice: choice,
@@ -328,7 +328,7 @@
                 )
                 composer.noteReturn(outcome)
                 apply(outcome, typed: typed, choice: choice)
-            }
+            })
         }
 
         fileprivate func apply(_ outcome: ComposeOutcome, typed: String, choice: Int) {

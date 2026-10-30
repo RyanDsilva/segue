@@ -66,6 +66,12 @@ struct ComposerKeyTests {
         return view.subviews.lazy.compactMap { field(in: $0) }.first
     }
 
+    /// Runs SwiftUI's pending update now, so the field reflects the model without waiting
+    /// for a run loop turn (which a loaded main actor can delay indefinitely).
+    private static func update(_ hosted: Hosted) {
+        hosted.window.contentView?.layoutSubtreeIfNeeded()
+    }
+
     /// Types `text` through the field editor, as keystrokes would.
     private func type(_ text: String, into hosted: Hosted) throws {
         let editor = try #require(hosted.field.currentEditor() as? NSTextView)
@@ -109,15 +115,16 @@ struct ComposerKeyTests {
         try press(#selector(NSResponder.cancelOperation(_:)), in: hosted)
         #expect(composer.text.isEmpty)
         // The field follows the model on SwiftUI's next update.
-        try await hosted.env.waitFor { hosted.field.stringValue.isEmpty ? true : nil }
+        Self.update(hosted)
+        #expect(hosted.field.stringValue.isEmpty)
 
         // Return appends the shown song and clears the line, focus kept.
         try type("kesar", into: hosted)
         try press(#selector(NSResponder.insertNewline(_:)), in: hosted)
-        try await hosted.env.waitFor {
-            hosted.session.setlists.setlist(hosted.friday)?.songCount == 1 ? true : nil
-        }
-        try await hosted.env.waitFor { composer.text.isEmpty ? true : nil }
+        await composer.awaitAccept()
+        #expect(hosted.session.setlists.setlist(hosted.friday)?.songCount == 1)
+        #expect(composer.text.isEmpty)
+        Self.update(hosted)
         #expect(hosted.field.stringValue.isEmpty)
         #expect(hosted.window.firstResponder === hosted.field.currentEditor())
     }
