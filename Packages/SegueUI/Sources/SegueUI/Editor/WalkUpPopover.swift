@@ -34,6 +34,8 @@ extension EnvironmentValues {
 struct WalkUpRunView: View {
     let run: ApproachRun
     let size: CGFloat
+    /// Set by the line's VoiceOver action for this run: opens the picker too.
+    @Binding var requested: ChangeID?
     @Environment(\.walkUpPicking) private var picking
     @State private var isPresented = false
     @State private var isHovered = false
@@ -49,16 +51,41 @@ struct WalkUpRunView: View {
             .pointerStyle(.link)
             .onHover { isHovered = $0 }
             .help("Shows other walk-ups")
-            .accessibilityLabel("Walk-up: \(run.accessibility)")
+            .accessibilityLabel(Self.spokenName(run))
+            .accessibilityHint("Shows other walk-ups")
             .accessibilityIdentifier(AccessibilityID.sheetWalkUp)
-            .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+            .popover(isPresented: presented, arrowEdge: .bottom) {
                 WalkUpPopover(id: run.change, picking: picking) {
-                    isPresented = false
+                    presented.wrappedValue = false
                 }
             }
         } else {
             label
         }
+    }
+
+    /// Open from a click or from the line's VoiceOver action.
+    private var presented: Binding<Bool> {
+        Binding(
+            get: { isPresented || requested == run.change },
+            set: { isOn in
+                isPresented = isOn
+                if !isOn, requested == run.change {
+                    requested = nil
+                }
+            },
+        )
+    }
+
+    /// "Walk-up into C: A, B" (section 8.12), the run's button and the line's action.
+    static func spokenName(_ run: ApproachRun) -> String {
+        let parts = run.accessibility.components(separatedBy: " into ")
+        let notes = (parts.first ?? "")
+            .replacingOccurrences(of: "walk up ", with: "")
+            .replacingOccurrences(of: "walk down ", with: "")
+            .replacingOccurrences(of: "walk ", with: "")
+        guard parts.count == 2 else { return "Walk-up: \(run.accessibility)" }
+        return "Walk-up into \(parts[1]): \(notes)"
     }
 
     /// A pick reads as "yours": ink at 70% instead of muted.
@@ -69,17 +96,57 @@ struct WalkUpRunView: View {
     }
 }
 
-/// The ranked candidates (A-D), then "Nothing here", then "Reset to suggestion".
+extension View {
+    /// A lyric line is one VoiceOver element, so each walk-up run on it is reached as one of
+    /// the line's actions ("Walk-up into C: A, B"), which opens that run's picker.
+    func walkUpActions(_ runs: [ApproachRun], requested: Binding<ChangeID?>) -> some View {
+        modifier(WalkUpActions(runs: runs, requested: requested))
+    }
+}
+
+private struct WalkUpActions: ViewModifier {
+    let runs: [ApproachRun]
+    @Binding var requested: ChangeID?
+    @Environment(\.walkUpPicking) private var picking
+
+    func body(content: Content) -> some View {
+        content.accessibilityActions {
+            if picking?.isEnabled == true {
+                ForEach(runs, id: \.change) { run in
+                    Button(WalkUpRunView.spokenName(run)) { requested = run.change }
+                }
+            }
+        }
+    }
+}
+
+/// The ranked candidates (A-D), then "Nothing here", then "Reset to suggestion". Up and Down
+/// move, Return chooses, Esc closes; hovering a row with Option held shows its score
+/// breakdown (for tuning the weights, section 8.9).
 struct WalkUpPopover: View {
     let id: ChangeID
     let picking: WalkUpPicking
     let dismiss: () -> Void
+    /// The keyboard (and hover) row: the options in rank order, then "Nothing here".
+    @State private var highlighted: Int?
+    @State private var optionHeld = false
+    @FocusState private var focused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let details = picking.details(id) {
                 header(details)
                 rows(details.change)
+                    .focusable()
+                    .focusEffectDisabled()
+                    .focused($focused)
+                    .onKeyPress(keys: [.upArrow, .downArrow, .return]) { press in
+                        handle(press.key, change: details.change)
+                    }
+                    .onAppear {
+                        highlighted = highlighted ?? shownIndex(details.change)
+                        focused = true
+                    }
             } else {
                 Text("This change is no longer in the song.")
                     .font(Theme.font.body)
@@ -88,7 +155,41 @@ struct WalkUpPopover: View {
         }
         .padding(14)
         .frame(width: 300, alignment: .leading)
-        .accessibilityIdentifier(AccessibilityID.walkUpPopover)
+        #if os(macOS)
+            .onModifierKeysChanged(mask: .option) { _, new in
+                optionHeld = new.contains(.option)
+            }
+        #endif
+            .accessibilityIdentifier(AccessibilityID.walkUpPopover)
+    }
+
+    /// The options shown as rows (a `hold` is the "Nothing here" row).
+    private static func options(_ change: ChordChange) -> [WalkUpCandidate] {
+        change.candidates.filter { $0.kind != .hold }
+    }
+
+    /// The row of the walk-up shown now: the pick, else the suggestion, else "Nothing here".
+    private func shownIndex(_ change: ChordChange) -> Int {
+        let options = Self.options(change)
+        guard let shown = change.pickCandidate ?? change.candidates.first, shown.kind != .hold
+        else { return options.count }
+        return options.firstIndex { Self.same($0, shown) } ?? 0
+    }
+
+    private func handle(_ key: KeyEquivalent, change: ChordChange) -> KeyPress.Result {
+        let options = Self.options(change)
+        let last = options.count
+        let current = highlighted ?? shownIndex(change)
+        switch key {
+        case .upArrow:
+            highlighted = max(0, current - 1)
+        case .downArrow:
+            highlighted = min(last, current + 1)
+        default:
+            picking.choose(change, current < last ? options[current] : nil)
+            dismiss()
+        }
+        return .handled
     }
 
     private func header(_ details: WalkUpDetails) -> some View {
@@ -104,7 +205,7 @@ struct WalkUpPopover: View {
 
     @ViewBuilder
     private func rows(_ change: ChordChange) -> some View {
-        let options = change.candidates.filter { $0.kind != .hold }
+        let options = Self.options(change)
         let shown = change.pickCandidate ?? change.candidates.first
         if options.isEmpty {
             Text("No walk-up here. " + (change.suppressed?.reason ?? ""))
@@ -121,9 +222,21 @@ struct WalkUpPopover: View {
                     suggested: candidate == change.candidates.first,
                     selected: shown.map { Self.same($0, candidate) } ?? false,
                 )
+                .background(highlight(index))
+                .onHover {
+                    if $0 {
+                        highlighted = index
+                    }
+                }
                 .accessibilityIdentifier(AccessibilityID.walkUpOption(index))
             }
             nothingRow(change, selected: shown.map { $0.kind == .hold } ?? true)
+                .background(highlight(options.count))
+                .onHover {
+                    if $0 {
+                        highlighted = options.count
+                    }
+                }
         }
         if change.pick != nil {
             Button("Reset to suggestion") {
@@ -165,6 +278,13 @@ struct WalkUpPopover: View {
                     Text(description + (suggested ? " \u{00B7} Suggested" : ""))
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
+                    if optionHeld, highlighted == Self.options(change).firstIndex(of: candidate) {
+                        Text(Self.breakdown(candidate))
+                            .font(.system(size: 11, weight: .medium).monospaced())
+                            .foregroundStyle(Theme.color.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier(AccessibilityID.walkUpBreakdown)
+                    }
                 }
                 Spacer(minLength: 4)
                 if selected {
@@ -207,6 +327,25 @@ struct WalkUpPopover: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Nothing here" + (selected ? ", selected" : ""))
         .accessibilityIdentifier(AccessibilityID.walkUpNothing)
+    }
+
+    /// The keyboard row's tint.
+    private func highlight(_ index: Int) -> some View {
+        RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .fill(highlighted == index ? Theme.color.line : Color.clear)
+    }
+
+    /// "prior 3 + resolution 2 + direction 1.5 = 6.5": each weighted term, in the
+    /// vocabulary's order, summing to the score.
+    static func breakdown(_ candidate: WalkUpCandidate) -> String {
+        let terms = WalkUpTerm.allCases.compactMap { term in
+            candidate.breakdown[term].map { "\(term.rawValue) \(number($0))" }
+        }
+        return terms.joined(separator: " + ") + " = \(number(candidate.score))"
+    }
+
+    private static func number(_ value: Double) -> String {
+        value == value.rounded() ? String(Int(value)) : String(format: "%.1f", value)
     }
 
     /// Same notes and kind (a pick rebuilt from its offsets equals the generated one).

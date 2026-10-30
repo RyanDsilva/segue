@@ -190,6 +190,8 @@ private struct ItemView: View {
 struct LyricLineView: View {
     let line: RenderLine
     let style: SongSheetStyle
+    /// A walk-up run whose picker VoiceOver asked for through the line's actions (P8-4b).
+    @State private var requestedWalkUp: ChangeID?
 
     var body: some View {
         let tokens = LyricToken.tokens(for: line)
@@ -220,7 +222,12 @@ struct LyricLineView: View {
                             }
                             if let approach = token.approach {
                                 // The walk-up into the next chord (P8-4b 8.8).
-                                WalkUpRunView(run: approach, size: style.chordSize * 0.6)
+                                let size = style.chordSize * 0.6
+                                WalkUpRunView(
+                                    run: approach,
+                                    size: size,
+                                    requested: $requestedWalkUp,
+                                )
                             }
                         }
                         .fixedSize()
@@ -242,6 +249,7 @@ struct LyricLineView: View {
             .accessibilityLabel(Self.spokenText(tokens))
             .accessibilityAddTraits(.isStaticText)
             .accessibilityIdentifier(AccessibilityID.sheetLine)
+            .walkUpActions(tokens.compactMap(\.approach), requested: $requestedWalkUp)
         }
     }
 

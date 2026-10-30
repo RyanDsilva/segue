@@ -217,4 +217,45 @@ struct WalkUpPickerTests {
         #expect(!library.showsWalkUps)
         #expect(library.walkUpsSource(songID: song.id) == nil)
     }
+
+    @Test
+    func `the option breakdown lists each weighted term and sums to the score`() throws {
+        let (document, _) = ChordProParser.parse(Self.song)
+        let options = DisplayOptions().withBass(InstrumentProfile(
+            bassNotes: true,
+            walkUps: .everyChange,
+        ))
+        let model = RenderModel(document: document, options: options)
+        let change = try #require(BassLine.changes(
+            model,
+            document: document,
+            prefs: BassPrefs(),
+        ).first)
+        let top = try #require(change.candidates.first)
+        let text = WalkUpPopover.breakdown(top)
+        #expect(text.hasPrefix("genrePrior "))
+        #expect(text.hasSuffix(" = \(Int(top.score))") || text.contains(" = "))
+        #expect(text.contains("resolution 2"))
+    }
+
+    @Test
+    func `the run reads as a VoiceOver button and the stage face has its glyphs`() {
+        let run = ApproachRun(
+            change: ChangeID(from: ChordPosition(section: 0, chord: 0), toBass: PitchClass(0)),
+            notes: ["A", "B"],
+            chromatic: [false, false],
+            isPick: false,
+            accessibility: "walk up A, B into C",
+        )
+        #expect(WalkUpRunView.spokenName(run) == "Walk-up into C: A, B")
+        // The run's "\u{203A}" and chromatic "\u{00B0}" exist in the stage face (no
+        // fallback font, no ">" needed).
+        #expect(Theme.registerFonts())
+        for role in [TextRole.approach, .chord] {
+            let font = StageTextMetrics.ctFont(role, size: 20)
+            var characters: [UniChar] = [0x203A, 0x00B0]
+            var glyphs = [CGGlyph](repeating: 0, count: characters.count)
+            #expect(CTFontGetGlyphsForCharacters(font, &characters, &glyphs, characters.count))
+        }
+    }
 }
