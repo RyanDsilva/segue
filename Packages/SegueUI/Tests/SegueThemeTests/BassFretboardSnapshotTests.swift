@@ -71,8 +71,23 @@ extension DiagramSnapshotTests {
         let popover = WalkUpPopover(id: first.id, picking: picking) {}
             .background(Theme.color.surfaceAlt)
         try snapshot(popover, name: "walkup-popover", scheme: scheme)
+    }
 
-        // The Walk-ups list with a pick and a saved walk-up that no longer matches.
+    /// The Walk-ups list with a saved walk-up that no longer matches (its rows sit in a scroll
+    /// view, which the snapshot renderer leaves blank).
+    @Test(arguments: schemes)
+    @MainActor
+    func `the walk-ups list renders`(scheme: ColorScheme) throws {
+        #expect(Theme.registerFonts())
+        let (four, document) = Self.bassModel(strings: 4)
+        let changes = BassLine.changes(four, document: document, prefs: BassPrefs())
+        let first = try #require(changes.first)
+        let picking = WalkUpPicking(
+            isEnabled: true,
+            details: { _ in WalkUpDetails(change: first, section: "Verse", feel: "Pop") },
+            choose: { _, _ in },
+            reset: { _ in },
+        )
         let stale = try #require(ChordAnchors.anchor(
             at: first.id.from,
             units: SongSections.units(of: document),
