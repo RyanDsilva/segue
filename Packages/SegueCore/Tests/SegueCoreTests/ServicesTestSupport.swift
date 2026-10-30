@@ -75,7 +75,8 @@ enum VocabularySample {
         }
         events += snapshots.map(AnalyticsEvent.librarySnapshot)
         events += LibraryLocation.allCases.map(AnalyticsEvent.libraryCreated)
-        events += SongSource.allCases.map(AnalyticsEvent.songCreated)
+        events += SongSource.allCases.map { AnalyticsEvent.songCreated($0) }
+        events += SongSource.allCases.map { AnalyticsEvent.songCreated($0, nearDuplicate: true) }
         for method in ImportMethod.allCases {
             for files in SmallBucket.allCases {
                 for outcome in ImportOutcome.allCases {

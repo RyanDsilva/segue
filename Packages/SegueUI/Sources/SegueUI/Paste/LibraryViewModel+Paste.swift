@@ -62,14 +62,15 @@ public extension LibraryViewModel {
         await flushEditor()
         guard let summary = await review.accept() else { return }
         pasteReview = nil
+        // Non-PII: only whether a written song looked like a library song (R163).
+        let lookalike = review.items.contains { $0.isTicked && $0.nearDuplicate != nil }
         if let method = review.importMethod {
             let files = review.items.count + review.directFiles.count + review.preSkipped.count
-            let lookalike = review.items.contains { $0.isTicked && $0.nearDuplicate != nil }
             await finishImport(summary, files: files, method: method, nearDuplicate: lookalike)
         } else {
             await reload()
             if !summary.imported.isEmpty {
-                recordSongsCreated(.newSong)
+                recordSongsCreated(.newSong, nearDuplicate: lookalike)
             }
             showImported(summary, bar: !summary.skipped.isEmpty)
         }

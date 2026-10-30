@@ -7,8 +7,9 @@ import Services
 
 extension LibraryViewModel {
     /// Row 5 plus the song milestones (row 13), after the catalog was reloaded.
-    func recordSongsCreated(_ source: SongSource) {
-        services.record(.songCreated(source))
+    /// `nearDuplicate`: at least one created song carried the lookalike warning.
+    func recordSongsCreated(_ source: SongSource, nearDuplicate: Bool = false) {
+        services.record(.songCreated(source, nearDuplicate: nearDuplicate))
         recordSongMilestones()
     }
 
@@ -36,7 +37,7 @@ extension LibraryViewModel {
         ))
         guard !summary.imported.isEmpty else { return }
         services.record(.milestoneReached(.firstImport, daysSinceFirstLaunch: daysSinceFirstLaunch))
-        recordSongsCreated(.import)
+        recordSongsCreated(.import, nearDuplicate: nearDuplicate)
     }
 
     /// Rows 8 and 17 once the library's results for `state` are on screen.

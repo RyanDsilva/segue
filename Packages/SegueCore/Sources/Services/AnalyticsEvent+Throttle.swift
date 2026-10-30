@@ -23,8 +23,8 @@ public extension AnalyticsEvent {
             return .perOccurrence
         case .appLaunched, .librarySnapshot, .songDeleted:
             return .daily(key: name)
-        case let .songCreated(source):
-            return .daily(key: "\(name)|\(source.rawValue)")
+        case let .songCreated(source, nearDuplicate):
+            return .daily(key: "\(name)|\(source.rawValue)|\(nearDuplicate)")
         case let .featureUsed(feature, context):
             return .daily(key: "\(name)|\(feature.rawValue)|\(context.rawValue)")
         case let .editorOpened(mode):

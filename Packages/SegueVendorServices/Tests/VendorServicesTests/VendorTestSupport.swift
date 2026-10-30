@@ -235,7 +235,8 @@ enum VocabularySample {
             ))
         }
         events += LibraryLocation.allCases.map(AnalyticsEvent.libraryCreated)
-        events += SongSource.allCases.map(AnalyticsEvent.songCreated)
+        events += SongSource.allCases.map { AnalyticsEvent.songCreated($0) }
+        events += SongSource.allCases.map { AnalyticsEvent.songCreated($0, nearDuplicate: true) }
         events += ImportMethod.allCases.flatMap { method in
             ImportOutcome.allCases.map {
                 .songImported(method: method, files: .zero, outcome: $0, nonUTF8: true)

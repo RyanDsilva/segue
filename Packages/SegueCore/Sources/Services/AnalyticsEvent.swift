@@ -24,8 +24,9 @@ public enum AnalyticsEvent: Sendable, Hashable {
     case librarySnapshot(LibrarySnapshot)
     /// Row 4: a library was chosen.
     case libraryCreated(LibraryLocation)
-    /// Row 5: a new song (daily per source).
-    case songCreated(SongSource)
+    /// Row 5: a new song (daily per source and lookalike flag). `nearDuplicate`: a
+    /// created song carried the "looks like a song in your library" warning (R163).
+    case songCreated(SongSource, nearDuplicate: Bool = false)
     // Flat parameters, like every row: the closed vocabulary maps each one to one key.
     // swiftlint:disable enum_case_associated_values_count
     /// Row 6: one import operation.
@@ -388,8 +389,11 @@ extension AnalyticsEvent {
             ]
         case let .libraryCreated(location):
             ["segue.location": location.rawValue]
-        case let .songCreated(source):
-            ["segue.source": source.rawValue]
+        case let .songCreated(source, nearDuplicate):
+            [
+                "segue.source": source.rawValue,
+                "segue.nearDuplicate": String(nearDuplicate),
+            ]
         case let .songImported(method, files, outcome, nonUTF8, nearDuplicate):
             [
                 "segue.method": method.rawValue,

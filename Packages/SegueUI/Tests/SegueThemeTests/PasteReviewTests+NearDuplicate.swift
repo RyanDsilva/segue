@@ -63,6 +63,32 @@ extension PasteReviewTests {
         await library.cancelPasteReview()
     }
 
+    /// R163: an accepted paste that looks like a library song flags its row 5 event.
+    @Test
+    func `an accepted lookalike paste flags its song-created event`() async throws {
+        let env = try TestEnvironment()
+        let library = try await env.openLibrary()
+        let recording = RecordingLog(url: env.scratch.appending(path: "services.jsonl"))
+        library.services = ServicesHub(
+            factory: RecordingServicesFactory(log: recording),
+            consent: ConsentState(analytics: .granted(.now), crashReports: .declined(.now)),
+            throttle: AnalyticsThrottle(suiteName: env.suiteName, clock: env.clock),
+        )
+        _ = try await library.store.createSong(source: Self.librarySource)
+        await library.reload()
+
+        library.beginPasteReview(text: Self.paste, source: .clipboard)
+        #expect(library.pasteReview?.selected?.nearDuplicate != nil)
+        await library.pasteReview?.awaitRefinement()
+        await library.acceptPasteReview()
+
+        let signal = try #require(recording.entries().first {
+            $0["name"] as? String == "Segue.Song.created"
+        })
+        let params = try #require(signal["params"] as? [String: String])
+        #expect(params == ["segue.source": "newSong", "segue.nearDuplicate": "true"])
+    }
+
     @Test
     func `a ChordPro lookalike is reviewed as read and lands with the others`() async throws {
         let env = try TestEnvironment()
