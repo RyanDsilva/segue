@@ -99,6 +99,10 @@
         @ObservationIgnored var landsAtBottom = false
         /// Whether the current item was reached by an advance (for auto-start).
         @ObservationIgnored var arrivedByAdvance = false
+        /// Navigation actions queued or running that can change the current song; page
+        /// turns are ignored while any is in flight, since they would decide from the old
+        /// song (R154).
+        @ObservationIgnored private(set) var songChangesInFlight = 0
 
         /// Per-song live memory waiting to be written, latest value per song.
         @ObservationIgnored var unsavedPrefs: [SongID: LivePrefs] = [:]
@@ -196,7 +200,16 @@
         /// in the engine: the stage follows it and a "not saving" problem stays up until a
         /// later write succeeds.
         public func perform(_ action: ShowAction) {
+            let changesSong = action.changesSong
+            if changesSong {
+                songChangesInFlight += 1
+            }
             enqueue { session in
+                defer {
+                    if changesSong {
+                        session.songChangesInFlight -= 1
+                    }
+                }
                 let controller = session.context.controller
                 let before = session.state.current?.item.itemId
                 do {
@@ -304,6 +317,18 @@
         /// Seconds since the run started.
         func elapsed(at now: Date) -> TimeInterval {
             max(0, now.timeIntervalSince(state.record.startedAt))
+        }
+    }
+
+    private extension ShowAction {
+        /// Whether this navigation action can change the current song (page turns wait for it).
+        var changesSong: Bool {
+            switch self {
+            case .jump, .next, .playNextRequest, .playNow, .previous, .skipCurrent:
+                true
+            default:
+                false
+            }
         }
     }
 #endif

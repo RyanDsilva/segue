@@ -235,8 +235,11 @@
         }
 
         /// Page-turner Page Down (R45): pages down, and at the song's bottom (or when it
-        /// fits) moves to the next song, at its top.
+        /// fits) moves to the next song, at its top. Ignored while a song change is in
+        /// flight (a double tap never skips a song), and at the bottom of the last song it
+        /// stays put with a "Last song" hint: only an explicit Next ends the chart (R154).
         func pageForward() {
+            guard songChangesInFlight == 0 else { return }
             let now = context.scrollClock.now()
             if let plan, plan.needsScroll {
                 let offset = scrollOffset(at: now)
@@ -246,12 +249,17 @@
                     return
                 }
             }
+            if state.current != nil, state.record.breakId == nil, !state.record.hasNextItem {
+                flash("Last song")
+                return
+            }
             perform(.next)
         }
 
         /// Page-turner Page Up (R45): pages up, and at the song's top moves to the previous
-        /// song, at its bottom.
+        /// song, at its bottom. Ignored while a song change is in flight (R158 Q1).
         func pageBack() {
+            guard songChangesInFlight == 0 else { return }
             let now = context.scrollClock.now()
             if let plan, plan.needsScroll, scrollOffset(at: now) > 0.5 {
                 pageUp()

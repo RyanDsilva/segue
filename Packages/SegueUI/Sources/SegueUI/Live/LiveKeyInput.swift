@@ -47,7 +47,7 @@
                 // reach the app.
                 return stroke.modifiers.isEmpty
             }
-            if isRepeat, command.scope != .viewport {
+            if isRepeat, !command.repeatsWhenHeld {
                 return true
             }
             session.dispatch(command)

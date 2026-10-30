@@ -72,6 +72,17 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
         }
     }
 
+    /// Whether a held key (auto-repeat) may repeat this command: only continuous scroll and
+    /// zoom. A repeat never changes songs, toggles, cycles, confirms or plays (R154).
+    public var repeatsWhenHeld: Bool {
+        switch self {
+        case .scrollFaster, .scrollPageDown, .scrollPageUp, .scrollSlower, .zoomIn, .zoomOut:
+            true
+        default:
+            false
+        }
+    }
+
     /// The engine action for a `.show` command; nil for the others.
     public var showAction: ShowAction? {
         switch self {

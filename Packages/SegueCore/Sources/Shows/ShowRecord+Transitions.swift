@@ -227,6 +227,12 @@ extension ShowRecord {
         return items[start...].firstIndex { $0.state == .pending }
     }
 
+    /// Whether `next` has a pending item to move to (a queued request does not count:
+    /// `next` never plays one). False at the last song, so a page turner can stay put.
+    public var hasNextItem: Bool {
+        nextPendingIndex != nil
+    }
+
     /// With nothing current (the end was reached): the item that was current last, from the
     /// most recent event that left it.
     private var cursorIndex: Int? {

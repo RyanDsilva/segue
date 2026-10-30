@@ -121,6 +121,16 @@ struct Phase2ModelTests {
     }
 
     @Test
+    func `only continuous scroll and zoom repeat when a key is held`() {
+        let repeating: Set<LiveCommand> = [
+            .scrollPageDown, .scrollPageUp, .scrollFaster, .scrollSlower, .zoomIn, .zoomOut,
+        ]
+        for command in LiveCommand.allCases {
+            #expect(command.repeatsWhenHeld == repeating.contains(command), "\(command)")
+        }
+    }
+
+    @Test
     func `default bindings cover every command and round-trip through json`() throws {
         let table = InputBindingTable.defaults
         for command in LiveCommand.allCases {

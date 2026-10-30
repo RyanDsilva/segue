@@ -205,9 +205,17 @@ extension StageWindowSuites {
                 #expect(try LiveKeyInput.handle(Self.key(124, repeat: true), session: live))
             }
             #expect(try LiveKeyInput.handle(Self.key(1, "s", repeat: true), session: live))
+            // A held page turner (Page Down on a song that fits) never changes songs (R154).
+            for _ in 0 ..< 30 {
+                #expect(try LiveKeyInput.handle(Self.key(121, repeat: true), session: live))
+            }
+            #expect(try LiveKeyInput.handle(Self.key(0, "a", repeat: true), session: live))
+            #expect(try LiveKeyInput.handle(Self.key(8, "c", repeat: true), session: live))
             try await Task.sleep(for: .milliseconds(200))
             #expect(live.positionText == "1 of 3")
             #expect(!live.showsDrawer)
+            #expect(!live.isAutoScrolling)
+            #expect(live.currentPrefs?.columns == nil)
 
             #expect(try LiveKeyInput.handle(Self.key(124, repeat: false), session: live))
             _ = try await env.waitFor { live.positionText == "2 of 3" ? true : nil }
