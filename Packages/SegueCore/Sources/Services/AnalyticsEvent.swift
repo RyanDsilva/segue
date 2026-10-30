@@ -75,6 +75,9 @@ public enum AnalyticsEvent: Sendable, Hashable {
     /// Row 23 (P3-17): a section note was added, moved, toggled or deleted (daily per action,
     /// kind and placement).
     case notesEdited(NotesEditedSummary)
+    /// Row 24 (P8-5): a Return in the set composer, and a composer session that added rows.
+    case setlistComposed(ComposerSummary)
+    case setlistComposerSession(songs: SmallBucket, cycles: SmallBucket)
 }
 
 // MARK: - Grouped parameters (cases with more than four values)
@@ -357,7 +360,7 @@ extension AnalyticsEvent {
         case .songCreated, .songDeleted, .songImported: "Song"
         case .featureUsed: "Feature"
         case .editorChordPalette, .editorOpened: "Editor"
-        case .setlistCreated: "Setlist"
+        case .setlistComposed, .setlistComposerSession, .setlistCreated: "Setlist"
         case .showEnded, .showStarted: "Show"
         case .milestoneReached: "Milestone"
         case .helpOpened: "Help"
@@ -391,6 +394,8 @@ extension AnalyticsEvent {
         case .aiAssistantUsed: "assistantUsed"
         case .aiSmartFilterUsed: "smartFilterUsed"
         case .notesEdited: "edited"
+        case .setlistComposed: "composed"
+        case .setlistComposerSession: "composerSession"
         }
     }
 
@@ -483,6 +488,7 @@ extension AnalyticsEvent {
                 "segue.entry": summary.entry.rawValue,
                 "segue.repeatHint": String(summary.repeatHint),
             ]
+        case .setlistComposed, .setlistComposerSession: composerParams
         }
     }
 }

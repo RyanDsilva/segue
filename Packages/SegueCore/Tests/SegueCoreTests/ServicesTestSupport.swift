@@ -162,6 +162,27 @@ enum VocabularySample {
                 repeatHint: row.isMultiple(of: 2),
             )))
         }
+        events += composerEvents
+        return events
+    }
+
+    /// Row 24 (P8-5): every composer action, tier, form and entry at least once.
+    private static var composerEvents: [AnalyticsEvent] {
+        let actions = ComposerAction.allCases, tiers = ComposerTier.allCases
+        let forms = ComposerForm.allCases, entries = ComposerEntry.allCases
+        var events = (0 ..< max(actions.count, tiers.count, forms.count)).map { row in
+            AnalyticsEvent.setlistComposed(ComposerSummary(
+                action: actions[row % actions.count],
+                tier: tiers[row % tiers.count],
+                form: forms[row % forms.count],
+                alternative: row.isMultiple(of: 2),
+                key: row.isMultiple(of: 3),
+                entry: entries[row % entries.count],
+            ))
+        }
+        events += SmallBucket.allCases.map { bucket in
+            .setlistComposerSession(songs: bucket, cycles: bucket)
+        }
         return events
     }
 
