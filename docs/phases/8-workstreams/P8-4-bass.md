@@ -384,11 +384,11 @@ Derived values [R3.1]: `a`, `b` (bass pitch classes at concert pitch: slash bass
 **Ranking** [R3.4]: score = the sum of weighted terms, every term recorded in `breakdown`:
 
 1. **Genre prior** (0-3), `WalkUpWeights.standard.prior[kind][genre]`, the research table verbatim ([R3.4] item 1; column "unknown" for `genre == nil`).
-2. **Clash with chord A** (-5): a note a half step from A's third, fifth or seventh that is not the target-side chromatic approach note (this rejects `F G` over E into Am).
+2. **Clash with chord A** (-5): a note that cross-relates with A's fifth or seventh, that is the same letter a half step away (G against E's G#, C against A7's C#), and is neither one of A's own tones nor the target-side chromatic approach note. A neighbour on another letter is a passing tone, not a clash (R165). A note that cross-relates with A's third is never generated at all (this rejects `F G` over E into Am).
 3. **Resolution**: last note a half step from `b` +2, a whole step +1, the fifth +1.
-4. **Direction**: +1 for up when `energyUp == true`, down when `false`; +1 more in Country for the walk up a fourth (I-IV, V-I).
+4. **Direction**: section energy sets direction only when walking into a new section (section 8.4): +1 for up when `energyUp == true`, down when `false`. With unknown energy, the candidate that moves the short way from `a` to `b` gets +1.5 (R165). +1 more in Country for the walk up a fourth (I-IV, V-I).
 5. **Length**: -2 per note beyond `maxNotes` (dropped beyond `maxNotes + 1`); +0.5 for exactly filling the slots when `n >= 4`.
-6. **Minor tonic** (+2): minor key, B is i, the candidate ends on the raised 7; plus +1 for `F G#` (harmonic) with Bollywood, +1 for `F# G#` (melodic) otherwise.
+6. **Minor tonic** (+2): minor key, B is i, chord A holds the raised 7 (V, V7, vii°; R165), and the candidate ends on it; plus +1 for `F G#` (harmonic) with Bollywood, +1 for `F# G#` (melodic) otherwise.
 7. **Into section** (+1) for `scaleWalk` and `scaleChrom`.
 
 Under S2 the order is fixed (`hold`, then the passing note) and the breakdown holds one `writtenLine` term. Otherwise the result is the top 4 with score >= 3 (`WalkUpWeights.standard.floor`), ties broken by `WalkUpKind` declaration order, then lower first-note pitch.
@@ -397,18 +397,18 @@ Under S2 the order is fixed (`hold`, then the passing note) and the breakdown ho
 
 **Spelling**: notes in the key's scale via `KeySpelling.spell(_:in:)`; a note that chord A supplies keeps A's spelling (`G#` over E); any other chromatic note is a sharp ascending and a flat descending (white keys stay naturals, the chart rule).
 
-**Worked examples** (feel Pop unless stated, unknown beats; first = what the chart shows):
+**Worked examples** (feel Pop unless stated, unknown beats; first = what the chart shows; the G -> C, G -> D and A7 -> Dm rows were corrected to what the rules generate, R165):
 
 | A -> B (key) | Ranked candidates |
 |---|---|
-| G -> C (G) | `A B`, `B`, `G` (fifth of C) |
-| G -> D (G) | `F# E` (down), `B C#` (scaleChrom up), `A` (fifth of D) |
+| G -> C (G) | `A B`, `B`, `E D` (down); the fifth `G` holds A's own root, so it never appears |
+| G -> D (G) | `F# E` (down), `E`, `B C` (up), `C#`; `B C#` (scaleChrom) and `A` (fifth of D) rank below the top 4 |
 | G -> Em (G) | `F#` |
 | C -> D (G) | `C#` |
 | E -> Am (Am) | `F# G#`, `G#`; Bollywood: `F G#`, `F# G#`, `G#`; `F G` never |
 | G -> Am (Am) | `G#` |
 | F -> G, then G -> Am (Am), any feel | F -> G: `hold`, `F#` (S2); G -> Am: `hold`, `G#` |
-| A7 -> Dm (C) | `B C#`, `C#`, `E` |
+| A7 -> Dm (C) | `B C#`, `C#`, `F E` (down); the fifth `A` is A7's own root, so it never appears |
 | C -> C/B -> Am -> Am/G (C) | C -> C/B none (S1); C/B -> Am: `hold`, `Bb`; Am -> Am/G: `hold`, `Ab` |
 | G -> C# (C), tritone | `C` |
 
