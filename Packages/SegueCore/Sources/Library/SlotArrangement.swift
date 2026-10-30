@@ -424,8 +424,8 @@ public enum SongSections {
     }
 
     /// The chorus a `{chorus}` repeat at `index` refers to: the latest earlier written-out
-    /// chorus whose label matches, else the latest written-out chorus (the live layout's
-    /// `RepeatCollapser.repeatTarget` rule).
+    /// chorus whose label matches, else the latest written-out chorus (the stage writes the
+    /// repeat out with its lines, R147).
     public static func repeatTarget(of index: Int, in sections: [RenderSection]) -> Int? {
         guard sections.indices.contains(index) else { return nil }
         let wanted = SectionNotes.label(of: sections[index])?.lowercased()

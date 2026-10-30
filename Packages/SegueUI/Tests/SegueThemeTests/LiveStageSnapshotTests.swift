@@ -106,7 +106,7 @@ extension StageWindowSuites {
             // a pixel counts as changed past 8/255 (two renders differ by 1/255 in text
             // antialiasing).
             let scale = 2.0
-            let bandTop = LiveView.headerHeight + LiveView.bodyTopPadding
+            let bandTop = LiveView.headerHeight + LiveView.mapHeight + LiveView.bodyTopPadding
                 + LiveView.viewport(for: screen, topInset: 0).height
             let bandBottom = bandTop + LiveView.statusBandHeight
             var changed = (song: 0, band: 0, footer: 0)
@@ -210,7 +210,10 @@ extension StageWindowSuites {
             screen: CGSize,
             label: String,
         ) throws {
-            #expect(plan.fit == .fits, "\(label)")
+            // The section map band (R147, 58 pt) costs the 13" stage about a line: forty
+            // lines no longer fit there and scroll at the minimum instead.
+            let mayScroll = label == "forty-lines at 13in"
+            #expect(plan.fit == .fits || (mayScroll && plan.fit == .scrollsAtMinimum), "\(label)")
             #expect(plan.lyricSize >= LiveSettings.defaultMinLyricSize, "\(label)")
             let blocks = plan.columns.flatMap(\.blocks)
             #expect(blocks.flatMap(\.labelLines).allSatisfy { $0.text.size >= 12 })

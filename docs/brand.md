@@ -113,6 +113,8 @@ Editor and PDF use the same chord/lyric ratio so what you edit is what you see o
 
 Minimal and functional. Transitions between songs are a fast cross-fade (150 ms or less) or none. Auto-scroll is linear and continuous. Nothing pulses, bounces or loops on stage, and the cue dot never blinks. All motion respects Reduce Motion, and in live mode non-essential animation is disabled outright.
 
+Exception (R151): the stage metronome's beat pips flash at the song's tempo when the metronome is on; Reduce Motion shows a stepping numeral instead.
+
 ## 9. Implementation plan (SwiftUI)
 
 - **Phase 0:**

@@ -2,8 +2,9 @@ import XCTest
 
 /// Per-slot arrangements E2E (P3-16, R122, R123) on a fresh library: a slot's popover >
 /// Arrange Sections > skip the Bridge, last Chorus x2, a 2:40 slot length; the builder shows
-/// the mark and the slot length; the show plays the arrangement; the gig log says so; an
-/// edit to the song makes the arrangement out of date. The `.cho` is never changed by it.
+/// the mark and the slot length; the show plays the arrangement with every pass written out
+/// and on the section map (R147); the gig log says so; an edit to the song makes the
+/// arrangement out of date. The `.cho` is never changed by it.
 final class SegueArrangementE2ETests: SetlistE2ETestCase {
     private static let song = """
     {title: Harbor Lights}
@@ -84,13 +85,13 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
         // Skip the Bridge (row 5).
         click(app, ArrangementAXID.play(4))
         SetlistE2E.waitForDisk("Skipping the Bridge never reached the setlist file") {
-            try Self.plays(root) == [1, 1, 1, 1, 0, 1]
+            try Self.modes(root) == ["full", "full", "full", "full", "skip", "full"]
         }
         // The last chorus (row 6) twice: select it, then +.
         click(app, ArrangementAXID.row(5))
         click(app, ArrangementAXID.countUp(5))
         SetlistE2E.waitForDisk("The play count never reached the setlist file") {
-            try Self.plays(root) == [1, 1, 1, 1, 0, 2]
+            try Self.modes(root) == ["full", "full", "full", "full", "skip", "full", "full"]
         }
         // A length for this slot.
         let field = app.textFields[SetlistAXID.songCardLength].firstMatch
@@ -119,11 +120,12 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
         )
         XCTAssertEqual(after, cho, "The song file changed")
         let file = try XCTUnwrap(SetlistFixture.setlistFiles(root).first)
-        XCTAssertEqual(file["schemaVersion"] as? Int, 5)
+        XCTAssertEqual(file["schemaVersion"] as? Int, 6)
     }
 
-    /// Start Show: the stage says "Arranged", no Bridge, three "Repeat chorus" lines (the
-    /// `{chorus}` and the last chorus played twice); the gig log names the arrangement.
+    /// Start Show: the stage says "Arranged", no Bridge, every chorus written out in full (no
+    /// "Repeat chorus"): the map has six chips, the four choruses badged "1 of 4" ...; the gig
+    /// log names the arrangement.
     @MainActor
     private func playTheShow(_ app: XCUIApplication) throws {
         click(app, SetlistAXID.setlistStartShow)
@@ -134,11 +136,18 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
         XCTAssertTrue(tag.appears(timeout: 5))
         XCTAssertEqual(tag.value as? String, "Arranged for this gig")
         XCTAssertTrue(SetlistE2E.element(app, ArrangementAXID.liveBody).appears(timeout: 5))
-        // The stage's lines are the app's only "Repeat chorus" and "Bridge" texts.
-        let repeats = app.staticTexts.matching(NSPredicate(format: "value == 'Repeat chorus'"))
-        SetlistE2E.waitUntil("The stage never showed the arranged repeats (\(repeats.count))") {
-            repeats.count == 3
-        }
+        // Every pass written out, on the map with its badge (R147).
+        XCTAssertTrue(SetlistE2E.element(app, ArrangementAXID.liveMap).appears(timeout: 5))
+        let lastChip = SetlistE2E.element(app, ArrangementAXID.mapChip(6))
+        XCTAssertTrue(lastChip.appears(timeout: 5))
+        XCTAssertEqual(lastChip.label, "Chorus, 4 of 4")
+        XCTAssertFalse(SetlistE2E.element(app, ArrangementAXID.mapChip(7)).exists)
+        XCTAssertTrue(SetlistE2E.element(app, ArrangementAXID.passBadge(2)).exists)
+        XCTAssertEqual(
+            app.staticTexts.matching(NSPredicate(format: "value == 'Repeat chorus'")).count,
+            0,
+            "A repeat is collapsed on stage",
+        )
         XCTAssertEqual(
             app.staticTexts.matching(NSPredicate(format: "value == 'Bridge'")).count,
             0,
@@ -197,9 +206,10 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
         return entries.first?["arrangement"] as? [String: Any]
     }
 
-    private static func plays(_ root: URL) throws -> [Int] {
-        let steps = try arrangement(root)?["steps"] as? [[String: Any]] ?? []
-        return steps.compactMap { $0["plays"] as? Int }
+    /// The saved passes' show modes ("full" when the key is absent).
+    private static func modes(_ root: URL) throws -> [String] {
+        let passes = try arrangement(root)?["passes"] as? [[String: Any]] ?? []
+        return passes.map { $0["mode"] as? String ?? "full" }
     }
 }
 
@@ -215,6 +225,15 @@ enum ArrangementAXID {
     static let liveBody = "segue.live.body"
     static let liveArrangement = "segue.live.arrangement"
     static let liveEndDialog = "segue.live.endDialog"
+    static let liveMap = "segue.live.map"
+
+    static func mapChip(_ number: Int) -> String {
+        "segue.live.map.chip.\(number)"
+    }
+
+    static func passBadge(_ number: Int) -> String {
+        "segue.live.passBadge.\(number)"
+    }
 
     static func row(_ index: Int) -> String {
         "segue.setlist.arrangement.row.\(index)"

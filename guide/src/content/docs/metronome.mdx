@@ -1,14 +1,14 @@
 ---
 title: The metronome
-description: A quiet pulse in the corner of the stage at each song's tempo. A click only in rehearsals, never during a show.
+description: Four beat pips and the tempo at the bottom right of the stage, at each song's tempo. A click only in rehearsals, never during a show.
 ---
 import Shot from '../../components/Shot.astro';
 
 ## The pulse {#pulse}
 
-A small dot in the bottom right of the stage pulses at the song's tempo and time signature, with the first beat of each bar in coral. Press <kbd>M</kbd> to show or hide it for this show, or use the Metronome row in the pre-show checklist. To start every show with it on, choose **Settings > Live > Start shows with the metronome on**.
+At the bottom right of the stage, above the footer, the tempo sits beside one large pip per beat of the bar: four in 4/4, three in 3/4. Each pip flashes on its beat, and the first beat of each bar is coral. With Reduce Motion on, a number counts the beats instead (also for bars of more than eight beats). Press <kbd>M</kbd> to show or hide it for this show, or use the Metronome row in the pre-show checklist. To start every show with it on, choose **Settings > Live > Start shows with the metronome on**.
 
-<Shot id="metronome" alt="The metronome pulse and tempo in the corner of the stage" />
+<Shot id="metronome" alt="The metronome: 96 BPM and four beat pips, the first in coral, above the footer" />
 
 ## Songs with no tempo {#no-tempo}
 
@@ -17,6 +17,10 @@ The metronome hides for a song without a tempo. Add one on the [song card](/guid
 ## Compound meters {#meters}
 
 In 6/8 and other compound meters, the pulse follows the dotted quarter: two pulses per bar in 6/8.
+
+## The loop count-in {#count-in}
+
+When a [rehearsal loop](/guide/rehearse#loop) goes back to the top of its section, the pips show for one bar to count you in, even if the pulse is off. The click sounds too if it's on. A song without a tempo just pauses for two seconds.
 
 ## The click, in rehearsals only {#click}
 

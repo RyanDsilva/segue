@@ -102,6 +102,8 @@ It can be split into **A1** (the `Shows` module) and **A2** (Setlists and Librar
 
 ## Unit B - Live layout engine (`Sources/LiveLayout/`, `SegueUI/Live/Layout/`)
 
+> Superseded by R147 (2026-10-30): the stage never collapses repeats. `RepeatCollapser`, `CollapsedSection`, `LayoutRequest.collapseRepeats` and the `.collapsed` block content are gone; every pass is laid out in full, with a section map and "2 of 3" badges. See `docs/phases/8-workstreams/P8-2-stage-map-and-passes.md` sections 5 and 6.
+
 | Type / function | Contract |
 |---|---|
 | `LayoutRequest { model, viewport, minLyricSize, zoom, collapseRepeats, columns?, cues, notes, style }` | Built by C from `RenderModel` (with overrides applied), the sidecar `live`/`cues`/`notes`, the item note and `LiveSettings.minLyricSize`. |

@@ -138,6 +138,18 @@
             "⌘R"
           ],
           "title" : "Refresh"
+        },
+        {
+          "keys" : [
+            "⌥⌘↩"
+          ],
+          "title" : "Rehearse Song"
+        },
+        {
+          "keys" : [
+            "⇧⌘↩"
+          ],
+          "title" : "Play Song Live"
         }
       ],
       "menu" : "Library"
@@ -191,12 +203,6 @@
             "⌥↑"
           ],
           "title" : "Move Up"
-        },
-        {
-          "keys" : [
-            "⌘L"
-          ],
-          "title" : "Add Song by Name"
         },
         {
           "keys" : [
@@ -321,6 +327,23 @@
       ]
     },
     {
+      "group" : "Sections",
+      "rows" : [
+        {
+          "keys" : [
+            "1-9"
+          ],
+          "title" : "Jump to Section"
+        },
+        {
+          "keys" : [
+            "L"
+          ],
+          "title" : "Loop Section (Rehearsal)"
+        }
+      ]
+    },
+    {
       "group" : "View",
       "rows" : [
         {
@@ -347,12 +370,6 @@
             "C"
           ],
           "title" : "Columns"
-        },
-        {
-          "keys" : [
-            "O"
-          ],
-          "title" : "Collapse Repeats"
         }
       ]
     },
@@ -402,17 +419,6 @@
           "title" : "Keyboard Shortcuts"
         }
       ]
-    {
-      "group" : "Bass",
-      "rows" : [
-        {
-          "keys" : [
-            "B"
-          ],
-          "title" : "Bass Notes"
-        }
-      ]
-    },
     },
     {
       "group" : "Show",
