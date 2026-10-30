@@ -42,6 +42,9 @@
                         .accessibilityIdentifier(AccessibilityID.liveArrangement)
                 }
                 Spacer(minLength: 24)
+                if let pass = session.loopedPass {
+                    StageLoopPill(name: pass.name, stopKey: session.loopKey)
+                }
                 if session.kind == .rehearsal {
                     StageChip(text: "Rehearsal")
                         .accessibilityIdentifier(AccessibilityID.liveRehearsal)
@@ -120,6 +123,39 @@
             return hours > 0
                 ? "\(hours):\(String(format: "%02d", minutes)):\(tail)"
                 : "\(minutes):\(tail)"
+        }
+    }
+
+    /// The header's loop pill (R148): "⟲ Looping Chorus 2/3" and "L stops", ringed and
+    /// lightly filled in coral.
+    struct StageLoopPill: View {
+        let name: PassName
+        let stopKey: String?
+
+        var body: some View {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("⟲ Looping \(name.chipText)")
+                    .font(SchibstedGrotesk.semiBold.font(size: 14))
+                    .foregroundStyle(Theme.color.ink)
+                if let stopKey {
+                    Text("\(stopKey) stops")
+                        .font(SchibstedGrotesk.medium.font(size: 14))
+                        .foregroundStyle(Theme.color.muted)
+                }
+            }
+            .lineLimit(1)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 5)
+            .background {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Theme.color.cue.opacity(0.08))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(Theme.color.cue.opacity(0.55), lineWidth: 1)
+                    }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier(AccessibilityID.liveLoop)
         }
     }
 
@@ -279,8 +315,8 @@
 
         /// Generated from the live bindings, so custom keys show truthfully.
         private var summary: String {
-            (["Song \(session.positionText)"] + KeyHelp.statusHints(session.context.bindings, kind: session.kind))
-                .joined(separator: "  ·  ")
+            let hints = KeyHelp.statusHints(session.context.bindings, kind: session.kind)
+            return (["Song \(session.positionText)"] + hints).joined(separator: "  ·  ")
         }
     }
 #endif

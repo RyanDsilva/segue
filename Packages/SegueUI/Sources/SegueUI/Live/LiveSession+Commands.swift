@@ -70,6 +70,14 @@
         }
 
         private func dispatchZoom(_ command: LiveCommand) {
+            if let index = command.jumpIndex {
+                jump(toPass: index)
+                return
+            }
+            if command == .toggleLoop {
+                toggleLoop()
+                return
+            }
             switch command {
             case .zoomIn: zoom(1)
             case .zoomOut: zoom(-1)

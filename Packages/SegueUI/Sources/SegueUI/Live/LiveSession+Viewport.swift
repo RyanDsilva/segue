@@ -45,7 +45,11 @@
             upNextModel = upNextSlot.flatMap { slot in
                 slot.song.map { song in
                     Self.arranged(
-                        StageRequest.renderModel(song, overrides: slot.item.overrides),
+                        StageRequest.renderModel(
+                            song,
+                            overrides: slot.item.overrides,
+                            bass: bassView,
+                        ),
                         StageRequest.resolution(slot.item.arrangement, song: song),
                     )
                 }
@@ -66,6 +70,7 @@
                 settings: context.settings.settings,
                 minLyricSize: minLyricSize,
                 viewport: viewport,
+                bass: bassView,
             )
             currentModel = request.model
             currentArrangement = resolution.map { $0.isOutOfDate ? .outOfDate : .applied }
@@ -74,6 +79,7 @@
             let newPlan = LayoutEngine.plan(request, metrics: StageTextMetrics())
             plan = newPlan
             updateScroller(newPlan, item: slot.item, song: song, prefs: prefs)
+            rescheduleLoopWrap()
         }
 
         /// Records once per item what the stage did with its arrangement (the gig log says
@@ -99,6 +105,9 @@
             let speed = scrollSpeed(newPlan, song: song, item: slot, prefs: prefs)
             if laidOutItem != item || scroller == nil {
                 laidOutItem = item
+                // A new song: the current pass follows its scroll and any loop ends.
+                clearPinnedPass()
+                stopLoop()
                 var fresh = AutoScroller(speed: speed, overflow: newPlan.overflow)
                 if let fraction = pendingFraction {
                     pendingFraction = nil
@@ -186,6 +195,9 @@
         }
 
         func pageDown() {
+            if pageWrapsLoop() {
+                return
+            }
             guard let plan, plan.needsScroll else { return }
             let now = context.scrollClock.now()
             let offset = scrollOffset(at: now)
@@ -208,6 +220,10 @@
         /// stays put with a "Last song" hint: only an explicit Next ends the chart (R154).
         func pageForward() {
             guard songChangesInFlight == 0 else { return }
+            // A loop on (rehearsal): a step past the looped pass wraps instead (R148).
+            if pageWrapsLoop() {
+                return
+            }
             let now = context.scrollClock.now()
             if let plan, plan.needsScroll {
                 let offset = scrollOffset(at: now)
@@ -239,6 +255,8 @@
 
         private func seek(_ offset: Double, at now: Date) {
             scroller?.seek(to: offset, at: now)
+            clearPinnedPass()
+            rescheduleLoopWrap()
             Task { await flushScroll() }
         }
 
@@ -259,7 +277,11 @@
             case .idle, .paused:
                 scroller.start(at: now)
             }
+            if scroller.phase == .running {
+                clearPinnedPass()
+            }
             self.scroller = scroller
+            rescheduleLoopWrap()
         }
 
         /// Records a running scroll that reached the bottom as finished, so the display
@@ -274,6 +296,8 @@
 
         func restartScroll() {
             scroller?.restart(at: context.scrollClock.now())
+            clearPinnedPass()
+            rescheduleLoopWrap()
             Task { await flushScroll() }
         }
 

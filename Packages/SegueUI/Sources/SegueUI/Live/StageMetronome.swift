@@ -23,6 +23,10 @@
         public private(set) var clicks = false
         /// The current song's beat grid; nil without a tempo, in a break or past the end.
         public private(set) var track: MetronomeTrack?
+        /// The end of the rehearsal loop's count-in bar (P8-2): the pips show until then even
+        /// with the pulse off.
+        public private(set) var countInEnd: Date?
+        @ObservationIgnored private var countInTask: Task<Void, Never>?
 
         /// The monotonic stage clock (the auto-scroll clock): beats never drift with NTP.
         @ObservationIgnored let clock: any Clock
@@ -55,6 +59,16 @@
             isOn && track != nil
         }
 
+        /// Whether the pips may show: the pulse is on, or a count-in bar is under way.
+        var mayShowPulse: Bool {
+            track != nil && (isOn || countInEnd != nil)
+        }
+
+        /// Whether the pips show at `now` (the count-in bar ends on its own).
+        func showsPulse(at now: Date) -> Bool {
+            track != nil && (isOn || countInEnd.map { now < $0 } ?? false)
+        }
+
         /// Follows the engine: a new current item (or a changed tempo or meter, or a break
         /// starting or ending) restarts the grid on beat 1 now.
         func follow(_ state: ShowState) {
@@ -78,7 +92,7 @@
         func toggle() {
             isOn.toggle()
             if isOn {
-                restartGrid()
+                restart(at: clock.now())
             }
         }
 
@@ -88,7 +102,7 @@
             guard click != nil else { return false }
             clicks.toggle()
             if clicks, !isOn {
-                restartGrid()
+                restart(at: clock.now())
             }
             syncClick()
             return true
@@ -105,11 +119,42 @@
         func stop() {
             clicks = false
             click?.stop()
+            endCountIn()
         }
 
-        private func restartGrid() {
+        /// The rehearsal loop's wrap (R148): the grid restarts at `now`, so beat 1 of the
+        /// count-in bar falls on the wrap and the section starts on the next downbeat; the
+        /// pips show for that bar even with the pulse off, and the click sounds only when it
+        /// is on (`K`). Returns how long the scroll holds: one bar, or 2 s without a usable
+        /// tempo (no pips, R158 Q4).
+        @discardableResult
+        func countIn(at now: Date) -> TimeInterval {
+            guard track != nil else { return Self.tempolessHold }
+            restart(at: now)
+            let bar = track?.barDuration ?? Self.tempolessHold
+            countInEnd = now.addingTimeInterval(bar)
+            countInTask?.cancel()
+            countInTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(bar))
+                guard !Task.isCancelled else { return }
+                self?.countInEnd = nil
+            }
+            return bar
+        }
+
+        /// The hold at a loop wrap for a song without a tempo.
+        static let tempolessHold: TimeInterval = 2
+
+        private func endCountIn() {
+            countInTask?.cancel()
+            countInTask = nil
+            countInEnd = nil
+        }
+
+        /// Beat 1 now: switching the pulse or the click on counts the band in.
+        private func restart(at now: Date) {
             guard var track else { return }
-            track.start = clock.now()
+            track.start = now
             self.track = track
             syncClick()
         }

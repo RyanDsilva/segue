@@ -29,11 +29,17 @@
         /// screen size alone.
         nonisolated static let headerHeight: CGFloat = 76
         nonisolated static let footerHeight: CGFloat = 64
+        /// The section map band under the header (R147): 48 pt chips plus 10 pt below,
+        /// always reserved so the viewport never changes between songs.
+        nonisolated static let mapHeight: CGFloat = 58
+        /// How far left of the song area the pass marks may draw (the current pass's dot sits
+        /// before the gutter name, in the side padding).
+        nonisolated static let markSlack: CGFloat = 24
 
         /// The layout viewport for a stage of `size` (the body minus its padding and the
         /// status band).
         static func viewport(for size: CGSize, topInset: CGFloat) -> LayoutSize {
-            let body = size.height - headerHeight - footerHeight - topInset
+            let body = size.height - headerHeight - mapHeight - footerHeight - topInset
             return LayoutSize(
                 width: max(0, size.width - 2 * horizontalPadding),
                 height: max(0, body - bodyTopPadding - statusBandHeight),
@@ -45,6 +51,7 @@
                 StageHeader(session: session)
                     .frame(height: Self.headerHeight)
                     .padding(.top, topInset)
+                mapBand
                 songArea
                 statusBand
                 StageFooter(session: session)
@@ -64,6 +71,7 @@
                         .padding(.top, topInset)
                 }
             }
+            .overlay(alignment: .top) { jumpToast }
             .overlay(alignment: .top) { searchOverlay }
             .overlay { endConfirm }
             .overlay { keysOverlay }
@@ -77,6 +85,37 @@
                     revealStatus()
                 }
             }
+        }
+
+        // MARK: Section map
+
+        /// The map strip (R147): the shown passes of the current song, current one lit, in
+        /// Live and Rehearsal. Empty (but reserved) in a break, past the end, for an
+        /// unavailable song and for fewer than two passes.
+        private var mapBand: some View {
+            ZStack {
+                let passes = session.mapPasses
+                if !passes.isEmpty {
+                    TimelineView(.animation(paused: !session.isAutoScrolling)) { _ in
+                        let now = session.context.scrollClock.now()
+                        StageMapStrip(
+                            passes: passes,
+                            current: session.currentPass(at: now),
+                            progress: session.passProgress(at: now),
+                            loop: session.loopPass,
+                            onJump: { session.jump(toPass: $0) },
+                        )
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: Self.mapHeight)
+        }
+
+        /// "Jumped to ...", 14 pt below the map, centred over the song.
+        private var jumpToast: some View {
+            StageJumpToast(message: session.jumpToast)
+                .padding(.top, Self.headerHeight + Self.mapHeight + topInset + 14)
         }
 
         // MARK: Song body
@@ -113,14 +152,25 @@
                     let fraction = session.scrollFraction(at: now)
                     StagePlanView(plan: plan)
                         .equatable()
+                        .overlay(alignment: .topLeading) {
+                            StagePassOverlay(
+                                plan: plan,
+                                current: session.currentPass(at: now),
+                                loop: session.loopPass,
+                            )
+                        }
                         .offset(y: -session.scrollOffset(at: now))
                         .frame(
                             width: plan.viewport.width,
                             height: plan.viewport.height,
                             alignment: .topLeading,
                         )
-                        .clipped()
-                        .mask { Self.edgeMask(moreBelow: fraction < 0.999 && plan.needsScroll) }
+                        // Clipped by the mask, which reaches into the side padding so the
+                        // current pass's dot before the gutter shows.
+                        .mask {
+                            Self.edgeMask(moreBelow: fraction < 0.999 && plan.needsScroll)
+                                .padding(.horizontal, -Self.markSlack)
+                        }
                         .accessibilityElement(children: .contain)
                         .overlay(alignment: .topLeading) {
                             // The layout state for the E2E suite only: VoiceOver users never

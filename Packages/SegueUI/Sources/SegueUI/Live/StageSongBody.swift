@@ -107,6 +107,7 @@
                     x: line.text.x - padding.width,
                     baseline: line.baseline,
                 )
+                .accessibilityIdentifier(AccessibilityID.livePassBadge(block.id + 1))
             case .sectionLabel:
                 placed(
                     text(

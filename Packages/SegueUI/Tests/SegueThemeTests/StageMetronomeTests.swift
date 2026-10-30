@@ -212,14 +212,43 @@ extension StageWindowSuites {
             #expect(size().width == 0)
             live.dispatch(.toggleMetronome)
             #expect(live.indicator == "Metronome on")
-            #expect(size().width > StageMetronomeView.dot)
+            // Four 30 pt pips in 4/4 (R151), beside the tempo.
+            #expect(size().width > 4 * StageMetronomeView.pip + 3 * StageMetronomeView.pipSpacing)
             #expect(StageMetronomeView.bpmText(96) == "96")
             #expect(StageMetronomeView.bpmText(92.5) == "92.5")
             #expect(StageMetronomeView.flash(0) == 1)
-            #expect(StageMetronomeView.flash(0.6) == 0)
+            #expect(StageMetronomeView.flash(0.45) == 0)
             live.dispatch(.next)
             _ = try await run.env.waitFor { live.positionText == "2 of 2" ? true : nil }
             #expect(size().width == 0)
+            try await run.end(live)
+        }
+
+        @Test
+        func `one pip per pulse of the bar, a numeral past eight pulses`() async throws {
+            let run = try await MetronomeRun(songs: [
+                "{title: Four}\n{tempo: 96}\n[G]La\n",
+                "{title: Three}\n{tempo: 96}\n{time: 3/4}\n[G]La\n",
+                "{title: Nine}\n{tempo: 96}\n{time: 9/4}\n[G]La\n",
+            ])
+            run.app.liveSettings.metronomeOn = true
+            let live = try await run.start(.gig)
+            func width() -> CGFloat {
+                let host = NSHostingView(rootView: StageMetronomeView(metronome: live.metronome))
+                host.layoutSubtreeIfNeeded()
+                return host.fittingSize.width
+            }
+            let step = StageMetronomeView.pip + StageMetronomeView.pipSpacing
+            let four = width()
+            live.dispatch(.next)
+            _ = try await run.env.waitFor { live.positionText == "2 of 3" ? true : nil }
+            let three = width()
+            #expect(abs(four - three - step) < 0.5)
+            live.dispatch(.next)
+            _ = try await run.env.waitFor { live.positionText == "3 of 3" ? true : nil }
+            // 9 pulses: the numeral, narrower than four pips.
+            #expect(live.metronome.track?.meter.pulses == 9)
+            #expect(width() < three)
             try await run.end(live)
         }
 

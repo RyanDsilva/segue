@@ -87,6 +87,22 @@
         var currentArrangement: ArrangementState?
         /// Items whose arrangement state was sent to the show record.
         @ObservationIgnored var recordedArrangements: Set<ShowItemID> = []
+
+        // Pass state (see LiveSession+Passes.swift, R147, R148).
+
+        /// The pass a jump or a loop wrap made current; cleared by the next manual scroll,
+        /// page step, Home, auto-scroll start or song change.
+        var pinnedPass: Int?
+        /// The pass the rehearsal loop repeats; nil when no loop is on.
+        var loopPass: Int?
+        /// The "Jumped to ..." confirmation and its sequence number (a repeat restarts it).
+        var jumpToast: StageJumpToast.Message?
+        @ObservationIgnored var jumpToastTask: Task<Void, Never>?
+        /// The task waiting for the loop's next wrap on the scroll clock, and that instant.
+        @ObservationIgnored var loopWrapTask: Task<Void, Never>?
+        @ObservationIgnored var loopWrapInstant: Date?
+        /// A section jump was recorded for analytics this session (once only).
+        @ObservationIgnored var recordedJump = false
         /// The item the plan was laid out for; a change resets scrolling.
         @ObservationIgnored var laidOutItem: ShowItemID?
         /// Per-song live memory changed during this run (also saved to the sidecar).
@@ -173,6 +189,7 @@
 
         /// The stage went away: release the assertion and stop the timer.
         func stop() {
+            stopLoop()
             metronome.stop()
             flushTask?.cancel()
             flushTask = nil
@@ -271,6 +288,7 @@
         /// "End Show" confirmed: ends the run through the app (gig log, Shortcut, review).
         public func confirmEnd() {
             overlay = nil
+            stopLoop()
             metronome.stop()
             enqueue { session in
                 session.isEnding = true
