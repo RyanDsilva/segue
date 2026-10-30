@@ -1,9 +1,10 @@
 import XCTest
 
-/// Per-slot arrangements E2E (P3-16, R122, R123) on a fresh library: a slot's popover >
-/// Arrange Sections > skip the Bridge, last Chorus x2, a 2:40 slot length; the builder shows
-/// the mark and the slot length; the show plays the arrangement with every pass written out
-/// and on the section map (R147); the gig log says so; an edit to the song makes the
+/// Arrange Sections E2E (P8-3, R149, R156) on a fresh library: a slot's popover > Sections
+/// opens the sequence strip with one chip per part; S skips the Bridge, a chip's "+" plays
+/// the last chorus again, a typed roadmap commits with Return and keeps the sheet open; the
+/// row shows the mark; "Rehearse this" plays the slot as arranged (every pass on the section
+/// map, no Bridge) and the sheet opens again when it ends; an edit to the song makes the
 /// arrangement out of date. The `.cho` is never changed by it.
 final class SegueArrangementE2ETests: SetlistE2ETestCase {
     private static let song = """
@@ -36,15 +37,12 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
 
     @MainActor
     func testArrangeSectionsForOneGig() throws {
-        // The P3-16 row sheet this drives was replaced by the P8-3 sequence strip; the rewrite
-        // of this class (P8-3 section 10.4) lands after the band-practice build.
-        throw XCTSkip("Pending the P8-3 rewrite for the sequence strip")
         let root = try XCTUnwrap(libraryRoot)
         try seed(root)
         let app = try launch(light: false)
         openSetlistInArrange(app)
         try arrange(app, root)
-        try playTheShow(app)
+        try rehearseThis(app)
         try outOfDate(app, root)
     }
 
@@ -72,50 +70,50 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
         XCTAssertTrue(row.appears(timeout: 10))
     }
 
-    /// The popover's Sections button opens the sheet; skip, x2, length; Done.
+    /// The popover's Sections button opens the sheet: six chips; S skips the Bridge, "+"
+    /// repeats the last chorus, a roadmap commits on Return; Done.
     @MainActor
     private func arrange(_ app: XCUIApplication, _ root: URL) throws {
         let cho = try String(
             contentsOf: root.appending(path: "songs/harbor-lights.cho"),
             encoding: .utf8,
         )
-        app.staticTexts[SetlistAXID.entryTitle].firstMatch.click(in: app)
-        click(app, ArrangementAXID.open)
-        let sheet = SetlistE2E.element(app, ArrangementAXID.sheet)
-        XCTAssertTrue(sheet.appears(timeout: 10), "Arrange Sections never opened")
+        let sheet = openSheet(app)
+        XCTAssertTrue(SetlistE2E.element(app, ArrangementAXID.chip(5)).appears(timeout: 5))
+        XCTAssertFalse(SetlistE2E.element(app, ArrangementAXID.chip(6)).exists)
         screenshot(app, "arrangement-sheet-full")
 
-        // Skip the Bridge (row 5).
-        click(app, ArrangementAXID.play(4))
+        // Select the Bridge (chip 5) and skip it with S.
+        click(app, ArrangementAXID.chip(4))
+        app.typeKey("s", modifierFlags: [], in: app)
         SetlistE2E.waitForDisk("Skipping the Bridge never reached the setlist file") {
             try Self.modes(root) == ["full", "full", "full", "full", "skip", "full"]
         }
-        // The last chorus (row 6) twice: select it, then +.
-        click(app, ArrangementAXID.row(5))
-        click(app, ArrangementAXID.countUp(5))
-        SetlistE2E.waitForDisk("The play count never reached the setlist file") {
+        // The last chorus again: its hover "+".
+        let last = SetlistE2E.element(app, ArrangementAXID.chip(5))
+        last.hover()
+        click(app, ArrangementAXID.chipDuplicate(5))
+        SetlistE2E.waitForDisk("The extra chorus never reached the setlist file") {
             try Self.modes(root) == ["full", "full", "full", "full", "skip", "full", "full"]
         }
-        // A length for this slot.
-        let field = app.textFields[SetlistAXID.songCardLength].firstMatch
-        XCTAssertTrue(field.appears(timeout: 5))
-        field.click(in: app)
-        field.typeText("2:40\r", in: app)
-        SetlistE2E.waitForDisk("The slot length never reached the setlist file") {
-            try Self.arrangement(root)?["length"] as? Double == 160
+        // A typed roadmap: Return commits and the sheet stays open.
+        let roadmap = app.textFields[ArrangementAXID.roadmap].firstMatch
+        XCTAssertTrue(roadmap.appears(timeout: 5))
+        roadmap.click(in: app)
+        app.typeKey("a", modifierFlags: .command, in: app)
+        roadmap.typeText("V1 C V2 C -B C C:1\r", in: app)
+        SetlistE2E.waitForDisk("The roadmap never reached the setlist file") {
+            try Self.modes(root) == ["full", "full", "full", "full", "skip", "full", "first"]
         }
+        XCTAssertTrue(sheet.exists, "Return in the roadmap closed the sheet")
         screenshot(app, "arrangement-sheet-arranged")
         click(app, ArrangementAXID.done)
         XCTAssertTrue(sheet.disappears(timeout: 5))
 
-        // The row shows the mark and the slot's own length; the song keeps its 3:40.
+        // The row shows the mark; the song file never changed.
         let mark = SetlistE2E.element(app, ArrangementAXID.mark)
         XCTAssertTrue(mark.appears(timeout: 5))
-        XCTAssertEqual(mark.label, "Custom arrangement")
-        XCTAssertEqual(
-            SetlistE2E.text(app.staticTexts[SetlistAXID.entryLength].firstMatch),
-            "2:40",
-        )
+        XCTAssertEqual(mark.label, "Custom arrangement, 7 passes, 1 skipped")
         screenshot(app, "arrangement-row")
         let after = try String(
             contentsOf: root.appending(path: "songs/harbor-lights.cho"),
@@ -126,54 +124,41 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
         XCTAssertEqual(file["schemaVersion"] as? Int, 6)
     }
 
-    /// Start Show: the stage says "Arranged", no Bridge, every chorus written out in full (no
-    /// "Repeat chorus"): the map has six chips, the four choruses badged "1 of 4" ...; the gig
-    /// log names the arrangement.
+    /// "Rehearse this": the stage plays the slot as arranged (no Bridge, the fourth chorus
+    /// pass first line only on the map); ending it opens the sheet again.
     @MainActor
-    private func playTheShow(_ app: XCUIApplication) throws {
-        click(app, SetlistAXID.setlistStartShow)
-        click(app, ArrangementAXID.checklistStart)
+    private func rehearseThis(_ app: XCUIApplication) throws {
+        let sheet = openSheet(app)
+        click(app, ArrangementAXID.rehearse)
         let title = app.staticTexts[ArrangementAXID.liveTitle]
-        XCTAssertTrue(title.appears(timeout: 10))
-        let tag = app.staticTexts[ArrangementAXID.liveArrangement]
-        XCTAssertTrue(tag.appears(timeout: 5))
-        XCTAssertEqual(tag.value as? String, "Arranged for this gig")
-        XCTAssertTrue(SetlistE2E.element(app, ArrangementAXID.liveBody).appears(timeout: 5))
-        // Every pass written out, on the map with its badge (R147).
+        XCTAssertTrue(title.appears(timeout: 10), "Rehearse this never reached the stage")
         XCTAssertTrue(SetlistE2E.element(app, ArrangementAXID.liveMap).appears(timeout: 5))
         let lastChip = SetlistE2E.element(app, ArrangementAXID.mapChip(6))
         XCTAssertTrue(lastChip.appears(timeout: 5))
-        XCTAssertEqual(lastChip.label, "Chorus, 4 of 4")
+        XCTAssertEqual(lastChip.label, "Chorus, 4 of 4, first line only")
         XCTAssertFalse(SetlistE2E.element(app, ArrangementAXID.mapChip(7)).exists)
-        XCTAssertTrue(SetlistE2E.element(app, ArrangementAXID.passBadge(2)).exists)
-        XCTAssertEqual(
-            app.staticTexts.matching(NSPredicate(format: "value == 'Repeat chorus'")).count,
-            0,
-            "A repeat is collapsed on stage",
-        )
         XCTAssertEqual(
             app.staticTexts.matching(NSPredicate(format: "value == 'Bridge'")).count,
             0,
             "The skipped Bridge is on stage",
         )
-        screenshot(app, "arrangement-stage")
+        screenshot(app, "arrangement-rehearse-this")
         app.typeKey(".", modifierFlags: .command, in: app)
         XCTAssertTrue(SetlistE2E.element(app, ArrangementAXID.liveEndDialog).appears(timeout: 5))
         app.typeKey(.return, modifierFlags: [], in: app)
         XCTAssertTrue(title.disappears(timeout: 10))
+        XCTAssertTrue(sheet.appears(timeout: 10), "The sheet did not open again")
+        click(app, ArrangementAXID.done)
+        XCTAssertTrue(sheet.disappears(timeout: 5))
+    }
 
-        click(app, SetlistAXID.sidebarGigLog)
-        click(app, SetlistAXID.gigLogRow)
-        let played = SetlistE2E.element(app, SetlistAXID.gigPlayedRow)
-        XCTAssertTrue(played.appears(timeout: 5))
-        XCTAssertTrue(
-            SetlistE2E.text(played)
-                .contains(
-                    "Custom arrangement: Verse 1, Chorus, Verse 2, Chorus 2nd, Chorus 3rd x2",
-                ),
-            SetlistE2E.text(played),
-        )
-        screenshot(app, "arrangement-gig-log")
+    @MainActor
+    private func openSheet(_ app: XCUIApplication) -> XCUIElement {
+        app.staticTexts[SetlistAXID.entryTitle].firstMatch.click(in: app)
+        click(app, ArrangementAXID.open)
+        let sheet = SetlistE2E.element(app, ArrangementAXID.sheet)
+        XCTAssertTrue(sheet.appears(timeout: 10), "Arrange Sections never opened")
+        return sheet
     }
 
     /// Renaming a played section in the song makes the slot's arrangement out of date.
@@ -238,15 +223,14 @@ enum ArrangementAXID {
         "segue.live.passBadge.\(number)"
     }
 
-    static func row(_ index: Int) -> String {
-        "segue.setlist.arrangement.row.\(index)"
+    static let roadmap = "segue.setlist.arrangement.roadmap"
+    static let rehearse = "segue.setlist.arrangement.rehearse"
+
+    static func chip(_ index: Int) -> String {
+        "segue.setlist.arrangement.chip.\(index)"
     }
 
-    static func play(_ index: Int) -> String {
-        "segue.setlist.arrangement.play.\(index)"
-    }
-
-    static func countUp(_ index: Int) -> String {
-        "segue.setlist.arrangement.count.\(index).up"
+    static func chipDuplicate(_ index: Int) -> String {
+        "segue.setlist.arrangement.chip.\(index).duplicate"
     }
 }

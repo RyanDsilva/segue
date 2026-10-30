@@ -218,7 +218,6 @@
                     style: StrokeStyle(lineWidth: 1, dash: isSkipped ? [4, 3] : []),
                 )
             }
-            .overlay(alignment: .topTrailing) { hoverButtons }
             .opacity(isDragging ? 0.3 : isSkipped ? 0.55 : 1)
             .overlay {
                 if isSelected {
@@ -228,7 +227,6 @@
                 }
             }
             .contentShape(shape)
-            .onHover { isHovered = $0 }
             .onTapGesture {
                 if NSEvent.modifierFlags.contains(.option), !isReadOnly {
                     perform(.toggleSkip(chip.id))
@@ -253,6 +251,9 @@
                 }
             }
             .accessibilityIdentifier(AccessibilityID.arrangementChip(chip.id))
+            // After the chip's own element, so the hover buttons stay their own controls.
+            .overlay(alignment: .topTrailing) { hoverButtons }
+            .onHover { isHovered = $0 }
         }
 
         private var kindBar: some View {
