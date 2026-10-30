@@ -65,7 +65,7 @@ struct RomanizedHindiSearchTests {
         ("kabhee", "kabi"),
         ("hain", "hai"),
         ("hai", "hai"),
-        ("mein", "mei"),
+        ("mein", "mai"),
         ("main", "mai"),
         ("nahin", "nahi"),
         ("nahi", "nahi"),
@@ -88,6 +88,45 @@ struct RomanizedHindiSearchTests {
     ])
     func `normalizer folds spelling variants`(input: String, expected: String) {
         #expect(RomanNormalizer.normalize(input) == expected)
+    }
+
+    /// R157 (P8-5 section 6.8): in normalized words of at most 4 letters, `ei` and `ae`
+    /// fold to `ai`, so "tuj mai rab" finds "Tujh Mein Rab" and "ai dil" finds "Ae Dil".
+    @Test(arguments: [
+        ("mein", "mai"),
+        ("main", "mai"),
+        ("mai", "mai"),
+        ("ae", "ai"),
+        ("ai", "ai"),
+        ("hae", "hai"),
+        ("hai", "hai"),
+        ("hain", "hai"),
+        ("nei", "nai"),
+        ("nai", "nai"),
+        // Longer words keep their vowel pairs.
+        ("deewana", "divana"),
+        ("mehfil", "mehfil"),
+        ("kaise", "kaise"),
+        // English short words stay apart where they did before.
+        ("pen", "pen"),
+        ("pin", "pin"),
+        ("ten", "ten"),
+        ("tin", "tin"),
+        ("aid", "aid"),
+        ("they", "tey"),
+    ])
+    func `short words fold their vowel pairs`(input: String, expected: String) {
+        #expect(RomanNormalizer.normalize(input) == expected)
+    }
+
+    @Test
+    func `short-word folding finds tujh mein rab from tuj mai rab`() async throws {
+        let lib = try TestLibrary()
+        let store = try await lib.openStore()
+        _ = try await store.createSong(source: "{title: Tujh Mein Rab Dikhta Hai}\n[G]La la\n")
+        _ = try await store.createSong(source: "{title: Ae Dil Hai Mushkil}\n[Am]La la\n")
+        #expect(try await store.search(query: "tuj mai rab").titles == ["Tujh Mein Rab Dikhta Hai"])
+        #expect(try await store.search(query: "ai dil").titles == ["Ae Dil Hai Mushkil"])
     }
 
     @Test

@@ -18,8 +18,9 @@ import Foundation
 public enum RomanNormalizer {
     /// Bump on any change to `rules`, `words(_:)` or `looseWord(_:)`.
     ///
-    /// History: 2 = phase 0 rules; 3 = the loose (vowel quality) form.
-    public static let version = 3
+    /// History: 2 = phase 0 rules; 3 = the loose (vowel quality) form; 4 = short-word vowel
+    /// pairs (R157).
+    public static let version = 4
 
     /// Shortest normalized word the loose form folds vowels in. Shorter words are mostly
     /// distinct English and Hindi words (`pen`/`pin`, `mere`/`meri`), so they stay apart.
@@ -38,6 +39,10 @@ public enum RomanNormalizer {
         /// Drop a word-final `n` that follows one of these vowels, only for words at least
         /// `minLength` long (nasalized long endings: `hain` -> `hai`, `nahin` -> `nahi`).
         case dropFinalN(after: Set<Character>, minLength: Int)
+        /// In a word of at most `maxLength` letters, replace each of `pairs` with `to`
+        /// (`mein` -> `mei` -> `mai`, `ae` -> `ai`): short romanized Hindi words are spelled
+        /// with either vowel pair (R157). Longer words keep theirs.
+        case foldShortVowelPair(_ pairs: [String], to: String, maxLength: Int)
     }
 
     /// The rule table, applied in order.
@@ -68,6 +73,9 @@ public enum RomanNormalizer {
         .replaceSuffix("ie", with: "i", minLength: 3),
         // `hain` -> `hai`, `mein` -> `mei`, `nahin` -> `nahi`, `kyun` -> `kyu`.
         .dropFinalN(after: ["i", "u"], minLength: 4),
+        // R157: `mein`/`main`/`mai`, `ae`/`ai`, `hae`/`hai`, `nei`/`nai` (after the final
+        // `n` has gone, so `mein` arrives as `mei`).
+        .foldShortVowelPair(["ei", "ae"], to: "ai", maxLength: 4),
     ]
 
     /// `text` normalized word by word, words joined by single spaces.
@@ -138,6 +146,9 @@ public enum RomanNormalizer {
             return dropFinalN(word, after: vowels, minLength: minLength)
         case let .dropH(consonants):
             return dropH(word, after: consonants)
+        case let .foldShortVowelPair(pairs, replacement, maxLength):
+            guard word.count <= maxLength else { return word }
+            return pairs.reduce(word) { $0.replacingOccurrences(of: $1, with: replacement) }
         case let .replace(target, replacement):
             return word.replacingOccurrences(of: target, with: replacement)
         case let .replaceSuffix(suffix, replacement, minLength):
@@ -180,8 +191,14 @@ public enum RomanNormalizer {
 extension RomanNormalizer {
     /// Levenshtein distance between two words, giving up early once it exceeds `limit`.
     static func editDistance(_ lhs: String, _ rhs: String, limit: Int) -> Int {
-        let left = Array(lhs)
-        let right = Array(rhs)
+        editDistance(Array(lhs), Array(rhs), limit: limit)
+    }
+
+    /// `editDistance(_:_:limit:)` over pre-split letters, for callers that compare the same
+    /// words many times (the set composer's matcher).
+    static func editDistance<Letter: Equatable>(_ left: [Letter], _ right: [Letter], limit: Int)
+        -> Int
+    {
         if abs(left.count - right.count) > limit {
             return limit + 1
         }
