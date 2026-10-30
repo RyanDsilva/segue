@@ -194,6 +194,12 @@
         },
         {
           "keys" : [
+            "⌘L"
+          ],
+          "title" : "Add Song by Name"
+        },
+        {
+          "keys" : [
             "⇧⌘A"
           ],
           "title" : "Arrange Sections…"
@@ -387,6 +393,17 @@
             "K"
           ],
           "title" : "Metronome Click (Rehearsal)"
+        }
+      ]
+    },
+    {
+      "group" : "Bass",
+      "rows" : [
+        {
+          "keys" : [
+            "B"
+          ],
+          "title" : "Bass Notes"
         }
       ]
     },
