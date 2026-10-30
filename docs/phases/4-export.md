@@ -68,6 +68,7 @@ Get charts and setlists out of Segue as paper or shareable PDFs. Live partner sy
 4. Sections are kept whole whenever they fit on a page. If a section doesn't fit in the remaining space but does fit on an empty page, it moves to the next page. If it is longer than a full page, it breaks between line pairs, and the section label repeats as "Chorus (cont.)".
 5. A section heading is never orphaned at the bottom of a page: it needs at least 2 line pairs with it.
 6. A collapsed chorus repeat (the "Chorus" reference block) prints as the reference when the live view collapses it. An export option expands it in full.
+   - *Note (2026-10-30): the live collapse setting this rule leans on is removed; the stage writes every repeat out in full (R147). The PDF export gets its own repeats option instead, default written out in full (R158, P8-2 Q9).*
 7. Diagram strip: either on top of the first page or at the end of the song (an option). It is never split.
 8. Fit-to-one-page option for single charts: try 2 columns, then scale the font down to a minimum readable size (configurable, default 9 pt). If it still doesn't fit, fall back to multi-page.
 9. Songbook: each song starts on a new page. No duplex padding (decided: not supported).
