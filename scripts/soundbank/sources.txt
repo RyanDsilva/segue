@@ -1,0 +1,23 @@
+# Sound bank sources (P8-6 section 12). Downloads are never committed; fetch each into its
+# own new, empty folder, check the SHA-256, then run extract.py (and render-ab.swift for a
+# listening A/B).
+
+# GeneralUser GS 2.0.3 (S. Christian Collins), GeneralUser GS License v2.0.
+# Used only in the 2026-10-30 listening A/B; not in the bundle.
+https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/684543d5e5efaef08d02be50dcda8d552478fa60/GeneralUser-GS.sf2
+sha256 9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe
+https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/684543d5e5efaef08d02be50dcda8d552478fa60/documentation/LICENSE.txt
+sha256 7b32efefdf95ce38a043799f0659853ddc00fbaa14d8c50f0aca16b9b8b405be
+
+# FluidR3_GM (Frank Wen), MIT; Debian fluid-soundfont 3.1-5.3.
+https://sources.debian.org/data/main/f/fluid-soundfont/3.1-5.3/FluidR3_GM.sf2
+sha256 74594e8f4250680adf590507a306655a299935343583256f3b722c48a1bc1cb0
+https://sources.debian.org/data/main/f/fluid-soundfont/3.1-5.3/COPYING
+sha256 8ef830b65c97a976b86e34bb5fde08d99dfb1db13c4149b5b20bc837ac6c4568
+
+# The bundle (Ryan's blind A/B, 2026-10-30: every voice FluidR3): programs 0 (piano),
+# 27 (clean guitar), 33 (finger bass, the default bass), 34 (pick bass), bank 0.
+#   uv run --no-project python -I scripts/soundbank/extract.py \
+#     Packages/SegueUI/Sources/SegueUI/Audio/Sounds/SegueSounds.sf2 \
+#     --name "Segue Sounds" <download folder>/FluidR3_GM.sf2:0,27,33,34
+# Result: 11.59 MB (cap 12 MB).
