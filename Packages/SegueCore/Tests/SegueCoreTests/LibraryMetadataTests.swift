@@ -293,8 +293,8 @@ struct LibraryMetadataTests {
 
         let relaunched = try await lib.openStore()
         #expect(try await relaunched.search(query: "sangeet").map(\.id) == [song.id])
-        // Schema 3 (the loose search columns), normalizer rules 3.
-        #expect(try IndexProbe.scalar(lib, "PRAGMA user_version") == "3003")
+        // Schema 3 (the loose search columns), normalizer rules 4 (R157 short-word pairs).
+        #expect(try IndexProbe.scalar(lib, "PRAGMA user_version") == "3004")
         #expect(try IndexProbe.scalar(lib, "SELECT tags FROM songs") == "Sangeet")
         #expect(try IndexProbe.scalar(lib, "SELECT COUNT(*) FROM plays") == "0")
     }
