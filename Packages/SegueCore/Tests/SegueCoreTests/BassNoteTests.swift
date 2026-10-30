@@ -155,7 +155,12 @@ struct BassNoteTests {
         #expect(profile.bassView?.notes == true)
         #expect(profile.bassView?.tuning == .bassStandard4)
         // The Settings tuning applies with or without "I play bass" (R163).
-        let five = InstrumentProfile(playsBass: false, strings: 5, tuning: .bassHighC5, bassNotes: true)
+        let five = InstrumentProfile(
+            playsBass: false,
+            strings: 5,
+            tuning: .bassHighC5,
+            bassNotes: true,
+        )
         #expect(five.bassView?.tuning == .bassHighC5)
     }
 
