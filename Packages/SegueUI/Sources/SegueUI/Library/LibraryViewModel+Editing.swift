@@ -220,6 +220,7 @@ extension LibraryViewModel {
             save: save,
         )
         editor.librarySectionKinds = librarySectionKinds
+        editor.attachBassPrefs(record.sidecar.bass, persist: persistBassPrefs(following: base))
         closeEditor()
         selection = id
         detail = .song(id)
@@ -291,6 +292,19 @@ extension LibraryViewModel {
         { [weak self] id, prefs in
             guard let self else { throw CancellationError() }
             let saved = try await updateDisplayPrefs(id: id, prefs)
+            base.revision.sidecarHash = saved.revision.sidecarHash
+            return saved
+        }
+    }
+
+    /// Walk-up picks and feel write the sidecar only, like the display toggles (P8-4b).
+    private func persistBassPrefs(
+        following base: RevisionBox,
+    ) -> (SongID, BassPrefs) async throws -> SongRecord {
+        { [weak self] id, prefs in
+            guard let self else { throw CancellationError() }
+            let saved = try await store.updateBassPrefs(id: id, prefs)
+            await applySaved(saved)
             base.revision.sidecarHash = saved.revision.sidecarHash
             return saved
         }

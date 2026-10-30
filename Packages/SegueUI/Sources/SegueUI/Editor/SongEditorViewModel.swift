@@ -140,6 +140,10 @@ public final class SongEditorViewModel {
     /// The last stage-note sidecar write; the next one waits for it (P3-13).
     @ObservationIgnored var cuesTask: Task<Void, Never>?
     @ObservationIgnored var renderTask: Task<Void, Never>?
+    /// The song's walk-up picks and feel (sidecar `bass`, P8-4b), writer, last write.
+    var bassPrefs = BassPrefs()
+    @ObservationIgnored var persistBassPrefs: ((SongID, BassPrefs) async throws -> SongRecord)?
+    @ObservationIgnored var bassTask: Task<Void, Never>?
     @ObservationIgnored var prefsTask: Task<Void, Never>?
     @ObservationIgnored var revision = 0
     @ObservationIgnored var keystrokes = KeystrokeStats()
@@ -348,8 +352,8 @@ public final class SongEditorViewModel {
         renderTask?.cancel()
         let snapshot = snapshot
         let options = options
-        let bass = instrument?.bassView
-        let needsCanvas = bass != nil && editorMode == .visual
+        let bass = BassRender(view: instrument?.bassView, prefs: bassPrefs)
+        let needsCanvas = bass.view?.notes == true && editorMode == .visual
         let revision = revision
         let userShapes = userShapes
         renderTask = Task { [weak self] in
@@ -362,7 +366,7 @@ public final class SongEditorViewModel {
             renderModel = rendered.preview
             updateDerived(from: rendered.preview)
             #if os(macOS)
-                if editorMode == .visual, rendered.canvas.transform.options.bass == nil,
+                if editorMode == .visual, rendered.canvas.transform.options.bass?.notes != true,
                    canvasModel?.sections != rendered.canvas.sections
                 {
                     canvasModel = rendered.canvas

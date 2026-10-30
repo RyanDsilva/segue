@@ -1,6 +1,7 @@
 #if os(macOS)
     import Diagrams
     import Editing
+    import MusicTheory
     import SwiftUI
 
     /// Settings > Instrument (P8-4 6.4, R152, R158 Q7): the bass-note view for anyone, and
@@ -63,12 +64,46 @@
                     if showsCustom {
                         customField
                     }
+                    Toggle("Fretboard in the editor", isOn: binding(\.fretboard))
+                        .disabled(!profile.playsBass)
+                        .accessibilityIdentifier(AccessibilityID.settingsInstrumentFretboard)
+                    SettingsNote(text: "Shows where to play each chord's bass note in the "
+                        + "editor's diagram strip.")
                 }
+                walkUpsSection
             }
             .formStyle(.grouped)
             .onAppear {
                 customDraft = isPreset ? "" : profile.tuning.name
             }
+        }
+
+        /// Walk-ups on charts and the default feel (P8-4b section 8.7), while bass notes show.
+        private var walkUpsSection: some View {
+            Section("Walk-ups") {
+                Picker("Walk-ups on charts", selection: Binding(
+                    get: { profile.walkUps },
+                    set: { density in store.setWalkUps(density) },
+                )) {
+                    ForEach(WalkUpDensity.allCases, id: \.self) { density in
+                        Text(density.title).tag(density)
+                    }
+                }
+                .accessibilityIdentifier(AccessibilityID.settingsInstrumentWalkUps)
+                SettingsNote(text: "A short run of notes into the next chord, after the chord "
+                    + "it leaves. Change one in the editor or library.")
+                Picker("Default feel", selection: Binding(
+                    get: { profile.genre },
+                    set: { genre in store.update { $0.genre = genre } },
+                )) {
+                    ForEach(BassGenre.allCases, id: \.self) { genre in
+                        Text(genre.title).tag(genre)
+                    }
+                }
+                .accessibilityIdentifier(AccessibilityID.settingsInstrumentGenre)
+                SettingsNote(text: "Songs use this unless you set their own feel.")
+            }
+            .disabled(!profile.bassNotes)
         }
 
         static let bassNotesNote = "Shows the note to play at sounding pitch in every song "

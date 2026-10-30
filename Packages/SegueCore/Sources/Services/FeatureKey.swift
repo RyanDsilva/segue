@@ -43,6 +43,11 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case bassProfile
     case bassNotes
     case bassNeck
+    /// P8-4b 8.12: walk-ups on charts turned on (Settings), a walk-up pick or "Nothing
+    /// here" saved, a song's feel set (editor or library).
+    case walkUps
+    case walkUpPick
+    case songFeel
     /// P8-3 section 9: a pass's show mode set in Arrange Sections (no song data), a roadmap
     /// committed, "Rehearse this" started.
     case arrangementMode

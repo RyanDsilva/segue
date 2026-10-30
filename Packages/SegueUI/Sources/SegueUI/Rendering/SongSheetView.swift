@@ -218,6 +218,10 @@ struct LyricLineView: View {
                                     .font(SchibstedGrotesk.medium.font(size: style.chordSize * 0.6))
                                     .foregroundStyle(Theme.color.muted)
                             }
+                            if let approach = token.approach {
+                                // The walk-up into the next chord (P8-4b 8.8).
+                                WalkUpRunView(run: approach, size: style.chordSize * 0.6)
+                            }
                         }
                         .fixedSize()
                     }
@@ -255,7 +259,10 @@ struct LyricLineView: View {
     static func spokenText(_ tokens: [LyricToken]) -> String {
         let lyric = tokens.map(\.text).joined().trimmingCharacters(in: .whitespaces)
         let chords = tokens.compactMap { token in
-            token.chord.map { spokenChord($0, detail: token.detail) }
+            token.chord.map { chord in
+                spokenChord(chord, detail: token.detail)
+                    + (token.approach.map { ", \($0.accessibility)" } ?? "")
+            }
         }
         guard !chords.isEmpty else { return lyric }
         let spokenChords = chords.joined(separator: ", ")
@@ -274,6 +281,8 @@ struct LyricToken: Identifiable, Equatable {
     var isUnknown = false
     /// The small concert chord beside a bass note (P8-4 6.7).
     var detail: String?
+    /// The walk-up run after the chord unit (P8-4b 8.8).
+    var approach: ApproachRun?
     /// The line may wrap after this piece: its text ends in whitespace, or it is the last
     /// piece of the line.
     var endsWord = true
@@ -312,6 +321,7 @@ struct LyricToken: Identifiable, Equatable {
                         text: "",
                         isUnknown: segment.isUnknown,
                         detail: segment.detail,
+                        approach: segment.approach,
                     ))
                 }
                 continue
@@ -324,6 +334,7 @@ struct LyricToken: Identifiable, Equatable {
                     text: word,
                     isUnknown: offset == 0 && segment.isUnknown,
                     detail: offset == 0 ? segment.detail : nil,
+                    approach: offset == 0 ? segment.approach : nil,
                 ))
             }
         }
@@ -335,6 +346,7 @@ struct LyricToken: Identifiable, Equatable {
         var text: String
         var isUnknown = false
         var detail: String?
+        var approach: ApproachRun?
     }
 
     /// The lyric cut at each chord's offset: text before the first chord, then each chord
@@ -368,6 +380,7 @@ struct LyricToken: Identifiable, Equatable {
                 text: text(start, next),
                 isUnknown: chord.kind == .unknown,
                 detail: chord.detail,
+                approach: chord.approach,
             ))
         }
         return segments

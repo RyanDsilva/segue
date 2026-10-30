@@ -59,7 +59,7 @@ struct DiagramStripContent: View {
 
     @ViewBuilder
     private func cell(for diagram: RenderDiagram) -> some View {
-        if let onCustomize {
+        if let onCustomize, diagram.bass == nil {
             Button {
                 onCustomize(diagram)
             } label: {
@@ -91,6 +91,15 @@ private struct DiagramStripCell: View {
     let size: DiagramSize
 
     var body: some View {
+        if let bass = diagram.bass {
+            // The bassist's fretboard (P8-4b section 7.2): no customise action for bass.
+            BassFretboardView(diagram: bass, size: size)
+        } else {
+            instrumentCell
+        }
+    }
+
+    @ViewBuilder private var instrumentCell: some View {
         switch (instrument, diagram.guitar, diagram.piano) {
         case let (.guitar, guitar?, _):
             GuitarDiagramView(

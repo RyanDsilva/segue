@@ -117,7 +117,9 @@
             case .visual:
                 VStack(spacing: 0) {
                     VisualEditorRepresentable(controller: model.visualEditor)
-                    if model.options.showDiagrams, !model.diagrams.isEmpty {
+                    // Diagrams exist only with the song's strip or the bassist's fretboard
+                    // (P8-4b section 7.2) on.
+                    if !model.diagrams.isEmpty {
                         diagramStrip(model.diagrams)
                     }
                 }
@@ -146,6 +148,7 @@
         private var preview: some View {
             // Its own view, so only the preview depends on `renderModel`.
             EditorPreview(model: model, onCustomize: customize)
+                .environment(\.walkUpPicking, model.walkUpPicking)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.color.ground)
                 .accessibilityElement(children: .contain)

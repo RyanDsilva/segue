@@ -21,4 +21,18 @@ public extension AccessibilityID {
     static let settingsInstrumentStrings = "segue.settings.instrument.strings"
     static let settingsInstrumentTuning = "segue.settings.instrument.tuning"
     static let settingsInstrumentCustomTuning = "segue.settings.instrument.customTuning"
+    static let settingsInstrumentFretboard = "segue.settings.instrument.fretboard"
+    static let settingsInstrumentWalkUps = "segue.settings.instrument.walkUps"
+    static let settingsInstrumentGenre = "segue.settings.instrument.genre"
+
+    /// A walk-up run in the editor or library preview (a button, P8-4b section 8.9).
+    static let sheetWalkUp = "segue.walkUp.run"
+    /// The walk-up picker popover and its rows.
+    static let walkUpPopover = "segue.walkUp.popover"
+    static func walkUpOption(_ index: Int) -> String {
+        "segue.walkUp.option.\(index)"
+    }
+
+    static let walkUpNothing = "segue.walkUp.nothing"
+    static let walkUpReset = "segue.walkUp.reset"
 }

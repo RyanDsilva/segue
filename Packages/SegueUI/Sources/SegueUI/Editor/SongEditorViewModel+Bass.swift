@@ -1,6 +1,7 @@
 import ChordPro
 import Diagrams
 import Editing
+import Library
 import Observation
 
 /// The bass-note view in the editor (P8-4 6.3, 6.5): the user-level profile, never the song's.
@@ -42,14 +43,26 @@ extension SongEditorViewModel {
         bass: BassView?,
         needsCanvas: Bool = false,
         userShapes: UserShapeLibrary,
+        bassPrefs: BassPrefs = BassPrefs(),
     ) -> (preview: RenderModel, canvas: RenderModel) {
         var preview = options
         preview.bass = bass
-        let model = RenderModel(document: document, options: preview, userShapes: userShapes)
+        // Walk-ups only in the bass-note view (R162 Q4); the canvas never shows them.
+        let model = BassLine.annotated(
+            RenderModel(document: document, options: preview, userShapes: userShapes),
+            document: document,
+            prefs: bassPrefs,
+        )
         guard needsCanvas else { return (model, model) }
         var chart = options
         chart.showDiagrams = false
         return (model, RenderModel(document: document, options: chart))
+    }
+
+    /// The user's bass view and the song's walk-up picks, for one background render.
+    struct BassRender: Sendable {
+        var view: BassView?
+        var prefs: BassPrefs
     }
 
     /// One background render: the preview, the snapshot's diagnostics and the canvas model.
@@ -63,7 +76,7 @@ extension SongEditorViewModel {
     nonisolated static func render(
         _ snapshot: SourceSnapshot,
         _ options: DisplayOptions,
-        _ bass: BassView?,
+        _ bass: BassRender,
         _ needsCanvas: Bool,
         _ userShapes: UserShapeLibrary,
     ) async -> Rendered {
@@ -71,9 +84,10 @@ extension SongEditorViewModel {
             let models = renderModels(
                 snapshot.document,
                 options: options,
-                bass: bass,
+                bass: bass.view,
                 needsCanvas: needsCanvas,
                 userShapes: userShapes,
+                bassPrefs: bass.prefs,
             )
             return Rendered(
                 preview: models.preview,

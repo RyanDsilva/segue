@@ -1,5 +1,6 @@
 import Editing
 import Foundation
+import MusicTheory
 import Observation
 import Services
 import Support
@@ -51,6 +52,15 @@ public final class InstrumentProfileStore {
     public func toggleBassNotes(from context: FeatureContext) {
         update { $0.bassNotes.toggle() }
         services.record(.featureUsed(.bassNotes, context))
+    }
+
+    /// Walk-ups on charts (P8-4b section 8.7).
+    public func setWalkUps(_ density: WalkUpDensity) {
+        let wasOff = profile.walkUps == .off
+        update { $0.walkUps = density }
+        if wasOff, density != .off {
+            services.record(.featureUsed(.walkUps, .settings))
+        }
     }
 
     /// Reset All Settings: back to the defaults (bass-note view off, EADG).

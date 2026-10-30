@@ -53,7 +53,12 @@ enum SongSummary {
         var options = record.sidecar.displayPrefs.displayOptions
         options.bass = bass
         options.showDiagrams = options.showDiagrams && showDiagrams
-        return RenderModel(document: record.document, options: options, userShapes: userShapes)
+        // Walk-ups in the bass-note view: the song's pick, else the top candidate (P8-4b).
+        return BassLine.annotated(
+            RenderModel(document: record.document, options: options, userShapes: userShapes),
+            document: record.document,
+            prefs: record.sidecar.bass,
+        )
     }
 
     /// Artist and performance line for a rendered song: "Artist  ·  G, capo 2, 96". The key
