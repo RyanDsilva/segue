@@ -246,7 +246,8 @@ struct PasteReviewTests {
 
         library.beginPasteReview(text: Self.paste, source: .clipboard)
         let item = try #require(library.pasteReview?.selected)
-        try await env.waitFor { item.status == .finished ? true : nil }
+        await library.pasteReview?.awaitRefinement()
+        #expect(item.status == .finished)
         #expect(!item.aiLabelledBlocks.isEmpty)
         #expect(item.text != base.text)
         let footer = PasteFooter.make(

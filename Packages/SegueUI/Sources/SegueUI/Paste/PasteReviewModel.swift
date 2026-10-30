@@ -179,6 +179,12 @@ public final class PasteReviewModel {
         }
     }
 
+    /// Returns once the running refinement queue has drained (tests await this instead of
+    /// polling a status against a wall-clock deadline).
+    func awaitRefinement() async {
+        await queue?.value
+    }
+
     private func refine(_ item: PasteReviewItem, router: Router) async {
         guard item.status == .queued else { return }
         let first = router.policy.order(for: .sectionLabels).first
