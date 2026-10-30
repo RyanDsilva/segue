@@ -87,7 +87,7 @@
         @State private var roadmapText = ""
         @State private var roadmapError: String?
         @FocusState private var laneFocused: Bool
-        @FocusState private var roadmapFocused: Bool
+        @State private var roadmapFocused = false
 
         /// The lane as saved (or pending), without a roadmap being typed.
         private var base: ArrangementDraft {

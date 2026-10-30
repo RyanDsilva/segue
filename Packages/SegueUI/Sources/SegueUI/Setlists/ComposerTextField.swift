@@ -18,10 +18,15 @@
     ///
     /// Romanized Hindi rule: spell-check, grammar, autocorrect, text replacement, smart
     /// quotes and dashes, completion, inline predictions and Writing Tools are all off, so
-    /// nothing ever "corrects" what was typed ("---" stays three hyphens).
+    /// nothing ever "corrects" what was typed ("---" stays three hyphens). Arrange Sections'
+    /// roadmap field (P8-3 section 6.5) uses it for the same reason (romanized part labels).
     struct ComposerTextField: NSViewRepresentable {
         let text: String
         var font: NSFont
+        var identifier = AccessibilityID.setlistComposer
+        /// Drawn while the field is empty (the composer draws its own instead).
+        var placeholder: String?
+        var accessibilityHint: String?
         /// Bumped to take keyboard focus (⌘L).
         var focusRequest: Int
         /// Bumped to select the whole text (the duplicate block keeps it, selected).
@@ -57,8 +62,10 @@
             field.stringValue = text
             field.delegate = context.coordinator
             field.onFocusChange = { focused in context.coordinator.parent.onFocusChange(focused) }
-            field.setAccessibilityIdentifier(AccessibilityID.setlistComposer)
+            field.setAccessibilityIdentifier(identifier)
             field.setAccessibilityLabel(accessibilityLabel)
+            field.placeholderString = placeholder
+            field.setAccessibilityHelp(accessibilityHint)
             field.setContentHuggingPriority(.defaultLow, for: .horizontal)
             field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             context.coordinator.focusRequest = focusRequest
@@ -73,6 +80,7 @@
                 field.stringValue = text
             }
             field.font = font
+            field.isEnabled = context.environment.isEnabled
             field.setAccessibilityLabel(accessibilityLabel)
             field.setAccessibilityValueDescription(accessibilityValue)
             if coordinator.focusRequest != focusRequest {

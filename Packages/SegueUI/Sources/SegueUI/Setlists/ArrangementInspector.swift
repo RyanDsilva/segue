@@ -172,7 +172,7 @@
         let isReadOnly: Bool
         @Binding var text: String
         let error: String?
-        let isFocused: FocusState<Bool>.Binding
+        @Binding var isFocused: Bool
         let onEdit: (String) -> Void
         let onCommit: () -> Void
         let onRevert: () -> Void
@@ -183,31 +183,34 @@
                     .font(SchibstedGrotesk.bold.font(size: 11))
                     .tracking(0.08 * 11)
                     .foregroundStyle(Theme.color.muted)
-                TextField("Roadmap", text: $text)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 15, weight: .semibold).monospaced())
-                    .tracking(0.02 * 15)
-                    .foregroundStyle(Theme.color.ink)
-                    .autocorrectionDisabled()
-                    .focused(isFocused)
-                    .padding(.vertical, 9)
-                    .padding(.horizontal, 11)
-                    .background(Theme.color.ground, in: RoundedRectangle(cornerRadius: 7))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .strokeBorder(borderColor, lineWidth: 1)
-                    }
-                    .disabled(isReadOnly)
-                    .onChange(of: text) { _, new in
-                        if isFocused.wrappedValue {
-                            onEdit(new)
-                        }
-                    }
-                    .onSubmit(onCommit)
-                    .onExitCommand(perform: onRevert)
-                    .accessibilityLabel("Roadmap")
-                    .accessibilityHint(helpText)
-                    .accessibilityIdentifier(AccessibilityID.arrangementRoadmap)
+                // An AppKit field with its own field editor: spell-check, autocorrect and
+                // completion stay off (romanized Hindi labels, section 6.5).
+                ComposerTextField(
+                    text: text,
+                    font: .monospacedSystemFont(ofSize: 15, weight: .semibold),
+                    identifier: AccessibilityID.arrangementRoadmap,
+                    placeholder: "Roadmap",
+                    accessibilityHint: helpText,
+                    focusRequest: 0,
+                    selectAllRequest: 0,
+                    accessibilityLabel: "Roadmap",
+                    accessibilityValue: text,
+                    onChange: { new in
+                        text = new
+                        onEdit(new)
+                    },
+                    onFocusChange: { isFocused = $0 },
+                    onCommand: command,
+                )
+                .frame(height: 18)
+                .padding(.vertical, 9)
+                .padding(.horizontal, 11)
+                .background(Theme.color.ground, in: RoundedRectangle(cornerRadius: 7))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .strokeBorder(borderColor, lineWidth: 1)
+                }
+                .disabled(isReadOnly)
                 help
                 Text(error ?? " ")
                     .font(SchibstedGrotesk.semiBold.font(size: 12))
@@ -222,7 +225,21 @@
             if error != nil {
                 return Theme.color.cue
             }
-            return isFocused.wrappedValue ? Theme.color.muted : Theme.color.controlBorder
+            return isFocused ? Theme.color.muted : Theme.color.controlBorder
+        }
+
+        /// Return commits and keeps the sheet open; Esc reverts the text first.
+        private func command(_ command: ComposerCommand) -> Bool {
+            switch command {
+            case .accept:
+                onCommit()
+                return true
+            case .escape:
+                onRevert()
+                return true
+            case .backtab, .next, .previous, .tab:
+                return false
+            }
         }
 
         private var helpText: String {
