@@ -379,6 +379,9 @@
         public internal(set) var reviewSaveBlockers: [SetlistID: String] = [:]
         /// Why the last "Save to Setlist" failed; the review stays up with this shown.
         public internal(set) var reviewSaveFailure: String?
+        /// An answer to the first review is being written: the sheet disables its buttons
+        /// and a second answer is ignored (R154, a double click answered twice).
+        public internal(set) var isResolvingReview = false
 
         /// The pre-show checklist while it is shown (start of a show or rehearsal).
         public internal(set) var preShow: PreShowChecklist?

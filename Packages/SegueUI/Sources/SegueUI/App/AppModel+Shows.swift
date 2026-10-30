@@ -206,8 +206,14 @@
         /// during the show are kept; Discard leaves the setlist file untouched. The answer
         /// is stored on the show, so the review is offered until it is answered (a failed
         /// save keeps it pending, with the reason in the sheet).
+        /// One answer at a time: a second call while one is being written returns at once,
+        /// and the answered review is removed by identity, never by position (R154).
         func resolveReorderReview(save: Bool, including inserted: Set<ShowItemID>) async {
-            guard let diff = pendingReorderReviews.first, let session else { return }
+            guard !isResolvingReview,
+                  let diff = pendingReorderReviews.first,
+                  let session else { return }
+            isResolvingReview = true
+            defer { isResolvingReview = false }
             let blocked = reviewSaveBlockers[diff.setlistId] != nil
             if save, !blocked {
                 do {
@@ -240,7 +246,9 @@
                         + "It may be offered again."
                 }
             }
-            pendingReorderReviews.removeFirst()
+            pendingReorderReviews.removeAll {
+                $0.showId == diff.showId && $0.setlistId == diff.setlistId
+            }
             if !pendingReorderReviews.contains(where: { $0.setlistId == diff.setlistId }) {
                 reviewSaveBlockers[diff.setlistId] = nil
             }

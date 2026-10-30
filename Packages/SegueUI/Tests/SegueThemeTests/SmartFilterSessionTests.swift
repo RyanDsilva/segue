@@ -1,6 +1,7 @@
 import Foundation
 import Library
 @testable import SegueUI
+import SwiftUI
 import Testing
 
 /// Smart filters in a real in-process session (P3-6): what the sidebar section drives
@@ -194,6 +195,59 @@ struct SmartFilterSessionTests {
         #expect(full.rows.count == SmartFilterDraft.Kind.allCases.count)
         full.removeRow(full.rows[0].id)
         #expect(full.rows.count == SmartFilterDraft.Kind.allCases.count - 1)
+    }
+
+    /// The editor's rows bind by ID (R154, the SEGUE-MACOS-2 shape): a binding a focused
+    /// field still holds after its row is removed never traps and never writes elsewhere.
+    @Test
+    func `a removed condition row's binding is ignored instead of trapping`() throws {
+        var draft = SmartFilterDraft(name: "", conditions: SmartFilterConditions())
+        draft.addRow(after: draft.rows.first?.id)
+        draft.addRow(after: draft.rows.last?.id)
+        #expect(draft.rows.count == 3)
+        let state = DraftBox(draft)
+        let binding = Binding(get: { state.draft }, set: { state.draft = $0 })
+
+        let middle = state.draft.rows[1]
+        let middleRow = SmartFilterEditorSheet.rowBinding(
+            in: binding,
+            id: middle.id,
+            fallback: middle,
+        )
+        middleRow.wrappedValue.lower = "90"
+        middleRow.wrappedValue.upper = "120"
+        #expect(state.draft.rows[1].lower == "90")
+        let before = state.draft.rows.filter { $0.id != middle.id }
+        // The binding the last render built (its fallback is the row as drawn).
+        let rendered = SmartFilterEditorSheet.rowBinding(
+            in: binding,
+            id: middle.id,
+            fallback: state.draft.rows[1],
+        )
+
+        state.draft.removeRow(middle.id)
+        rendered.wrappedValue.lower = "100"
+        middleRow.wrappedValue.upper = "130"
+        #expect(rendered.wrappedValue.lower == "90")
+        #expect(state.draft.rows == before)
+
+        let last = try #require(state.draft.rows.last)
+        let lastRow = SmartFilterEditorSheet.rowBinding(in: binding, id: last.id, fallback: last)
+        state.draft.removeRow(last.id)
+        lastRow.wrappedValue.upper = "200"
+        #expect(state.draft.rows.count == 1)
+        let untouched = state.draft.rows.allSatisfy(\.upper.isEmpty)
+        #expect(untouched)
+    }
+}
+
+/// Holds a draft for a hand-built binding (no SwiftUI host in tests).
+@MainActor
+private final class DraftBox {
+    var draft: SmartFilterDraft
+
+    init(_ draft: SmartFilterDraft) {
+        self.draft = draft
     }
 }
 

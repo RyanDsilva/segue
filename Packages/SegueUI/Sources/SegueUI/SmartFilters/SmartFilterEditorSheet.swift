@@ -54,9 +54,9 @@
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
                     .foregroundStyle(Theme.color.ink)
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach($draft.rows) { $row in
+                    ForEach(draft.rows) { row in
                         SmartFilterConditionRow(
-                            row: $row,
+                            row: rowBinding(row.id, fallback: row),
                             isFirst: row.id == draft.rows.first?.id,
                             kinds: draft.unusedKinds(besides: row),
                             libraryTags: libraryTags,
@@ -112,6 +112,33 @@
     }
 
     /// One condition row: "and", field popup, operator popup, value, minus / plus.
+    extension SmartFilterEditorSheet {
+        /// A row's binding keyed by its ID, never by position (the SEGUE-MACOS-2 shape): a
+        /// field still focused in a removed row reads its last value and its writes are
+        /// dropped, instead of writing through a stale index.
+        private func rowBinding(
+            _ id: SmartFilterDraft.Row.ID,
+            fallback: SmartFilterDraft.Row,
+        ) -> Binding<SmartFilterDraft.Row> {
+            Self.rowBinding(in: $draft, id: id, fallback: fallback)
+        }
+
+        static func rowBinding(
+            in draft: Binding<SmartFilterDraft>,
+            id: SmartFilterDraft.Row.ID,
+            fallback: SmartFilterDraft.Row,
+        ) -> Binding<SmartFilterDraft.Row> {
+            Binding(
+                get: { draft.wrappedValue.rows.first { $0.id == id } ?? fallback },
+                set: { value in
+                    if let index = draft.wrappedValue.rows.firstIndex(where: { $0.id == id }) {
+                        draft.wrappedValue.rows[index] = value
+                    }
+                },
+            )
+        }
+    }
+
     struct SmartFilterConditionRow: View {
         @Binding var row: SmartFilterDraft.Row
         let isFirst: Bool

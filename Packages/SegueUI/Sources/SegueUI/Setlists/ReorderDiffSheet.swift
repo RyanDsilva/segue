@@ -27,6 +27,9 @@
         /// The window the sheet is presented on: the sheet never outgrows it (the rows scroll
         /// instead). Nil = no limit beyond the defaults.
         let available: CGSize?
+        /// An answer is being written: Save and Discard are disabled so a double click
+        /// answers once (R154).
+        let isBusy: Bool
         @State private var included: Set<ShowItemID>
 
         public init(
@@ -37,6 +40,7 @@
             saveFailure: String? = nil,
             setlistChanged: Bool = false,
             available: CGSize? = nil,
+            isBusy: Bool = false,
         ) {
             self.diff = diff
             self.onSave = onSave
@@ -45,6 +49,7 @@
             self.saveFailure = saveFailure
             self.setlistChanged = setlistChanged
             self.available = available
+            self.isBusy = isBusy
             _included = State(initialValue: diff.defaultIncluded)
         }
 
@@ -238,10 +243,11 @@
                 // Neither button is the default action: the choice is always deliberate.
                 Button("Discard", action: onDiscard)
                     .buttonStyle(.segueSecondary)
+                    .disabled(isBusy)
                     .accessibilityIdentifier(AccessibilityID.reorderDiscard)
                 Button("Save to Setlist") { onSave(included) }
                     .buttonStyle(.segueSecondary)
-                    .disabled(saveDisabledReason != nil)
+                    .disabled(saveDisabledReason != nil || isBusy)
                     .accessibilityIdentifier(AccessibilityID.reorderSave)
             }
             .controlSize(.large)

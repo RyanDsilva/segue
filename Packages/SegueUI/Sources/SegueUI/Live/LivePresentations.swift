@@ -71,6 +71,7 @@
                         saveFailure: app.reviewSaveFailure,
                         setlistChanged: app.setlistChangedSinceShow(diff),
                         available: hostSize,
+                        isBusy: app.isResolvingReview,
                     )
                     .interactiveDismissDisabled()
                     .id((diff.showId?.description ?? diff.setlistId.description)
