@@ -22,7 +22,10 @@ struct StageLayoutRenderTests {
         (.comment, "SchibstedGrotesk-Medium"),
         (.note, "SchibstedGrotesk-Medium"),
         (.cue, "SchibstedGrotesk-Bold"),
-        (.collapsedRepeat, "SchibstedGrotesk-Regular"),
+        (.chordSeparator, "SchibstedGrotesk-Regular"),
+        (.passBadge, "SchibstedGrotesk-SemiBold"),
+        (.modeTag, "SchibstedGrotesk-Bold"),
+        (.moreLines, "SchibstedGrotesk-Medium"),
     ])
     func `each role measures in its bundled face`(role: TextRole, face: String) {
         let font = StageTextMetrics.ctFont(role, size: 22)
@@ -249,7 +252,7 @@ struct StageLayoutRenderTests {
         let cues = [SongCue(section: "Chorus", occurrence: 1, text: "Watch Ravi for the stop")]
         let shots: [Shot] = [
             Shot("basic-verse-chorus.cho", "basic-13in", cues: cues, notes: ["Start soft"]),
-            Shot("basic-verse-chorus.cho", "basic-expanded-16in", stage: 1, collapse: false),
+            Shot("basic-verse-chorus.cho", "basic-expanded-16in", stage: 1),
             Shot("live-forty-lines.cho", "forty-lines-13in"),
             Shot("live-forty-lines.cho", "forty-lines-1080p", stage: 2),
             Shot("live-devanagari.cho", "devanagari-13in", metrics: true),
@@ -263,7 +266,6 @@ struct StageLayoutRenderTests {
                 viewport: Support.stages[shot.stage].size,
                 minLyricSize: 22,
                 zoom: shot.zoom,
-                collapseRepeats: shot.collapse,
                 cues: shot.cues,
                 notes: shot.notes,
             )
@@ -277,9 +279,6 @@ struct StageLayoutRenderTests {
     private func runs(_ block: LayoutBlock) -> [PlacedText] {
         var runs = block.allRows.flatMap { $0.chords + $0.text }
         runs += block.labelLines.map(\.text) + block.cues.flatMap(\.lines).map(\.text)
-        if case let .collapsed(line, _) = block.content {
-            runs.append(line)
-        }
         return runs
     }
 }
@@ -290,7 +289,6 @@ struct Shot {
     var name: String
     var stage = 0
     var zoom = 1.0
-    var collapse = true
     var cues: [SongCue] = []
     var notes: [String] = []
     /// Underline each run at its measured width.
@@ -301,7 +299,6 @@ struct Shot {
         _ name: String,
         stage: Int = 0,
         zoom: Double = 1,
-        collapse: Bool = true,
         cues: [SongCue] = [],
         notes: [String] = [],
         metrics: Bool = false,
@@ -310,7 +307,6 @@ struct Shot {
         self.name = name
         self.stage = stage
         self.zoom = zoom
-        self.collapse = collapse
         self.cues = cues
         self.notes = notes
         self.metrics = metrics

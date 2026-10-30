@@ -164,15 +164,6 @@ struct PlanCanvas: View {
         lyricX: Double,
         context: GraphicsContext,
     ) {
-        if case let .collapsed(line, _) = block.content, let baseline = block.collapsedBaseline {
-            text(
-                line,
-                x: lyricX + line.x,
-                baseline: top + baseline,
-                color: Theme.color.muted,
-                context,
-            )
-        }
         for row in block.allRows {
             let rowTop = top + row.y
             for chord in row.chords {

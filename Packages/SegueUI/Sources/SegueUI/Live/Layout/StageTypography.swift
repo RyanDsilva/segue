@@ -23,11 +23,18 @@ enum StageFace: Hashable, Sendable {
     /// Brand type scale (docs/brand.md section 6-7).
     static func of(_ role: TextRole) -> Self {
         switch role {
-        case .chord, .cue, .sectionLabel: .schibsted(.bold)
-        case .collapsedRepeat, .lyric: .schibsted(.regular)
-        case .comment, .labelDetail, .note: .schibsted(.medium)
+        case .chord, .cue, .modeTag, .sectionLabel: .schibsted(.bold)
+        case .chordSeparator, .lyric: .schibsted(.regular)
+        case .comment, .labelDetail, .moreLines, .note: .schibsted(.medium)
+        case .passBadge: .schibsted(.semiBold)
         case .verbatim: .monospaced
         }
+    }
+
+    /// Letter spacing in ems: the gutter's mode tag is tracked 0.06 em (P8-2); every other
+    /// role is set solid.
+    static func tracking(_ role: TextRole) -> Double {
+        role == .modeTag ? 0.06 : 0
     }
 
     func ctFont(size: Double) -> CTFont {
@@ -132,8 +139,12 @@ public struct StageTextMetrics: TextMeasuring {
     }
 
     private func line(_ text: String, role: TextRole, size: Double) -> CTLine {
-        let attributes = [kCTFontAttributeName: Self.cache.font(role, size)] as CFDictionary
-        let string = CFAttributedStringCreate(nil, text as CFString, attributes)
+        var attributes: [CFString: Any] = [kCTFontAttributeName: Self.cache.font(role, size)]
+        let tracking = StageFace.tracking(role)
+        if tracking > 0 {
+            attributes[kCTKernAttributeName] = tracking * size
+        }
+        let string = CFAttributedStringCreate(nil, text as CFString, attributes as CFDictionary)
             ?? NSAttributedString(string: text)
         return CTLineCreateWithAttributedString(string)
     }
@@ -258,5 +269,10 @@ public enum StageTypography {
     /// sizes in `LayoutStyle`; every `PlacedText` carries its own `size`).
     public static func font(_ role: TextRole, size: Double) -> Font {
         StageFace.of(role).font(size: size)
+    }
+
+    /// The letter spacing to draw `role` with at `size` (points), as measured.
+    public static func tracking(_ role: TextRole, size: Double) -> Double {
+        StageFace.tracking(role) * size
     }
 }

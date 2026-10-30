@@ -7,6 +7,7 @@
 import ChordPro
 import Editing
 import Foundation
+import Library
 
 /// How the plan relates to the viewport.
 public enum LayoutFit: Sendable, Hashable {
@@ -106,6 +107,11 @@ public struct LayoutRow: Sendable, Hashable {
         /// Blank stanza break: no runs, height only.
         case stanzaBreak
         case note
+        /// A Chords only pass's line (P8-2): the line's chords between `|` separators, all in
+        /// `text` (roles `.chord` and `.chordSeparator`), no lyrics.
+        case chordRow
+        /// A First line pass's "+ N more lines (first line only)" (P8-2).
+        case moreLines
     }
 
     public var kind: Kind
@@ -176,19 +182,21 @@ public struct PlacedCue: Sendable, Hashable {
 /// One section (or the notes block) in a column.
 public struct LayoutBlock: Sendable, Hashable, Identifiable {
     public enum Content: Sendable, Hashable {
-        /// The section in full.
+        /// The pass, laid out in its show mode.
         case rows([LayoutRow])
-        /// A collapsed repeat: one muted line ("Repeat chorus") plus the lines that differ
-        /// from the first occurrence.
-        case collapsed(line: PlacedText, differing: [LayoutRow])
         /// Song and item notes above the first section.
         case notes([LayoutRow])
     }
 
-    /// Index into `RenderModel.sections`; -1 for the notes block.
+    /// The shown pass's index (0-based among shown passes, unique even when a part plays
+    /// twice); -1 for the notes block. Not a section index: see `source`.
     public var id: Int
-    /// Gutter label ("Chorus", "Chorus x2", "Chorus (cont.)" on a split section's later
-    /// parts); nil for none.
+    /// The part: index into `RenderModel.sections`; -1 for the notes block.
+    public var source: Int
+    /// Index into `LayoutPlan.passes`; nil for the notes block.
+    public var pass: Int?
+    /// Gutter label ("Chorus", "Chorus (cont.)" on a split section's later parts); nil for
+    /// none.
     public var label: String?
     /// Chorus labels use `text`, others `muted` (brand.md).
     public var isChorusLabel: Bool
@@ -200,17 +208,19 @@ public struct LayoutBlock: Sendable, Hashable, Identifiable {
     public var cues: [PlacedCue]
     /// The gutter lines, top-aligned with the block's first ink: the name (bold, at least
     /// `LayoutStyle.minLabelSize`, wrapped only when the widest gutter cannot hold it), then
-    /// a smaller `TextRole.labelDetail` line ("x2", "(cont.)"). `x` from the column's left
-    /// edge, baselines from the block's top. Draw these rather than `label`.
+    /// on a first part the pass badge ("2 of 3", `.passBadge`, boxed) and the mode tag
+    /// ("CHORDS", `.modeTag`), or on a continuation "(cont.)" (`.labelDetail`). `x` from
+    /// the column's left edge, baselines from the block's top. Draw these rather than
+    /// `label`.
     public var labelLines: [PlacedLine]
-    /// For `.collapsed` content: the baseline of the collapsed line, from the block's top.
-    public var collapsedBaseline: Double?
     /// 0 for a section's first (or only) part; 1, 2, ... for the continuation of a section
     /// that had to be split across columns (labelled "(cont.)", no cues; same `id`).
     public var part: Int
 
     public init(
         id: Int,
+        source: Int? = nil,
+        pass: Int? = nil,
         label: String?,
         isChorusLabel: Bool,
         tint: SectionTint,
@@ -219,10 +229,11 @@ public struct LayoutBlock: Sendable, Hashable, Identifiable {
         content: Content,
         cues: [PlacedCue],
         labelLines: [PlacedLine] = [],
-        collapsedBaseline: Double? = nil,
         part: Int = 0,
     ) {
         self.id = id
+        self.source = source ?? id
+        self.pass = pass
         self.label = label
         self.isChorusLabel = isChorusLabel
         self.tint = tint
@@ -231,7 +242,6 @@ public struct LayoutBlock: Sendable, Hashable, Identifiable {
         self.content = content
         self.cues = cues
         self.labelLines = labelLines
-        self.collapsedBaseline = collapsedBaseline
         self.part = part
     }
 }
@@ -248,6 +258,57 @@ public struct LayoutColumn: Sendable, Hashable {
         self.x = x
         self.width = width
         self.blocks = blocks
+    }
+}
+
+/// One shown pass as placed (P8-2): what the map strip, the jump and the current-pass
+/// tracking read.
+public struct PlanPass: Sendable, Hashable {
+    /// 0-based among shown passes; the jump key is `index + 1`.
+    public var index: Int
+    /// Index into `SlotArrangement.passes`; nil for the full song.
+    public var position: Int?
+    /// The part: index into `RenderModel.sections`.
+    public var source: Int
+    public var name: PassName
+    /// Never `.skip`.
+    public var mode: PassMode
+    public var tint: SectionTint
+    /// The part's kind, for the map's kind stripe.
+    public var kind: SectionKind?
+    /// Column of the pass's first block.
+    public var column: Int
+    /// Top of its first block in that column.
+    public var top: Double
+    /// Bottom of its last block (its last part).
+    public var bottom: Double
+    /// Sum of its blocks' heights (the map chip's width).
+    public var weight: Double
+
+    public init(
+        index: Int,
+        position: Int?,
+        source: Int,
+        name: PassName,
+        mode: PassMode,
+        tint: SectionTint,
+        kind: SectionKind?,
+        column: Int,
+        top: Double,
+        bottom: Double,
+        weight: Double,
+    ) {
+        self.index = index
+        self.position = position
+        self.source = source
+        self.name = name
+        self.mode = mode
+        self.tint = tint
+        self.kind = kind
+        self.column = column
+        self.top = top
+        self.bottom = bottom
+        self.weight = weight
     }
 }
 
@@ -269,6 +330,8 @@ public struct LayoutPlan: Sendable, Hashable {
     /// when a label needs it. Lyrics start at `gutterWidth + LayoutStyle.gutterGap` from
     /// each column's left edge.
     public var gutterWidth: Double
+    /// The shown passes in played order, with where each landed (P8-2).
+    public var passes: [PlanPass]
 
     public init(
         lyricSize: Double,
@@ -280,6 +343,7 @@ public struct LayoutPlan: Sendable, Hashable {
         pageStops: [Double],
         lineCount: Int,
         gutterWidth: Double = LayoutStyle.stage.gutterWidth,
+        passes: [PlanPass] = [],
     ) {
         self.lyricSize = lyricSize
         self.chordSize = chordSize
@@ -290,6 +354,7 @@ public struct LayoutPlan: Sendable, Hashable {
         self.pageStops = pageStops
         self.lineCount = lineCount
         self.gutterWidth = gutterWidth
+        self.passes = passes
     }
 
     /// How far the content scrolls (0 when it fits).

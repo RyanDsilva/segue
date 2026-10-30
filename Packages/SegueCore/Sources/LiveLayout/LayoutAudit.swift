@@ -33,7 +33,7 @@ public enum LayoutAudit {
             let lyricWidth = column.width - plan.gutterWidth - style.gutterGap
             var bottom = -Double.infinity
             for block in column.blocks {
-                let label = "\(name) block \(block.id).\(block.part)"
+                let label = "\(name) block \(block.source).\(block.part)"
                 if block.y < bottom - epsilon {
                     issues.append("\(label) overlaps the block above")
                 }
@@ -72,12 +72,6 @@ public enum LayoutAudit {
             }
             bottom = cue.y + cue.height
         }
-        if let baseline = block.collapsedBaseline, case let .collapsed(line, _) = block.content {
-            issues += glyphViolations(
-                line, baseline: baseline, top: bottom, bottom: block.height, metrics,
-            )
-            issues += horizontal([line], width: lyricWidth, what: "collapsed line")
-        }
         for row in block.allRows {
             if row.y < bottom - epsilon || row.y + row.height > block.height + epsilon {
                 issues.append("row at \(row.y) outside the block or overlapping")
@@ -87,7 +81,10 @@ public enum LayoutAudit {
         }
         for line in block.labelLines {
             issues += horizontal([line.text], width: gutter, what: "label")
-            if line.text.size < LayoutStyle.stage.minLabelSize - epsilon {
+            // The mode tag is a deliberately small caps tag (10.5 pt, P8-2).
+            if line.text.role != .modeTag,
+               line.text.size < LayoutStyle.stage.minLabelSize - epsilon
+            {
                 issues
                     .append("label \"\(line.text.text)\" below \(LayoutStyle.stage.minLabelSize)pt")
             }

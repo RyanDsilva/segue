@@ -1,5 +1,6 @@
-// Owner: unit B. Turns a layout request into measured sections: repeats collapsed (or
-// expanded), cues pinned to their sections, unmatched cues moved to the notes.
+// Owner: unit B, P8-2. Turns a layout request into measured passes: every part written out
+// in full (R147), each shown pass in its show mode (R149), cues pinned to their sections,
+// unmatched cues moved to the notes.
 
 import ChordPro
 import Editing
@@ -12,23 +13,26 @@ struct SongPreparation {
 
     func measure() -> MeasuredSong {
         let original = request.model.sections
-        // Cues pin to the song's own sections (song-relative label + occurrence) before an
-        // arrangement reorders them; a cue shows on its section's first play only, and a
-        // cue on a skipped section is simply not played (not "unmatched").
+        let units = SongSections.units(of: original)
+        // Cues pin to the song's own sections (song-relative label + occurrence) before the
+        // passes reorder them; a cue shows on its part's first shown pass only, and a cue on
+        // a part that is only skipped is simply not played (not "unmatched").
         let (pinned, unmatched) = pinCues(original)
-        let sections: [RenderSection]
-        let cues: [[SongCue]]
-        if let order = request.arrangement {
-            let arranged = ArrangedSections.build(original, order: order)
-            sections = arranged.map(\.section)
-            cues = arranged.map { $0.isFirstShown ? pinned[$0.source] : [] }
-        } else {
-            sections = original
-            cues = pinned
+        let order = request.passes ?? ArrangementResolver.fullSong(units)
+        let arranged = ArrangedSections.build(original, order: order)
+        let titles = arranged.map { pass in
+            units.first { $0.index == pass.source }?.title ?? ""
         }
-        let collapsed = RepeatCollapser.collapse(sections, enabled: request.collapseRepeats)
-        let measured = sections.indices.map { index in
-            section(index, sections: sections, collapsed: collapsed[index], cues: cues[index])
+        let names = PassNaming.names(
+            titles: titles,
+            shown: Array(repeating: true, count: arranged.count),
+        )
+        let measured = arranged.indices.map { index in
+            section(
+                arranged[index],
+                name: names[index],
+                cues: arranged[index].isFirstShown ? pinned[arranged[index].source] : [],
+            )
         }
         var notes = request.notes
             .flatMap { $0.components(separatedBy: .newlines) }
@@ -38,61 +42,123 @@ struct SongPreparation {
         return MeasuredSong(
             notes: notes.map { measurer.paragraph($0, role: .note) },
             sections: measured,
-            lineCount: lineCount(sections),
+            lineCount: arranged.reduce(0) { $0 + Self.lyricLines($1.section.items) },
         )
     }
 
     private func section(
-        _ index: Int,
-        sections: [RenderSection],
-        collapsed: CollapsedSection,
+        _ pass: ArrangedSection,
+        name passName: PassName,
         cues: [SongCue],
     ) -> MeasuredSection {
-        let section = sections[index]
-        var name = RepeatCollapser.displayLabel(section)
-        var detail: String?
-        let body: MeasuredSection.Body
-        if let root = collapsed.repeatOf {
-            name = name ?? RepeatCollapser.displayLabel(sections[root]) ?? "Chorus"
-            // The count is the gutter's small second line, so "Verse 2 x2" never wraps
-            // between its words.
-            detail = "x\(collapsed.occurrence)"
-            body = .collapsed(
-                line: measurer.paragraph(Self.repeatText(sections[root]), role: .collapsedRepeat),
-                differing: collapsed.differingItems.map { items(section.items[$0]) },
-            )
-        } else if section.isRepeat {
-            if let target = RepeatCollapser.repeatTarget(of: index, in: sections) {
-                body = .full(sections[target].items.map(items))
-            } else {
-                body = .collapsed(
-                    line: measurer.paragraph(Self.repeatText(section), role: .collapsedRepeat),
-                    differing: [],
-                )
-            }
-        } else {
-            body = .full(section.items.map(items))
+        let section = pass.section
+        let name = SectionNotes.label(of: section)
+        let tag: String? = switch pass.mode {
+        case .chordsOnly: "CHORDS"
+        case .firstLine: "1ST LINE"
+        case .full, .skip: nil
         }
-        let label = name.map { name in detail.map { "\(name) \($0)" } ?? name }
         return MeasuredSection(
             id: section.id,
-            label: label,
+            source: pass.source,
+            position: pass.position,
+            label: name,
             name: name,
             labelText: name.map { measurer.paragraph($0, role: .sectionLabel) },
-            labelDetail: detail.map { measurer.paragraph($0, role: .labelDetail) },
+            badge: name.flatMap { _ in passName.badgeText }
+                .map { measurer.paragraph($0, role: .passBadge) },
+            modeTag: tag.map { measurer.paragraph($0, role: .modeTag) },
             continuation: name.map { _ in
                 measurer.paragraph(Self.continuationText, role: .labelDetail)
             },
             isChorus: section.kind == .chorus,
             tint: SectionTint(section.kind),
-            body: body,
+            kind: section.kind,
+            mode: pass.mode,
+            passName: passName,
+            items: items(section.items, mode: pass.mode),
             cues: cues.map { cue in
                 MeasuredCue(text: cue.text, paragraph: measurer.paragraph(cue.text, role: .cue))
             },
         )
     }
 
-    private func items(_ item: RenderItem) -> MeasuredItem {
+    /// The part's items as the show mode presents them (P8-2 section 6.3).
+    private func items(_ items: [RenderItem], mode: PassMode) -> [MeasuredItem] {
+        switch mode {
+        case .full, .skip: items.map(item)
+        case .chordsOnly: chordsOnly(items)
+        case .firstLine: firstLine(items)
+        }
+    }
+
+    /// Each chorded lyric line as a chord row; chordless lyric lines dropped (and the breaks
+    /// around them collapsed to one); comments and tab lines kept.
+    private func chordsOnly(_ items: [RenderItem]) -> [MeasuredItem] {
+        var result: [MeasuredItem] = []
+        for item in items {
+            switch item {
+            case let .lyrics(line):
+                if !line.chords.isEmpty {
+                    result.append(.chordRow(measurer.line(line).chords, line.path))
+                }
+            case .stanzaBreak:
+                if case .stanzaBreak = result.last {
+                    continue
+                }
+                result.append(self.item(item))
+            case .comment, .verbatim:
+                result.append(self.item(item))
+            }
+        }
+        while case .stanzaBreak = result.first {
+            result.removeFirst()
+        }
+        while case .stanzaBreak = result.last {
+            result.removeLast()
+        }
+        return result
+    }
+
+    /// The comments before the first line, the first line, then "+ N more lines".
+    private func firstLine(_ items: [RenderItem]) -> [MeasuredItem] {
+        guard let first = Self.firstLineIndex(items) else { return items.map(item) }
+        var result: [MeasuredItem] = items[..<first].compactMap { item in
+            if case .comment = item {
+                return self.item(item)
+            }
+            return nil
+        }
+        result.append(item(items[first]))
+        let more = items[(first + 1)...].count(where: Self.isLine)
+        if more > 0 {
+            let text = more == 1
+                ? "+ 1 more line (first line only)"
+                : "+ \(more) more lines (first line only)"
+            result.append(.moreLines(measurer.paragraph(text, role: .moreLines)))
+        }
+        return result
+    }
+
+    /// The first lyric line with words; else the first lyric or verbatim line.
+    private static func firstLineIndex(_ items: [RenderItem]) -> Int? {
+        items.firstIndex { item in
+            if case let .lyrics(line) = item {
+                return !line.lyrics.trimmingCharacters(in: .whitespaces).isEmpty
+            }
+            return false
+        } ?? items.firstIndex(where: isLine)
+    }
+
+    /// A performed line (lyric or tab/grid), as opposed to a comment or a break.
+    private static func isLine(_ item: RenderItem) -> Bool {
+        switch item {
+        case .lyrics, .verbatim: true
+        case .comment, .stanzaBreak: false
+        }
+    }
+
+    private func item(_ item: RenderItem) -> MeasuredItem {
         switch item {
         case let .lyrics(line):
             return .lyric(measurer.line(line))
@@ -110,15 +176,6 @@ struct SongPreparation {
     /// The gutter's second line on the parts of a section split between columns.
     static let continuationText = "(cont.)"
 
-    /// "Repeat chorus", or "Repeat <label>" for a differently named section.
-    static func repeatText(_ section: RenderSection) -> String {
-        let label = RepeatCollapser.displayLabel(section) ?? "Chorus"
-        if label.caseInsensitiveCompare("Chorus") == .orderedSame {
-            return "Repeat chorus"
-        }
-        return "Repeat \(label)"
-    }
-
     /// Cues per section and the cues whose section no longer exists, by the section notes
     /// anchoring rule (`SectionNotes.pin`: display label, case-insensitive, and 1-based
     /// occurrence of that label).
@@ -130,19 +187,14 @@ struct SongPreparation {
         )
     }
 
-    /// Lyric lines as performed: `{chorus}` repeats count their chorus's lines.
-    private func lineCount(_ sections: [RenderSection]) -> Int {
-        sections.indices.reduce(0) { total, index in
-            let source = sections[index].isRepeat
-                ? RepeatCollapser.repeatTarget(of: index, in: sections).map { sections[$0] }
-                : sections[index]
-            let lines = source?.items.count { item in
-                if case .lyrics = item {
-                    return true
-                }
-                return false
-            } ?? 0
-            return total + lines
+    /// Lyric lines as performed (the tempo scroll estimate): every shown pass counts all of
+    /// its part's lyric lines, whatever its mode; `{chorus}` repeats are already written out.
+    private static func lyricLines(_ items: [RenderItem]) -> Int {
+        items.count { item in
+            if case .lyrics = item {
+                return true
+            }
+            return false
         }
     }
 }

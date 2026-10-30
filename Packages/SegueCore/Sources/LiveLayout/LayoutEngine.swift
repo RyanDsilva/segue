@@ -6,8 +6,10 @@ import Library
 
 /// The auto-fit algorithm (phase 2 spec, "Auto-fit layout"). Deterministic and pure:
 ///
-/// 1. Lay out the rendered model (sections, lines, chord runs) with `metrics`.
-/// 2. Collapse repeats when `collapseRepeats` (`RepeatCollapser`).
+/// 1. Lay out the rendered model (sections, lines, chord runs) with `metrics`, one block per
+///    shown pass (`LayoutRequest.passes`, else the full song): every repeat written out in
+///    full (R147), each pass in its show mode (R149).
+/// 2. (Removed by R147: repeats are never collapsed.)
 /// 3. For columns 1...3 (limited by `minColumnWidth`, or forced by `columns`), binary-search
 ///    the largest lyric size in `minLyricSize ... style.maxLyricSize` at which the content
 ///    fits the viewport height. Columns break at section boundaries.
@@ -20,25 +22,5 @@ public enum LayoutEngine {
         let measurer = Measurer(metrics: metrics)
         let song = SongPreparation(request: request, measurer: measurer).measure()
         return FitSearch(request: request, song: song, measurer: measurer).plan()
-    }
-}
-
-/// One section after repeat collapsing.
-public struct CollapsedSection: Sendable, Hashable {
-    /// Index into `RenderModel.sections`.
-    public var index: Int
-    /// Nil when shown in full; otherwise the earlier section it repeats and how many times
-    /// this content has appeared so far (2 for the first repeat).
-    public var repeatOf: Int?
-    public var occurrence: Int
-    /// Indices into the section's `items` that differ from the first occurrence (shown
-    /// under the collapsed line).
-    public var differingItems: [Int]
-
-    public init(index: Int, repeatOf: Int?, occurrence: Int, differingItems: [Int]) {
-        self.index = index
-        self.repeatOf = repeatOf
-        self.occurrence = occurrence
-        self.differingItems = differingItems
     }
 }

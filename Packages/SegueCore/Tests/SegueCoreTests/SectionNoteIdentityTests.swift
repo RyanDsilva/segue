@@ -182,13 +182,11 @@ struct SectionNoteIdentityTests {
         #expect(repeatUnit.isRepeat)
     }
 
-    @Test(arguments: [true, false])
-    func `a cue on a chorus repeat shows its callout with repeats collapsed or not`(
-        collapse: Bool,
-    ) {
+    @Test
+    func `a cue on a chorus repeat shows its callout on the written-out repeat`() {
         let model = LiveLayoutSupport.model(source: NoteFix.song)
         let cue = SongCue(section: "Chorus", occurrence: 3, text: "Last time")
-        let (plan, _) = LiveLayoutSupport.plan(model, collapseRepeats: collapse, cues: [cue])
+        let (plan, _) = LiveLayoutSupport.plan(model, cues: [cue])
         #expect(plan.blocks.flatMap(\.cues).map(\.text) == ["Last time"])
     }
 }

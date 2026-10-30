@@ -100,6 +100,11 @@ public struct MetronomeTrack: Sendable, Hashable {
         60 / bpm
     }
 
+    /// Seconds per bar: `pulses x 60 / bpm` (the rehearsal loop's count-in, P8-2).
+    public var barDuration: TimeInterval {
+        Double(meter.pulses) * interval
+    }
+
     /// The beat sounding at `now`. Before `start` this is beat 1 at phase 0 (the count-in
     /// has not begun).
     public func beat(at now: Date) -> MetronomeBeat {

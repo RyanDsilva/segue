@@ -4,6 +4,7 @@
 import ChordPro
 import Editing
 import Foundation
+import Library
 
 /// The size all measurements are taken at.
 let referenceSize = 100.0
@@ -51,29 +52,38 @@ enum MeasuredItem {
     case comment(MeasuredParagraph, BlockPath)
     case verbatim(text: String, width: Double, path: BlockPath)
     case stanzaBreak(BlockPath)
+    /// A Chords only line (P8-2): the line's chords (widths at `referenceSize`).
+    case chordRow([MeasuredChord], BlockPath)
+    /// "+ N more lines (first line only)" under a First line pass (P8-2).
+    case moreLines(MeasuredParagraph)
 }
 
-/// One section as auto-fit sees it, after repeat collapsing.
+/// One shown pass as auto-fit sees it (R147: never collapsed).
 struct MeasuredSection {
-    enum Body {
-        case full([MeasuredItem])
-        case collapsed(line: MeasuredParagraph, differing: [MeasuredItem])
-    }
-
+    /// The shown pass's index.
     var id: Int
-    /// The block label ("Chorus x2"), for `LayoutBlock.label`.
+    /// The part: index into `RenderModel.sections`.
+    var source: Int
+    /// Index into `SlotArrangement.passes`; nil for the full song.
+    var position: Int?
+    /// The block label ("Chorus"), for `LayoutBlock.label`.
     var label: String?
-    /// The section's name without the repeat count ("Chorus").
+    /// The gutter name ("Chorus"; nil for loose lines).
     var name: String?
     /// The gutter's first line: `name`, measured as a label.
     var labelText: MeasuredParagraph?
-    /// The gutter's second line for a collapsed repeat ("x2").
-    var labelDetail: MeasuredParagraph?
+    /// The gutter's pass badge ("2 of 3") and mode tag ("CHORDS"), when there are.
+    var badge: MeasuredParagraph?
+    var modeTag: MeasuredParagraph?
     /// "(cont.)", measured as a label detail, for the parts after a split.
     var continuation: MeasuredParagraph?
     var isChorus: Bool
     var tint: SectionTint
-    var body: Body
+    var kind: SectionKind?
+    var mode: PassMode
+    /// The pass's name on the map ("Chorus 2/3").
+    var passName: PassName
+    var items: [MeasuredItem]
     var cues: [MeasuredCue]
 }
 

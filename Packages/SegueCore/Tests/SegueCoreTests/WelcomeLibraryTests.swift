@@ -85,7 +85,7 @@ struct WelcomeLibraryTests {
             let source = try String(contentsOf: url, encoding: .utf8)
             // The labels live mode pins cues to (the gutter's, as the notes editor offers).
             let labels = RenderModel(document: ChordProParser.parse(source).0, options: .init())
-                .sections.compactMap(RepeatCollapser.displayLabel)
+                .sections.compactMap(SectionNotes.label(of:))
             for cue in song.cues {
                 let count = labels.count { $0.caseInsensitiveCompare(cue.section) == .orderedSame }
                 #expect(count >= (cue.occurrence ?? 1), "\(song.file): \(cue.section)")

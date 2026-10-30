@@ -2,6 +2,7 @@
 
 import ChordPro
 import Editing
+import Library
 
 /// One item's rows (lyric line, comment, verbatim line or stanza break). `rows[].y` is from
 /// the unit's top.
@@ -19,28 +20,33 @@ struct LaidUnit {
 /// A section laid out at one size, ready to be packed into columns (whole or split between
 /// units).
 struct LaidSection {
+    /// The shown pass's index; -1 for the notes.
     var id: Int
+    /// The part (`RenderModel.sections` index); -1 for the notes.
+    var source: Int
+    var position: Int?
     var label: String?
-    /// `label` without a repeat count, for "(cont.)" labels.
+    /// The gutter name, for "(cont.)" labels.
     var name: String?
     var isChorus: Bool
     var tint: SectionTint
+    var kind: SectionKind?
+    var mode: PassMode
+    var passName: PassName?
     var isNotes: Bool
-    /// The gutter of the first part ("Chorus" / "x2") and of later parts of a split section
-    /// ("Chorus" / "(cont.)").
+    /// The gutter of the first part ("Chorus" / "2 of 3" / "CHORDS") and of later parts of a
+    /// split section ("Chorus" / "(cont.)").
     var gutter: LabelLayout
     var continuationGutter: LabelLayout
-    /// Cues (y from the head's top) and the collapsed line above the units.
+    /// Cues (y from the head's top) above the units.
     var cues: [PlacedCue]
-    var collapsedLine: PlacedText?
-    var collapsedBaseline: Double?
     var headHeight: Double
-    /// The first ink in the head (a cue's box, the collapsed line), from the head's top.
+    /// The first ink in the head (a cue's box), from the head's top.
     var headInkTop: Double?
     var units: [LaidUnit]
     /// A verbatim line had to be broken to fit the column.
     var brokeVerbatim: Bool
-    /// A lyric line wraps (or the collapsed line is wider than the column).
+    /// A lyric line wraps.
     var wrapped: Bool
 }
 
@@ -76,53 +82,34 @@ struct SectionLayout {
     func lay(_ section: MeasuredSection) -> LaidSection {
         var cues: [PlacedCue] = []
         var head = 0.0
-        var headInkTop: Double? = section.cues.isEmpty ? nil : 0
-        var wrapped = false
+        let headInkTop: Double? = section.cues.isEmpty ? nil : 0
         for cue in section.cues {
             let placed = callout(cue, y: head)
             cues.append(placed)
             head += placed.height + style.calloutSpacing
         }
-        var collapsedLine: PlacedText?
-        var collapsedBaseline: Double?
-        var units: [LaidUnit] = []
         var broke = false
-        switch section.body {
-        case let .full(items):
-            units = items.map { unit($0, broke: &broke) }
-        case let .collapsed(line, differing):
-            let size = context.lyricSize
-            let band = size * style.lineHeight
-            collapsedLine = singleLine(line, size: size)
-            let baseline = head + SizeContext.baseline(
-                band: band, size: size, extents: context.lyricExtents,
-            )
-            collapsedBaseline = baseline
-            headInkTop = headInkTop ?? baseline - context.lyricExtents.inkTop * size
-            if let collapsedLine, collapsedLine.width > width {
-                wrapped = true
-            }
-            head += band
-            units = differing.map { unit($0, broke: &broke) }
-        }
-        wrapped = wrapped || units.contains(where: \.wrapped)
+        let units = section.items.map { unit($0, broke: &broke) }
         return LaidSection(
             id: section.id,
+            source: section.source,
+            position: section.position,
             label: section.label,
             name: section.name,
             isChorus: section.isChorus,
             tint: section.tint,
+            kind: section.kind,
+            mode: section.mode,
+            passName: section.passName,
             isNotes: false,
             gutter: gutters[section.id]?.first ?? .empty,
             continuationGutter: gutters[section.id]?.continuation ?? .empty,
             cues: cues,
-            collapsedLine: collapsedLine,
-            collapsedBaseline: collapsedBaseline,
             headHeight: head,
             headInkTop: headInkTop,
             units: units,
             brokeVerbatim: broke,
-            wrapped: wrapped,
+            wrapped: units.contains(where: \.wrapped),
         )
     }
 
@@ -153,16 +140,19 @@ struct SectionLayout {
         }
         return LaidSection(
             id: -1,
+            source: -1,
+            position: nil,
             label: nil,
             name: nil,
             isChorus: false,
             tint: .other,
+            kind: nil,
+            mode: .full,
+            passName: nil,
             isNotes: true,
             gutter: .empty,
             continuationGutter: .empty,
             cues: [],
-            collapsedLine: nil,
-            collapsedBaseline: nil,
             headHeight: 0,
             headInkTop: nil,
             units: units,
@@ -219,14 +209,18 @@ struct SectionLayout {
                 source: path,
             )
             return LaidUnit(rows: [row], height: height, isBreak: true, inkTop: nil)
+        case let .chordRow(chords, path):
+            return stack(chordRows(chords, path: path))
+        case let .moreLines(paragraph):
+            return moreLines(paragraph)
         }
     }
 
-    private func textRows(
+    func textRows(
         _ paragraph: MeasuredParagraph,
         size: Double,
         kind: LayoutRow.Kind,
-        path: BlockPath,
+        path: BlockPath?,
     ) -> [LayoutRow] {
         let band = size * style.lineHeight
         let extents = measurer.metrics.extents(of: paragraph.role)
@@ -246,7 +240,7 @@ struct SectionLayout {
         }
     }
 
-    private func stack(_ rows: [LayoutRow]) -> LaidUnit {
+    func stack(_ rows: [LayoutRow]) -> LaidUnit {
         var y = 0.0
         let placed = rows.map { row in
             var row = row
@@ -360,9 +354,5 @@ struct SectionLayout {
         }
         guard !text.isEmpty else { return nil }
         return PlacedText(text: text, x: 0, width: ink, role: role, size: size)
-    }
-
-    private func singleLine(_ paragraph: MeasuredParagraph, size: Double) -> PlacedText? {
-        Self.run(paragraph.words, scale: size / referenceSize, size: size, role: paragraph.role)
     }
 }

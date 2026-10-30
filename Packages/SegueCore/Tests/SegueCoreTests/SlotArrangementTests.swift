@@ -133,41 +133,27 @@ struct SlotArrangementTests {
             return
         }
         let cue = SongCue(section: "Chorus", occurrence: 3, text: "Big finish")
-        let collapsed = LayoutRequest(
+        let request = LayoutRequest(
             model: model,
             viewport: LiveLayoutSupport.macBook13,
             minLyricSize: 22,
             cues: [cue, SongCue(section: "Bridge", text: "Quiet")],
-            arrangement: order,
+            passes: order,
         )
-        let plan = LayoutEngine.plan(collapsed, metrics: FixedAdvanceMetrics())
+        let plan = LayoutEngine.plan(request, metrics: FixedAdvanceMetrics())
         let blocks = plan.columns.flatMap(\.blocks).filter { $0.part == 0 }
         #expect(blocks.map(\.id) == [0, 1, 2])
-        // The repeat whose chorus was skipped is written out in full; its second play
-        // collapses ("Repeat chorus") with the song's collapse setting on.
-        guard case .rows = blocks[1].content else {
-            Issue.record("the first chorus play is in full")
-            return
+        #expect(blocks.map(\.source) == [1, 6, 6])
+        // The repeat whose chorus was skipped is written out in full, both times (R147).
+        let lyrics = blocks.map { block in
+            block.allRows.flatMap(\.text).map(\.text).joined(separator: " ")
         }
-        guard case .collapsed = blocks[2].content else {
-            Issue.record("the second play collapses")
-            return
-        }
-        // The cue stays on its song-relative chorus (first play only); the skipped bridge's
-        // cue is not played and is not moved to the notes.
-        #expect(blocks.flatMap(\.cues).map(\.text) == ["Big finish"])
+        #expect(lyrics[1] == lyrics[2])
+        #expect(lyrics[1].contains("Chorus line one"))
+        // The cue stays on its song-relative chorus (first shown pass only); the skipped
+        // bridge's cue is not played and is not moved to the notes.
+        #expect(blocks.map { $0.cues.map(\.text) } == [[], ["Big finish"], []])
         #expect(plan.blocks.allSatisfy { $0.id != -1 })
-
-        var expanded = collapsed
-        expanded.collapseRepeats = false
-        let full = LayoutEngine.plan(expanded, metrics: FixedAdvanceMetrics())
-        let fullBlocks = full.columns.flatMap(\.blocks).filter { $0.part == 0 }
-        #expect(fullBlocks.allSatisfy {
-            if case .rows = $0.content {
-                return true
-            }
-            return false
-        })
     }
 
     // MARK: Files

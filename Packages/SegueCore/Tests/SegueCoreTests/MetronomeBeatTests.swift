@@ -144,4 +144,14 @@ struct MetronomeBeatTests {
         #expect(onBeat.beat.isDownbeat)
         #expect(track.nextBeat(atOrAfter: Self.start.addingTimeInterval(-3)).beat.index == 0)
     }
+
+    @Test(arguments: [
+        ("4/4", 120.0, 2.0),
+        ("3/4", 90.0, 2.0),
+        ("6/8", 60.0, 2.0),
+        ("12/8", 60.0, 4.0),
+    ])
+    func `a bar lasts pulses x 60 over bpm`(time: String, bpm: Double, seconds: Double) throws {
+        #expect(try abs(Self.track(bpm, time).barDuration - seconds) < 1e-9)
+    }
 }

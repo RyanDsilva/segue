@@ -46,18 +46,7 @@
                 Color.clear.frame(width: column.width, height: block.height)
                 tint
                 ForEach(block.labelLines.indices, id: \.self) { index in
-                    let line = block.labelLines[index]
-                    let isName = line.text.role == .sectionLabel
-                    placed(
-                        text(
-                            line.text,
-                            color: block.isChorusLabel && isName
-                                ? Theme.color.ink : Theme.color.muted,
-                        ),
-                        x: line.text.x,
-                        baseline: line.baseline,
-                    )
-                    .accessibilityAddTraits(isName ? .isHeader : [])
+                    labelLine(block.labelLines[index])
                 }
                 content
                 ForEach(block.cues.indices, id: \.self) { index in
@@ -97,13 +86,39 @@
             switch block.content {
             case let .notes(rows), let .rows(rows):
                 rowViews(rows)
-            case let .collapsed(line, differing):
+            }
+        }
+
+        /// One gutter line: the name (chorus labels `ink`, others `muted`), the pass badge in
+        /// its hairline box, the mode tag, or "(cont.)".
+        @ViewBuilder
+        private func labelLine(_ line: PlacedLine) -> some View {
+            switch line.text.role {
+            case .passBadge:
+                let padding = style.passBadgePadding
                 placed(
-                    text(line),
-                    x: lyricOrigin + line.x,
-                    baseline: block.collapsedBaseline ?? plan.lyricSize,
+                    text(line.text)
+                        .padding(.horizontal, padding.width)
+                        .padding(.vertical, padding.height)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .strokeBorder(Theme.color.controlBorder, lineWidth: 1)
+                        },
+                    x: line.text.x - padding.width,
+                    baseline: line.baseline,
                 )
-                rowViews(differing)
+            case .sectionLabel:
+                placed(
+                    text(
+                        line.text,
+                        color: block.isChorusLabel ? Theme.color.ink : Theme.color.muted,
+                    ),
+                    x: line.text.x,
+                    baseline: line.baseline,
+                )
+                .accessibilityAddTraits(.isHeader)
+            default:
+                placed(text(line.text), x: line.text.x, baseline: line.baseline)
             }
         }
 
@@ -157,24 +172,34 @@
         }
 
         private func text(_ run: PlacedText, color: Color? = nil) -> Text {
-            Text(run.text)
-                .font(StageTypography.font(
-                    run.role,
-                    size: run.size > 0 ? run.size : size(run.role),
-                ))
+            let size = run.size > 0 ? run.size : size(run.role)
+            return Text(run.text)
+                .font(StageTypography.font(run.role, size: size))
+                .tracking(StageTypography.tracking(run.role, size: size))
                 .foregroundStyle(color ?? self.color(run))
         }
 
+        /// The fallback size of a run that carries none: lyric-relative roles scale with the
+        /// plan, gutter and callout roles are fixed.
         private func size(_ role: TextRole) -> Double {
             switch role {
-            case .chord: plan.chordSize
-            case .collapsedRepeat, .lyric: plan.lyricSize
+            case .chord, .chordSeparator: plan.chordSize
+            case .lyric: plan.lyricSize
             case .comment: plan.lyricSize * style.commentScale
+            case .moreLines: plan.lyricSize * style.moreLinesScale
             case .verbatim: plan.lyricSize * style.verbatimScale
-            case .sectionLabel: style.labelSize
+            default: Self.fixedSize(role, style: style)
+            }
+        }
+
+        private static func fixedSize(_ role: TextRole, style: LayoutStyle) -> Double {
+            switch role {
             case .labelDetail: style.labelDetailSize
+            case .passBadge: style.passBadgeSize
+            case .modeTag: style.modeTagSize
             case .cue: style.cueSize
             case .note: style.noteSize
+            default: style.labelSize
             }
         }
 
@@ -183,11 +208,13 @@
             case .chord:
                 run.chordKind == .chord || run.chordKind == nil
                     ? Theme.color.cueText : Theme.color.muted
-            case .collapsedRepeat, .comment, .labelDetail, .note, .sectionLabel:
+            case .comment, .labelDetail, .modeTag, .moreLines, .note, .sectionLabel:
                 Theme.color.muted
+            case .chordSeparator:
+                Theme.color.indicatorOff
             case .cue:
                 Theme.color.cueText
-            case .lyric, .verbatim:
+            case .lyric, .passBadge, .verbatim:
                 Theme.color.ink
             }
         }

@@ -29,26 +29,6 @@
             state.current?.song.map(prefs(for:))
         }
 
-        /// The song in a slot as it renders there: sidecar view options with the setlist
-        /// overrides applied, no diagrams.
-        static func renderModel(_ song: SongRecord, overrides: SetlistOverrides) -> RenderModel {
-            var options = song.sidecar.displayPrefs.displayOptions
-            options.showDiagrams = false
-            let (applied, capo) = overrides.applied(
-                to: options,
-                songCapo: song.document.metadata.capo,
-            )
-            return RenderModel(document: song.document, options: applied, capo: capo)
-        }
-
-        /// A slot's arrangement checked against its song as loaded (R122); nil for a slot
-        /// that plays the full song.
-        static func resolution(_ item: ShowItem, song: SongRecord) -> ArrangementResolution? {
-            item.arrangement.map {
-                ArrangementResolver.resolve($0, units: SongSections.units(of: song.document))
-            }
-        }
-
         /// `model` with its sections in the arranged order (the up-next line reads the first
         /// line actually played); the full song when there is no applicable arrangement.
         static func arranged(_ model: RenderModel, _ resolution: ArrangementResolution?)
@@ -65,8 +45,8 @@
             upNextModel = upNextSlot.flatMap { slot in
                 slot.song.map { song in
                     Self.arranged(
-                        Self.renderModel(song, overrides: slot.item.overrides),
-                        Self.resolution(slot.item, song: song),
+                        StageRequest.renderModel(song, overrides: slot.item.overrides),
+                        StageRequest.resolution(slot.item.arrangement, song: song),
                     )
                 }
             }
@@ -78,31 +58,19 @@
                 laidOutItem = nil
                 return
             }
-            let model = Self.renderModel(song, overrides: slot.item.overrides)
-            currentModel = model
-            let resolution = Self.resolution(slot.item, song: song)
+            let prefs = prefs(for: song)
+            let (request, resolution) = StageRequest.make(
+                song: song,
+                slot: StageSlot(slot.item),
+                prefs: prefs,
+                settings: context.settings.settings,
+                minLyricSize: minLyricSize,
+                viewport: viewport,
+            )
+            currentModel = request.model
             currentArrangement = resolution.map { $0.isOutOfDate ? .outOfDate : .applied }
             recordArrangement(currentArrangement, for: slot.item)
-            var order: [PlayedPass]?
-            if case let .applied(played, _) = resolution {
-                order = played
-            }
             guard viewport.width > 0, viewport.height > 0 else { return }
-            let prefs = prefs(for: song)
-            let notes = [song.sidecar.notes, slot.item.note]
-                .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
-            let request = LayoutRequest(
-                model: model,
-                viewport: viewport,
-                minLyricSize: minLyricSize,
-                zoom: prefs.zoom,
-                collapseRepeats: prefs.collapseRepeats,
-                columns: context.settings.settings.columns(for: prefs),
-                cues: song.sidecar.cues,
-                notes: notes,
-                arrangement: order,
-            )
             let newPlan = LayoutEngine.plan(request, metrics: StageTextMetrics())
             plan = newPlan
             updateScroller(newPlan, item: slot.item, song: song, prefs: prefs)

@@ -1,4 +1,4 @@
-// Owner: unit B. Turns the chosen candidate into the fully positioned `LayoutPlan`.
+// Owner: unit B, P8-2. Turns the chosen candidate into the fully positioned `LayoutPlan`.
 
 struct PlanAssembly {
     let candidate: Candidate
@@ -33,7 +33,40 @@ struct PlanAssembly {
             ),
             lineCount: lineCount,
             gutterWidth: gutterWidth,
+            passes: passes(),
         )
+    }
+
+    /// Each shown pass with where it landed: its first block's column and top, its last
+    /// block's bottom, and its blocks' total height.
+    private func passes() -> [PlanPass] {
+        var passes: [PlanPass] = []
+        for (column, placements) in candidate.packing.columns.enumerated() {
+            for placement in placements {
+                let section = candidate.sections[placement.section]
+                guard !section.isNotes, let name = section.passName else { continue }
+                let bottom = placement.y + placement.height
+                if let last = passes.indices.last, passes[last].index == section.id {
+                    passes[last].bottom = bottom
+                    passes[last].weight += placement.height
+                    continue
+                }
+                passes.append(PlanPass(
+                    index: section.id,
+                    position: section.position,
+                    source: section.source,
+                    name: name,
+                    mode: section.mode,
+                    tint: section.tint,
+                    kind: section.kind,
+                    column: column,
+                    top: placement.y,
+                    bottom: bottom,
+                    weight: placement.height,
+                ))
+            }
+        }
+        return passes
     }
 
     private func block(_ placement: Placement) -> LayoutBlock {
@@ -50,13 +83,7 @@ struct PlanAssembly {
             }
             y += unit.height
         }
-        let content: LayoutBlock.Content = if section.isNotes {
-            .notes(rows)
-        } else if isFirst, let line = section.collapsedLine {
-            .collapsed(line: line, differing: rows)
-        } else {
-            .rows(rows)
-        }
+        let content: LayoutBlock.Content = section.isNotes ? .notes(rows) : .rows(rows)
         let top = packer.labelTop(placement.section, placement.units, part: placement.part)
         let labelLines = packer.gutter(placement.section, part: placement.part).lines.map { line in
             PlacedLine(text: line.text, baseline: line.baseline + top)
@@ -64,6 +91,8 @@ struct PlanAssembly {
         let continuation = section.name.map { "\($0) \(SongPreparation.continuationText)" }
         return LayoutBlock(
             id: section.id,
+            source: section.source,
+            pass: section.isNotes ? nil : section.id,
             label: isFirst ? section.label : continuation,
             isChorusLabel: section.isChorus,
             tint: section.tint,
@@ -76,7 +105,6 @@ struct PlanAssembly {
                 return cue
             } : [],
             labelLines: labelLines,
-            collapsedBaseline: isFirst ? section.collapsedBaseline.map { $0 + inset } : nil,
             part: placement.part,
         )
     }
@@ -109,10 +137,10 @@ struct PlanAssembly {
 }
 
 public extension LayoutBlock {
-    /// Every row of the block, whatever its content (not the collapsed line).
+    /// Every row of the block, whatever its content.
     var allRows: [LayoutRow] {
         switch content {
-        case let .collapsed(_, rows), let .notes(rows), let .rows(rows):
+        case let .notes(rows), let .rows(rows):
             rows
         }
     }

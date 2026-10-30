@@ -220,6 +220,28 @@ public struct AutoScroller: Sendable, Hashable {
         }
     }
 
+    /// A seek that then holds the scroll still for `holding` seconds before it moves on at
+    /// the same speed (the rehearsal loop's one-bar count-in, P8-2). Not running: a plain
+    /// seek.
+    public mutating func seek(to offset: Double, at now: Date, holding: TimeInterval) {
+        seek(to: offset, at: now)
+        if phase == .running {
+            pendingLeadIn = max(0, holding)
+        }
+    }
+
+    /// When a running scroll will reach `offset`: nil when it is not running, is already at
+    /// or past it, never moves, or stops at the end of the overflow first (P8-2, the loop
+    /// wrap).
+    public func instant(reaching offset: Double) -> Date? {
+        guard phase == .running, let anchor, speed.pointsPerSecond > 0,
+              offset > base, offset <= overflow
+        else { return nil }
+        return anchor.addingTimeInterval(
+            pendingLeadIn + (offset - base) / speed.pointsPerSecond,
+        )
+    }
+
     /// A new speed from `now` on (nudge), keeping the current offset.
     public mutating func setSpeed(_ speed: ScrollSpeed, at now: Date) {
         rebase(at: now)

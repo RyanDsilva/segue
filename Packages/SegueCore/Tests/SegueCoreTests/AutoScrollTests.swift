@@ -163,6 +163,27 @@ struct AutoScrollTests {
     }
 
     @Test
+    func `a held seek waits before moving on and the instant of an offset is predicted`() {
+        var scroller = threeMinuteScroller()
+        scroller.start(at: at(0))
+        // Lead-in 10 s, then 5 pt/s: 100 pt is reached at 30 s.
+        #expect(scroller.instant(reaching: 100) == at(30))
+        #expect(scroller.instant(reaching: 0) == nil)
+        #expect(scroller.instant(reaching: scroller.overflow + 1) == nil)
+        // The loop's count-in: seek back and hold 2 s, then the same speed.
+        scroller.seek(to: 40, at: at(50), holding: 2)
+        #expect(scroller.offset(at: at(51)) == 40)
+        #expect(abs(scroller.offset(at: at(54)) - 50) < 1e-9)
+        #expect(scroller.instant(reaching: 60) == at(56))
+        // Not running: a plain seek, and no instant.
+        scroller.pause(at: at(60))
+        scroller.seek(to: 10, at: at(61), holding: 2)
+        #expect(scroller.phase == .paused)
+        #expect(scroller.offset(at: at(70)) == 10)
+        #expect(scroller.instant(reaching: 20) == nil)
+    }
+
+    @Test
     func `a nudge changes the speed from now on`() {
         var scroller = threeMinuteScroller()
         scroller.start(at: at(0))

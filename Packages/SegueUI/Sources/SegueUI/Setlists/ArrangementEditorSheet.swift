@@ -486,13 +486,12 @@
         private var plan: LayoutPlan {
             let prefs = record.sidecar.live
             let request = LayoutRequest(
-                model: LiveSession.renderModel(record, overrides: entry.overrides),
+                model: StageRequest.renderModel(record, overrides: entry.overrides),
                 viewport: Self.stage,
                 minLyricSize: 22,
-                collapseRepeats: prefs.collapseRepeats,
                 columns: prefs.columns,
                 cues: record.sidecar.cues,
-                arrangement: order.isEmpty ? nil : order,
+                passes: order.isEmpty ? nil : order,
             )
             return LayoutEngine.plan(request, metrics: StageTextMetrics())
         }

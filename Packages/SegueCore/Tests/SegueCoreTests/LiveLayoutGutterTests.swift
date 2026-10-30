@@ -5,32 +5,62 @@ import Library
 import LiveLayout
 import Testing
 
-/// Gutter labels (decisions.md, "Auto-fit prefers no wrapping"): never below 12pt, the
-/// repeat count and "(cont.)" on a small second line instead of an awkward wrap, the gutter
-/// widening for long names, and every label top-aligned with its section (mockup C).
+/// Gutter labels (decisions.md, "Auto-fit prefers no wrapping"; R147): never below 12pt, the
+/// pass badge ("2 of 3"), the mode tag and "(cont.)" on small lines under the name instead of
+/// an awkward wrap, the gutter widening for long names, and every label top-aligned with its
+/// section (mockup C).
 struct LiveLayoutGutterTests {
     typealias Support = LiveLayoutSupport
 
     private let metrics = FixedAdvanceMetrics()
 
     @Test
-    func `a repeat count is a small second line under the name`() throws {
+    func `a repeated label carries a pass badge and a mode tag under the name`() throws {
         let model = Support.model(source: """
         {start_of_verse: Verse 2}
         [G]Paper boats
         {end_of_verse}
+        {start_of_chorus}
+        [C]Harbour lights
+        {end_of_chorus}
         {start_of_verse: Verse 2}
         [G]Paper boats
         {end_of_verse}
         """)
         let (plan, request) = Support.plan(model)
-        let block = try #require(plan.block(id: 1))
-        #expect(block.label == "Verse 2 x2")
-        #expect(block.labelLines.map(\.text.text) == ["Verse 2", "x2"])
-        #expect(block.labelLines.map(\.text.role) == [.sectionLabel, .labelDetail])
+        let first = try #require(plan.block(id: 0))
+        let block = try #require(plan.block(id: 2))
+        #expect(block.label == "Verse 2")
+        #expect(first.labelLines.map(\.text.text) == ["Verse 2", "1 of 2"])
+        #expect(block.labelLines.map(\.text.text) == ["Verse 2", "2 of 2"])
+        #expect(block.labelLines.map(\.text.role) == [.sectionLabel, .passBadge])
         #expect(block.labelLines.map(\.text.size) == [13, 12])
-        #expect(block.labelLines[1].baseline > block.labelLines[0].baseline)
+        // The badge sits in its box (6 pt in from the gutter edge), 4 pt below the name.
+        #expect(block.labelLines[1].text.x == 6)
+        #expect(block.labelLines[1].baseline > block.labelLines[0].baseline + 4)
+        // A label shown once has no badge.
+        #expect(try #require(plan.block(id: 1)).labelLines.map(\.text.text) == ["Chorus"])
         #expect(LayoutAudit.violations(of: plan, request: request, metrics: metrics).isEmpty)
+
+        // A Chords only pass adds its mode tag under the badge.
+        let units = SongSections.units(of: model.sections)
+        let request2 = LayoutRequest(
+            model: model,
+            viewport: Support.macBook13,
+            minLyricSize: 22,
+            passes: [
+                PlayedPass(index: units[0].index, mode: .chordsOnly, position: 0),
+                PlayedPass(index: units[2].index, mode: .firstLine, position: 1),
+            ],
+        )
+        let tagged = LayoutEngine.plan(request2, metrics: metrics)
+        let chords = try #require(tagged.block(id: 0))
+        #expect(chords.labelLines.map(\.text.text) == ["Verse 2", "1 of 2", "CHORDS"])
+        #expect(chords.labelLines.map(\.text.role) == [.sectionLabel, .passBadge, .modeTag])
+        #expect(chords.labelLines.map(\.text.size) == [13, 12, 10.5])
+        #expect(try #require(tagged.block(id: 1)).labelLines.last?.text.text == "1ST LINE")
+        let issues = LayoutAudit.violations(of: tagged, request: request2, metrics: metrics)
+        #expect(issues.isEmpty, "\(issues)")
     }
 
     /// The name's first ink sits level with the first chord's ink: the label heads the

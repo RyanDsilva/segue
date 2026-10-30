@@ -16,19 +16,12 @@ struct LiveLayoutCorpusTests {
         let model = try Support.model(name)
         for (stage, size) in Support.stages {
             for minimum in [16.0, 22, 30, 48] {
-                for collapse in [true, false] {
-                    let (plan, request) = Support.plan(
-                        model, viewport: size, minLyricSize: minimum, collapseRepeats: collapse,
-                    )
-                    let issues = LayoutAudit.violations(
-                        of: plan, request: request, metrics: FixedAdvanceMetrics(),
-                    )
-                    #expect(
-                        issues.isEmpty,
-                        "\(name) \(stage) min \(minimum) collapse \(collapse): \(issues.prefix(5))",
-                    )
-                    #expect(plan.lyricSize >= minimum)
-                }
+                let (plan, request) = Support.plan(model, viewport: size, minLyricSize: minimum)
+                let issues = LayoutAudit.violations(
+                    of: plan, request: request, metrics: FixedAdvanceMetrics(),
+                )
+                #expect(issues.isEmpty, "\(name) \(stage) min \(minimum): \(issues.prefix(5))")
+                #expect(plan.lyricSize >= minimum)
             }
         }
     }
@@ -78,16 +71,21 @@ struct LiveLayoutCorpusTests {
             for case let .lyrics(line) in model.sections.flatMap(\.items) {
                 expected[line.path] = line.lyrics.filter { !$0.isWhitespace }
             }
-            var drawn: [BlockPath: String] = [:]
+            // Per pass: a written-out repeat draws its chorus's lines again (R147).
+            var passes: [[BlockPath: String]] = []
             for block in plan.blocks {
+                var drawn: [BlockPath: String] = [:]
                 for row in block.allRows where row.kind == .lyric {
                     guard let path = row.source else { continue }
                     drawn[path, default: ""] += row.text.map(\.text).joined()
                         .filter { !$0.isWhitespace }
                 }
+                passes.append(drawn)
             }
-            #expect(drawn.allSatisfy { expected[$0.key] == $0.value }, "\(name)")
-            #expect(!drawn.isEmpty)
+            #expect(passes.allSatisfy { drawn in
+                drawn.allSatisfy { expected[$0.key] == $0.value }
+            }, "\(name)")
+            #expect(passes.contains { !$0.isEmpty })
         }
     }
 

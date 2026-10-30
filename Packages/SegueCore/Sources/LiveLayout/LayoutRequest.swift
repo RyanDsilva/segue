@@ -24,11 +24,21 @@ public enum TextRole: Sendable, Hashable {
     /// Section label in the gutter: bold, `LayoutStyle.labelSize` (fixed, never below
     /// `minLabelSize`).
     case sectionLabel
-    /// The small second gutter line under a label: the repeat count ("x2") or "(cont.)" on
-    /// a section split between columns. Medium, `LayoutStyle.labelDetailSize`, muted.
+    /// The small second gutter line under a label: "(cont.)" on a section split between
+    /// columns. Medium, `LayoutStyle.labelDetailSize`, muted.
     case labelDetail
-    /// "Repeat chorus" line: regular, lyric size, muted.
-    case collapsedRepeat
+    /// The gutter's pass badge, "2 of 3" (P8-2): semibold, `LayoutStyle.passBadgeSize`,
+    /// `ink`, drawn in a hairline box.
+    case passBadge
+    /// The gutter's show mode tag, "CHORDS" / "1ST LINE" (P8-2): bold, uppercase,
+    /// `LayoutStyle.modeTagSize`, tracked, muted.
+    case modeTag
+    /// The `|` between and around the chords of a Chords only row (P8-2): regular, chord
+    /// size, `indicatorOff`.
+    case chordSeparator
+    /// "+ 3 more lines (first line only)" under a First line pass (P8-2): medium, lyric size
+    /// x `LayoutStyle.moreLinesScale`, muted.
+    case moreLines
     /// `{comment}` lines: medium italic-free, lyric size x `LayoutStyle.commentScale`, muted.
     case comment
     /// Tab/grid lines: monospaced, lyric size x `LayoutStyle.verbatimScale`.
@@ -201,6 +211,21 @@ public struct LayoutStyle: Sendable, Hashable {
     public var minLabelSize: Double
     /// Size of the gutter's second line (`TextRole.labelDetail`).
     public var labelDetailSize: Double
+    /// The gutter's pass badge ("2 of 3") and mode tag ("CHORDS") sizes, and the gap above
+    /// each (P8-2).
+    public var passBadgeSize: Double
+    public var modeTagSize: Double
+    public var gutterLineGap: Double
+    /// The pass badge's box padding: horizontal, vertical (points).
+    public var passBadgePadding: LayoutSize
+    /// A Chords only row: height as a multiple of the chord size, the gap around each `|`
+    /// and the narrowest chord run, as multiples of the chord size (P8-2).
+    public var chordRowHeight: Double
+    public var chordRowGap: Double
+    public var chordRunMinimum: Double
+    /// "+ N more lines" as a multiple of the lyric size, and the space above it (points).
+    public var moreLinesScale: Double
+    public var moreLinesSpacing: Double
     /// How much larger a layout with fewer columns must be to win over `preferredColumns`
     /// (decisions.md, "Columns").
     public var wrapTolerance: Double
@@ -242,6 +267,15 @@ public struct LayoutStyle: Sendable, Hashable {
         smallLineHeight: Double = 1.3,
         minLabelSize: Double = 12,
         labelDetailSize: Double = 12,
+        passBadgeSize: Double = 12,
+        modeTagSize: Double = 10.5,
+        gutterLineGap: Double = 4,
+        passBadgePadding: LayoutSize = LayoutSize(width: 6, height: 1),
+        chordRowHeight: Double = 1.5,
+        chordRowGap: Double = 0.55,
+        chordRunMinimum: Double = 1.6,
+        moreLinesScale: Double = 0.6,
+        moreLinesSpacing: Double = 2,
         wrapTolerance: Double = 0.15,
         comfortableLyricSize: Double = 28,
         comfortableMinimumFactor: Double = 1.25,
@@ -272,6 +306,15 @@ public struct LayoutStyle: Sendable, Hashable {
         self.smallLineHeight = smallLineHeight
         self.minLabelSize = minLabelSize
         self.labelDetailSize = labelDetailSize
+        self.passBadgeSize = passBadgeSize
+        self.modeTagSize = modeTagSize
+        self.gutterLineGap = gutterLineGap
+        self.passBadgePadding = passBadgePadding
+        self.chordRowHeight = chordRowHeight
+        self.chordRowGap = chordRowGap
+        self.chordRunMinimum = chordRunMinimum
+        self.moreLinesScale = moreLinesScale
+        self.moreLinesSpacing = moreLinesSpacing
         self.wrapTolerance = wrapTolerance
         self.comfortableLyricSize = comfortableLyricSize
         self.comfortableMinimumFactor = comfortableMinimumFactor
@@ -294,8 +337,6 @@ public struct LayoutRequest: Sendable {
     public var minLyricSize: Double
     /// `LivePrefs.zoom`: multiplies the fitted size (still clamped to the minimum).
     public var zoom: Double
-    /// `LivePrefs.collapseRepeats`.
-    public var collapseRepeats: Bool
     /// Forces the column count; nil = auto-fit. The caller resolves the precedence
     /// (`LiveSettings.columns(for:)`: the song's `LivePrefs.columns`, else the global
     /// default, else auto).
@@ -304,9 +345,10 @@ public struct LayoutRequest: Sendable {
     public var cues: [SongCue]
     /// Sidecar notes and the setlist item note, shown above the first section.
     public var notes: [String]
-    /// A slot's arrangement (R122), resolved against `model.sections`
-    /// (`ArrangementResolver`): the sections to play, in order; nil = the full song.
-    public var arrangement: [PlayedPass]?
+    /// The shown passes, in order (R147, R149): a slot's arrangement resolved against
+    /// `model.sections` (`ArrangementResolver`); nil = the full song as written. Every pass
+    /// is laid out in full (no repeat is ever collapsed).
+    public var passes: [PlayedPass]?
     public var style: LayoutStyle
 
     public init(
@@ -314,22 +356,20 @@ public struct LayoutRequest: Sendable {
         viewport: LayoutSize,
         minLyricSize: Double,
         zoom: Double = 1,
-        collapseRepeats: Bool = true,
         columns: Int? = nil,
         cues: [SongCue] = [],
         notes: [String] = [],
-        arrangement: [PlayedPass]? = nil,
+        passes: [PlayedPass]? = nil,
         style: LayoutStyle = .stage,
     ) {
         self.model = model
         self.viewport = viewport
         self.minLyricSize = minLyricSize
         self.zoom = zoom
-        self.collapseRepeats = collapseRepeats
         self.columns = columns
         self.cues = cues
         self.notes = notes
-        self.arrangement = arrangement
+        self.passes = passes
         self.style = style
     }
 }

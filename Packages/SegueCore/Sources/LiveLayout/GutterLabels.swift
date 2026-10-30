@@ -1,9 +1,10 @@
-// Owner: unit B. Gutter labels (decisions.md, phase 2 build rulings): the section name at
-// 13pt, never below 12pt, a small second line for the repeat count or "(cont.)", top-aligned
-// with the section. Laid out once per plan: they do not scale with the lyrics.
+// Owner: unit B, P8-2. Gutter labels (decisions.md, phase 2 build rulings; R147): the section
+// name at 13pt, never below 12pt, then on a first part the pass badge ("2 of 3") and the mode
+// tag ("CHORDS"), or "(cont.)" on a continuation, top-aligned with the section. Laid out once
+// per plan: they do not scale with the lyrics.
 
 extension SectionLayout {
-    /// Each labelled section's gutter labels at `gutter` width.
+    /// Each labelled pass's gutter labels at `gutter` width.
     static func gutters(
         for sections: [MeasuredSection],
         gutter: Double,
@@ -12,18 +13,18 @@ extension SectionLayout {
     ) -> [Int: SectionGutters] {
         var result: [Int: SectionGutters] = [:]
         for section in sections where section.labelText != nil {
-            func make(_ detail: MeasuredParagraph?) -> LabelLayout {
+            func make(_ extras: [MeasuredParagraph?]) -> LabelLayout {
                 label(
                     section.labelText,
-                    detail: detail,
+                    extras: extras.compactMap(\.self),
                     gutter: gutter,
                     style: style,
                     measurer: measurer,
                 )
             }
             result[section.id] = SectionGutters(
-                first: make(section.labelDetail),
-                continuation: make(section.continuation),
+                first: make([section.badge, section.modeTag]),
+                continuation: make([section.continuation]),
             )
         }
         return result
@@ -31,10 +32,11 @@ extension SectionLayout {
 
     /// The gutter label, top-aligned: the name on one line at `labelSize`, shrunk toward
     /// `minLabelSize` (never below) when the gutter is narrow, wrapped at words only when it
-    /// still does not fit; then `detail` ("x2", "(cont.)") as a smaller second line.
+    /// still does not fit; then each of `extras` below it: "(cont.)" as a smaller line, the
+    /// pass badge in its box and the mode tag `gutterLineGap` below the line above.
     static func label(
         _ name: MeasuredParagraph?,
-        detail: MeasuredParagraph?,
+        extras: [MeasuredParagraph],
         gutter: Double,
         style: LayoutStyle,
         measurer: Measurer,
@@ -48,21 +50,66 @@ extension SectionLayout {
             let fitting = ((gutter * referenceSize / full) * 2).rounded(.down) / 2
             size = max(style.minLabelSize, min(size, fitting))
         }
-        var placed = wrap(name, size: size, width: gutter, measurer: measurer)
-        if let detail {
-            placed += wrap(detail, size: style.labelDetailSize, width: gutter, measurer: measurer)
-        }
-        var lines: [PlacedLine] = []
-        var baseline = 0.0
-        var bottom = 0.0
-        for (index, line) in placed.enumerated() {
+        var stack = GutterStack()
+        for (index, line) in wrap(name, size: size, width: gutter, measurer: measurer)
+            .enumerated()
+        {
             let extents = measurer.metrics.extents(of: line.role)
-            baseline = index == 0
-                ? extents.inkTop * line.size
-                : baseline + line.size * style.smallLineHeight
-            lines.append(PlacedLine(text: line, baseline: baseline))
-            bottom = baseline + extents.descent * line.size
+            let step = size * style.smallLineHeight
+            stack.baseline = index == 0 ? extents.inkTop * line.size : stack.baseline + step
+            stack.lines.append(PlacedLine(text: line, baseline: stack.baseline))
+            stack.bottom = stack.baseline + extents.descent * line.size
         }
-        return LabelLayout(lines: lines, height: bottom)
+        for extra in extras {
+            stack.append(extra, gutter: gutter, style: style, measurer: measurer)
+        }
+        return LabelLayout(lines: stack.lines, height: stack.bottom)
+    }
+}
+
+/// The gutter's lines as they are stacked: baselines from the first line's ink top, and how
+/// far the last one reaches.
+private struct GutterStack {
+    var lines: [PlacedLine] = []
+    var baseline = 0.0
+    var bottom = 0.0
+
+    /// One line under the name: the pass badge in its box and the mode tag
+    /// `gutterLineGap` below the line above, "(cont.)" one small line down.
+    mutating func append(
+        _ extra: MeasuredParagraph,
+        gutter: Double,
+        style: LayoutStyle,
+        measurer: Measurer,
+    ) {
+        let extents = measurer.metrics.extents(of: extra.role)
+        func wrap(_ size: Double, _ width: Double) -> [PlacedText] {
+            SectionLayout.wrap(extra, size: size, width: width, measurer: measurer)
+        }
+        switch extra.role {
+        case .passBadge:
+            let padding = style.passBadgePadding
+            let size = style.passBadgeSize
+            for var line in wrap(size, max(1, gutter - 2 * padding.width)) {
+                line.x += padding.width
+                baseline = bottom + style.gutterLineGap + padding.height + extents.ascent * size
+                lines.append(PlacedLine(text: line, baseline: baseline))
+                bottom = baseline + extents.descent * size + padding.height
+            }
+        case .modeTag:
+            let size = style.modeTagSize
+            for line in wrap(size, gutter) {
+                baseline = bottom + style.gutterLineGap + extents.inkTop * size
+                lines.append(PlacedLine(text: line, baseline: baseline))
+                bottom = baseline + extents.descent * size
+            }
+        default:
+            let size = style.labelDetailSize
+            for line in wrap(size, gutter) {
+                baseline += size * style.smallLineHeight
+                lines.append(PlacedLine(text: line, baseline: baseline))
+                bottom = baseline + extents.descent * size
+            }
+        }
     }
 }
