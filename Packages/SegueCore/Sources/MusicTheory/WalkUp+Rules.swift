@@ -177,8 +177,13 @@ struct WalkUpMove {
             let letter = Letter(rawValue: (key.tonic.letter.rawValue + 5) % 7) ?? .F
             byLetter[letter] = ChordToneSpelling.spell(letter: letter, pitch: sixth, key: key)
         }
+        // In letter order, and chord A's tones win when two letters share a pitch class
+        // (A's Ab over the scale's G#), so the spelling never depends on dictionary order.
+        let tones = Set([third, fifth, seventh].compactMap(\.self))
         var notes: [PitchClass: NoteClass] = [:]
-        for note in byLetter.values {
+        for note in byLetter.sorted(by: { $0.key.rawValue < $1.key.rawValue }).map(\.value)
+            where notes[note.pitchClass] == nil || tones.contains(note)
+        {
             notes[note.pitchClass] = note
         }
         return PassingScale(notes: notes)
