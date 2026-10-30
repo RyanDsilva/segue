@@ -1,5 +1,4 @@
 #if os(macOS)
-    import AVFoundation
     import Foundation
     import Shows
     import Support
@@ -95,86 +94,23 @@
         }
     }
 
-    /// The system output through `AVAudioEngine`: a short synthesized tick per beat (higher
-    /// on beat 1), scheduled on the audio clock so it lands on the beat whatever the main
-    /// thread is doing. The engine starts on the first click on its own queue and follows
-    /// the system's output device.
-    public final class AudioEngineClickOutput: MetronomeClickOutput, @unchecked Sendable {
-        // Everything below is touched only on `queue`.
-        private let queue = DispatchQueue(label: "dev.segue.metronome-click", qos: .userInteractive)
-        private var engine: AVAudioEngine?
-        private var player: AVAudioPlayerNode?
-        private var buffers: [MetronomeAccent: AVAudioPCMBuffer] = [:]
+    /// The rehearsal click on the shared audio engine (P8-6 section 8.2): a short
+    /// synthesized tick per beat (higher on beat 1), scheduled on the audio clock so it lands
+    /// on the beat whatever the main thread is doing. The engine starts on the first click,
+    /// follows the system's output device and is rebuilt after a device change.
+    public final class AudioEngineClickOutput: MetronomeClickOutput {
+        private let host: AudioEngineHost
 
-        public init() {}
+        public init(host: AudioEngineHost = .shared) {
+            self.host = host
+        }
 
         public func schedule(_ accent: MetronomeAccent, beat _: Int, in delay: TimeInterval) {
-            // The host time is taken now, before the hop to the queue.
-            let hostTime = mach_absolute_time() + AVAudioTime.hostTime(forSeconds: delay)
-            queue.async { [self] in
-                guard let player = startedPlayer(), let buffer = buffers[accent] else { return }
-                player.scheduleBuffer(buffer, at: AVAudioTime(hostTime: hostTime))
-            }
+            host.scheduleClick(accent, in: delay)
         }
 
         public func stop() {
-            queue.async { [self] in
-                player?.stop()
-            }
-        }
-
-        /// The player, with the engine built and running (rebuilt after the output device
-        /// changed and stopped it). Nil when the system has no usable output.
-        private func startedPlayer() -> AVAudioPlayerNode? {
-            if engine == nil {
-                build()
-            }
-            guard let engine, let player else { return nil }
-            if !engine.isRunning {
-                do {
-                    try engine.start()
-                } catch {
-                    return nil
-                }
-            }
-            if !player.isPlaying {
-                player.play()
-            }
-            return player
-        }
-
-        private func build() {
-            let engine = AVAudioEngine()
-            let player = AVAudioPlayerNode()
-            guard let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1)
-            else { return }
-            engine.attach(player)
-            engine.connect(player, to: engine.mainMixerNode, format: format)
-            buffers = [
-                .downbeat: Self.tick(format, frequency: 1760, level: 0.9),
-                .plain: Self.tick(format, frequency: 1320, level: 0.5),
-            ].compactMapValues(\.self)
-            self.engine = engine
-            self.player = player
-        }
-
-        /// A 40 ms sine blip with a fast exponential decay.
-        private static func tick(
-            _ format: AVAudioFormat,
-            frequency: Double,
-            level: Float,
-        ) -> AVAudioPCMBuffer? {
-            let frames = AVAudioFrameCount(format.sampleRate * 0.04)
-            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames),
-                  let samples = buffer.floatChannelData?[0]
-            else { return nil }
-            buffer.frameLength = frames
-            for frame in 0 ..< Int(frames) {
-                let time = Double(frame) / format.sampleRate
-                let envelope = exp(-time / 0.008)
-                samples[frame] = level * Float(sin(2 * .pi * frequency * time) * envelope)
-            }
-            return buffer
+            host.stopClicks()
         }
     }
 #endif

@@ -37,6 +37,8 @@ let package = Package(
                 .copy("App/WelcomeLibrary"),
                 // The AI provider order per task (P3-2, spec 4.1; R63 by default).
                 .copy("App/AIConfig"),
+                // The sound bank (P8-6 section 12): an SF2 extracted from FluidR3_GM (MIT).
+                .copy("Audio/Sounds"),
             ],
             swiftSettings: strictSettings,
         ),

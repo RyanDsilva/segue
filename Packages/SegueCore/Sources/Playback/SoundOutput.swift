@@ -10,6 +10,12 @@ public enum ChordSound: String, Sendable, Hashable, Codable, CaseIterable {
     case cleanGuitar
 }
 
+/// The bass voice's instrument (Settings > Audio; finger by default).
+public enum BassSound: String, Sendable, Hashable, Codable, CaseIterable {
+    case finger
+    case pick
+}
+
 /// How a chord is struck: low to high a few milliseconds apart, or all at once.
 public enum ChordStyle: String, Sendable, Hashable, Codable, CaseIterable {
     case strum
@@ -106,7 +112,7 @@ public struct Phrase: Sendable, Hashable {
 /// (SegueUI) ever holds one, and none exists while a gig runs (section 9).
 public protocol SoundOutput: AnyObject, Sendable {
     /// Loads what the voices need (the sound bank) off the main thread. Makes no sound.
-    func prepare(_ sound: ChordSound)
+    func prepare(chord: ChordSound, bass: BassSound)
     /// Plays `events`, their onsets counted from `delay` seconds after now.
     func schedule(_ events: [NoteEvent], in delay: TimeInterval)
     /// Silences everything at once: pending events dropped, sounding notes released.

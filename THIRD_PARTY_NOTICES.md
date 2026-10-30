@@ -22,6 +22,12 @@ Segue itself is proprietary (see [LICENSE](LICENSE)). It ships the open-source c
 | EventSource | 1.5.1 | https://github.com/mattt/EventSource | MIT | `Packages/SegueUI/Sources/SegueUI/App/Licenses/EventSource.txt` |
 | Schibsted Grotesk (Regular, Medium, SemiBold, Bold, ExtraBold) | 1.100 | https://github.com/schibsted/schibsted-grotesk | SIL Open Font License 1.1 | `Packages/SegueUI/Sources/SegueUI/Theme/Fonts/OFL.txt` |
 
+**Sounds**
+
+| Component | Version | Source | Licence | Licence text in this repo |
+|---|---|---|---|---|
+| FluidR3_GM SoundFont (piano, clean guitar, finger and pick bass, extracted into `SegueSounds.sf2`) | 3.1 (Debian fluid-soundfont 3.1-5.3) | https://sources.debian.org/data/main/f/fluid-soundfont/3.1-5.3/ | MIT | `Packages/SegueUI/Sources/SegueUI/App/Licenses/FluidR3.txt` |
+
 Versions are the exact pins in `Tuist/Package.swift`, `Packages/SegueCore/Package.swift` and `Tuist/Package.resolved` (GRDB.swift at `b83108d`, Tonic at `601eeb2`, sentry-cocoa at `4bb2282`, mlx-swift-lm at `3b339ad`, mlx-swift at `1960120`, swift-transformers at `4847310`, swift-huggingface at `c30143a`, swift-jinja at `1e4d0dc`, swift-crypto at `da9d28d`, swift-asn1 at `3b6410f`, swift-collections at `35a1edc`, swift-numerics at `0c0290f`, yyjson at `8b4a38d`, EventSource at `86b5096`, swift-syntax at `79e4b74`); the font version is the `name` table of the bundled TTFs. `make docs-check` fails if a pin in `Tuist/Package.resolved` is missing from the tables in this file, so a dependency bump must update this file in the same change.
 
 ### GRDB.swift
@@ -83,6 +89,10 @@ Copyright (c) 2020 YaoYuan <ibireme@gmail.com>. MIT License; full text in `yyjso
 ### EventSource
 
 Copyright 2025 Mattt (https://mat.tt). MIT License; full text in `EventSource.txt` (byte-identical to the `LICENSE.md` of the 1.5.1 release). Linked through swift-huggingface.
+
+### FluidR3_GM SoundFont
+
+Copyright (c) 2000-2002, 2008 Frank Wen. MIT License; full text in `FluidR3.txt` (byte-identical to the `COPYING` file of Debian's fluid-soundfont 3.1-5.3). The app's sound bank, `Packages/SegueUI/Sources/SegueUI/Audio/Sounds/SegueSounds.sf2`, holds four presets copied unmodified from `FluidR3_GM.sf2` (programs 0, 27, 33 and 34) by `scripts/soundbank/extract.py`; the downloads and their SHA-256 are in `scripts/soundbank/sources.txt`.
 
 ## Resolved but not shipped
 

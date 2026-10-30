@@ -133,6 +133,13 @@
       "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/Tonic.txt"
     },
     {
+      "name": "FluidR3_GM SoundFont",
+      "summary": "Piano, clean guitar and bass sounds for hearing chords and walk-ups.",
+      "licence": "MIT License",
+      "source": "https://sources.debian.org/data/main/f/fluid-soundfont/3.1-5.3/",
+      "licenceFile": "Packages/SegueUI/Sources/SegueUI/App/Licenses/FluidR3.txt"
+    },
+    {
       "name": "Sentry",
       "summary": "Crash and hang reports, sent only if you allow them.",
       "licence": "MIT License",
