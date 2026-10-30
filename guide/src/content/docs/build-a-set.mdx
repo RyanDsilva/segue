@@ -16,13 +16,28 @@ import Steps from '../../components/Steps.astro';
 
 <Clip id="build-a-set" title="Picking songs and arranging a set" caption="Click or Space ticks songs in order, Command-2 switches to Arrange, Option-Down moves a song, Shift-Command-B adds a break." />
 
+## Type a set {#type-a-set}
+
+The last row of the set list is a text row. Press <kbd>⌘L</kbd> (**Setlist > Add Song by Name**), type a few letters of a song and press <kbd>Return</kbd>: the song is added at the end and the row is ready for the next one. A 12-song set is twelve lines and twelve Returns.
+
+<Shot id="builder-composer" alt="The set list with the text row at the end suggesting Kesariya, key A" />
+
+- **The suggestion.** The best match shows in grey after what you typed, with the key and length the new row will have. Spelling variants find the right song: "kesriya", "tuj mai rab" and "fir le aya dil" all work. Segue never changes what you typed.
+- **Not the one you meant?** Press <kbd>↓</kbd> or <kbd>Tab</kbd> to go through up to five other matches (<kbd>↑</kbd> or <kbd>⇧Tab</kbd> goes back). Click one to add it.
+- **The key for this show.** End the line with the key: "kesariya in A", "tum hi ho (Am)" or "pal key of D". The row shows that key and the song itself doesn't change. A key that only names the same key signature ("in C" for a song in Am) changes nothing.
+- **A break.** Type `---` and press <kbd>Return</kbd> to start the next part ("Set 2"). Click the break row to rename it.
+- **Already in the set.** If the song is already in the set, the row says where ("Already in the set at #4") and selects it instead of adding it again.
+- **No song matches** means nothing in the library fits; press <kbd>Esc</kbd> to clear the line.
+
+Each Return is one step for **Edit > Undo**. You can also drop songs from the library on this row.
+
 ## From the library {#from-library}
 
 In the main library, <kbd>⌘</kbd>-click or <kbd>⇧</kbd>-click to select several songs, then choose **Add to Setlist**. **Setlist > Add Selected Song to Setlist** adds the selected one.
 
 ## Each song once {#once}
 
-A song can be in a setlist only once. Segue won't add it twice.
+A song can be in a setlist only once. Segue won't add it twice, whether you tick it, drag it or type it.
 
 ## Key and capo for this show {#key-and-capo}
 

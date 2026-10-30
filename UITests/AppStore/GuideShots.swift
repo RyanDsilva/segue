@@ -198,6 +198,29 @@ final class GuideShots: GuideShotCase {
         shoot("assistant-why", window, callouts: ["why": breakdown])
     }
 
+    /// The set composer (P8-5): builder-composer, a new set typed with ⌘L, the next song's
+    /// ghost and key showing.
+    @MainActor
+    func testSetComposer() {
+        let app = launch()
+        let window = mainWindow(app)
+        app.typeKey("n", modifierFlags: [.command, .shift], in: app)
+        let name = app.textFields[GuideAXID.newSetlistName]
+        XCTAssertTrue(name.appears(timeout: 10))
+        name.typeText("Sangeet Night\n", in: app)
+        let field = app.textFields[GuideAXID.setlistComposer]
+        XCTAssertTrue(field.appears(timeout: 10))
+        app.typeKey("2", modifierFlags: .command, in: app)
+        app.typeKey("l", modifierFlags: .command, in: app)
+        for line in ["kitabon wali in Bm", "ferry lights", "---"] {
+            field.typeText(line, in: app)
+            app.typeKey(.return, modifierFlags: [], in: app)
+        }
+        field.typeText("soundchek in A", in: app)
+        _ = element(app, GuideAXID.setlistComposerGhost)
+        shoot("builder-composer", window)
+    }
+
     /// Running time and breaks: timeline, missing-lengths, stage-break; Arrange Sections:
     /// arrange-sheet.
     @MainActor

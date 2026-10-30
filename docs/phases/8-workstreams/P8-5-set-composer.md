@@ -41,9 +41,11 @@ A 12-song set is typed, not clicked: ⌘L, type a few letters of each song, Retu
 | | Today (P3-12 Pick, 12 songs) | Target (composer) |
 | --- | --- | --- |
 | Per song | click the library search (1), clear the previous query (1), type, Return to the first result (1), ↓ when the first result is wrong (~0.25 avg), Space to tick (1) | type, Return (1) |
-| 12 songs | ~51 actions plus typing | ⌘L (1) + 12 Returns = **13 actions plus typing** (+ one Tab / ↓ per song whose best match is wrong) |
+| 12 songs | **47 measured** (53 with the break and Kesariya's key) plus typing | ⌘L (1) + 12 Returns = **13 actions plus typing** (+ one Tab / ↓ per song whose best match is wrong); **measured 14 with the break**, no Tab or ↓ |
 | Gig key for a slot | click the row (1), popover stepper presses (2-4), Escape (1): ~5 per slot | 0 extra: "in A" is typed in the same line |
 | Break | click a row (1), ⇧⌘B (1) | type "---", Return (1) |
+
+Measured 2026-10-30: before, the section 13 set replayed through the real library search on the same 24-song library (every intended song was the first result, so no ↓: 3 actions for the first song, 4 for each later one = 47, +2 for the break, +4 for "in A"); after, `SegueSetComposerE2ETests` counts ⌘L + 13 Returns = 14 for 12 songs and the break, gig key included.
 
 How it is measured:
 
