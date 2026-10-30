@@ -1,6 +1,9 @@
+import ChordPro
+import CoreText
 import Editing
 import Foundation
 import Library
+import LiveLayout
 import MusicTheory
 @testable import SegueUI
 import Testing
@@ -130,5 +133,88 @@ struct WalkUpPickerTests {
         let song = try await library.createSong(source: Self.song)
         let model = SongSummary.renderModel(song, bass: store.bassView)
         #expect(Self.runs(model).isEmpty)
+    }
+
+    // MARK: The Walk-ups list (section 8.9)
+
+    @Test
+    func `the editor's list groups changes, sets the feel with undo and removes stale picks`(
+    ) async throws {
+        let env = try TestEnvironment()
+        let opened = try await open(env)
+        let (library, editor, song) = (opened.library, opened.editor, opened.song)
+        let source = try #require(editor.walkUpsSource)
+        #expect(source.title == "Harbour")
+        #expect(source.changes.map { "\($0.fromName)>\($0.toName)" } == ["G>C"])
+        #expect(WalkUpsSheet.groups(source.changes).map(\.changes.count) == [1])
+        #expect(source.feel == nil)
+        #expect(source.defaultFeel == .pop)
+        #expect(source.unmatched.isEmpty)
+
+        source.setFeel(.bollywood)
+        #expect(editor.walkUpsSource?.feel == .bollywood)
+        await editor.bassTask?.value
+        #expect(try await library.store.song(id: song.id)?.sidecar.bass.genre == .bollywood)
+        editor.sourceEditor.undoManager.undo()
+        #expect(editor.walkUpsSource?.feel == nil)
+        source.setFeel(.rock)
+        source.setFeel(nil)
+        await editor.bassTask?.value
+        #expect(try await library.store.song(id: song.id)?.sidecar.bass.genre == nil)
+
+        // A pick whose target changed no longer matches: listed, then removed.
+        let change = try #require(source.changes.first)
+        editor.pickWalkUp(change, change.candidates.first)
+        editor.sourceEditor.replaceAll(with: Self.song.replacingOccurrences(
+            of: "[C]",
+            with: "[Am]",
+        ))
+        try await AISettingsTests.waitUntil(timeout: .seconds(30)) {
+            editor.walkUpsSource?.unmatched.count == 1
+        }
+        let stale = try #require(editor.walkUpsSource?.unmatched.first)
+        #expect(stale.text == "Lead-in: G \u{2192} C, A B")
+        editor.walkUpsSource?.remove([stale.pick])
+        #expect(editor.walkUpsSource?.unmatched.isEmpty == true)
+        #expect(editor.bassPrefs.walkUps.isEmpty)
+    }
+
+    @Test
+    func `the library picks, sets the feel and lists without undo`() async throws {
+        let env = try TestEnvironment()
+        let store = InstrumentProfileStore(defaults: env.defaults)
+        store.update { $0.bassNotes = true }
+        store.setWalkUps(.everyChange)
+        let library = try await env.openLibrary()
+        library.instrument = store
+        let song = try await library.createSong(source: Self.song)
+        let cho = try env.read(song.relativePath)
+        #expect(library.showsWalkUps)
+        let source = try #require(library.walkUpsSource(songID: song.id))
+        let change = try #require(source.changes.first)
+        #expect(source.readOnlyHelp == nil)
+        let details = try #require(source.picking.details(change.id))
+        #expect(details.feel == "Pop")
+        let half = try #require(change.candidates.first { $0.kind == .diatonicNeighbour })
+        source.picking.choose(change, half)
+        await library.walkUpWrite?.value
+        let saved = try #require(library.song(id: song.id))
+        #expect(saved.sidecar.bass.walkUps.map(\.kind) == [.diatonicNeighbour])
+        #expect(try env.read(song.relativePath) == cho)
+        #expect(library.walkUpsSource(songID: song.id)?.changes.first?.pick != nil)
+
+        source.setFeel(.worship)
+        await library.walkUpWrite?.value
+        #expect(library.song(id: song.id)?.sidecar.bass.genre == .worship)
+
+        let picked = try #require(library.walkUpsSource(songID: song.id)?.changes.first)
+        source.picking.reset(picked)
+        await library.walkUpWrite?.value
+        #expect(library.song(id: song.id)?.sidecar.bass.walkUps.isEmpty == true)
+
+        // Outside the bass-note view the library offers no walk-ups.
+        store.toggleBassNotes(from: .library)
+        #expect(!library.showsWalkUps)
+        #expect(library.walkUpsSource(songID: song.id) == nil)
     }
 }

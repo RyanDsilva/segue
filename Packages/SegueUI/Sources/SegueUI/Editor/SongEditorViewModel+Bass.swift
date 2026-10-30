@@ -11,6 +11,27 @@ extension SongEditorViewModel {
         instrument?.profile.bassNotes ?? false
     }
 
+    /// "I play bass" (P8-4 6.5): the top bar's diagram group becomes the bassist's.
+    var playsBass: Bool {
+        instrument?.profile.playsBass ?? false
+    }
+
+    /// The bassist's fretboard strip (user-level, the top bar's "Fretboard" button).
+    var showsFretboard: Bool {
+        instrument?.profile.fretboard ?? false
+    }
+
+    /// Flips the bassist's fretboard strip for every song; the song's own guitar or piano
+    /// diagrams setting is never touched.
+    func toggleFretboard() {
+        instrument?.update { $0.fretboard.toggle() }
+    }
+
+    /// "Bass, BEADG": the Settings > Instrument tuning.
+    var bassInstrumentTitle: String {
+        "Bass, " + (instrument?.profile.tuning.name ?? Tuning.bassStandard4.name)
+    }
+
     /// The editor's Bass segment: flips the user-level bass-note view for every song and
     /// the stage. The song's sidecar is never written.
     func toggleBassNotes() {

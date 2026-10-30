@@ -35,4 +35,28 @@ public extension AccessibilityID {
 
     static let walkUpNothing = "segue.walkUp.nothing"
     static let walkUpReset = "segue.walkUp.reset"
+    /// The score breakdown under a row while Option is held.
+    static let walkUpBreakdown = "segue.walkUp.breakdown"
+
+    /// The Walk-ups list (P8-4b 8.9): its openers in the editor and the library, the sheet,
+    /// its feel picker, rows, and the unmatched footer.
+    static let editorWalkUps = "segue.editor.walkUps"
+    static let librarySongWalkUps = "segue.library.song.walkUps"
+    static let walkUpsSheet = "segue.walkUps.sheet"
+    static let walkUpsFeel = "segue.walkUps.feel"
+    static let walkUpsDone = "segue.walkUps.done"
+    static let walkUpsUnmatched = "segue.walkUps.unmatched"
+    static let walkUpsRemoveAll = "segue.walkUps.removeAll"
+    static func walkUpsRow(_ index: Int) -> String {
+        "segue.walkUps.row.\(index)"
+    }
+
+    static func walkUpsRemove(_ index: Int) -> String {
+        "segue.walkUps.remove.\(index)"
+    }
+
+    /// The editor top bar's bassist controls (P8-4 6.5): the Fretboard button and the
+    /// "Bass, BEADG" menu.
+    static let editorFretboard = "segue.editor.fretboard"
+    static let editorBassInstrument = "segue.editor.bassInstrument"
 }

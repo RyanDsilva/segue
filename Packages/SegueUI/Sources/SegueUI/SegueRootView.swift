@@ -262,6 +262,11 @@
                             Task { await app.startSongSession(song, kind: kind) }
                         },
                     ))
+                    .environment(\.openInstrumentSettings, OpenInstrumentSettingsAction {
+                        app.polish.preferences.selectedPane = SegueSettingsView.Pane.instrument
+                            .rawValue
+                        openSettings()
+                    })
             case .gigLog:
                 GigLogPane(model: session.gigLog) { id in
                     Task { await session.revealGig(id) }

@@ -213,4 +213,25 @@ struct BassLineTests {
         // A's chord deleted: unmatched.
         #expect(!resolves(Self.song.replacingOccurrences(of: "[G]Hello", with: "Hello")))
     }
+
+    @Test
+    func `an unmatched pick is listed with its section, chords and notes as saved`() throws {
+        let (model, document) = Self.model(Self.song)
+        let pick = try #require(Self.pick(
+            .scaleWalk,
+            offsets: [-3, -1],
+            model: model,
+            document: document,
+        ))
+        let prefs = BassPrefs(walkUps: [pick])
+        #expect(BassLine.unmatched(model, document: document, prefs: prefs).isEmpty)
+        let (edited, editedDocument) = Self.model(
+            Self.song.replacingOccurrences(of: "[C]my", with: "[Am]my"),
+        )
+        let unmatched = BassLine.unmatched(edited, document: editedDocument, prefs: prefs)
+        #expect(unmatched == [pick])
+        #expect(pick.savedSummary(key: SongKey(parsing: "G")) == "Verse: G \u{2192} C, A B")
+        let hold = WalkUpPick(anchor: pick.anchor, to: "C", kind: .hold, offsets: [])
+        #expect(hold.savedNotes(key: nil) == "Nothing")
+    }
 }

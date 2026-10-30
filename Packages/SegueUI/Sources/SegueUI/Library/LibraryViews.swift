@@ -30,6 +30,18 @@
                         .importDrop(model: model, isTargeted: $isDropTargeted)
                 }
             }
+            .sheet(isPresented: Binding(
+                get: { model.walkUpsSongID != nil },
+                set: {
+                    if !$0 {
+                        model.walkUpsSongID = nil
+                    }
+                },
+            )) {
+                if let id = model.walkUpsSongID {
+                    WalkUpsSheet(source: { model.walkUpsSource(songID: id) })
+                }
+            }
             .navigationTitle(model.scope.title)
             // The editor sets its own title; a song count under it would read as its own.
             .navigationSubtitle(model.editor == nil ? songCount(shownCount) : "")
@@ -291,6 +303,10 @@
                 AddSongsToSetlistMenu(session: session, songIDs: selection)
             } else {
                 AddToSetlistMenu(session: session, songID: songID)
+            }
+            if selection.count <= 1, session.library.showsWalkUps {
+                Button("Walk-ups\u{2026}") { session.library.walkUpsSongID = songID }
+                    .accessibilityIdentifier(AccessibilityID.librarySongWalkUps)
             }
             Button("Show in Finder") { session.revealSong(songID) }
                 .accessibilityIdentifier(AccessibilityID.songShowInFinder)

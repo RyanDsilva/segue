@@ -105,4 +105,48 @@ extension SongEditorViewModel {
             reset: { [weak self] change in self?.resetWalkUp(change) },
         )
     }
+
+    /// The Walk-ups list for this song (nil until it is rendered, or outside the bass-note
+    /// view); every change is one undo step.
+    var walkUpsSource: WalkUpsSource? {
+        guard let renderModel, renderModel.transform.options.bass?.notes == true else {
+            return nil
+        }
+        let document = snapshot.document
+        let key = renderModel.transform.key.writtenKey
+        let sections = renderModel.sections
+        return WalkUpsSource(
+            title: renderModel.header.title ?? "Untitled",
+            changes: BassLine.changes(renderModel, document: document, prefs: bassPrefs),
+            sectionLabel: { index in
+                sections.indices.contains(index) ? SectionNotes.label(of: sections[index]) : nil
+            },
+            unmatched: BassLine.unmatched(renderModel, document: document, prefs: bassPrefs)
+                .map { ($0, $0.savedSummary(key: key)) },
+            feel: bassPrefs.genre,
+            defaultFeel: instrument?.profile.genre ?? .pop,
+            density: instrument?.profile.walkUps ?? .off,
+            readOnlyHelp: canPickWalkUps ? nil : "Save the song first",
+            picking: walkUpPicking,
+            setFeel: { [weak self] genre in self?.setSongFeel(genre) },
+            remove: { [weak self] picks in self?.removeWalkUps(picks) },
+        )
+    }
+
+    /// The song's own feel (nil: the profile's default), one undo step.
+    func setSongFeel(_ genre: BassGenre?) {
+        guard canPickWalkUps, genre != bassPrefs.genre else { return }
+        var prefs = bassPrefs
+        prefs.genre = genre
+        setBassPrefs(prefs, actionName: "Change Feel")
+        services.record(.featureUsed(.songFeel, .editor))
+    }
+
+    /// Removes saved picks that no longer match the song, one undo step.
+    func removeWalkUps(_ picks: [WalkUpPick]) {
+        guard canPickWalkUps, !picks.isEmpty else { return }
+        var prefs = bassPrefs
+        prefs.walkUps.removeAll { picks.contains($0) }
+        setBassPrefs(prefs, actionName: picks.count == 1 ? "Remove Walk-up" : "Remove Walk-ups")
+    }
 }

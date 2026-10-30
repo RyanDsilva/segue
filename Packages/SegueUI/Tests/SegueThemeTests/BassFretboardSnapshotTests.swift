@@ -71,5 +71,32 @@ extension DiagramSnapshotTests {
         let popover = WalkUpPopover(id: first.id, picking: picking) {}
             .background(Theme.color.surfaceAlt)
         try snapshot(popover, name: "walkup-popover", scheme: scheme)
+
+        // The Walk-ups list with a pick and a saved walk-up that no longer matches.
+        let stale = try #require(ChordAnchors.anchor(
+            at: first.id.from,
+            units: SongSections.units(of: document),
+            sections: four.sections,
+        ))
+        let sections = four.sections
+        let list = WalkUpsSheet(source: {
+            WalkUpsSource(
+                title: "Harbour Lights",
+                changes: changes,
+                sectionLabel: { SectionNotes.label(of: sections[$0]) ?? "Verse" },
+                unmatched: [(
+                    WalkUpPick(anchor: stale, to: "A", kind: .chromBelow, offsets: [-1]),
+                    "Verse: G \u{2192} A, G#",
+                )],
+                feel: .rock,
+                defaultFeel: .pop,
+                density: .off,
+                readOnlyHelp: nil,
+                picking: picking,
+                setFeel: { _ in },
+                remove: { _ in },
+            )
+        })
+        try snapshot(list, name: "walkups-sheet", scheme: scheme)
     }
 }

@@ -122,6 +122,10 @@ public final class LibraryViewModel {
     @ObservationIgnored var instrument: InstrumentProfileStore?
     /// Heard chords and walk-up auditions (P8-6); the app hands it over with the services.
     @ObservationIgnored var sound: SoundSession?
+    /// The last walk-up sidecar write from the library; the next waits for it (P8-4b).
+    @ObservationIgnored var walkUpWrite: Task<Void, Never>?
+    /// The song whose Walk-ups list is open from the library (P8-4b 8.9).
+    var walkUpsSongID: SongID?
 
     /// The open editor: the new-song editor (`detail == .newSong`) or an edit of the
     /// selected song. Nil when the detail pane shows a rendered song or nothing.

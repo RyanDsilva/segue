@@ -10,7 +10,9 @@
     /// state saved to the song's sidecar; capo and "Apply to source" edit the ChordPro.
     struct EditorTopBar: View {
         @Environment(\.openGuide) private var openGuide
+        @Environment(\.openInstrumentSettings) private var openInstrumentSettings
         let model: SongEditorViewModel
+        @State private var showsWalkUps = false
 
         var body: some View {
             HStack(alignment: .center, spacing: 0) {
@@ -139,6 +141,52 @@
         static let bassPitchHelp = "Bass notes always show sounding pitch"
 
         private var diagramGroup: some View {
+            HStack(spacing: 8) {
+                if model.playsBass {
+                    bassistGroup
+                } else {
+                    chartDiagramGroup
+                }
+                if model.showsBassNotes {
+                    Button("Walk-ups\u{2026}") { showsWalkUps = true }
+                        .buttonStyle(.segueSecondary)
+                        .controlSize(.small)
+                        .help("Every chord change's walk-up in this song, and its feel")
+                        .accessibilityIdentifier(AccessibilityID.editorWalkUps)
+                        .sheet(isPresented: $showsWalkUps) {
+                            WalkUpsSheet(source: { model.walkUpsSource })
+                        }
+                }
+            }
+        }
+
+        /// The bassist's diagram controls (P8-4 6.5, P8-4b): the user-level fretboard strip
+        /// and the Settings tuning; the song's own instrument is left as it is.
+        private var bassistGroup: some View {
+            HStack(spacing: 8) {
+                SegmentedGroup {
+                    SegmentButton(title: "Fretboard", isOn: model.showsFretboard) {
+                        model.toggleFretboard()
+                    }
+                    .accessibilityIdentifier(AccessibilityID.editorFretboard)
+                    .help("Show where to play each chord on the bass (all songs)")
+                }
+                Menu {
+                    Button("Instrument Settings\u{2026}") { openInstrumentSettings?() }
+                } label: {
+                    Text(model.bassInstrumentTitle)
+                        .font(SchibstedGrotesk.semiBold.font(size: 13))
+                }
+                .menuStyle(.button)
+                .buttonStyle(.segueSecondary)
+                .controlSize(.small)
+                .fixedSize()
+                .accessibilityIdentifier(AccessibilityID.editorBassInstrument)
+                .help("Strings and tuning for the bass fretboard, in Settings > Instrument")
+            }
+        }
+
+        private var chartDiagramGroup: some View {
             HStack(spacing: 8) {
                 SegmentedGroup {
                     SegmentButton(title: "Diagrams", isOn: model.options.showDiagrams) {
