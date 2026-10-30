@@ -204,12 +204,22 @@ struct LyricLineView: View {
             ) {
                 ForEach(tokens) { token in
                     if let chord = token.chord {
-                        Text(chord)
-                            .font(Theme.font.liveChord(size: style.lyricSize))
-                            .foregroundStyle(
-                                token.isUnknown ? Theme.color.muted : Theme.color.cueText,
-                            )
-                            .fixedSize()
+                        // A chord unit: the chord (or bass note), then the concert chord
+                        // small and muted beside it (P8-4 6.7), measured as one piece so
+                        // the next chord and the lyrics never run under it.
+                        HStack(alignment: .firstTextBaseline, spacing: style.chordSize * 0.25) {
+                            Text(chord)
+                                .font(Theme.font.liveChord(size: style.lyricSize))
+                                .foregroundStyle(
+                                    token.isUnknown ? Theme.color.muted : Theme.color.cueText,
+                                )
+                            if let detail = token.detail {
+                                Text(detail)
+                                    .font(SchibstedGrotesk.medium.font(size: style.chordSize * 0.6))
+                                    .foregroundStyle(Theme.color.muted)
+                            }
+                        }
+                        .fixedSize()
                     }
                     Text(token.text)
                         .font(Theme.font.liveLyric(size: style.lyricSize))
@@ -231,10 +241,22 @@ struct LyricLineView: View {
         }
     }
 
+    /// A chord unit as spoken: "G" as is; a bass note "3 \u{00B7} B" reads "3, B", and with
+    /// the chord beside "B, bass of G slash B" (P8-4 6.7). A chord that is just the note
+    /// ("G" beside "G") is not read twice.
+    static func spokenChord(_ chord: String, detail: String?) -> String {
+        let note = chord.replacingOccurrences(of: " \u{00B7} ", with: ", ")
+        let letter = chord.components(separatedBy: " \u{00B7} ").last ?? chord
+        guard let detail, detail != letter else { return note }
+        return "\(note), bass of \(detail.replacingOccurrences(of: "/", with: " slash "))"
+    }
+
     /// "<chords>: <lyric>", or the lyric alone when the line has no chords.
     static func spokenText(_ tokens: [LyricToken]) -> String {
         let lyric = tokens.map(\.text).joined().trimmingCharacters(in: .whitespaces)
-        let chords = tokens.compactMap(\.chord)
+        let chords = tokens.compactMap { token in
+            token.chord.map { spokenChord($0, detail: token.detail) }
+        }
         guard !chords.isEmpty else { return lyric }
         let spokenChords = chords.joined(separator: ", ")
         return lyric.isEmpty ? spokenChords : "\(spokenChords): \(lyric)"
@@ -250,6 +272,8 @@ struct LyricToken: Identifiable, Equatable {
     let chord: String?
     let text: String
     var isUnknown = false
+    /// The small concert chord beside a bass note (P8-4 6.7).
+    var detail: String?
     /// The line may wrap after this piece: its text ends in whitespace, or it is the last
     /// piece of the line.
     var endsWord = true
@@ -287,6 +311,7 @@ struct LyricToken: Identifiable, Equatable {
                         chord: chord,
                         text: "",
                         isUnknown: segment.isUnknown,
+                        detail: segment.detail,
                     ))
                 }
                 continue
@@ -298,6 +323,7 @@ struct LyricToken: Identifiable, Equatable {
                     chord: chord,
                     text: word,
                     isUnknown: offset == 0 && segment.isUnknown,
+                    detail: offset == 0 ? segment.detail : nil,
                 ))
             }
         }
@@ -308,6 +334,7 @@ struct LyricToken: Identifiable, Equatable {
         var chord: String?
         var text: String
         var isUnknown = false
+        var detail: String?
     }
 
     /// The lyric cut at each chord's offset: text before the first chord, then each chord
@@ -340,6 +367,7 @@ struct LyricToken: Identifiable, Equatable {
                 chord: chord.text,
                 text: text(start, next),
                 isUnknown: chord.kind == .unknown,
+                detail: chord.detail,
             ))
         }
         return segments

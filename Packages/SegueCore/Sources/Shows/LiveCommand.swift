@@ -57,6 +57,8 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
     case jumpToPass9
     /// Loop the current pass with a one-bar count-in: rehearsals only (`L`, R148).
     case toggleLoop
+    /// The user-level bass-note view on or off, for anyone (`B`, P8-4, R158 Q3).
+    case toggleBassNotes
 
     /// Who handles a command.
     public enum Scope: Sendable, Hashable {
@@ -78,6 +80,8 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
             .viewport
         case .jumpToPass1, .jumpToPass2, .jumpToPass3, .jumpToPass4, .jumpToPass5,
              .jumpToPass6, .jumpToPass7, .jumpToPass8, .jumpToPass9, .toggleLoop:
+            .viewport
+        case .toggleBassNotes:
             .viewport
         case .endShow, .openSearch, .showKeys, .toggleMetronome, .toggleMetronomeClick,
              .toggleRequests, .toggleSidebar:
@@ -152,6 +156,7 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
              .jumpToPass6, .jumpToPass7, .jumpToPass8, .jumpToPass9:
             "Jump to Section \((jumpIndex ?? 0) + 1)"
         case .toggleLoop: "Loop Section (Rehearsal)"
+        case .toggleBassNotes: "Bass Notes"
         }
     }
 }

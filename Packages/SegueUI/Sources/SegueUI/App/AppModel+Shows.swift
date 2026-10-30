@@ -360,6 +360,7 @@
                 library: session.stores.library,
                 bindings: loadBindings(session),
                 settings: liveSettings,
+                instrument: instrumentProfile,
                 scrollClock: dependencies.live.scrollClock,
                 clock: session.stores.clock,
                 makeClickOutput: dependencies.live.makeClickOutput,

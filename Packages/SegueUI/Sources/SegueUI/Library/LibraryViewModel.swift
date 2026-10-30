@@ -117,6 +117,10 @@ public final class LibraryViewModel {
     /// own `{define}`s.
     public internal(set) var userShapes: UserShapeLibrary = .empty
 
+    /// Settings > Instrument (P8-4): the song page and the editor preview show bass notes
+    /// when its bass view is on. The session hands it over when the library opens.
+    @ObservationIgnored var instrument: InstrumentProfileStore?
+
     /// The open editor: the new-song editor (`detail == .newSong`) or an edit of the
     /// selected song. Nil when the detail pane shows a rendered song or nothing.
     public internal(set) var editor: SongEditorViewModel? {

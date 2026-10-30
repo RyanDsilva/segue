@@ -65,6 +65,7 @@
             case .scrollFaster: nudgeScrollSpeed(faster: true)
             case .scrollSlower: nudgeScrollSpeed(faster: false)
             case .restartScroll: restartScroll()
+            case .toggleBassNotes: toggleBassNotes()
             default: dispatchZoom(command)
             }
         }

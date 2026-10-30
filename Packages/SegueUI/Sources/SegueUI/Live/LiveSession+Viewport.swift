@@ -80,6 +80,7 @@
             plan = newPlan
             updateScroller(newPlan, item: slot.item, song: song, prefs: prefs)
             rescheduleLoopWrap()
+            recordBassNeckShown()
         }
 
         /// Records once per item what the stage did with its arrangement (the gig log says

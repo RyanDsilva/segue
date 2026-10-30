@@ -216,6 +216,7 @@ extension LibraryViewModel {
             cues: record.sidecar.cues,
             persistCues: persistCues(following: base),
             autosave: autosave,
+            instrument: instrument,
             save: save,
         )
         editor.librarySectionKinds = librarySectionKinds
@@ -243,6 +244,7 @@ extension LibraryViewModel {
             persistLivePrefs: persistLivePrefs(following: base),
             persistCues: persistCues(following: base),
             autosave: autosave,
+            instrument: instrument,
             save: { [weak self] source in
                 guard let self else { throw CancellationError() }
                 return try await saveNewSong(source, created: created, base: base)

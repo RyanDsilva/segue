@@ -244,6 +244,12 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case sectionJump
     case sectionLoop
     case singleSongSession
+    /// Settings > Instrument: "I play bass" was turned on (P8-4 6.6).
+    case bassProfile
+    /// The bass-note view was toggled from the editor or the stage (P8-4 6.6).
+    case bassNotes
+    /// The stage mini neck was shown, once per stage session (P8-4 6.6).
+    case bassNeck
 }
 
 public enum FeatureContext: String, Sendable, CaseIterable {

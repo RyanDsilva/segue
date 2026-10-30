@@ -28,6 +28,7 @@ public enum KeyHelp {
         ("Sections", LiveCommand.jumps + [.toggleLoop]),
         ("View", [.zoomIn, .zoomOut, .resetZoom, .cycleColumns]),
         ("Metronome", [.toggleMetronome, .toggleMetronomeClick]),
+        ("Bass", [.toggleBassNotes]),
         ("Panels", [.openSearch, .toggleRequests, .toggleSidebar, .showKeys]),
         ("Show", [.endShow]),
     ]

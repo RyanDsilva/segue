@@ -1,9 +1,10 @@
 #if os(macOS)
     import SwiftUI
 
-    /// The app's Settings window (Segue > Settings…, WS2b 4.6): General, Appearance, Live, AI
-    /// (P3-3, R73), Privacy (WS3's view, hosted as is) and Data. The window title follows the
-    /// pane, and the last pane comes back when Settings reopens (HIG).
+    /// The app's Settings window (Segue > Settings…, WS2b 4.6): General, Appearance,
+    /// Instrument (P8-4), Live, AI (P3-3, R73), Privacy (WS3's view, hosted as is) and Data.
+    /// The window title follows the pane, and the last pane comes back when Settings reopens
+    /// (HIG).
     public struct SegueSettingsView: View {
         let app: AppModel
 
@@ -15,6 +16,7 @@
         enum Pane: String, CaseIterable {
             case general
             case appearance
+            case instrument
             case live
             case ai
             case privacy
@@ -34,6 +36,10 @@
                 Tab("Appearance", systemImage: "circle.lefthalf.filled", value: Pane.appearance) {
                     AppearanceSettingsView(store: app.polish.appearance)
                         .accessibilityIdentifier(AccessibilityID.settingsPane("appearance"))
+                }
+                Tab("Instrument", systemImage: "guitars", value: Pane.instrument) {
+                    InstrumentSettingsView(store: app.instrumentProfile)
+                        .accessibilityIdentifier(AccessibilityID.settingsPane("instrument"))
                 }
                 Tab("Live", systemImage: "music.mic", value: Pane.live) {
                     LiveSettingsView(

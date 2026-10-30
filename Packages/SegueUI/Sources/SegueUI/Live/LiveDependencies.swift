@@ -9,6 +9,8 @@
     public struct LiveDependencies {
         /// Settings > Live.
         public var settings: LiveSettingsStore
+        /// Settings > Instrument (P8-4): the bass-note view and the stage mini neck.
+        public var instrument: InstrumentProfileStore
         public var shortcuts: any ShortcutRunner
         public var power: any PowerSourceReading
         /// Drives auto-scroll. A monotonic clock (`MonotonicClock`: NTP corrections and
@@ -29,8 +31,10 @@
             power: any PowerSourceReading = SystemPowerSource(),
             scrollClock: any Clock = MonotonicClock(),
             bindingsURL: URL? = nil,
+            instrument: InstrumentProfileStore? = nil,
         ) {
             self.settings = settings
+            self.instrument = instrument ?? InstrumentProfileStore(defaults: settings.defaults)
             self.shortcuts = shortcuts
             self.power = power
             self.scrollClock = scrollClock

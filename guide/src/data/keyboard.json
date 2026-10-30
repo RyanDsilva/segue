@@ -396,6 +396,17 @@
           "title" : "Keyboard Shortcuts"
         }
       ]
+    {
+      "group" : "Bass",
+      "rows" : [
+        {
+          "keys" : [
+            "B"
+          ],
+          "title" : "Bass Notes"
+        }
+      ]
+    },
     },
     {
       "group" : "Show",

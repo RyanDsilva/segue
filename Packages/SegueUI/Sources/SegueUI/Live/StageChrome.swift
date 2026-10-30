@@ -41,6 +41,9 @@
                             : "Full song: the arrangement is out of date")
                         .accessibilityIdentifier(AccessibilityID.liveArrangement)
                 }
+                if let scale = session.currentModel?.header.scale {
+                    StageScaleLine(scale: scale)
+                }
                 Spacer(minLength: 24)
                 if let pass = session.loopedPass {
                     StageLoopPill(name: pass.name, stopKey: session.loopKey)

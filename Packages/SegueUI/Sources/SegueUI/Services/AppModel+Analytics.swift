@@ -54,6 +54,7 @@
             session.library.aiRouter = ai.router
             TimeItModel.shared.services = services
             liveSettings.services = services
+            instrumentProfile.services = services
             let songs = session.library.catalog
             let gigs = await session.stores.shows.gigLog().count
             diagnosticLog?.notice(.library, "opened", [

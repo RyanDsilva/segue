@@ -410,5 +410,10 @@
         public var liveSettings: LiveSettingsStore {
             dependencies.live.settings
         }
+
+        /// Settings > Instrument (P8-4).
+        public var instrumentProfile: InstrumentProfileStore {
+            dependencies.live.instrument
+        }
     }
 #endif

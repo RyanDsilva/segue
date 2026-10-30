@@ -17,7 +17,11 @@
         @FocusState private var headingFocused: Bool
 
         var body: some View {
-            let render = SongSummary.renderModel(record, userShapes: model.userShapes)
+            let render = SongSummary.renderModel(
+                record,
+                userShapes: model.userShapes,
+                bass: model.instrument?.bassView,
+            )
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     header(render)

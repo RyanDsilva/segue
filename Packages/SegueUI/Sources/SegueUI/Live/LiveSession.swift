@@ -38,6 +38,8 @@
             var library: LibraryStore
             var bindings: InputBindingTable
             var settings: LiveSettingsStore
+            /// Settings > Instrument (P8-4): the bass-note view and the mini neck.
+            var instrument: InstrumentProfileStore?
             /// Drives auto-scroll: monotonic (`MonotonicClock`), so NTP corrections and sleep
             /// never make the song jump (a time-scaled clock in the auto-scroll E2E).
             var scrollClock: any Clock
@@ -144,6 +146,8 @@
             didSet { search.services = services }
         }
 
+        /// `bassNeck` was recorded for this run (P8-4: once per stage session).
+        @ObservationIgnored var bassNeckRecorded = false
         /// Auto-scroll was switched on during this run (`Segue.Show.ended`).
         @ObservationIgnored var autoScrollUsed = false
         @ObservationIgnored private var queue: Task<Void, Never>?

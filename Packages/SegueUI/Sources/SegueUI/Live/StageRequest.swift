@@ -49,6 +49,7 @@
             settings: LiveSettings,
             minLyricSize: Double,
             viewport: LayoutSize,
+            bass: BassView? = nil,
         ) -> (request: LayoutRequest, resolution: ArrangementResolution?) {
             let resolution = resolution(slot.arrangement, song: song)
             var passes: [PlayedPass]?
@@ -59,7 +60,7 @@
                 .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
             let request = LayoutRequest(
-                model: renderModel(song, overrides: slot.overrides),
+                model: renderModel(song, overrides: slot.overrides, bass: bass),
                 viewport: viewport,
                 minLyricSize: minLyricSize,
                 zoom: prefs.zoom,
@@ -72,10 +73,16 @@
         }
 
         /// The song in a slot as it renders there: sidecar view options with the setlist
-        /// overrides applied, no diagrams.
-        static func renderModel(_ song: SongRecord, overrides: SetlistOverrides) -> RenderModel {
+        /// overrides applied, no diagrams. The user's bass view (P8-4) is set before the
+        /// overrides, so the slot's capo and transpose still feed the sounding pitch.
+        static func renderModel(
+            _ song: SongRecord,
+            overrides: SetlistOverrides,
+            bass: BassView? = nil,
+        ) -> RenderModel {
             var options = song.sidecar.displayPrefs.displayOptions
             options.showDiagrams = false
+            options.bass = bass
             let (applied, capo) = overrides.applied(
                 to: options,
                 songCapo: song.document.metadata.capo,

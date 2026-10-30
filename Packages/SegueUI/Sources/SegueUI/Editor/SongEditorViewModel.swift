@@ -124,6 +124,9 @@ public final class SongEditorViewModel {
     @ObservationIgnored var originalSource: String
     /// The user's shape library, for diagram lookup after the song's `{define}`s.
     @ObservationIgnored let userShapes: UserShapeLibrary
+    /// Settings > Instrument (P8-4): the preview renders with its bass view; the visual
+    /// canvas never does (decision 5). Observed, so a flip anywhere re-renders the preview.
+    @ObservationIgnored let instrument: InstrumentProfileStore?
     /// Records analytics events (WS3 spec 5); the library hands over the app's hub.
     @ObservationIgnored public var services: ServicesHub = .disabled
     @ObservationIgnored let save: (String) async throws -> SongRecord
@@ -172,9 +175,11 @@ public final class SongEditorViewModel {
         cues: [SongCue] = [],
         persistCues: ((SongID, [SongCue]) async throws -> SongRecord)? = nil,
         autosave timing: AutosaveTiming = .standard,
+        instrument: InstrumentProfileStore? = nil,
         save: @escaping (String) async throws -> SongRecord,
     ) {
         autosave = timing.scheduler()
+        self.instrument = instrument
         self.mode = mode
         startedAsNew = mode == .create
         self.userShapes = userShapes
@@ -196,15 +201,14 @@ public final class SongEditorViewModel {
         // A new song starts as text; an existing one opens on the visual canvas (layout b).
         let blank = source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         editorMode = blank ? .text : .visual
-        let initial = RenderModel(
-            document: snapshot.document,
-            options: options,
-            userShapes: userShapes,
-        )
+        let initial = Self.renderModels(
+            snapshot.document, options: options, bass: instrument?.bassView, userShapes: userShapes,
+        ).preview
         renderModel = initial
         diagnostics = snapshot.diagnostics
         updateDerived(from: initial)
         autosave.save = { [weak self] in await self?.saveNow() ?? true }
+        observeInstrument()
     }
 
     // MARK: State
@@ -344,6 +348,8 @@ public final class SongEditorViewModel {
         renderTask?.cancel()
         let snapshot = snapshot
         let options = options
+        let bass = instrument?.bassView
+        let needsCanvas = bass != nil && editorMode == .visual
         let revision = revision
         let userShapes = userShapes
         renderTask = Task { [weak self] in
@@ -351,30 +357,23 @@ public final class SongEditorViewModel {
                 try? await Task.sleep(for: delay)
             }
             guard !Task.isCancelled else { return }
-            let rendered = await Task.detached(priority: .userInitiated) {
-                (
-                    RenderModel(
-                        document: snapshot.document,
-                        options: options,
-                        userShapes: userShapes,
-                    ),
-                    snapshot.diagnostics,
-                )
-            }.value
+            let rendered = await Self.render(snapshot, options, bass, needsCanvas, userShapes)
             guard !Task.isCancelled, let self, self.revision == revision else { return }
-            renderModel = rendered.0
-            updateDerived(from: rendered.0)
+            renderModel = rendered.preview
+            updateDerived(from: rendered.preview)
             #if os(macOS)
-                if editorMode == .visual, canvasModel?.sections != rendered.0.sections {
-                    canvasModel = rendered.0
+                if editorMode == .visual, rendered.canvas.transform.options.bass == nil,
+                   canvasModel?.sections != rendered.canvas.sections
+                {
+                    canvasModel = rendered.canvas
                     visualController?.reload()
                 }
             #endif
-            if diagnostics != rendered.1 {
-                diagnostics = rendered.1
+            if diagnostics != rendered.diagnostics {
+                diagnostics = rendered.diagnostics
             }
             #if os(macOS)
-                sourceController?.showDiagnostics(rendered.1, for: snapshot.text)
+                sourceController?.showDiagnostics(rendered.diagnostics, for: snapshot.text)
             #endif
             let summary = keystrokes.summary
             if summary != keystrokeSummary {

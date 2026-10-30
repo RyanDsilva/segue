@@ -40,7 +40,10 @@
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if model.editorMode == .visual {
-                    Text("Click above a syllable to add a chord. Drag pills to move.")
+                    // The canvas keeps chart chords in the bass-note view (P8-4 decision 5).
+                    Text(model.showsBassNotes
+                        ? "Bass notes show in the preview and on stage"
+                        : "Click above a syllable to add a chord. Drag pills to move.")
                         .font(SchibstedGrotesk.medium.font(size: 14))
                         .foregroundStyle(Theme.color.muted)
                         .lineLimit(1)
@@ -103,23 +106,37 @@
                         model.setCapoMode(.shapes)
                     }
                     .accessibilityIdentifier(AccessibilityID.editorShapes)
-                    .help("Chords as written: guitar shapes for the capo")
+                    .help(model.showsBassNotes ? Self.bassPitchHelp
+                        : "Chords as written: guitar shapes for the capo")
                     SegmentButton(title: "Concert", isOn: model.options.capoMode == .concert) {
                         model.setCapoMode(.concert)
                     }
                     .accessibilityIdentifier(AccessibilityID.editorConcert)
-                    .help("Chords at concert pitch (sounding), for keys and voice")
+                    .help(model.showsBassNotes ? Self.bassPitchHelp
+                        : "Chords at concert pitch (sounding), for keys and voice")
                 }
-                .disabled(model.capo == 0)
+                .disabled(model.capo == 0 || model.showsBassNotes)
                 SegmentedGroup {
                     SegmentButton(title: "Nashville", isOn: model.options.nashville) {
                         model.setNashville(!model.options.nashville)
                     }
                     .accessibilityIdentifier(AccessibilityID.editorNashville)
-                    .help("Show chords as Nashville numbers")
+                    .help(model.showsBassNotes
+                        ? "Show the Nashville number with the bass note (this song)"
+                        : "Show chords as Nashville numbers")
+                }
+                // Always there, with or without "I play bass" (R158 Q7): user-level.
+                SegmentedGroup {
+                    SegmentButton(title: "Bass", isOn: model.showsBassNotes) {
+                        model.toggleBassNotes()
+                    }
+                    .accessibilityIdentifier(AccessibilityID.editorBass)
+                    .help("Show the note to play at sounding pitch (all songs)")
                 }
             }
         }
+
+        static let bassPitchHelp = "Bass notes always show sounding pitch"
 
         private var diagramGroup: some View {
             HStack(spacing: 8) {

@@ -41,14 +41,17 @@ enum SongSummary {
         return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
 
-    /// The song as its display toggles render it (sidecar prefs). The live view passes
-    /// `showDiagrams: false` (its strip is phase 2).
+    /// The song as its display toggles render it (sidecar prefs), with the user's bass-note
+    /// view when it is on (P8-4 6.3). The live view passes `showDiagrams: false` (its strip
+    /// is phase 2).
     static func renderModel(
         _ record: SongRecord,
         showDiagrams: Bool = true,
         userShapes: UserShapeLibrary = .empty,
+        bass: BassView? = nil,
     ) -> RenderModel {
         var options = record.sidecar.displayPrefs.displayOptions
+        options.bass = bass
         options.showDiagrams = options.showDiagrams && showDiagrams
         return RenderModel(document: record.document, options: options, userShapes: userShapes)
     }
@@ -66,7 +69,9 @@ enum SongSummary {
         ].compactMap(\.self).joined(separator: "  ·  ")
     }
 
-    /// Displayed key, capo (Shapes mode) and tempo: "G, capo 2, 96"; nil when none.
+    /// Displayed key, capo (Shapes mode) and tempo: "G, capo 2, 96"; nil when none. In the
+    /// bass-note view the key is the sounding key and there is no capo (the notes are not
+    /// shapes), exactly as in Concert mode.
     static func performanceLine(_ model: RenderModel) -> String? {
         let header = model.header
         var parts: [String] = []
@@ -77,7 +82,10 @@ enum SongSummary {
             case .ambiguous: parts.append("\(key) (ambiguous)")
             }
         }
-        if let capo = header.capo, capo > 0, model.transform.options.capoMode == .shapes {
+        let options = model.transform.options
+        if let capo = header.capo, capo > 0, options.capoMode == .shapes,
+           options.bass?.notes != true
+        {
             parts.append("capo \(capo)")
         }
         if let tempo = header.tempo, tempo > 0 {
