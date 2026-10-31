@@ -4,8 +4,8 @@
 
     /// A song's credits on one muted line (P8-8 section 4.2): "A, B · Kalank", then an
     /// optional trailing note ("  ·  12 plays"). When the line is too narrow, Movie / Album
-    /// truncates first, then the artists; the trailing note keeps its room. Shows nothing
-    /// when there is nothing to say. The caller sets font and colour.
+    /// is dropped first, then the artists truncate. Shows nothing when there is nothing to
+    /// say. The caller sets font and colour.
     struct SongCreditsLine: View {
         let artists: [String]
         let album: String?
@@ -13,24 +13,31 @@
 
         var body: some View {
             let names = ArtistNames.display(artists)
-            if names != nil || album != nil || trailing != nil {
-                HStack(spacing: 0) {
-                    if let names {
-                        Text(names)
-                            .layoutPriority(2)
+            let full = Self.join([names, album].compactMap(\.self), " · ")
+            if full != nil || trailing != nil {
+                // The whole line when it fits; else without Movie / Album (never a dangling
+                // separator); else the artists truncated at the end.
+                ViewThatFits(in: .horizontal) {
+                    line(full)
+                    if album != nil, names != nil {
+                        line(names)
                     }
-                    if let album {
-                        Text(names == nil ? album : " · \(album)")
-                            .layoutPriority(1)
-                    }
-                    if let trailing {
-                        Text(names == nil && album == nil ? trailing : "  ·  \(trailing)")
-                            .layoutPriority(3)
-                    }
+                    line(names ?? full)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .lineLimit(1)
-                .accessibilityElement(children: .combine)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Self.join([full, trailing].compactMap(\.self), ", ") ?? "")
             }
+        }
+
+        private func line(_ credits: String?) -> some View {
+            Text(Self.join([credits, trailing].compactMap(\.self), "  ·  ") ?? "")
+                .lineLimit(1)
+        }
+
+        private static func join(_ parts: [String], _ separator: String) -> String? {
+            parts.isEmpty ? nil : parts.joined(separator: separator)
         }
     }
 #endif
