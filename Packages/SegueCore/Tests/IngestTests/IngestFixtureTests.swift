@@ -136,7 +136,8 @@ struct LabelScore {
         titles += 1
         titlesCorrect += gold.title.contains(Self.norm(result.metadata.title)) ? 1 : 0
         artists += 1
-        artistsCorrect += gold.artist.contains(Self.norm(result.metadata.artists.first)) ? 1 : 0
+        let written = result.metadata.artists.compactMap(Self.norm)
+        artistsCorrect += gold.artist.contains(written) ? 1 : 0
     }
 
     var report: String {

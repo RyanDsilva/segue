@@ -85,16 +85,21 @@ public enum PasteRefiner {
 
     /// Title and artist only when they appear in the candidate lines (case-insensitive) and
     /// could be a name: chord tokens, a capo or tuning note or a chord legend are dropped
-    /// (the real-paste eval saw a chord list and a capo line come back as the title).
+    /// (the real-paste eval saw a chord list and a capo line come back as the title). The
+    /// value returned is the sheet's own spelling of the matched text, never the model's
+    /// casing (P8-8 section 3.8, R163: code results win; no AI step re-spells a name).
     public static func refinements(
         _ output: MetadataOutput,
         for task: MetadataTask,
     ) -> Refinements {
         let normalized = output.normalized()
-        let text = (task.topLines + task.bottomLines).joined(separator: "\n").lowercased()
+        let text = (task.topLines + task.bottomLines).joined(separator: "\n")
         func written(_ value: String) -> String? {
-            let found = !value.isEmpty && text.contains(value.lowercased())
-            return found && IngestPipeline.isPlausibleName(value) ? value : nil
+            guard !value.isEmpty,
+                  let range = text.range(of: value, options: [.caseInsensitive])
+            else { return nil }
+            let sheet = String(text[range])
+            return IngestPipeline.isPlausibleName(sheet) ? sheet : nil
         }
         return Refinements(
             title: written(normalized.title),

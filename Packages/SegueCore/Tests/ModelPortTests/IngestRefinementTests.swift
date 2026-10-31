@@ -196,6 +196,38 @@ struct IngestRefinementTests {
         #expect(invented.title == nil && invented.key == "G")
     }
 
+    /// P8-8 section 3.8: the sheet's own spelling of the matched text, never the model's
+    /// casing; a value not in the sheet is dropped; no AI step re-spells a romanized name.
+    @Test
+    func `model metadata keeps the sheet's spelling`() {
+        let task = MetadataTask(
+            topLines: ["Tum Hi Ho", "Singer - Arijit Singh & mithoon"],
+            bottomLines: [],
+            chords: ["G", "D"],
+        )
+        let answer = PasteRefiner.refinements(
+            MetadataOutput(title: "TUM HI HO", artist: "arijit singh", key: ""),
+            for: task,
+        )
+        #expect(answer.title == "Tum Hi Ho")
+        #expect(answer.artist == "Arijit Singh")
+        let combined = PasteRefiner.refinements(
+            MetadataOutput(title: "", artist: "ARIJIT SINGH & MITHOON", key: ""),
+            for: task,
+        )
+        #expect(combined.artist == "Arijit Singh & mithoon")
+        let corrected = PasteRefiner.refinements(
+            MetadataOutput(title: "", artist: "Arijit Singh & Mithun", key: ""),
+            for: task,
+        )
+        #expect(corrected.artist == nil)
+        let invented = PasteRefiner.refinements(
+            MetadataOutput(title: "", artist: "Shreya Ghoshal", key: ""),
+            for: task,
+        )
+        #expect(invented.artist == nil)
+    }
+
     /// R121: the converter wins on title and artist. No metadata call when code found both,
     /// and a model artist is never taken when code found the title (a site heading included).
     @Test

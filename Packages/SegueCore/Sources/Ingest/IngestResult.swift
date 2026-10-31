@@ -23,6 +23,10 @@ public struct IngestResult: Sendable, Equatable {
     /// Metadata fields a model filled in (`IngestPipeline.apply`); empty for the deterministic
     /// result.
     public var refinedFields: Set<RefinedField> = []
+    /// Credit-line and header artists the deterministic split (or the accepted model artist)
+    /// turned into 2+ artists, in reading order (P8-8 section 3.7); the review offers "Keep
+    /// as one" for each. Directive values and ChordPro passthrough never split.
+    public var artistSplits: [ArtistSplit] = []
 
     /// Metadata fields the source already writes as directives (never written twice).
     var directiveFields: Set<MetadataKey>

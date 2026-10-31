@@ -1,3 +1,4 @@
+import ChordPro
 import Foundation
 import MusicTheory
 
@@ -8,6 +9,8 @@ enum MetadataAssembly {
         var metadata: IngestMetadata
         var directiveFields: Set<MetadataKey>
         var consumedLines: Set<Int>
+        /// Credit-line and header artists that split into 2+ (P8-8 section 3.7).
+        var artistSplits: [ArtistSplit]
     }
 
     /// Reads metadata from `blocks`, marking title-block lines it used as `.metadata`.
@@ -59,6 +62,7 @@ enum MetadataAssembly {
             metadata: collector.resolved(chords: writtenChords(blocks)),
             directiveFields: collector.directiveFields,
             consumedLines: collector.consumed,
+            artistSplits: collector.artistSplits,
         )
     }
 
@@ -125,6 +129,7 @@ private struct Collector {
     var statedKey: String?
     var shapesKey: String?
     var keyFromDirective = false
+    var artistSplits: [ArtistSplit] = []
 
     /// Adds `fields` from source line `line`; true when at least one was new.
     @discardableResult
@@ -139,8 +144,26 @@ private struct Collector {
         return used
     }
 
+    /// A field from a credit line or a header: a combined artist splits (R172, R173). A
+    /// field from an `{artist}` directive comes through `addDirective` and stays whole.
     @discardableResult
     private mutating func add(_ field: MetadataField) -> Bool {
+        guard case let .artist(value) = field else { return store(field) }
+        let split = ArtistNames.split(value)
+        guard !split.parts.isEmpty else { return store(field) }
+        var used = false
+        for part in split.parts where store(.artist(part)) {
+            used = true
+        }
+        if used, split.didSplit {
+            artistSplits.append(split)
+        }
+        return used
+    }
+
+    @discardableResult
+    /// Stores one field as given (first wins; artists deduplicated).
+    private mutating func store(_ field: MetadataField) -> Bool {
         switch field {
         case let .title(value): return Self.set(&metadata.title, value)
         case let .artist(value):
@@ -174,7 +197,7 @@ private struct Collector {
         directiveFields.insert(key)
         keyFromDirective = keyFromDirective || key == .key
         if let field = Self.field(key, value) {
-            add(field)
+            store(field)
         }
     }
 

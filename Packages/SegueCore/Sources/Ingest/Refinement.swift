@@ -41,10 +41,16 @@ extension IngestPipeline {
         }
         // R121: the converter wins. A title code found (a site heading included) means the
         // artist line, if any, was already read: a model artist is never taken beside it.
+        // P8-8 section 3.8: the accepted model artist splits exactly as code's would.
+        var artistSplits = base.artistSplits
         if metadata.artists.isEmpty, base.metadata.title == nil,
            let artist = nonEmpty(refinements.artist)
         {
-            metadata.artists = [artist]
+            let split = ArtistNames.split(artist)
+            metadata.artists = split.parts.isEmpty ? [artist] : split.parts
+            if split.didSplit {
+                artistSplits.append(split)
+            }
             refinedFields.insert(.artist)
         }
 
@@ -59,6 +65,7 @@ extension IngestPipeline {
             result.keyInference.refined = key
         }
         result.refinedFields = refinedFields
+        result.artistSplits = artistSplits
         result.diagnostics += rejected.map { .refinementRejected(block: $0) }
         return result
     }

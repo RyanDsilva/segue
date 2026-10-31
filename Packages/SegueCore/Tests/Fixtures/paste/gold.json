@@ -632,7 +632,13 @@
    "chorus"
   ],
   "title": "Mitti Ki Khushboo",
-  "artist": "Zoya & The Village Band",
+  "artist": [
+   "Zoya & The Village Band",
+   [
+    "Zoya",
+    "The Village Band"
+   ]
+  ],
   "key": "Am",
   "keyStated": true
  },
@@ -658,7 +664,10 @@
   ],
   "title": "Late Night Dilli",
   "artist": [
-   "DJ Saahil ft. Rhea",
+   [
+    "DJ Saahil",
+    "Rhea"
+   ],
    "DJ Saahil"
   ],
   "key": "Em",

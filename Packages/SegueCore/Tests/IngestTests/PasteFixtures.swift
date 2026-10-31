@@ -87,11 +87,13 @@ enum PasteFixtures {
     // MARK: - Gold
 
     /// One fixture's gold (same shape as the spike's `gold.py`): each label entry lists the
-    /// acceptable labels; `title`/`artist` list acceptable normalized values (`nil` = none).
+    /// acceptable labels; `title` lists acceptable normalized values (`nil` = none); `artist`
+    /// lists acceptable artist lists, normalized and in order (a string is one artist, a
+    /// list several, `null` none; P8-8).
     struct GoldEntry {
         var labels: [[String]]
         var title: [String?]
-        var artist: [String?]
+        var artist: [[String]]
         var key: [String]
         var keyStated: Bool
     }
@@ -106,7 +108,7 @@ enum PasteFixtures {
             GoldEntry(
                 labels: (entry["labels"] as? [Any] ?? []).map(alternatives),
                 title: optionalAlternatives(entry["title"]),
-                artist: optionalAlternatives(entry["artist"]),
+                artist: artistAlternatives(entry["artist"]),
                 key: alternatives(entry["key"] ?? "unknown"),
                 keyStated: entry["keyStated"] as? Bool ?? false,
             )
@@ -115,6 +117,19 @@ enum PasteFixtures {
 
     private static func alternatives(_ value: Any) -> [String] {
         (value as? [String]) ?? [(value as? String) ?? ""]
+    }
+
+    /// `"A"` = [[a]], `null` = [[]], `["A", ["B", "C"], null]` = [[a], [b, c], []].
+    private static func artistAlternatives(_ value: Any?) -> [[String]] {
+        func list(_ item: Any?) -> [String] {
+            switch item {
+            case let names as [Any]: names.compactMap { LabelScore.norm($0 as? String) }
+            case let name as String: LabelScore.norm(name).map { [$0] } ?? []
+            default: []
+            }
+        }
+        guard let alternatives = value as? [Any] else { return [list(value)] }
+        return alternatives.map(list)
     }
 
     private static func optionalAlternatives(_ value: Any?) -> [String?] {

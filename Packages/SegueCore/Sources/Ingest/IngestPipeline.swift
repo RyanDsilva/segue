@@ -51,7 +51,9 @@ public enum IngestPipeline {
             consumedLines: extraction.consumedLines,
             removed: normalized.removed,
         )
-        return assemble(draft)
+        var result = assemble(draft)
+        result.artistSplits = extraction.artistSplits
+        return result
     }
 
     /// Renders, parses and validates a draft (also the re-render step for refinements).
