@@ -46,7 +46,7 @@ final class SetAssistantModel {
         var seed: UInt64
         var target: TimeInterval?
         var matching: Int
-        var leftOutNoLength: [SongID]
+        var leftOutNoTime: [SongID]
         var tolerance: TimeInterval
     }
 
@@ -245,7 +245,7 @@ final class SetAssistantModel {
             seed: seed,
             target: draft.target,
             matching: draft.matchingCount,
-            leftOutNoLength: draft.leftOutNoLength,
+            leftOutNoTime: draft.leftOutNoTime,
             tolerance: draft.tolerance,
         )
         recordUse(rebuilt: rebuild)

@@ -175,7 +175,6 @@ struct SlotArrangementTests {
                 Self.pass(units, "After Chorus"),
             ],
             knownParts: KnownPart.all(units),
-            length: 155,
         )
         setlist = try await store.updateEntry(entry, in: setlist.id)
 
@@ -186,7 +185,7 @@ struct SlotArrangementTests {
         #expect(json.contains("\"section\" : \"Intro\""))
         #expect(json.contains("\"loose\" : 1"))
         #expect(json.contains("\"after\" : \"Chorus\""))
-        #expect(json.contains("\"length\" : 155"))
+        #expect(!json.contains("\"length\""))
         let (reloaded, issues) = try await lib.loadSetlists()
         #expect(issues.isEmpty)
         #expect(await reloaded.setlist(id: setlist.id) == setlist)
@@ -235,7 +234,6 @@ struct SlotArrangementTests {
         var entry = setlist.entries[0]
         let arrangement = SlotArrangement(
             passes: [ArrangementPass(anchor: .loose(after: nil, block: 1))],
-            length: 90,
         )
         entry.arrangement = arrangement
         setlist = try await harness.setlists.updateEntry(entry, in: setlist.id)
@@ -269,25 +267,24 @@ struct SlotArrangementTests {
     // MARK: Timing
 
     @Test
-    func `an arranged slot counts its own length, never the song's`() {
+    func `an arranged slot counts its own passes, a plain slot the song's`() {
         func ulid(_ time: UInt64, _ byte: Int) -> ULID {
             ULID(milliseconds: time, randomness: Array(repeating: UInt8(byte), count: 10))
         }
         let songs = (0 ..< 2).map { SongID(ulid(1, $0)) }
         let items = (0 ..< 2).map { SetlistItemID(ulid(2, $0)) }
-        let lengths = Dictionary(uniqueKeysWithValues: songs.map {
-            ($0, SongLength(seconds: 240, source: .directive))
-        })
         var entries = zip(items, songs).map { SetlistEntry(itemId: $0, songId: $1) }
-        entries[0].arrangement = SlotArrangement(passes: [], length: 150)
-        var timing = SetlistTiming(entries: entries, lengths: lengths, target: nil)
-        #expect(timing.items[0].length == SongLength(seconds: 150, source: .slot))
+        entries[0].arrangement = SlotArrangement(passes: [])
+        let timing = SetlistTiming(
+            entries: entries,
+            times: [
+                items[0]: .known(seconds: 150, bars: 60, tempo: 96, estimated: false),
+                items[1]: .known(seconds: 240, bars: 96, tempo: 96, estimated: false),
+            ],
+            target: nil,
+        )
+        #expect(timing.items[0].time == ItemTime(seconds: 150, source: .arrangement))
+        #expect(timing.items[1].time == ItemTime(seconds: 240, source: .song))
         #expect(timing.total == 390)
-        // No slot length: unknown and flagged, even though the song has a `{duration}`.
-        entries[0].arrangement?.length = nil
-        timing = SetlistTiming(entries: entries, lengths: lengths, target: nil)
-        #expect(timing.items[0].length == nil)
-        #expect(timing.unknownItemIds == [items[0]])
-        #expect(timing.total == 240)
     }
 }

@@ -57,6 +57,7 @@
             guard let slot = state.current, let song = slot.song else {
                 currentModel = nil
                 currentTimeline = nil
+                currentPlayedTime = nil
                 shownPass = nil
                 currentArrangement = nil
                 plan = nil
@@ -91,6 +92,21 @@
             rescheduleLoopWrap()
             recordBassNeckShown()
             noteCurrentPass(currentPass(at: context.scrollClock.now()))
+        }
+
+        /// The item's time from its played passes (the arrangement only when it applies, else
+        /// the full song, R122), built once per song version and arrangement, not per layout.
+        private func notePlayedTime(_ song: SongRecord, item: ShowItem) {
+            let arrangement = currentArrangement == .applied ? item.arrangement : nil
+            let key = PlayedTimeKey(
+                item: item.itemId,
+                source: song.source,
+                arrangement: arrangement,
+            )
+            if playedTimeKey != key || currentPlayedTime == nil {
+                playedTimeKey = key
+                currentPlayedTime = SlotTimes.slot(song, arrangement: arrangement)
+            }
         }
 
         /// Records once per item what the stage did with its arrangement (the gig log says
@@ -154,15 +170,14 @@
             item: ShowItem,
             prefs: LivePrefs,
         ) -> ScrollSpeed {
+            notePlayedTime(song, item: item)
             let metadata = song.document.metadata
-            // An arranged slot scrolls over its own length (nil = unknown: the tempo path),
-            // never the full song's `{duration}` (R122); out of date plays the full song.
-            let duration = item.arrangement != nil && currentArrangement == .applied
-                ? item.arrangement?.length
-                : metadata.duration
+            // The item's time from its played passes (P8-8 5.6, R173): tempo x played bars;
+            // without one, a chordless song with a tempo uses the per-line estimate and a
+            // song with no tempo starts at the default speed ([ and ] adjust it).
             return ScrollSpeedModel.speed(ScrollSpeedInput(
                 overflow: plan.overflow,
-                duration: duration,
+                playedTime: currentPlayedTime?.seconds,
                 tempo: metadata.tempo,
                 time: metadata.time,
                 lineCount: plan.lineCount,
@@ -433,5 +448,12 @@
                 await writer.value
             }
         }
+    }
+
+    /// The item, song version and applied arrangement a played time was computed for.
+    struct PlayedTimeKey: Equatable {
+        var item: ShowItemID
+        var source: String
+        var arrangement: SlotArrangement?
     }
 #endif

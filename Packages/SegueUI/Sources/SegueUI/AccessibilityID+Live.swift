@@ -17,6 +17,7 @@ public extension AccessibilityID {
     static let liveProblem = "segue.live.problem"
     static let liveSongUnavailable = "segue.live.songUnavailable"
     static let liveIndicator = "segue.live.indicator"
+    static let liveTempoHint = "segue.live.tempoHint"
     static let liveEndDialog = "segue.live.endDialog"
     static let liveEndConfirm = "segue.live.endConfirm"
 

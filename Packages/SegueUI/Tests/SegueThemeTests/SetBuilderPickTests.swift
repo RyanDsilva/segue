@@ -7,23 +7,25 @@ import Testing
 
 /// Set building on a real app session (P3-12, R84-R88): Pick's tick order, ⌘A, ticks into
 /// a selected part, Arrange's keyboard moves and Insert Break (each one undo step), Library
-/// multi-select's Add to Setlist, and the missing-lengths list with its inline fill.
+/// multi-select's Add to Setlist, and the no-time list with its inline tempo.
 @MainActor
 struct SetBuilderPickTests {
     private static let fridayID = "01JC0000000000000000000F01"
     private struct Seed {
         var slug: String
         var title: String
-        var length: String?
+        var tempo: Int?
+        /// No chords at all: nothing to time even with a tempo.
+        var lyricsOnly = false
     }
 
     /// The seeded songs, in library order.
     private static let songs = [
-        Seed(slug: "ferry-lights", title: "Ferry Lights", length: "4:40"),
-        Seed(slug: "harbour-lights", title: "Harbour Lights", length: nil),
-        Seed(slug: "kettle-on", title: "Kettle On", length: "3:05"),
-        Seed(slug: "paper-boats", title: "Paper Boats", length: "3:12"),
-        Seed(slug: "pyaar-ki-raah", title: "Pyaar Ki Raah", length: nil),
+        Seed(slug: "ferry-lights", title: "Ferry Lights", tempo: 96),
+        Seed(slug: "harbour-lights", title: "Harbour Lights", tempo: nil),
+        Seed(slug: "kettle-on", title: "Kettle On", tempo: 120),
+        Seed(slug: "paper-boats", title: "Paper Boats", tempo: 60),
+        Seed(slug: "pyaar-ki-raah", title: "Pyaar Ki Raah", tempo: 80, lyricsOnly: true),
     ]
 
     private static func id(_ index: Int) -> SongID {
@@ -50,9 +52,10 @@ struct SetBuilderPickTests {
             withIntermediateDirectories: true,
         )
         for (index, song) in songs.enumerated() {
-            let length = song.length.map { "{duration: \($0)}\n" } ?? ""
+            let tempo = song.tempo.map { "{tempo: \($0)}\n" } ?? ""
+            let body = song.lyricsOnly ? "La la\n" : String(repeating: "[G]La la\n", count: 8)
             try env.write(
-                "{title: \(song.title)}\n\(length)[G]La la\n",
+                "{title: \(song.title)}\n\(tempo)\(body)",
                 to: "songs/\(song.slug).cho",
             )
             try env.write(
@@ -187,24 +190,35 @@ struct SetBuilderPickTests {
     }
 
     @Test
-    func `the missing-lengths list names exactly the songs without a length and fills them`(
-    ) async throws {
+    func `the no-time list names exactly the songs with no time and takes a tempo`() async throws {
         let fix = try await Self.open(entries: [0, 1, 2, 4])
         let library = fix.session.library
         let setlist = try #require(fix.session.setlists.setlist(fix.friday))
 
-        let rows = MissingLengthsList.rows(setlist, within: nil, library: library)
+        let rows = MissingTimesList.rows(setlist, within: nil, library: library)
         #expect(rows.map(\.title) == ["Harbour Lights", "Pyaar Ki Raah"])
         #expect(rows.map(\.place) == ["#2", "#4"])
+        #expect(rows.map(\.reason) == [.noTempo, .noChords])
+        // Eight one-bar chords: Ferry Lights at 96 BPM is 20 s, Kettle On at 120 is 16 s.
+        var timing = SetlistTiming(setlist: setlist, library: library, defaultChangeover: 0)
+        #expect(timing.items.map(\.timeText) == ["~0:20", "--:--", "~0:16", "--:--"])
+        #expect(timing.totalText == "~≥0:36 + 2 unknown")
 
-        // The inline field writes {duration} through the song card's path: one edit.
-        await step(fix.manager) { await library.editSongSource(id: Self.id(1), .setLength(245)) }
-        try await fix.env.waitFor {
-            MissingLengthsList.rows(setlist, within: nil, library: library).count == 1
-                ? true : nil
+        // Not a tempo: the field says so and nothing is written.
+        #expect(MissingTimesList.writeTempo("fast", song: Self.id(1), library: library)
+            == "Enter beats per minute, like 96")
+        // Return writes {tempo} through the song card's path: one edit, one undo step.
+        await step(fix.manager) {
+            #expect(MissingTimesList.writeTempo("96", song: Self.id(1), library: library) == nil)
+            _ = try? await fix.env.waitFor {
+                library.song(id: Self.id(1))?.document.metadata.tempo == 96 ? true : nil
+            }
         }
-        let timing = SetlistTiming(setlist: setlist, songs: library.song(id:), defaultChangeover: 0)
-        #expect(timing.totalText == "≥11:50 + 1 unknown")
-        #expect(try fix.env.read("songs/harbour-lights.cho").contains("{duration: 4:05}"))
+        #expect(MissingTimesList.rows(setlist, within: nil, library: library).map(\.title)
+            == ["Pyaar Ki Raah"])
+        timing = SetlistTiming(setlist: setlist, library: library, defaultChangeover: 0)
+        #expect(timing.totalText == "~≥0:56 + 1 unknown")
+        #expect(try fix.env.read("songs/harbour-lights.cho").contains("{tempo: 96}"))
+        #expect(fix.manager.undoActionName == "Set Tempo")
     }
 }

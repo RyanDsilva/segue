@@ -77,7 +77,7 @@ extension StageWindowSuites.LiveHardeningTests {
         live.perform(.next)
         _ = try await env.waitFor { live.positionText == "3 of 3" ? true : nil }
         let request = try await #require(app.session).library.createSong(
-            source: LiveFixture.source(title: "Yankee Request", lines: 4, duration: nil),
+            source: LiveFixture.source(title: "Yankee Request", lines: 4),
         )
         live.perform(.addRequest(request.id, note: nil))
         _ = try await env.waitFor { live.queuedRequests.count == 1 ? true : nil }

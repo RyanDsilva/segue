@@ -5,7 +5,7 @@
     import Setlists
     import SwiftUI
 
-    /// One slot: `#  Title  Key  Capo  Length  Start`, the note under the title.
+    /// One slot: `#  Title  Key  Capo  Time  Start`, the note under the title.
     struct SetEntryRow: View {
         let position: Int
         /// The part the row is in (its leading-edge colour).
@@ -53,8 +53,13 @@
                     .accessibilityIdentifier(AccessibilityID.entryKey)
                 cell(display.capoText, width: 64, isOverridden: entry.overrides.capo != nil)
                     .accessibilityIdentifier(AccessibilityID.entryCapo)
-                cell(SetlistTiming.format(timing?.length), width: 56)
-                    .accessibilityIdentifier(AccessibilityID.entryLength)
+                cell(
+                    timing?.timeText ?? SetlistTiming.unknownText,
+                    width: 56,
+                    help: timing?.slot?.help,
+                )
+                .accessibilityValue(timing?.slot?.spoken ?? "")
+                .accessibilityIdentifier(AccessibilityID.entryTime)
                 cell(startText, width: 60, alignment: .trailing)
                     .accessibilityIdentifier(AccessibilityID.entryStart)
                 EntryAssistantCells(assistant: assistant, title: title, isHovered: isHovered)
@@ -156,6 +161,7 @@
             weight: SchibstedGrotesk = .medium,
             alignment: Alignment = .leading,
             isOverridden: Bool = false,
+            help: String? = nil,
         ) -> some View {
             Text(text)
                 .font(weight.font(size: 14))
@@ -163,7 +169,7 @@
                 .underline(isOverridden, pattern: .dot, color: Theme.color.muted)
                 .lineLimit(1)
                 .frame(width: width, alignment: alignment)
-                .help(isOverridden ? "Set for this setlist only" : "")
+                .help(help ?? (isOverridden ? "Set for this setlist only" : ""))
         }
 
         private var removeButton: some View {

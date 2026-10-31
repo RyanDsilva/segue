@@ -12,7 +12,7 @@
     }
 
     /// The set column's rows (direction C): #, title (and slot note), key after overrides,
-    /// capo, length and start time, each with its part's colour on the leading edge; break
+    /// capo, time and start time, each with its part's colour on the leading edge; break
     /// rows are markers with the part's total. Drag a row onto another to move it before
     /// that row; drop library songs on a row (inserted before it) or on the set composer
     /// below (appended). Songs already in the set are never added again. Click a row to
@@ -34,7 +34,7 @@
         var body: some View {
             let timing = SetlistTiming(
                 setlist: setlist,
-                songs: library.song(id:),
+                library: library,
                 defaultChangeover: defaultChangeover,
             )
             let repeated = setlist.repeatedEntries

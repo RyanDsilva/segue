@@ -4,9 +4,11 @@ import Foundation
 
 /// Where an auto-scroll speed came from.
 public enum ScrollSpeedSource: Sendable, Hashable {
-    /// `{duration}`: the overflow scrolls over the duration minus the lead-in.
-    case duration
-    /// No duration: estimated from `{tempo}` and `{time}` (beats per line).
+    /// The item's time from its timeline (`SlotTimes`, tempo x the played bars, P8-8 5.6):
+    /// the overflow scrolls over that time minus the lead-in.
+    case timeline
+    /// No timeline time (a chordless song with a tempo): estimated from `{tempo}` and
+    /// `{time}` (beats per line).
     case tempo
     /// Neither: `ScrollSpeedModel.defaultSpeed`.
     case fallback
@@ -30,8 +32,8 @@ public struct ScrollSpeed: Sendable, Hashable {
 public struct ScrollSpeedInput: Sendable, Hashable {
     /// `LayoutPlan.overflow`.
     public var overflow: Double
-    /// `{duration}` seconds.
-    public var duration: TimeInterval?
+    /// The item's played time in seconds (`SlotTimes.time(of:)`); nil when unknown.
+    public var playedTime: TimeInterval?
     /// `{tempo}` BPM.
     public var tempo: Double?
     /// `{time}` ("4/4", "3/4", "6/8").
@@ -43,14 +45,14 @@ public struct ScrollSpeedInput: Sendable, Hashable {
 
     public init(
         overflow: Double,
-        duration: TimeInterval?,
+        playedTime: TimeInterval?,
         tempo: Double?,
         time: String?,
         lineCount: Int,
         factor: Double = 1,
     ) {
         self.overflow = overflow
-        self.duration = duration
+        self.playedTime = playedTime
         self.tempo = tempo
         self.time = time
         self.lineCount = lineCount
@@ -62,13 +64,13 @@ public struct ScrollSpeedInput: Sendable, Hashable {
 public enum ScrollSpeedModel {
     /// Lead-in before scrolling starts (the intro offset).
     public static let leadIn: TimeInterval = 10
-    /// Speed used when the song has neither duration nor tempo.
+    /// Speed used when the song has no tempo (adjusted with [ and ]).
     public static let defaultSpeed: Double = 12
     /// Multiplier applied per `[` / `]` nudge.
     public static let nudgeStep = 1.1
 
-    /// The shortest scroll time a duration may leave after the lead-in; shorter songs scroll
-    /// over their whole duration with no lead-in.
+    /// The shortest scroll time a played time may leave after the lead-in; shorter songs
+    /// scroll over their whole time with no lead-in.
     public static let minimumScrollTime: TimeInterval = 20
     /// Bars one lyric line takes, for the tempo estimate.
     public static let barsPerLine = 2.0
@@ -76,11 +78,11 @@ public enum ScrollSpeedModel {
     public static func speed(_ input: ScrollSpeedInput) -> ScrollSpeed {
         let factor = input.factor.isFinite && input.factor > 0 ? input.factor : 1
         let overflow = max(0, input.overflow)
-        if let duration = input.duration, duration.isFinite, duration > 0 {
-            return derived(overflow: overflow, duration: duration, factor: factor, .duration)
+        if let played = input.playedTime, played.isFinite, played > 0 {
+            return derived(overflow: overflow, seconds: played, factor: factor, .timeline)
         }
-        if let estimate = estimatedDuration(input) {
-            return derived(overflow: overflow, duration: estimate, factor: factor, .tempo)
+        if let estimate = estimatedTime(input) {
+            return derived(overflow: overflow, seconds: estimate, factor: factor, .tempo)
         }
         return ScrollSpeed(
             pointsPerSecond: defaultSpeed * factor,
@@ -91,7 +93,7 @@ public enum ScrollSpeedModel {
 
     /// `lineCount` lines x `barsPerLine` bars x beats per bar at `tempo`. Compound metres
     /// (6/8, 9/8, 12/8) count the dotted beat.
-    public static func estimatedDuration(_ input: ScrollSpeedInput) -> TimeInterval? {
+    public static func estimatedTime(_ input: ScrollSpeedInput) -> TimeInterval? {
         guard let tempo = input.tempo, tempo.isFinite, tempo > 0, input.lineCount > 0 else {
             return nil
         }
@@ -112,12 +114,12 @@ public enum ScrollSpeedModel {
 
     private static func derived(
         overflow: Double,
-        duration: TimeInterval,
+        seconds: TimeInterval,
         factor: Double,
         _ source: ScrollSpeedSource,
     ) -> ScrollSpeed {
-        let lead = duration - leadIn >= minimumScrollTime ? leadIn : 0
-        let time = duration - lead
+        let lead = seconds - leadIn >= minimumScrollTime ? leadIn : 0
+        let time = seconds - lead
         return ScrollSpeed(pointsPerSecond: overflow / time * factor, leadIn: lead, source: source)
     }
 }

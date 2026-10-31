@@ -192,7 +192,6 @@ extension StageWindowSuites {
                 app: app,
                 titles: ["Long"],
                 lines: 240,
-                duration: "3:00",
             )
             app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
             #expect(await app.startShow(fixture.setlist, kind: .rehearsal))
@@ -200,7 +199,8 @@ extension StageWindowSuites {
             defer { StageWindowController.shared.close() }
             live.setViewport(LayoutSize(width: 1390, height: 700))
             live.dispatch(.toggleAutoScroll)
-            env.clock.advance(by: 400)
+            // 240 lines of four bars at 96 BPM: 2400 s on the timeline.
+            env.clock.advance(by: 2600)
             #expect(live.scrollFraction(at: env.clock.now()) == 1)
             // The flush tick records the end: the display stops ticking.
             live.settleScroll()
@@ -211,7 +211,7 @@ extension StageWindowSuites {
             #expect(live.scrollFraction(at: env.clock.now()) == 0)
 
             // Without the tick having run, one press at the bottom still starts over.
-            env.clock.advance(by: 400)
+            env.clock.advance(by: 2600)
             live.dispatch(.toggleAutoScroll)
             #expect(live.isAutoScrolling)
             #expect(live.scrollFraction(at: env.clock.now()) == 0)

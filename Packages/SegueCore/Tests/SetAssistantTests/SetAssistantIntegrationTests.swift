@@ -197,14 +197,15 @@ struct SetAssistantIntegrationTests {
         #expect(saved.entries == draft.entries)
         #expect(saved.targetDuration == 1800)
         let byID = Dictionary(uniqueKeysWithValues: loaded.records.map { ($0.id, $0) })
-        let lengths = Dictionary(uniqueKeysWithValues: saved.songEntries.compactMap { entry in
-            entry.songId.flatMap { id in
-                byID[id].flatMap(SetlistTiming.directiveLength(of:)).map { (id, $0) }
+        var times: [SetlistItemID: SlotTime] = [:]
+        for entry in saved.songEntries {
+            if let id = entry.songId, let record = byID[id] {
+                times[entry.itemId] = SlotTimes.slot(record, arrangement: entry.arrangement)
             }
-        })
+        }
         let timing = SetlistTiming(
             entries: saved.entries,
-            lengths: lengths,
+            times: times,
             target: saved.targetDuration,
             changeover: TimeInterval(saved.changeoverSeconds ?? 0),
         )

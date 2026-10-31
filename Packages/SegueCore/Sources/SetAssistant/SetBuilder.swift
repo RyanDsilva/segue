@@ -1,9 +1,10 @@
 // Phase 3 P3-7 (spec section 7 steps 5-7): filter, pick, order. A greedy fill to the target
 // length (+/- the tolerance) by score, a swap pass when it falls short, then an order pass
 // for key flow (same key back to back, capo and tuning changes penalised, related keys a
-// small bonus). Lengths are `{duration}` plus the setlist's changeover (R86); songs without
-// a length are left out of a length target and named (R107). A song appears at most once
-// (the setlist invariant, 1d027df). Rebuild keeps locked songs and break rows where they are
+// small bonus). Times are each song's tempo x its played bars (`SlotTimes`, R172) plus the
+// setlist's changeover (R86); songs without a time are left out of a length target and
+// named. A song appears at most once (the setlist invariant, 1d027df). Rebuild keeps locked songs
+// and break rows where they are
 // and re-packs the other slots. Deterministic: same library, request and seed, same set.
 
 import Foundation
@@ -23,16 +24,16 @@ public struct SetDraft: Sendable, Equatable {
     public var target: TimeInterval?
     /// The song count asked for, if any.
     public var songCount: Int?
-    /// Songs that met the request but have no length, left out of a length target (R107:
-    /// "N songs left out: no length"), sorted by title.
-    public var leftOutNoLength: [SongID]
+    /// Songs that met the request but have no time, left out of a length target ("2 songs
+    /// left out: no tempo", P8-8 section 5.4), sorted by title.
+    public var leftOutNoTime: [SongID]
     /// How many songs met the request's filters (locked songs not counted).
     public var matchingCount: Int
     /// The tolerance used, in seconds.
     public var tolerance: TimeInterval
 
     /// Whether the set meets the request: the total is within target +/- tolerance (with no
-    /// unknown length), and a requested count is met.
+    /// unknown time), and a requested count is met.
     public var isWithinTolerance: Bool {
         if let songCount, entries.count(where: { !$0.isBreak }) < songCount {
             return false
@@ -145,7 +146,7 @@ public struct SetBuilder: Sendable {
         seed: UInt64,
         newItemID: () -> SetlistItemID,
     ) -> SetDraft {
-        let library = Self.withSlotLengths(library, layout: layout)
+        let library = Self.withSlotTimes(library, layout: layout, request: request)
         let songsByID = Dictionary(library.songs.map { ($0.id, $0) }) { first, _ in first }
         let scorer = Scorer(
             config: config,
@@ -178,50 +179,58 @@ public struct SetBuilder: Sendable {
             .order(picked, passes: config.swapPasses)
         let entries = skeleton.entries(filling: ordered, newItemID: newItemID)
 
-        let lengths = Dictionary(uniqueKeysWithValues: songsByID.values.compactMap { song in
-            song.length.map { (song.id, SongLength(seconds: $0, source: .directive)) }
-        })
+        var times: [SetlistItemID: SlotTime] = [:]
+        for entry in entries {
+            if let id = entry.songId, let song = songsByID[id] {
+                times[entry.itemId] = song.slotTime
+            }
+        }
         return SetDraft(
             entries: entries,
             breakdowns: breakdowns(entries, songs: songsByID, scorer: scorer),
             timing: SetlistTiming(
-                entries: entries, lengths: lengths, target: target, changeover: changeover,
+                entries: entries, times: times, target: target, changeover: changeover,
             ),
             target: target,
             songCount: request.songCount,
-            leftOutNoLength: pool.leftOut,
+            leftOutNoTime: pool.leftOut,
             matchingCount: pool.matching,
             tolerance: config.toleranceSeconds,
         )
     }
 
-    /// The library with an arranged slot's own length (R122) in place of its song's: a kept
-    /// or re-picked slot keeps its arrangement, so it counts the length played there; an
-    /// arranged slot with no slot length has no length (left out under a target, R107).
-    static func withSlotLengths(
+    /// The library with each song's time (`SlotTimes`) for the songs `request` admits and
+    /// the slots `layout` keeps: a kept or re-picked arranged slot counts its arrangement's
+    /// played passes. Songs built without a record keep the time they were given.
+    static func withSlotTimes(
         _ library: AssistantLibrary,
         layout: RebuildLayout,
+        request: SetRequest,
     ) -> AssistantLibrary {
-        var arranged: [SongID: TimeInterval?] = [:]
+        guard !library.records.isEmpty else { return library }
+        var arranged: [SongID: SlotArrangement] = [:]
+        var kept = Set<SongID>()
         for entry in layout.entries {
-            if let id = entry.songId, let arrangement = entry.arrangement, arranged[id] == nil {
-                // `updateValue`: assigning a nil length through the subscript would drop
-                // the key instead of recording "no length".
-                arranged.updateValue(arrangement.length.flatMap { $0 > 0 ? $0 : nil }, forKey: id)
+            guard let id = entry.songId else { continue }
+            kept.insert(id)
+            if let arrangement = entry.arrangement, arranged[id] == nil {
+                arranged[id] = arrangement
             }
         }
-        guard !arranged.isEmpty else { return library }
         var library = library
         for index in library.songs.indices {
-            if let length = arranged[library.songs[index].id] {
-                library.songs[index].length = length
-            }
+            let song = library.songs[index]
+            guard kept.contains(song.id)
+                || admits(song, request, smartFilterMatches: library.smartFilterMatches),
+                let record = library.records[song.id]
+            else { continue }
+            library.songs[index] = song.timed(library.times(record, arranged[song.id]))
         }
         return library
     }
 
     /// The songs a request admits (locked ones aside), best base score first, with songs
-    /// without a length set aside under a length target (R107).
+    /// without a time set aside under a length target.
     private func candidates(
         _ request: SetRequest,
         library: AssistantLibrary,
@@ -236,8 +245,8 @@ public struct SetBuilder: Sendable {
         let matching = admitted.count
         var leftOut: [AssistantSong] = []
         if target != nil {
-            leftOut = admitted.filter { $0.length == nil }
-            admitted.removeAll { $0.length == nil }
+            leftOut = admitted.filter { $0.time == nil }
+            admitted.removeAll { $0.time == nil }
         }
         let base = Dictionary(uniqueKeysWithValues: admitted.map { ($0.id, scorer.base($0).total) })
         admitted.sort { lhs, rhs in
@@ -255,7 +264,7 @@ public struct SetBuilder: Sendable {
         /// Best base score first.
         var ranked: [AssistantSong]
         var base: [SongID: Double]
-        /// Admitted songs without a length (under a length target), by title.
+        /// Admitted songs without a time (under a length target), by title.
         var leftOut: [SongID]
         /// How many songs the request admits.
         var matching: Int

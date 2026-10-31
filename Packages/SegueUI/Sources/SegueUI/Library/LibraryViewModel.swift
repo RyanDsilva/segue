@@ -133,6 +133,8 @@ public final class LibraryViewModel {
     @ObservationIgnored var walkUpWrite: Task<Void, Never>?
     /// The fill span selected in the song pane's preview (P8-7 12.1), and its song.
     @ObservationIgnored let spanSelection = ChordSpanSelection()
+    /// Slot times per song version (P8-8 section 5.9).
+    @ObservationIgnored let times = SongTimeCache()
     @ObservationIgnored var spanSong: SongID?
     /// The fill editor sheet while it is open from the library, and the sheets a gig closed
     /// (kept for the next open of the same span, never saved).

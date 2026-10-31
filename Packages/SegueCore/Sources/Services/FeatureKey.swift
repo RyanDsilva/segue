@@ -31,6 +31,9 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case songArtists
     case songAlbum
     case artistSplit
+    /// P8-8 section 8: a tempo written from the set's no-time list, the assistant's left-out
+    /// list or Arrange Sections (builder context).
+    case tempoFromSet
     /// The song card's Time it timer was stopped into a length (R91).
     case timeIt
     /// The stage metronome was switched on (R90, P3-14).

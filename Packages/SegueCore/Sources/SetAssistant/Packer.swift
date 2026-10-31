@@ -27,8 +27,8 @@ struct Skeleton {
     let lockedSongs: Set<SongID>
     /// Unlocked entries by song: a song picked again keeps its item ID, overrides and note.
     private let reusable: [SongID: SetlistEntry]
-    /// Locked songs' known lengths plus break intermissions.
-    let fixedLength: TimeInterval
+    /// Locked songs' known times plus break intermissions.
+    let fixedTime: TimeInterval
     let lockedCount: Int
     let partCount: Int
 
@@ -46,7 +46,7 @@ struct Skeleton {
             {
                 locked.insert(id)
                 positions.append(.fixed(entry, songs[id]))
-                fixed += songs[id]?.length ?? 0
+                fixed += songs[id]?.time ?? 0
             } else {
                 if let id = entry.songId, reusable[id] == nil {
                     reusable[id] = entry
@@ -57,7 +57,7 @@ struct Skeleton {
         self.positions = positions
         lockedSongs = locked
         self.reusable = reusable.filter { !locked.contains($0.key) }
-        fixedLength = fixed
+        fixedTime = fixed
         lockedCount = locked.count
         partCount = layout.entries.count(where: \.isBreak) + 1
     }
@@ -110,12 +110,12 @@ struct Skeleton {
         }
     }
 
-    /// Estimated set total with `picked` new songs: lengths, intermissions and a changeover
+    /// Estimated set total with `picked` new songs: times, intermissions and a changeover
     /// between songs of a part (each part assumed to hold a song).
-    func total(lengths: TimeInterval, songs: Int, changeover: TimeInterval) -> TimeInterval {
+    func total(times: TimeInterval, songs: Int, changeover: TimeInterval) -> TimeInterval {
         let all = songs + lockedCount
         let gaps = max(all - min(partCount, all), 0)
-        return fixedLength + lengths + changeover * TimeInterval(gaps)
+        return fixedTime + times + changeover * TimeInterval(gaps)
     }
 }
 
@@ -163,13 +163,13 @@ struct Packer {
         self.changeover = changeover
     }
 
-    private var lengthSum: TimeInterval {
-        picked.reduce(0) { $0 + ($1.length ?? 0) }
+    private var timeSum: TimeInterval {
+        picked.reduce(0) { $0 + ($1.time ?? 0) }
     }
 
     private func total(adding extra: TimeInterval = 0, songs: Int? = nil) -> TimeInterval {
         skeleton.total(
-            lengths: lengthSum + extra,
+            times: timeSum + extra,
             songs: songs ?? picked.count,
             changeover: changeover,
         )
@@ -198,7 +198,7 @@ struct Packer {
             if total() >= target {
                 break
             }
-            if total(adding: song.length ?? 0, songs: picked.count + 1) <= target + tolerance {
+            if total(adding: song.time ?? 0, songs: picked.count + 1) <= target + tolerance {
                 add(song)
             }
         }
@@ -228,7 +228,7 @@ struct Packer {
             let found = candidates.first { song in
                 guard !pickedIDs.contains(song.id), song.hasTag(tag) else { return false }
                 guard let limit else { return true }
-                return total(adding: song.length ?? 0, songs: count) <= limit
+                return total(adding: song.time ?? 0, songs: count) <= limit
             }
             if let found {
                 add(found, pin: true)
@@ -252,7 +252,7 @@ struct Packer {
             if wanted.map({ picked.count < $0 }) ?? true,
                let song = candidates.first(where: {
                    !pickedIDs.contains($0.id)
-                       && total(adding: $0.length ?? 0, songs: picked.count + 1) <= high
+                       && total(adding: $0.time ?? 0, songs: picked.count + 1) <= high
                })
             {
                 add(song)
@@ -276,7 +276,7 @@ struct Packer {
         var trade: Double
 
         /// Reaching the window first; then the best score trade, or (still short) the most
-        /// length gained.
+        /// time gained.
         func beats(_ other: Self) -> Bool {
             if reaches != other.reaches {
                 return reaches
@@ -290,9 +290,9 @@ struct Packer {
     {
         var best: Swap?
         for (index, song) in picked.enumerated() where !pinned.contains(song.id) {
-            let length = song.length ?? 0
+            let time = song.time ?? 0
             for other in candidates where !pickedIDs.contains(other.id) {
-                let gain = (other.length ?? 0) - length
+                let gain = (other.time ?? 0) - time
                 guard gain > 0, current + gain <= high else { continue }
                 let swap = Swap(
                     out: index,

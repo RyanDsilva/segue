@@ -17,7 +17,6 @@ struct ArrangementEditorTests { // swiftlint:disable:this type_body_length
     private static let itemID = "01JC0000000000000000000T00"
     private static let song = """
     {title: Soundcheck}
-    {duration: 3:20}
 
     {start_of_verse: Verse 1}
     [G]First verse words
@@ -288,25 +287,38 @@ struct ArrangementEditorTests { // swiftlint:disable:this type_body_length
     }
 
     @Test
-    func `an arranged slot without its own length is unknown and listed, then filled`(
-    ) async throws {
+    func `the footer time follows the passes and Set Tempo writes the song`() async throws {
         let fix = try await Self.open()
-        try await edit(fix, .toggleSkip(4), selection: 4)
         let library = fix.session.library
+        let id = try SongID(#require(ULID(string: Self.songID)))
+        let record = try #require(library.song(id: id))
+        // No tempo yet: unknown (never guessed), and the no-time list names the slot.
         var setlist = try #require(fix.session.setlists.setlist(fix.friday))
-        // The song has {duration: 3:20}, but the slot plays something else: unknown.
-        let rows = MissingLengthsList.rows(setlist, within: nil, library: library)
-        #expect(rows.map(\.isArranged) == [true])
-        var timing = SetlistTiming(setlist: setlist, songs: library.song(id:), defaultChangeover: 0)
-        #expect(timing.unknownCount == 1)
+        var slot = try #require(setlist.entries.first)
+        #expect(library.times.slot(record, arrangement: slot.arrangement) == .unknown(.noTempo))
+        #expect(MissingTimesList.rows(setlist, within: nil, library: library).count == 1)
 
-        try await edit(fix, .setLength(160))
+        // Set Tempo... writes the song's {tempo}, not the setlist (the footer's write).
+        fix.manager.beginUndoGrouping()
+        #expect(MissingTimesList.writeTempo("120", song: id, library: library) == nil)
+        try await fix.env.waitFor { library.song(id: id)?.document.metadata.tempo }
+        fix.manager.endUndoGrouping()
+        #expect(try fix.env.read("songs/soundcheck.cho").contains("{tempo: 120}"))
+        // Six one-bar parts at 120 BPM: 12 s for the full song.
+        var timing = SetlistTiming(setlist: setlist, library: library, defaultChangeover: 0)
+        #expect(timing.totalText == "~0:12")
+
+        // Skipping the bridge drops its bar from this slot only.
+        try await edit(fix, .toggleSkip(4), selection: 4)
         setlist = try #require(fix.session.setlists.setlist(fix.friday))
-        timing = SetlistTiming(setlist: setlist, songs: library.song(id:), defaultChangeover: 0)
-        #expect(timing.totalText == "2:40")
-        #expect(MissingLengthsList.rows(setlist, within: nil, library: library).isEmpty)
-        // The song keeps its own length.
-        #expect(try fix.env.read("songs/soundcheck.cho").contains("{duration: 3:20}"))
+        slot = try #require(setlist.entries.first)
+        let updated = try #require(library.song(id: id))
+        let time = library.times.slot(updated, arrangement: slot.arrangement)
+        #expect(time.clock == "~0:10")
+        timing = SetlistTiming(setlist: setlist, library: library, defaultChangeover: 0)
+        #expect(timing.items.first?.time?.source == .arrangement)
+        #expect(timing.totalText == "~0:10")
+        #expect(MissingTimesList.rows(setlist, within: nil, library: library).isEmpty)
     }
 
     @Test

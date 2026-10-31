@@ -94,12 +94,13 @@
                     TotalText(
                         total: timing.total,
                         unknown: timing.unknownCount,
+                        estimated: timing.isEstimated,
                         note: timing.changeoverNote,
                         font: SchibstedGrotesk.bold.font(size: 15),
                         identifier: AccessibilityID.setlistTotal,
                     )
                     if !timing.unknownItemIds.isEmpty {
-                        MissingLengthsButton(
+                        MissingTimesButton(
                             count: timing.unknownItemIds.count,
                             setlist: setlist,
                             library: library,
@@ -138,7 +139,7 @@
             var parts: [String] = []
             for (index, part) in timing.parts.enumerated() {
                 if let breakId = part.breakItemId,
-                   let length = timing.items.first(where: { $0.itemId == breakId })?.length
+                   let length = timing.items.first(where: { $0.itemId == breakId })?.time
                 {
                     parts.append("break \(SetlistTiming.format(length.seconds))")
                 }
@@ -156,7 +157,7 @@
             var result: [Segment] = []
             for (index, part) in timing.parts.enumerated() {
                 if let breakId = part.breakItemId {
-                    let pause = timing.items.first { $0.itemId == breakId }?.length?.seconds ?? 0
+                    let pause = timing.items.first { $0.itemId == breakId }?.time?.seconds ?? 0
                     result.append(Segment(kind: .gap, seconds: pause, part: index, label: nil))
                 }
                 if part.total > 0 {
@@ -257,7 +258,7 @@
             var width: CGFloat
         }
 
-        /// Hatched unknowns get a fixed width per song (they have no length to scale);
+        /// Hatched unknowns get a fixed width per song (they have no time to scale);
         /// breaks without an intermission a thin gap; the rest shares the width by time.
         static func layout(_ segments: [Segment], width: CGFloat, scale: TimeInterval)
             -> [Placed]
@@ -282,7 +283,7 @@
         }
     }
 
-    /// Diagonal stripes in a part's colour: songs in that part with no length yet.
+    /// Diagonal stripes in a part's colour: songs in that part with no time yet.
     private struct HatchPattern: View {
         let color: Color
 
@@ -301,11 +302,12 @@
     }
 
     /// A total in the phase 2 notation, drawn as its known part ("≥38:20") with the
-    /// "+ 2 unknown" part as the `MissingLengthsButton` beside it; VoiceOver and the E2E
+    /// "+ 2 unknown" part as the `MissingTimesButton` beside it; VoiceOver and the E2E
     /// suite read the whole notation ("≥38:20 + 2 unknown").
     struct TotalText: View {
         let total: TimeInterval
         let unknown: Int
+        var estimated = false
         let note: String?
         let font: Font
         let identifier: String
@@ -316,20 +318,31 @@
                 .foregroundStyle(Theme.color.ink)
                 .fixedSize()
                 .help(note ?? "")
-                .accessibilityLabel(SetlistTiming.totalText(total: total, unknown: unknown))
+                .accessibilityLabel(SetlistTiming.totalText(
+                    total: total,
+                    unknown: unknown,
+                    estimated: estimated,
+                ))
+                .accessibilityValue(SetlistTiming.spokenTotal(
+                    total: total,
+                    unknown: unknown,
+                    estimated: estimated,
+                ))
                 .accessibilityIdentifier(identifier)
         }
 
-        /// "38:20", "≥38:20", or nothing when only unknowns are left (the button says it).
+        /// "38:20", "≥38:20", "~38:20" (a known time rests on default chord lengths), or
+        /// nothing when only unknowns are left (the button says it).
         private var visible: String {
-            guard unknown > 0 else { return SetlistTiming.format(total) }
+            let prefix = estimated && total > 0 ? SetlistTiming.estimatedPrefix : ""
+            guard unknown > 0 else { return prefix + SetlistTiming.format(total) }
             guard total > 0 else { return "" }
-            return SetlistTiming.lowerBoundPrefix + SetlistTiming.format(total)
+            return prefix + SetlistTiming.lowerBoundPrefix + SetlistTiming.format(total)
         }
     }
 
-    /// "+ 2 unknown ▾" (R88), tinted red: opens the list of exactly the songs without a length.
-    struct MissingLengthsButton: View {
+    /// "+ 2 unknown ▾", tinted red: opens the list of exactly the songs with no time.
+    struct MissingTimesButton: View {
         let count: Int
         let setlist: Setlist
         let library: LibraryViewModel
@@ -358,12 +371,12 @@
             }
             .buttonStyle(.plain)
             .fixedSize()
-            .help("Songs without a length")
-            .accessibilityLabel(count == 1 ? "1 song without a length" :
-                "\(count) songs without a length")
+            .help("Songs with no time")
+            .accessibilityLabel(count == 1 ? "1 song with no time" :
+                "\(count) songs with no time")
             .accessibilityIdentifier(AccessibilityID.setlistUnknownButton)
             .popover(isPresented: $isOpen, arrowEdge: .bottom) {
-                MissingLengthsList(setlist: setlist, library: library, within: within)
+                MissingTimesList(setlist: setlist, library: library, within: within)
             }
         }
     }

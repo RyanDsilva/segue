@@ -8,7 +8,7 @@
     /// The setlist builder (R84, direction C). Pick: the library checklist on the left and
     /// the set on the right; Arrange: the set alone, full width. The header holds the name,
     /// details, Rehearse / Start show and the timeline strip (one coloured region per part,
-    /// unknown lengths hatched, breaks as gaps, the target as a line).
+    /// unknown times hatched, breaks as gaps, the target as a line).
     struct SetlistBuilderView: View {
         @Environment(\.openGuide) private var openGuide
         let setlist: Setlist
@@ -100,19 +100,6 @@
                 SegueTips.openSetlistHasEntries = !isEmpty
             }
             .environment(\.slotArrangementActions, SlotArrangementActions(
-                setLength: { [model, setlist] item, seconds in
-                    Task {
-                        guard var arrangement = model.setlist(setlist.id)?.entry(item)?.arrangement
-                        else { return }
-                        arrangement.length = seconds
-                        await model.setArrangement(
-                            arrangement,
-                            of: item,
-                            in: setlist.id,
-                            actionName: "Set Slot Length",
-                        )
-                    }
-                },
                 open: { [model, setlist] item in model.openArrangement(item, in: setlist.id) },
             ))
             .sheet(item: Binding(
@@ -161,7 +148,7 @@
         private var header: some View {
             let timing = SetlistTiming(
                 setlist: setlist,
-                songs: library.song(id:),
+                library: library,
                 defaultChangeover: defaultChangeover,
             )
             return VStack(alignment: .leading, spacing: 16) {

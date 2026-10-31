@@ -161,11 +161,11 @@ extension StageWindowSuites {
             let fixture = try await LiveFixture(app: app, titles: ["Alpha", "Bravo"])
             let session = try #require(app.session)
             let extra = try await session.library.createSong(
-                source: LiveFixture.source(title: "Zulu Request", lines: 4, duration: nil),
+                source: LiveFixture.source(title: "Zulu Request", lines: 4),
             )
             // R102: a song is requested once per show, so the blank note goes on another.
             let other = try await session.library.createSong(
-                source: LiveFixture.source(title: "Yankee Request", lines: 4, duration: nil),
+                source: LiveFixture.source(title: "Yankee Request", lines: 4),
             )
             app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
             #expect(await app.startShow(fixture.setlist, kind: .gig))
@@ -190,7 +190,7 @@ extension StageWindowSuites {
 
             // Esc on the note goes back to the results without adding anything.
             let third = try await session.library.createSong(
-                source: LiveFixture.source(title: "Xray Request", lines: 4, duration: nil),
+                source: LiveFixture.source(title: "Xray Request", lines: 4),
             )
             live.dispatch(.openSearch)
             live.search.query = "xray"
@@ -242,7 +242,7 @@ extension StageWindowSuites {
         }
 
         @Test
-        func `auto-scroll reaches the bottom of a 3 minute song and holds while paused`(
+        func `auto-scroll reaches the bottom of a song over its played time and holds while paused`(
         ) async throws {
             _ = NSApplication.shared
             let env = try TestEnvironment()
@@ -251,7 +251,6 @@ extension StageWindowSuites {
                 app: app,
                 titles: ["Long"],
                 lines: 240,
-                duration: "3:00",
             )
             app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
             #expect(await app.startShow(fixture.setlist, kind: .rehearsal))
@@ -262,18 +261,21 @@ extension StageWindowSuites {
             #expect(plan.needsScroll)
             #expect(plan.lyricSize >= 22)
 
+            // 240 lines of four bars at 96 BPM: 40 minutes from the timeline (P8-8 5.6).
+            #expect(live.currentPlayedTime?.seconds == 2400)
+            #expect(!live.needsTempoHint)
             // Never moves before it is started.
             env.clock.advance(by: 30)
             #expect(live.scrollFraction(at: env.clock.now()) == 0)
             live.dispatch(.toggleAutoScroll)
-            env.clock.advance(by: 90)
+            env.clock.advance(by: 1200)
             let halfway = live.scrollFraction(at: env.clock.now())
             #expect(halfway > 0.3 && halfway < 0.7)
             live.dispatch(.toggleAutoScroll)
             env.clock.advance(by: 60)
             #expect(live.scrollFraction(at: env.clock.now()) == halfway)
             live.dispatch(.toggleAutoScroll)
-            env.clock.advance(by: 120)
+            env.clock.advance(by: 1300)
             #expect(live.scrollFraction(at: env.clock.now()) == 1)
         }
     }
@@ -286,12 +288,12 @@ struct LiveFixture {
     let setlist: Setlist
     let library: LibraryStore
 
-    init(app: AppModel, titles: [String], lines: Int = 8, duration: String? = nil) async throws {
+    init(app: AppModel, titles: [String], lines: Int = 8) async throws {
         let session = try #require(app.session)
         var songs: [SongRecord] = []
         for title in titles {
             try await songs.append(session.library.createSong(
-                source: Self.source(title: title, lines: lines, duration: duration),
+                source: Self.source(title: title, lines: lines),
             ))
         }
         let created = try #require(await session.setlists.create(name: "Fixture Set"))
@@ -303,11 +305,9 @@ struct LiveFixture {
         library = session.stores.library
     }
 
-    static func source(title: String, lines: Int, duration: String?) -> String {
+    /// Four one-bar chords a line at 96 BPM: each line plays 10 s.
+    static func source(title: String, lines: Int) -> String {
         var text = "{title: \(title)}\n{key: G}\n{tempo: 96}\n"
-        if let duration {
-            text += "{duration: \(duration)}\n"
-        }
         for verse in 0 ..< max(1, lines / 4) {
             text += "{start_of_verse: Verse \(verse + 1)}\n"
             for line in 0 ..< 4 {

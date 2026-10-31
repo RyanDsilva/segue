@@ -7,7 +7,7 @@
 
     /// The set composer (P8-5, direction B): always the last row of the set list in Pick and
     /// Arrange. Type a few letters of a song, Return, next. The best library match shows as
-    /// a muted ghost with the key, capo and length the new slot would show; ↓ / Tab open the
+    /// a muted ghost with the key, capo and time the new slot would show; ↓ / Tab open the
     /// alternatives under the row; "in A" sets the slot's gig key; "---" adds a break; a
     /// song already in the set is flagged, never added twice. The row is also the set's
     /// drop zone (a library song dropped on it is appended).
@@ -81,7 +81,7 @@
                     .frame(maxWidth: .infinity, alignment: .leading)
                 keyCell(state)
                 cell(state.capo, width: 64, identifier: AccessibilityID.setlistComposerCapo)
-                cell(state.length, width: 56, identifier: AccessibilityID.setlistComposerLength)
+                cell(state.time, width: 56, identifier: AccessibilityID.setlistComposerTime)
                 // Start, lock, (score) and remove columns of the rows above stay empty.
                 Color.clear.frame(width: trailingWidth, height: 1)
             }

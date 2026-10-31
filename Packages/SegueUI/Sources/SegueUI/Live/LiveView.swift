@@ -272,6 +272,12 @@
                         )
                         .accessibilityIdentifier(AccessibilityID.liveIndicator)
                         .transition(.opacity)
+                } else if session.needsTempoHint {
+                    // No tempo, so no time to scroll over (R173): the default speed, quietly.
+                    Text("No tempo: add one to time the scroll. [ and ] adjust the speed.")
+                        .font(SchibstedGrotesk.medium.font(size: 12))
+                        .foregroundStyle(Theme.color.muted)
+                        .accessibilityIdentifier(AccessibilityID.liveTempoHint)
                 }
             }
             .padding(.top, Self.headerHeight + topInset + 8)

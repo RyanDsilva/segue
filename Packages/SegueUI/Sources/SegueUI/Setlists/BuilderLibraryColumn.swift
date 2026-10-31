@@ -383,13 +383,11 @@
             }
         }
 
-        /// "G · 96 · 3:40" (each part only when known; a missing length reads --:--).
+        /// "G · 96" (each part only when known).
         private var meta: String {
             [
                 SongSummary.writtenKey(record),
                 SongSummary.tempo(record),
-                SetlistTiming.directiveLength(of: record).map { SetlistTiming.format($0.seconds) }
-                    ?? SetlistTiming.unknownText,
             ].compactMap(\.self).joined(separator: " · ")
         }
     }

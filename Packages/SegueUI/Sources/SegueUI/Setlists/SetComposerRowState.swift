@@ -24,7 +24,7 @@
         var ghost: Ghost?
         var key = ""
         var capo = ""
-        var length = ""
+        var time = ""
         var status: Status?
         var duplicate: SetlistItemID?
         var matchCount = 0
@@ -74,7 +74,8 @@
             }
             key = preview?.display.key ?? "-"
             capo = preview?.display.capoText ?? ""
-            length = SetlistTiming.format(preview?.display.length)
+            let slotTime = record.map { library.times.song($0) }
+            time = Self.cell(slotTime)
             if let existing = setlist.entries.first(where: { $0.songId == match.id }),
                let position = Self.songNumber(of: existing.itemId, in: setlist)
             {
@@ -92,19 +93,25 @@
             }
             spokenValue = spoken(
                 title: title,
-                seconds: preview?.display.length?.seconds,
+                time: slotTime,
                 choice: composer.choice,
             )
         }
 
+        /// The ghost's Time cell: "3:40", "~3:40", or "-" when unknown (never a guess).
+        static func cell(_ time: SlotTime?) -> String {
+            guard let time, time.seconds != nil else { return "-" }
+            return time.clock
+        }
+
         /// "Suggestion: Kesariya, key A, 4:05. 1 of 3." plus the status line.
-        private func spoken(title: String, seconds: TimeInterval?, choice: Int) -> String {
+        private func spoken(title: String, time: SlotTime?, choice: Int) -> String {
             var spoken = "Suggestion: \(title)"
             if key != "-" {
                 spoken += ", key \(key)"
             }
-            if let seconds {
-                spoken += ", \(SetlistTiming.format(seconds))"
+            if let time, time.seconds != nil {
+                spoken += ", \(time.spoken)"
             }
             spoken += ". \(choice + 1) of \(matchCount)."
             switch status {
@@ -183,7 +190,7 @@
                     .foregroundStyle(Theme.color.muted)
                     .frame(width: 56, alignment: .leading)
                 Color.clear.frame(width: 64, height: 1)
-                Text(SetlistTiming.format(preview?.display.length))
+                Text(ComposerRowState.cell(record.map { library.times.song($0) }))
                     .font(SchibstedGrotesk.medium.font(size: 13))
                     .foregroundStyle(Theme.color.muted)
                     .frame(width: 56, alignment: .leading)

@@ -192,7 +192,7 @@
         var body: some View {
             let timing = SetlistTiming(
                 setlist: setlist,
-                songs: library.song(id:),
+                library: library,
                 defaultChangeover: defaultChangeover,
             )
             HStack(spacing: 14) {
@@ -207,7 +207,7 @@
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier(AccessibilityID.assistantStatus)
-                let leftOut = result.leftOutNoLength.filter { !setlist.contains($0) }
+                let leftOut = result.leftOutNoTime.filter { !setlist.contains($0) }
                 if !leftOut.isEmpty {
                     LeftOutButton(songs: leftOut, library: library)
                 }

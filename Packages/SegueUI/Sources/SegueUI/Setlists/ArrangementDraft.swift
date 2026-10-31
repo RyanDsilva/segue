@@ -63,7 +63,6 @@ struct ArrangementDraft: Equatable {
         case replace([ArrangementPass])
         /// The out-of-date banner's Update: the lane as shown.
         case update
-        case setLength(TimeInterval?)
     }
 
     enum Refusal: Equatable, Error {
@@ -95,7 +94,6 @@ struct ArrangementDraft: Equatable {
     private(set) var newParts: [SongSectionUnit]
     /// The palette, in order of first appearance in the song.
     let groups: [Group]
-    var length: TimeInterval?
     /// Whether the slot has a saved arrangement (else the lane is the full song).
     let isCustom: Bool
     /// The saved arrangement cannot be played as saved (missing parts or a broken
@@ -106,7 +104,6 @@ struct ArrangementDraft: Equatable {
     init(arrangement: SlotArrangement?, units: [SongSectionUnit]) {
         self.units = units
         isCustom = arrangement != nil
-        length = arrangement?.length
         let saved = arrangement ?? .fullSong(units)
         isOutOfDate = arrangement.map {
             ArrangementResolver.resolve($0, units: units).isOutOfDate
@@ -147,7 +144,7 @@ struct ArrangementDraft: Equatable {
 
     /// The lane as it would be saved: every part of the song known (R123).
     var arrangement: SlotArrangement {
-        SlotArrangement(passes: passes, knownParts: KnownPart.all(units), length: length)
+        SlotArrangement(passes: passes, knownParts: KnownPart.all(units))
     }
 
     var playingCount: Int {
@@ -207,7 +204,7 @@ struct ArrangementDraft: Equatable {
     /// Applies `edit` with the chip at `selection` selected. Refuses an edit that would leave
     /// nothing to play, exceed `SlotArrangement.maxPasses`, or change nothing.
     func apply(_ edit: Edit, selection: Int) -> Swift.Result<Result, Refusal> {
-        let start = Change(passes: passes, length: length, selection: selection, name: "")
+        let start = Change(passes: passes, selection: selection, name: "")
         guard let change = added(edit, start) ?? rearranged(edit, start) ?? restyled(edit, start)
         else { return .failure(.nothingChanged) }
         if change.passes.count > SlotArrangement.maxPasses, change.passes.count > chips.count {
@@ -218,7 +215,6 @@ struct ArrangementDraft: Equatable {
             arrangement: SlotArrangement(
                 passes: change.passes,
                 knownParts: KnownPart.all(units),
-                length: change.length,
             ),
             selection: max(change.selection, 0),
             actionName: change.name,
@@ -228,7 +224,6 @@ struct ArrangementDraft: Equatable {
     /// An edit's outcome before the invariants are checked.
     private struct Change {
         var passes: [ArrangementPass]
-        var length: TimeInterval?
         var selection: Int
         var name: String
 
@@ -291,7 +286,7 @@ struct ArrangementDraft: Equatable {
         return change
     }
 
-    /// Modes, the roadmap, Update and the length; nil for other edits or no change.
+    /// Modes, the roadmap and Update; nil for other edits or no change.
     private func restyled(_ edit: Edit, _ start: Change) -> Change? {
         var change = start
         switch edit {
@@ -314,10 +309,6 @@ struct ArrangementDraft: Equatable {
             change.name = "Edit Roadmap"
         case .update:
             change.name = "Update Arrangement"
-        case let .setLength(seconds):
-            guard seconds != change.length else { return nil }
-            change.length = seconds
-            change.name = "Set Slot Length"
         default:
             return nil
         }

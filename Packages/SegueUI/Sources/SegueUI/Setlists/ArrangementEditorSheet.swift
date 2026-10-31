@@ -43,6 +43,7 @@
                     setlist: setlist,
                     entry: entry,
                     record: record,
+                    library: library,
                     units: SongSections.units(of: record.document),
                     editor: editor,
                     isReadOnly: setlist.readOnly != nil || library.isPerforming,
@@ -85,6 +86,7 @@
         let setlist: Setlist
         let entry: SetlistEntry
         let record: SongRecord
+        let library: LibraryViewModel
         let units: [SongSectionUnit]
         let editor: ArrangementEditor
         let isReadOnly: Bool
@@ -351,13 +353,12 @@
         private func footer(_ draft: ArrangementDraft) -> some View {
             HStack(spacing: 10) {
                 GuideHelpButton(.arrangeSections)
-                Text("Length for this gig")
-                LengthField(target: .slot(entry.itemId), length: draft.length) { seconds in
-                    perform(.setLength(seconds))
-                }
-                .disabled(isReadOnly)
-                Text(songLengthHint)
-                    .help("The song's own length stays in the song; this slot has its own.")
+                SlotTimeFooter(
+                    time: library.times.slot(record, arrangement: draft.arrangement),
+                    record: record,
+                    library: library,
+                    isReadOnly: isReadOnly,
+                )
                 Spacer(minLength: 8)
                 // The note drops before anything else does in a narrow sheet.
                 ViewThatFits(in: .horizontal) {
@@ -371,11 +372,6 @@
             .foregroundStyle(Theme.color.muted)
             .padding(.horizontal, 18)
             .frame(height: 52)
-        }
-
-        private var songLengthHint: String {
-            let song = record.document.metadata.duration.flatMap { $0 > 0 ? $0 : nil }
-            return "Song: " + (song.map { SetlistTiming.format($0) } ?? "no length")
         }
     }
 

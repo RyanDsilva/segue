@@ -57,13 +57,14 @@ struct SetAssistantTests {
                     #expect(song.proficiency != .learning, "Learning picked (seed \(seed))")
                 }
                 if draft.target != nil {
-                    #expect(song.length != nil, "no-length song packed (seed \(seed))")
+                    #expect(song.time != nil, "no-time song packed (seed \(seed))")
                 }
             }
-            // Changeover counted: lengths + 30 s between songs (one part).
+            // Changeover counted: times + 30 s between songs (one part).
             if draft.target != nil {
-                let lengths = ids.compactMap { songs[$0]?.length }.reduce(0, +)
-                #expect(draft.timing.total == lengths + 30 * Double(max(ids.count - 1, 0)))
+                let times = ids.compactMap { songs[$0]?.time }.reduce(0, +)
+                #expect(abs(draft.timing.total - (times + 30 * Double(max(ids.count - 1, 0))))
+                    < 1e-6)
             }
             // Breakdowns: one per song slot, every signal listed, summing to the total.
             #expect(draft.breakdowns.count == ids.count)
@@ -84,16 +85,16 @@ struct SetAssistantTests {
     }
 
     @Test
-    func `songs with no length are left out of a length target and named (R107)`() {
+    func `songs with no time are left out of a length target and named`() {
         let (request, draft) = Self.build("30 min set", seed: 1)
         let library = Self.fixture.library
         let expected = library.songs
-            .filter { $0.length == nil && SetBuilder.admits($0, request, smartFilterMatches: [:]) }
+            .filter { $0.time == nil && SetBuilder.admits($0, request, smartFilterMatches: [:]) }
         #expect(!expected.isEmpty)
-        #expect(Set(draft.leftOutNoLength) == Set(expected.map(\.id)))
+        #expect(Set(draft.leftOutNoTime) == Set(expected.map(\.id)))
         // A count request packs them (no length target).
         let (_, counted) = Self.build("40 songs", seed: 1)
-        #expect(counted.leftOutNoLength.isEmpty)
+        #expect(counted.leftOutNoTime.isEmpty)
         #expect(counted.songIDs.count == 40)
     }
 
@@ -160,10 +161,10 @@ struct SetAssistantTests {
         #expect(Set(rebuilt.songIDs).count == rebuilt.songIDs.count)
         #expect(rebuilt.isWithinTolerance, "\(rebuilt.timing.totalText)")
         // Changeovers within each part only.
-        let lengths = rebuilt.songIDs.compactMap { Self.fixture.song($0)?.length }.reduce(0, +)
+        let times = rebuilt.songIDs.compactMap { Self.fixture.song($0)?.seconds }.reduce(0, +)
         let parts = rebuilt.timing.parts.filter { !$0.songItemIds.isEmpty }.count
-        #expect(rebuilt.timing.total
-            == TimeInterval(lengths) + 30 * Double(rebuilt.songIDs.count - parts))
+        #expect(abs(rebuilt.timing.total
+                - (times + 30 * Double(rebuilt.songIDs.count - parts))) < 1e-6)
     }
 
     @Test
@@ -210,17 +211,14 @@ struct SetAssistantTests {
     }
 
     @Test
-    func `rebuild keeps an arranged slot whole and counts its slot length (R122)`() throws {
+    func `rebuild keeps an arranged slot whole (R122)`() throws {
         let (_, first) = Self.build("an hour, songs I know well", seed: 4)
         var entries = first.entries
         let anchor = SectionAnchor.section(SectionRef(label: "Chorus", occurrence: 1))
         entries[1].arrangement = SlotArrangement(
             passes: [ArrangementPass(anchor: anchor), ArrangementPass(anchor: anchor)],
-            length: 95,
         )
         entries[1].locked = true
-        // An unlocked arranged slot with no slot length has no length for the packer.
-        entries[2].arrangement = SlotArrangement(passes: [ArrangementPass(anchor: anchor)])
         let (_, rebuilt) = Self.build(
             "an hour, songs I know well",
             seed: 5,
@@ -228,9 +226,7 @@ struct SetAssistantTests {
         )
         #expect(rebuilt.entries[1] == entries[1])
         let slot = try #require(rebuilt.timing.items.first { $0.itemId == entries[1].itemId })
-        #expect(slot.length == SongLength(seconds: 95, source: .slot))
-        #expect(try !rebuilt.songIDs.contains(#require(entries[2].songId)))
-        #expect(try rebuilt.leftOutNoLength.contains(#require(entries[2].songId)))
+        #expect(slot.time?.source == .arrangement)
     }
 
     @Test

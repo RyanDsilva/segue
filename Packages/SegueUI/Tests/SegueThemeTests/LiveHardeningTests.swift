@@ -128,7 +128,7 @@ extension StageWindowSuites {
             let fixture = try await LiveFixture(app: app, titles: ["Alpha", "Bravo", "Charlie"])
             let session = try #require(app.session)
             let late = try await session.library.createSong(
-                source: LiveFixture.source(title: "Added Late", lines: 4, duration: nil),
+                source: LiveFixture.source(title: "Added Late", lines: 4),
             )
             app.liveSettings.settings.hiddenChecklistItems = Set(ChecklistItem.allCases)
             #expect(await app.startShow(fixture.setlist, kind: .gig))

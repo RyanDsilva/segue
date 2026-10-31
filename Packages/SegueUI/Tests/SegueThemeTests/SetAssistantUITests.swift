@@ -34,7 +34,7 @@ struct SetAssistantUITests {
         var assistant: SetAssistantModel
     }
 
-    /// 40 songs: every 7th has no length, every 5th is Learning, tags and keys rotate.
+    /// 40 songs: every 7th has no tempo (so no time), every 5th is Learning, tags and keys rotate.
     private static func open() async throws -> Fixture {
         let env = try TestEnvironment()
         for folder in ["songs", "setlists"] {
@@ -44,15 +44,18 @@ struct SetAssistantUITests {
             )
         }
         for index in 0 ..< 40 {
+            // About 3 to 5 minutes at the song's tempo, one bar per chord.
             let seconds = 180 + (index * 37) % 120
-            let length = index % 7 == 3 ? "" : "{duration: \(seconds / 60):"
-                + String(format: "%02d", seconds % 60) + "}\n"
+            let tempo = 70 + index * 2
+            let bars = max(1, Int((Double(seconds * tempo) / 240).rounded()))
+            let tempoLine = index % 7 == 3 ? "" : "{tempo: \(tempo)}\n"
+            let chords = String(repeating: "[G]La ", count: bars)
             // P8-8: every 4th song is Arijit Singh's from Kalank, the next a legacy duo.
             let credits = index.isMultiple(of: 4) ? "{artist: Arijit Singh}\n{album: Kalank}\n"
                 : index % 4 == 1 ? "{artist: Vishal & Shekhar}\n" : ""
             try env.write(
                 "{title: Song \(index)}\n\(credits){key: \(keys[index % keys.count])}\n"
-                    + "{tempo: \(70 + index * 2)}\n\(length)[G]La la\n",
+                    + "\(tempoLine)\(chords)\n",
                 to: "songs/song-\(index).cho",
             )
             let level = index.isMultiple(of: 5) ? "learning"
@@ -107,7 +110,7 @@ struct SetAssistantUITests {
         #expect(setlist.targetDuration == 1800)
         let records = setlist.entries.compactMap(\.songId).compactMap(fix.session.library.song)
         #expect(Set(records.map(\.id)).count == records.count)
-        let total = records.compactMap(\.document.metadata.duration).reduce(0, +)
+        let total = records.compactMap { SlotTimes.song($0).seconds }.reduce(0, +)
         #expect(abs(total - 1800) <= 180)
         for record in records {
             #expect(record.sidecar.proficiency != .learning)
@@ -120,12 +123,17 @@ struct SetAssistantUITests {
             #expect(abs(breakdown.contributions.map(\.value).reduce(0, +) - breakdown.total)
                 < 1e-9)
         }
-        // R107: the matched songs without a length are named.
+        // The matched songs with no time (no tempo) are left out and named.
         let result = try #require(fix.assistant.result)
-        #expect(!result.leftOutNoLength.isEmpty)
-        #expect(result.leftOutNoLength.allSatisfy {
-            fix.session.library.song(id: $0)?.document.metadata.duration == nil
+        #expect(!result.leftOutNoTime.isEmpty)
+        #expect(result.leftOutNoTime.allSatisfy {
+            fix.session.library.song(id: $0)?.document.metadata.tempo == nil
         })
+        let reasons = Set(result.leftOutNoTime.compactMap {
+            fix.session.library.song(id: $0).flatMap { SlotTimes.song($0).unknown }
+        })
+        #expect(LeftOutButton.title(result.leftOutNoTime.count, reasons: reasons)
+            .hasSuffix("left out: no tempo"))
 
         fix.manager.undo()
         try await fix.env.waitFor {

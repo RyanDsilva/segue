@@ -151,7 +151,6 @@ struct ArrangementDraftTests {
             EditCase(.toggleSkip(4), 4, "0 1 2 3 4:skip 5", 4, "Skip Pass"),
             EditCase(.replace([Self.pass(4), Self.pass(1)]), 3, "4 1", 1, "Edit Roadmap"),
             EditCase(.update, 0, "0 1 2 3 4 5", 0, "Update Arrangement"),
-            EditCase(.setLength(160), 0, "0 1 2 3 4 5", 0, "Set Slot Length"),
         ]
         for item in cases {
             try Self.check(draft, item)
@@ -161,7 +160,6 @@ struct ArrangementDraftTests {
         #expect(try Self.applied(skipped, .toggleSkip(1)).actionName == "Play Pass")
         #expect(try Self.lane(Self.applied(skipped, .playAgainAtEnd(1))) == "0 4:skip 4")
         #expect(try Self.lane(Self.applied(skipped, .duplicate(1))) == "0 4:skip 4:skip")
-        #expect(try Self.applied(draft, .setLength(95)).arrangement.length == 95)
     }
 
     @Test

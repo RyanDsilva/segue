@@ -7,7 +7,9 @@ import Setlists
 import Support
 
 /// The seeded 300-song fixture library (P3-7 tests): tags, proficiency, keys, capo, tunings,
-/// tempo, `{duration}` lengths with some unknown, and play history. Deterministic: the same
+/// tempo (some songs without one, so with no time), a bar count, and play history. A song's
+/// time is its tempo times its bars (one bar per chord in 4/4, `SlotTimes`). Deterministic: the
+/// same
 /// seed gives the same library.
 struct AssistantFixture {
     static let tags = [
@@ -28,7 +30,8 @@ struct AssistantFixture {
         var capo: Int
         var dropD: Bool
         var tempo: Int?
-        var length: Int?
+        /// Chords, one bar each.
+        var bars: Int
         var lastPlayedDaysAgo: Int?
 
         var source: String {
@@ -42,11 +45,20 @@ struct AssistantFixture {
             if let tempo {
                 lines.append("{tempo: \(tempo)}")
             }
-            if let length {
-                lines.append("{duration: \(length / 60):\(String(format: "%02d", length % 60))}")
-            }
-            lines += ["", "{start_of_verse: Verse 1}", "[C]La la [G]la", "{end_of_verse}", ""]
+            let chords = (0 ..< bars).map { $0.isMultiple(of: 2) ? "[C]la" : "[G]la" }
+            lines += [
+                "",
+                "{start_of_verse: Verse 1}",
+                chords.joined(separator: " "),
+                "{end_of_verse}",
+                "",
+            ]
             return lines.joined(separator: "\n")
+        }
+
+        /// Tempo x bars; nil without a tempo.
+        var seconds: TimeInterval? {
+            tempo.map { Double(bars) * 240 / Double($0) }
         }
 
         var assistantSong: AssistantSong {
@@ -59,7 +71,8 @@ struct AssistantFixture {
                 capo: capo,
                 tuning: dropD ? [38, 45, 50, 55, 59, 64] : Tuning.standard.strings,
                 tempo: tempo.map(Double.init),
-                length: length.map(TimeInterval.init),
+                time: seconds.map { .known(seconds: $0, bars: bars, tempo: 0, estimated: true) }
+                    ?? .unknown(.noTempo),
                 lastPlayed: lastPlayedDaysAgo.map {
                     AssistantFixture.now.addingTimeInterval(-Double($0) * 86400)
                 },
@@ -90,6 +103,7 @@ struct AssistantFixture {
             case 12 ..< 18: .pro
             default: nil
             }
+            let tempo = roll(8) == 0 ? nil : 60 + roll(110)
             return Song(
                 id: SongID(ids.next()),
                 title: String(format: "Fixture Song %03d", index + 1),
@@ -98,8 +112,8 @@ struct AssistantFixture {
                 key: roll(12) == 0 ? nil : Self.keys[roll(Self.keys.count)],
                 capo: roll(5) == 0 ? 1 + roll(4) : 0,
                 dropD: roll(10) == 0,
-                tempo: roll(8) == 0 ? nil : 60 + roll(110),
-                length: roll(10) == 0 ? nil : 150 + roll(180),
+                tempo: tempo,
+                bars: max(1, (150 + roll(180)) * (tempo ?? 96) / 240),
                 lastPlayedDaysAgo: roll(5) < 2 ? roll(200) : nil,
             )
         }

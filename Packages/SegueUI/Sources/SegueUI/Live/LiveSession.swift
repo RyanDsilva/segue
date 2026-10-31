@@ -100,6 +100,17 @@
         /// The current song's timeline in written order (P8-7): what each part's pass has in
         /// effect (`{key}`, `{tempo}`, `{time}`).
         @ObservationIgnored var currentTimeline: SongTimeline?
+        /// The current item's time from its played passes (`SlotTimes`, P8-8 5.6): the
+        /// auto-scroll speed reads it. Computed once per song version and arrangement.
+        var currentPlayedTime: SlotTime?
+        /// What `currentPlayedTime` was computed for.
+        @ObservationIgnored var playedTimeKey: PlayedTimeKey?
+        /// The current song has no tempo, so auto-scroll starts at the default speed: the
+        /// stage shows a quiet hint to add one (R173).
+        var needsTempoHint: Bool {
+            currentPlayedTime?.unknown == .noTempo
+        }
+
         /// The current pass as the stage last saw it (the scale line and metronome follow it).
         var shownPass: Int?
         /// Rehearsal play-along's follow state (see LiveSession+PlayAlong.swift).

@@ -199,7 +199,8 @@ struct WelcomeLibraryTests {
     }
 
     @Test
-    func `the demo setlist plan builds the Welcome Set at 15 10 of 20 00`() async throws {
+    func `the demo setlist plan builds the Welcome Set, every slot timed, against 20 00`(
+    ) async throws {
         let lib = try TestLibrary()
         let store = try await lib.openStore()
         let seeded = try await store.seedSongs(fromManifestFolder: Self.folder)
@@ -230,15 +231,22 @@ struct WelcomeLibraryTests {
         #expect(setlist.entries[2].note == "Brushes, start soft")
         #expect(setlist.entries[3].note == "Closer: big finish")
         #expect(setlist.venue == nil && setlist.date == nil)
-        let lengths = Dictionary(uniqueKeysWithValues: seeded.compactMap { song in
-            SetlistTiming.directiveLength(of: song.record).map { (song.record.id, $0) }
-        })
+        let records = Dictionary(uniqueKeysWithValues: seeded.map { ($0.record.id, $0.record) })
+        var times: [SetlistItemID: SlotTime] = [:]
+        for entry in setlist.entries {
+            if let id = entry.songId, let record = records[id] {
+                times[entry.itemId] = SlotTimes.slot(record, arrangement: entry.arrangement)
+            }
+        }
         let timing = SetlistTiming(
             entries: setlist.entries,
-            lengths: lengths,
+            times: times,
             target: setlist.targetDuration,
         )
-        #expect(timing.totalText == "15:10")
+        // Every Welcome song has a tempo and chords: no slot is unknown; the times rest on
+        // the default one bar per chord, so the total reads "~" (R173).
+        #expect(timing.unknownCount == 0)
+        #expect(timing.totalText == "~10:09")
         #expect(timing.target.map(SetlistTiming.format) == "20:00")
     }
 

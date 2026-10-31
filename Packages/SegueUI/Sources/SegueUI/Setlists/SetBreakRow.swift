@@ -52,12 +52,13 @@
                     TotalText(
                         total: timing.total,
                         unknown: timing.unknownCount,
+                        estimated: timing.isEstimated,
                         note: changeoverNote,
                         font: SchibstedGrotesk.semiBold.font(size: 14),
                         identifier: AccessibilityID.setlistBreakTotal,
                     )
                     if timing.unknownCount > 0 {
-                        MissingLengthsButton(
+                        MissingTimesButton(
                             count: timing.unknownCount,
                             setlist: setlist,
                             library: library,

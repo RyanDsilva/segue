@@ -15,9 +15,9 @@ struct AutoScrollTests {
     @Test
     func `a duration scrolls the overflow over the duration minus the lead-in`() {
         let speed = ScrollSpeedModel.speed(ScrollSpeedInput(
-            overflow: 850, duration: 180, tempo: 92, time: "4/4", lineCount: 30,
+            overflow: 850, playedTime: 180, tempo: 92, time: "4/4", lineCount: 30,
         ))
-        #expect(speed.source == .duration)
+        #expect(speed.source == .timeline)
         #expect(speed.leadIn == ScrollSpeedModel.leadIn)
         #expect(abs(speed.pointsPerSecond - 850 / 170) < 1e-9)
     }
@@ -25,7 +25,7 @@ struct AutoScrollTests {
     @Test
     func `a short duration scrolls from the start`() {
         let speed = ScrollSpeedModel.speed(ScrollSpeedInput(
-            overflow: 100, duration: 25, tempo: nil, time: nil, lineCount: 10,
+            overflow: 100, playedTime: 25, tempo: nil, time: nil, lineCount: 10,
         ))
         #expect(speed.leadIn == 0)
         #expect(abs(speed.pointsPerSecond - 4) < 1e-9)
@@ -47,9 +47,9 @@ struct AutoScrollTests {
         seconds: Double,
     ) {
         let input = ScrollSpeedInput(
-            overflow: 600, duration: nil, tempo: tempo, time: time, lineCount: 40,
+            overflow: 600, playedTime: nil, tempo: tempo, time: time, lineCount: 40,
         )
-        #expect(ScrollSpeedModel.estimatedDuration(input) == seconds)
+        #expect(ScrollSpeedModel.estimatedTime(input) == seconds)
         let speed = ScrollSpeedModel.speed(input)
         #expect(speed.source == .tempo)
         #expect(abs(speed.pointsPerSecond - 600 / (seconds - ScrollSpeedModel.leadIn)) < 1e-9)
@@ -58,7 +58,7 @@ struct AutoScrollTests {
     @Test
     func `neither duration nor tempo uses the default speed`() {
         let speed = ScrollSpeedModel.speed(ScrollSpeedInput(
-            overflow: 600, duration: nil, tempo: nil, time: "4/4", lineCount: 40,
+            overflow: 600, playedTime: nil, tempo: nil, time: "4/4", lineCount: 40,
         ))
         #expect(speed.source == .fallback)
         #expect(speed.pointsPerSecond == ScrollSpeedModel.defaultSpeed)
@@ -67,9 +67,9 @@ struct AutoScrollTests {
     @Test
     func `the nudge factor multiplies every source`() {
         let inputs = [
-            ScrollSpeedInput(overflow: 500, duration: 200, tempo: nil, time: nil, lineCount: 0),
-            ScrollSpeedInput(overflow: 500, duration: nil, tempo: 100, time: nil, lineCount: 30),
-            ScrollSpeedInput(overflow: 500, duration: nil, tempo: nil, time: nil, lineCount: 30),
+            ScrollSpeedInput(overflow: 500, playedTime: 200, tempo: nil, time: nil, lineCount: 0),
+            ScrollSpeedInput(overflow: 500, playedTime: nil, tempo: 100, time: nil, lineCount: 30),
+            ScrollSpeedInput(overflow: 500, playedTime: nil, tempo: nil, time: nil, lineCount: 30),
         ]
         for var input in inputs {
             let base = ScrollSpeedModel.speed(input).pointsPerSecond
@@ -82,7 +82,7 @@ struct AutoScrollTests {
 
     func threeMinuteScroller(overflow: Double = 850) -> AutoScroller {
         let speed = ScrollSpeedModel.speed(ScrollSpeedInput(
-            overflow: overflow, duration: 180, tempo: nil, time: nil, lineCount: 40,
+            overflow: overflow, playedTime: 180, tempo: nil, time: nil, lineCount: 40,
         ))
         return AutoScroller(speed: speed, overflow: overflow)
     }

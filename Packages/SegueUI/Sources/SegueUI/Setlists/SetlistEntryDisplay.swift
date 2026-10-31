@@ -8,13 +8,11 @@ import Setlists
 struct SetlistEntryDisplay: Equatable {
     var key: String?
     var capo: Int?
-    var length: SongLength?
 
     init(entry: SetlistEntry, record: SongRecord?) {
         guard let record else {
             key = nil
             capo = nil
-            length = nil
             return
         }
         let songCapo = record.document.metadata.capo
@@ -29,7 +27,6 @@ struct SetlistEntryDisplay: Equatable {
         )
         key = transform.displayKey?.name
         self.capo = (capo ?? 0) > 0 ? capo : nil
-        length = SetlistTiming.directiveLength(of: record)
     }
 
     /// "Capo 2", or nothing when there is none: "Capo" labels the column itself, and a bare
@@ -40,18 +37,39 @@ struct SetlistEntryDisplay: Equatable {
 }
 
 extension SetlistTiming {
-    /// Timings for `setlist` with lengths from the songs' `{duration}` directives and the
-    /// setlist's changeover, else `defaultChangeover` (Settings > General, R86).
-    init(setlist: Setlist, songs: (SongID) -> SongRecord?, defaultChangeover: Int) {
-        var lengths: [SongID: SongLength] = [:]
-        for song in setlist.entries.compactMap(\.songId) where lengths[song] == nil {
-            if let record = songs(song), let length = Self.directiveLength(of: record) {
-                lengths[song] = length
+    /// Timings for `setlist` with each slot's time from the timeline (`SlotTimes.slot`,
+    /// through the library's cache) and the setlist's changeover, else `defaultChangeover`
+    /// (Settings > General, R86). A missing song is unknown.
+    @MainActor
+    init(setlist: Setlist, library: LibraryViewModel, defaultChangeover: Int) {
+        var times: [SetlistItemID: SlotTime] = [:]
+        for entry in setlist.entries {
+            if let song = entry.songId, let record = library.song(id: song) {
+                times[entry.itemId] = library.times.slot(record, arrangement: entry.arrangement)
             }
         }
         self.init(
             entries: setlist.entries,
-            lengths: lengths,
+            times: times,
+            target: setlist.targetDuration,
+            changeover: ChangeoverSetting.effective(
+                for: setlist.changeoverSeconds,
+                default: defaultChangeover,
+            ),
+        )
+    }
+
+    /// The same, uncached (tests and callers without a library view model).
+    init(setlist: Setlist, songs: (SongID) -> SongRecord?, defaultChangeover: Int) {
+        var times: [SetlistItemID: SlotTime] = [:]
+        for entry in setlist.entries {
+            if let song = entry.songId, let record = songs(song) {
+                times[entry.itemId] = SlotTimes.slot(record, arrangement: entry.arrangement)
+            }
+        }
+        self.init(
+            entries: setlist.entries,
+            times: times,
             target: setlist.targetDuration,
             changeover: ChangeoverSetting.effective(
                 for: setlist.changeoverSeconds,

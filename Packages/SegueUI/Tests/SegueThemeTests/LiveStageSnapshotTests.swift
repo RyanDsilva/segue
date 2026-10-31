@@ -29,7 +29,7 @@ extension StageWindowSuites {
             let session = try #require(app.session)
             for (title, lines) in [("Long", 40), ("Very Long", 96)] {
                 let song = try await session.library.createSong(
-                    source: LiveFixture.source(title: title, lines: lines, duration: "3:00"),
+                    source: LiveFixture.source(title: title, lines: lines),
                 )
                 await session.setlists.add(song.id, to: fixture.setlist.id)
             }

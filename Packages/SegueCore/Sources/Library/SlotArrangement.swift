@@ -143,8 +143,9 @@ public enum ArrangementProblem: Sendable, Hashable {
 }
 
 /// A setlist slot's arrangement for this gig only (R122, R149): an ordered list of passes.
-/// Saved in the setlist entry as `"arrangement": {"passes": [...], "knownParts": [...],
-/// "length": 215}`.
+/// Saved in the setlist entry as `"arrangement": {"passes": [...], "knownParts": [...]}`. The
+/// slot's time comes from the passes it plays (`SlotTimes.slot`, P8-8); an older file's
+/// `"length"` key is ignored and dropped on the next save.
 public struct SlotArrangement: Sendable, Hashable, Codable {
     /// The most passes an arrangement may hold.
     public static let maxPasses = 48
@@ -154,18 +155,10 @@ public struct SlotArrangement: Sendable, Hashable, Codable {
     /// Every part of the song when the arrangement was last saved. Empty means "the parts
     /// named in `passes`" (a hand-written or migrated file).
     public var knownParts: [KnownPart]
-    /// The slot's length in seconds (typed or timed); nil = unknown, flagged in totals. Never
-    /// derived from the song's `{duration}` (R122).
-    public var length: TimeInterval?
 
-    public init(
-        passes: [ArrangementPass],
-        knownParts: [KnownPart] = [],
-        length: TimeInterval? = nil,
-    ) {
+    public init(passes: [ArrangementPass], knownParts: [KnownPart] = []) {
         self.passes = passes
         self.knownParts = knownParts
-        self.length = length
     }
 
     /// The song as written: every part once, Full, in song order; every part known.
@@ -231,14 +224,12 @@ public struct SlotArrangement: Sendable, Hashable, Codable {
     private enum CodingKeys: String, CodingKey {
         case passes
         case knownParts
-        case length
     }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         passes = try container.decodeIfPresent([ArrangementPass].self, forKey: .passes) ?? []
         knownParts = try container.decodeIfPresent([KnownPart].self, forKey: .knownParts) ?? []
-        length = try container.decodeIfPresent(TimeInterval.self, forKey: .length)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -246,9 +237,6 @@ public struct SlotArrangement: Sendable, Hashable, Codable {
         try container.encode(passes, forKey: .passes)
         if !knownParts.isEmpty {
             try container.encode(knownParts, forKey: .knownParts)
-        }
-        if let length, length > 0 {
-            try container.encode(length, forKey: .length)
         }
     }
 }

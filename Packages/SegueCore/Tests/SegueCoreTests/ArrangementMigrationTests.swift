@@ -19,7 +19,6 @@ struct ArrangementMigrationTests {
                 SlotArrangementTests.pass(units, "Verse 1"),
             ],
             knownParts: KnownPart.all(units),
-            length: 90,
         )
         let data = try SegueJSON.encode(arrangement)
         let json = try #require(String(bytes: data, encoding: .utf8))
@@ -38,7 +37,6 @@ struct ArrangementMigrationTests {
         #expect(decoded.knownParts.isEmpty)
         // No `knownParts`: the parts the passes name.
         #expect(decoded.effectiveKnownParts.map(\.anchor) == decoded.passes.map(\.anchor))
-        #expect(decoded.length == nil)
     }
 
     @Test
@@ -68,7 +66,6 @@ struct ArrangementMigrationTests {
             KnownPart(anchor: chorus, fingerprint: "bb"),
             KnownPart(anchor: leadIn, fingerprint: "cc"),
         ])
-        #expect(arrangement.length == 200)
         #expect(json["steps"] == nil)
     }
 
@@ -99,7 +96,6 @@ struct ArrangementMigrationTests {
             == ["Verse", "Bridge", "Chorus", "Chorus", "After Chorus"])
         #expect(arrangement.passes.map(\.mode) == [.full, .skip, .full, .full, .full])
         #expect(arrangement.knownParts.count == 4)
-        #expect(arrangement.length == 180)
 
         // The next save writes schema 6.
         _ = try await store.updateEntry(setlist.entries[0], in: setlistID)
@@ -109,6 +105,8 @@ struct ArrangementMigrationTests {
         #expect(json.contains("\"passes\""))
         #expect(!json.contains("\"steps\""))
         #expect(!json.contains("\"plays\""))
+        // The old slot length key is ignored on read and dropped on this save (P8-8 7.1).
+        #expect(!json.contains("\"length\""))
     }
 
     @Test
@@ -154,7 +152,6 @@ struct ArrangementMigrationTests {
                 KnownPart(anchor: anchor),
                 KnownPart(anchor: .loose(after: nil, block: 2)),
             ],
-            length: 60,
         )
         #expect(reloaded.items[0].arrangement == expected)
         #expect(reloaded.planned[0].arrangement == expected)

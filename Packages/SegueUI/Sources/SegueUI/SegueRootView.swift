@@ -303,11 +303,11 @@
                             }
                         },
                     ))
-                    .environment(\.openSongForLength, OpenSongAction { song in
-                        // The missing-lengths list's Open Song: the song's card in the
-                        // Library with its Length field focused (R88).
+                    .environment(\.openSong, OpenSongAction { song in
+                        // The no-time list's Open Song: the song's card in the Library with
+                        // its Tempo token open (P8-8 section 5.5).
                         session.sidebarSelection = .library
-                        session.library.showSong(song, focusing: .length)
+                        session.library.showSong(song, focusing: .tempo)
                     })
                     .id(id)
                 } else {
