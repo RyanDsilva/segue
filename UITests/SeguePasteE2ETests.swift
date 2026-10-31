@@ -37,8 +37,8 @@ final class SeguePasteE2ETests: XCTestCase {
     Bring her home tonight
     """
 
-    // The async fixtures are main-actor isolated in XCTest, like this class; the
-    // synchronous setUpWithError()/tearDownWithError() overrides are nonisolated.
+    /// The async fixtures are main-actor isolated in XCTest, like this class; the
+    /// synchronous setUpWithError()/tearDownWithError() overrides are nonisolated.
     override func setUp() async throws {
         continueAfterFailure = false
         let base = URL(filePath: "/private/tmp/segue-e2e", directoryHint: .isDirectory)
