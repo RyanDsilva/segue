@@ -41,12 +41,19 @@ struct SongSheetView: View {
     let style: SongSheetStyle
     /// The editor's "Looks like a key change" chips, each above its section (P8-7 6.2).
     var keyChanges: [KeyChangeSuggestion] = []
+    /// The fill span being selected (P8-7 12.1): its capsule gets a row under the landing.
+    @Environment(\.chordSpan) var span
 
     var body: some View {
         // One lazy row per item: a 200-line song only builds the rows on screen, and typing
         // re-renders only the row whose content changed (rows are Equatable).
         LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(SheetRow.rows(of: sections, style: style, keyChanges: keyChanges)) { row in
+            ForEach(SheetRow.rows(
+                of: sections,
+                style: style,
+                keyChanges: keyChanges,
+                capsuleAfter: capsuleLine,
+            )) { row in
                 SheetRowView(row: row, style: style).equatable()
             }
         }
@@ -61,6 +68,8 @@ struct SheetRow: Identifiable, Equatable {
         case repeatNote(String)
         /// The key-change chip above a section (the editor's preview only).
         case keyChange(KeyChangeSuggestion)
+        /// "Create Bass Fill..." under the line holding a fill span's landing (P8-7 12.1).
+        case fillCapsule
     }
 
     /// Section id and item index: stable while the structure is unchanged.
@@ -76,6 +85,7 @@ struct SheetRow: Identifiable, Equatable {
         of sections: [RenderSection],
         style: SongSheetStyle,
         keyChanges: [KeyChangeSuggestion] = [],
+        capsuleAfter: BlockPath? = nil,
     ) -> [Self] {
         var rows: [Self] = []
         for section in sections {
@@ -110,6 +120,15 @@ struct SheetRow: Identifiable, Equatable {
                     topSpacing: index == 0 ? sectionSpacing : style.rowSpacing,
                     sectionPath: index == 0 ? section.path : nil,
                 ))
+                if let capsuleAfter, case let .lyrics(line) = item, line.path == capsuleAfter {
+                    rows.append(Self(
+                        id: "\(section.id).\(index).fill",
+                        label: nil,
+                        isChorus: isChorus,
+                        content: .fillCapsule,
+                        topSpacing: 6,
+                    ))
+                }
             }
         }
         return rows
@@ -155,6 +174,9 @@ private struct SheetRowView: View, Equatable {
             switch row.content {
             case let .keyChange(suggestion):
                 KeyChangeChipRow(suggestion: suggestion)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            case .fillCapsule:
+                FillSpanCapsuleRow()
                     .frame(maxWidth: .infinity, alignment: .leading)
             case let .repeatNote(text):
                 Text(text)
@@ -221,6 +243,8 @@ struct LyricLineView: View {
     @State private var requestedWalkUp: ChangeID?
     /// The chord at the play-along playhead, underlined (P8-6 10.3).
     @Environment(\.playAlongCue) private var cue
+    /// The fill span being selected (P8-7 12.1).
+    @Environment(\.chordSpan) var span
 
     var body: some View {
         let tokens = LyricToken.tokens(for: line)
@@ -261,7 +285,8 @@ struct LyricLineView: View {
                             }
                         }
                         .fixedSize()
-                        .modifier(ChordUnitPlayback(chord: token.source))
+                        .modifier(ChordUnitSpanMark(index: spanIndex(token)))
+                        .modifier(ChordUnitPlayback(chord: token.source, line: line.path))
                     }
                     Text(token.text)
                         .font(Theme.font.liveLyric(size: style.lyricSize))
@@ -277,11 +302,12 @@ struct LyricLineView: View {
             // One element per line, read chords first (WS2b 4.9.2): "G, D: Van door slides
             // and the street lamps hum".
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Self.spokenText(tokens))
+            .accessibilityLabel(Self.spokenText(tokens) { spanPlace($0) })
             .accessibilityAddTraits(.isStaticText)
             .accessibilityIdentifier(AccessibilityID.sheetLine)
             .walkUpActions(tokens.compactMap(\.approach), requested: $requestedWalkUp)
             .modifier(ChordPlayActions(tokens: tokens))
+            .modifier(ChordSpanActionsModifier(line: line.path, tokens: tokens))
         }
     }
 
@@ -302,11 +328,15 @@ struct LyricLineView: View {
     }
 
     /// "<chords>: <lyric>", or the lyric alone when the line has no chords.
-    static func spokenText(_ tokens: [LyricToken]) -> String {
+    static func spokenText(
+        _ tokens: [LyricToken],
+        span: (LyricToken) -> String? = { _ in nil },
+    ) -> String {
         let lyric = tokens.map(\.text).joined().trimmingCharacters(in: .whitespaces)
         let chords = tokens.compactMap { token in
             token.chord.map { chord in
                 spokenChord(chord, detail: token.detail)
+                    + (span(token).map { ", \($0)" } ?? "")
                     + (token.approach.map { ", \($0.accessibility)" } ?? "")
             }
         }

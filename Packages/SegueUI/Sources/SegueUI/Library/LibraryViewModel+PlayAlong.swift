@@ -18,6 +18,10 @@ extension LibraryViewModel {
             }
             // The song's saved fills replace the bass line where they apply (P8-7 13).
             model.fillProvider = { [weak model] built in model?.source?.fills(built) ?? [] }
+            model.openFill = { [weak self] span in
+                guard let self, let id = playAlongSong else { return }
+                openFillEditor(songID: id, span: span)
+            }
             return model
         }
     }

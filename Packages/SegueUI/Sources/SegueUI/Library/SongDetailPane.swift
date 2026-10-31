@@ -58,6 +58,7 @@
             }
             // The bar follows the song shown; another song stops it.
             .onChange(of: render, initial: true) { feedPlayAlong(render) }
+            .modifier(LibraryFills(model: model, record: record, render: render))
             .onChange(of: model.playAlong?.isOpen) { feedPlayAlong(render) }
             // A timing write changes the sidecar only, not the rendered chart.
             .onChange(of: record.sidecar.bass) { feedPlayAlong(render) }
@@ -305,6 +306,8 @@
                         .environment(\.chordHearing, model.chordHearing(render))
                         .environment(\.walkUpAudition, model.walkUpAudition(render))
                         .environment(\.playAlongCue, model.playAlong?.cue)
+                        .environment(\.chordSpan, model.chordSpanActions(record, render: render))
+                        .background(SpanEscape(selection: model.spanSelection))
                 }
                 if !render.diagrams.isEmpty {
                     StripSnapshot(

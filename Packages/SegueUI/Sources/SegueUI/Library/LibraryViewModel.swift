@@ -131,6 +131,17 @@ public final class LibraryViewModel {
     @ObservationIgnored var playAlongSong: SongID?
     /// The last walk-up sidecar write from the library; the next waits for it (P8-4b).
     @ObservationIgnored var walkUpWrite: Task<Void, Never>?
+    /// The fill span selected in the song pane's preview (P8-7 12.1), and its song.
+    @ObservationIgnored let spanSelection = ChordSpanSelection()
+    @ObservationIgnored var spanSong: SongID?
+    /// The fill editor sheet while it is open from the library, and the sheets a gig closed
+    /// (kept for the next open of the same span, never saved).
+    var fillEditor: FillEditorModel?
+    /// A fill sheet opened from the Walk-ups list (presented by the list).
+    @ObservationIgnored weak var listFillEditor: FillEditorModel?
+    @ObservationIgnored var fillDrafts: [String: FillEditorModel] = [:]
+    /// A one-time note after saving a fill with the bass-note view off.
+    var fillNote: String?
     /// The song whose Walk-ups list is open from the library (P8-4b 8.9).
     var walkUpsSongID: SongID?
 

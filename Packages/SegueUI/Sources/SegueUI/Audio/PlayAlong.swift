@@ -31,6 +31,9 @@ final class PlayAlong {
     /// Writes one directive to the song's `.cho` (Tap Timing's "Set song tempo to 96", P8-7
     /// section 7): one undo step in the editor. Nil: not offered.
     @ObservationIgnored var writeDirective: (@MainActor (EditOperation) -> Void)?
+    /// Opens the fill editor on a lane span (indices into the song's written-order
+    /// timeline, P8-7 12.1). Nil: not offered.
+    @ObservationIgnored var openFill: (@MainActor (ClosedRange<Int>) -> Void)?
 
     /// The song as it is now; nil before the preview has rendered.
     private(set) var source: PlayAlongSource?

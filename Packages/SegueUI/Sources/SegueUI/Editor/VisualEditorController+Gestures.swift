@@ -20,6 +20,9 @@
             let location = point(of: event)
             if let pill = pill(at: location) {
                 textView.window?.makeFirstResponder(textView)
+                if spanClick(pill, event: event) {
+                    return true
+                }
                 selectedChord = ChordSelection(
                     path: pill.line.path,
                     offset: pill.chord.offset,
@@ -51,10 +54,28 @@
                 redrawOverlay()
                 return true
             }
-            if selectedChord != nil {
+            if selectedChord != nil || model.spanSelection.anchor != nil {
                 selectedChord = nil
+                model.spanSelection.clear()
+                showSpanCapsule()
                 redrawOverlay()
             }
+            return false
+        }
+
+        /// Shift-click: the fill span from the last pill clicked or played (P8-7 12.1),
+        /// silently (true: handled); a plain click also anchors it.
+        private func spanClick(_ pill: PillLayout, event: NSEvent) -> Bool {
+            guard pill.chord.kind == .chord else { return false }
+            if event.modifierFlags.contains(.shift) {
+                model.extendFillSpan(line: pill.line.path, offset: pill.chord.offset)
+                selectedChord = nil
+                showSpanCapsule()
+                redrawOverlay()
+                return true
+            }
+            model.anchorFillSpan(line: pill.line.path, offset: pill.chord.offset)
+            showSpanCapsule()
             return false
         }
 

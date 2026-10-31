@@ -13,6 +13,8 @@
         case ghost
         /// The original of a pill being dragged.
         case lifted
+        /// Inside the fill span being selected (P8-7 12.1).
+        case inSpan
     }
 
     extension VisualEditorController: CanvasOverlayPainting {
@@ -59,6 +61,12 @@
             )
             if selection == selectedChord {
                 return .selected
+            }
+            if pill.chord.kind == .chord, model.isInFillSpan(
+                line: pill.line.path,
+                offset: pill.chord.offset,
+            ) {
+                return .inSpan
             }
             return switch pill.chord.kind {
             case .chord: .normal
@@ -165,6 +173,14 @@
                 EditorStyle.lineStrong.setStroke()
                 shape.stroke()
                 return EditorStyle.muted
+            case .inSpan:
+                EditorStyle.ground.setFill()
+                shape.fill()
+                EditorStyle.cue.withAlphaComponent(0.18).setFill()
+                shape.fill()
+                EditorStyle.cue.setStroke()
+                shape.stroke()
+                return EditorStyle.cueText
             case .lifted:
                 EditorStyle.ground.setFill()
                 shape.fill()

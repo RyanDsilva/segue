@@ -97,10 +97,12 @@ extension SongEditorViewModel {
         _ prefs: BassPrefs,
         parts: [Part] = [],
         persist: @escaping (SongID, BassPrefs) async throws -> SongRecord,
+        persistParts: ((SongID, [Part]) async throws -> SongRecord)? = nil,
     ) {
         bassPrefs = prefs
         self.parts = parts
         persistBassPrefs = persist
+        self.persistParts = persistParts
         scheduleRender(delay: .zero)
     }
 
@@ -111,6 +113,10 @@ extension SongEditorViewModel {
             details: { [weak self] id in self?.walkUpDetails(id) },
             choose: { [weak self] change, candidate in self?.pickWalkUp(change, candidate) },
             reset: { [weak self] change in self?.resetWalkUp(change) },
+            editFill: { [weak self] id in
+                guard let self, let span = fillSong?.span(of: id) else { return }
+                openFillEditor(span: span)
+            },
         )
     }
 
@@ -148,6 +154,13 @@ extension SongEditorViewModel {
             setFeel: { [weak self] genre in self?.setSongFeel(genre) },
             setScale: { [weak self] mode in self?.setSongScale(mode) },
             remove: { [weak self] picks in self?.removeWalkUps(picks) },
+            fills: fillSong.map(FillListItem.items) ?? [],
+            openFill: { [weak self] id in self?.openFillEditor(part: id) },
+            renameFill: { [weak self] id, name in self?.renameFill(id, to: name) },
+            deleteFills: { [weak self] ids in self?.deleteFills(ids) },
+            fillClosed: { [weak self] sheet, forGig in
+                self?.fillEditorClosed(sheet, forGig: forGig)
+            },
         )
     }
 

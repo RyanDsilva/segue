@@ -225,6 +225,7 @@ extension LibraryViewModel {
             record.sidecar.bass,
             parts: record.sidecar.parts,
             persist: persistBassPrefs(following: base),
+            persistParts: persistParts(following: base),
         )
         closeEditor()
         selection = id
@@ -310,6 +311,20 @@ extension LibraryViewModel {
         { [weak self] id, prefs in
             guard let self else { throw CancellationError() }
             let saved = try await store.updateBassPrefs(id: id, prefs)
+            await applySaved(saved)
+            base.revision.sidecarHash = saved.revision.sidecarHash
+            return saved
+        }
+    }
+
+    /// Fills write the sidecar only, like walk-up picks (P8-7d); the library's record is
+    /// replaced so every view of the song follows.
+    private func persistParts(
+        following base: RevisionBox,
+    ) -> (SongID, [Part]) async throws -> SongRecord {
+        { [weak self] id, parts in
+            guard let self else { throw CancellationError() }
+            let saved = try await store.updateParts(id: id, parts)
             await applySaved(saved)
             base.revision.sidecarHash = saved.revision.sidecarHash
             return saved

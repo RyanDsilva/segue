@@ -24,6 +24,8 @@ struct WalkUpPicking {
     /// nil: "Nothing here".
     var choose: @MainActor (ChordChange, WalkUpCandidate?) -> Void
     var reset: @MainActor (ChordChange) -> Void
+    /// Opens the saved fill covering a change (P8-7 9.3); nil where fills cannot open.
+    var editFill: (@MainActor (PartID) -> Void)?
 }
 
 extension EnvironmentValues {
@@ -50,6 +52,9 @@ struct WalkUpPopover: View {
         VStack(alignment: .leading, spacing: 10) {
             if let details = picking.details(id) {
                 header(details)
+                if let part = details.change.coveredBy {
+                    coveredNote(part)
+                }
                 rows(details.change)
                     .focusable()
                     .focusEffectDisabled()
@@ -152,6 +157,26 @@ struct WalkUpPopover: View {
                 .font(SchibstedGrotesk.medium.font(size: 12))
                 .foregroundStyle(Theme.color.muted)
         }
+    }
+
+    /// "A fill covers this change" (the pick still shows on the passes the fill skips).
+    private func coveredNote(_ part: PartID) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text("A fill covers this change")
+                .font(SchibstedGrotesk.semiBold.font(size: 12))
+                .foregroundStyle(Theme.color.ink)
+            Spacer(minLength: 4)
+            if let editFill = picking.editFill {
+                Button("Edit Fill\u{2026}") {
+                    dismiss()
+                    editFill(part)
+                }
+                .buttonStyle(.segueSecondary)
+                .controlSize(.small)
+            }
+        }
+        .padding(8)
+        .background(Theme.color.cue.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
     }
 
     @ViewBuilder

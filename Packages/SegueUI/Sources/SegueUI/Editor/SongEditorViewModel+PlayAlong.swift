@@ -16,6 +16,7 @@ extension SongEditorViewModel {
         model.writeDirective = { [weak self] operation in
             self?.perform(operation)
         }
+        model.openFill = { [weak self] span in self?.openFillEditor(span: span) }
         // The song's saved fills replace the bass line where they apply (P8-7 section 13).
         model.fillProvider = { [weak model] built in model?.source?.fills(built) ?? [] }
         playAlongStore = model

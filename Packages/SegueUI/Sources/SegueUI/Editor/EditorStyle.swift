@@ -9,6 +9,7 @@
         // MARK: Colours (docs/brand.md section 5)
 
         static let cueText = token("cueText", fallback: .systemRed)
+        static let cue = token("cue", fallback: .systemRed)
         static let ink = token("ink", fallback: .labelColor)
         static let ground = token("ground", fallback: .textBackgroundColor)
         static let muted = token("muted", fallback: .secondaryLabelColor)

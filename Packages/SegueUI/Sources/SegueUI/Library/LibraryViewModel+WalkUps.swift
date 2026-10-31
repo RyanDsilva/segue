@@ -51,6 +51,10 @@ extension LibraryViewModel {
             reset: { [weak self] change in
                 self?.resetWalkUp(songID: id, change: change)
             },
+            editFill: { [weak self] part in
+                guard let self, let span = fillSong(id)?.span(of: part) else { return }
+                openFillEditor(songID: id, span: span)
+            },
         )
     }
 
@@ -94,6 +98,15 @@ extension LibraryViewModel {
                 self?.writeBassPrefs(songID: id) { prefs in
                     prefs.walkUps.removeAll { picks.contains($0) }
                 }
+            },
+            fills: fillSong(id).map(FillListItem.items) ?? [],
+            openFill: { [weak self] part in self?.openFillEditor(songID: id, part: part) },
+            renameFill: { [weak self] part, name in
+                self?.renameFill(songID: id, part, to: name)
+            },
+            deleteFills: { [weak self] parts in self?.deleteFills(songID: id, parts) },
+            fillClosed: { [weak self] sheet, forGig in
+                self?.fillEditorClosed(sheet, forGig: forGig)
             },
         )
     }

@@ -1,3 +1,4 @@
+import AppKit
 import Diagrams
 import Editing
 import MusicTheory
@@ -126,31 +127,44 @@ extension SoundSession {
 }
 
 /// A chord unit that plays when clicked (P8-6 10.1): a pointer cursor and a subtle hover
-/// tint, nothing else; disabled with the show help during a gig.
+/// tint, nothing else; disabled with the show help during a gig. In a preview that selects
+/// fill spans (P8-7 12.1) the click also anchors the span and a shift-click extends it
+/// silently.
 struct ChordUnitPlayback: ViewModifier {
     let chord: RenderChord?
+    /// The unit's line, for span selection.
+    var line: BlockPath?
     @Environment(\.chordHearing) private var hearing
+    @Environment(\.chordSpan) private var span
     @State private var isHovered = false
 
     func body(content: Content) -> some View {
-        if let hearing, let chord, chord.kind == .chord {
+        if let chord, chord.kind == .chord, hearing != nil || (span != nil && line != nil) {
+            let playable = hearing?.isEnabled == true
             content
+                // A selectable chart (the library) would take the click for text selection.
+                .textSelection(.disabled)
                 .padding(.horizontal, 2)
                 .background(
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Theme.color.cueText
-                            .opacity(isHovered && hearing.isEnabled ? 0.12 : 0)),
+                        .fill(Theme.color.cueText.opacity(isHovered && playable ? 0.12 : 0)),
                 )
                 .padding(.horizontal, -2)
                 .contentShape(Rectangle())
                 .onHover { isHovered = $0 }
-                .pointerStyle(hearing.isEnabled ? .link : nil)
+                .pointerStyle(playable || span != nil ? .link : nil)
                 .onTapGesture {
-                    if hearing.isEnabled {
+                    let extending = NSEvent.modifierFlags.contains(.shift)
+                    if let span, let line,
+                       span.click(line: line, chord: chord, extending: extending)
+                    {
+                        return
+                    }
+                    if let hearing, hearing.isEnabled {
                         hearing.play(chord)
                     }
                 }
-                .help(hearing.isEnabled ? "" : SoundGate.offHelp)
+                .help(hearing.map { $0.isEnabled ? "" : SoundGate.offHelp } ?? "")
         } else {
             content
         }

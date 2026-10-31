@@ -149,6 +149,8 @@ public final class SongEditorViewModel {
     /// The song's saved fills (sidecar `parts`, P8-7c): a fill covers its changes in the
     /// preview, the Walk-ups list and play-along.
     var parts: [Part] = []
+    /// Bass fills (P8-7d): the span selection, the fill sheet and the parts writer.
+    @ObservationIgnored let fills = EditorFills()
     @ObservationIgnored var persistBassPrefs: ((SongID, BassPrefs) async throws -> SongRecord)?
     @ObservationIgnored var bassTask: Task<Void, Never>?
     @ObservationIgnored var prefsTask: Task<Void, Never>?
@@ -265,6 +267,7 @@ public final class SongEditorViewModel {
         if chords != paletteChords {
             paletteChords = chords
         }
+        fillsFollowRender()
     }
 
     // MARK: Saving

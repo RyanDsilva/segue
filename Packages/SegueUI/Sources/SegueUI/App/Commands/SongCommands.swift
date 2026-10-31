@@ -15,6 +15,9 @@
                 }
                 .keyboardShortcut(MenuShortcuts.playAlong)
                 .disabled(app.menuPlayAlong == nil)
+                Button(MenuShortcuts.createBassFill.title) { app.createBassFill() }
+                    .keyboardShortcut(MenuShortcuts.createBassFill)
+                    .disabled(!app.canCreateBassFill)
                 Menu("Insert") {
                     ForEach(ChartDirective.allCases) { directive in
                         Button(directive.insertTitle) {
@@ -32,6 +35,26 @@
         var menuEditor: SongEditorViewModel? {
             guard let session, !isPerforming else { return nil }
             return session.library.editor
+        }
+
+        /// Song > Create Bass Fill... (P8-7 12.1): the open editor's span (preview, canvas or
+        /// lane), else the library pane's; never on stage or during a gig.
+        var canCreateBassFill: Bool {
+            guard let session, !isPerforming, sound.isAvailable else { return false }
+            if let editor = session.library.editor {
+                return editor.canCreateFill
+            }
+            guard case .song = session.library.detail else { return false }
+            return session.library.canCreateFill
+        }
+
+        func createBassFill() {
+            guard canCreateBassFill, let session else { return }
+            if let editor = session.library.editor {
+                editor.createFillFromMenu()
+            } else {
+                session.library.createFillFromMenu()
+            }
         }
 
         /// The Play along bar a menu command acts on: the open editor's, else the library

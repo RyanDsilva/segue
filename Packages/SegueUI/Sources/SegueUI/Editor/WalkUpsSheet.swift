@@ -33,6 +33,14 @@ struct WalkUpsSource {
     var setFeel: @MainActor (BassGenre?) -> Void
     var setScale: @MainActor (FillMode?) -> Void
     var remove: @MainActor ([WalkUpPick]) -> Void
+    /// The song's saved fills (P8-7 12.1), the "Fills" group.
+    var fills: [FillListItem] = []
+    /// Opens the fill editor on a saved fill (nil when it no longer applies).
+    var openFill: @MainActor (PartID) -> FillEditorModel? = { _ in nil }
+    var renameFill: @MainActor (PartID, String) -> Void = { _, _ in }
+    var deleteFills: @MainActor ([PartID]) -> Void = { _ in }
+    /// How the fill sheet closed (a gig keeps its drafts).
+    var fillClosed: @MainActor (FillEditorModel, Bool) -> Void = { _, _ in }
 }
 
 /// The Walk-ups list sheet.
@@ -46,6 +54,10 @@ struct WalkUpsSheet: View {
                 header(source)
                 Rule()
                 list(source)
+                if !source.fills.isEmpty {
+                    Rule()
+                    FillsGroup(source: source)
+                }
                 if !source.unmatched.isEmpty {
                     Rule()
                     unmatched(source)

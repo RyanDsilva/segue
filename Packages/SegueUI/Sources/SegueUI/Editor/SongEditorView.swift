@@ -74,6 +74,12 @@
                 )
             }
             .sectionNotesSheet(for: model)
+            .fillEditorSheet(
+                model.fillEditor,
+                set: { model.fillEditor = $0 },
+                closed: { sheet, forGig in model.fillEditorClosed(sheet, forGig: forGig) },
+                note: Binding(get: { model.fillNote }, set: { model.fillNote = $0 }),
+            )
             .onChange(of: model.renderModel) { feedPlayAlong() }
             .onChange(of: model.playAlong?.isOpen) { feedPlayAlong() }
             // Closing the editor (or switching song) stops play-along.
@@ -222,10 +228,13 @@
                             keyChanges: model.keyChangeSuggestions(renderModel),
                         )
                         .environment(\.chordHearing, model.chordHearing)
+                        .environment(\.chordSpan, model.chordSpanActions)
                         .environment(\.chartDirectives, ChartDirectiveActions(model: model))
                         .environment(\.playAlongCue, model.playAlong?.cue)
                         .padding(.horizontal, 40)
                         .padding(.vertical, 24)
+                        // A click off the chords (or Esc) clears a fill span (P8-7 12.1).
+                        .background(SpanEscape(selection: model.spanSelection))
                     }
                 }
                 .followsPlayAlong(model.playAlong?.cue, proxy: proxy)

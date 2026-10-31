@@ -1,6 +1,7 @@
 #if os(macOS)
     import AppKit
     import Editing
+    import SwiftUI
 
     /// The visual canvas (layout b): lyrics with chord pills over syllables, editable
     /// section labels and lyrics, read-only tab/grid.
@@ -45,6 +46,8 @@
         lazy var chipBar = SectionChipBarHost(controller: self)
         /// "Looks like a key change" chips at the right of the bands' caps (P8-7 6.2).
         lazy var keyChips = KeyChangeChipHosts(controller: self)
+        /// "Create Bass Fill..." under the fill span's landing pill (P8-7 12.1).
+        var spanCapsule: NSHostingView<AnyView>?
         /// Section notes per section (P3-13 fills this; the band leaves a badge slot).
         var sectionNoteCount: (BlockPath) -> Int = { _ in 0 }
 
@@ -105,6 +108,7 @@
             container.overlay.needsDisplay = true
             updateChipBar()
             keyChips.layout()
+            showSpanCapsule()
         }
 
         func focus() {

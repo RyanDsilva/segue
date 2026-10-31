@@ -22,10 +22,13 @@ public final class InstrumentProfileStore {
     @ObservationIgnored public var services: ServicesHub = .disabled
 
     @ObservationIgnored private let defaults: UserDefaults
+    /// The fill editor's per-user memory (P8-7 12.2), in the same defaults.
+    @ObservationIgnored let fillEditor: FillEditorSettings
 
     public init(defaults: UserDefaults) {
         self.defaults = defaults
         profile = Self.load(from: defaults)
+        fillEditor = FillEditorSettings(defaults: defaults)
     }
 
     /// The render-time slice (`DisplayOptions.bass`).

@@ -125,6 +125,13 @@
         )
         /// P8-6 10.3: opens or closes the editor's or library's Play along bar.
         static let playAlong = MenuShortcut("Song", "Play Along", "p", [.command, .shift])
+        /// P8-7 12.1: opens the fill editor on the selected chord span.
+        static let createBassFill = MenuShortcut(
+            "Song",
+            "Create Bass Fill\u{2026}",
+            "f",
+            [.command, .option],
+        )
         // Setlist
         static let startShow = MenuShortcut("Setlist", "Start Show", .return)
         static let rehearse = MenuShortcut("Setlist", "Rehearse", .return, [.command, .option])
@@ -158,7 +165,7 @@
         public static let all: [MenuShortcut] = [
             settings, newSong, newSongFromClipboard, importSongs, showInFinder, moveToTrash, close,
             save, undo, redo,
-            refresh, rehearseSong, playSongLive, playAlong,
+            refresh, rehearseSong, playSongLive, playAlong, createBassFill,
             startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak,
             addSongByName,
             arrangeSections, moveUp, moveDown, mainWindow, help, keyboardShortcuts,

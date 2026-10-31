@@ -149,6 +149,10 @@
                         .font(.callout)
                         .foregroundStyle(Theme.color.muted)
                 }
+                if let open = model.openFill, model.span != nil {
+                    Spacer(minLength: 8)
+                    LaneFillButton(model: model, open: open)
+                }
             }
         }
 
@@ -158,6 +162,29 @@
             if !model.setLength(index, text: text) {
                 NSSound.beep()
                 text = shown
+            }
+        }
+    }
+
+    /// "Create Bass Fill..." for a shift-click span in the lane (P8-7 12.1), or why the span
+    /// cannot take one.
+    struct LaneFillButton: View {
+        let model: PlayAlong
+        let open: @MainActor (ClosedRange<Int>) -> Void
+
+        var body: some View {
+            if let problem = model.fillSpanProblem {
+                Text(problem.reason)
+                    .font(.callout)
+                    .foregroundStyle(Theme.color.muted)
+            } else if let span = model.fillSpan {
+                Button("Create Bass Fill\u{2026}") { open(span) }
+                    .buttonStyle(.segueSecondary)
+                    .controlSize(.small)
+                    .disabled(!model.canEditTiming || !model.session.isAvailable)
+                    .help(model.session.isAvailable ? "Make a bass fill over these chords"
+                        : SoundGate.offHelp)
+                    .accessibilityIdentifier(AccessibilityID.fillCreate)
             }
         }
     }

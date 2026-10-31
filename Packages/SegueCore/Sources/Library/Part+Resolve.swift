@@ -111,7 +111,7 @@ public extension PartPlay {
     }
 
     /// A timed chord at concert pitch, spelled in the `{key}` in effect there.
-    internal static func concert(_ chord: TimedChord, transform: DisplayTransform) -> ChordSymbol? {
+    static func concert(_ chord: TimedChord, transform: DisplayTransform) -> ChordSymbol? {
         let transposer = Transposer(
             semitones: transform.concertSemitones,
             sourceKey: chord.key ?? transform.key.writtenKey,
