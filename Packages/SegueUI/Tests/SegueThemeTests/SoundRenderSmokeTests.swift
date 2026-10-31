@@ -10,7 +10,7 @@ import Testing
 struct SoundRenderSmokeTests {
     @Test
     func `bass, chord and click land on time from the bundled bank, unclipped`() throws {
-        let host = AudioEngineHost(offlineBank: SoundBank.bundledURL)
+        let host = AudioEngineHost(offlineBank: SoundBank.sourceURL)
         let fallbacks = Atomic(0)
         host.onBankFallback = { fallbacks.add(1, ordering: .relaxed) }
         let output = AudioEngineSoundOutput(host: host)
@@ -65,13 +65,13 @@ struct SoundRenderSmokeTests {
             NoteEvent(voice: .chord, note: 60, velocity: 80, onset: 0.25, duration: 0.2),
             NoteEvent(voice: .click(.plain), note: 0, velocity: 100, onset: 0.25, duration: 0),
         ] {
-            let host = AudioEngineHost(offlineBank: SoundBank.bundledURL)
+            let host = AudioEngineHost(offlineBank: SoundBank.sourceURL)
             AudioEngineSoundOutput(host: host).schedule([event], in: 0)
             let samples = host.renderOffline(seconds: 0.5)
             let first = try #require(samples.firstIndex { abs($0) > 0.001 })
             #expect(abs(Double(first) / rate - 0.25) <= 512 / rate, "\(event.voice) late")
         }
-        let host = AudioEngineHost(offlineBank: SoundBank.bundledURL)
+        let host = AudioEngineHost(offlineBank: SoundBank.sourceURL)
         let output = AudioEngineSoundOutput(host: host)
         output.schedule(
             [NoteEvent(voice: .bass, note: 40, velocity: 96, onset: 0.30, duration: 0.3)],
@@ -88,7 +88,7 @@ struct SoundRenderSmokeTests {
 struct SoundBankBundleTests {
     @Test
     func `the bank is at most 12 MB of SF2 with every program the app loads`() throws {
-        let url = try #require(SoundBank.bundledURL)
+        let url = try #require(SoundBank.sourceURL)
         let data = try Data(contentsOf: url)
         #expect(data.count <= 12 * 1024 * 1024)
         #expect(data.prefix(4) == Data("RIFF".utf8))
@@ -102,6 +102,19 @@ struct SoundBankBundleTests {
         for program in wanted {
             #expect(presets.contains(program), "program \(program) missing")
         }
+    }
+
+    /// The bank ships once, from the app's Contents/Resources: never as a SegueUI package
+    /// resource, which the Quick Look extension copies too (verify-common.sh checks the app).
+    @Test
+    func `the bank is not in the SegueUI resource bundle`() {
+        #expect(Bundle.module.url(forResource: "SegueSounds", withExtension: "sf2") == nil)
+        #expect(Bundle.module.url(
+            forResource: "SegueSounds",
+            withExtension: "sf2",
+            subdirectory: "Sounds",
+        ) == nil)
+        #expect(SoundBank.bundledURL(in: .module) == nil)
     }
 
     /// The bank-0 programs in the `phdr` chunk (38-byte records, the last is EOP).

@@ -3,7 +3,7 @@
 # drift. Source it from the repo root after defining `prefix` (the line prefix, e.g.
 # "verify-appstore"). Provides `forbidden`, `perf_strings`, `test_hook_strings`,
 # `app_entitlements`, `fail`, `pass`, `failures`, `check_no_test_hooks`,
-# `check_resource_bundle` and `check_third_party_notices`.
+# `check_resource_bundle`, `check_third_party_notices` and `check_sound_bank`.
 
 # Anything that can only come from the personal package or its compilation condition,
 # including Settings > AI > Advanced custom models and the eval code "Check this model" runs
@@ -123,6 +123,7 @@ check_third_party_notices() {
     for file in THIRD_PARTY_NOTICES.md SegueUI_SegueUI.bundle/Contents/Resources/Licenses/GRDB.txt \
         SegueUI_SegueUI.bundle/Contents/Resources/Licenses/Tonic.txt \
         SegueUI_SegueUI.bundle/Contents/Resources/Licenses/Sentry.txt \
+        SegueUI_SegueUI.bundle/Contents/Resources/Licenses/FluidR3.txt \
         SegueUI_SegueUI.bundle/Contents/Resources/Fonts/OFL.txt; do
         [[ -s "$resources/$file" ]] || missing+="$file "
     done
@@ -130,5 +131,19 @@ check_third_party_notices() {
         fail "$label: third-party notices missing from the bundle: $missing"
     else
         pass "$label: third-party notices and licence texts ship in the bundle"
+    fi
+}
+
+# check_sound_bank <label> <app>: the 11 MB sound bank (P8-6 section 12) ships exactly once,
+# at Contents/Resources/SegueSounds.sf2, and nowhere else in the app: not in the SegueUI
+# resource bundle and not in the Quick Look extension, which copies that bundle and never
+# plays a sound.
+check_sound_bank() {
+    local label="$1" app="$2" copies
+    copies=$(find "$app" -iname '*.sf2' -o -iname '*.sf3' -o -iname '*.dls' | sort)
+    if [[ "$copies" == "$app/Contents/Resources/SegueSounds.sf2" ]]; then
+        pass "$label: the sound bank ships once, at Contents/Resources/SegueSounds.sf2"
+    else
+        fail "$label: the sound bank must ship exactly once, at Contents/Resources:"$'\n'"${copies:-none}"
     fi
 }

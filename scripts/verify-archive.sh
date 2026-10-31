@@ -300,6 +300,7 @@ check_8() {
     fi
     check_resource_bundle "8" "$app"
     check_third_party_notices "8" "$app"
+    check_sound_bank "8" "$app"
 }
 
 # MARK: 9. Privacy manifest

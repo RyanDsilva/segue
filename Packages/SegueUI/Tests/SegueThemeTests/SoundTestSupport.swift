@@ -5,6 +5,14 @@ import Services
 import Support
 import Synchronization
 
+extension SoundBank {
+    /// The bank in the source tree: the app ships it from there (Project.swift), and the
+    /// package's tests, which have no app bundle, read it in place.
+    static let sourceURL: URL? = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        .appending(path: "Sources/SegueUI/Audio/Sounds/SegueSounds.sf2")
+}
+
 /// A recording `SoundOutput` (P8-6 section 15.2): what was scheduled, at what time on the
 /// test clock, and every `stopAll`.
 final class RecordingSoundOutput: SoundOutput, @unchecked Sendable {

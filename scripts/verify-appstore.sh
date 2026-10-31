@@ -21,6 +21,8 @@
 #   4. Fails if the embedded SegueUI resource bundle lacks the real identifier or the app's
 #      copyright and version (B-6).
 #   5. Fails unless THIRD_PARTY_NOTICES.md and the licence texts ship in the bundle.
+#   6. Fails unless the sound bank ships exactly once, in the app's Contents/Resources (never
+#      again in the Quick Look extension's copy of the SegueUI bundle, P8-6).
 #
 # The flavors have separate bundle IDs (docs/release/decisions.md R11): the App Store build is
 # dev.ryandsilva.segue (App/SegueAppStore.entitlements), Personal is
@@ -200,6 +202,7 @@ check_quicklook Release-AppStore
 check_no_test_hooks Release-AppStore "$products/Release-AppStore/Segue.app/Contents/MacOS/Segue"
 check_resource_bundle Release-AppStore "$products/Release-AppStore/Segue.app"
 check_third_party_notices Release-AppStore "$products/Release-AppStore/Segue.app"
+check_sound_bank Release-AppStore "$products/Release-AppStore/Segue.app"
 
 build Segue-Personal Release-Personal
 check_entitlements Release-Personal

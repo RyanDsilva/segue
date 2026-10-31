@@ -8,13 +8,16 @@
     /// another bank, re-run the extractor into the same file: the programs below are General
     /// MIDI numbers, so nothing else changes.
     enum SoundBank {
-        /// The bundled SF2 (never SF3: `AVAudioUnitSampler` crashed loading one [A1]).
+        /// The bundled SF2 (never SF3: `AVAudioUnitSampler` crashed loading one [A1]). It
+        /// ships once, in the app's own Contents/Resources (Project.swift), not in the SegueUI
+        /// resource bundle, which the Quick Look extension copies too; so it is found only in
+        /// the app, and the Quick Look extension (which never plays) has none.
         static var bundledURL: URL? {
-            Bundle.module.url(
-                forResource: "SegueSounds",
-                withExtension: "sf2",
-                subdirectory: "Sounds",
-            )
+            bundledURL(in: .main)
+        }
+
+        static func bundledURL(in bundle: Bundle) -> URL? {
+            bundle.url(forResource: "SegueSounds", withExtension: "sf2")
         }
 
         /// The macOS built-in GS bank, loaded in place as the first fallback (never bundled,
