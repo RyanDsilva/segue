@@ -2,7 +2,7 @@
 
 > Canonical context: `docs/00-vision.md` (decisions) and `docs/research.md` (verified facts). This doc is standalone for the phase 5 build session. If it disagrees with the vision doc, the vision doc wins.
 
-Roadmap: after phase 6 (MIDI), before phase 7 (iOS) by the orchestrator's default; Ryan has not ranked phases 5 and 7 (`docs/release/decisions.md` R138). Audio-to-chart (the former goal 1 and sub-milestones 5a-5c) was removed from the roadmap (R132); its earlier design is in git history and `docs/research/phase5-audio.md`.
+Roadmap: after launch, after phase 6 (MIDI input).
 
 ## 1. Goal
 
@@ -42,7 +42,6 @@ public final class PluginRegistry {          // built once at launch, immutable 
 
 - `DraftSong` is core's existing "unsaved song" value (ChordPro AST + metadata + provenance). Every plugin result lands in the same review/correct flow used by paste cleanup (phase 3); nothing is saved without user confirmation.
 - UI asks the registry what is available; it never checks build flags.
-- The audio contract (`AudioAnalyzer`, `AudioAnalysis`, core chord-to-word alignment) went with audio-to-chart (R132).
 
 **Registration.** The Personal scheme's app target links `SeguePersonalModules` and contains one file, `PersonalPlugins.swift`, that calls `SeguePersonalModules.registerAll(into: registry)` at launch. That file belongs only to the Personal target's membership. The App Store target has no such file and no package dependency. No `#if PERSONAL` in shared code.
 
@@ -60,6 +59,29 @@ Decided: the package stays an in-repo folder (`Packages/SeguePersonalModules`); 
 ## 4. Romanization (core)
 
 LRCLIB can return Hindi lyrics in Devanagari. They are converted deterministically to casual Bollywood romanization (no diacritics: "tum hi ho", "pyaar", "dil", "hai") by a `HindiRomanizer` in core: a rule table (consonants, matras, inherent-vowel deletion at word end and in common medial positions, nasalization as "n", nukta forms) plus an override dictionary for frequent words where the casual spelling differs from the rules. No language model in the loop, so output is reproducible. English words in mixed lines pass through unchanged.
+
+### 4.1 Devanagari to casual romanization - research (2026-10-17)
+
+- **Apple ICU `.toLatin` probe** **V** (local run) is ISO-15919-like:
+  - `तुम ही हो` gives "tuma hī hō", `चलते` gives "calatē", `आँखें` gives "ām̐khēṁ", `क्यों` gives "kyōṁ".
+  - Adding `.stripDiacritics` gives "tuma hi ho / calate / amkhem / kyom / divana".
+  - It has no schwa deletion, writes च as "c" (not "ch"), writes anusvara/chandrabindu as "m", and loses vowel length (target style is "aa"/"ee": "pyaar", "deewana").
+  - Verdict: not a usable base, and fixing it with post-rules is no simpler than writing our own table.
+- **Libraries.**
+  - `indic_transliteration` (sanscript) and `common_maps` are **MIT** **V**. They have scheme tables (ITRANS, OPTITRANS, HK, IAST) but **no schwa deletion** (grep of the source finds none). Usable as a reference for the consonant and matra table.
+  - **Aksharamukha is AGPL-3.0** **V** (README) and libindic `indic-trans` is AGPL-3.0 **V**. Avoid both.
+  - IndicXlit (MIT) is an ML model, excluded by the "no language model" rule above.
+  - Google Dakshina's romanization lexicon (Hindi words with *attested casual romanizations*) is **CC BY-SA 4.0** **V** (README).
+- **Override dictionary sources.** Dakshina's frequency-ranked attested spellings would be ideal for the override dictionary, but the share-alike licence would attach to the derived list. Because `HindiRomanizer` lives in core (App Store), **hand-curate the override list ourselves from Bollywood lyric words** and use Dakshina only as a local eval oracle, never shipped.
+- **Approach.** A small deterministic Swift implementation is feasible (~300 lines plus a table):
+  - Grapheme pass with a casual consonant map: च ch, छ chh, श/ष sh, व v/w, ज़ z, फ़ f, ड़ d.
+  - Casual vowels: ा aa, ी ee/i (final i), ू oo/u, ै ai, ौ au, ए/े e, ओ/ो o.
+  - Nasals: ं/ँ become n, or m before labials (प/ब/म).
+  - Schwa deletion: delete word-final inherent a, and delete medial a in a VC_CV context when the following syllable has a full vowel (the classic Narasimhan et al. 2004 rule family **U** for the citation). For example, चलते gives "chalte".
+  - Then the override dictionary.
+- **Conclusion.** Do not build on ICU `.toLatin`. Write our own table with schwa deletion, MIT sanscript tables as a reference, and a hand-curated override list. Dakshina (CC BY-SA) is for eval only and never shipped in core.
+
+(**V** = verified at the cited primary source or by a local probe on macOS 26.6.2, 2026-10-17; **U** = unverified.)
 
 ## 5. Sub-milestones
 
@@ -88,15 +110,14 @@ Integration-first; unit tests only for tricky pure logic.
 
 1. LRCLIB API terms and rate limits re-check; whether synced lyrics help structure.
 2. Page structures of UG, E-Chords and Chordie (UG embeds chart JSON in page data - verify), and Share extension behaviour on macOS 26.
-3. **Licence-clean transliteration:** survey Devanagari -> casual romanization approaches and their licences (rule-based libraries, Apple's `StringTransform`/ICU transliteration and how far its output is from casual style, permissively licensed word lists for the override dictionary) and pick the base for `HindiRomanizer`.
+3. **Licence-clean transliteration:** done - see section 4.1 (own rule table with schwa deletion, hand-curated override list).
 
 ## Resolved decisions
 
-See `docs/decisions.md` and `docs/release/decisions.md` R132-R138.
+See `docs/decisions.md`.
 
 1. **Package location: folder in this repo** (`Packages/SeguePersonalModules`) - absence is enforced by the section 3 checks, not by repo separation.
 2. **URL import sites: Ultimate Guitar, E-Chords/Chordie, plus generic page extraction.**
-3. **Audio-to-chart removed** (R132): the earlier rulings on the default lyrics engine, in-app recording, the accuracy gate, source audio retention and the chord-model fallback are moot.
 
 ## Open questions
 
