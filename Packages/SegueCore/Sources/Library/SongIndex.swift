@@ -17,7 +17,7 @@ struct IndexedSong: Sendable, Equatable {
     /// The song's tags (normalized, see `SongMetadata.normalizedTags`), one per line.
     var tags: String
     /// "Movie / Album": the first `{album}`, "" when none (P8-8 section 4.3).
-    var album: String = ""
+    var album = ""
 }
 
 /// What the indexer needs to decide whether a file changed.

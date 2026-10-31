@@ -123,8 +123,9 @@ public struct SongMatch: Sendable, Equatable {
 /// Scores titles (with the file-name fallback) and, as a weaker signal, first lyric lines;
 /// trailing words naming one of the song's artists qualify a title ("tum hi ho arijit",
 /// "tum hi ho by arijit"), and a line that only names an artist lists their songs (P8-8
-/// section 3.5.1, amending P8-5's "never artists"); never lyrics bodies, albums or tags. Uses the same `RomanNormalizer` forms as library
-/// search so both agree on romanized Hindi spelling variants. Every title and first line
+/// section 3.5.1, amending P8-5's "never artists"); never lyrics bodies, albums or tags.
+/// Uses the same `RomanNormalizer` forms as library search so both agree on romanized
+/// Hindi spelling variants. Every title and first line
 /// is tokenized once in `init`; `bestMatches(for:limit:)` runs per keystroke, in memory,
 /// linear in the number of songs.
 public struct SongMatcher: Sendable {
@@ -148,7 +149,7 @@ public struct SongMatcher: Sendable {
     }
 
     /// One text's words in the three forms, as vocabulary IDs.
-    private struct Words: Sendable {
+    struct Words: Sendable {
         var original: [Int]
         var normalized: [Int]
         var loose: [Int]
@@ -162,7 +163,7 @@ public struct SongMatcher: Sendable {
         }
     }
 
-    private struct Prepared: Sendable {
+    struct Prepared: Sendable {
         var candidate: MatchCandidate
         var title: Words
         var firstLine: Words
@@ -171,7 +172,7 @@ public struct SongMatcher: Sendable {
     }
 
     /// The typed line, prepared once per keystroke.
-    private struct Query {
+    struct Query {
         /// Vocabulary IDs per form (`MatchForm.index`); -1 for a word no song has.
         var ids: [[Int]]
         /// Per form: which vocabulary words the last typed word is a prefix of (nil when the
@@ -184,17 +185,6 @@ public struct SongMatcher: Sendable {
         var byWords: Set<Int> = []
         /// Letters in the typed line (the artist tier needs 4+).
         var letters = 0
-
-        /// The first `count` words as their own query: no word of it is a prefix (the user
-        /// typed past it).
-        func head(_ count: Int) -> Self {
-            Self(
-                ids: ids.map { Array($0.prefix(count)) },
-                lastPrefixOf: ids.map { _ in nil },
-                nearby: Array(nearby.prefix(count)),
-                byWords: byWords.filter { $0 < count },
-            )
-        }
 
         func matches(_ form: MatchForm, _ index: Int, _ word: Int, isLast: Bool) -> Bool {
             if ids[form.index][index] == word {
@@ -309,11 +299,11 @@ public struct SongMatcher: Sendable {
 
     // MARK: - Tiers
 
-    private static let titleTiers: [(MatchTier, Int)] = [
+    static let titleTiers: [(MatchTier, Int)] = [
         (.exactTitle, 100), (.titlePrefix, 90), (.titleWords, 75),
     ]
     private static let firstLineTiers: [(MatchTier, Int)] = [(.titlePrefix, 50), (.titleWords, 45)]
-    private static let allForms = MatchForm.allCases
+    static let allForms = MatchForm.allCases
     private static let firstLineForms: [MatchForm] = [.normalized, .loose]
 
     private func match(_ query: Query, _ song: Prepared, allowsFirstLine: Bool) -> SongMatch? {
@@ -350,74 +340,10 @@ public struct SongMatcher: Sendable {
         return Self.artistMatch(query, song)
     }
 
-    /// The `exactTitle`, `titlePrefix` and `titleWords` tiers for `query`.
-    private static func titleMatch(_ query: Query, _ song: Prepared) -> SongMatch? {
-        let count = query.ids[0].count
-        guard count > 0 else { return nil }
-        for (tier, base) in titleTiers {
-            for form in allForms {
-                let words = song.title[form]
-                guard matches(tier, query, form, words) else { continue }
-                let score = base - form.penalty - min(words.count - count, 5)
-                return SongMatch(id: song.candidate.id, score: score, tier: tier, form: form)
-            }
-        }
-        return nil
-    }
-
-    /// The words before `headCount` with a trailing "by" dropped.
-    private static func trimBy(_ query: Query, _ headCount: Int) -> Int {
-        headCount > 1 && query.byWords.contains(headCount - 1) ? headCount - 1 : headCount
-    }
-
-    /// The artist part the words from `start` on all name (each a distinct word of it; the
-    /// last typed word may be a 4+ letter prefix), else nil.
-    private static func qualifier(_ query: Query, from start: Int, _ song: Prepared) -> String? {
-        let typed = query.ids[MatchForm.normalized.index]
-        guard start < typed.count else { return nil }
-        let last = typed.count - 1
-        let words = Array(start ... last)
-        for artist in song.artists {
-            let found = assigns(words.count, slots: artist.words.count) { index, slot in
-                query.matches(.normalized, words[index], artist.words[slot],
-                              isLast: words[index] == last)
-            }
-            if found {
-                return artist.name
-            }
-        }
-        return nil
-    }
-
-    /// The `artist` tier: the whole line (after a leading "by") is the leading words of one
-    /// of the song's artists, the last typed word possibly a 4+ letter prefix; 4+ letters.
-    private static func artistMatch(_ query: Query, _ song: Prepared) -> SongMatch? {
-        let typed = query.ids[MatchForm.normalized.index]
-        let start = typed.count > 1 && query.byWords.contains(0) ? 1 : 0
-        guard query.letters - (start == 1 ? 2 : 0) >= 4, start < typed.count else { return nil }
-        let last = typed.count - 1
-        for artist in song.artists where typed.count - start <= artist.words.count {
-            let leads = (start ... last).allSatisfy { index in
-                query.matches(.normalized, index, artist.words[index - start],
-                              isLast: index == last)
-            }
-            if leads {
-                return SongMatch(
-                    id: song.candidate.id,
-                    score: 40,
-                    tier: .artist,
-                    form: .normalized,
-                    artist: artist.name,
-                )
-            }
-        }
-        return nil
-    }
-
     /// The `exactTitle`, `titlePrefix` and `titleWords` rules against `words`. A typed word
     /// matches a word when equal or, for the last typed word only, a prefix of it (in the
     /// normalized forms only from `SongIndex.minimumPrefixLength` letters).
-    private static func matches(
+    static func matches(
         _ tier: MatchTier,
         _ query: Query,
         _ form: MatchForm,
@@ -459,7 +385,7 @@ public struct SongMatcher: Sendable {
 
     /// Whether `words` typed words can each be paired with a distinct one of `slots` title
     /// words (any order), where `pairs(word, slot)` says which pairings are allowed.
-    private static func assigns(
+    static func assigns(
         _ words: Int,
         slots: Int,
         _ pairs: (Int, Int) -> Bool,

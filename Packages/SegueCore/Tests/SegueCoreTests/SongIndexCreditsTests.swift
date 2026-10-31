@@ -42,5 +42,4 @@ struct SongIndexCreditsTests {
         _ = lib
         #expect(try await store.search(query: query).titles.sorted() == expected.sorted())
     }
-
 }

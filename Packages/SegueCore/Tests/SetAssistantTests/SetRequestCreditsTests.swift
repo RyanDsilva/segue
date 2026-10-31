@@ -31,8 +31,11 @@ struct SetRequestCreditsTests {
         ("not by atif", [.excludeArtist("Atif Aslam")]),
         ("not from kalank", [.excludeAlbum("Kalank")]),
         ("hindi songs by arijit or atif", [.tag("hindi"), .artist("Arijit Singh")]),
-        ("upbeat by arijit, by atif", [.tag("upbeat"), .artist("Arijit Singh"),
-                                       .artist("Atif Aslam")]),
+        ("upbeat by arijit, by atif", [
+            .tag("upbeat"),
+            .artist("Arijit Singh"),
+            .artist("Atif Aslam"),
+        ]),
     ])
     func `credits read as chips`(text: String, chips: [SetChip]) {
         #expect(Self.lexicon.parse(text).chips == chips)

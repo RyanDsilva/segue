@@ -330,15 +330,13 @@ public extension SetChip {
         case let .tempo(range): range.title
         case let .smartFilter(id): filterName(id) ?? "Smart filter"
         case let .avoidRecent(on): on ? "Avoid recent" : "Recent OK"
-        case .closer, .excludeKey, .excludeTag, .key, .opener, .tag: nameTitle
-        case let .artist(name): "by \(name)"
-        case let .excludeArtist(name): "not by \(name)"
-        case let .album(name): "from \(name)"
-        case let .excludeAlbum(name): "not from \(name)"
+        case .album, .artist, .closer, .excludeAlbum, .excludeArtist, .excludeKey, .excludeTag,
+             .key, .opener, .tag: nameTitle
         }
     }
 
-    /// Tag, key and slot chips: "covers", "no covers", "in G", "opens upbeat".
+    /// Tag, key, slot and credit chips: "covers", "no covers", "in G", "opens upbeat", "by
+    /// Arijit Singh", "from Kalank".
     private var nameTitle: String {
         switch self {
         case let .tag(tag): tag
@@ -347,6 +345,10 @@ public extension SetChip {
         case let .excludeKey(key): "not in \(key)"
         case let .opener(tag): "opens \(tag)"
         case let .closer(tag): "closes \(tag)"
+        case let .artist(name): "by \(name)"
+        case let .excludeArtist(name): "not by \(name)"
+        case let .album(name): "from \(name)"
+        case let .excludeAlbum(name): "not from \(name)"
         default: ""
         }
     }

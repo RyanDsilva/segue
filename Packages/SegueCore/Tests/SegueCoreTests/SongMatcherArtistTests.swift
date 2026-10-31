@@ -34,8 +34,13 @@ struct SongMatcherArtistTests {
         }
     }
 
-    @Test(arguments: ["tum hi ho arijit", "tum hi ho by arijit", "tum hi ho arijit singh",
-                      "Tum Hi Ho Arij", "tum hi ho singh"])
+    @Test(arguments: [
+        "tum hi ho arijit",
+        "tum hi ho by arijit",
+        "tum hi ho arijit singh",
+        "Tum Hi Ho Arij",
+        "tum hi ho singh"
+    ])
     func `a trailing artist picks that song first`(typed: String) throws {
         let matches = Self.matcher.bestMatches(for: typed)
         let first = try #require(matches.first)

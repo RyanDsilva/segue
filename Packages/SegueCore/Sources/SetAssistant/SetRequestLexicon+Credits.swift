@@ -17,42 +17,58 @@ struct CreditNames: Sendable {
     private(set) var longest = 1
 
     init(artists artistValues: [String], albums albumNames: [String]) {
+        let names = Self.artistNames(artistValues)
+        for name in names {
+            Self.add(name, to: &artists, longest: &longest)
+        }
+        for name in names {
+            addLeads(of: name)
+        }
+        for name in albumNames {
+            Self.add(name.trimmingCharacters(in: .whitespaces), to: &albums, longest: &longest)
+        }
+    }
+
+    /// Each stored value's split parts, plus a combined value itself (a legacy "Vishal &
+    /// Shekhar" is one name until someone splits it).
+    private static func artistNames(_ values: [String]) -> [String] {
         var names: [String] = []
-        for value in artistValues {
+        for value in values {
             let parts = SongFilter.artistParts(value)
             names += parts
             if parts.count > 1 {
                 names.append(value.trimmingCharacters(in: .whitespaces))
             }
         }
-        for name in names {
-            let words = SetRequestLexicon.nameWords(name)
-            guard !words.isEmpty else { continue }
-            longest = max(longest, words.count)
-            for key in SetRequestLexicon.keys(words) where artists[key] == nil {
-                artists[key] = name
-            }
+        return names
+    }
+
+    private static func add(
+        _ name: String,
+        to table: inout [String: String],
+        longest: inout Int,
+    ) {
+        let words = SetRequestLexicon.nameWords(name)
+        guard !words.isEmpty else { return }
+        longest = max(longest, words.count)
+        for key in SetRequestLexicon.keys(words) where table[key] == nil {
+            table[key] = name
         }
-        for name in names {
-            let words = SetRequestLexicon.nameWords(name)
-            guard words.count > 1 else { continue }
-            for count in 1 ..< words.count {
-                for key in SetRequestLexicon.keys(Array(words.prefix(count))) {
-                    switch artistLeads[key] {
-                    case nil: artistLeads[key] = .some(name)
-                    case let .some(existing?) where SetRequest.fold(existing) != SetRequest
-                        .fold(name): artistLeads[key] = .some(nil)
-                    default: break
-                    }
+    }
+
+    /// The leading words of a several-word name; shared by two names, they name neither.
+    private mutating func addLeads(of name: String) {
+        let words = SetRequestLexicon.nameWords(name)
+        guard words.count > 1 else { return }
+        for count in 1 ..< words.count {
+            for key in SetRequestLexicon.keys(Array(words.prefix(count))) {
+                guard let existing = artistLeads[key] else {
+                    artistLeads[key] = .some(name)
+                    continue
                 }
-            }
-        }
-        for name in albumNames {
-            let words = SetRequestLexicon.nameWords(name)
-            guard !words.isEmpty else { continue }
-            longest = max(longest, words.count)
-            for key in SetRequestLexicon.keys(words) where albums[key] == nil {
-                albums[key] = name.trimmingCharacters(in: .whitespaces)
+                if let existing, SetRequest.fold(existing) != SetRequest.fold(name) {
+                    artistLeads[key] = .some(nil)
+                }
             }
         }
     }
@@ -65,7 +81,7 @@ struct CreditNames: Sendable {
     /// exactly one name), longest first, and how many words it took.
     func artist(in scan: Scan, at index: Int) -> (String, Int)? {
         longest(in: scan, at: index) { key in
-            artists[key] ?? artistLeads[key] ?? nil
+            artists[key] ?? artistLeads[key].flatMap(\.self)
         }
     }
 

@@ -14,7 +14,7 @@ struct IngestArtistSplitTests {
     static let verse = "\n\nVerse 1\nG        C\nKoi baat hai dil mein\nD        G\nWoh kehna hai\n"
 
     @Test
-    func `H06's credit line splits`() throws {
+    func `the H06 credit line splits`() throws {
         let result = try PasteFixtures.ingest("H06-scale-capo-tab.txt")
         #expect(result.metadata.artists == ["Zoya", "The Village Band"])
         #expect(result.artistSplits == [ArtistSplit(
@@ -26,7 +26,7 @@ struct IngestArtistSplitTests {
     }
 
     @Test
-    func `H08's header splits`() throws {
+    func `the H08 header splits`() throws {
         let result = try PasteFixtures.ingest("H08-codemixed.txt")
         #expect(result.metadata.title == "Late Night Dilli")
         #expect(result.metadata.artists == ["DJ Saahil", "Rhea"])
@@ -51,8 +51,10 @@ struct IngestArtistSplitTests {
     }
 
     @Test(arguments: [
-        ("Singers: Arijit Singh, Shreya Ghoshal & Mithoon",
-         ["Arijit Singh", "Shreya Ghoshal", "Mithoon"]),
+        (
+            "Singers: Arijit Singh, Shreya Ghoshal & Mithoon",
+            ["Arijit Singh", "Shreya Ghoshal", "Mithoon"],
+        ),
         ("Artist: arijit singh, Arijit Singh", ["arijit singh"]),
         ("Artist: Simon and Garfunkel", ["Simon and Garfunkel"]),
         ("Vocals: Salim-Sulaiman", ["Salim-Sulaiman"]),

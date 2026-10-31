@@ -161,8 +161,8 @@ private struct Collector {
         return used
     }
 
-    @discardableResult
     /// Stores one field as given (first wins; artists deduplicated).
+    @discardableResult
     private mutating func store(_ field: MetadataField) -> Bool {
         switch field {
         case let .title(value): return Self.set(&metadata.title, value)

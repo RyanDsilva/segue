@@ -120,7 +120,9 @@ public struct SetBuilder: Sendable {
                   SongFilter.albumForms(request.albums).contains(album)
             else { return false }
         }
-        if let album = song.albumForm, SongFilter.albumForms(request.excludeAlbums).contains(album) {
+        if let album = song.albumForm,
+           SongFilter.albumForms(request.excludeAlbums).contains(album)
+        {
             return false
         }
         return true

@@ -54,14 +54,20 @@ struct SetArtistsEditTests {
 
     @Test(arguments: [
         // After the last {artist}.
-        ("{title: S}\n{artist: A}\n{key: G}\n[G]La\n",
-         "{title: S}\n{artist: A}\n{artist: B}\n{artist: C}\n{key: G}\n[G]La\n"),
+        (
+            "{title: S}\n{artist: A}\n{key: G}\n[G]La\n",
+            "{title: S}\n{artist: A}\n{artist: B}\n{artist: C}\n{key: G}\n[G]La\n",
+        ),
         // After {title} when there is no {artist}.
-        ("{key: G}\n{title: S}\n{capo: 2}\n[G]La\n",
-         "{key: G}\n{title: S}\n{artist: B}\n{artist: C}\n{capo: 2}\n[G]La\n"),
+        (
+            "{key: G}\n{title: S}\n{capo: 2}\n[G]La\n",
+            "{key: G}\n{title: S}\n{artist: B}\n{artist: C}\n{capo: 2}\n[G]La\n",
+        ),
         // After the leading metadata when there is no {title}.
-        ("{key: G}\n{capo: 2}\n[G]La\n",
-         "{key: G}\n{capo: 2}\n{artist: B}\n{artist: C}\n[G]La\n"),
+        (
+            "{key: G}\n{capo: 2}\n[G]La\n",
+            "{key: G}\n{capo: 2}\n{artist: B}\n{artist: C}\n[G]La\n",
+        ),
         // At the top when nothing leads.
         ("[G]La\n", "{artist: B}\n{artist: C}\n[G]La\n"),
         // CRLF files keep CRLF; a last line without an ending.

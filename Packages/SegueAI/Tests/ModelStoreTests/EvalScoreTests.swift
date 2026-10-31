@@ -72,8 +72,8 @@ struct EvalScoreTests {
         let gold = GoldEntry(
             labels: [["other"]],
             title: [nil],
-            artist: [[EvalScore.norm("Zoya & The Village Band")!],
-                     [EvalScore.norm("Zoya")!, EvalScore.norm("The Village Band")!]],
+            artist: [["Zoya & The Village Band"], ["Zoya", "The Village Band"]]
+                .map { names in names.compactMap(EvalScore.norm) },
             key: ["G"],
         )
         func score(_ artists: [String], code: [String]) -> EvalScore {
