@@ -17,6 +17,10 @@
         /// The walk-up shown after the chord, numbered 1, 2, 3 in played order; a note with
         /// no place in the window is left out (its number is kept on the others).
         var walkUp: [WalkStep] = []
+        /// While the chord is inside a saved fill's span: the fill's note count over its
+        /// departing chords ("fill: 5 notes"); `walkUp` then holds the fill's notes over this
+        /// chord, numbered across the whole fill (P8-7 14.4).
+        var fillTotal: Int?
         /// The frets drawn: `BassFretboard.windowFrets` frets.
         var window: ClosedRange<Int>
         var tuning: Tuning
@@ -56,7 +60,9 @@
             if degrees.count > 1 {
                 parts.append("tones " + degrees.joined(separator: ", "))
             }
-            if !walkUp.isEmpty {
+            if let fillTotal {
+                parts.append("fill: \(fillTotal) note" + (fillTotal == 1 ? "" : "s"))
+            } else if !walkUp.isEmpty {
                 parts.append("walk-up \(walkUp.count) note" + (walkUp.count == 1 ? "" : "s"))
             }
             return parts.joined(separator: "; ")
@@ -83,6 +89,31 @@
             state.walkUp = path.enumerated().compactMap { index, position in
                 position.map { WalkStep(number: index + 1, position: $0) }
             }
+            return state
+        }
+
+        /// The same neck with a saved fill's notes over this chord drawn as numbered notes, in
+        /// the walk-up path style (P8-7 14.4): a pinned note at its pin, the others walked
+        /// from the suggested position; numbered in played order across the whole fill; a
+        /// note outside the window is left out (its number kept on the others). None while
+        /// dimmed.
+        func with(fill run: FillRun?) -> Self {
+            guard let run, !dimmed else { return self }
+            var state = self
+            let walked = BassFretboard.walkPath(
+                run.pitches,
+                ascending: nil,
+                from: suggested,
+                frets: window,
+                tuning: tuning,
+            )
+            state.walkUp = walked.indices.compactMap { index in
+                let pin = run.pins.indices.contains(index) ? run.pins[index] : nil
+                let position = pin.flatMap { window.contains($0.fret) ? $0 : nil }
+                    ?? (pin == nil ? walked[index] : nil)
+                return position.map { WalkStep(number: run.firstNumber + index, position: $0) }
+            }
+            state.fillTotal = run.total
             return state
         }
 

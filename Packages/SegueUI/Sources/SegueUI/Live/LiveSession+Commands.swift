@@ -88,6 +88,7 @@
             case .zoomOut: zoom(-1)
             case .resetZoom: zoom(0)
             case .cycleColumns: cycleColumns()
+            case .toggleFillTab: toggleFillTab()
             default: break
             }
         }

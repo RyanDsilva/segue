@@ -27,6 +27,16 @@ extension SongEditorViewModel {
         instrument?.update { $0.fretboard.toggle() }
     }
 
+    /// "Fills as tab" (P8-7 14.2): every saved fill as a mini tab, for every song and the
+    /// stage (the same setting as `t` on stage and Settings > Instrument).
+    var fillsAsTab: Bool {
+        instrument?.profile.fillsAsTab ?? false
+    }
+
+    func toggleFillsAsTab() {
+        instrument?.toggleFillsAsTab(from: .editor)
+    }
+
     /// "Bass, BEADG": the Settings > Instrument tuning.
     var bassInstrumentTitle: String {
         "Bass, " + (instrument?.profile.tuning.name ?? Tuning.bassStandard4.name)

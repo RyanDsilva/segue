@@ -57,6 +57,21 @@ public final class InstrumentProfileStore {
         services.record(.featureUsed(.bassNotes, context))
     }
 
+    /// "Fills as tab" (P8-7 section 14.2): every saved fill as a mini tab, else each fill's
+    /// own choice. `t` on stage, the editor's Bass menu and Settings all set it.
+    public func setFillsAsTab(_ on: Bool, from context: FeatureContext) {
+        guard on != profile.fillsAsTab else { return }
+        update { $0.fillsAsTab = on }
+        if on {
+            services.record(.featureUsed(.fillTab, context))
+        }
+    }
+
+    /// Flips "Fills as tab".
+    public func toggleFillsAsTab(from context: FeatureContext) {
+        setFillsAsTab(!profile.fillsAsTab, from: context)
+    }
+
     /// Walk-ups on charts (P8-4b section 8.7).
     public func setWalkUps(_ density: WalkUpDensity) {
         let wasOff = profile.walkUps == .off

@@ -295,6 +295,8 @@ public struct InputBindingTable: Sendable, Hashable {
             key("p", .togglePlayAlong),
             // The bass-note view, for anyone (P8-4, R158 Q3).
             key("b", .toggleBassNotes),
+            // Saved fills as mini tabs, for anyone (P8-7 section 14.2).
+            key("t", .toggleFillTab),
         ],
     )
 

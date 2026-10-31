@@ -427,6 +427,12 @@
             "B"
           ],
           "title" : "Bass Notes"
+        },
+        {
+          "keys" : [
+            "T"
+          ],
+          "title" : "Fills as Tab"
         }
       ]
     },

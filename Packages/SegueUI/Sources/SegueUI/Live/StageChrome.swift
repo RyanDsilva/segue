@@ -349,7 +349,11 @@
 
         /// Generated from the live bindings, so custom keys show truthfully.
         private var summary: String {
-            let hints = KeyHelp.statusHints(session.context.bindings, kind: session.kind)
+            let hints = KeyHelp.statusHints(
+                session.context.bindings,
+                kind: session.kind,
+                hasFills: session.currentSongHasFills,
+            )
             return (["Song \(session.positionText)"] + hints).joined(separator: "  ·  ")
         }
     }

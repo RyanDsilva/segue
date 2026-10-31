@@ -81,4 +81,7 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case fillEditor
     case fillAudition
     case fillPianoRoll
+    /// P8-7 section 15: "Fills as tab" turned on (stage `t`, the editor's Bass menu,
+    /// Settings).
+    case fillTab
 }

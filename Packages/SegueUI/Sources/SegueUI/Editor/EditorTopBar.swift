@@ -173,6 +173,12 @@
                     .help("Show where to play each chord on the bass (all songs)")
                 }
                 Menu {
+                    Toggle("Fills as Tab", isOn: Binding(
+                        get: { model.fillsAsTab },
+                        set: { _ in model.toggleFillsAsTab() },
+                    ))
+                    .accessibilityIdentifier(AccessibilityID.editorFillsAsTab)
+                    Divider()
                     Button("Instrument Settings\u{2026}") { openInstrumentSettings?() }
                 } label: {
                     Text(model.bassInstrumentTitle)

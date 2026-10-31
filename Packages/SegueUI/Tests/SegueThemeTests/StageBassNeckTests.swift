@@ -78,6 +78,44 @@ struct StageBassNeckTests {
     }
 
     @Test
+    func `a fill's notes are numbered across the whole fill, a pin at its string`() throws {
+        let transform = Self.transform(key: "G", capo: nil)
+        let state = try #require(StageBassNeckState.make(
+            chord: "C",
+            transform: transform,
+            home: 3,
+            tuning: .bassStandard4,
+        ))
+        // The second chord of a fill: its notes D and E are the fill's 3rd and 4th of 5; E is
+        // pinned to the D string (fret 2), D is walked from C on the A string.
+        let run = FillRun(
+            part: "fill",
+            notes: ["D", "E"],
+            chromatic: [false, false],
+            isLast: true,
+            accessibility: "fill: D, E into G",
+            pitches: [PitchClass(2), PitchClass(4)],
+            pins: [nil, FretPosition(string: 2, fret: 2)],
+            firstNumber: 3,
+            total: 5,
+        )
+        let filled = state.with(fill: run)
+        #expect(filled.walkUp == [
+            .init(number: 3, position: FretPosition(string: 1, fret: 5)),
+            .init(number: 4, position: FretPosition(string: 2, fret: 2)),
+        ])
+        #expect(filled.accessibilityValue.hasSuffix("; fill: 5 notes"))
+        #expect(!filled.accessibilityValue.contains("walk-up"))
+        // A pin outside the window is left out, its number kept on the others.
+        var far = run
+        far.pins = [nil, FretPosition(string: 2, fret: 14)]
+        #expect(state.with(fill: far).walkUp.map(\.number) == [3])
+        var dimmed = state
+        dimmed.dimmed = true
+        #expect(dimmed.with(fill: run).walkUp.isEmpty)
+    }
+
+    @Test
     func `the Settings strings and tuning with or without the profile`() throws {
         let transform = Self.transform(key: "D", capo: nil)
         // R163: the neck uses the Settings tuning for anyone, not only for "I play bass".

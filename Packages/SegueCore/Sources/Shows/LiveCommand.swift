@@ -59,6 +59,9 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
     case toggleLoop
     /// The user-level bass-note view on or off, for anyone (`B`, P8-4, R158 Q3).
     case toggleBassNotes
+    /// The user-level "Fills as tab" on or off: every saved fill as a mini tab instead of
+    /// note names (`T`, P8-7 section 14.2, R168 Q8). Display only, Live and Rehearsal.
+    case toggleFillTab
     /// Play bass, chords and click along from the current pass: rehearsals only (`P`, P8-6
     /// 10.4); a gig only flashes.
     case togglePlayAlong
@@ -85,7 +88,7 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
              .jumpToPass6, .jumpToPass7, .jumpToPass8, .jumpToPass9, .toggleLoop,
              .togglePlayAlong:
             .viewport
-        case .toggleBassNotes:
+        case .toggleBassNotes, .toggleFillTab:
             .viewport
         case .endShow, .openSearch, .showKeys, .toggleMetronome, .toggleMetronomeClick,
              .toggleRequests, .toggleSidebar:
@@ -162,6 +165,7 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
         case .toggleLoop: "Loop Section (Rehearsal)"
         case .togglePlayAlong: "Play Along (Rehearsal)"
         case .toggleBassNotes: "Bass Notes"
+        case .toggleFillTab: "Fills as Tab"
         }
     }
 }

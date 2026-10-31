@@ -22,6 +22,25 @@
             flash(instrument.profile.bassNotes ? "Bass notes" : "Chords")
         }
 
+        /// `T`: "Fills as tab" on or off (P8-7 14.2), the same user-level setting as the
+        /// editor's Bass menu and Settings; display only, so it works in Live and Rehearsal
+        /// alike and never makes a sound. A song with no saved fill only flashes.
+        func toggleFillTab() {
+            guard let instrument = context.instrument else { return }
+            guard currentSongHasFills else {
+                flash("No fills in this song")
+                return
+            }
+            instrument.toggleFillsAsTab(from: .stage)
+            relayout()
+            flash(instrument.profile.fillsAsTab ? "Fills as tab" : "Fills as names")
+        }
+
+        /// Whether the current slot's song has a saved fill (the status line then names `T`).
+        var currentSongHasFills: Bool {
+            state.current?.song?.sidecar.parts.isEmpty == false
+        }
+
         /// Whether the mini neck is up: the bass view with its neck on, a laid-out song with
         /// at least one chord, not in a break (past the end and an unavailable song have no
         /// plan). Hidden otherwise, with no placeholder.
@@ -58,6 +77,10 @@
                 )
             } ?? StageBassNeckState.make(drawn: chord.text, home: home, tuning: tuning)
             state?.dimmed = chord.dimmed
+            // A fill covering the change wins: its path, never also the walk-up's (P8-7 14.4).
+            if let fill = chord.fill {
+                return state?.with(fill: fill)
+            }
             return state?.with(walkUp: chord.walkUp)
         }
 

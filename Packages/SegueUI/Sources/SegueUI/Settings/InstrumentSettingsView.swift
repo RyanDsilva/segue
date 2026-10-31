@@ -102,6 +102,16 @@
                 }
                 .accessibilityIdentifier(AccessibilityID.settingsInstrumentGenre)
                 SettingsNote(text: "Songs use this unless you set their own feel.")
+                Picker("Show fills as", selection: Binding(
+                    get: { profile.fillsAsTab },
+                    set: { store.setFillsAsTab($0, from: .settings) },
+                )) {
+                    Text("Each fill\u{2019}s choice").tag(false)
+                    Text("Always tab").tag(true)
+                }
+                .accessibilityIdentifier(AccessibilityID.settingsInstrumentFillsAs)
+                SettingsNote(text: "Note names over the chords, or a small tab under the line. "
+                    + "T flips it on stage.")
             }
             .disabled(!profile.bassNotes)
         }

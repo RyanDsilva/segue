@@ -67,6 +67,22 @@ struct KeyHelpTests {
         #expect(KeyHelp.statusHints(.defaults, kind: .rehearsal).prefix(5) == [
             "← → songs", "A scroll", "1-9 sections", "L loop", "P play along",
         ])
+        // A song with a saved fill names `T` (P8-7 14.2), in a gig and a rehearsal.
+        #expect(KeyHelp.statusHints(.defaults, hasFills: true).prefix(4) == [
+            "← → songs", "A scroll", "1-9 sections", "T fills as tab",
+        ])
+        #expect(KeyHelp.statusHints(.defaults, kind: .rehearsal, hasFills: true)[5]
+            == "T fills as tab")
+    }
+
+    @Test
+    func `t flips fills to tab in the bass group, display only`() throws {
+        let bass = try #require(KeyHelp.groups(.defaults).first { $0.title == "Bass" })
+        #expect(bass.rows.map(\.title) == ["Bass Notes", "Fills as Tab"])
+        #expect(bass.rows.map(\.keys) == [["B"], ["T"]])
+        #expect(InputBindingTable.defaults.command(for: .key(KeyStroke("t"))) == .toggleFillTab)
+        #expect(LiveCommand.toggleFillTab.scope == .viewport)
+        #expect(!LiveCommand.toggleFillTab.repeatsWhenHeld)
     }
 
     @Test

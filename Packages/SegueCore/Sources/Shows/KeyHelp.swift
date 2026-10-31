@@ -28,7 +28,7 @@ public enum KeyHelp {
         ("Sections", LiveCommand.jumps + [.toggleLoop, .togglePlayAlong]),
         ("View", [.zoomIn, .zoomOut, .resetZoom, .cycleColumns]),
         ("Metronome", [.toggleMetronome, .toggleMetronomeClick]),
-        ("Bass", [.toggleBassNotes]),
+        ("Bass", [.toggleBassNotes, .toggleFillTab]),
         ("Panels", [.openSearch, .toggleRequests, .toggleSidebar, .showKeys]),
         ("Show", [.endShow]),
     ]
@@ -62,8 +62,13 @@ public enum KeyHelp {
 
     /// The status line's key hints: the first key of each main command, as before the
     /// table existed ("← → songs  ·  A scroll  ·  1-9 sections  ·  ..."), ending with
-    /// "? keys"; a rehearsal also names its loop key ("L loop").
-    public static func statusHints(_ table: InputBindingTable, kind: ShowKind = .gig) -> [String] {
+    /// "? keys"; a rehearsal also names its loop key ("L loop"), and a song with a saved
+    /// fill its fills-as-tab key ("T fills as tab", P8-7 14.2) after the bass keys' place.
+    public static func statusHints(
+        _ table: InputBindingTable,
+        kind: ShowKind = .gig,
+        hasFills: Bool = false,
+    ) -> [String] {
         func first(_ command: LiveCommand) -> String? {
             table.triggers(for: command).first.map(keycap)
         }
@@ -90,6 +95,9 @@ public enum KeyHelp {
                 }
                 if kind == .rehearsal, let key = first(.togglePlayAlong) {
                     hints.append("\(key) play along")
+                }
+                if hasFills, let key = first(.toggleFillTab) {
+                    hints.append("\(key) fills as tab")
                 }
             }
         }
