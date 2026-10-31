@@ -182,6 +182,34 @@ struct EditPlanner {
         setDirectiveLine(existing?.line, name: name, value: value)
     }
 
+    /// See `EditOperation.insertDirective`.
+    mutating func insertDirective(
+        name: String,
+        value: String,
+        before path: BlockPath,
+    ) throws(EditError) {
+        let trimmed = value.trimmingCharacters(in: .whitespaces)
+        let readable = switch name {
+        case "key":
+            SongKey(parsing: trimmed) != nil
+        case "tempo", "time":
+            !trimmed.isEmpty && Metadata.valueProblem(name: name, value: trimmed) == nil
+        default:
+            false
+        }
+        guard readable, !trimmed.contains("}"), !trimmed.contains("\n") else {
+            throw .invalidDirective(name)
+        }
+        guard snapshot.block(at: path) != nil, let index = snapshot.map.lineOfPath[path] else {
+            throw .invalidPath(path)
+        }
+        snapshot.insertLine(
+            DirectiveLine.canonical(name: name, value: trimmed),
+            afterLine: index == 0 ? nil : index - 1,
+            into: &builder,
+        )
+    }
+
     mutating func setMeta(name: String, value: String?) {
         let existing = snapshot.directiveLines(named: "meta").first { entry in
             Self.firstWord(entry.directive.value)?.lowercased() == name.lowercased()

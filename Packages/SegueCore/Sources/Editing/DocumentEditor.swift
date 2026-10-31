@@ -37,6 +37,12 @@ public enum EditOperation: Sendable, Hashable {
     case setDirective(name: String, value: String?)
     /// Sets `{meta: <name> <value>}` (e.g. `tuning`); `nil` removes it.
     case setMeta(name: String, value: String?)
+    /// Inserts one canonical `{key: A}`, `{time: 3/4}` or `{tempo: 120}` line as its own line
+    /// just before the block at `before` (a section header: top-level, before it; a line
+    /// inside a section: as a section item before it), applying from there (P8-7 section
+    /// 6.1, R167 Q2). Only `key`, `time` and `tempo`; throws `invalidDirective` for another
+    /// name or a value that does not read back.
+    case insertDirective(name: String, value: String, before: BlockPath)
     /// Replaces every `{define}` with the same name by one canonical define, or inserts it
     /// after the leading metadata directives.
     case setDefine(ChordDefinition)
@@ -125,6 +131,8 @@ public enum EditError: Error, Sendable, Hashable {
     case sectionKindsDiffer(BlockPath, BlockPath)
     /// Note text that would not read back as one comment directive with that text.
     case notCommentText(String)
+    /// A positional directive other than `key`, `time` or `tempo`, or a value it cannot read.
+    case invalidDirective(String)
 }
 
 /// Plans tree operations as minimal text edits (phase 1 spec, "Sync between modes").
@@ -137,7 +145,9 @@ public enum DocumentEditor {
         in snapshot: SourceSnapshot,
     ) throws(EditError) -> SourceChange {
         var planner = EditPlanner(snapshot: snapshot)
-        let name: String = if let lyric = try planLyricOperation(operation, with: &planner) {
+        let name: String = if case let .insertDirective(directive, value, path) = operation {
+            try planInsertDirective(directive, value: value, before: path, with: &planner)
+        } else if let lyric = try planLyricOperation(operation, with: &planner) {
             lyric
         } else if let section = try planSectionOperation(operation, with: &planner) {
             section
@@ -211,12 +221,28 @@ public enum DocumentEditor {
             planner.removeDefine(name: define)
             return "Remove Chord Shape"
         case .changeSectionKind, .createSection, .deleteChord, .duplicateChord, .editComments,
-             .editLyrics, .insertChord, .insertComment, .joinWithPrevious, .mergeSections,
-             .moveChord,
+             .editLyrics, .insertChord, .insertComment, .insertDirective, .joinWithPrevious,
+             .mergeSections, .moveChord,
              .moveSectionEdge, .removeComment,
              .replaceChord, .setCommentText, .setSectionKind, .splitLine,
              .splitSection, .unwrapSection, .wrapSection:
             return ""
+        }
+    }
+
+    /// A positional `{key}`, `{time}` or `{tempo}` (P8-7 section 6.1).
+    private static func planInsertDirective(
+        _ directive: String,
+        value: String,
+        before path: BlockPath,
+        with planner: inout EditPlanner,
+    ) throws(EditError) -> String {
+        let name = DirectiveLine.canonicalName(directive)
+        try planner.insertDirective(name: name, value: value, before: path)
+        return switch name {
+        case "key": "Insert Key Change"
+        case "time": "Insert Time Change"
+        default: "Insert Tempo Change"
         }
     }
 
