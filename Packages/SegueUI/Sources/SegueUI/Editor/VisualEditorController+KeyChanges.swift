@@ -5,7 +5,7 @@
     import SwiftUI
 
     /// The visual canvas's key-change chips and directive inserts (P8-7 sections 6.1, 6.2): a
-    /// chip at the right of a section band's cap row when its chords look like another key,
+    /// chip just above a section band when its chords look like another key,
     /// and "Insert Key / Time / Tempo Change Here..." in the band's menu.
     extension VisualEditorController {
         /// The section menu's insert items, for the section at `path` (its header).
@@ -100,7 +100,7 @@
             layout()
         }
 
-        /// Puts each chip at the right of its band's cap row, or hides it.
+        /// Puts each chip just above its band, or hides it.
         func layout() {
             guard let controller else { return }
             var placed = Set<Int>()
@@ -111,11 +111,15 @@
                       let frame = controller.bandFrame(band), frame.topVisible
                 else { continue }
                 let host = host(for: suggestion, in: controller)
-                let size = host.fittingSize
-                let textView = controller.textView
-                let right = textView.bounds.width - textView.textContainerInset.width
-                let corner = textView.convert(
-                    CGPoint(x: right - size.width, y: frame.rect.minY),
+                let fitting = host.fittingSize
+                let size = CGSize(width: ceil(fitting.width), height: ceil(fitting.height))
+                // In the gap above the band, where the lyrics start, as the preview has it:
+                // it never covers a line.
+                let corner = controller.textView.convert(
+                    CGPoint(
+                        x: controller.laneX.upperBound + CanvasTypesetting.bandLaneGap - 2,
+                        y: frame.rect.minY - size.height - 4,
+                    ),
                     to: controller.container,
                 )
                 let container = controller.container

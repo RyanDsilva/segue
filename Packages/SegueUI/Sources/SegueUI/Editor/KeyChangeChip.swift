@@ -82,8 +82,10 @@
             .padding(.leading, 10)
             .padding(.trailing, 4)
             .padding(.vertical, 3)
-            .background(Theme.color.surfaceAlt, in: Capsule())
-            .overlay { Capsule().strokeBorder(Theme.color.line, lineWidth: 1) }
+            .background {
+                Capsule().fill(Theme.color.surfaceAlt)
+                Capsule().inset(by: 0.5).stroke(Theme.color.line, lineWidth: 1)
+            }
             .fixedSize()
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Looks like a key change to \(suggestion.key.name)")

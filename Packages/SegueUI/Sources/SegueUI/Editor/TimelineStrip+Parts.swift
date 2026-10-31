@@ -74,10 +74,10 @@
         var body: some View {
             ZStack(alignment: .trailing) {
                 Rectangle()
-                    .fill(Theme.color.cueText.opacity(0.10))
+                    .fill(Theme.color.cueText.opacity(0.18))
                     .frame(width: width)
                 Rectangle()
-                    .fill(Theme.color.cueText.opacity(0.55))
+                    .fill(Theme.color.cueText.opacity(0.8))
                     .frame(width: 1, height: TimelineStrip.blockHeight * 0.4)
             }
             .frame(height: TimelineStrip.blockHeight)
