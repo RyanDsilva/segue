@@ -207,9 +207,11 @@ struct WalkUpPopover: View {
         let notes = candidate.notes.map(\.chartName)
         let index = Int(letter.unicodeScalars.first?.value ?? 65) - 65
         let spoken = "option \(letter), \(notes.joined(separator: ", ")) into \(change.toName)"
-        return HStack(spacing: 0) {
+        // The play button and "Use this" line up with the option's notes, not its second line.
+        return HStack(alignment: .top, spacing: 0) {
             if audition != nil {
                 playButton(index, change: change, label: spoken)
+                    .padding(.top, 5)
             }
             rowButton(
                 letter: letter,
@@ -219,6 +221,7 @@ struct WalkUpPopover: View {
                 selected: selected,
             )
             useButton(index, change: change)
+                .padding(.top, 5)
         }
     }
 
