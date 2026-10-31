@@ -189,6 +189,12 @@
             playAlongFollow.target = target
             scroller.seek(to: target, at: now)
             self.scroller = scroller
+            startFollowEase(from: from, at: now)
+        }
+
+        /// Eases the scroll from `from` to where the scroller now is over 0.25 s (none with
+        /// Reduce Motion).
+        private func startFollowEase(from: Double, at now: Date) {
             guard !Self.reducesMotion else { return }
             playAlongFollow.ease = PlayAlongFollow.Ease(from: from, start: now)
             // Frames only for the ease, not for as long as play-along plays.

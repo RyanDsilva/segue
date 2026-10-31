@@ -281,7 +281,9 @@
                 if reduceMotion {
                     proxy.scrollTo(row, anchor: anchor)
                 } else {
-                    withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo(row, anchor: anchor) }
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        proxy.scrollTo(row, anchor: anchor)
+                    }
                 }
             }
         }
