@@ -1,12 +1,12 @@
 ---
 title: The song card
-description: Title, artist, key, tempo, length and more on one card. Segue writes the ChordPro for you; the file stays standard.
+description: Title, artists, Movie / Album, key, tempo and more on one card. Segue writes the ChordPro for you; the file stays standard.
 ---
 import Shot from '../../components/Shot.astro';
 
 The song card sits above the song in the library and in the editor. Click any field to change it. Segue writes it into the song's ChordPro file, or into the small details file beside it for tags and proficiency.
 
-<Shot id="card" alt="The song card with title, artist, key, tempo, length, proficiency and tags" callouts={['key', 'tempo', 'length']} />
+<Shot id="card" alt="The song card with title, artists, key, tempo, proficiency and tags" callouts={['key', 'tempo', 'artists']} />
 
 ## Artists and Movie / Album {#artists}
 
@@ -18,7 +18,7 @@ Artists are chips. Type a name and press <kbd>Return</kbd> or <kbd>,</kbd> to ad
 
 ## Set essentials {#essentials}
 
-Key, length and tempo are the **set essentials**: Segue uses them to time a set and plan its flow. A small dot marks each one that is missing, on the card and on the song's row in the library. The **Missing essentials** filter in the sidebar lists every song that needs one.
+Key and tempo are the **set essentials**: Segue uses them to time a set and plan its flow. A small dot marks each one that is missing, on the card and on the song's row in the library. The **Missing essentials** filter in the sidebar lists every song that needs one.
 
 ## Key {#key}
 
@@ -26,13 +26,7 @@ Pick the key and Major or Minor. If the song has no key yet, Segue suggests one 
 
 ## Tempo {#tempo}
 
-Type the beats per minute, or tap along with the song: each tap updates the tempo.
-
-## Length {#length}
-
-Type a length like `4:05`. Or click **Time it**, play the song, and click **Stop**: the time becomes the length. <kbd>Esc</kbd> cancels. Segue never guesses a length; a song without one shows as unknown in set totals.
-
-<Shot id="card-time-it" alt="Time it running on the song card" />
+Type the beats per minute, or tap along with the song: each tap updates the tempo. The tempo also sets the song's time in a set: Segue counts the bars you play at that tempo (see [Running time](/guide/running-time)). A song with no tempo has no time, and set totals show it as unknown.
 
 ## Capo, time signature, proficiency and tags {#more}
 

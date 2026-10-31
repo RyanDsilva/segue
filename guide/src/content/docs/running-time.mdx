@@ -1,10 +1,12 @@
 ---
 title: Breaks, changeover and running time
-description: Split a set into parts with breaks, add changeover time between songs and see which songs still need a length.
+description: Split a set into parts with breaks, add changeover time between songs and see each song's time from its tempo and the bars you play.
 ---
 import Shot from '../../components/Shot.astro';
 
-The builder adds up the songs' lengths into a running time for each part and the whole set, next to the setlist's target if it has one.
+Each song's time comes from its tempo and the bars you play: Segue counts the bars of the chart (one bar per chord unless the chart or your [chord timing](/guide/chord-timing) says otherwise) at the song's tempo. An [arranged](/guide/arrange-sections) slot counts only the passes it plays, so a skipped section adds nothing and a chorus played twice counts twice.
+
+The **Time** column shows each song's time, for example "3:40". Hover over it to see the tempo and the number of bars. A time that rests on Segue's default of one bar per chord reads "~3:40": correct the chord lengths in [Chord timing](/guide/chord-timing) to make it exact. The builder adds the times into a running time for each part and the whole set, next to the setlist's target if it has one.
 
 <Shot id="timeline" alt="The set with Set 1, a break and Set 2, each with its own total" />
 
@@ -20,8 +22,10 @@ Choose **Edit Break…** on a break row to give it a length. It counts in the wh
 
 Changeover is the time between songs: tuning, a sip of water, a word to the crowd. Set it for a setlist under **Details…**, or set the default in **Settings > General**. It is added after every song but the last of each part.
 
-## Songs with no length {#unknown}
+## Songs with no time {#unknown}
 
-Segue never guesses a length. A song with no length adds nothing, and the total says how many are unknown, for example "38:20 + 2 unknown", so it never looks more precise than it is. Click "unknown" to list exactly which songs need one, then type a length or time the song.
+Segue never guesses a time. A song has none when it has no tempo, or no chords to count. Its row reads "--:--", it adds nothing, later start times become "at least" times like "≥13:50", and the total says how many are unknown, for example "≥38:20 + 2 unknown", so it never looks more precise than it is.
 
-<Shot id="missing-lengths" alt="The list of songs without a length" />
+Click "unknown" to list exactly which songs have no time. For a song with no tempo, type one in its row, or click **Tap** and tap along, then press <kbd>Return</kbd>: Segue writes the tempo into the song and every total updates. A song with no chords says "No chords to time"; click **Open Song** to add them.
+
+<Shot id="missing-times" alt="The list of songs with no time, each with a Tempo field" />
