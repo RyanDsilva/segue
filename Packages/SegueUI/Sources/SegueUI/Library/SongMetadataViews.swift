@@ -2,6 +2,10 @@
     import Library
     import SwiftUI
 
+    /// The narrowest `SongMetadataSection` keeps its label column: the labels, the gap and
+    /// the proficiency picker at its natural width.
+    private let metadataGridMinWidth: CGFloat = 380
+
     /// The editable metadata above the chart: proficiency (Learning / Ready / Pro), tags,
     /// play history, the song's stage notes and its section notes (P3-13). Every change
     /// saves at once: metadata through `LibraryStore.updateMetadata`, section notes through
@@ -12,43 +16,52 @@
         @State private var isEditingSectionNotes = false
         @State private var notesDraft: String?
         @FocusState private var notesFocused: Bool
+        /// Too narrow for the label column beside the proficiency picker: each label goes
+        /// above its value instead.
+        @State private var isNarrow = false
 
         var body: some View {
-            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 16, verticalSpacing: 12) {
-                GridRow {
-                    label("Proficiency")
-                    ProficiencyPicker(
-                        selection: record.sidecar.proficiency,
-                        isDisabled: record.isReadOnly,
-                    ) { level in
-                        save { $0.proficiency = level }
+            Group {
+                if isNarrow {
+                    VStack(alignment: .leading, spacing: 14) {
+                        stacked("Proficiency") { proficiency }
+                        stacked("Tags") { tags }
+                        stacked("Played") { played }
+                        stacked("Notes") { songNotes }
+                        stacked("Sections") { sectionNotes }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Grid(
+                        alignment: .leadingFirstTextBaseline,
+                        horizontalSpacing: 16,
+                        verticalSpacing: 12,
+                    ) {
+                        GridRow {
+                            label("Proficiency")
+                            proficiency
+                        }
+                        GridRow {
+                            label("Tags")
+                            tags
+                        }
+                        GridRow {
+                            label("Played")
+                            played
+                        }
+                        GridRow {
+                            label("Notes")
+                            songNotes
+                        }
+                        GridRow {
+                            label("Sections")
+                            sectionNotes
+                        }
                     }
                 }
-                GridRow {
-                    label("Tags")
-                    TagEditor(
-                        tags: record.sidecar.tags,
-                        suggestions: model.tagNames,
-                        isDisabled: record.isReadOnly,
-                    ) { tags in
-                        save { $0.tags = tags }
-                    }
-                }
-                GridRow {
-                    label("Played")
-                    Text(playHistory)
-                        .font(Theme.font.body)
-                        .foregroundStyle(Theme.color.muted)
-                        .accessibilityIdentifier(AccessibilityID.songPlayStats)
-                }
-                GridRow {
-                    label("Notes")
-                    songNotes
-                }
-                GridRow {
-                    label("Sections")
-                    sectionNotes
-                }
+            }
+            .onGeometryChange(for: Bool.self) { $0.size.width < metadataGridMinWidth } action: {
+                isNarrow = $0
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.songMeta)
@@ -62,6 +75,45 @@
             }
             .onChange(of: record.id) {
                 notesDraft = nil
+            }
+        }
+
+        private var proficiency: some View {
+            ProficiencyPicker(
+                selection: record.sidecar.proficiency,
+                isDisabled: record.isReadOnly,
+            ) { level in
+                save { $0.proficiency = level }
+            }
+            .fixedSize()
+        }
+
+        private var tags: some View {
+            TagEditor(
+                tags: record.sidecar.tags,
+                suggestions: model.tagNames,
+                isDisabled: record.isReadOnly,
+            ) { tags in
+                save { $0.tags = tags }
+            }
+        }
+
+        private var played: some View {
+            Text(playHistory)
+                .font(Theme.font.body)
+                .foregroundStyle(Theme.color.muted)
+                .accessibilityIdentifier(AccessibilityID.songPlayStats)
+        }
+
+        private func stacked(
+            _ title: String,
+            @ViewBuilder content: () -> some View,
+        ) -> some View {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(Theme.font.label)
+                    .foregroundStyle(Theme.color.muted)
+                content()
             }
         }
 

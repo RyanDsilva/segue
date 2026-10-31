@@ -71,25 +71,63 @@
             }
         }
 
+        /// The narrowest the title gets beside the buttons: a 30pt word or two.
+        private static let titleMinWidth: CGFloat = 220
+
+        /// Title and buttons on one line while the title keeps `titleMinWidth`: all four
+        /// buttons, else "…" and Edit (Rehearse and Live are in "…", and on the selected
+        /// list row). Narrower still, the buttons go under the artist.
         private func header(_ render: RenderModel) -> some View {
+            ViewThatFits(in: .horizontal) {
+                headerRow(render, sessionButtons: true)
+                headerRow(render, sessionButtons: false)
+                VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        titleView(render)
+                        artistView
+                    }
+                    ViewThatFits(in: .horizontal) {
+                        headerButtons(sessionButtons: true)
+                        headerButtons(sessionButtons: false)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+
+        private func headerRow(_ render: RenderModel, sessionButtons: Bool) -> some View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 16) {
+                    // Ideal width is the minimum, so ViewThatFits measures the row at the
+                    // narrowest title it allows; laid out, the title takes the rest.
                     titleView(render)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    HStack(spacing: 8) {
-                        moreMenu
-                        SongSessionButtons(songID: record.id)
-                        Button("Edit") { model.beginEditing(record) }
-                            .buttonStyle(.segueSecondary)
-                            .help(record.isReadOnly ? "This song is read-only" : "Edit ChordPro")
-                            .disabled(record.isReadOnly)
-                            .accessibilityIdentifier(AccessibilityID.editSong)
-                    }
-                    .controlSize(.large)
-                    .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 6 }
+                        .frame(
+                            minWidth: Self.titleMinWidth,
+                            idealWidth: Self.titleMinWidth,
+                            maxWidth: .infinity,
+                            alignment: .leading,
+                        )
+                    headerButtons(sessionButtons: sessionButtons)
+                        .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 6 }
                 }
                 artistView
             }
+        }
+
+        private func headerButtons(sessionButtons: Bool) -> some View {
+            HStack(spacing: 8) {
+                moreMenu
+                if sessionButtons {
+                    SongSessionButtons(songID: record.id)
+                }
+                Button("Edit") { model.beginEditing(record) }
+                    .buttonStyle(.segueSecondary)
+                    .help(record.isReadOnly ? "This song is read-only" : "Edit ChordPro")
+                    .disabled(record.isReadOnly)
+                    .accessibilityIdentifier(AccessibilityID.editSong)
+            }
+            .controlSize(.large)
+            .fixedSize()
         }
 
         // MARK: Title and artist, edited in place
