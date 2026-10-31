@@ -33,8 +33,12 @@ struct KeyHelpTests {
         let sections = try #require(groups.first { $0.title == "Sections" })
         #expect(titles.firstIndex(of: "Sections") == titles.firstIndex(of: "Scrolling")
             .map { $0 + 1 })
-        #expect(sections.rows.map(\.title) == ["Jump to Section", "Loop Section (Rehearsal)"])
-        #expect(sections.rows.map(\.keys) == [["1-9"], ["L"]])
+        #expect(sections.rows.map(\.title) == [
+            "Jump to Section", "Loop Section (Rehearsal)", "Play Along (Rehearsal)",
+        ])
+        #expect(sections.rows.map(\.keys) == [["1-9"], ["L"], ["P"]])
+        #expect(LiveCommand.togglePlayAlong.scope == .viewport)
+        #expect(!LiveCommand.togglePlayAlong.repeatsWhenHeld)
         #expect(!groups.flatMap(\.rows).contains { $0.title == "Collapse Repeats" })
         #expect(LiveCommand.jumpToPass4.title == "Jump to Section 4")
         #expect(LiveCommand.jumpToPass4.jumpIndex == 3)
@@ -48,7 +52,7 @@ struct KeyHelpTests {
             InputBinding(.key(KeyStroke("3")), .next),
         ])
         let rows = try #require(KeyHelp.groups(rebound).first { $0.title == "Sections" }).rows
-        #expect(rows.count == 10)
+        #expect(rows.count == 11)
         #expect(rows[2].keys.isEmpty)
         #expect(!KeyHelp.statusHints(rebound).contains("1-9 sections"))
     }
@@ -59,9 +63,9 @@ struct KeyHelpTests {
             "← → songs", "A scroll", "1-9 sections", "C columns", "⌘K search", "S set order",
             "Q requests", "⌘. end", "? keys",
         ])
-        // A rehearsal names its loop key.
-        #expect(KeyHelp.statusHints(.defaults, kind: .rehearsal).prefix(4) == [
-            "← → songs", "A scroll", "1-9 sections", "L loop",
+        // A rehearsal names its loop and play-along keys.
+        #expect(KeyHelp.statusHints(.defaults, kind: .rehearsal).prefix(5) == [
+            "← → songs", "A scroll", "1-9 sections", "L loop", "P play along",
         ])
     }
 

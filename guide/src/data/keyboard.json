@@ -158,6 +158,17 @@
       "items" : [
         {
           "keys" : [
+            "⇧⌘P"
+          ],
+          "title" : "Play Along"
+        }
+      ],
+      "menu" : "Song"
+    },
+    {
+      "items" : [
+        {
+          "keys" : [
             "⌘↩"
           ],
           "title" : "Start Show"
@@ -346,6 +357,12 @@
             "L"
           ],
           "title" : "Loop Section (Rehearsal)"
+        },
+        {
+          "keys" : [
+            "P"
+          ],
+          "title" : "Play Along (Rehearsal)"
         }
       ]
     },

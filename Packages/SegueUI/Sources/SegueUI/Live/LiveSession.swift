@@ -65,6 +65,8 @@
         public let search: QuickSearchModel
         /// The stage metronome (R90); its click exists only in a rehearsal.
         public let metronome: StageMetronome
+        /// Rehearsal play-along (`P`, P8-6 10.4); nil in a gig, always (`attachSound`).
+        var playAlong: StagePlayAlong?
         /// A short message on the stage ("No requests queued."); cleared by the next command.
         public var notice: String?
 
@@ -100,6 +102,10 @@
         @ObservationIgnored var currentTimeline: SongTimeline?
         /// The current pass as the stage last saw it (the scale line and metronome follow it).
         var shownPass: Int?
+        /// Rehearsal play-along's follow state (see LiveSession+PlayAlong.swift).
+        @ObservationIgnored var playAlongFollow = PlayAlongFollow()
+        /// A follow ease is under way: the stage redraws every frame only meanwhile.
+        var isEasingFollow = false
         /// What the stage does with the current item's arrangement (R122); nil = the item
         /// plays the full song as written.
         var currentArrangement: ArrangementState?
@@ -214,6 +220,7 @@
 
         /// The stage went away: release the assertion and stop the timer.
         func stop() {
+            stopPlayAlong()
             stopLoop()
             metronome.stop()
             flushTask?.cancel()
@@ -304,6 +311,9 @@
                 || newState.current?.song != state.current?.song
             state = newState
             metronome.follow(newState)
+            if changed || newState.record.currentBreak != nil {
+                stopPlayAlong()
+            }
             if changed {
                 laidOutItem = nil
             }
@@ -313,6 +323,7 @@
         /// "End Show" confirmed: ends the run through the app (gig log, Shortcut, review).
         public func confirmEnd() {
             overlay = nil
+            stopPlayAlong()
             stopLoop()
             metronome.stop()
             enqueue { session in

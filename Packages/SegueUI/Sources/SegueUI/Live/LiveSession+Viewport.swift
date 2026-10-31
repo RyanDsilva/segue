@@ -116,7 +116,9 @@
             let speed = scrollSpeed(newPlan, song: song, item: slot, prefs: prefs)
             if laidOutItem != item || scroller == nil {
                 laidOutItem = item
-                // A new song: the current pass follows its scroll and any loop ends.
+                // A new song: the current pass follows its scroll and any loop (and Rehearsal
+                // play-along) ends.
+                stopPlayAlong()
                 clearPinnedPass()
                 stopLoop()
                 var fresh = AutoScroller(speed: speed, overflow: newPlan.overflow)
@@ -180,7 +182,7 @@
 
         /// The scroll offset in points at `now`.
         func scrollOffset(at now: Date) -> Double {
-            scroller?.offset(at: now) ?? 0
+            followEased(scroller?.offset(at: now) ?? 0, at: now)
         }
 
         /// The scroll position 0...1 at `now` (0 when the song fits).
@@ -189,8 +191,10 @@
             return min(1, max(0, scrollOffset(at: now) / plan.overflow))
         }
 
+        /// Whether the stage scroll moves by itself (auto-scroll, or Rehearsal play-along's
+        /// short follow ease), so the views redraw every frame.
         var isAutoScrolling: Bool {
-            scroller?.phase == .running
+            scroller?.phase == .running || isEasingFollow
         }
 
         /// The footer's auto-scroll state; nil when the song fits (nothing to scroll).

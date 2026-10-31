@@ -59,6 +59,9 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
     case toggleLoop
     /// The user-level bass-note view on or off, for anyone (`B`, P8-4, R158 Q3).
     case toggleBassNotes
+    /// Play bass, chords and click along from the current pass: rehearsals only (`P`, P8-6
+    /// 10.4); a gig only flashes.
+    case togglePlayAlong
 
     /// Who handles a command.
     public enum Scope: Sendable, Hashable {
@@ -79,7 +82,8 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
              .zoomIn, .zoomOut:
             .viewport
         case .jumpToPass1, .jumpToPass2, .jumpToPass3, .jumpToPass4, .jumpToPass5,
-             .jumpToPass6, .jumpToPass7, .jumpToPass8, .jumpToPass9, .toggleLoop:
+             .jumpToPass6, .jumpToPass7, .jumpToPass8, .jumpToPass9, .toggleLoop,
+             .togglePlayAlong:
             .viewport
         case .toggleBassNotes:
             .viewport
@@ -156,6 +160,7 @@ public enum LiveCommand: String, Sendable, Hashable, Codable, CaseIterable {
              .jumpToPass6, .jumpToPass7, .jumpToPass8, .jumpToPass9:
             "Jump to Section \((jumpIndex ?? 0) + 1)"
         case .toggleLoop: "Loop Section (Rehearsal)"
+        case .togglePlayAlong: "Play Along (Rehearsal)"
         case .toggleBassNotes: "Bass Notes"
         }
     }

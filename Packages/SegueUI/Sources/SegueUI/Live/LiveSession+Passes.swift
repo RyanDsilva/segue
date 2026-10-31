@@ -56,6 +56,7 @@
                 flash("No section \(index + 1)")
                 return
             }
+            let playingAlong = isPlayingAlong
             if let loop = loopPass, loop != index {
                 stopLoop()
             }
@@ -72,6 +73,11 @@
                 services.record(.featureUsed(.sectionJump, .stage))
             }
             rescheduleLoopWrap()
+            if playingAlong {
+                // Play-along restarts at the start of that pass (P8-6 10.4).
+                stopPlayAlong()
+                startPlayAlong(from: index)
+            }
         }
 
         /// "Jumped to Bridge" / "Jumped to Chorus · 2 of 3": a toast and a VoiceOver
@@ -119,11 +125,19 @@
             }
             loopPass = current
             services.record(.featureUsed(.sectionLoop, .stage))
+            if isPlayingAlong {
+                // Play-along now loops this pass, with the count-in at every wrap.
+                stopPlayAlong()
+                startPlayAlong(from: current)
+            }
             rescheduleLoopWrap()
         }
 
         /// Ends the loop (L, a jump elsewhere, a song change, End).
         func stopLoop() {
+            if playAlong?.loops == true, isPlayingAlong {
+                stopPlayAlong()
+            }
             loopWrapTask?.cancel()
             loopWrapTask = nil
             loopWrapInstant = nil
@@ -155,8 +169,9 @@
             loopWrapTask?.cancel()
             loopWrapTask = nil
             loopWrapInstant = nil
+            // While play-along plays, the audio wraps the loop (P8-6 10.4).
             guard let loop = loopPass, let plan, StagePasses.followsScroll(plan),
-                  let scroller
+                  let scroller, !isPlayingAlong
             else { return }
             let target = StagePasses.wrapOffset(of: loop, in: plan)
             guard let instant = scroller.instant(reaching: target) else { return }

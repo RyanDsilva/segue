@@ -79,6 +79,10 @@
                 toggleLoop()
                 return
             }
+            if command == .togglePlayAlong {
+                togglePlayAlong()
+                return
+            }
             switch command {
             case .zoomIn: zoom(1)
             case .zoomOut: zoom(-1)

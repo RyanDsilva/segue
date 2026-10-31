@@ -39,11 +39,16 @@ extension StageWindowSuites {
                 ) == nil)
                 #expect(run.app.dependencies.audio.isBlocked)
                 #expect(!sound.isAvailable)
+                // No play-along on a gig stage: the type cannot be made for one.
+                #expect(live.playAlong == nil)
+                #expect(StagePlayAlong(kind: kind, sound: sound) == nil)
             case .rehearsal:
                 #expect(!sound.gate.gigRunning)
                 #expect(sound.makePlayer() != nil)
                 #expect(!run.app.dependencies.audio.isBlocked)
                 #expect(sound.isAvailable)
+                #expect(live.playAlong != nil)
+                #expect(StagePlayAlong(kind: kind, sound: sound) != nil)
             }
             try await run.end(live)
         }
@@ -55,6 +60,9 @@ extension StageWindowSuites {
             let live = try await run.start(.gig)
             #expect(try !run.app.sound.play(Self.chordPhrase()))
             try await SoundEntryPoints.driveAll(run.app)
+            // `P` on the gig stage only flashes.
+            live.dispatch(.togglePlayAlong)
+            #expect(live.indicator == "Play-along works in rehearsals")
             #expect(run.sounds.made == 0)
             #expect(run.app.dependencies.audio.isBlocked)
             try await run.end(live)

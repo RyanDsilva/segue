@@ -16,9 +16,9 @@ extension SegueLiveE2ETests {
         XCTAssertTrue(overlay.appears(timeout: 5), "? did not show the key help")
         let rows = app.descendants(matching: .any).matching(identifier: LiveAXID.keysOverlayRow)
         // Every `LiveCommand` row once: 22, plus the metronome's M and Shift-M (P3-14), minus
-        // the retired collapse toggle (R147), plus 1-9 jumps and L loop (R148) and B bass notes
-        // (R152).
-        XCTAssertEqual(rows.count, 26, "every command once")
+        // the retired collapse toggle (R147), plus 1-9 jumps and L loop (R148), B bass notes
+        // (R152) and P play along (P8-6 10.4).
+        XCTAssertEqual(rows.count, 27, "every command once")
         screenshot(app, "keys-overlay")
         key(app, .escape)
         XCTAssertTrue(overlay.disappears(timeout: 5), "Esc did not close it")

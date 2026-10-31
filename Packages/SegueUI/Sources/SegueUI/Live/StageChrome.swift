@@ -45,6 +45,9 @@
                     StageScaleLine(scale: scale)
                 }
                 Spacer(minLength: 24)
+                if session.isPlayingAlong {
+                    StagePlayAlongPill()
+                }
                 if let pass = session.loopedPass {
                     StageLoopPill(name: pass.name, stopKey: session.loopKey)
                 }
@@ -161,6 +164,29 @@
             }
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier(AccessibilityID.liveLoop)
+        }
+    }
+
+    /// "♪ Playing along" (P8-6 10.4): Rehearsal play-along is sounding. Text, so VoiceOver
+    /// reads it; nothing relies on the sound alone.
+    struct StagePlayAlongPill: View {
+        var body: some View {
+            Text("\u{266A} Playing along")
+                .font(SchibstedGrotesk.semiBold.font(size: 14))
+                .foregroundStyle(Theme.color.ink)
+                .lineLimit(1)
+                .padding(.horizontal, 11)
+                .padding(.vertical, 5)
+                .background {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(Theme.color.cue.opacity(0.08))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .strokeBorder(Theme.color.cue.opacity(0.55), lineWidth: 1)
+                        }
+                }
+                .accessibilityLabel("Playing along")
+                .accessibilityIdentifier(AccessibilityID.livePlayAlong)
         }
     }
 

@@ -180,6 +180,7 @@
                 dependencies.ai.gate.isShowRunning = live != nil
                 // No sound in a gig (R161, P8-6 section 9): before the stage is presented.
                 sound.stageChanged(kind: live?.kind)
+                live?.attachSound(sound)
             }
         }
 

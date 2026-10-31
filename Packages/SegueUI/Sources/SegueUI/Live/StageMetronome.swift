@@ -24,6 +24,16 @@
         public private(set) var clicks = false
         /// The current song's beat grid; nil without a tempo, in a break or past the end.
         public private(set) var track: MetronomeTrack?
+        /// Rehearsal play-along clicks itself (P8-6 10.4): the rehearsal click (`K`) stays
+        /// silent meanwhile, so there is never a double click.
+        public var muted = false {
+            didSet {
+                if muted != oldValue {
+                    syncClick()
+                }
+            }
+        }
+
         /// The end of the rehearsal loop's count-in bar (P8-2): the pips show until then even
         /// with the pulse off.
         public private(set) var countInEnd: Date?
@@ -191,7 +201,7 @@
         }
 
         private func syncClick() {
-            click?.play(clicks ? track : nil)
+            click?.play(clicks && !muted ? track : nil)
         }
     }
 #endif

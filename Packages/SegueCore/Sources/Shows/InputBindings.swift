@@ -291,6 +291,8 @@ public struct InputBindingTable: Sendable, Hashable {
             key("8", .jumpToPass8),
             key("9", .jumpToPass9),
             key("l", .toggleLoop),
+            // Play along with bass, chords and click (P8-6 10.4; rehearsals only).
+            key("p", .togglePlayAlong),
             // The bass-note view, for anyone (P8-4, R158 Q3).
             key("b", .toggleBassNotes),
         ],

@@ -25,7 +25,7 @@ public enum KeyHelp {
             .pageForward, .pageBack, .scrollPageDown, .scrollPageUp, .toggleAutoScroll,
             .scrollFaster, .scrollSlower, .restartScroll,
         ]),
-        ("Sections", LiveCommand.jumps + [.toggleLoop]),
+        ("Sections", LiveCommand.jumps + [.toggleLoop, .togglePlayAlong]),
         ("View", [.zoomIn, .zoomOut, .resetZoom, .cycleColumns]),
         ("Metronome", [.toggleMetronome, .toggleMetronomeClick]),
         ("Bass", [.toggleBassNotes]),
@@ -87,6 +87,9 @@ public enum KeyHelp {
                 }
                 if kind == .rehearsal, let key = first(.toggleLoop) {
                     hints.append("\(key) loop")
+                }
+                if kind == .rehearsal, let key = first(.togglePlayAlong) {
+                    hints.append("\(key) play along")
                 }
             }
         }
