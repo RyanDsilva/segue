@@ -19,6 +19,12 @@ public struct AudioSettings: Sendable, Hashable, Codable {
     public var outputUID: String?
     /// That device's name when it was chosen, for "<name> (not connected)" while it is gone.
     public var outputName: String?
+    /// The play-along bar's voice toggles (P8-6 10.3), remembered across songs.
+    public var playAlongBass: Bool
+    public var playAlongChords: Bool
+    public var playAlongClick: Bool
+    /// nil = the charts' setting (walk-ups shown on charts).
+    public var playAlongWalkUps: Bool?
 
     public init(
         chordSound: ChordSound = .piano,
@@ -27,6 +33,10 @@ public struct AudioSettings: Sendable, Hashable, Codable {
         volume: Double = 0.7,
         outputUID: String? = nil,
         outputName: String? = nil,
+        playAlongBass: Bool = true,
+        playAlongChords: Bool = true,
+        playAlongClick: Bool = true,
+        playAlongWalkUps: Bool? = nil,
     ) {
         self.chordSound = chordSound
         self.chordStyle = chordStyle
@@ -34,6 +44,10 @@ public struct AudioSettings: Sendable, Hashable, Codable {
         self.volume = min(max(volume, 0), 1)
         self.outputUID = outputUID
         self.outputName = outputUID == nil ? nil : outputName
+        self.playAlongBass = playAlongBass
+        self.playAlongChords = playAlongChords
+        self.playAlongClick = playAlongClick
+        self.playAlongWalkUps = playAlongWalkUps
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -43,6 +57,10 @@ public struct AudioSettings: Sendable, Hashable, Codable {
         case volume
         case outputUID
         case outputName
+        case playAlongBass
+        case playAlongChords
+        case playAlongClick
+        case playAlongWalkUps
     }
 
     public init(from decoder: any Decoder) throws {
@@ -58,6 +76,10 @@ public struct AudioSettings: Sendable, Hashable, Codable {
             volume: field(.volume, defaults.volume),
             outputUID: field(.outputUID, defaults.outputUID),
             outputName: field(.outputName, defaults.outputName),
+            playAlongBass: field(.playAlongBass, defaults.playAlongBass),
+            playAlongChords: field(.playAlongChords, defaults.playAlongChords),
+            playAlongClick: field(.playAlongClick, defaults.playAlongClick),
+            playAlongWalkUps: field(.playAlongWalkUps, defaults.playAlongWalkUps),
         )
     }
 }

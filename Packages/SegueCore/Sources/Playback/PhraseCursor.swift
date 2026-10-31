@@ -18,6 +18,8 @@ public struct PhraseCursor: Sendable {
     public private(set) var pass = 1
     /// The next event of the current pass to hand out.
     private var next = 0
+    /// Seconds into the current pass up to which events were handed out.
+    public private(set) var handed: TimeInterval = 0
 
     public init(phrase: Phrase, start: Date, loop: Bool) {
         self.phrase = phrase
@@ -33,6 +35,7 @@ public struct PhraseCursor: Sendable {
     ) -> [(NoteEvent, delay: TimeInterval)] {
         let horizon = now.addingTimeInterval(lookahead)
         var result: [(NoteEvent, delay: TimeInterval)] = []
+        defer { handed = horizon.timeIntervalSince(passStart) }
         while true {
             while next < phrase.events.count {
                 let event = phrase.events[next]
@@ -61,6 +64,33 @@ public struct PhraseCursor: Sendable {
     /// no loop, nothing wraps and the swap never takes effect.
     public mutating func swap(to phrase: Phrase) {
         pending = phrase
+    }
+
+    /// Replaces the current pass from a point not yet handed out (a play-along timing,
+    /// tempo or voice change applying from the next bar): the old events before `oldOffset`
+    /// still play, then `phrase`'s events from `newOffset` on, moved so that `newOffset`
+    /// lands at `oldOffset`. A looping cursor plays `phrase` whole from the next wrap.
+    /// `oldOffset` is raised to what was already handed out, so nothing plays twice.
+    public mutating func replace(
+        with phrase: Phrase,
+        from newOffset: TimeInterval,
+        aligning oldOffset: TimeInterval,
+    ) {
+        let shift = max(0, handed - oldOffset)
+        let old = oldOffset + shift
+        let new = newOffset + shift
+        let kept = self.phrase.events.filter { $0.onset < old }
+        let moved = phrase.events.filter { $0.onset >= new }.map { event in
+            var event = event
+            event.onset += old - new
+            return event
+        }
+        self.phrase = Phrase(events: kept + moved, length: old + max(0, phrase.length - new))
+        // Sorted, the handed-out events (all kept, all before `old`) come first.
+        next = kept.count { $0.onset <= handed }
+        if loop {
+            pending = phrase
+        }
     }
 
     /// Whether a non-looping phrase has played out by `now`.

@@ -36,6 +36,9 @@
                 }
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if let playAlong = model.playAlong, playAlong.isOpen {
+                    PlayAlongBar(model: playAlong)
+                }
                 EditorStatusBar(model: model)
             }
             .background(Theme.color.ground)
@@ -71,6 +74,16 @@
                 )
             }
             .sectionNotesSheet(for: model)
+            .onChange(of: model.renderModel) { feedPlayAlong() }
+            .onChange(of: model.playAlong?.isOpen) { feedPlayAlong() }
+            // Closing the editor (or switching song) stops play-along.
+            .onDisappear { model.playAlong?.stop() }
+        }
+
+        /// The open bar follows the song as rendered (an edit, a timing write, the options).
+        private func feedPlayAlong() {
+            guard let playAlong = model.playAlong, playAlong.isOpen else { return }
+            playAlong.update(model.playAlongSource)
         }
 
         @ToolbarContentBuilder private var toolbar: some ToolbarContent {
@@ -81,6 +94,11 @@
             // The detail column's toolbar packs items at its leading edge; the flexible
             // spacer pushes the actions to the trailing end, where macOS puts them.
             ToolbarSpacer(.flexible)
+            if let playAlong = model.playAlong {
+                ToolbarItem(placement: .automatic) {
+                    PlayAlongToggle(model: playAlong)
+                }
+            }
             ToolbarItem(placement: .automatic) {
                 // Edits save themselves (R17); Done only closes the editor after a last
                 // save. No Esc shortcut: Esc belongs to the editor (completion, chord
@@ -194,13 +212,21 @@
         let onCustomize: (RenderDiagram) -> Void
 
         var body: some View {
-            ScrollView {
-                if let renderModel = model.renderModel {
-                    SongPageView(model: renderModel, selectable: false, onCustomize: onCustomize)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    if let renderModel = model.renderModel {
+                        SongPageView(
+                            model: renderModel,
+                            selectable: false,
+                            onCustomize: onCustomize,
+                        )
                         .environment(\.chordHearing, model.chordHearing)
+                        .environment(\.playAlongCue, model.playAlong?.cue)
                         .padding(.horizontal, 40)
                         .padding(.vertical, 24)
+                    }
                 }
+                .followsPlayAlong(model.playAlong?.cue, proxy: proxy)
             }
         }
     }

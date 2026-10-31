@@ -121,7 +121,14 @@ public final class LibraryViewModel {
     /// when its bass view is on. The session hands it over when the library opens.
     @ObservationIgnored var instrument: InstrumentProfileStore?
     /// Heard chords and walk-up auditions (P8-6); the app hands it over with the services.
-    @ObservationIgnored var sound: SoundSession?
+    @ObservationIgnored var sound: SoundSession? {
+        didSet { makePlayAlong() }
+    }
+
+    /// The song pane's Play along bar (P8-6 10.3), made when sound arrives (observed, so the
+    /// pane's button appears then), and its song.
+    var playAlong: PlayAlong?
+    @ObservationIgnored var playAlongSong: SongID?
     /// The last walk-up sidecar write from the library; the next waits for it (P8-4b).
     @ObservationIgnored var walkUpWrite: Task<Void, Never>?
     /// The song whose Walk-ups list is open from the library (P8-4b 8.9).

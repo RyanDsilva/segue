@@ -123,6 +123,8 @@
             .return,
             [.command, .shift],
         )
+        /// P8-6 10.3: opens or closes the editor's or library's Play along bar.
+        static let playAlong = MenuShortcut("Song", "Play Along", "p", [.command, .shift])
         // Setlist
         static let startShow = MenuShortcut("Setlist", "Start Show", .return)
         static let rehearse = MenuShortcut("Setlist", "Rehearse", .return, [.command, .option])
@@ -156,7 +158,7 @@
         public static let all: [MenuShortcut] = [
             settings, newSong, newSongFromClipboard, importSongs, showInFinder, moveToTrash, close,
             save, undo, redo,
-            refresh, rehearseSong, playSongLive,
+            refresh, rehearseSong, playSongLive, playAlong,
             startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak,
             addSongByName,
             arrangeSections, moveUp, moveDown, mainWindow, help, keyboardShortcuts,

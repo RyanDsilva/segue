@@ -285,7 +285,7 @@
     }
 
     /// Bar label: 14 / 700 muted (mockup "Transpose", "Capo").
-    private struct BarLabel: View {
+    struct BarLabel: View {
         let title: String
 
         init(_ title: String) {
@@ -300,7 +300,7 @@
     }
 
     /// 30 x 30 stepper button with a hairline border (mockup -/+).
-    private struct StepButton: View {
+    struct StepButton: View {
         let symbol: String
         let label: String
         let action: () -> Void

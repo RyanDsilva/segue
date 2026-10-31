@@ -137,6 +137,13 @@ enum SoundEntryPoints {
         hearing.play(chord)
         hearing.playConcert("G")
         hearing.playBass(31)
+        // The library's Play along bar (and the Song menu finds nothing to open).
+        let playAlong = try #require(library.playAlong)
+        library.showPlayAlong(record, render: render)
+        playAlong.setOpen(true)
+        playAlong.play()
+        #expect(!playAlong.isPlaying)
+        #expect(app.menuPlayAlong == nil)
         // The walk-up picker's and the Walk-ups list's play buttons.
         for audition in [
             library.walkUpAudition(render),

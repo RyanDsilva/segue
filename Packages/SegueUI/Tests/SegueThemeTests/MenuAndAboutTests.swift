@@ -53,7 +53,7 @@ struct MenuShortcutsTests {
         let names = [
             "newSong", "newSongFromClipboard", "importSongs", "showInFinder", "moveToTrash",
             "close",
-            "save", "refresh", "rehearseSong", "playSongLive",
+            "save", "refresh", "rehearseSong", "playSongLive", "playAlong",
             "startShow", "rehearse", "newSetlist", "pickSongs", "arrangeSet", "insertBreak",
             "addSongByName",
             "arrangeSections",

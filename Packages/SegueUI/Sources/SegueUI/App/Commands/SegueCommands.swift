@@ -17,6 +17,7 @@
             AppInfoCommands()
             FileCommands(app: app)
             LibraryCommands(app: app)
+            SongCommands(app: app)
             SetlistCommands(app: app)
             LiveCommands(app: app)
             WindowCommands()

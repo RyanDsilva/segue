@@ -192,6 +192,8 @@ struct LyricLineView: View {
     let style: SongSheetStyle
     /// A walk-up run whose picker VoiceOver asked for through the line's actions (P8-4b).
     @State private var requestedWalkUp: ChangeID?
+    /// The chord at the play-along playhead, underlined (P8-6 10.3).
+    @Environment(\.playAlongCue) private var cue
 
     var body: some View {
         let tokens = LyricToken.tokens(for: line)
@@ -215,6 +217,7 @@ struct LyricLineView: View {
                                 .foregroundStyle(
                                     token.isUnknown ? Theme.color.muted : Theme.color.cueText,
                                 )
+                                .underline(isCue(token), color: Theme.color.cueText)
                             if let detail = token.detail {
                                 Text(detail)
                                     .font(SchibstedGrotesk.medium.font(size: style.chordSize * 0.6))
@@ -253,6 +256,12 @@ struct LyricLineView: View {
             .walkUpActions(tokens.compactMap(\.approach), requested: $requestedWalkUp)
             .modifier(ChordPlayActions(tokens: tokens))
         }
+    }
+
+    /// Whether `token`'s chord is the one at the play-along playhead.
+    private func isCue(_ token: LyricToken) -> Bool {
+        guard let cue, let source = token.source else { return false }
+        return cue.line == line.path && cue.offset == source.offset
     }
 
     /// A chord unit as spoken: "G" as is; a bass note "3 \u{00B7} B" reads "3, B", and with

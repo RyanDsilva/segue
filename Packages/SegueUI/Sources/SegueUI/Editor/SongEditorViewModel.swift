@@ -129,6 +129,8 @@ public final class SongEditorViewModel {
     @ObservationIgnored let instrument: InstrumentProfileStore?
     /// Heard chords and walk-up auditions (P8-6); the library hands it over.
     @ObservationIgnored var sound: SoundSession?
+    /// The Play along bar's model (P8-6 10.3), made on first use.
+    @ObservationIgnored var playAlongStore: PlayAlong?
     /// Records analytics events (WS3 spec 5); the library hands over the app's hub.
     @ObservationIgnored public var services: ServicesHub = .disabled
     @ObservationIgnored let save: (String) async throws -> SongRecord

@@ -22,32 +22,53 @@
                 userShapes: model.userShapes,
                 bass: model.instrument?.bassView,
             )
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    header(render)
-                    if let reason = record.readOnly {
-                        notice(UserMessage.readOnlyText(reason), systemImage: "lock.fill")
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        header(render)
+                        if let reason = record.readOnly {
+                            notice(UserMessage.readOnlyText(reason), systemImage: "lock.fill")
+                        }
+                        if record.hasDerivedID {
+                            notice(
+                                "Segue could not read this song's ID from its metadata file, so "
+                                    + "setlists lose track of it if the file is renamed.",
+                                systemImage: "link.badge.plus",
+                            )
+                        }
+                        SongCardView(host: cardHost)
+                            .id(record.id)
+                        SongMetadataSection(model: model, record: record)
+                        Rule()
+                        chart(render)
                     }
-                    if record.hasDerivedID {
-                        notice(
-                            "Segue could not read this song's ID from its metadata file, so "
-                                + "setlists lose track of it if the file is renamed.",
-                            systemImage: "link.badge.plus",
-                        )
-                    }
-                    SongCardView(host: cardHost)
-                        .id(record.id)
-                    SongMetadataSection(model: model, record: record)
-                    Rule()
-                    chart(render)
+                    .padding(.horizontal, 32)
+                    .padding(.top, 24)
+                    .padding(.bottom, 28)
+                    .frame(maxWidth: 860, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal, 32)
-                .padding(.top, 24)
-                .padding(.bottom, 28)
-                .frame(maxWidth: 860, alignment: .leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .followsPlayAlong(model.playAlong?.cue, proxy: proxy)
             }
             .background(Theme.color.ground)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if let playAlong = model.playAlong, playAlong.isOpen {
+                    PlayAlongBar(model: playAlong)
+                }
+            }
+            // The bar follows the song shown; another song stops it.
+            .onChange(of: render, initial: true) { feedPlayAlong(render) }
+            .onChange(of: model.playAlong?.isOpen) { feedPlayAlong(render) }
+            // A timing write changes the sidecar only, not the rendered chart.
+            .onChange(of: record.sidecar.bass) { feedPlayAlong(render) }
+            .onDisappear { model.playAlong?.stop() }
+        }
+
+        private func feedPlayAlong(_ render: RenderModel) {
+            guard let playAlong = model.playAlong else { return }
+            if playAlong.isOpen || model.playAlongSong != record.id {
+                model.showPlayAlong(record, render: render)
+            }
         }
 
         private func header(_ render: RenderModel) -> some View {
@@ -228,6 +249,13 @@
 
         private func chart(_ render: RenderModel) -> some View {
             VStack(alignment: .leading, spacing: 20) {
+                if let playAlong = model.playAlong, !render.sections.isEmpty {
+                    // Play along with this chart (P8-6 10.3); the bar opens at the bottom.
+                    PlayAlongToggle(model: playAlong)
+                        .controlSize(.small)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.bottom, -12)
+                }
                 if render.sections.isEmpty {
                     Text("No lyrics yet.")
                         .font(Theme.font.body)
@@ -238,6 +266,7 @@
                         .environment(\.walkUpPicking, model.walkUpPicking(songID: record.id))
                         .environment(\.chordHearing, model.chordHearing(render))
                         .environment(\.walkUpAudition, model.walkUpAudition(render))
+                        .environment(\.playAlongCue, model.playAlong?.cue)
                 }
                 if !render.diagrams.isEmpty {
                     StripSnapshot(

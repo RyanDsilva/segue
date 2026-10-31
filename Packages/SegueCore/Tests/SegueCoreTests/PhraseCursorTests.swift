@@ -100,3 +100,51 @@ struct PhraseCursorTests {
         #expect(abs(cursor.position(at: Self.start.addingTimeInterval(0.8)) - 0.8) < 1e-6)
     }
 }
+
+extension PhraseCursorTests {
+    @Test
+    func `a replace keeps what was handed out and plays the new phrase from the bar`() {
+        var cursor = PhraseCursor(
+            phrase: Self.phrase([0, 1, 2, 3], length: 4),
+            start: Self.start,
+            loop: true,
+        )
+        // Handed out through 0.5 + 0.3 lookahead.
+        _ = cursor.due(at: Self.start.addingTimeInterval(0.5), lookahead: 0.3)
+        // The new phrase's bar at 2.0 lands where the old one had it, at 2.0; its events
+        // before it are not played, the old ones before it still are.
+        cursor.replace(
+            with: Self.phrase([0, 0.5, 2, 2.5], length: 4, note: 70),
+            from: 2,
+            aligning: 2,
+        )
+        var handed: [(UInt8, Double)] = []
+        var time = 0.6
+        while time <= 5.05 {
+            for (event, delay) in cursor.due(
+                at: Self.start.addingTimeInterval(time),
+                lookahead: 0.3,
+            ) {
+                handed.append((event.note, ((time + delay) * 1000).rounded() / 1000))
+            }
+            time += 0.1
+        }
+        #expect(handed.map(\.0) == [60, 70, 70, 70, 70])
+        #expect(handed.map(\.1) == [1, 2, 2.5, 4, 4.5])
+    }
+
+    @Test
+    func `a replace never plays again what was already handed out`() {
+        var cursor = PhraseCursor(
+            phrase: Self.phrase([0, 1], length: 2),
+            start: Self.start,
+            loop: false,
+        )
+        _ = cursor.due(at: Self.start.addingTimeInterval(0.8), lookahead: 0.3)
+        // Asked to switch at 1.0, but 1.0 was handed out: it switches at 1.1 instead.
+        cursor.replace(with: Self.phrase([1, 1.5], length: 2, note: 70), from: 1, aligning: 1)
+        let rest = cursor.due(at: Self.start.addingTimeInterval(1.5), lookahead: 0.3)
+        #expect(rest.map(\.0.note) == [70])
+        #expect(rest.map { ($0.0.onset * 1000).rounded() / 1000 } == [1.5])
+    }
+}

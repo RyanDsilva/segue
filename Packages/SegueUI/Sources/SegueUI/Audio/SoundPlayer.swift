@@ -33,6 +33,10 @@ public final class SoundPlayer {
     public private(set) var pass = 0
     /// A short line when sound stopped by itself ("Stopped: the audio output changed").
     public internal(set) var status: String?
+    /// Bumped on every start: whoever started a phrase knows whether it is still theirs.
+    public private(set) var generation = 0
+    /// The lead-in (a count-in) played once before the first pass of the phrase.
+    @ObservationIgnored private(set) var leadIn: Phrase?
 
     /// Nil while a gig runs.
     init?(
@@ -48,14 +52,49 @@ public final class SoundPlayer {
         self.settings = settings
     }
 
-    /// Plays `phrase` once, stopping whatever was playing.
-    public func play(_ phrase: Phrase) {
-        start(phrase, loop: false)
+    /// Plays `phrase` once, stopping whatever was playing; `leadIn` (a count-in) first.
+    public func play(_ phrase: Phrase, leadIn: Phrase? = nil) {
+        start(phrase, loop: false, leadIn: leadIn)
     }
 
-    /// Plays `phrase` over and over, stopping whatever was playing.
-    public func loop(_ phrase: Phrase) {
-        start(phrase, loop: true)
+    /// Plays `phrase` over and over, stopping whatever was playing; `leadIn` (a count-in)
+    /// only before the first pass, so the loop itself is seamless (R162 Q5).
+    public func loop(_ phrase: Phrase, leadIn: Phrase? = nil) {
+        start(phrase, loop: true, leadIn: leadIn)
+    }
+
+    /// Seconds into `phrase` (after any lead-in) sounding now: negative during the lead-in,
+    /// 0 when stopped.
+    public var bodyPosition: TimeInterval {
+        guard let cursor else { return 0 }
+        let position = cursor.position(at: clock.now())
+        guard cursor.pass == 1, let leadIn else { return position }
+        return position - leadIn.length
+    }
+
+    /// From `newOffset` in `phrase` (aligned to `oldOffset` of the phrase now sounding, both
+    /// counted after the lead-in) the new phrase takes over; a loop plays it whole from the
+    /// next pass. Nothing already handed to the output plays twice.
+    public func replace(
+        _ phrase: Phrase,
+        from newOffset: TimeInterval,
+        aligning oldOffset: TimeInterval,
+    ) {
+        guard isPlaying, var cursor else { return }
+        let lead = cursor.pass == 1 ? leadIn?.length ?? 0 : 0
+        if lead > 0, let leadIn {
+            cursor.replace(
+                with: leadIn.followed(by: phrase),
+                from: newOffset + lead,
+                aligning: oldOffset + lead,
+            )
+            if cursor.loop {
+                cursor.swap(to: phrase)
+            }
+        } else {
+            cursor.replace(with: phrase, from: newOffset, aligning: oldOffset)
+        }
+        self.cursor = cursor
     }
 
     /// While looping, `phrase` takes over at the next pass (A/B); otherwise it plays now.
@@ -76,6 +115,7 @@ public final class SoundPlayer {
         isPlaying = false
         isLooping = false
         pass = 0
+        leadIn = nil
         if wasPlaying {
             output?.stopAll()
         }
@@ -94,16 +134,27 @@ public final class SoundPlayer {
         status = "Stopped: the audio output changed"
     }
 
-    private func start(_ phrase: Phrase, loop: Bool) {
+    private func start(_ phrase: Phrase, loop: Bool, leadIn: Phrase? = nil) {
         guard !gate.gigRunning else { return }
         stop()
         status = nil
+        generation += 1
         let output = output ?? makeOutput()
         if self.output == nil {
             self.output = output
             output.prepare(chord: settings.settings.chordSound, bass: settings.settings.bassSound)
         }
-        cursor = PhraseCursor(phrase: phrase, start: clock.now(), loop: loop)
+        if let leadIn, leadIn.length > 0 {
+            self.leadIn = leadIn
+            cursor = PhraseCursor(
+                phrase: leadIn.followed(by: phrase),
+                start: clock.now(),
+                loop: loop,
+            )
+            cursor?.swap(to: phrase)
+        } else {
+            cursor = PhraseCursor(phrase: phrase, start: clock.now(), loop: loop)
+        }
         isPlaying = true
         isLooping = loop
         pass = 1
