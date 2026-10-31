@@ -102,6 +102,8 @@ struct KeyChangeUITests {
         // Visual mode works the same chip out for the canvas.
         opened.editor.setEditorMode(.visual)
         opened.editor.visualEditor.reload()
+        // Worked out once typing pauses (off the keystroke path); here, at once.
+        opened.editor.visualEditor.keyChips.refresh()
         #expect(opened.editor.visualEditor.keyChips.suggestions.map(\.key.name) == ["A"])
     }
 

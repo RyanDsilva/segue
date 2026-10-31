@@ -130,7 +130,7 @@
             }
             restoreCaret(fallback: caretBefore)
             resolveSelection()
-            keyChips.refresh()
+            keyChips.scheduleRefresh()
             redrawOverlay()
         }
 

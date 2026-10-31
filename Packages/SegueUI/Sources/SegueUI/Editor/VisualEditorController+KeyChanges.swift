@@ -83,6 +83,7 @@
         private weak var controller: VisualEditorController?
         private(set) var suggestions: [KeyChangeSuggestion] = []
         private var hosts: [Int: NSHostingView<KeyChangeChip>] = [:]
+        private var pending: Task<Void, Never>?
 
         init(controller: VisualEditorController) {
             self.controller = controller
@@ -93,7 +94,21 @@
             suggestions.filter { hosts[$0.section]?.isHidden == false }
         }
 
-        /// Works the suggestions out again for the canvas's song.
+        /// After an edit: works the suggestions out again once typing pauses, off the
+        /// keystroke path (a timeline and a key detection per section).
+        func scheduleRefresh() {
+            pending?.cancel()
+            pending = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: Self.settle)
+                guard !Task.isCancelled else { return }
+                self?.refresh()
+            }
+        }
+
+        /// How long typing must pause before the chips are worked out again.
+        static let settle = Duration.milliseconds(350)
+
+        /// Works the suggestions out again for the canvas's song now.
         func refresh() {
             guard let controller else { return }
             suggestions = controller.model.keyChangeSuggestions(controller.model.canvasModel)
