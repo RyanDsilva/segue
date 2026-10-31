@@ -3,7 +3,7 @@
 ## 2026-10-17 - Discovery, specs, phases 0-2 built and hardened
 
 ### What changed
-- Discovery interview + research -> `docs/00-vision.md`, `docs/research.md`, `docs/research/phase{3,5,7}-*.md`, `docs/decisions.md` (all rulings), `docs/brand.md`, 8 phase specs in `docs/phases/`, interface contracts `docs/phases/{1,2}-interfaces.md`, review logs `docs/reviews/phase{0,1,2}-review.md`.
+- Discovery interview + research -> `docs/00-vision.md`, `docs/research.md`, `docs/research/phase3-*.md`, `docs/decisions.md` (all rulings), `docs/brand.md`, phase specs in `docs/phases/`, interface contracts `docs/phases/{1,2}-interfaces.md`, review logs `docs/reviews/phase{0,1,2}-review.md`.
 - Name: **Segue** (bundle `dev.ryandsilva.segue`). Brand direction C "Precise" + taped-setlist icon. Design canvas (mockups, layout picks): https://claude.ai/artifact/XizqyqzA1chVfBSGThAzcQ
 - Built (local signed commits, NOT pushed): phase 0 skeleton (Tuist, SegueCore/SegueUI/SeguePersonalModules, ChordPro round-trip parser, files-canonical library + GRDB index with romanized-Hindi search, theme/tokens/font/icon, App Store exclusion check), phase 1 (music theory on Tonic, guitar/piano diagrams, editing engine, TextKit 2 text + visual canvas editor), phase 2 (show engine with crash resume + gig log, setlists builder, live layout auto-fit, stage UI with checklist/Shortcuts/quick search/requests/autoscroll, settings). Each phase got an independent adversarial review and a hardening pass.
 
@@ -14,9 +14,9 @@
 - Remote `origin` = github.com/RyanDsilva/segue (private); nothing pushed since the docs commits - push only when Ryan asks.
 
 ### Decisions (see docs/decisions.md for all)
-- Files canonical (.cho + .segue.json sidecar), index rebuildable; macOS 26 min; integration-first tests; personal-only features (audio, LRCLIB, URL import) live in `Packages/SeguePersonalModules`, never in the AppStore scheme.
+- Files canonical (.cho + .segue.json sidecar), index rebuildable; macOS 26 min; integration-first tests; personal-only features (LRCLIB, URL import) live in `Packages/SeguePersonalModules`, never in the AppStore scheme.
 - Signing: free Personal Team `V6BM673U35` (contact@ryandsilva.dev). **App Store needs the paid program.**
-- Phases 3-7 are now post-launch features; App Store publishing comes first.
+- Phase 3 is built; Phase 8 and PDF export ship before the App Store release; phases 5 and 6 come after launch.
 
 ### Surprises
 - Researcher-agent output was often wrong (licences, versions, SDK facts); verify against SDK headers/primary sources.
@@ -38,7 +38,7 @@ Start the App Store publishing session: enrol in / confirm the paid Apple Develo
 ### Addendum - phase 3 spikes landed
 - Results: `docs/research/phase3-spikes.md`; spike code/fixtures/scoring kept in `research/phase3-spikes/` (models excluded, lint-excluded).
 - Headline: Apple FM on this M1 Pro: 89% label accuracy but median 18 s/song (5-69 s), Hindi songs sometimes rejected (`unsupportedLanguageOrLocale`, fails fast). MLX Qwen3-4B-Instruct-2507 4bit: 98% labels, ~6.5 s, 3 GB RAM, 2.28 GB download. Set requests: code-first parsing beats both models.
-- Open phase 3 decisions (ask Ryan when phase 3 resumes): MLX-first routing when installed? curated model Qwen3-4B vs Gemma 4 E2B? keep a model call for set requests at all?
+- Phase 3 decisions these fed (settled when phase 3 was built, see `docs/decisions.md`): MLX-first routing when installed, the curated model (Qwen3-4B vs Gemma 4 E2B), and whether set requests keep a model call.
 - The ~10 GB of downloaded models in the session scratchpad are gone (checked 2026-10-17); a phase 3 re-run re-downloads them into `research/phase3-spikes/models/` (git-ignored).
 
 ## 2026-10-17 - Release kickoff, build phase 1, repo health, pre-push clean-up
@@ -46,12 +46,11 @@ Start the App Store publishing session: enrol in / confirm the paid Apple Develo
 ### What changed
 - Release planning: `docs/release/` (README guide, `decisions.md` R1-R50, open-questions, WS1-WS5 specs, research 01-09). Build phase 1 (section 3) landed: WS1 steps 1-7, WS2b steps 1-2, WS3 steps 1-2, WS4 steps 1-2 and 4-7 (see `git log`; the home page uses the Stage direction).
 - Repo health (R47-R50): README, LICENSE, notices, SECURITY, CONTRIBUTING, `.github/` (issue forms, PR template, CODEOWNERS, Linux CI, Dependabot, release workflow, labels), `make repo-check`, `docs/github-setup.md`. GitHub labels pruned to `labels.yml`.
-- Clean-up (`docs/cleanup-proposal.md`, approved items): dropped 13 tracked spike binaries/logs/caches, ignore rules for the spike harness outputs; `scripts/xcodebuild.sh` keeps the newest 10 result bundles; `make clean-local` trashes per-agent build dirs, old DerivedData copies, attachments and logs (about 33 GB freed this time, in the Trash until emptied).
+- Clean-up (approved items): dropped 13 tracked spike binaries/logs/caches, ignore rules for the spike harness outputs; `scripts/xcodebuild.sh` keeps the newest 10 result bundles; `make clean-local` trashes per-agent build dirs, old DerivedData copies, attachments and logs (about 33 GB freed this time, in the Trash until emptied).
 - Pre-push hook now stands in for branch protection (needs GitHub Pro on a private repo): signed commits + `make repo-check` + site strict check, with a one-time `SEGUE_ALLOW_SITE_PLACEHOLDERS=1` bypass for the site check only.
 
 ### State
 - `make lint`, `make repo-check`, `make build` green. Nothing pushed; all commits local and signed.
-- `docs/cleanup-proposal.md` is kept until the first push (orchestrator decides then).
 
 ### Decisions
 - See `docs/release/decisions.md` (release R1-R50) and `docs/decisions.md` (product phases); the two now cross-link.

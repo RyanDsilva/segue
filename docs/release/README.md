@@ -14,8 +14,8 @@ Legend: **-> paste to Claude** = not secret, give it to the session. **-> 1Passw
 - Pending: App Store Connect access (up to 48 h after renewal), 1Password CLI integration, vendor accounts (TelemetryDeck, Sentry, Featurebase, Cloudflare).
 - Next: the "Now" phase below, then WS1 steps 1-7 (they need nothing from Ryan).
 - **2026-10-18: phase 3 (AI entry & assistant) is pulled into 0.5 (R61-R79).** Release order (R79): phase 3 lands -> the R56 walkthrough (with phase 3 items) -> WS5 -> TestFlight -> real gig -> submit. Spec: `docs/phases/3-ai-entry-and-assistant.md`; workstreams: `docs/phases/3-workstreams/`. Your phase 3 items are in 2.3a.
-- **2026-10-19: rulings R80-R103** (metadata entry and fast set building from the walkthrough brainstorm, manual lengths + "Time it" instead of learned/estimated lengths, answers to phase 3 questions 1-16, converter rulings, no repeats within a show, About panel A). P3-1 has landed (55d8701); P3-A Part 1 proved MLX in the sandboxed archive and the shared app-group store with no profile regeneration. Six new workstreams P3-10 to P3-15. New questions 21-29 are in the phase 3 spec section 16.1.
-- **2026-10-20: roadmap rulings R132-R139.** v0.5 gains the phase 3 leftovers, the phase 4 PDFs (single chart, songbook, print, embedded preview), N1 Singer view, N4 Medleys and N8 Gig stats (launch is blocked on the Apple account anyway). Then phase 6 MIDI (with the Ampero MIDI-output research), phase 5 LRCLIB + URL import, phase 7 iOS + N5 Share by file. App Store only: no DMG or direct distribution (R139). Canonical order: `docs/00-vision.md` section 4.
+- **2026-10-19: rulings R80-R103** (metadata entry and fast set building from the walkthrough brainstorm, manual lengths + "Time it", answers to phase 3 questions 1-16, converter rulings, no repeats within a show, About panel A). P3-1 has landed (55d8701); P3-A Part 1 proved MLX in the sandboxed archive and the shared app-group store with no profile regeneration. Six new workstreams P3-10 to P3-15. New questions 21-29 are in the phase 3 spec section 16.1.
+- **Roadmap (R170).** v0.5 (pre-launch): Phase 8 (P8-1..P8-7), the phase 4 PDFs (single chart, songbook, print, embedded preview), Singer view and Medleys, then the App Store release (WS5 store media pass, TestFlight, site go-live). After launch: phase 6 MIDI input with MIDI and key learn; phase 5 LRCLIB lyrics search and URL import (Personal); fills for other instruments; Mac polish (Services menu, localisation, Handoff, menu bar extra, Help Book); the macOS 27 on-device model path; E2E tests in a VM. App Store only: no DMG or direct distribution (R139). Canonical order: `docs/00-vision.md` section 4.
 
 ---
 
@@ -140,13 +140,13 @@ Pasted by Ryan from the steps above. None is secret: the IDs and the DSN ship in
 - [ ] **Manual release (A51).** After approval, at a moment you choose: Apps > Segue > macOS App > 0.5 > **Release This Version**.
 - [ ] **Flip the site to the badge.** The session sets `appStore.status` to `"live"`, runs `make site && make site-check STRICT=1`, commits; you approve the push. Check the badge links to the live listing.
 - [ ] **After release.** Search "Segue setlists" on the US Mac App Store; check screenshots, preview, privacy and accessibility labels render. Watch Xcode Organizer and Sentry for 48 h. Weekly habit: Sentry **User Feedback**, copy anything worth keeping into GitHub by hand (reports expire after 30 days).
-- [ ] **Post-launch doc fold (agent session).** After v0.5 ships, fold `research/01-09` and `open-questions.md` into `decisions.md` (the chosen option per A/B id as an appendix) and a `research/SUMMARY.md` (findings that still matter for 0.6+), repoint the spec citations, then delete the originals. See `docs/cleanup-proposal.md` section 2 while it exists.
+- [ ] **Post-launch doc fold (agent session).** After v0.5 ships, fold `research/01-09` and `open-questions.md` into `decisions.md` (the chosen option per A/B id as an appendix) and a `research/SUMMARY.md` (findings that still matter for 0.6+), repoint the spec citations, then delete the originals.
 
 ---
 
 ### Later tasks (recorded)
-- [ ] **v0.5 additions (R138):** phase 3 leftovers; phase 4 single chart + songbook PDFs with print and embedded preview (`docs/phases/4-export.md`); N1 Singer view, N4 Medleys, N8 Gig stats (specs not written yet).
-- [ ] **After launch, in order (R138):** phase 6 MIDI input + mapping with MIDI learn, with the R135 Ampero II Stomp MIDI-output research ticket alongside; phase 5 LRCLIB + URL import; phase 7 iOS/iPadOS app, partner follow, personal modules on iOS, plus N5 Share by file. Phase 5 vs 7 is unranked (iOS last by default).
+- [ ] **v0.5, before the App Store release (R170):** Phase 8 (P8-1..P8-7, `docs/phases/8-workstreams/`); phase 4 single chart + songbook PDFs with print and embedded preview (`docs/phases/4-export.md`); Singer view; Medleys.
+- [ ] **After launch, in order (R170):** phase 6 MIDI input + mapping with MIDI learn and key learn; phase 5 LRCLIB lyrics search + URL import (Personal); fills for other instruments; Mac polish (Services menu, localisation, Handoff, menu bar extra, Help Book); the macOS 27 on-device model path; E2E tests in a VM.
 - [ ] **Website trim pass (R57):** in a fresh session once the app is feature-complete, cut copy and sections (Ryan: "too much text and site is too long"), then swap in real screenshots (WS5).
 - [ ] **Post-launch:** fold research 01-09 and open-questions.md into decisions.md plus a short summary.
 
@@ -175,7 +175,7 @@ Dependency summary: WS1 steps 1-5 come first (everyone builds on them). WS2a nee
 
 | Document | What it is |
 |---|---|
-| [decisions.md](decisions.md) | Canonical release rulings R1-R103 (kickoff, repo health R47-R51, build-out R52-R60, phase 3 in 0.5 R61-R79, metadata entry / fast set building / phase 3 answers R80-R103); specs follow it. Product rulings for phases 0-7 are in [../decisions.md](../decisions.md) |
+| [decisions.md](decisions.md) | Canonical release rulings R1-R103 (kickoff, repo health R47-R51, build-out R52-R60, phase 3 in 0.5 R61-R79, metadata entry / fast set building / phase 3 answers R80-R103); specs follow it. Product rulings for the product phases are in [../decisions.md](../decisions.md) |
 | [open-questions.md](open-questions.md) | The resolved question sheet: A items (Ryan), B defaults, I-1..I-17 cross-spec fixes, section 5 implementation order |
 | [specs/WS1-release-pipeline.md](specs/WS1-release-pipeline.md) | Signing, bundle-ID split, version, privacy manifest, readiness fixes, Gig Mode/R35, archive/validate/upload, verify-archive |
 | [specs/WS2a-core-ux.md](specs/WS2a-core-ux.md) | Import, Delete + Trash, autosave, menus (File/Setlist/Help/Window), About, `?` overlay, Show in Finder, undo, state restore |
@@ -196,7 +196,6 @@ Dependency summary: WS1 steps 1-5 come first (everyone builds on them). WS2a nee
 | [../phases/3-workstreams/](../phases/3-workstreams/) | P3-A, P3-1 to P3-7, P3-9 and P3-10 to P3-15 workstream specs (one per session) |
 | [accessibility-audit.md](accessibility-audit.md) | Per-label pass/fail evidence that decides the accessibility claims (completed in WS2b step 12) |
 | [../github-setup.md](../github-setup.md) | GitHub repo settings runbook: labels, security toggles, the pre-push hook that stands in for branch protection |
-| [../cleanup-proposal.md](../cleanup-proposal.md) | Pre-push repo clean-up audit (approved items carried out 2026-10-17); kept until the first push |
 | [../../README.md](../../README.md), [LICENSE](../../LICENSE), [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md), [SECURITY.md](../../SECURITY.md), [CONTRIBUTING.md](../../CONTRIBUTING.md) | Repo-health files (R47): overview, all-rights-reserved licence, dependency notices, security policy, contributing guide |
 
 ---
