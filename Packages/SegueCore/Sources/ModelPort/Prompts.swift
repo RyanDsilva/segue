@@ -66,10 +66,9 @@ public enum ModelPrompts {
     // MARK: - Metadata
 
     public static let metadataInstructions = """
-    Read the top and bottom of a song chord sheet and extract the song title, artist and key.
-    Copy title and artist exactly as written; use an empty string when the sheet does not name \
-    one. \
-    A line like "X Chords by Y" or "X - Y" gives title X and artist Y. Singer: names the artist. \
+    Read the top and bottom of a song chord sheet and extract the song title and key.
+    Copy the title exactly as written; use an empty string when the sheet does not name one. \
+    A line like "X Chords by Y" or "X - Y" gives title X. \
     Text may be English or Hindi in Latin letters; never translate it.
     """
 

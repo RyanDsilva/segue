@@ -32,14 +32,14 @@ public enum PasteRefiner {
         })
     }
 
-    /// The metadata call, or `nil` when code already has title and artist (R121: the converter
-    /// wins, whatever the key), or when there is no top or bottom candidate block (spike 5.3:
-    /// without one FM took a chord as the title).
+    /// The metadata call, or `nil` when code already has a title (R121: the converter wins,
+    /// whatever the key; artists come from code only, R174), or when there is no top or bottom
+    /// candidate block (spike 5.3: without one FM took a chord as the title).
     public static func metadataTask(for result: IngestResult) -> MetadataTask? {
         guard !result.isAlreadyChordPro,
               let candidates = result.questions.metadataCandidates,
               !candidates.topLines.isEmpty || !candidates.bottomLines.isEmpty,
-              result.metadata.title == nil || result.metadata.artists.isEmpty
+              result.metadata.title == nil
         else { return nil }
         return MetadataTask(
             topLines: candidates.topLines,
@@ -83,11 +83,11 @@ public enum PasteRefiner {
         return refinements
     }
 
-    /// Title and artist only when they appear in the candidate lines (case-insensitive) and
-    /// could be a name: chord tokens, a capo or tuning note or a chord legend are dropped
-    /// (the real-paste eval saw a chord list and a capo line come back as the title). The
-    /// value returned is the sheet's own spelling of the matched text, never the model's
-    /// casing (P8-8 section 3.8, R163: code results win; no AI step re-spells a name).
+    /// The title only when it appears in the candidate lines (case-insensitive) and could be
+    /// a name: chord tokens, a capo or tuning note or a chord legend are dropped (the
+    /// real-paste eval saw a chord list and a capo line come back as the title). The value
+    /// returned is the sheet's own spelling of the matched text, never the model's casing
+    /// (R163: code results win; no AI step re-spells a name).
     public static func refinements(
         _ output: MetadataOutput,
         for task: MetadataTask,
@@ -103,7 +103,6 @@ public enum PasteRefiner {
         }
         return Refinements(
             title: written(normalized.title),
-            artist: written(normalized.artist),
             key: normalized.key.isEmpty ? nil : normalized.key,
         )
     }
@@ -154,7 +153,6 @@ public enum PasteRefiner {
                     if let output = routed.output {
                         let answer = refinements(output, for: task)
                         merged.title = answer.title
-                        merged.artist = answer.artist
                         merged.key = answer.key
                     }
                     yield(final: false)

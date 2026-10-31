@@ -51,11 +51,10 @@ public enum WireMapping {
         return SectionLabelOutput(labels: labels)
     }
 
-    /// Spike 5.3 post-processing ("unknown" key -> empty, "Unknown" -> empty, artist equal to
-    /// the title -> empty).
+    /// Spike 5.3 post-processing ("unknown" key -> empty, "Unknown" -> empty).
     public static func metadata(_ wire: MetadataWire) -> MetadataOutput {
         let key = wire.key == ModelVocabulary.unknownKey ? "" : wire.key
-        return MetadataOutput(title: wire.title, artist: wire.artist, key: key).normalized()
+        return MetadataOutput(title: wire.title, key: key).normalized()
     }
 
     public static func lineClasses(

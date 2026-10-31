@@ -55,34 +55,28 @@ struct IngestRefinementTests {
         }
     }
 
-    /// P8-8 section 13.4: artist-list accuracy against `gold.json`, code only vs with the
-    /// replayed FM answers, over every paste fixture (fixtures without a recording ask the
-    /// model nothing, so both counts agree there). Code wins (R121), so the model can only
-    /// add an artist where code found none; it may never lose a right one.
+    /// R174: artists come from code only. Over every paste fixture, the replayed FM answers
+    /// leave the artist list exactly as code found it, and code's list matches `gold.json`
+    /// (all 46 recorded pastes were right before the model was taken off artists).
     @Test
-    func `artist accuracy, code only vs with the FM recordings`() async throws {
+    func `artists are code's, with or without the FM recordings`() async throws {
         let gold = try PasteFixtures.gold()
         var total = 0
-        var codeRight = 0
-        var modelRight = 0
+        var right = 0
         for name in PasteFixtures.names {
             let stem = PasteFixtures.stem(name)
-            guard let entry = gold[stem] else { continue }
             let base = try PasteFixtures.ingest(name)
             guard !base.isAlreadyChordPro else { continue }
             let refined = Self.recordedFixtures.contains(stem)
                 ? try await PasteRefiner.refined(base, router: Self.fmRouter()).result
                 : base
-            let code = entry.artist.contains(base.metadata.artists.compactMap(LabelScore.norm))
-            let model = entry.artist
-                .contains(refined.metadata.artists.compactMap(LabelScore.norm))
+            #expect(refined.metadata.artists == base.metadata.artists, "\(name)")
+            guard let entry = gold[stem] else { continue }
             total += 1
-            codeRight += code ? 1 : 0
-            modelRight += model ? 1 : 0
-            #expect(!code || model, "\(name): the model lost a right artist")
+            right += entry.artist.contains(base.metadata.artists.compactMap(LabelScore.norm))
+                ? 1 : 0
         }
-        print("Artist lists: code only \(codeRight)/\(total), with FM \(modelRight)/\(total)")
-        #expect(total > 0)
+        #expect(total > 0 && right == total)
     }
 
     /// Every fixture that asks a model anything has an FM recording.
@@ -119,13 +113,14 @@ struct IngestRefinementTests {
     ) throws {
         let base = try PasteFixtures.ingest("E07-short-unlabelled.txt")
         #expect(base.metadata.title == nil)
-        let refined = IngestPipeline.apply(Refinements(title: "Monday", artist: "June"), to: base)
-        #expect(refined.text.hasPrefix("{title: Monday}\n{artist: June}\n"))
-        #expect(refined.refinedFields == [.title, .artist])
+        let refined = IngestPipeline.apply(Refinements(title: "Monday"), to: base)
+        #expect(refined.text.hasPrefix("{title: Monday}\n"))
+        #expect(refined.metadata.artists.isEmpty)
+        #expect(refined.refinedFields == [.title])
 
         let titled = try PasteFixtures.ingest("E01-ug-headers.txt")
         let kept = IngestPipeline.apply(
-            Refinements(title: "Other Song", artist: "Someone"),
+            Refinements(title: "Other Song"),
             to: titled,
         )
         #expect(kept.metadata.title == titled.metadata.title)
@@ -213,69 +208,57 @@ struct IngestRefinementTests {
         )
         for title in ["G D Em C", "Capo 2", "E-A-D-G-B-e"] {
             let answer = PasteRefiner.refinements(
-                MetadataOutput(title: title, artist: "Ada Lund", key: ""),
+                MetadataOutput(title: title, key: ""),
                 for: task,
             )
             #expect(answer.title == nil, "\(title)")
-            #expect(answer.artist == "Ada Lund")
         }
         let invented = PasteRefiner.refinements(
-            MetadataOutput(title: "Something Else", artist: "", key: "G"),
+            MetadataOutput(title: "Something Else", key: "G"),
             for: task,
         )
         #expect(invented.title == nil && invented.key == "G")
     }
 
-    /// P8-8 section 3.8: the sheet's own spelling of the matched text, never the model's
-    /// casing; a value not in the sheet is dropped; no AI step re-spells a romanized name.
+    /// R163: the sheet's own spelling of the matched title, never the model's casing; a
+    /// value not in the sheet is dropped; no AI step re-spells a romanized name.
     @Test
-    func `model metadata keeps the sheet's spelling`() {
+    func `a model title keeps the sheet's spelling`() {
         let task = MetadataTask(
             topLines: ["Tum Hi Ho", "Singer - Arijit Singh & mithoon"],
             bottomLines: [],
             chords: ["G", "D"],
         )
         let answer = PasteRefiner.refinements(
-            MetadataOutput(title: "TUM HI HO", artist: "arijit singh", key: ""),
+            MetadataOutput(title: "TUM HI HO", key: ""),
             for: task,
         )
         #expect(answer.title == "Tum Hi Ho")
-        #expect(answer.artist == "Arijit Singh")
-        let combined = PasteRefiner.refinements(
-            MetadataOutput(title: "", artist: "ARIJIT SINGH & MITHOON", key: ""),
-            for: task,
-        )
-        #expect(combined.artist == "Arijit Singh & mithoon")
         let corrected = PasteRefiner.refinements(
-            MetadataOutput(title: "", artist: "Arijit Singh & Mithun", key: ""),
+            MetadataOutput(title: "Tum Hi Hoo", key: ""),
             for: task,
         )
-        #expect(corrected.artist == nil)
-        let invented = PasteRefiner.refinements(
-            MetadataOutput(title: "", artist: "Shreya Ghoshal", key: ""),
-            for: task,
-        )
-        #expect(invented.artist == nil)
+        #expect(corrected.title == nil)
     }
 
-    /// R121: the converter wins on title and artist. No metadata call when code found both,
-    /// and a model artist is never taken when code found the title (a site heading included).
+    /// R121, R174: the converter wins on the title, and artists come from code only. No
+    /// metadata call when code found a title; the refined result's artists are always code's.
     @Test
-    func `the converter wins on title and artist`() throws {
-        var titledOnly = 0
+    func `the converter wins on the title and owns the artists`() throws {
+        var untitled = 0
         for name in PasteFixtures.names {
             let result = try PasteFixtures.ingest(name)
-            guard !result.isAlreadyChordPro, result.metadata.title != nil else { continue }
-            if !result.metadata.artists.isEmpty {
+            guard !result.isAlreadyChordPro else { continue }
+            if result.metadata.title != nil {
                 #expect(PasteRefiner.metadataTask(for: result) == nil, "\(name)")
                 continue
             }
-            titledOnly += 1
-            let refined = IngestPipeline.apply(Refinements(artist: "Made Up Band"), to: result)
-            #expect(refined.metadata.artists.isEmpty, "\(name)")
-            #expect(!refined.refinedFields.contains(.artist), "\(name)")
+            untitled += 1
+            let refined = IngestPipeline.apply(Refinements(title: "Made Up"), to: result)
+            #expect(refined.metadata.artists == result.metadata.artists, "\(name)")
+            #expect(refined.refinedFields.isSubset(of: [.title]), "\(name)")
         }
-        #expect(titledOnly > 0)
+        #expect(untitled > 0)
     }
 
     /// Spike 5.3 / the real-paste eval: no metadata call without a top or bottom candidate.

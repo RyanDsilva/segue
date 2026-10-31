@@ -14,7 +14,6 @@ struct ModelPortRoutingTests {
     )
     static let answer = MetadataOutput(
         title: "Paper Lanterns",
-        artist: "The Hollow Pines",
         key: "G",
     )
     static let mlxID = ProviderID.mlx(ModelRef(repo: "mlx-community/test", revision: "abc"))
@@ -181,10 +180,10 @@ struct ModelPortRoutingTests {
 
     @Test
     func `metadata and set request outputs are normalised`() {
-        let output = MetadataOutput(title: " Unknown ", artist: "Glass Houses", key: "H")
-        #expect(output.normalized() == MetadataOutput(title: "", artist: "Glass Houses", key: ""))
-        let same = MetadataOutput(title: "Safar", artist: "safar", key: "Am").normalized()
-        #expect(same.artist.isEmpty && same.key == "Am")
+        let output = MetadataOutput(title: " Unknown ", key: "H")
+        #expect(output.normalized() == MetadataOutput(title: "", key: ""))
+        let same = MetadataOutput(title: "Safar", key: "Am").normalized()
+        #expect(same.title == "Safar" && same.key == "Am")
         let request = SetRequestOutput(
             includeTags: ["upbeat", "jazz", "upbeat", "ballad"],
             excludeTags: ["ballad"],

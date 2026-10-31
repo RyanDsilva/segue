@@ -164,12 +164,11 @@ public enum ArtistSeparator: String, Sendable, CaseIterable { case comma, ampers
 - **Review sheet:** under the artist chips, for each split, one muted line: "Split from 'Zoya & The Village Band' · Keep as one" (button). Keep as one replaces those parts with the original value in place (one `setArtists` edit of the review text, one undo step, the line disappears). The chips can also be edited like any chip field. The split line disappears if the user edits the artists by hand.
 - Fixtures: the golden `.cho` of every paste fixture whose artist came from a credit line or header with a separator is regenerated, and each diff is reviewed by hand in the step commit (expected today: `H06-scale-capo-tab.cho` "Zoya", "The Village Band"; `H08-codemixed.cho` "DJ Saahil", "Rhea"; grep the inputs for "," "&" "feat." "ft." in artist positions and list each in the commit message). `paste/gold.json` is updated the same way.
 
-### 3.8 AI refinement (R163 spirit: code results win)
+### 3.8 AI refinement (R174: artists from code only)
 
-- A model artist is still taken only when code found neither title nor artist (`Refinement.swift:41-49`, unchanged).
-- `PasteRefiner.refinements` (`PasteRefiner.swift:86-103`) returns **the sheet's own spelling** of the matched text (the substring of the candidate lines it matched, case-insensitively), never the model's casing or spelling; a value not found verbatim is dropped (unchanged). The accepted value then goes through the same `ArtistNames.split` as code values (3.7), so the model can neither merge nor split differently from code.
-- The prompt (`Prompts.swift:68-73`) is unchanged: the model returns the artist text as written; splitting is code's. No model step reads or writes `{album}`.
-- `PasteEvaluator` (`AIEval/PasteEvaluator.swift:89`) scores the artist **list** (exact, in order) and reports artist accuracy code-only vs with-model on the paste corpus; record both numbers in the step commit. If with-model is not better than code-only on artists, say so to the orchestrator (the user decides whether the model keeps the field).
+- The model no longer reads or writes artists (R174: code parsing gets all 46 recorded pastes right and the model added nothing). `MetadataOutput`, `MetadataWire`, the MLX grammar and `Refinements` have no artist; `RefinedField` is the title only; the prompt asks for the title and key. The metadata call runs only when code found no title (`PasteRefiner.metadataTask`).
+- `PasteRefiner.refinements` returns **the sheet's own spelling** of the matched title (the substring of the candidate lines it matched, case-insensitively), never the model's casing or spelling; a value not found verbatim is dropped. No model step reads or writes `{album}`.
+- `PasteEvaluator` scores the artist **list** (exact, in order), which is code's; the FM recordings test pins that every refined result keeps code's artist list.
 
 ### 3.9 Index
 
@@ -340,7 +339,7 @@ Enums, booleans and buckets only: never names, titles, albums or typed text. New
 - Row 24 (composer): `segue.tier` gains `artist`; new Bool `segue.artistWords` (an artist qualifier was used).
 - Row 21 (assistant): Bools `segue.artistChips`, `segue.albumChips`; `segue.leftOut` (SmallBucket of songs left out for no time).
 - `librarySnapshot`: `segue.noTempo` (SongBucket: songs without a `{tempo}`), to see how much of a library can be timed.
-- Paste row 19's `segue.correction`: an artist correction compares the whole list (`PasteAnalytics.swift:95`).
+- Paste row 19's `segue.correction`: no artist term (artists are never AI-filled, R174).
 
 ## 9. Accessibility
 
@@ -383,7 +382,7 @@ Also rendered: the review sheet's split line, the set row Time cell (known, esti
 - `SetArtistsEditTests`: unchanged list -> no edit; one-artist file untouched byte-for-byte after editing its key; rename artist 2 of 3 changes only that line; add after the last `{artist}`, else after `{title}`, else at the top; remove; reorder; spelling of an existing directive kept; one undo step "Set Artists"; values with "}" or newlines cleaned.
 - `MetadataAlbumTests`: `{album}` read, first wins, set and clear through `setDirective`.
 - `IngestArtistSplitTests` + the regenerated paste goldens: H06 split, H08 split, E03 (directive) kept whole, a `Singers: A, B & C` credit line -> three, dedup, `artistSplits` carried through refinement.
-- `PasteRefinerTests` (extend): a model "arijit singh" against a sheet "Arijit Singh" returns "Arijit Singh"; a model value not in the sheet is dropped; a model "A & B" splits like code.
+- `PasteRefinerTests` (extend): a model "TUM HI HO" against a sheet "Tum Hi Ho" returns "Tum Hi Ho"; a model value not in the sheet is dropped; the refined artists are always code's (R174).
 - `NearDuplicateTests` (extend): `{artist: Vishal & Shekhar}` vs a paste with Vishal, Shekhar scores artist 1.
 - `SongIndexTests` / `LibrarySearchTests` (extend): album found in all three forms ("kalank", "kalnk" is not, tier 4 is titles only); the version is 4xxx and an old index rebuilds; "shekhar" finds both stored forms.
 - `SmartFilterTests` (extend): artists any-of (split forms), albums any-of; a hand-written file with `"length": {...}` decodes, matches without it and is not rewritten by loading.
@@ -414,7 +413,7 @@ The 2,000-song cold `SlotTimes.song` cost and a 20-slot set (5.9), recorded in t
 
 ### 13.4 Eval
 
-Paste artist accuracy code-only vs with-model (3.8), recorded in the step 3 commit.
+Paste artist accuracy (code only, R174; 3.8), recorded in the step 3 commit.
 
 ### 13.5 E2E: `SegueSongMetadataE2ETests` (new, one class, one test, P8-8c)
 

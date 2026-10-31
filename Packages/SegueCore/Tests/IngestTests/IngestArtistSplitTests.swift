@@ -76,15 +76,4 @@ struct IngestArtistSplitTests {
         let relabelled = base.reassembled(labels: [:])
         #expect(relabelled.artistSplits == base.artistSplits)
     }
-
-    @Test
-    func `a model artist splits exactly as code would`() throws {
-        let base = try PasteFixtures.ingest("E07-short-unlabelled.txt")
-        #expect(base.metadata.title == nil && base.metadata.artists.isEmpty)
-        let refined = IngestPipeline.apply(Refinements(artist: "Vishal & Shekhar"), to: base)
-        #expect(refined.metadata.artists == ["Vishal", "Shekhar"])
-        #expect(refined.text.hasPrefix("{artist: Vishal}\n{artist: Shekhar}\n"))
-        #expect(refined.artistSplits.map(\.original) == ["Vishal & Shekhar"])
-        #expect(refined.refinedFields == [.artist])
-    }
 }

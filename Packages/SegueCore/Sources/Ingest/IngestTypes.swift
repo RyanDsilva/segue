@@ -284,9 +284,9 @@ public enum IngestDiagnostic: Sendable, Equatable, Hashable {
 }
 
 /// Metadata a model filled in (marked apart from rule-based results in the review sheet).
+/// Artists are never one: they come from code only (R174).
 public enum RefinedField: String, Sendable, Equatable, Hashable, CaseIterable {
     case title
-    case artist
 }
 
 /// Answers from a model, all by index (P3-2 fills it; `IngestResult.reassembled` renders it).
@@ -294,7 +294,6 @@ public struct Refinements: Sendable, Equatable, Hashable {
     /// Section labels by block index.
     public var labels: [Int: SectionLabel]
     public var title: String?
-    public var artist: String?
     public var key: String?
     /// Line classes by line index (for `.unknown` lines).
     public var lineClasses: [Int: LineClass]
@@ -302,13 +301,11 @@ public struct Refinements: Sendable, Equatable, Hashable {
     public init(
         labels: [Int: SectionLabel] = [:],
         title: String? = nil,
-        artist: String? = nil,
         key: String? = nil,
         lineClasses: [Int: LineClass] = [:],
     ) {
         self.labels = labels
         self.title = title
-        self.artist = artist
         self.key = key
         self.lineClasses = lineClasses
     }

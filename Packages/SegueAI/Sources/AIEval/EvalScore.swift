@@ -16,9 +16,6 @@ public struct EvalScore: Sendable, Hashable, Codable {
     public var titlesRight = 0
     public var artists = 0
     public var artistsRight = 0
-    /// The deterministic result's artist lists right (code only, before any model answer);
-    /// nil in a baseline written before P8-8.
-    public var codeArtistsRight: Int?
     public var keys = 0
     public var keysRight = 0
     /// Songs whose block count differs from the gold (all their labels count as wrong).
@@ -81,8 +78,6 @@ public struct EvalScore: Sendable, Hashable, Codable {
         titlesRight += gold.title.contains(Self.norm(record.title)) ? 1 : 0
         artists += 1
         artistsRight += gold.artist.contains(record.artists.compactMap(Self.norm)) ? 1 : 0
-        codeArtistsRight = (codeArtistsRight ?? 0)
-            + (gold.artist.contains(record.codeArtists.compactMap(Self.norm)) ? 1 : 0)
         keys += 1
         keysRight += gold.key.contains(record.key ?? "unknown") ? 1 : 0
         for call in record.calls {
@@ -109,8 +104,7 @@ public struct EvalScore: Sendable, Hashable, Codable {
         unheaded \(blocksRight - headedRight)/\(blocks - headed) \
         \(percent(blocksRight - headedRight, blocks - headed))
         songs with every label right \(songsAllLabelsRight)/\(songs)
-        title \(titlesRight)/\(titles), artist \(artistsRight)/\(artists) \
-        (code only \(codeArtistsRight ?? 0)/\(artists)), \
+        title \(titlesRight)/\(titles), artist \(artistsRight)/\(artists) (code only), \
         key \(keysRight)/\(keys)
         calls \(calls), failures: \(failureText), retries \(retries)
         labels call p50/p90 \(labelsCallP50Ms)/\(labelsCallP90Ms) ms; \

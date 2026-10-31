@@ -149,10 +149,10 @@
                     .disabled(!item.canSwapTitleAndArtist)
                     .help("Some sites write “Artist - Title”")
                     .accessibilityIdentifier(AccessibilityID.pasteSwap)
-                    if !item.aiFields.isEmpty {
+                    if item.aiFields.contains(.title) {
                         HStack(spacing: 4) {
                             SparkleMark()
-                            Text(aiFieldsText)
+                            Text("Title decided by AI")
                         }
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
@@ -162,14 +162,6 @@
                 if let lookalike = item.nearDuplicateText {
                     NearDuplicateCallout(text: lookalike)
                 }
-            }
-        }
-
-        private var aiFieldsText: String {
-            switch (item.aiFields.contains(.title), item.aiFields.contains(.artist)) {
-            case (true, true): "Title and artist decided by AI"
-            case (true, false): "Title decided by AI"
-            default: "Artist decided by AI"
             }
         }
 

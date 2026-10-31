@@ -121,34 +121,27 @@ public struct MetadataTask: ModelTask {
     }
 }
 
-/// `""` means "not named" for every field.
+/// `""` means "not named" for every field. No artist: artists come from code only (R174).
 public struct MetadataOutput: Sendable, Hashable, Codable {
     public var title: String
-    public var artist: String
     /// A name from `ModelVocabulary.keys`, or `""`.
     public var key: String
 
-    public init(title: String, artist: String, key: String) {
+    public init(title: String, key: String) {
         self.title = title
-        self.artist = artist
         self.key = key
     }
 
-    /// Spike 5.3 post-processing: trimmed, "Unknown"/"none"/"n/a" -> empty, an artist equal
-    /// to the title -> empty, a key outside the vocabulary -> empty.
+    /// Spike 5.3 post-processing: trimmed, "Unknown"/"none"/"n/a" -> empty, a key outside
+    /// the vocabulary -> empty.
     public func normalized() -> Self {
         func clean(_ text: String) -> String {
             let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
             let placeholders: Set = ["unknown", "none", "n/a", "na", "null", "-"]
             return placeholders.contains(trimmed.lowercased()) ? "" : trimmed
         }
-        let title = clean(title)
-        var artist = clean(artist)
-        if !artist.isEmpty, artist.lowercased() == title.lowercased() {
-            artist = ""
-        }
         let key = ModelVocabulary.keys.contains(key) ? key : ""
-        return Self(title: title, artist: artist, key: key)
+        return Self(title: clean(title), key: key)
     }
 }
 

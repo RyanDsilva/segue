@@ -206,7 +206,7 @@ struct MLXProviderTests {
 
     @Test
     func `the model loads once per paste and unloads right after`() async throws {
-        let metadata = #"{"title":"Harbour Wall","artist":"","key":"G"}"#
+        let metadata = #"{"title":"Harbour Wall","key":"G"}"#
         let engine = FakeEngine([.answer(Self.labelsJSON), .answer(metadata)])
         let provider = Self.provider(engine, linger: .milliseconds(200))
         let context = CallContext(allowsChunking: false)
@@ -215,7 +215,7 @@ struct MLXProviderTests {
             MetadataTask(topLines: ["Harbour Wall"], bottomLines: [], chords: ["G"]),
             context: context,
         )
-        #expect(answer.output == MetadataOutput(title: "Harbour Wall", artist: "", key: "G"))
+        #expect(answer.output == MetadataOutput(title: "Harbour Wall", key: "G"))
         #expect(engine.loads == 1)
         #expect(await provider.isModelLoaded)
         try await Task.sleep(for: .milliseconds(500))

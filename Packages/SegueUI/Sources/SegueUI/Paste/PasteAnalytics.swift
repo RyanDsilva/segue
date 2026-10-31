@@ -78,8 +78,8 @@ enum PasteAnalytics {
     }
 
     /// The edit distance between what the AI decided and what was accepted: the section
-    /// label sequence (Levenshtein, only when a model labelled a block) plus one per
-    /// AI-filled title or artist the user changed.
+    /// label sequence (Levenshtein, only when a model labelled a block) plus one when the
+    /// user changed an AI-filled title (artists are never AI-filled, R174).
     static func correction(of item: PasteReviewItem) -> CorrectionBucket {
         guard item.hasAIDecisions else { return .noCorrection }
         let proposed = ChordProParser.parse(item.proposal.text).0
@@ -89,11 +89,6 @@ enum PasteAnalytics {
             changes += distance(labels(proposed), labels(accepted))
         }
         if item.aiFields.contains(.title), proposed.metadata.title != accepted.metadata.title {
-            changes += 1
-        }
-        if item.aiFields.contains(.artist),
-           proposed.metadata.artists.first != accepted.metadata.artists.first
-        {
             changes += 1
         }
         return CorrectionBucket(changes: changes)

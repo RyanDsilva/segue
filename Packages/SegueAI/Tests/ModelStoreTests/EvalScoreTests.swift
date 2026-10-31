@@ -14,7 +14,6 @@ struct EvalScoreTests {
         labels: [String],
         title: String?,
         artists: [String] = [],
-        codeArtists: [String] = [],
     ) -> EvalRecord {
         EvalRecord(
             fixture: "E01",
@@ -23,7 +22,6 @@ struct EvalScoreTests {
             headed: [false, true, false],
             title: title,
             artists: artists,
-            codeArtists: codeArtists,
             key: "G",
             calls: [],
             skipped: false,
@@ -68,7 +66,7 @@ struct EvalScoreTests {
     }
 
     @Test
-    func `artists score as whole lists, in order, code only beside with-model`() {
+    func `artists score as whole lists, in order`() {
         let gold = GoldEntry(
             labels: [["other"]],
             title: [nil],
@@ -76,22 +74,15 @@ struct EvalScoreTests {
                 .map { names in names.compactMap(EvalScore.norm) },
             key: ["G"],
         )
-        func score(_ artists: [String], code: [String]) -> EvalScore {
+        func score(_ artists: [String]) -> EvalScore {
             EvalScore(
-                records: [Self.record(
-                    labels: ["other"],
-                    title: nil,
-                    artists: artists,
-                    codeArtists: code,
-                )],
+                records: [Self.record(labels: ["other"], title: nil, artists: artists)],
                 gold: ["E01": gold],
             )
         }
-        let split = score(["Zoya", "The Village Band"], code: ["Zoya", "The Village Band"])
-        #expect(split.artistsRight == 1 && split.codeArtistsRight == 1)
-        let whole = score(["Zoya & The Village Band"], code: [])
-        #expect(whole.artistsRight == 1 && whole.codeArtistsRight == 0)
-        #expect(score(["The Village Band", "Zoya"], code: []).artistsRight == 0)
-        #expect(score(["Zoya"], code: []).artistsRight == 0)
+        #expect(score(["Zoya", "The Village Band"]).artistsRight == 1)
+        #expect(score(["Zoya & The Village Band"]).artistsRight == 1)
+        #expect(score(["The Village Band", "Zoya"]).artistsRight == 0)
+        #expect(score(["Zoya"]).artistsRight == 0)
     }
 }

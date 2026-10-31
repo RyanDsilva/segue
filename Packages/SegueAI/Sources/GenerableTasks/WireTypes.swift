@@ -47,19 +47,13 @@ public struct MetadataWire: Codable, Sendable, Equatable {
     public var title: String
     @Guide(
         // swiftlint:disable:next line_length
-        description: "Artist, band or singer exactly as written, or an empty string if none is written",
-    )
-    public var artist: String
-    @Guide(
-        // swiftlint:disable:next line_length
         description: "Key of the song: the stated key (Key:, Scale:) if any, else your best guess from the chords, or unknown if there are no chords",
         .anyOf(WireVocabulary.keysOrUnknown),
     )
     public var key: String
 
-    public init(title: String, artist: String, key: String) {
+    public init(title: String, key: String) {
         self.title = title
-        self.artist = artist
         self.key = key
     }
 }

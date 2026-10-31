@@ -21,12 +21,12 @@ public enum MLXGrammars {
         return rules.joined(separator: "\n")
     }
 
-    /// `{"title":"...","artist":"...","key":<key>}`: strings of at most 80 characters, the key
+    /// `{"title":"...","key":<key>}`: strings of at most 80 characters, the key
     /// from the vocabulary or `unknown`.
     public static func metadata() -> String {
         [
-            "root ::= \(literal(#"{"title":"#)) str \(literal(#","artist":"#)) str "
-                + "\(literal(#","key":"#)) key \(literal("}"))",
+            "root ::= \(literal(#"{"title":"#)) str \(literal(#","key":"#)) key "
+                + literal("}"),
             stringRule,
             characterRule,
             "key ::= " + alternatives(WireVocabulary.keysOrUnknown),

@@ -24,10 +24,9 @@ public struct EvalRecord: Sendable, Hashable, Codable {
     /// Whether each block's label came from a header (code decides those).
     public var headed: [Bool]
     public var title: String?
-    /// The refined result's artists, in order (P8-8: the eval scores the whole list).
+    /// The result's artists, in order (the eval scores the whole list). Code finds them; no
+    /// model step reads or writes them (R174).
     public var artists: [String]
-    /// The deterministic result's artists, so artist accuracy reads code-only vs with-model.
-    public var codeArtists: [String]
     public var key: String?
     public var calls: [EvalCall]
     public var skipped: Bool
@@ -44,7 +43,6 @@ public struct EvalRecord: Sendable, Hashable, Codable {
         headed: [Bool],
         title: String?,
         artists: [String],
-        codeArtists: [String] = [],
         key: String?,
         calls: [EvalCall],
         skipped: Bool,
@@ -57,7 +55,6 @@ public struct EvalRecord: Sendable, Hashable, Codable {
         self.headed = headed
         self.title = title
         self.artists = artists
-        self.codeArtists = codeArtists
         self.key = key
         self.calls = calls
         self.skipped = skipped
@@ -92,7 +89,6 @@ public enum PasteEvaluator {
                 headed: result.blocks.map { $0.labelSource == .header },
                 title: result.metadata.title,
                 artists: result.metadata.artists,
-                codeArtists: base.metadata.artists,
                 key: key,
                 calls: calls.map(\.call),
                 skipped: base.isAlreadyChordPro,

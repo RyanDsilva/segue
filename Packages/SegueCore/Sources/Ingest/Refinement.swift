@@ -7,7 +7,7 @@ extension IngestPipeline {
     ///
     /// - labels only for unheaded blocks (`questions.unheadedBlocks`; headed labels, and the
     ///   R101 repetition labels, always come from code);
-    /// - title and artist only where code found none;
+    /// - a title only where code found none (artists come from code only, R174);
     /// - a model key only when `KeyDetector` is ambiguous and the key is one of its top two,
     ///   and then only as the review sheet's suggestion: it is never written into the `.cho`
     ///   (R101);
@@ -39,21 +39,6 @@ extension IngestPipeline {
             metadata.title = title
             refinedFields.insert(.title)
         }
-        // R121: the converter wins. A title code found (a site heading included) means the
-        // artist line, if any, was already read: a model artist is never taken beside it.
-        // P8-8 section 3.8: the accepted model artist splits exactly as code's would.
-        var artistSplits = base.artistSplits
-        if metadata.artists.isEmpty, base.metadata.title == nil,
-           let artist = nonEmpty(refinements.artist)
-        {
-            let split = ArtistNames.split(artist)
-            metadata.artists = split.parts.isEmpty ? [artist] : split.parts
-            if split.didSplit {
-                artistSplits.append(split)
-            }
-            refinedFields.insert(.artist)
-        }
-
         var result = base.reassembled(
             labels: acceptedLabels,
             lineClasses: acceptedLines,
@@ -65,7 +50,7 @@ extension IngestPipeline {
             result.keyInference.refined = key
         }
         result.refinedFields = refinedFields
-        result.artistSplits = artistSplits
+        result.artistSplits = base.artistSplits
         result.diagnostics += rejected.map { .refinementRejected(block: $0) }
         return result
     }

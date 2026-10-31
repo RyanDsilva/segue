@@ -99,10 +99,10 @@ struct FoundationModelsAdapterMappingTests {
 
     @Test
     func `metadata post-processing`() {
-        #expect(WireMapping.metadata(MetadataWire(title: "Unknown", artist: "", key: "unknown"))
-            == MetadataOutput(title: "", artist: "", key: ""))
-        #expect(WireMapping.metadata(MetadataWire(title: "Safar", artist: "Safar", key: "Am"))
-            == MetadataOutput(title: "Safar", artist: "", key: "Am"))
+        #expect(WireMapping.metadata(MetadataWire(title: "Unknown", key: "unknown"))
+            == MetadataOutput(title: "", key: ""))
+        #expect(WireMapping.metadata(MetadataWire(title: "Safar", key: "Am"))
+            == MetadataOutput(title: "Safar", key: "Am"))
     }
 
     @Test

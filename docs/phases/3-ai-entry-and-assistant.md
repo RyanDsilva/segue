@@ -42,7 +42,7 @@ Not in 0.5: a local AI stats screen or metrics database (R74), metronome sound d
 
 ## 3. Design principle: deterministic first, model last
 
-Code handles everything code can handle. Models only refine: section labels for blocks without a header, title/artist when code found none, and lines code could not classify (R63). The model **never outputs lyric text**: every output refers to blocks or lines by index, so lyrics cannot be respelled by construction (spike section 1). The lyric guard stays as a backstop.
+Code handles everything code can handle. Models only refine: section labels for blocks without a header, the title when code found none (artists come from code only, R174), and lines code could not classify (R63). The model **never outputs lyric text**: every output refers to blocks or lines by index, so lyrics cannot be respelled by construction (spike section 1). The lyric guard stays as a backstop.
 
 ```
 raw text (paste, .txt, .crd)
@@ -67,7 +67,7 @@ raw text (paste, .txt, .crd)
                                Music -> composer, Lyrics -> lyricist, Movie -> album (R101); with a
                                capo, {key} is the shapes key (R101)
  == review sheet opens HERE with the deterministic result (instant, never behind a spinner) ==
- -> AI refinement     (model, async)  only: labels for unheaded blocks, title/artist when code found
+ -> AI refinement     (model, async)  only: labels for unheaded blocks, the title when code found
                                none, unknown-line classes; results stream into the open sheet
  -> Lyric guard       (code)  the lyric token sequence of the assembled result must equal the
                                converter's (flat words; regrouping into sections is not a change);
@@ -297,7 +297,7 @@ Integration-first: real parser, real file store on a fresh temp library, real GR
 ### 14.1 Acceptance criteria
 
 - Every golden fixture yields valid ChordPro with zero chord loss and zero lyric change (English and romanized Hindi); a model response that would change a lyric is always rejected.
-- **Quality bar (R64):** with the curated MLX model, section labels and title/artist correct on >= 90% of the golden fixtures AND of Ryan's 10-20 real pastes (eval target). The FM path is measured and reported, with no bar (spike: about 88%).
+- **Quality bar (R64):** with the curated MLX model, section labels and title correct on >= 90% of the golden fixtures AND of Ryan's 10-20 real pastes (eval target). The FM path is measured and reported, with no bar (spike: about 88%).
 - AI off, unavailable or failing: paste and import still work, nothing crashes, blocks or waits on a spinner; the deterministic result shows instantly.
 - No FM call exceeds its runtime budget; long sheets succeed via MLX or chunking.
 - No model downloads without a click; size, licence and RAM need shown first; SHA256 verified; no `Accept-Language` or device User-Agent sent (asserted against a local test server).
