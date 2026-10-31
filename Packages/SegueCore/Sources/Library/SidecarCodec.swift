@@ -46,6 +46,8 @@ enum SidecarCodec {
             3: { _ in },
             // v4 -> v5: `bass` is new (P8-4b); an absent one decodes as empty.
             4: { _ in },
+            // v5 -> v6: `parts` is new (P8-7c); an absent one decodes as empty.
+            5: { _ in },
         ],
     )
 
@@ -147,6 +149,7 @@ private struct PartialSidecar: Decodable {
     var displayPrefs: DisplayPrefs?
     var live: LivePrefs?
     var bass: BassPrefs?
+    var parts: [Part]?
     var createdAt: Date?
     var updatedAt: Date?
 
@@ -159,6 +162,7 @@ private struct PartialSidecar: Decodable {
         case displayPrefs
         case live
         case bass
+        case parts
         case createdAt
         case updatedAt
     }
@@ -173,6 +177,7 @@ private struct PartialSidecar: Decodable {
         displayPrefs = try? container.decodeIfPresent(DisplayPrefs.self, forKey: .displayPrefs)
         live = try? container.decodeIfPresent(LivePrefs.self, forKey: .live)
         bass = try? container.decodeIfPresent(BassPrefs.self, forKey: .bass)
+        parts = Self.lenientParts(container)
         createdAt = try? container.decodeIfPresent(Date.self, forKey: .createdAt)
         updatedAt = try? container.decodeIfPresent(Date.self, forKey: .updatedAt)
     }
@@ -190,6 +195,7 @@ private struct PartialSidecar: Decodable {
             displayPrefs: displayPrefs ?? DisplayPrefs(),
             live: live ?? LivePrefs(),
             bass: bass ?? BassPrefs(),
+            parts: parts ?? [],
             createdAt: created,
             updatedAt: updatedAt ?? created,
         )
@@ -222,6 +228,20 @@ private struct PartialSidecar: Decodable {
             timestamp: created ?? Date(timeIntervalSince1970: 0),
             randomness: Array(digest.prefix(10)),
         ))
+    }
+
+    /// Parts one by one (each lenient inside, section 9.5), so one bad part does not hide the
+    /// others.
+    private static func lenientParts(_ container: KeyedDecodingContainer<CodingKeys>) -> [Part]? {
+        struct Lenient: Decodable {
+            var part: Part?
+
+            init(from decoder: any Decoder) throws {
+                part = try? Part(from: decoder)
+            }
+        }
+        return (try? container.decodeIfPresent([Lenient].self, forKey: .parts))?
+            .compactMap(\.part)
     }
 
     /// Cues one by one, so one malformed cue does not hide the others.

@@ -18,8 +18,9 @@ public struct Sidecar: Sendable, Equatable, Codable {
     /// 2 = phase 1 (`displayPrefs` holds the view toggles: transpose, capo mode, Nashville,
     /// diagrams, instrument, tuning); 3 = phase 2 (`cues`, `live` stage memory); 4 = P3-17
     /// (each cue has a stable `id`; a cue on one occurrence stores its section's `fp`);
-    /// 5 = P8-4b (`bass`: per-song walk-up feel and picks, play-along timing for P8-6; R161).
-    public static let currentSchemaVersion = 5
+    /// 5 = P8-4b (`bass`: per-song walk-up feel and picks, play-along timing for P8-6; R161);
+    /// 6 = P8-7c (`parts`: per-song instrument-neutral parts, bass fills; R167).
+    public static let currentSchemaVersion = 6
 
     public var schemaVersion: Int
     public var id: SongID
@@ -35,6 +36,8 @@ public struct Sidecar: Sendable, Equatable, Codable {
     public var live: LivePrefs
     /// The song's walk-up feel and picks, and play-along timing (schema 5, P8-4b).
     public var bass: BassPrefs
+    /// Instrument-neutral parts: the song's bass fills (schema 6, P8-7c). Always encoded.
+    public var parts: [Part]
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -48,6 +51,7 @@ public struct Sidecar: Sendable, Equatable, Codable {
         displayPrefs: DisplayPrefs = DisplayPrefs(),
         live: LivePrefs = LivePrefs(),
         bass: BassPrefs = BassPrefs(),
+        parts: [Part] = [],
         createdAt: Date,
         updatedAt: Date,
     ) {
@@ -60,6 +64,7 @@ public struct Sidecar: Sendable, Equatable, Codable {
         self.displayPrefs = displayPrefs
         self.live = live
         self.bass = bass
+        self.parts = parts
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

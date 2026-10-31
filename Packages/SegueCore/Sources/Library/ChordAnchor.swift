@@ -64,6 +64,16 @@ public enum ChordAnchors {
         return (applied, unmatched)
     }
 
+    /// Where one anchor sits now (no target; grid chords included), re-anchored as picks
+    /// are; nil when it no longer matches. Parts resolve their start and landing with it.
+    public static func position(
+        of anchor: ChordAnchor,
+        units: [SongSectionUnit],
+        sections: [RenderSection],
+    ) -> ChordPosition? {
+        WrittenChords(sections).resolve(anchor, to: nil, units: units)
+    }
+
     /// The anchor that saves the chord at `position`: its section's anchor and fingerprint,
     /// its ordinal and its written bass. nil when there is no such chord.
     public static func anchor(

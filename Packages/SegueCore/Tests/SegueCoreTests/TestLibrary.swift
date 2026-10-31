@@ -75,6 +75,7 @@ final class TestLibrary: Sendable {
 
     /// Bytes of a canonical sidecar written by this build at `date`.
     static func expectedSidecar(id: SongID, created: String, updated: String) -> String {
+        // swiftlint:disable:previous function_body_length
         """
         {
           "bass" : {
@@ -115,6 +116,9 @@ final class TestLibrary: Sendable {
             "scrollSpeedFactor" : 1,
             "zoom" : 1
           },
+          "parts" : [
+
+          ],
           "schemaVersion" : \(Sidecar.currentSchemaVersion),
           "tags" : [
 

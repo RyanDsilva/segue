@@ -258,15 +258,15 @@ struct SectionNoteSidecarTests {
     func `a newer sidecar opens read-only and keeps its cues`() async throws {
         let lib = try TestLibrary()
         let id = SongID(lib.ids.next())
-        let v5 = """
-        {"schemaVersion": 6, "id": "\(id)", "tags": [],
+        let newer = """
+        {"schemaVersion": 99, "id": "\(id)", "tags": [],
          "cues": [{"id": "\(CueID(lib.ids.next()))", "section": "Chorus", "text": "A", "glow": 1}],
          "createdAt": "2025-06-01T10:00:00.000Z", "updatedAt": "2025-06-02T10:00:00.000Z"}
         """
         try lib.write(NoteFix.song, to: "songs/placement.cho")
-        try lib.write(v5, to: "songs/placement.segue.json")
+        try lib.write(newer, to: "songs/placement.segue.json")
         let record = try #require(try await lib.openStore().song(id: id))
-        #expect(record.readOnly == .newerSchema(found: 6, supported: 5))
+        #expect(record.readOnly == .newerSchema(found: 99, supported: Sidecar.currentSchemaVersion))
         #expect(record.sidecar.cues.map(\.text) == ["A"])
     }
 }

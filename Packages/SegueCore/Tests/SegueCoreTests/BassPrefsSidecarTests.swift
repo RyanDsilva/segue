@@ -31,10 +31,10 @@ struct BassPrefsSidecarTests {
         #expect(record.sidecar.tags == ["gig"])
         #expect(record.sidecar.notes == "Start soft")
         #expect(record.sidecar.displayPrefs.transpose == 2)
-        // The next save writes schema 5 with the bass object.
+        // The next save writes the current schema with the bass object.
         _ = try await store.updateBassPrefs(id: song.id, BassPrefs(genre: .rock))
         let written = try lib.read("songs/old.segue.json")
-        #expect(written.contains("\"schemaVersion\" : 5"))
+        #expect(written.contains("\"schemaVersion\" : \(Sidecar.currentSchemaVersion)"))
         #expect(written.contains("\"genre\" : \"rock\""))
         #expect(written.contains("\"tags\""))
     }
@@ -160,12 +160,12 @@ struct BassPrefsSidecarTests {
     }
 
     @Test
-    func `a v6 sidecar opens read-only and is never rewritten`() async throws {
+    func `a newer sidecar opens read-only and is never rewritten`() async throws {
         let lib = try TestLibrary()
         let store = try await lib.openStore()
         let song = try await store.createSong(source: "{title: New}\n[G]Hello\n")
         let newer = """
-        {"id": "\(song.id)", "schemaVersion": 6, "bass": {"walkUps": [\(Self.pick)]}}
+        {"id": "\(song.id)", "schemaVersion": 7, "bass": {"walkUps": [\(Self.pick)]}}
         """
         try lib.write(newer, to: "songs/new.segue.json")
         try await store.refresh()
