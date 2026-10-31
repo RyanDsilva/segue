@@ -18,17 +18,16 @@ Run a whole solo/duo gig from a MacBook on a stand. That means building setlists
 - A gig log written automatically from a show, and editable afterwards.
 - Per-song notes and cues shown in live mode.
 - Basic tags and proficiency rating: editing, display and simple filtering. Smart filters come in phase 3.
-- A command layer that keyboard, pedals (phase 6) and MIDI (phase 6) all map onto.
+- A command layer that the keyboard (including keystroke pedals) and MIDI (phase 6) all map onto.
 - Crash-safe show state.
 
 ## Non-goals
 
-- Multiple timed sets
+- Break rows and per-part timed totals (phase 3, R85)
 - Backing tracks
-- MIDI or pedal input itself
+- MIDI input itself (phase 6)
 - AI set building (phase 3)
 - PDF export (phase 4)
-- Partner sync (phase 7)
 - Smart or saved filters (phase 3)
 
 ## Data model
@@ -64,7 +63,7 @@ Files stay canonical (see vision section 2). The SQLite index projects setlists 
 - Played and skipped state lives on the show, not the setlist, so a setlist stays reusable.
 
 **Gig log entry** - a finished show is its own gig log record: `endedAt` set, plus optional `venue`, `notes` and `rating`.
-- The "played" list is derived from the events: each song's start and end times, and whether it came from a request. These start/end times are also the raw input for phase 3's learned song durations, so `advanced`/`jumped` events must carry accurate timestamps from the injected clock.
+- The "played" list is derived from the events: each song's start and end times, and whether it came from a request. `advanced`/`jumped` events must carry accurate timestamps from the injected clock.
 - Gig log fields are fixed at venue, date, notes, rating. No pay/tips or per-song crowd notes.
 - Library views show "last played" and "times played" per song from the index projection.
 
@@ -129,7 +128,7 @@ Every action is a `ShowCommand` enum case, dispatched through one `ShowControlle
 - `zoomIn`, `zoomOut`, `resetZoom`
 - `endShow`
 
-Input sources map raw events to commands through a binding table (`Bindings.json`, with defaults in code). Phase 6 adds HID-pedal and MIDI sources without touching `ShowController`.
+Input sources map raw events to commands through a binding table (`Bindings.json`, with defaults in code). Phase 6 adds MIDI sources without touching `ShowController`.
 
 Default keys:
 
@@ -207,10 +206,9 @@ See `docs/decisions.md` (Phase 2).
 5. **"Play now":** the interrupted song goes back to pending. Implication: jumping never marks a song played.
 6. **Gig log fields:** venue, date, notes, rating only.
 7. **Proficiency:** three levels, Learning / Ready / Pro, stored as strings in the sidecar. Implication: phase 3 scoring and filters use the same three levels.
-8. **Second screen:** not built.
-9. **Unfinished show older than 12 hours:** auto-closed into the gig log on next launch, and the reorder diff (Save/Discard) is offered then. Implication: no show data is ever silently discarded.
-10. **Shortcut focus behaviour from full screen** is a verification task in phase 0 (see `0-walking-skeleton.md`); this phase follows its result.
-11. **Rehearse-setlist run (from phase 3 round 2):** a rehearsal mode that runs a setlist through the live view without creating a show or gig-log entry, timing every song. Implication: the show-state machine gets a `rehearsal` flavor that writes timings only.
+8. **Unfinished show older than 12 hours:** auto-closed into the gig log on next launch, and the reorder diff (Save/Discard) is offered then. Implication: no show data is ever silently discarded.
+9. **Shortcut focus behaviour from full screen** is a verification task in phase 0 (see `0-walking-skeleton.md`); this phase follows its result.
+10. **Rehearse-setlist run (from phase 3 round 2):** a rehearsal mode that runs a setlist through the live view without creating a show or gig-log entry, timing every song. Implication: the show-state machine gets a `rehearsal` flavor that writes timings only.
 
 ## Open questions
 

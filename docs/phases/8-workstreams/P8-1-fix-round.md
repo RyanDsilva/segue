@@ -20,7 +20,7 @@ A stage that a held, bouncing or stuck pedal cannot derail; two crash paths clos
 
 **In scope (R154, R159):** key auto-repeat limited to scroll and zoom; page-forward and page-back ignored while a song change is in flight; page-forward at the bottom of the last song stays put with a hint; the Smart Filter editor's positional row bindings; the reorder review's double submit; serialized setlist undo snapshots; a failed End Show re-offered at once; import folder depth and symlink guard; UTF-16 text files with a BOM; the near-duplicate warning (a similarity score over title, artist and content); verifying and resolving Sentry SEGUE-MACOS-2; custom section names as extra chips and menu items, and library suggestions in the Custom... field (R159).
 
-**Not in scope (R154 declined):** Duplicate Song, a count-in before auto-scroll, a quicker first run. Also not here: the collapse-repeats toggle (P8-2 removes it, R147).
+**Not in scope:** the collapse-repeats toggle (P8-2 removes it, R147).
 
 ## 2. Review findings checked against the code
 

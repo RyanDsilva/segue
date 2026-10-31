@@ -4,7 +4,7 @@ Phase 8 workstream (new, 2026-10-30). Rulings: `docs/release/decisions.md` **R16
 
 Ryan plays bass. He wants every bass feature to agree on how long each chord lasts, to fix that timing quickly (a click on a chord's length, or tapping along), to have key changes in the middle of a song count, and to write his own fills: pick a run of chords (possibly into the last chorus a step up), get four fills that differ in rhythm, hear them against the chords, tweak one on a fretboard or a piano roll, save it, and read it on stage as note names or a mini tab. None of it may make a sound during a show.
 
-The work is six build sessions in this one doc (section 17): **P8-7a** time core (lands **before P8-6b**), **P8-7b** timing UI and tap capture, **P8-7c** parts and the generator (after the fill corpus), **P8-7d** the fill editor (after P8-6a), **P8-7e** stage and the PDF hook, **P8-7f** the closing E2E test, guide pages and Ryan's by-ear check. MIDI export is out of scope (R167 Q14).
+The work is six build sessions in this one doc (section 17): **P8-7a** time core (lands **before P8-6b**), **P8-7b** timing UI and tap capture, **P8-7c** parts and the generator (after the fill corpus), **P8-7d** the fill editor (after P8-6a), **P8-7e** stage and the PDF hook, **P8-7f** the closing E2E test, guide pages and Ryan's by-ear check.
 
 ## Session rules (apply to every session)
 
@@ -26,7 +26,7 @@ The work is six build sessions in this one doc (section 17): **P8-7a** time core
 
 **In scope:** `SongTimeline` and its maps (meter, tempo, key) from positional directives; the `{key}` fix and its consumers; the grid parser; `ticks` and `push` on corrections; the chord-length lane's push and sub-beat editing; tap capture with review; the key-change chip; directive inserts; the `Part` model and sidecar schema 6; span anchoring; `Fill.candidates` with rhythm templates driven by the corpus; the fill editor (selection, candidates, audition, two views, mini tab, accessibility); fills in previews, on stage, on the mini neck and in play-along; the bass chart PDF hook; analytics; guide pages.
 
-**Not in scope:** MIDI, MusicXML and iReal Pro export or import (R167 Q14: MIDI comes in the first release after the fill editor; the model stays exportable, section 9.7); writing a section back as a ChordPro grid (section 21 Q9); instruments other than bass in the UI (R167 Q10); any sound in a Live show; lyric-syllable timing, LRC or a recording (R132); randomised fills; AI-generated fills; a per-song or named fill library shared across songs.
+**Not in scope:** instruments other than bass in the UI (R167 Q10); any sound in a Live show; lyric-syllable timing, LRC or a recording; randomised fills; AI-generated fills; a per-song or named fill library shared across songs.
 
 ## 2. Prior art (summary; the full survey is the research's A1 and Part B)
 
@@ -184,7 +184,6 @@ Grid chords are timed, play in play-along and can be part of a fill span; no wal
 | P8-6b lane | edits `beats` | same lane; P8-7b adds push, ticks and tap |
 | Fills (P8-7c) | n/a | event ticks are relative to `TimedChord.onset`; seconds via the tempo map |
 | Stage | walk-up text | fill names / tab at their span, bar and beat from the timeline (P8-7e) |
-| Exports (later) | n/a | read only the timeline and parts (section 9.7) |
 
 **Rule for every spec and session:** no feature computes a chord's length, key or meter except through `SongTimeline` (R167 Q1). `ChordBeats` becomes layer 2's implementation detail.
 
@@ -295,7 +294,7 @@ public struct Part: Sendable, Hashable, Identifiable {
 
 ### 9.4 Resolving to notes
 
-`Part.resolve(timeline:pass:transform:placement:) -> [ResolvedNote]` with `ResolvedNote { tick, len, midi, name, position: FretPosition?, articulations, velocity }` (absolute ticks from the timeline start, MIDI at sounding pitch, the spelled name, the fret position by pin or suggestion). Hearing, the stage, the neck, the mini tab and later exports all read this one resolver. `PhraseBuilder.fill(...)` (section 12.3) and `PhraseBuilder.playAlong` turn resolved notes into `BeatNote`s / `NoteEvent`s through the tempo map (ghost: velocity 40 and half length; staccato: half length; accent: +20 velocity; slide, hammer, pull: velocity -15, no other change).
+`Part.resolve(timeline:pass:transform:placement:) -> [ResolvedNote]` with `ResolvedNote { tick, len, midi, name, position: FretPosition?, articulations, velocity }` (absolute ticks from the timeline start, MIDI at sounding pitch, the spelled name, the fret position by pin or suggestion). Hearing, the stage, the neck and the mini tab all read this one resolver. `PhraseBuilder.fill(...)` (section 12.3) and `PhraseBuilder.playAlong` turn resolved notes into `BeatNote`s / `NoteEvent`s through the tempo map (ghost: velocity 40 and half length; staccato: half length; accent: +20 velocity; slide, hammer, pull: velocity -15, no other change).
 
 ### 9.5 Sidecar schema 6 (`parts`)
 
@@ -324,11 +323,7 @@ public struct Part: Sendable, Hashable, Identifiable {
 
 ### 9.6 Instrument neutrality (R167 Q10)
 
-Nothing in `Part`, `PartEvent`, `SpanAnchor` or the resolver is bass-specific except `InstrumentRef.bass` and the placement passed in; fret positions are derived, never stored (the pin is an open-string pitch, meaningful for any fretted instrument). The UI, the generator and the sidecar accept only `.bass` in this workstream (R137 for other instruments stands).
-
-### 9.7 Exportable later (R167 Q14)
-
-MIDI export (the first release after the editor) needs: tempo and meter maps (`FF 51`, `FF 58`), section markers (`FF 06` from the timeline's passes), resolved notes at 480 PPQ (the tick unit is chosen to match, section 21 Q1), and the chord timeline (a chord track). All of it is `SongTimeline` + `Part.resolve`; no export type is built now, and no field is added for it. `ExportabilityTests` (P8-7c) asserts the information is there: for a fixture song with a fill, the timeline plus resolved notes give every note a tick, a length, a MIDI pitch and a velocity, and every pass a start tick and name.
+Nothing in `Part`, `PartEvent`, `SpanAnchor` or the resolver is bass-specific except `InstrumentRef.bass` and the placement passed in; fret positions are derived, never stored (the pin is an open-string pitch, meaningful for any fretted instrument). The UI, the generator and the sidecar accept only `.bass` in this workstream (other instruments come later).
 
 ## 10. Selection to fill: what the span may be
 
@@ -549,7 +544,7 @@ Music theory and timing are tricky pure logic: table-driven Swift Testing suites
 - **`PartModelTests`** (7c): resolve `deg`/`oct` to MIDI under transpose, capo (both modes), a slot key override and a 5-string profile; spelling in the key in effect; a pin honoured, ignored on a missing string; octave folding flagged; an event past its chord's length flagged and skipped; articulation velocities and lengths.
 - **`PartAnchorTests`** (7c): resolves unchanged; survives transpose and an edit below the first two lines; re-anchors as picks do; unmatched when a span bass changes, a chord is inserted inside the span, or the landing is deleted; `.only(3)` / `.last` / `.all` on played passes; an arrangement that does not play the landing next does not apply it; overlap is rejected; fill wins over pick (`shown == nil`, `coveredBy`), the pick applies again on a skipped pass and after the part is removed.
 - **`PartsSidecarTests`** (7c): v5 migrates to 6 with empty `parts`; round-trip of the 9.5 example; lenient drops (bad event, bad part, unknown instrument); a v7 file opens read-only; `updateParts` leaves the `.cho` bytes, mtime and index projection unchanged.
-- **`FillCandidateTests`** (7c): the corpus goldens (11.4) and named rows (11.5). **`FillPropertyTests`** (11.6). **`FillTemplateCorpusTests`** (11.4 item 2). **`ExportabilityTests`** (9.7).
+- **`FillCandidateTests`** (7c): the corpus goldens (11.4) and named rows (11.5). **`FillPropertyTests`** (11.6). **`FillTemplateCorpusTests`** (11.4 item 2).
 - **`PhraseBuilderTests`** (extend): `fill` audition phrase bounds and voices (7d); play-along plays a fill instead of the pick in the passes it applies to (7c, with P8-6b's suite).
 - **`TabLayoutTests`** (7d): columns proportional to ticks, bar lines, chord names, articulations, 4 and 5 strings, a pin.
 
@@ -591,7 +586,7 @@ Every session ends with one `make quick` (and `make e2e-one` only for an existin
 10. Analytics `timingTap`, `chartDirective`, `keyChangeChip`, rows 27-28. Suite: `ServicesVocabularyTests`.
 
 **P8-7c - parts and generator** (after P8-7a and **after the fill corpus research has landed**: `docs/research/phase8-fill-corpus.md` and `fill-corpus.json`; silent)
-11. Corpus fixture in place and its loader (11.4); `Part` types, `PartAnchors`, `Part.resolve`, sidecar schema 6, `updateParts`. Suites: `PartModelTests`, `PartAnchorTests`, `PartsSidecarTests`, `ExportabilityTests`.
+11. Corpus fixture in place and its loader (11.4); `Part` types, `PartAnchors`, `Part.resolve`, sidecar schema 6, `updateParts`. Suites: `PartModelTests`, `PartAnchorTests`, `PartsSidecarTests`.
 12. **Template tuning, consuming the corpus:** `FillTemplates.standard` and the prior table derived from it; `Fill.candidates` with `FillWeights.standard`; `FillSpan.context`. Write the goldens first and drive the rules to them. Suites: `FillCandidateTests`, `FillPropertyTests`, `FillTemplateCorpusTests`.
 13. Fill wins over pick in `BassLine` (`coveredBy`); fills in `PhraseBuilder.playAlong` (section 13) if P8-6b has landed, else hand it to P8-6b. Suites: `BassLineTests`, `PhraseBuilderTests`.
 
@@ -641,10 +636,10 @@ All before v0.5 (R167 Q15).
 ## 20. Where the research was overruled or changed
 
 By **R167** (Ryan):
-- **Q15 (release).** The research recommended the fill editor (its sessions 4-7) **after** v0.5, with only the time core landing with P8-6b. R167 ships **everything before v0.5** (time core, timing UI, tap capture, parts and generator, editor, stage, PDF) as P8-7, and puts P8-6b on the same `SongTimeline`. Sections 1 and 17 follow R167; the time core must land **before** P8-6b, not "before or with" it (research D, session 2).
+- **Q15 (release).** The research recommended the fill editor (its sessions 4-6) **after** v0.5, with only the time core landing with P8-6b. R167 ships **everything before v0.5** (time core, timing UI, tap capture, parts and generator, editor, stage, PDF) as P8-7, and puts P8-6b on the same `SongTimeline`. Sections 1 and 17 follow R167; the time core must land **before** P8-6b, not "before or with" it (research D, session 2).
 - **Q16 (thin evidence).** The research recommended accepting thin evidence and tuning by ear, with a corpus-growth task inside the generator session. R167 makes the corpus **a research ticket first**; the generator's templates are derived from it (11.3-11.4), and P8-7c is blocked on it (17). The by-ear check stays, as a final pass (step 23), not as the tuning method.
 - **PDF.** The research had P8-7 print fills in the bass chart PDF (C5, D6); R161 had already moved the bass chart into the phase 4 export, so P8-7 specifies the seam only (14.5).
-- Every other research recommendation (Q1-Q14) was accepted as offered.
+- Every other research recommendation was accepted as offered.
 
 By this spec (each also an open question below where it is a real choice):
 - The time model lives in `Library`, not a new `Timing` module (5.1; a dependency cycle otherwise).
@@ -653,7 +648,7 @@ By this spec (each also an open question below where it is a real choice):
 
 ## 21. Open questions
 
-1. **Tick resolution.** (a) 480 per quarter (MIDI export's PPQ, holds 64th-note meters, triplets and quintuplets exactly) / (b) 24 per quarter (the research's MIDI-clock choice; a `{time}` in /64 would not divide). **Recommend (a)**; it only changes the numbers stored in `ticks` and `at`/`len`.
+1. **Tick resolution.** (a) 480 per quarter (a standard MIDI resolution, holds 64th-note meters, triplets and quintuplets exactly) / (b) 24 per quarter (the research's MIDI-clock choice; a `{time}` in /64 would not divide). **Recommend (a)**; it only changes the numbers stored in `ticks` and `at`/`len`.
 2. **Which consumers follow a mid-song `{key}`.** (a) Walk-ups, fills, Nashville numbers (re-keyed from the change, NNS practice), transposed chord spelling and the stage's sounding key and scale line follow the key in effect; library, filters, essentials and the song header keep the first `{key}` / (b) only walk-ups and fills follow it, everything visible stays on the first key / (c) (a) but Nashville keeps numbering in the song key. **Recommend (a).**
 3. **The stage metronome and a mid-song `{tempo}` / `{time}`** (outside play-along, which follows the maps). (a) The pips and rehearsal click switch at pass boundaries to the value in effect at the pass's first chord / (b) keep the first `{tempo}` and `{time}` for the whole song in v0.5. **Recommend (a)**: it honours R167's "mid-song directives are honoured" without tying the metronome to scroll position inside a pass.
 4. **Fills in the Rehearsal play-along.** (a) `p` in a rehearsal plays fills as it plays walk-ups (the existing rehearsal sound path; Live stays silent by construction) / (b) fills never sound on any stage, rehearsal play-along plays the pick or top walk-up instead. **Recommend (a)** (R162 Q6: play what the chart shows; R167 Q8: the fill wins in play-along).
@@ -661,6 +656,5 @@ By this spec (each also an open question below where it is a real choice):
 6. **Plain click in the preview.** (a) Keeps playing the chord (P8-6a) and also sets the invisible selection anchor; shift-click selects silently / (b) a plain click only plays, and spans need ⌘-click then ⇧-click / (c) a "Select Chords" mode in the top bar. **Recommend (a)**: it is R166's "click, then shift-click" with no new mode.
 7. **Fills and the walk-up density.** (a) Fills show in the bass-note view whatever the walk-up density (they are the user's own) / (b) fills follow the density (hidden when walk-ups are Off). Either way they show only in the bass-note view (as R162 Q4 for walk-ups). **Recommend (a).**
 8. **`t` scope.** (a) A persisted user-level setting ("Fills as tab", like `b` for bass notes), mirrored in the editor menu and Settings / (b) a stage-session-only flip that resets per show. **Recommend (a)**, consistent with `b`.
-9. **Writing a section as a ChordPro grid.** The research offered an optional "Write this intro as a ChordPro grid" export for instrumental sections (A3). (a) Out of P8-7 (R167 Q2 allows single directives only; a grid is a block rewrite) / (b) in P8-7b as an explicit action. **Recommend (a).**
 10. **If the corpus schema or family set differs from section 11.4 / 11.3.** (a) The corpus is canonical: P8-7c adapts the loader, and a new family the corpus finds (for example a Bollywood slide/meend family) comes back to the orchestrator as a one-line spec change before tuning / (b) P8-7c maps it onto the six families without asking. **Recommend (a)**, per the house rule to stop and ask at a spec-vs-research inconsistency.
 11. **Span limits.** (a) 2-9 chords and at most 8 bars of departing time / (b) no chord limit, 4 bars / (c) no limits. **Recommend (a)**: long enough for a turnaround across a section, short enough for the generator's templates and the stage display.

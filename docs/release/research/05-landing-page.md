@@ -6,7 +6,7 @@ Research date: 2026-10-17. Status: research and proposal only. Nothing is built 
 
 - The site lives at **`segue.ryandsilva.dev`**, a subdomain on free hosting.
 - The app is **free**.
-- Ryan lives in the **US**, so the privacy policy covers US (CCPA) and GDPR basics. India's DPDP is out of scope.
+- Ryan lives in the **US**, so the privacy policy covers US (CCPA) and GDPR basics.
 - The public support and privacy address is **`segue@ryandsilva.dev`**, which forwards to Ryan.
 - **Scope update:** the app will collect **anonymous usage analytics** and offer **in-app bug reports** (with diagnostics) and a **feature-request board with upvotes**. A sibling agent is choosing the vendors. Vendor names below are placeholders, written as `{ANALYTICS_VENDOR}`, `{BUGREPORT_VENDOR}` and `{FEEDBACK_VENDOR}`. Sections 1.3, 1.4, 7 and 9 reflect this update and supersede any "local-only, Data Not Collected" wording elsewhere.
 
@@ -112,7 +112,6 @@ GDPR Art. 13 adds the controller's identity and contact, purposes and legal basi
 5. **Apple.**
    - Downloads are handled by Apple under Apple's policy.
    - Apple crash reports reach the developer only if you opted in to share with app developers.
-   - Future iCloud Drive sync stores files in your own iCloud. Add this when it ships.
 6. **Legal basis (GDPR).**
    - Analytics: consent, or legitimate interest per D13.
    - Bug reports and feedback: your request, or legitimate interest in improving the app.
@@ -225,7 +224,7 @@ Source for everything in this section unless noted: [App Store Marketing Guideli
 
 ### 2.2 Product names and trademarks
 
-- **Product names.** Write "Mac", "MacBook Pro" and "iPhone" exactly, and never start a sentence with "IPhone".
+- **Product names.** Write "Mac" and "MacBook Pro" exactly.
   - Apple: "avoid referring to iOS, macOS ... in your marketing communications". Say "Segue for Mac" and "designed for MacBook on stage".
   - A requirements line ("Requires macOS 26 or later") is near-universal on indie pages. Keep it on Support and in small print rather than in headlines.
 - **Wording.** Say "available on the App Store" or "Download on the Mac App Store". Never "at the App Store" and never "downloadable".
@@ -446,13 +445,13 @@ segue.ryandsilva.dev/
 5. **Feature grid (6-8 cards):**
    - ChordPro files you own (plain files in a folder you choose).
    - Transpose and capo.
-   - Tags, proficiency and energy.
+   - Tags and proficiency.
    - Fast search, including romanized Hindi spelling variants.
    - Requests queue.
-   - Hands-free pedals and MIDI (only once phase 6 has shipped).
+   - Hands-free MIDI control with MIDI learn and key learn (only once phase 6 has shipped).
    - PDF export (only once phase 4 has shipped).
    - Light and dark.
-   - **Only list features in the App Store build.** No audio transcription, LRCLIB or URL import.
+   - **Only list features in the App Store build.** No LRCLIB or URL import.
 6. **Private by design.** "No account. Your songs never leave your Mac. AI runs on-device. Only anonymous usage stats, and you can switch them off." Link to `/privacy`. Wording must match the final analytics design exactly; never claim "no tracking" or "no data collected" once analytics ship.
 6b. **Shaped by players.** "Vote on what's next": link to `/feedback`, plus a "What's new" strip with the latest `changelog.json` entry (Tot pattern). The strip is rendered by the generator; no client-side JavaScript fetch is needed.
 7. **Maker note (optional).** Two lines from Ryan: built by a gigging musician for his own sets (Hand Mirror style).
@@ -477,8 +476,7 @@ segue.ryandsilva.dev/
   - What does analytics collect, and how do I turn it off?
   - Is AI on-device?
   - Which Macs support Apple Intelligence features? (the fallback behaviour)
-  - Pedals and MIDI.
-  - iPhone/iPad? ("Planned", without promising dates.)
+  - MIDI and key learn.
   - Is it free?
   - How do I request a feature?
 - Links to Changelog and Privacy.

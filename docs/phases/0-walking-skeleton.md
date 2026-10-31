@@ -18,7 +18,7 @@ The thinnest end-to-end Segue: one song travels through every stage - **add song
 
 ## Non-goals
 
-Visual editor, transpose/capo/Nashville, chord diagrams, auto-fit/auto-scroll, request queue, gig log, AI, import/export, plugins, pedals/MIDI, iOS. No design polish - the 2-3 design directions are presented before phase 1/2 UI work.
+Visual editor, transpose/capo/Nashville, chord diagrams, auto-fit/auto-scroll, request queue, gig log, AI, import/export, plugins, MIDI. No design polish - the 2-3 design directions are presented before phase 1/2 UI work.
 
 ## Project structure
 
@@ -34,7 +34,7 @@ Tuist/Package.swift             external SPM deps (GRDB, Tonic) pinned via Tuist
       Sources/Setlists      Setlist model + store
       Sources/Plugins       empty registry protocols (placeholder for phase 5)
       Sources/Support       Clock, FileSystem protocols + live/fake impls
-    SegueUI/             SwiftUI views (shared with iOS later); depends on Core
+    SegueUI/             SwiftUI views; depends on Core
     SeguePersonalModules/ empty package, one target with a no-op plugin registration
   UITests/                 XCUITest target
   scripts/ , Makefile
@@ -48,7 +48,7 @@ Tuist/Package.swift             external SPM deps (GRDB, Tonic) pinned via Tuist
   - `Segue-AppStore` - `Debug-AppStore` / `Release-AppStore`, does **not** reference the personal package at all. A script check (`make verify-appstore`) builds this scheme and fails if any `SeguePersonalModules` symbol or path appears in the build product or its link map.
   - Plugin wiring: app calls `PluginRegistry.registerAll()`; the personal package provides the implementation via a small `#if SEGUE_PERSONAL` import in the app target only. Core never knows the package exists.
 - **Entitlements (both flavors):** `com.apple.security.app-sandbox`, `com.apple.security.files.user-selected.read-write`, `com.apple.security.files.bookmarks.app-scope`. No network entitlement in phase 0.
-- **Signing:** bundle id `dev.ryandsilva.segue` (UI tests `dev.ryandsilva.segue.uitests`), automatic signing with the free Personal Team `V6BM673U35` (contact@ryandsilva.dev), set as the single `DEVELOPMENT_TEAM` constant in `Project.swift`; ad-hoc signing remains a one-switch fallback. A paid team replaces it before App Store/iCloud work.
+- **Signing:** bundle id `dev.ryandsilva.segue` (UI tests `dev.ryandsilva.segue.uitests`), automatic signing with the free Personal Team `V6BM673U35` (contact@ryandsilva.dev), set as the single `DEVELOPMENT_TEAM` constant in `Project.swift`; ad-hoc signing remains a one-switch fallback. A paid team replaces it before App Store work.
 
 ## ChordPro parser v0
 
@@ -97,7 +97,7 @@ Requirements: never throws on malformed input - unclosed braces/brackets become 
 - Writes: atomic (write temp + rename) through `NSFileCoordinator`; all IO goes through the injected `FileSystem` protocol.
 - **Index (GRDB):** `DatabasePool` (WAL) with tables `songs(id, path, title, artist, key, tempo, mtime, content_hash)` + FTS5 virtual table over title/artist/lyrics. Schema changes bump an index version and trigger drop-and-rebuild from files - no data migrations, since the index is a projection. On launch: scan, compare mtime/hash, upsert changes, delete missing. "Rebuild index" deletes and re-creates from files. The index is never written to by anything except the indexer.
 - **Romanized Hindi search:** lyrics and titles may be Hindi written in Latin script with no fixed spelling ("pyaar/pyar", "hai/hain", "kabhi/kabhie"). The indexer stores a deterministic `norm_*` form of title, artist, first line and lyrics alongside the originals, and FTS5 indexes both. `RomanNormalizer` (pure function, Core) applies, in order: lowercase + strip punctuation; collapse doubled letters (`pyaar`->`pyar`, `dill`->`dil`); vowel folding `aa->a`, `ee->i`, `ii->i`, `oo->u`, `uu->u`; `w->v`; drop `h` after consonants where it only marks aspiration (`bh->b`, `kh->k`, `dh->d`, `th->t`, `ph->p`, `gh->g`, `jh->j`, `chh->ch`); nasal endings `n` after a long vowel at word end dropped (`hain->hai`, `mein->mei`). The same function runs on the query. Matching order: exact FTS on originals, then FTS on normalized forms, then a trigram/edit-distance fallback (distance <= 1 per word for words of 4+ letters) over normalized titles and first lines. Original text is never modified; normalization exists only in the index. The rules live in one table so they can be tuned without touching callers, and changing them bumps the index version (drop-and-rebuild).
-- External edits (file changed in another editor) picked up on next launch or manual refresh; live watching (FSEvents/NSFilePresenter) is deferred.
+- External edits (file changed in another editor) picked up on next launch or manual refresh.
 
 ## Minimal setlist + live view
 
@@ -150,7 +150,7 @@ See `docs/decisions.md` for the audit trail.
 5. **Lint/format: SwiftLint + SwiftFormat via mise.** Enforced in `make check`.
 6. **Metadata: sidecar JSON only.** `.cho` files stay clean, portable ChordPro.
 7. **Default library: `~/Music/Segue`** (any folder pickable; bookmark persists access).
-8. **Signing: free Personal Team `V6BM673U35` (contact@ryandsilva.dev), bundle id `dev.ryandsilva.segue`.** Paid team later for App Store/iCloud.
+8. **Signing: free Personal Team `V6BM673U35` (contact@ryandsilva.dev), bundle id `dev.ryandsilva.segue`.** Paid team later for App Store.
 9. **Team ID committed** as `DEVELOPMENT_TEAM` in `Project.swift` - a team ID is not a secret.
 10. **Tuist local-only** - open-source `tuist generate`, pinned in mise, no Tuist cloud account or caching.
 

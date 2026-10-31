@@ -303,10 +303,8 @@ Defaults: no `{title}` -> title from the file name, content untouched; byte-iden
 **A36. How the pre-show "Focus" row becomes ticked** (WS1-1, R18)
 Under separate research: `research/09-shortcut-confirmation.md` (not yet written).
 - a) x-callback-url `x-success` (reportedly broken since macOS 26.5; needs a probe on 26.6.2/27)
-- b) A Segue App Intent the user adds as the last action of their Shortcut
-- c) A manual "Done" tick
-- d) b + c
-- **Recommend: wait for research 09.** Provisional preference d - truthful, sandbox-safe, with a manual fallback.
+- b) A manual "Done" tick
+- **Recommend: wait for research 09.** Whatever it picks keeps the manual "Done" tick as the fallback.
 - **Blocks**: WS1 step 6 and its E2E (6.3); WS2b `GigModeTip` text; WS5 shot 8 and review notes.
 
 **A37. Focus row when Gig Mode Shortcuts are off** (WS1-15)
@@ -372,11 +370,9 @@ Only your own installs (and the TestFlight build that inherits your container) h
 ### 2.6 Store listing
 
 **A46. Confirm R8: English (U.S.) only** (WS5-1)
-India's storefront defaults to English (U.K.).
 - a) en-US only (R8 as ruled)
-- b) Add en-GB with the India keyword set (`bhajan` in)
-- c) Research ticket
-- **Recommend a** to keep R8, unless you want Indian search reach now; then b, which reuses the screenshots.
+- b) Research ticket
+- **Recommend a** to keep R8.
 - **Blocks**: WS5 store metadata (section 4.5, deliver layout).
 
 **A47. Territories** (WS5-11)
@@ -522,7 +518,7 @@ Taken as stated unless Ryan objects.
 | B-20 | WS2b-15 | Quick Look rendering | View-based preview reusing the app's renderer and fonts | Matches the app pixel for pixel; size is not a concern |
 | B-21 | WS2b-16 | WS2b sequencing | See section 5 | |
 | B-22 | WS2b-17 | Consent contract with WS3 | WS3's `ConsentStore` wins | See I-1 |
-| B-23 | WS2b-20 | Archive scope | Include `songs/`, `setlists/`, `shows/`, `timings/`; exclude `.segue/`; no restore in 0.5 | R16 asks only for export; the index can be rebuilt |
+| B-23 | WS2b-20 | Archive scope | Include `songs/`, `setlists/`, `shows/`, `timings/`; exclude `.segue/` | R16 asks only for export; the index can be rebuilt |
 | B-24 | WS3-6 | Bug-report transport | Post the previewed envelope ourselves | Only way to send exactly what was previewed (R22) and to detect offline |
 | B-25 | WS3-12 | TestFlight builds in analytics | Mark them as TelemetryDeck test data | Keeps product charts clean |
 | B-26 | WS4-9 | App's bundled changelog path | App bundles the generated `website/changelog.json`; drop WS4's separate bundled-copy output | See I-2 |

@@ -199,7 +199,7 @@ Segue is free, with no subscription and no in-app purchases.
 
 Writing rules the text already follows. `store-check` enforces the mechanical ones.
 
-- **Nothing personal-only.** No audio, LRCLIB, URL import or custom models. These are personal modules and do not ship in this flavor.
+- **Nothing personal-only.** No LRCLIB, URL import or custom models. These are personal modules and do not ship in this flavor.
 - **AI claims only as built (R61, R62).** On-device, re-checks a paste's sections, title and artist and reads set requests, never rewrites lyrics or chords, nothing pasted leaves the Mac, works without any model. "Apple Intelligence" only in a referential phrase ("works with"), spelled exactly, never in a feature name (section 17, question 5).
 - **No other platforms.** No "iPhone", "iPad", "Android" or "Windows" (2.3.10).
 - **No competitor names** (2.3.7).

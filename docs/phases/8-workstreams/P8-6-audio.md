@@ -24,7 +24,7 @@ In the editor and the library, clicking a chord plays it (piano or clean guitar,
 
 **In scope:** a pure `Playback` core in SegueCore (note events, voicings, phrase building, the play-along timeline, the lookahead cursor) behind a SegueCore `SoundOutput` port; one shared `AVAudioEngine` with bass and chord samplers next to the existing rehearsal click, as an AVFoundation adapter in SegueUI; a bundled SF2 subset chosen by a listening A/B; the gig guard and its test; hear a chord; walk-up audition with A/B and pick; play-along in editor, library and Rehearsal; timing estimation and correction; Settings > Audio (output device, USB hint, chord voice, chord style, volume, test); accessibility; analytics; licence notices.
 
-**Not in scope:** any sound in a Live show or on the Live stage (R161); click-to-hear on any stage (Rehearsal included; Rehearsal gets play-along only); loading the user's own SoundFont; AUv3 instrument hosting; more instruments (drums, strings); swing or groove feels; recording, input or the microphone (R132 stays); MIDI output to external gear (roadmap, separate research); any `.cho` change (timing and picks live in the sidecar); setting a song's `{tempo}` from the play-along tempo control.
+**Not in scope:** any sound in a Live show or on the Live stage (R161); click-to-hear on any stage (Rehearsal included; Rehearsal gets play-along only); loading the user's own SoundFont; AUv3 instrument hosting; more instruments (drums, strings); swing or groove feels; recording, input or the microphone; any `.cho` change (timing and picks live in the sidecar); setting a song's `{tempo}` from the play-along tempo control.
 
 ## 2. Prior art
 

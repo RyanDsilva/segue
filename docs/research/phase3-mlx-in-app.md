@@ -1,6 +1,6 @@
 # Phase 3: MLX inside the shipped app (P3-A spike, 2026-10-19)
 
-Workstream P3-A (`docs/phases/3-workstreams/P3-A-mlx-in-shipped-app.md`), Part 1. It proves that MLX runs inside the real Segue app: built by Tuist, sandboxed, with the hardened runtime, archived as Release-AppStore, and reading its model from an app-group store that both flavours share (R67). Part 2 (re-scoring Qwen3-4B on Ryan's own pastes, R64) is waiting on the pastes; see section 8.
+Workstream P3-A (`docs/phases/3-workstreams/P3-A-mlx-in-shipped-app.md`), Part 1. It proves that MLX runs inside the real Segue app: built by Tuist, sandboxed, with the hardened runtime, archived as Release-AppStore, and reading its model from an app-group store that both flavours share (R67). Part 2 (re-scoring Qwen3-4B on Ryan's own pastes, R64) is done; see section 8.
 
 The experiment lives on branch `spike/p3a-mlx-in-app` (worktree `../setlist-p3a`). It is never merged as is. P3-3 applies the diff in section 6.
 

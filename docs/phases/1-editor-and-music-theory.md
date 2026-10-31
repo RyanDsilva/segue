@@ -17,7 +17,7 @@ Make a song chart fast to write and correct, and make one chart serve keys, guit
 
 ## Non-goals
 
-AI cleanup and paste conversion (phase 3), setlist/live-mode features (phase 2), PDF (phase 4), tab/grid editing beyond pass-through (blocks are preserved, not edited visually), ukulele diagrams, audio.
+AI cleanup and paste conversion (phase 3), setlist/live-mode features (phase 2), PDF (phase 4), tab/grid editing beyond pass-through (blocks are preserved, not edited visually), audio (P8-6).
 
 ## Data model
 
@@ -137,7 +137,7 @@ Integration-first: tests drive real components (parser, syntax tree, editor mode
 See `docs/decisions.md` for the audit trail.
 
 1. **Theory engine: Tonic as a dependency.** Our `ChartChord`/`ChordSymbol` wrap Tonic types; spelling rules are pinned by tests so Tonic upgrades cannot drift them.
-2. **Visual editor: TextKit 2 in AppKit** via `NSViewRepresentable`; shares the text engine with text mode, iOS port path through UITextView.
+2. **Visual editor: TextKit 2 in AppKit** via `NSViewRepresentable`; shares the text engine with text mode.
 3. **Guitar shapes: algorithmic generator per tuning + our own curated overrides.** No third-party chord database, so no licence risk.
 4. **Nashville in minor keys: relative major** (Am in A minor = 6m). No user setting this phase.
 5. **Apply transposition to source: rewrite chords and `{key}` (adding the inferred key when there is none), keep `{capo}`, flag custom shapes** that no longer match.

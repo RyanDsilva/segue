@@ -28,7 +28,7 @@ Make adding a song take under a minute from any messy source, make entering a so
 | One section note (`{comment}` + cues merged) with "Show on stage only" | yes | yes | R87 |
 | Set builder Pick / Arrange, Library multi-select + Add to Setlist | yes | yes | R84 |
 | Break rows with per-part totals; changeover time in totals; missing-lengths list | yes | yes | R85, R86, R88 |
-| Song lengths: manual on the song card + per-song "Time it" (no learning, no estimates) | yes | yes | R91 |
+| Song lengths: manual on the song card + per-song "Time it" | yes | yes | R91 |
 | Set assistant (lexicon + async model chips) and NL picks | yes | yes | R65, R92 |
 | Tags (starter suggestions) + smart filters | yes | yes | R71, R72 |
 | Settings > AI pane (sixth pane), one AI toggle | yes (no Advanced) | yes (with Advanced) | R73, R93 |
@@ -36,9 +36,9 @@ Make adding a song take under a minute from any messy source, make entering a so
 | Visual metronome on stage (sound in rehearsal only) | yes | yes | R90 |
 | No repeats within a show (live mode) | yes | yes | R102 |
 | About panel, variant A (native, one row of links) | yes | yes | R103 |
-| URL import, LRCLIB | no | phase 5 | R61, R132 (audio removed) |
+| URL import, LRCLIB | no | phase 5 | R61 |
 
-Out of scope for 0.5: energy rating (deferred, R71), AI energy or AI tag guesses at import (R71), a local AI stats screen or metrics database (R74), learned lengths and length estimates (R91), a ⌘K add palette (R89), metronome sound during a show (R90), a "gap queue" or "Detect sections" on existing songs (brainstorm direction C), PDF/photo import (not planned: phase 4 lists importing PDFs as a non-goal), macOS 27 `LanguageModel` / `MLXFoundationModels` (revisited in 0.6, R77), Private Cloud Compute.
+Not in 0.5: a local AI stats screen or metrics database (R74), metronome sound during a show (R90), "Detect sections" on existing songs, macOS 27 `LanguageModel` / `MLXFoundationModels` (revisited in 0.6, R77), Private Cloud Compute.
 
 ## 3. Design principle: deterministic first, model last
 
@@ -181,7 +181,7 @@ Proven in an archived, sandboxed, hardened Release-AppStore build (`docs/researc
 
 - Opens with the deterministic result immediately; AI decisions stream in as they arrive (MLX warm: about 4.4 s labels + 1.8 s metadata; FM: 5-30 s) with a quiet "Refining with <provider>..." line, never a blocking spinner. The user can edit or Accept before refinement finishes (refinement then stops).
 - Side by side (layout "a"): original left, result right; AI-decided labels and metadata marked apart from rule-based conversion; unknown lines and unparseable tokens flagged.
-- The metadata block is **the song card** (R80, section 16.0.1, built by P3-10) in draft mode: it edits the pending result, not a file. A detected key shows as a suggestion and is written only if the user picks it (R101). Tags with starter suggestions. No energy field (R71), no AI tag guesses (R71).
+- The metadata block is **the song card** (R80, section 16.0.1, built by P3-10) in draft mode: it edits the pending result, not a file. A detected key shows as a suggestion and is written only if the user picks it (R101). Tags with starter suggestions.
 - Accept writes `.cho` + sidecar through `LibraryStore.commitImport` (the `prepareImport`/`commitImport` split already exists). Cancel leaves the library untouched.
 - The footer names what produced the result ("Labels by Qwen3-4B", "Labels by Apple Intelligence", "Converted without AI") and shows the R69 note when relevant, plus a **quiet one-line download link** to Settings > AI when the result came from FM or code and the curated model is not installed (R93). No popups or tips offer the download.
 - With the AI toggle off (R93) the sheet shows the deterministic result and the footer says "Converted without AI (AI is off in Settings)".
@@ -200,19 +200,17 @@ Request -> instant code lexicon -> chips -> deterministic builder; an async mode
 
 **NL picks.** In the library search field: lexicon chips instantly, model suggestions async as above. **On stage** (quick search during a show): lexicon + text search only; **no model is loaded during a show**. Adding on stage follows R102 (no repeats within a show, built by P3-15): a song already played or still upcoming is refused with a message, and an upcoming one is offered "Move to Next" instead.
 
-Energy is deferred (R71): no energy field, signal or chip. Tempo is an explicit filter only (R92).
+Tempo is an explicit filter only (R92).
 
-## 8. Song lengths (R91, supersedes R70)
+## 8. Song lengths (R91)
 
-Manual lengths only; nothing is learned and nothing is estimated. The phase 2 rule stands again: an unknown length is never made up.
+Manual lengths only. The phase 2 rule stands again: an unknown length is never made up.
 
-- **Source:** the song's `{duration}` directive, and nothing else. It is entered on the **song card** (R80) as an `mm:ss` field (also `ss` or `h:mm:ss`, as `SongDocument+Derived` parses today), or filled by **"Time it"**: a per-song Start/Stop timer on the card; Stop writes the elapsed time into the Length field (one undoable edit), Esc cancels. Timer runs are not stored as samples; no `timings/<ulid>.timer.json`, no index columns for learned values.
+- **Source:** the song's `{duration}` directive, and nothing else. It is entered on the **song card** (R80) as an `mm:ss` field (also `ss` or `h:mm:ss`, as `SongDocument+Derived` parses today), or filled by **"Time it"**: a per-song Start/Stop timer on the card; Stop writes the elapsed time into the Length field (one undoable edit), Esc cancels. Timer runs are not stored as samples.
 - **Unknown stays unknown:** `--:--` on the row, totals `≥38:20 + 2 unknown` (phase 2 notation, unchanged). The "N unknown" part of every total is a **button** that lists exactly which songs lack a length (R88, section 16.0.5).
 - **Changeover** (R86): a per-setlist value with a global default (Settings > General, default 0 s) is added after every song but the last of each part; totals include it and say so in their help text.
 - **Shows and rehearsals** keep recording what was played and when (phase 2 files, gig log), but nothing feeds back into a song's length.
 - **Welcome songs** carry `{duration}` lengths (R78). The four shipped Welcome songs already have them (Ferry Lights 4:40, Kettle On 3:05, Kitaabon Wali Gali 4:05, Soundcheck at Seven 3:20); P3-5 adds a test that pins this, and WS5's screenshot-only songs need `{duration}` when they land.
-
-The questions this section used to carry (16.1 questions 1, 2, 5, 6) are moot.
 
 ## 9. Tags and smart filters (R71, R72)
 
@@ -305,7 +303,7 @@ Integration-first: real parser, real file store on a fresh temp library, real GR
 - No model downloads without a click; size, licence and RAM need shown first; SHA256 verified; no `Accept-Language` or device User-Agent sent (asserted against a local test server).
 - Both flavours read one model store (proven by P3-A, R100), excluded from backup, never in the library or its archive.
 - Every paste and conversion import goes through the review sheet; nothing reaches the library without Accept.
-- A song's length comes only from its `{duration}` (song card or Time it); nothing is learned or estimated; unknown lengths show `--:--`, totals say `+ N unknown`, and "N unknown" lists exactly those songs.
+- A song's length comes only from its `{duration}` (song card or Time it); unknown lengths show `--:--`, totals say `+ N unknown`, and "N unknown" lists exactly those songs.
 - Every song card field and slash-menu item writes valid ChordPro or sidecar data with no typing of directive syntax; Text mode shows the result.
 - A 20-song set can be built in Pick mode with the keyboard alone (filter, ↓/Space or ⌘A, then ⌥↑/⌥↓ in Arrange), never adding a song twice.
 - During a show: no model loads, paste is disabled, no song is added twice, the metronome never makes a sound.
@@ -350,7 +348,7 @@ Sibling workstreams share a working tree: expect unrelated diffs and stage only 
 
 **Problem (Ryan's R56 walkthrough):** "The song markers and metadata need to be thought out well, it is hard to type in and remember everything and insert everything correctly, it should be very easy and quick to build a setlist." A read-only audit (2026-10-18) found: key, tempo, length and time are editable only by typing directives in Text mode; the inspector shows key, tempo and length as read-only subtitle text; the visual editor can relabel but not create a section; the `{` completion is a flat list of raw names where `{cho` offers only the chorus-*repeat* directive, `{verse` matches nothing, short and labelled forms are never offered and values get no help; `{key}` is never validated (`{key: Hm}` gets in silently); building a 20-song set with 6 missing lengths takes about 110-130 actions and 6 context switches, with no multi-select, no keyboard path from search to add, drag-only reordering and nothing listing the songs without a length.
 
-**Ruling:** direction B (song card + checklist) with A's text helpers and C's missing-lengths list (R80-R88); no ⌘K palette (R89); a visual metronome (R90). Every control writes standard ChordPro or the sidecar through the existing edit path (`EditOperation.setDirective` / `.setMeta` in `DocumentEditor`), so Text mode stays the escape hatch and files stay portable. Autosave (R17) and undo apply as everywhere else.
+**Ruling:** direction B (song card + checklist) with A's text helpers and C's missing-lengths list (R80-R88); a visual metronome (R90). Every control writes standard ChordPro or the sidecar through the existing edit path (`EditOperation.setDirective` / `.setMeta` in `DocumentEditor`), so Text mode stays the escape hatch and files stay portable. Autosave (R17) and undo apply as everywhere else.
 
 #### 16.0.1 Song card (R80, P3-10; Time it P3-5)
 
@@ -416,18 +414,18 @@ One concept replaces `{comment}` vs live cues: a **section note** attached to a 
 
 #### 16.0.8 Not in 0.5
 
-⌘K add palette (R89); direction C's gap queue and "Detect sections and key" on existing songs; learned or estimated lengths (R91); energy (R71); metronome sound during a show (R90).
+"Detect sections and key" on existing songs; metronome sound during a show (R90).
 
 ### 16.1 Open questions
 
 Questions 1-16 were ruled on 2026-10-18/19 (R91-R100):
 
-1. Learned-length storage: **moot** (R91, no learning).
-2. Clearing learned samples: **moot** (R91).
+1. Length storage: **moot** (R91: lengths are manual).
+2. Clearing timing samples: **moot** (R91).
 3. Tempo in the set assistant: **(b) an explicit filter only** (R92).
 4. Opener/closer shaping: **(a) only when asked, via tags** (R92).
-5. Estimates in smart filters and the assistant: **moot** (R91, no estimates).
-6. Estimate formula: **moot** (R91).
+5. Lengths in smart filters and the assistant: **moot** (R91: lengths are manual).
+6. Length formula: **moot** (R91).
 7. Personal-only custom-model code: **(a) `SeguePersonalModules`** (R97).
 8. Fallback if the shared store fails: **moot**; P3-A proved the store (R100). App Store Connect validation is still pending at the first real `make validate`.
 9. AI preferences: **(b) one toggle, "Use AI to refine pastes and set requests", default on** (R93).
@@ -461,5 +459,5 @@ New questions raised by R80-R103. Each blocks only the step named; nothing here 
 
 ## 17. Resolved decisions
 
-`docs/release/decisions.md` R61-R79 (2026-10-18) and R80-R103 (2026-10-18/19) and, still valid, `docs/decisions.md` Phase 3: review sheet always shown; no polished batch import (R96's one-sheet batch with checkboxes is not automatic acceptance); recently-played penalty global, not venue-aware; free-form tags with starter suggestions; minimum OS stays macOS 26. Superseded there: FM-first Hindi routing (by R63), energy 1-5 and AI energy at import (by R71), any mlx-community model in both flavours (narrowed by R62), "learn real durations" (by R91), and rehearsal-timing samples as a length source (by R91). R70 (learned + estimated lengths) is itself superseded by R91, so the phase 2 "unknown length never made up" rule stands. A song appears at most once per setlist (walkthrough rule, enforced in code, 1d027df) and at most once per show (R102).
+`docs/release/decisions.md` R61-R79 (2026-10-18) and R80-R103 (2026-10-18/19) and, still valid, `docs/decisions.md` Phase 3: review sheet always shown; no polished batch import (R96's one-sheet batch with checkboxes is not automatic acceptance); recently-played penalty global, not venue-aware; free-form tags with starter suggestions; minimum OS stays macOS 26. Superseded there: FM-first Hindi routing (by R63), any mlx-community model in both flavours (narrowed by R62), and the earlier duration rulings (by R91), so the phase 2 "unknown length never made up" rule stands. A song appears at most once per setlist (walkthrough rule, enforced in code, 1d027df) and at most once per show (R102).
 

@@ -74,10 +74,10 @@ It can be split into **A1** (the `Shows` module) and **A2** (Setlists and Librar
 | `ShowEnding { record, diff?, gigLogEntry? }` | `diff` is nil when nothing changed (no sheet) and always nil for a rehearsal. |
 | `ShowStore` (actor) | `load(root:)` loads shows and rebuilds the play projection; `save` writes atomically (a finished show also replaces its plays); also `show(id:)`, `gigLog()` (newest first), `updateGigDetails`, `delete`, `launchCheck() -> LaunchShowCheck { resumable?, autoClosed: [ShowEnding] }`. `staleInterval` is 12 h. A stale show is closed with `closure = .stale` and `endedAt = updatedAt`. |
 | `PlayHistoryIndex` | Has `replacePlays(forShow:with:)` and `replaceAllPlays(_:)`. `LibraryStore` conforms. |
-| `GigLogEntry(_ record:)`, `PlayedSong`, `ShowRecord.playedSongs` / `.playRecords` | The played list comes from events: start = the last time the item became current, end = advanced past it as played. These are also the phase 3 learned-duration input. |
+| `GigLogEntry(_ record:)`, `PlayedSong`, `ShowRecord.playedSongs` / `.playRecords` | The played list comes from events: start = the last time the item became current, end = advanced past it as played. |
 | `ReorderDiff` | `compute(_:)` returns nil when the items are the planned entries in planned order with nothing inserted. Rows are `.unchanged` / `.moved(fromPosition:)` (not in the longest kept run) / `.inserted(origin)`. `entries(including:)` builds what Save writes. |
 | `DurationSample`, `DurationSampleSink`, `RehearsalTimingStore` | One sample per completed song. Rehearsals write `timings/<run ulid>.rehearsal.json` atomically after each sample. `loadAll(root:fileSystem:)` is for phase 3. |
-| `LiveCommand`, `InputBindingTable`, `KeyStroke`, `KeyModifiers`, `InputTrigger`, `InputBinding` | Implemented. Each command has a `scope` (`.show` / `.viewport` / `.chrome`), a `showAction` and a `title`. In `bindings.json`, a trigger is written `{"key": "k", "modifiers": ["command"]}`; phase 6 adds HID and MIDI trigger cases. |
+| `LiveCommand`, `InputBindingTable`, `KeyStroke`, `KeyModifiers`, `InputTrigger`, `InputBinding` | Implemented. Each command has a `scope` (`.show` / `.viewport` / `.chrome`), a `showAction` and a `title`. In `bindings.json`, a trigger is written `{"key": "k", "modifiers": ["command"]}`; phase 6 adds a MIDI trigger case. |
 | `LiveSettings`, `ChecklistItem` | Implemented value types. The UI persists them. |
 
 ### A2 - `Setlists/SetlistStore.swift`, `Library/LibraryStore+Phase2.swift`, `Library/SongIndex.swift`
@@ -204,9 +204,9 @@ Shared rules:
 9. **Cue anchoring.** A section label (case-insensitive) plus an optional 1-based occurrence; nil means every occurrence. A cue whose label no longer exists is shown in the notes block.
 10. **"Smart filters" in the brief vs the spec.** The spec puts smart and saved filters in phase 3 (a non-goal here). D builds **simple** filtering only: typed tokens in the search field ("ready, upbeat, key G") plus chips. Nothing is saved.
 11. **Unknown song length in the builder.** Superseded by the build ruling: never estimated. The row shows `--:--`, later starts are lower bounds (`≥13:50`) and the total reads `≥38:20 + 2 unknown` (see unit D's `SetlistTiming` notation above).
-    - *Phase 3: R70 (estimates) was itself superseded by R91 (docs/release/decisions.md): no estimates, no learned lengths; this rule stands. A length is entered on the song card or filled by "Time it", and the "N unknown" total becomes a button listing the songs without one (R88).*
+    - *Phase 3: R70 (estimates) was itself superseded by R91 (docs/release/decisions.md): no estimates; this rule stands. A length is entered on the song card or filled by "Time it", and the "N unknown" total becomes a button listing the songs without one (R88).*
 12. **Minimum lyric size range** in Settings: 16-48pt (default 22).
-13. **`bindings.json` location.** Application Support (per device; pedals are per machine). There is no editor UI in phase 2; defaults apply when the file is missing or malformed (the error is reported).
+13. **`bindings.json` location.** Application Support (per machine). There is no editor UI in phase 2; defaults apply when the file is missing or malformed (the error is reported).
 14. **Stage presentation.** The stage stays the phase 0 borderless window that hides the menu bar and Dock (the spec's "full screen" step reads as this). The "Shortcut from full screen" verification in `0-walking-skeleton.md` is **still open and needs one manual run by Ryan**. C re-asserts the stage window as key after `NSWorkspace.open(shortcuts://...)` regardless, and confirms with the real in-app call.
 15. **Stale show `endedAt`.** It is set to the show's last update, not to the launch time.
 16. **Play now on a song already in the set** jumps to its first pending item and doesn't move it, so a show whose only change is jumps raises no reorder sheet.

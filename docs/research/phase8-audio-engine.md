@@ -2,7 +2,7 @@
 
 Feasibility research for R160 ("research an in-app audio engine so the user can hear chords, bass notes and candidate walk-ups, and audition and pick between walk-up options per chord change"). It feeds P8-4b (`docs/phases/8-workstreams/P8-4-bass.md`, which today lists "audio" as not in scope). **V** = verified at the cited source, or by a local probe on 2026-10-30 (macOS 26.6.2 build 25G83, MacOSX26.5 SDK, M1 Pro 16 GB); **U** = unverified.
 
-**How this differs from `phase5-audio.md`.** Phase 5 was audio *in* (recording, stem separation, ASR, chord detection for audio-to-chart), all removed by R132. This is audio *out*: synthesizing notes the chart already knows. No microphone, no ML model, no recording entitlement, nothing R132 removed. R132's text removes "5.1 audio-to-chart (recording, separation, transcription, chord detection and its eval)" only; playback was never a personal module.
+**Scope.** This is audio *out*: synthesizing notes the chart already knows. No microphone, no ML model, no recording entitlement; playback is not a personal module.
 
 ## 0. What exists today
 

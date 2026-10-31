@@ -33,7 +33,7 @@ Overall risk is **low-to-medium**. Today the App Store flavor is a sandboxed, of
 | 2.3.7 Name/keywords | Unique name, <=30 chars, no trademark stuffing, subtitle may not reference other apps | "Segue - Setlists & Chords" = 25 chars | Low | Do not put "OnSong", "Ultimate Guitar", "SongbookPro", "Bollywood" song names, etc. in keywords. "ChordPro" as a descriptive format keyword is nominative (trademark status UNVERIFIED; no registration found). |
 | 2.3.8 Metadata 4+ | Icons/screenshots appropriate for 4+ | Icon is a taped setlist | Low | - |
 | 2.3.9 Rights to materials | You must own rights to everything in screenshots | Risk if screenshots show real songs | **Med** | Only original demo songs in screenshots/preview. |
-| 2.3.10 Other platforms | No names/imagery of other platforms | Shipped sources have no iOS/Android/Windows mentions in UI (only a `windowsCP1252` decoder, invisible). Vision docs mention iPhone/iPad later. | Low | Don't write "iPhone version coming" in description. |
+| 2.3.10 Other platforms | No names/imagery of other platforms | Shipped sources have no iOS/Android/Windows mentions in UI (only a `windowsCP1252` decoder, invisible). | Low | Don't write "iPhone version coming" in description. |
 | 2.4.5(i) Sandbox | Sandboxed, follow file system docs | `com.apple.security.app-sandbox`, `files.user-selected.read-write`, `files.bookmarks.app-scope` only (`App/Segue.entitlements`). Library created via save panel; Debug-only `/tmp` exception verified absent from AppStore products by `scripts/verify-appstore.sh`. | Low | Keep the verify script in the release checklist. |
 | 2.4.5(ii) Self-contained, Xcode packaging | No installers, no shared-location installs | Single .app, fonts/licences in SegueUI resource bundle | Low | - |
 | 2.4.5(iii) No auto-launch / lingering processes; no Dock/desktop icons | - | No login item, no helper, no `SMAppService`. Shortcuts runs in Shortcuts' own process, user-configured. | Low | - |
@@ -42,7 +42,7 @@ Overall risk is **low-to-medium**. Today the App Store flavor is a sandboxed, of
 | 2.4.5(viii) / 2.5.1 Current OS, public APIs | - | macOS 26 min; public APIs (IOKit.ps power source read, `ProcessInfo` activity, NSWorkspace URL open) | Low | - |
 | 2.4.5(ix) Localizations in bundle | - | English only | Low | - |
 | 2.5.9 Don't alter native UI behaviors | - | Stage mode sets `NSApp.presentationOptions = [.hideDock, .hideMenuBar]` only while performing, restored on exit (`StageWindowController.swift:85,121`); Esc / End Show exits | Low | Mention in review notes so the reviewer knows how to leave stage mode. |
-| 2.5.14 Recording user activity | Consent + indicator when recording | Gig log is user-entered; no recording in AppStore flavor (audio is personal-only) | Low | - |
+| 2.5.14 Recording user activity | Consent + indicator when recording | Gig log is user-entered; Segue records no audio or video | Low | - |
 | 4 Design (Mac) | Main window must be reopenable from the menu | `.newItem` group replaced by "New Song" -> no "New Window"; no Window-menu entry for the main window | **Med-High** | Add a Window menu item (e.g. "Library" Cmd-0) calling `openWindow(id: "segue.main")`, or quit on last window close. |
 | 4.1 Copycats | Don't copy other apps/brands | Own name, own brand | Low | USPTO check on "Segue" still open (vision doc). |
 | 4.2 Minimum functionality | Lasting utility | Editor, transpose, diagrams, setlists, stage mode, gig log | Low | Welcome library shows it off. |
@@ -59,7 +59,7 @@ Overall risk is **low-to-medium**. Today the App Store flavor is a sandboxed, of
 | 5.2.2 Third-party services | Must be permitted by the service ToS | No third-party services in AppStore flavor | Low | Keep `scripts/verify-appstore.sh` green. |
 | 5.2.5 Apple products | Don't look like Apple apps | Distinct brand | Low | "Shortcuts" is an Apple trademark: refer to it as "the Shortcuts app", don't use its icon in screenshots. |
 | 1.2 UGC | Filters/reporting/blocking for apps where users share content | No sharing, no server; PDF export later is local | Low | Not UGC in the 1.2 sense. |
-| 3.1 Payments | - | Free, no IAP | n/a | If tip jar later: must be IAP (3.1.1). |
+| 3.1 Payments | - | Free, no IAP | n/a | - |
 | Export compliance | ASC asks about encryption on every upload | `ITSAppUsesNonExemptEncryption` not set | Low (friction) | Add `ITSAppUsesNonExemptEncryption = NO` to Info.plist in `Project.swift` (app uses no encryption beyond OS). |
 | Privacy manifest | `PrivacyInfo.xcprivacy` | None in app; GRDB 7.11.1 ships its own (`GRDB/PrivacyInfo.xcprivacy`) | Low | Secondary sources say required-reason API declarations are not enforced for macOS (UNVERIFIED; Apple's page did not render). Adding an app-level manifest declaring no tracking/no collected data and `NSPrivacyAccessedAPICategoryUserDefaults` (CA92.1) + file timestamp (C617.1) is cheap insurance. |
 

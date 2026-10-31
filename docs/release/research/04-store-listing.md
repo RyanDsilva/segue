@@ -128,11 +128,8 @@ Recommendation: skip the preview for v1.0. Revisit when there is a stage-mode de
 
 ### 3.3 Localization
 
-- **Languages:** metadata can be localized into 50 languages and locales ([App Store localizations](https://developer.apple.com/help/app-store-connect/reference/app-information/app-store-localizations)). This includes Hindi and nine other Indian languages (added 2026-03-31 per [Adapty](https://adapty.io/blog/markdown/custom-product-pages-app-store.md); the current Apple list confirms them).
-- **Storefront defaults that matter to Segue:**
-  - **USA:** default English (US). Additional supported languages: Arabic, Chinese (Simplified/Traditional), French, Korean, Portuguese (Brazil), Russian, Spanish (Mexico), Vietnamese.
-  - **India:** default **English (U.K.)**. Additional: Bangla, Gujarati, Hindi, Kannada, Malayalam, Marathi, Odia, Punjabi, Tamil, Telugu, Urdu.
-- **Implication:** an **English (U.K.)** localization is what India (and the UK) see by default. It carries its own name, subtitle and 100-byte keyword set. That gives Segue a second, India-tuned keyword field for romanized Hindi and Bollywood terms without diluting the US set.
+- **Languages:** metadata can be localized into 50 languages and locales ([App Store localizations](https://developer.apple.com/help/app-store-connect/reference/app-information/app-store-localizations)).
+- **US storefront default:** English (US). Additional supported languages: Arabic, Chinese (Simplified/Traditional), French, Korean, Portuguese (Brazil), Russian, Spanish (Mexico), Vietnamese.
 - **Cross-locale keyword indexing (UNVERIFIED):** industry sources claim that keywords from a storefront's additional languages are also indexed in that storefront. Apple does not document this, so don't rely on it.
 - **No Devanagari:** do not ship a Hindi (Devanagari) localization. The app does not display Devanagari (vision doc, Language row).
 
@@ -140,7 +137,6 @@ Recommendation: skip the preview for v1.0. Revisit when there is a stage-mode de
 
 - **Custom product pages:** up to 70 per app, each with its own screenshots, promo text and keywords. They are "available on the App Store on iOS 15 and iPadOS 15, or later" ([Apple](https://developer.apple.com/help/app-store-connect/create-custom-product-pages/configure-multiple-product-page-versions)). They are **not available for a Mac-only app**.
 - **Product page optimization (A/B tests):** "Optimize your iOS or iPadOS app's product page" ([Apple](https://developer.apple.com/help/app-store-connect/create-product-page-optimization-tests/overview-of-product-page-optimization)). Also **not available for Mac**.
-- Both become relevant once the phase-7 iPad app ships.
 
 ---
 
@@ -278,16 +274,9 @@ Data is from US App Store pages fetched 2026-10-17. Ratings are as shown on the 
 - **Secondary: Productivity.** Organising a library and sets fits "make a specific process or task more organized". The alternative is Entertainment, which fits worse. Planning Center Music Stand uses Business, which fits Segue worse still.
 - Source: [Apple categories](https://developer.apple.com/app-store/categories/).
 
-### 6.2 Pricing (context, given the decision)
+### 6.2 Pricing
 
-| Option | Fits Segue? | Notes |
-|---|---|---|
-| **Free, no IAP (chosen)** | Yes | Simplest paperwork: free apps need only the Developer Program License Agreement, with no Paid Apps Agreement, banking or tax forms ([Apple](https://developer.apple.com/help/app-store-connect/manage-agreements/sign-and-update-agreements)). Removes the purchase barrier against OnSong's subscription. Supports a non-trader DSA declaration (7.2). Positioning is "free, no ads, no subscription, no account". |
-| Paid upfront ($5.99-19.99) | Viable later | Peers: Leganote $5.99, LinkeSOFT $19.99, forScore $24.99. Paid apps get no free trial on the Mac App Store. |
-| Free + one-time unlock ($5.99-9.99) | Viable later | Peers: SongbookPro $5.99, Òrain $7.99, Songbook Buddy $6.99. Would need the Paid Apps Agreement and StoreKit. |
-| Subscription | Poor fit | Local-only app with no server cost. It would contradict the "no subscription" positioning. |
-
-Note for later: switching a free app to paid is possible (price is editable anytime). Taking features away from existing free users into an IAP is a trust cost. If monetization ever comes, a one-time "supporter" unlock for **new** features is the gentlest path.
+**Free, no IAP (chosen).** Simplest paperwork: free apps need only the Developer Program License Agreement, with no Paid Apps Agreement, banking or tax forms ([Apple](https://developer.apple.com/help/app-store-connect/manage-agreements/sign-and-update-agreements)). Removes the purchase barrier against OnSong's subscription. Supports a non-trader DSA declaration (7.2). Positioning is "free, no ads, no subscription, no account".
 
 ### 6.3 Name, subtitle, keywords
 
@@ -305,12 +294,6 @@ Note for later: switching a free app to paid is possible (price is editable anyt
   - It leaves out words already in the name or subtitle (setlist, chords, lyrics, live, gig) and the word "app".
   - Swap candidates: *autoscroll*, *prompter* (shorter than teleprompter), *repertoire*, *chart*, *open mic*.
   - Flag: *band* and *worship* are relevant (worship and cover band leaders are named users), but Segue has no band-sharing feature. If reviews complain, drop *band*.
-- **Keywords for English (U.K.)** (India and UK default; 100 bytes):
-  ```
-  hindi,bollywood,bhajan,chordpro,songbook,transpose,teleprompter,worship,band,guitar,piano,capo,stage
-  ```
-  - Use these only if the romanized Hindi support is shown in screenshots and the description, to stay inside Guideline 2.3.7 relevance.
-  - *bhajan* assumes devotional Hindi songs are a real use. **Ryan to confirm.**
 - Don't use competitor names (OnSong, forScore and so on). Apple forbids them.
 
 ### 6.4 Promotional text (166 / 170 chars, editable anytime)
@@ -321,7 +304,7 @@ Your chart, your set, your cue. Segue keeps your songs as ChordPro files, builds
 
 ### 6.5 Description draft (about 2,300 / 4,000 chars)
 
-Each bullet must be checked against the App Store build before submission. Remove anything that is not shipped in the App Store flavor: Shortcuts specifics, show checklist, running time, VoiceOver claims, keep-awake. Never mention personal-only features (audio, LRCLIB, URL import).
+Each bullet must be checked against the App Store build before submission. Remove anything that is not shipped in the App Store flavor: Shortcuts specifics, show checklist, running time, VoiceOver claims, keep-awake. Never mention personal-only features (LRCLIB, URL import).
 
 ```
 Segue is a chord chart and setlist app for performing musicians, built for the Mac. Keep your songs as plain ChordPro files, build tonight's set, and play it from a stage view that fits each song on one screen.
@@ -356,7 +339,6 @@ STAGE MODE
 - Keeps the display awake while you play.
 
 WORKS WITH YOUR MAC
-- Shortcuts actions for your sets and shows.
 - Native macOS design with light and dark appearance and full keyboard control.
 - Works fully offline. Nothing on stage depends on a network.
 
@@ -400,20 +382,19 @@ Writing notes:
    - **Trader:** your address or P.O. box, phone and email are **published** on the product page.
    - Alternatively, don't distribute in the EU.
    - Source: [Apple DSA](https://developer.apple.com/help/app-store-connect/manage-compliance-information/manage-european-union-digital-services-act-trader-requirements).
-3. **English (U.K.) localization for India/UK** with the Hindi/Bollywood keyword set: yes or no. Is *bhajan* in or out?
-4. **Keywords *band* / *worship*:** keep or swap them for *autoscroll*, *repertoire* or *open mic*?
-5. **Screenshot seeding for the App Store flavor:**
+3. **Keywords *band* / *worship*:** keep or swap them for *autoscroll*, *repertoire* or *open mic*?
+4. **Screenshot seeding for the App Store flavor:**
    - (a) give `Debug-AppStore` the sandbox exception;
    - (b) seed a bundled demo library into the container (recommended);
    - (c) shoot from Personal with features hidden.
-6. **Screenshot style:**
+5. **Screenshot style:**
    - framed with captions on a brand background (recommended for shots 2-8);
    - full-bleed raw window (recommended for hero shot 1);
    - all framed or all full-bleed.
    - Per your preference, I can mock 2-3 directions on the design canvas before building the compositor.
-7. **Upload path:** manual drag-and-drop or fastlane `deliver` (Ruby via mise) with metadata versioned in git.
-8. **App preview video for 1.0:** skip (recommended) or make one.
-9. **Secondary category:** Productivity (recommended) or Entertainment.
+6. **Upload path:** manual drag-and-drop or fastlane `deliver` (Ruby via mise) with metadata versioned in git.
+7. **App preview video for 1.0:** skip (recommended) or make one.
+8. **Secondary category:** Productivity (recommended) or Entertainment.
 
 ---
 

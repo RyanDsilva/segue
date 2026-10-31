@@ -1,6 +1,6 @@
 # P3-5 - Length entry: the "Time it" timer, the length field and Welcome lengths
 
-Wave 2. **Rescoped 2026-10-19 by R91** (supersedes R70): no learned lengths, no estimates, no timing samples. What is left is the small, reusable length-entry piece that the song card (P3-10) and the missing-lengths list (P3-12) embed. Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 8 and 16.0.1). Rulings: `docs/release/decisions.md` R91, R78, R80, R17 (autosave); the phase 2 rule "Unknown song length: ... no made-up default" in `docs/decisions.md` stands again. Existing code: `SongDocument+Derived.swift` (`{duration}` parsing: `ss`, `mm:ss`, `h:mm:ss`, and `valueProblem`), `Editing/DocumentEditor.swift` (`EditOperation.setDirective`), `Setlists/SetlistTiming.swift` (unchanged phase 2 notation), `Library/WelcomeSeed.swift`.
+Wave 2. **Rescoped 2026-10-19 by R91:** no timing samples. This workstream is the small, reusable length-entry piece that the song card (P3-10) and the missing-lengths list (P3-12) embed. Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 8 and 16.0.1). Rulings: `docs/release/decisions.md` R91, R78, R80, R17 (autosave); the phase 2 rule "Unknown song length: ... no made-up default" in `docs/decisions.md` stands again. Existing code: `SongDocument+Derived.swift` (`{duration}` parsing: `ss`, `mm:ss`, `h:mm:ss`, and `valueProblem`), `Editing/DocumentEditor.swift` (`EditOperation.setDirective`), `Setlists/SetlistTiming.swift` (unchanged phase 2 notation), `Library/WelcomeSeed.swift`.
 
 ## Session rules (apply to every P3 workstream)
 
@@ -21,7 +21,7 @@ A song's length is typed once as `mm:ss` or timed with one click, and lands in t
 3. **Length field + Time it control** (`SongCard/LengthField.swift`, new): an `mm:ss` text field with the value type's validation, and a "Time it" button that becomes Stop with a live elapsed time. Commit (Return, focus out, or Stop) calls a closure the host supplies (`(TimeInterval?) -> Void`; nil = clear). P3-10 wires it to `EditOperation.setDirective(.duration, ...)` as one undoable edit; P3-12 reuses it in the missing-lengths popover. Accessibility identifiers `segue.songCard.length` and `segue.songCard.timeIt`; VoiceOver announces start, stop and the written length.
 4. **Analytics:** call `featureUsed(.timeIt)` on Stop once P3-4 has defined it; if P3-4 has not landed, leave one call site marked for it and tell the orchestrator.
 5. **Welcome lengths (R78):** the four Welcome songs already carry `{duration}` (Ferry Lights 4:40, Kettle On 3:05, Kitaabon Wali Gali 4:05, Soundcheck at Seven 3:20): add a test that pins it, and note in the hand-off that WS5's screenshot-only songs need `{duration}` too when they land.
-6. **Nothing learned:** confirm `SetlistTiming` and `SetlistEntryDisplay` still use `{duration}` only and the phase 2 notation (`--:--`, `≥38:20 + 2 unknown`); make no change there except comments that mention estimates. Do not add `DurationSample.Source.timer` files, index columns or a `Durations` module.
+6. **Notation unchanged:** confirm `SetlistTiming` and `SetlistEntryDisplay` still use `{duration}` only and the phase 2 notation (`--:--`, `≥38:20 + 2 unknown`); make no change there. Do not add `DurationSample.Source.timer` files, index columns or a `Durations` module.
 
 ## Not yours
 

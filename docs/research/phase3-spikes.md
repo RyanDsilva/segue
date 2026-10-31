@@ -194,10 +194,10 @@ when MLX Qwen3-4B does the labelling.
 
 ## 4. Natural-language set requests (15 prompts)
 
-Each prompt's gold record has 12 fields (target minutes, count, min proficiency, energy min/max,
-opener, closer, include/exclude tags, keys, tempo min/max). The table gives field accuracy and fully
+Each prompt's gold record has 12 fields (target minutes, count, min proficiency, opener, closer,
+include/exclude tags, keys, tempo min/max, and others). The table gives field accuracy and fully
 exact prompts. Before comparing, deterministic normalisation (what the app's mapper would do) turns
-no-op values into "unset": 0, energy 1 or 5, tempo >= 250, duplicate tags.
+no-op values into "unset": 0, tempo >= 250, duplicate tags.
 
 | Schema | FM | Qwen3-4B | Gemma 4 E2B | Qwen3.5-2B | Phi-4-mini |
 |---|---|---|---|---|---|
@@ -211,8 +211,8 @@ no-op values into "unset": 0, energy 1 or 5, tempo >= 250, duplicate tags.
   None of the three schemas fixed this.
 - The v3 numeric parser (regex in `SpikeCore/NumericRequest`) got all 15 prompts right. It was written
   against these prompts, so treat that as an upper bound, not a measurement.
-- Most remaining model errors are invented energy and opener values. A phrase lexicon in code
-  ("know well" -> ready, "know cold" -> pro, "mellow/chill" -> low, "finish big" -> closer high, tag
+- Most remaining model errors are invented opener values. A phrase lexicon in code
+  ("know well" -> ready, "know cold" -> pro, "finish big" -> closer high, tag
   names as written) would cover nearly every prompt here.
 
 ## 5. Recommendations
@@ -239,7 +239,7 @@ a larger download (3.58 GB). Qwen3.5-2B and Phi-4-mini are not viable.
 2. **Over-budget sheets** (more than about 35 blocks): go to MLX directly. Chunk on FM only when MLX
    is absent, using deterministic cross-chunk hints.
 3. **Set request / NL pick:**
-   - Code always runs first: numbers, keys, and a phrase lexicon for proficiency, energy,
+   - Code always runs first: numbers, keys, and a phrase lexicon for proficiency,
      opener/closer and tag names. Its result fills the chips instantly, inside the < 1 s budget.
    - A model is called only when words remain unmapped, asynchronously, and its additions appear as
      suggested chips. Order: MLX if installed (v3 schema), else FM (v3 schema; expect about 65%).

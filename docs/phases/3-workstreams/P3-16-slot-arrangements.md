@@ -18,7 +18,7 @@ For one gig, a setlist slot can say "play Intro, Verse 1, Chorus, Verse 2, then 
 
 **In scope:** skip sections, per-section play counts, reorder, play a section again at another point; a slot length for an arranged slot; out-of-date detection; stage rendering; timing; gig log; undo; accessibility.
 
-**Not in scope (R122):** named song-level arrangements ("Acoustic version" saved on the song), stage-time section jumping, any change to the `.cho`, the song PDF export or the library preview (they always show the full song).
+**Not in scope (R122):** any change to the `.cho`, the song PDF export or the library preview (they always show the full song).
 
 ## 2. Terms
 

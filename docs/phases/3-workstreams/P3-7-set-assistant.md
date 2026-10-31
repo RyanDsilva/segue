@@ -1,6 +1,6 @@
 # P3-7 - Set assistant and natural-language picks
 
-Wave 3 (after P3-2, P3-6 and P3-12). Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 7, 8, 9, 16.0.5, 16.1 question 24). Rulings: `docs/release/decisions.md` R65 (lexicon first, async model chips, no model on stage), R71 (no energy; shape with tags, length, key flow, repeat avoidance), **R92** (tempo = explicit filter only; opener/closer shaping only when asked, via tags; async pass = curated MLX if installed, else FM, as suggested chips), R93 (AI toggle), R94 (load per request), R91 (lengths = `{duration}` only), R84-R86 (Arrange mode, break rows, changeover), R89 (no ⌘K palette), R102 (no repeats in a show: P3-15 owns it), R39 (design directions); `docs/decisions.md` Phase 2 (Learning / Ready / Pro) and Phase 3 (recently-played penalty global, not venue-aware). Measurements: `docs/research/phase3-spikes.md` section 4 (the v3 split: code parses numbers/keys, the model maps fuzzy words only).
+Wave 3 (after P3-2, P3-6 and P3-12). Parent spec: `docs/phases/3-ai-entry-and-assistant.md` (read sections 7, 8, 9, 16.0.5, 16.1 question 24). Rulings: `docs/release/decisions.md` R65 (lexicon first, async model chips, no model on stage), R71 (shape with tags, length, key flow, repeat avoidance), **R92** (tempo = explicit filter only; opener/closer shaping only when asked, via tags; async pass = curated MLX if installed, else FM, as suggested chips), R93 (AI toggle), R94 (load per request), R91 (lengths = `{duration}` only), R84-R86 (Arrange mode, break rows, changeover), R102 (no repeats in a show: P3-15 owns it), R39 (design directions); `docs/decisions.md` Phase 2 (Learning / Ready / Pro) and Phase 3 (recently-played penalty global, not venue-aware). Measurements: `docs/research/phase3-spikes.md` section 4 (the v3 split: code parses numbers/keys, the model maps fuzzy words only).
 
 **Invariant from Ryan's walkthrough:** a song appears **at most once per setlist**, enforced in the setlist model (commit 1d027df). The packer and Rebuild assume it; it is never a score term. On stage, R102 (no repeats within a show) is P3-15's.
 
@@ -14,7 +14,7 @@ Wave 3 (after P3-2, P3-6 and P3-12). Parent spec: `docs/phases/3-ai-entry-and-as
 
 ## Before you start
 
-Questions 3, 4 and 14 are ruled (R92). Question 24 (songs with no length when packing to a duration) is open and blocks the packer's unknown-length handling until Ryan rules (recommendation a: leave them out and say "N songs left out: no length", a button opening P3-12's missing-lengths list). The builder's Pick/Arrange UI, break rows and missing-lengths list are P3-12's: the assistant plugs into the builder, it does not redesign it. No ⌘K palette (R89).
+Questions 3, 4 and 14 are ruled (R92). Question 24 (songs with no length when packing to a duration) is open and blocks the packer's unknown-length handling until Ryan rules (recommendation a: leave them out and say "N songs left out: no length", a button opening P3-12's missing-lengths list). The builder's Pick/Arrange UI, break rows and missing-lengths list are P3-12's: the assistant plugs into the builder, it does not redesign it.
 
 ## Deliverables
 

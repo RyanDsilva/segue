@@ -1,7 +1,7 @@
 # 01 - Apple account and App Store Connect business setup
 
 Researched 2026-10-17. Scope (narrowed by Ryan): US resident, individual membership, renewing the lapsed paid
-Apple Developer Program membership on team `V6BM673U35`, app **free at launch**. India coverage dropped.
+Apple Developer Program membership on team `V6BM673U35`, app **free at launch**.
 Every claim has a source in the "Sources" section (numbered `[n]`). Anything not confirmed from a primary
 source is marked **UNVERIFIED**.
 
@@ -72,8 +72,7 @@ Tags: **[RYAN]** = manual action in a browser or app. **[AGENT]** = automatable 
    both for the implementation session, which is out of scope for this research doc.)
 7. **[AGENT or RYAN]** Register the explicit App ID `dev.ryandsilva.segue`, platform macOS (Account
    Holder/Admin) [9]. Capabilities: App Sandbox and user-selected file access are entitlements that need no
-   portal capability. In-App Purchase is on by default for explicit App IDs [9]. Add iCloud only when R7.2
-   iCloud work lands. Xcode automatic signing with `-allowProvisioningUpdates` registers it too, but doing
+   portal capability. In-App Purchase is on by default for explicit App IDs [9]. Xcode automatic signing with `-allowProvisioningUpdates` registers it too, but doing
    it explicitly in the portal or through the API keeps it inspectable. A local check found no provisioning
    profile for `dev.ryandsilva.segue`, so the ID is probably not registered anywhere yet (if it were
    registered to another team, release takes a support request [21]).
@@ -148,7 +147,7 @@ name [26]. Use the 30-char subtitle for extra keywords [12].
 - **Later (recommended for a free launch):** nothing to sign, no W-9, no bank account [6].
 - **Now:** signing is irreversible ("can't undo") [6]. It unlocks paid pricing and IAP, and requires a
   W-9 (SSN, as a US individual) plus bank details [27][28]. Tax info can't be edited after submission
-  except through support [27]. Do it now only if IAP (e.g. a tip jar or Pro unlock) is close.
+  except through support [27].
 - When paid or IAP arrives, **enrol in the Small Business Program in the same session** as signing the Paid
   Apps Agreement. The 15% rate starts 15 days after the end of the fiscal month of approval, so enrolling
   late means early sales pay 30% [29][30].
@@ -179,14 +178,6 @@ was provided [31].
   authority [1][5]. Converting is done by contacting Apple support, only after renewal completes [5][4].
   LLC formation cost and time depend on the state - **UNVERIFIED**, not researched. Also makes DSA trader
   status cleaner: the D-U-N-S address is shown instead of a home address [8].
-
-### D5. Free trial / monetisation shape (only if paid later)
-- Paid up-front: Family Sharing **UNVERIFIED** - Apple's help confirms the toggle only for non-consumable
-  IAP and auto-renewable subscriptions, and once on it can't be turned off [32].
-- Free app with an unlock IAP: a free trial is allowed only as a $0 non-consumable named "XX-day Trial",
-  with disclosure rules [26].
-- Note: on the **US storefront**, the guideline 3.1.3 ban on linking to external purchases "does not
-  apply" [26].
 
 ## Costs (USD)
 
@@ -225,7 +216,6 @@ was provided [31].
 - 2026-08-18: EU terms. The Core Technology Commission replaces the Core Technology Fee from 2026-10-01
   (affects paid or IAP only) [33].
 - 2025-02-17: DSA trader status enforced in the EU [31].
-- Enrollment in India is now only through the Apple Developer app (not relevant after the US decision) [5].
 
 ## Sources
 

@@ -18,7 +18,7 @@ A 12-song set is typed, not clicked: ⌘L, type a few letters of each song, Retu
 
 **In scope (R153):** the composer row at the end of the set list in both Pick and Arrange; ⌘L; ghost completion with key and length; Return appends and keeps focus (Things-style); ↑/↓ and Tab / ⇧Tab cycle alternatives; inline key token ("kesariya in A", "(Am)", "key of D") stored as `SetlistOverrides.transpose`, with the relative major or minor meaning no change (R158 Q2); "---" inserts a break; structural duplicate block; "No song matches"; the whole-line matcher; the R157 short-word rules in `RomanNormalizer` (search improves everywhere); analytics; accessibility; guide page.
 
-**Declined in R153 - do not spec, build or stub:** paste a set from chat, placeholder slots for songs not in the library, gig templates, fill suggestions, drag to sidebar setlists, Play Again from the Gig Log, and the other click-reduction bundles (song entry, set editing, faster to stage). In particular, "No match" offers nothing else: no "Create song", no placeholder, no suggestion.
+**"No match" offers nothing else** (R153): the row only says so.
 
 **Unchanged:** the library column stays for browsing (Pick's checklist, ⌘A, drag); Arrange's keys, the slot popover, break rows, undo, timing.
 
@@ -319,11 +319,7 @@ New file `SegueCore/Sources/Services/AnalyticsEvent+Composer.swift`, a new row i
 
 ## 12. Design directions (step 0, R39)
 
-The three directions offered (renders in the session scratchpad `p8-5/`, light and dark, Pick and Arrange):
-
-- **A - Ghost row** (not chosen): the composer looks exactly like a set row with muted values; alternatives cycle in place with the "2 of 5" counter; no list.
-- **B - Ghost row + alternatives list** (chosen, R158 Q3): as A, plus a compact list (up to 5 rows: title, key, length, "In set" badge) that drops under the row from the first ↓ / Tab, Things-style.
-- **C - Pill** (not chosen): a rounded input pill under the last row (Spotlight-like), with the ghost and the key/length chips inside the pill; less "row-like", more obviously an input.
+**Direction B - ghost row + alternatives list** (R158 Q3; renders in the session scratchpad `p8-5/`, light and dark, Pick and Arrange): the composer looks exactly like a set row with muted values; alternatives cycle in place with the "2 of 5" counter, plus a compact list (up to 5 rows: title, key, length, "In set" badge) that drops under the row from the first ↓ / Tab, Things-style.
 
 **Direction B is chosen** (R158 Q3: the alternatives list is visible). Step 0 renders B only, light and dark, Pick and Arrange, with the four states of section 4.2 (match, close spelling, already in set, no match) and the open alternatives list, for Ryan to confirm before step 4.
 

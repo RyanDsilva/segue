@@ -52,7 +52,7 @@ Conventions for the session:
 | B-20 | Quick Look: view-based preview reusing the app's renderer and fonts | 4.7 |
 | B-21 | Sequencing per open-questions section 5 | 6 |
 | B-22 / I-1 | WS3's `ConsentStore` is the single consent store and writer | 3, 4.1, 4.6 |
-| B-23 | Archive includes `songs/`, `setlists/`, `shows/`, `timings/`; excludes `.segue/`; no restore in 0.5 | 4.8 |
+| B-23 | Archive includes `songs/`, `setlists/`, `shows/`, `timings/`; excludes `.segue/` | 4.8 |
 | B-26 / I-2 | The app bundles the generated `website/changelog.json`; WS4's schema 1 | 4.3 |
 | I-3 | No remote changelog fetch anywhere (WS2a drops `changelogFeed`) | 4.3 |
 | I-4 | WS2b owns the seeder and `-SegueSeedWelcome`; WS5's `-SegueScreenshotLibrary YES` composes it | 4.2 |
@@ -337,7 +337,6 @@ Every library-affecting control is disabled while performing (`app.isPerforming`
 - Contents (B-23): one top folder `Segue Library YYYY-MM-DD/` containing `songs/` (`.cho` and `.segue.json`), `setlists/`, `shows/`, `timings/`, as they are on disk. Excluded: `.segue/` (the rebuildable index and app-private state), `.DS_Store`, and anything else at the library root that is not one of those four folders (a user's own files there are theirs, not Segue's). Empty or missing folders are simply absent.
 - Mechanism (no third-party code, works in the sandbox): copy the four folders into a staging directory under `FileManager.temporaryDirectory`, then `NSFileCoordinator.coordinate(readingItemAt:options: .forUploading)`, which yields a zip of the staging folder, then move it to the chosen URL (replacing an existing file the user confirmed in the panel). Core logic in `Packages/SegueCore/Sources/Library/LibraryArchive.swift` (pure Foundation, injectable file system and clock for the date); the panel and progress in SegueUI. Runs off the main actor with a small progress indicator in the Data pane / a sheet; large libraries are text and stay small.
 - Errors (no space, destination not writable, folder unreadable mid-copy): no partial file at the destination; the error banner with the `UserMessage` text. The staging folder is always removed.
-- Restore/import of an archive: not in 0.5 (B-23).
 
 ### 4.9 Accessibility pass (R15)
 

@@ -4,7 +4,7 @@
 
 ## Goal
 
-Get charts and setlists out of Segue as paper or shareable PDFs. Live partner sync and share-by-file (N5) wait for phase 7. **Ships in v0.5** (`docs/release/decisions.md` R138); the setlist one-pager and ChordPro export were removed from the roadmap (R132). Exports must look as good as the live view and must match what the performer currently sees: transpose, capo, Nashville and diagram settings.
+Get charts and setlists out of Segue as paper or shareable PDFs. **Ships in v0.5.** Exports must look as good as the live view and must match what the performer currently sees: transpose, capo, Nashville and diagram settings.
 
 ## Scope
 
@@ -20,12 +20,9 @@ Get charts and setlists out of Segue as paper or shareable PDFs. Live partner sy
 
 ## Non-goals
 
-- **Setlist one-pager** (floor sheet) - removed from the roadmap (R132).
-- **ChordPro export** (song, setlist folder/zip, library zip) - removed (R132): the library already is ChordPro files, and the Settings export archive covers a whole-library copy.
-- Exporting to other apps' formats: OnSong, OpenSong XML, Word.
+- Exporting to other apps' formats (e.g. Word).
 - Email/cloud upload integrations beyond the system share sheet.
 - Annotations or handwriting on PDFs.
-- Importing PDFs.
 - Per-band-member part exports.
 
 ## Rendering approach
@@ -46,7 +43,7 @@ Get charts and setlists out of Segue as paper or shareable PDFs. Live partner sy
 | Option | Pros | Cons |
 |---|---|---|
 | SwiftUI `ImageRenderer` into a PDF context | Reuses SwiftUI chart views as-is | Rasterises some effects; weak control over page breaks; has to be driven one page at a time anyway; text selectability uncertain |
-| Core Graphics PDF context (`CGContext(consumer:mediaBox:)`) + Core Text | Vector, selectable text, exact control, works on iOS too, deterministic | More drawing code |
+| Core Graphics PDF context (`CGContext(consumer:mediaBox:)`) + Core Text | Vector, selectable text, exact control, deterministic | More drawing code |
 | PDFKit (`PDFDocument`) | Good for viewing, merging, metadata | Not a layout or drawing API |
 
 **Recommendation:**
@@ -101,8 +98,7 @@ See `docs/decisions.md`.
 2. **Duplex: no** - songs start on a new page, no blank padding.
 3. **Notes in export: opt-in per export** - default off, toggle in preview toolbar.
 4. **No branding footer.**
-5. **Removed (R132):** the setlist one-pager (so the earlier "no large-print two-page setlist" ruling is moot) and ChordPro export (so "bakes current transpose by default" is moot).
-6. **Ships in v0.5** (R138).
+5. **Ships in v0.5.**
 
 ## Open questions
 

@@ -61,7 +61,7 @@ On disk: `{"id": "01JB...", "section": "Chorus", "occurrence": 2, "text": "Watch
 
 ### 3.2 Migration (`SidecarCodec` step `3:`)
 
-- Each cue without an `id` gets a **deterministic** ID: a ULID whose 48-bit time part is the sidecar's `createdAt` (else the Unix epoch) and whose 80-bit random part is the first 80 bits of a stable hash of `(song id, cue index, section, occurrence, text)`. Deterministic so that (a) re-reading an unsaved migrated sidecar yields the same IDs (the store reloads on file events, and a fresh UUID per read would make every reload look like new notes to the sheet), and (b) two devices migrating the same file (phase 7 iOS reads the same folder, R134) agree on the IDs without coordination.
+- Each cue without an `id` gets a **deterministic** ID: a ULID whose 48-bit time part is the sidecar's `createdAt` (else the Unix epoch) and whose 80-bit random part is the first 80 bits of a stable hash of `(song id, cue index, section, occurrence, text)`. Deterministic so that re-reading an unsaved migrated sidecar yields the same IDs (the store re-reads sidecars, and a fresh UUID per read would make every reload look like new notes to the sheet), and two copies of the app migrating the same file agree on the IDs without coordination.
 - New cues created after migration get a fresh `ULID()` (`Support/ULID.swift`).
 - Decode repairs hand-edited files deterministically: a missing or unparseable `id` gets the derived ID above; a duplicate `id` keeps the first and re-derives the later ones. A repaired sidecar is written back on the next save like any migration.
 - An older build (schema 3) opening a v4 sidecar gets `.newerSchema(found: 4, supported: 3)` and opens the song read-only, so it can never silently drop the IDs. This is the same trade as setlist schema 5 (R123 question 6 = a). Every sidecar this build saves is written at 4.
@@ -132,7 +132,7 @@ R144: repeats are offered as targets, and picking one for a chart note explains 
 This is the hard part and Ryan's call (open question 1). Constraints:
 
 - **Files stay valid, portable ChordPro** (vision, R106). Other apps must open the `.cho` and print the notes exactly as the user wrote them.
-- **The user may edit the `.cho` anywhere**: Segue's Text mode, another editor, another ChordPro app, a phone (phase 7 reads the same folder). Any identity scheme must survive that or degrade honestly.
+- **The user may edit the `.cho` anywhere**: Segue's Text mode, another editor or another ChordPro app. Any identity scheme must survive that or degrade honestly.
 - **What needs a chart note ID?** Today: only the sheet (rows, drafts, focus, queued edits) and the planner (resolve the target of an edit). No stored artifact refers to a chart note: arrangements reference sections, the gig log references songs, analytics carries no IDs. A persistent chart note ID would only pay off for a future feature that refers to a specific chart note from outside the `.cho` (none is planned).
 
 ### Option I - Derived IDs (chart notes stay positional; only stage notes are persisted with IDs)
@@ -172,7 +172,7 @@ Three spellings, all with the same core trade (identity travels with the line, b
 | Fixes the stale-position bugs | yes | yes | yes |
 | Size of work | small | large | medium |
 
-**Recommendation: Option I.** Stage notes get persisted IDs (section 3); chart notes keep positional identity with derived IDs resolved at plan time. It fixes every bug the report exposed, keeps files exactly as portable as today, and needs no reconciliation. Option II is the upgrade path if a later feature (for example notes referenced from a setlist or shared to a partner device) ever needs persistent chart note identity; nothing in Option I blocks it.
+**Recommendation: Option I.** Stage notes get persisted IDs (section 3); chart notes keep positional identity with derived IDs resolved at plan time. It fixes every bug the report exposed, keeps files exactly as portable as today, and needs no reconciliation. Option II is the upgrade path if a later feature (for example notes referenced from a setlist) ever needs persistent chart note identity; nothing in Option I blocks it.
 
 ## 6. Arrangements (R122/R123)
 

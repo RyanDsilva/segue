@@ -534,7 +534,7 @@ site-fonts: ## Rebuild the subset WOFF2 web fonts from the bundled TTFs
 
 - Hero and section screenshots come from the R10 screenshot workstream (App Store flavor, Welcome library and screenshot-only original songs per A48; never real songs). Take the raw 2880x1800 captures, export JPEG (quality 0.85, sRGB) at 1280 and 2560 px wide with ImageIO (part of `--raster`, reading from a path set in that workstream's output). Until it exists the sections render without art, and `--strict` with `status: live` fails.
 - `<img srcset="... 1280w, ... 2560w" sizes="(max-width: 1080px) 100vw, 1080px">`, explicit width/height, hero `fetchpriority="high"`, others lazy.
-- Never show personal-only features (audio, LRCLIB, URL import) or real song lyrics in any image.
+- Never show personal-only features (LRCLIB, URL import) or real song lyrics in any image.
 
 ---
 
@@ -1031,9 +1031,6 @@ Create a Shortcut that turns on a Focus, then pick it in Settings > Live > Gig M
 
 **Will my page-turner pedal work?**
 Pedals that send arrow keys or Page Up / Page Down work out of the box. See Stage mode (/help/live). [VERIFY]
-
-**Is there an iPhone or iPad version?**
-Not yet. It's on the list; vote for it on the feature board.
 
 **Is Segue really free?**
 Yes. No ads, no subscription and no in-app purchases.

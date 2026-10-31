@@ -1,6 +1,6 @@
 # P8-3 - Arrangement sequence strip: the Arrange Sections sheet rebuilt as B1
 
-Wave 8 (2026-10-30). Rulings: `docs/release/decisions.md` **R149** (per-pass show modes, sequence strip), with R122 (per-slot arrangements, no song-level or named arrangements), R123 (P3-16 details: sheet, live preview, anchoring, out of date, new sections), R147 (every pass written out on stage, section map, collapse-repeats removed), R148 (section jump, rehearsal loop) and R150 (single-song sessions from the library play the full song), **R156** ("Rehearse this" plays the slot's arrangement in the slot's key and capo, not logged; extends R150), **R155** (build order), **R158** (this spec's open questions closed, section 14). Related: R16 (builder undo), R79 (accessibility walk), R113 (test budget), R154 (serialized setlist undo snapshots). Predecessor spec: `docs/phases/3-workstreams/P3-16-slot-arrangements.md` (the current row-list sheet).
+Wave 8 (2026-10-30). Rulings: `docs/release/decisions.md` **R149** (per-pass show modes, sequence strip), with R122 (per-slot arrangements), R123 (P3-16 details: sheet, live preview, anchoring, out of date, new sections), R147 (every pass written out on stage, section map, collapse-repeats removed), R148 (section jump, rehearsal loop) and R150 (single-song sessions from the library play the full song), **R156** ("Rehearse this" plays the slot's arrangement in the slot's key and capo, not logged; extends R150), **R155** (build order), **R158** (this spec's open questions closed, section 14). Related: R16 (builder undo), R79 (accessibility walk), R113 (test budget), R154 (serialized setlist undo snapshots). Predecessor spec: `docs/phases/3-workstreams/P3-16-slot-arrangements.md` (the current row-list sheet).
 
 **Consumes P8-2's pass model.** Sibling spec `docs/phases/8-workstreams/P8-2-stage-map-and-passes.md` owns the pass model (one entry per pass, each with a show mode), the setlist schema v6 bump and its migration from v5 `plays`, the resolver, and stage rendering (map strip, pass badges, mode rendering). This spec owns only the editor: the draft logic, the sheet, the typed roadmap, the preview wiring, "Rehearse this", and the builder's arrangement text. Section 4 lists exactly what it needs from P8-2.
 
@@ -22,7 +22,7 @@ Arranging a slot becomes "build the sequence you will play": the song's parts in
 
 **In scope:** the sheet (layout, chips, palette, inspector, roadmap, preview, footer, banner), keyboard, drag and drop, accessibility, undo names, the pure draft and roadmap logic, the preview fix (section 3.4), "Rehearse this", the slot popover's and the slot mark's arrangement text, the guide page, analytics events, the editor half of the E2E.
 
-**Not in scope:** the pass model, schema v6 and its migration, the resolver, stage and map rendering, section jump and loop (P8-2 / R148), single-song sessions from the library (R150 sibling), any song-level or named arrangement (R122, R149: declined), any change to the `.cho`.
+**Not in scope:** the pass model, schema v6 and its migration, the resolver, stage and map rendering, section jump and loop (P8-2 / R148), single-song sessions from the library (R150 sibling), any change to the `.cho`.
 
 ## 2. Terms
 
@@ -83,7 +83,7 @@ This spec is written against these names. If P8-2 names them differently, use P8
 10. **Stage accessibility identifiers** for the map chips and pass badges, mirrored in the UITests target, for the E2E's stage assertions (section 10.4).
 11. **Shared stage request.** Either P8-2 provides one function that builds the stage's `LayoutRequest` for (song, slot entry, Live settings, viewport), called by `LiveSession+Viewport.swift` and by the preview, or this workstream adds it (section 6.4) and P8-2 switches its call site. Agree which before step 4.
 
-**Needs from the R150 single-song session workstream** (sibling P8 spec that adds Rehearse/Live from the library): an entry point that starts a one-song rehearsal for a song **with an optional slot entry** (key/capo overrides and arrangement), not logged to the Gig Log or gig stats (R150), and that tells the caller when the session ends (section 6.7).
+**Needs from the R150 single-song session workstream** (sibling P8 spec that adds Rehearse/Live from the library): an entry point that starts a one-song rehearsal for a song **with an optional slot entry** (key/capo overrides and arrangement), not logged to the Gig Log (R150), and that tells the caller when the session ends (section 6.7).
 
 ## 5. Decisions
 

@@ -79,25 +79,18 @@ Current code: `SegueUI/Live/ShortcutRunner.swift` opens `shortcuts://run-shortcu
 - Implementation note: send via `NSAppleEventDescriptor`/`AESendMessage` or ScriptingBridge on a background queue with a timeout (NSAppleScript is main-thread only), so a hung shortcut cannot freeze the show UI.
 - Review: scripting-targets with an Apple-declared access group is the documented MAS path. App Review acceptance for this specific target: **UNVERIFIED** (no rejection or approval report found either way).
 
-### 2.5 App Intent in reverse ("Confirm Gig Mode in Segue")
-
-- How: Segue ships an `AppIntent` (`openAppWhenRun = false`) the user appends as the last action of their Gig Mode On / Off Shortcut. It marks the pending checklist row confirmed. Optionally a parameter (`on` / `off`) and a run token are unnecessary: Segue only accepts it while a start/end request is pending.
-- Entitlements: none. Review: standard. Truthful by construction: the action only runs if every earlier action ran without stopping the shortcut.
-- Cost: one more setup step; existing Shortcuts never auto-tick; Shortcuts may open Segue if it is not running (it is, during a show). Needs App Intents in the app target.
-
-### 2.6 Checking the Focus outcome directly
+### 2.5 Checking the Focus outcome directly
 
 - `INFocusStatusCenter` exists on macOS 12+ (https://developer.apple.com/documentation/intents/infocusstatuscenter), needs `NSFocusStatusUsageDescription` (https://developer.apple.com/documentation/bundleresources/information-property-list/nsfocusstatususagedescription) and a user permission prompt. It needs the **Communication Notifications** capability (`com.apple.developer.usernotifications.communication`): without it macOS returns `DNDErrorDomain Code=1004: App is missing Communication Notifications entitlement` (Home Assistant issue on macOS 27, 2026-09-25: https://github.com/home-assistant/iOS/issues/5904 ; capability described at https://developer.apple.com/documentation/usernotifications/implementing-communication-notifications ). `isFocused` says only that *some* Focus is on, and only if the user enabled "Share Focus status" for that Focus (https://support.apple.com/guide/mac-help/mchlff5da36d/mac). Review risk: claiming a communication-app capability in a setlist app could be questioned (**UNVERIFIED**). Weak signal: a Sleep or Work Focus already on would read as "confirmed".
 - Better: a **Focus filter** (`SetFocusFilterIntent`, macOS 13+, https://developer.apple.com/documentation/appintents/setfocusfilterintent ; overview https://developer.apple.com/documentation/appintents/focus ). The user adds Segue's filter to their "Performing" Focus in System Settings; the system runs Segue's intent when that Focus turns on ("When someone engages a Focus, the system executes your app's custom SetFocusFilterIntent"). This tells Segue that *the specific* Focus activated, with no entitlement and no communication capability. Called again on deactivation with default values: from WWDC22 "Meet Focus filters" (session 10121), **UNVERIFIED** by probe. It verifies the outcome, not the shortcut, so it also works if Ryan turns the Focus on by hand.
 
-### 2.7 Other options considered
+### 2.6 Other options considered
 
-- "Open URL `segue://gigmode/ok`" as the shortcut's last action: same idea as 2.5 with a URL scheme instead of an intent; cruder (brings Segue forward, user types a URL). 2.5 is better.
 - Reading `~/Library/DoNotDisturb/DB/*.json` or private DND/WorkflowKit APIs: blocked by the sandbox and by 2.5.1 (public APIs only). Rejected.
 - There is no public in-process API for a third-party app to run a user Shortcut by name on macOS (Intents' `INVoiceShortcutCenter` only covers the app's own donated shortcuts). **UNVERIFIED** that nothing new landed in the macOS 27 SDK.
 - Manual "Done" (WS1 option C): always truthful, no automation.
 
-### 2.8 Comparison
+### 2.7 Comparison
 
 | Mechanism | Learns success? | Learns failure? | Entitlement | User setup | MAS risk |
 |---|---|---|---|---|---|
@@ -105,7 +98,6 @@ Current code: `SegueUI/Live/ShortcutRunner.swift` opens `shortcuts://run-shortcu
 | NSUserUnixTask + CLI | Exit 0 | Exit != 0 (action-failure mapping UNVERIFIED) | none | install script | low |
 | Process + CLI | Exit 0 (real run UNVERIFIED) | Exit != 0 | none | none | medium, UNVERIFIED |
 | Apple events to Shortcuts Events | Returns | Throws (action-failure mapping UNVERIFIED) | scripting-targets `com.apple.shortcuts.run` + apple-events | one TCC prompt | low-medium, UNVERIFIED |
-| App Intent callback | Intent runs | Silence (timeout -> unknown) | none | add action | low |
 | Focus filter | Focus actually on | Silence (timeout -> unknown) | none | add filter to Focus | low |
 | INFocusStatus | Some Focus on | No | Communication Notifications | permission + share status | medium |
 | Manual Done | Performer says so | n/a | none | tap | none |
@@ -116,11 +108,9 @@ Current code: `SegueUI/Live/ShortcutRunner.swift` opens `shortcuts://run-shortcu
 
 Primary: **Apple events to Shortcuts Events** (2.4) as the runner, replacing the `shortcuts://run-shortcut` hand-over. It is the only zero-setup mechanism that observes both success and failure, it uses an access group Apple publishes for exactly this, and it is synchronous, so the row state comes from the result, not a guess.
 
-Optional outcome check: **Segue Focus filter** (2.6). If the user has added it, the row can say the Focus is actually on, which is what the performer cares about.
+Optional outcome check: **Segue Focus filter** (2.5). If the user has added it, the row can say the Focus is actually on, which is what the performer cares about.
 
 Fallback: **manual "Done"** on any row that ends in `unknown`, as WS1 already plans for brightness.
-
-If the section 4 probe shows the scripting-targets path is blocked in a real sandboxed build, use the **App Intent callback** (2.5) instead, with manual Done as the fallback (WS1 Q1 option "b + c").
 
 Row states (`PreShowChecklist.FocusStatus`), what the row shows, and whether it ticks:
 
@@ -128,7 +118,7 @@ Row states (`PreShowChecklist.FocusStatus`), what the row shows, and whether it 
 |---|---|---|---|
 | `notConfigured` | no Shortcut set | "Gig Mode Shortcuts are off. Set them up in Settings > Live." | no |
 | `running(name)` | request sent, awaiting result | "Running “Gig Mode On”..." | no |
-| `ran(name)` | Shortcuts Events `run` returned without error (or App Intent callback received) | "“Gig Mode On” ran." | **yes** (meets R18) |
+| `ran(name)` | Shortcuts Events `run` returned without error | "“Gig Mode On” ran." | **yes** (meets R18) |
 | `confirmed(name)` | ran, and Segue's Focus filter fired | "“Gig Mode On” ran. Focus is on." | **yes** |
 | `unknown(name)` | timed out (e.g. 30 s), or only a hand-over/x-error code 4 is known | "Asked Shortcuts to run “Gig Mode On”; couldn't confirm it finished." + Done button | no, until Done |
 | `failed(name, message)` | Apple-event error: not found (-1728), permission denied, shortcut error | "“Gig Mode On” failed: <message>." + Retry | no |
@@ -143,7 +133,7 @@ Manual step for Ryan: in Shortcuts, create **"Segue Focus Probe"** with one harm
 
 1. `shortcuts run "Segue Focus Probe"; echo $?` and the Fail variant: confirms the CLI exit codes (2.2, 2.3).
 2. `osascript -e 'tell application "Shortcuts Events" to run shortcut "Segue Focus Probe"'` and the Fail variant: does an action failure throw? (2.4)
-3. x-callback: `open 'shortcuts://x-callback-url/run-shortcut?name=Segue%20Focus%20Probe&x-success=segue-probe://ok&x-error=segue-probe://err'` with a tiny URL-scheme handler (or the Debug Segue build once it registers `segue`), with and without a "Stop and Output" action: does x-error code 4 still fire on success? (1)
+3. x-callback: `open 'shortcuts://x-callback-url/run-shortcut?name=Segue%20Focus%20Probe&x-success=segue-probe://ok&x-error=segue-probe://err'` with a tiny URL-scheme handler, with and without a "Stop and Output" action: does x-error code 4 still fire on success? (1)
 4. Re-run 1 and 2 from a real sandboxed build (a scratch target or Segue Debug with the scripting-targets entitlement added locally): does the sandbox allow it, and does the TCC prompt appear?
 
 Record results in this doc. Cleanup note: my sandbox probe left an empty container at `~/Library/Containers/dev.ryandsilva.segueshortcutprobe`; a guard hook blocked me from deleting it, so Ryan can remove it by hand.
