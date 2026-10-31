@@ -495,6 +495,7 @@ public struct ChordChange: Sendable, Hashable, Identifiable {
 - `InstrumentProfile` gains `walkUps: WalkUpDensity` (default `.off`) and `genre: BassGenre` (the default feel, default `.pop`); `BassView` gains the same two plus `fretboard` (already there). Lenient decode as for the other fields.
 - Settings > Instrument, a **Walk-ups** group (enabled while "Show bass notes" is on): "Walk-ups on charts" pop-up Off / Into sections / Every change, note "A short run of notes into the next chord, after the chord it leaves. Change one in the editor or library."; "Default feel" pop-up (Pop, Rock, Worship, Country / gospel, Bollywood), note "Songs use this unless you set their own feel." Identifiers `segue.settings.instrument.walkUps`, `segue.settings.instrument.genre`, plus `segue.settings.instrument.fretboard`.
 - A **song's feel** is set in the Walk-ups list header (8.9): "Feel: Default (Pop) / Pop / Rock / Worship / Country / gospel / Bollywood". Choosing "Default" removes the song's own value. Stored in the sidecar (8.10).
+- A **song's scale** sits after the feel (R170, P8-7 section 11.7): "Scale: Default (Major)", the scales of the key's quality; it sets the walk-ups' passing scale. Stored in the sidecar's `bass.mode`.
 
 ### 8.8 Display
 
