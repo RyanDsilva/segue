@@ -43,7 +43,6 @@ Release rulings live here; product rulings for phases 0-6 live in [../decisions.
 - R17. **Autosave** replaces explicit Save (Cmd-S becomes a confirming no-op).
 - R18. Gig Mode Shortcuts are OFF until the user sets them up. A checklist row ticks only when its Shortcut actually ran successfully.
 - R19. First run seeds a deletable Welcome library: 3-5 ORIGINAL songs written for Segue (one romanized Hindi; never real song titles or lyrics) + a demo setlist.
-  - *See R78: Welcome songs carry `{duration}` lengths.*
 - R20. Review prompt after the 1st completed gig, never during a show.
 - R21. Help docs are web pages at segue.ryandsilva.dev/help.
 - R22. Bug report may offer "attach current song" (off by default) and must preview everything it sends.
@@ -123,7 +122,7 @@ Ryan's rulings after the phase 3 spikes (`docs/research/phase3-spikes.md`). The 
   - *Proven locally by P3-A, R100 (group `V6BM673U35.dev.ryandsilva.segue.models`, no profile regeneration); App Store Connect validation pending at the first real `make validate`.*
 - R68. **Low RAM:** show the memory need and warn under 16 GB; never block.
 - R69. **Foundation Models unavailable:** a reason-specific inline note per `UnavailableReason` with "Open System Settings"; no nag prompts.
-- R71. **Set shaping:** the set assistant shapes sets with tags (existing sidecar tags), length, key flow and repeat avoidance. Starter tag suggestions are a manual pick.
+- R71. **Set shaping:** the set assistant shapes sets with tags (existing sidecar tags), key flow and repeat avoidance. Starter tag suggestions are a manual pick.
 - R72. **Smart filters** are library files `filters/<slug>.filter.json`, added to `LibraryRoot` and `LibraryArchive.includedFolders`.
 - R73. **Settings gets a sixth pane, "AI"** (model download/status; Advanced in Personal only). Reset All Settings resets AI preferences but keeps downloaded models.
 - R74. **AI stats go to analytics:** opt-in (existing consent), closed-vocabulary, non-personal TelemetryDeck events: paste outcome, which provider handled it, fallback reason, latency bucket, correction-amount bucket, model download result, assistant and smart-filter use. Never song text or titles. Requires an `AnalyticsEvent`/`IngestBody` allowlist change and an update to the privacy policy's example list.
@@ -131,7 +130,6 @@ Ryan's rulings after the phase 3 spikes (`docs/research/phase3-spikes.md`). The 
 - R75. **Paste entry points:** File > New Song from Clipboard (`⌥⌘V`; verify it is free), a button in the empty-library state, and `⌘V` while the song list has focus.
 - R76. **`.crd` import accepted**, routed through the converter and review sheet.
 - R77. **Code placement:** new `Packages/SegueAI` (FM + MLX adapters, downloader); the provider port types and a `ScriptedProvider` (replays recorded real outputs) live in SegueCore. One code path on macOS 26; the macOS 27 `LanguageModel` / `MLXFoundationModels` path is revisited in 0.6.
-- R78. **Welcome songs get `{duration}` lengths** so set timing works out of the box (the four shipped Welcome songs already carry them).
 - R79. **Release order:** phase 3 lands -> Ryan's R56 walkthrough -> WS5 screenshots, preview and metadata -> TestFlight -> real gig -> submit. New UI gets its own accessibility walk before any accessibility label is claimed. Refines R6 and R56.
 
 Not yet decided (open questions for the WS5-stage fold-in, listed in the phase 3 spec section 16.2): a 9th screenshot vs replacing one; a keywords swap; the age-rating AI questionnaire and content-rights answer with a downloadable model (a quick research ticket before WS5 is recommended); "Apple Intelligence" trademark usage in marketing copy.
@@ -145,20 +143,15 @@ Ryan's rulings on the metadata/set-building brainstorm (from his R56 walkthrough
 
 Metadata entry and fast set building:
 
-- R80. **Direction B, the song card.** An inspector card (library detail pane and editor) whose controls write the ChordPro directives and the sidecar for the user: title, artist, key, tempo, length (with "Time it", R91), capo, time signature, proficiency, tags. Files stay standard ChordPro; Text mode is the escape hatch. **Set essentials** = key + length + tempo, each marked with a dot when missing. The paste review sheet's metadata block is the same component.
-- R81. **Text mode helpers, from direction A:** a `/` slash-command menu (plain names; a section entry wraps the selected lines; value pickers for key, tempo and length), plus the `{` completion fixes from the brainstorm audit (offer `start_of_*` when a section word is typed, short forms, labelled forms, value help, and key validation: `{key: Hm}` is flagged with a fix).
+- R80. **Direction B, the song card.** An inspector card (library detail pane and editor) whose controls write the ChordPro directives and the sidecar for the user: title, artist, key, tempo, capo, time signature, proficiency, tags. Files stay standard ChordPro; Text mode is the escape hatch. **Set essentials** = key + tempo, each marked with a dot when missing. The paste review sheet's metadata block is the same component.
+- R81. **Text mode helpers, from direction A:** a `/` slash-command menu (plain names; a section entry wraps the selected lines; value pickers for key and tempo), plus the `{` completion fixes from the brainstorm audit (offer `start_of_*` when a section word is typed, short forms, labelled forms, value help, and key validation: `{key: Hm}` is flagged with a fix).
 - R82. **Section band** in the visual editor, Logic-style: select lines, then V / C / B / I keys or chips make or relabel a section; drag a band's edge to resize it.
 - R83. **New song starts with the paste flow**, with a "Start blank" link that opens a blank editor plus the song card.
 - R84. **Set builder Pick and Arrange modes.** Pick: Space ticks, ⌘A ticks the filtered list, tick order = set order. Arrange: ⌥↑ / ⌥↓ and drag. **Plus real multi-select in the main Library** (⌘-click, ⇧-click) with Add to Setlist.
 - R85. **Break rows inside one setlist**; each part shows its own total.
 - R86. **Changeover time** per setlist, with a global default, added to the totals.
 - R87. **One section note:** `{comment}` and live cues merge into a single "section note" concept with a "Show on stage only" toggle.
-- R88. **Missing-lengths list:** the set total's "N unknown" becomes a button that lists exactly which songs lack a length (each row opens that song's card on Length).
 - R90. **Visual metronome in 0.5:** a small corner overlay on stage pulsing at the song's tempo and time signature; toggled per show and by a key; **sound only in rehearsal mode, never during a show**.
-
-Lengths:
-
-- R91. **Manual length plus "Time it".** Length is entered on the song card (writes `{duration}`), and a per-song "Time it" timer fills the field. Unknown stays unknown and is flagged in totals: the phase 2 rule ("Unknown song length: ... no made-up default", `../decisions.md`) stands. P3-5 is the timer and the length field.
 
 Set assistant:
 
@@ -193,7 +186,6 @@ Phase 3 spec questions 21-29 (Ryan, 2026-10-19):
 - R104. Break rows on stage: a break interstitial ("Break - Set 2 starts with <song>"); Next continues; the show clock keeps running (question 21 = a).
 - R105. A break row may carry an optional length, counted in the whole-setlist total only (question 22 = a).
 - R106. Section notes: chart notes stay `{comment}` in the `.cho`, stage-only notes stay sidecar cues; the toggle moves a note between them (question 23 = a).
-- R107. The set assistant's packer leaves songs with no length out and says "N songs left out: no length", linking to the missing-lengths list (question 24 = a).
 - R108. Metronome: hidden for songs without `{tempo}`; the per-show toggle remembers the last choice; rehearsal sound off by default (question 25 = a).
 - R109. During a show, every route into the review sheet is disabled (clipboard paste, `.txt`/`.crd` conversion imports, New Song's paste flow goes straight to Start blank); already-ChordPro imports stay allowed (question 26 = a).
 - R110. Set essentials outside the card: a quiet dot on library rows and the builder's library column, plus a built-in "Missing essentials" filter (question 27 = c).
@@ -223,8 +215,8 @@ Curated model (Ryan, 2026-10-19, after the 51-paste bake-off, docs/research/phas
 
 Gig arrangements (Ryan, 2026-10-19):
 
-- R122. Per-slot arrangements ship in 0.5 (new workstream P3-16). A setlist slot may override which sections of the song are played: skip sections, set repeat counts and reorder them, for that gig only. The `.cho` stays the master and is never changed; "Reset to full song" removes the override. Section references use the same label-plus-occurrence anchoring as section notes; an arrangement whose sections no longer exist is flagged "out of date" and the stage shows the full song. A slot with an arrangement takes a manually entered (or timed) length for that slot; the song file keeps the full song's length. If no slot length is entered, the slot's length is unknown and flagged (never derived from the full length).
-- R123. Per-slot arrangement details (P3-16 open questions): the editor is the "Arrange Sections" sheet with a live stage preview, opened from the slot popover's Arrangement row, the slot context menu and a Setlist menu item (question 7 = B). An extra play follows the song's collapse-repeats setting (1 = b). "Play Again Later" duplicates a row to drag anywhere (2 = b). Each block of lines outside any section is its own row (tickable, skippable, movable, with a play count); lines before the first section are a "Lead-in" row (3). Sections are matched by label + occurrence plus a fingerprint of the first two lyric lines; a mismatch marks the arrangement out of date, and new sections appear unticked under "New in the song" without marking it out of date (4 = b). Out of date: builder mark, a pre-show checklist row with Edit, totals keep the slot length, a quiet "Full song" note on stage (5 = a). Every setlist saved by this build is written at schema 5 (6 = a). A running show copies arrangements exactly as it copies key and capo when the setlist is edited mid-show.
+- R122. Per-slot arrangements ship in 0.5 (new workstream P3-16). A setlist slot may override which sections of the song are played: skip sections, set repeat counts and reorder them, for that gig only. The `.cho` stays the master and is never changed; "Reset to full song" removes the override. Section references use the same label-plus-occurrence anchoring as section notes; an arrangement whose sections no longer exist is flagged "out of date" and the stage shows the full song.
+- R123. Per-slot arrangement details (P3-16 open questions): the editor is the "Arrange Sections" sheet with a live stage preview, opened from the slot popover's Arrangement row, the slot context menu and a Setlist menu item (question 7 = B). An extra play follows the song's collapse-repeats setting (1 = b). "Play Again Later" duplicates a row to drag anywhere (2 = b). Each block of lines outside any section is its own row (tickable, skippable, movable, with a play count); lines before the first section are a "Lead-in" row (3). Sections are matched by label + occurrence plus a fingerprint of the first two lyric lines; a mismatch marks the arrangement out of date, and new sections appear unticked under "New in the song" without marking it out of date (4 = b). Out of date: builder mark, a pre-show checklist row with Edit, a quiet "Full song" note on stage (5 = a). Every setlist saved by this build is written at schema 5 (6 = a). A running show copies arrangements exactly as it copies key and capo when the setlist is edited mid-show.
 
 AI accuracy follow-up (Ryan, 2026-10-19, after reconciling eval-ai with the bake-off; correction section in docs/research/phase3-model-bakeoff.md):
 

@@ -43,7 +43,7 @@ Product rulings for phases 0-6 live here; the v0.5 App Store release rulings (R1
 - MLX: **curated one-click model** (chosen by eval spike) **plus advanced setting for any mlx-community model**.
   - *Narrowed by R62 (release/decisions.md): the custom mlx-community model setting is Personal-only; R64 names the curated candidate.*
 - Paste review sheet: **always shown**.
-- Set builder: **suggested starter tags**. Repeat avoidance: not venue-aware. Song lengths: manual length + "Time it" (R91).
+- Set builder: **suggested starter tags**. Repeat avoidance: not venue-aware.
   - *Batch import: R96 lists every converted file in one review sheet with checkboxes (no automatic batch acceptance).*
 
 ## Phase 4
@@ -65,7 +65,6 @@ Product rulings for phases 0-6 live here; the v0.5 App Store release rulings (R1
 - **Phase 0:** team ID committed as `DEVELOPMENT_TEAM` in `Project.swift`; Tuist local-only (no cloud account or caching). Verification task added: Shortcut launch behaviour from a full-screen sandboxed app (feeds phase 2).
 - **Phase 1:** chords Tonic cannot model use our own interval table - transposable, with generated diagrams. Nashville header in minor keys shows both, e.g. "Am (rel. C)".
 - **Phase 2:** unfinished show older than 12 hours is closed into the gig log on next launch and the reorder diff is offered then. Rehearse-setlist run added (no show or gig-log record).
-- **Phase 3:** rehearsal timing uses both a rehearse-setlist run and a per-song Start/Stop timer.
 
 ## Naming (2026-10-17)
 
@@ -132,8 +131,7 @@ Chosen on the design canvas (https://claude.ai/artifact/XizqyqzA1chVfBSGThAzcQ):
 Defaults from docs/phases/2-interfaces.md stand except:
 - **Next** always goes to the song after the current one in playing order; songs passed over by "Play now" are not revisited automatically (they stay pending and can be picked).
 - **Missing songs at show start are removed** from the show (listed in the pre-show warning), not marked skipped.
-- **Unknown song length:** row shows `--:--`; set total reads e.g. "≥38:20 + 2 unknown" and later start times are lower bounds ("≥13:50"); no made-up default.
-  - *Confirmed by R91 (release/decisions.md): lengths come from the song card or "Time it", and the "N unknown" total lists the songs without one (R88).*
+- **Unknown song time:** row shows `--:--`; set total reads e.g. "≥38:20 + 2 unknown" and later start times are lower bounds ("≥13:50"); no made-up default.
 - **Save reorder to setlist:** inserted songs / requests are **checked** by default.
 - **Rehearsal runs get the same safety as shows:** crash resume and the pre-show checklist (Shortcuts optional); still no gig-log entry.
 - **Auto-fit prefers no wrapping:** choose the largest layout with zero wrapped lyric lines; allow wrapping only if the best no-wrap layout is more than ~15% smaller or would go below the user minimum. Split-section continuations get a "(cont.)" label; gutter labels stay at least 12pt.
