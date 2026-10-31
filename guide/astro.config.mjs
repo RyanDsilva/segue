@@ -26,6 +26,7 @@ const sidebar = [
       page('text-mode', 'Text mode'),
       page('transpose', 'Transpose and capo'),
       page('play-bass', 'Playing bass'),
+      page('chord-timing', 'Chord timing and key changes'),
     ],
   },
   {
