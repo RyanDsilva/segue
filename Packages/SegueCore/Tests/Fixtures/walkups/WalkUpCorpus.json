@@ -674,6 +674,30 @@
    "genre": "pop",
    "intoSection": false,
    "expectNone": true
+  },
+  {
+   "name": "R168 weak-beat exemption: Cm to D in G minor, rock, three beats keeps the chromatic E Eb",
+   "from": "Cm",
+   "to": "D",
+   "key": "Gm",
+   "genre": "rock",
+   "beats": 3,
+   "intoSection": false,
+   "expectContains": [
+    "E Eb"
+   ]
+  },
+  {
+   "name": "R168 weak-beat exemption: the same run on a four-beat chord starts on beat 3 (strong) and stays out",
+   "from": "Cm",
+   "to": "D",
+   "key": "Gm",
+   "genre": "rock",
+   "beats": 4,
+   "intoSection": false,
+   "mustNotContain": [
+    "E Eb"
+   ]
   }
  ]
 }

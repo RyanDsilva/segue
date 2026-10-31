@@ -453,6 +453,14 @@ private struct Walk {
     /// B's section raises the energy (chorus, bridge, pre-chorus: true), settles (verse,
     /// outro: false), else nil.
     static func energy(of section: RenderSection) -> Bool? {
+        BassLine.sectionEnergy(section)
+    }
+}
+
+public extension BassLine {
+    /// A section raises the energy (chorus, bridge, pre-chorus: true), settles it (verse,
+    /// outro: false), else nil: what walk-ups and fills into it lean on.
+    static func sectionEnergy(_ section: RenderSection) -> Bool? {
         let label = (SectionNotes.label(of: section) ?? "").lowercased()
         switch section.kind {
         case .bridge, .chorus: return true

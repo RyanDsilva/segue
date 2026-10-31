@@ -207,6 +207,9 @@ extension WalkUpMove {
     /// `target`) cross-relates with `tone`: the same letter a half step away, so it contradicts
     /// chord A (G over E major's G#, C over A7's C#). A neighbour on another letter (B under
     /// Am's C) is a passing tone, not a clash.
+    ///
+    /// R168: a note inside a stepwise chromatic run into the target, on a weak beat, is
+    /// exempt (E Eb into D over Cm in a three-beat bar).
     func clashes(_ notes: [NoteClass], with tone: NoteClass?) -> Bool {
         guard let tone else { return false }
         return notes.enumerated().contains { index, note in
@@ -215,8 +218,23 @@ extension WalkUpMove {
             let approach = isLast && abs(WalkUp.signedDistance(pitch, target)) == 1
             let gap = abs(WalkUp.signedDistance(pitch, tone.pitchClass))
             return !approach && !departingTones.contains(pitch) && gap == 1
-                && note.letter == tone.letter
+                && note.letter == tone.letter && !exempt(index, of: notes)
         }
+    }
+
+    /// Note `index` sits inside a monotonic run of half steps that ends on the target, on a
+    /// weak pulse: the walk-up's notes fill the last pulses of chord A (unknown beats count
+    /// as a four-beat bar), and beat 1 and the middle of a four-beat bar are strong.
+    func exempt(_ index: Int, of notes: [NoteClass]) -> Bool {
+        let pitches = notes.map(\.pitchClass) + [target]
+        let steps = zip(pitches, pitches.dropFirst()).map { WalkUp.signedDistance($0, $1) }
+        guard let step = steps.last, abs(step) == 1,
+              steps[index...].allSatisfy({ $0 == step })
+        else { return false }
+        let beats = context.beats ?? 4
+        let pulse = beats - notes.count + index
+        let bar = beats.isMultiple(of: 3) && beats < 6 ? 3 : 4
+        return !pulse.isMultiple(of: bar) && !(bar == 4 && pulse % bar == 2)
     }
 
     func score(_ candidate: inout WalkUpCandidate) {
