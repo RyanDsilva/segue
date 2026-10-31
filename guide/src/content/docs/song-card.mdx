@@ -8,6 +8,14 @@ The song card sits above the song in the library and in the editor. Click any fi
 
 <Shot id="card" alt="The song card with title, artist, key, tempo, length, proficiency and tags" callouts={['key', 'tempo', 'length']} />
 
+## Artists and Movie / Album {#artists}
+
+A song can have several artists. In the library, the artists and the movie or album sit under the title: double-click a line to edit it in place. In the editor, the card's first two tokens open the same fields.
+
+Artists are chips. Type a name and press <kbd>Return</kbd> or <kbd>,</kbd> to add it, exactly as you typed it. As you type, Segue suggests artists already in your library; press <kbd>↓</kbd> then <kbd>Return</kbd>, or <kbd>Tab</kbd>, to take one. Drag a chip to reorder it; the first is the main artist. In an empty field, <kbd>⌫</kbd> twice removes the last chip. A chip like "Vishal & Shekhar" offers **Split** to make it two artists. Each artist is its own standard `{artist}` line in the ChordPro file.
+
+**Movie / Album** is one name, saved as `{album}`. Search finds songs by it, and smart filters and the set assistant use it ("from Kalank").
+
 ## Set essentials {#essentials}
 
 Key, length and tempo are the **set essentials**: Segue uses them to time a set and plan its flow. A small dot marks each one that is missing, on the card and on the song's row in the library. The **Missing essentials** filter in the sidebar lists every song that needs one.
