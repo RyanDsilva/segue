@@ -38,11 +38,11 @@ Rehearsal at home is a secondary use of the same views.
 | Language | English + romanized Hindi (Latin script). Romanization-tolerant search; lyrics never respelled or translated (AI output checked mechanically); autocorrect/spell-check off in lyrics; app-generated Hindi uses casual Bollywood romanization. No Devanagari display. |
 | Editor | Both modes, toggleable: text (ChordPro with syntax colors, chord autocomplete, live preview) and visual (click/drag chords onto syllables). |
 | Instruments | Transpose + capo toggle (shapes vs concert pitch), Nashville number view toggle, chord diagrams for guitar (standard + alternate tunings + custom shapes) and piano voicings; bass support (P8-4: instrument profile, bass-note view, mini neck, walk-ups) and a bass fill creator (P8-7), with fills for other instruments to follow. |
-| Live view (v1) | Auto-fit to one screen (columns/scale), auto-scroll (duration/tempo-based, pausable), next-song footer, dark stage theme, per-song font/zoom memory, every section written out with a section map, section jump and a rehearsal loop (R147, R148), keep awake + suppress notifications. |
+| Live view (v1) | Auto-fit to one screen (columns/scale), auto-scroll (timeline/tempo-based, pausable), next-song footer, dark stage theme, per-song font/zoom memory, every section written out with a section map, section jump and a rehearsal loop (R147, R148), keep awake + suppress notifications. |
 | Setlist live ops | Quick library search mid-show, reorder/skip/mark played, request queue. Break rows split a set into parts, each with its own timed total (R85, R86). |
 | Gig extras | Per-song notes/cues, gig log/history, PDF export/print, Singer view, Medleys. |
 | Audio | Play-along in the editor, library and Rehearsal (bass + chords + click at tempo, P8-6); audio never plays in a Live show. |
-| Library | Tags (free-form + suggested starters) + smart filters, proficiency (Learning / Ready / Pro), song lengths typed or timed with "Time it" (unknown stays unknown, R91). |
+| Library | Tags (free-form + suggested starters) + smart filters, proficiency (Learning / Ready / Pro). |
 | Set assistant | Build a set to a target length; natural-language song picks. |
 | Sharing | PDF (phase 4, in v0.5). |
 | Control | Keyboard keys today; MIDI input + mapping with MIDI learn and key learn in phase 6 (R141). Page-turn pedals and clickers that send keystrokes work through key bindings. |

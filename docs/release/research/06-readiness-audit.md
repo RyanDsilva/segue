@@ -109,7 +109,7 @@ Fresh sandbox: chooser screen with "Create Library in Music..." (save panel pref
 
 ### 7. Clean-machine robustness
 
-No assumptions about pre-existing directories: library folder created by the save panel flow, `.segue/`, setlists, shows and timings directories are created on demand (LibraryStore.swift:107, SetlistStore.swift:88, ShowStore.swift:77, DurationSamples.swift:82 under Packages/SegueCore/Sources). Real home is read via `getpwuid` only to seed panel locations (LibraryLocation.swift:58-63), never for direct file access. Single-instance edge: shared bundle id with the Personal build (P4).
+No assumptions about pre-existing directories: library folder created by the save panel flow, `.segue/`, setlists and shows directories are created on demand (LibraryStore.swift:107, SetlistStore.swift:88, ShowStore.swift:77 under Packages/SegueCore/Sources). Real home is read via `getpwuid` only to seed panel locations (LibraryLocation.swift:58-63), never for direct file access. Single-instance edge: shared bundle id with the Personal build (P4).
 
 ### 8. Quality
 

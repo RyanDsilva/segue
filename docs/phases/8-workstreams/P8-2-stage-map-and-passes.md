@@ -35,14 +35,14 @@ On stage the song reads top to bottom exactly as it will be played: every sectio
 
 Model and storage:
 
-- `ArrangementStep { anchor, fingerprint, plays }` with `plays` 0 = skipped, 1-9 = played that many times in a row, codec with keys `section/occurrence/loose/after/afterOccurrence/fp/plays`: `Packages/SegueCore/Sources/Library/SlotArrangement.swift:55-122`. `SlotArrangement { steps, length }`, `maxPlays = 9`, `fullSong(_:)`, `playedSteps`, `playedSummary` (the gig log line, "Chorus 3rd x2"): `:126-186`.
+- `ArrangementStep { anchor, fingerprint, plays }` with `plays` 0 = skipped, 1-9 = played that many times in a row, codec with keys `section/occurrence/loose/after/afterOccurrence/fp/plays`: `Packages/SegueCore/Sources/Library/SlotArrangement.swift:55-122`. `SlotArrangement { steps }`, `maxPlays = 9`, `fullSong(_:)`, `playedSteps`, `playedSummary` (the gig log line, "Chorus 3rd x2"): `:126-186`.
 - `ArrangementResolver.resolve(_:units:)` returns `.applied(order: [PlayedSection{index, plays}], newSections:)` or `.outOfDate(missing:)`; `unit(for:in:)` matches anchor and fingerprint (legacy fingerprint accepted): `Library/ArrangementResolver.swift:38-82`. `ArrangedSections.build` expands plays and writes a `{chorus}` repeat out with its target's items: `:98-127`.
 - Setlist file schema 5 ("5 = per-slot arrangements (R122)"), `Setlist.currentSchemaVersion = 5`: `Setlists/Setlist.swift:282-286`; entry field `arrangement`: `:170`, codec `:225-269`; JSON migrator: `:463`.
 - `ShowItem.arrangement` and `arrangementState`, copied at show start: `Shows/ShowRecord.swift:100-117`, `ShowController.swift:96-105`. `ShowRecord.currentSchemaVersion = 3` (`ShowRecord.swift:300`); migrator steps `[1, 2]` identity: `Shows/ShowStore.swift:58-63`.
 
 Stage pipeline:
 
-- `LiveSession.relayout()` resolves the slot arrangement and builds the `LayoutRequest` with `collapseRepeats: prefs.collapseRepeats` and `arrangement: [PlayedSection]?`: `Packages/SegueUI/Sources/SegueUI/Live/LiveSession+Viewport.swift:34-109`. The up-next model is arranged with `ArrangedSections` (`:54-62`). Auto-scroll duration uses the slot length when applied (`:161-181`).
+- `LiveSession.relayout()` resolves the slot arrangement and builds the `LayoutRequest` with `collapseRepeats: prefs.collapseRepeats` and `arrangement: [PlayedSection]?`: `Packages/SegueUI/Sources/SegueUI/Live/LiveSession+Viewport.swift:34-109`. The up-next model is arranged with `ArrangedSections` (`:54-62`).
 - `SongPreparation.measure()` pins cues on the song's own sections, applies the arrangement, then runs `RepeatCollapser.collapse(sections, enabled: request.collapseRepeats)` and builds `MeasuredSection` bodies `.full` or `.collapsed(line: "Repeat chorus", differing:)` with an "x2" gutter detail: `Packages/SegueCore/Sources/LiveLayout/SongPreparation.swift:13-147`.
 - `RepeatCollapser` (collapse, `repeatTarget`, `displayLabel`, private `normalize`): `LiveLayout/RepeatCollapser.swift:15-136`. `CollapsedSection`: `LiveLayout/LayoutEngine.swift:26-44`. `LayoutBlock.Content.collapsed`, `collapsedBaseline`, `LayoutBlock.id` "index into RenderModel.sections": `LiveLayout/LayoutPlan.swift:176-237`. `TextRole.collapsedRepeat`: `LayoutRequest.swift:31`. `LayoutRequest.collapseRepeats`: `:297-328`.
 - Other `RepeatCollapser` consumers: `WelcomeLibraryTests.swift:88` (`displayLabel`), `LiveLayoutCollapseTests`, `SectionNoteIdentityTests.swift:191`, `LiveLayoutCorpusTests.swift:21`, `StageLayoutRenderTests.swift:266`, `SlotArrangementTests.swift:186`. The arrangement fingerprint does **not** use `RepeatCollapser.normalize` any more: `SongSections` has its own `normalize` and `repeatTarget` (`SlotArrangement.swift:361-390`), so nothing outside the stage needs `RepeatCollapser`. The PDF export spec (`docs/phases/4-export.md` pagination rule 6) refers to "a collapsed chorus repeat ... when the live view collapses it"; the export is not built yet, and that rule now carries the R147 / R158 Q9 note (its own repeats option, default written out in full).
@@ -59,7 +59,7 @@ Stage chrome:
 
 Runs:
 
-- Rehearsal is a `ShowKind` over a whole setlist (`Shows/ShowRecord.swift:63-67`). `AppModel.startShow(_:kind:)` flushes the editor, shows the pre-show checklist, starts a `ShowController` that writes `shows/<ulid>.show.json` at once and claims it, presents the stage: `Packages/SegueUI/Sources/SegueUI/App/AppModel+Shows.swift:86-143`. `showEnvironment` adds a `RehearsalTimingStore` for rehearsals: `:307-329`. `finishRun` ends, records analytics, counts gigs for the review prompt, runs the end Shortcut, reloads reviews: `:380-405`. A gig record that is saved finished feeds the plays projection (`ShowStore.save`, `ShowStore.swift:114-127`) and the gig log (`GigLog.swift:66`). `ShowStore.claim` throws `notLoaded` without a root.
+- Rehearsal is a `ShowKind` over a whole setlist (`Shows/ShowRecord.swift:63-67`). `AppModel.startShow(_:kind:)` flushes the editor, shows the pre-show checklist, starts a `ShowController` that writes `shows/<ulid>.show.json` at once and claims it, presents the stage: `Packages/SegueUI/Sources/SegueUI/App/AppModel+Shows.swift:86-143`. `finishRun` ends, records analytics, counts gigs for the review prompt, runs the end Shortcut, reloads reviews: `:380-405`. A gig record that is saved finished feeds the plays projection (`ShowStore.save`, `ShowStore.swift:114-127`) and the gig log (`GigLog.swift:66`). `ShowStore.claim` throws `notLoaded` without a root.
 - Library: the song detail header has "…" (`SongActions`) and "Edit": `Library/SongDetailPane.swift:48-66, 205-222`; the list row context menu uses `SongActions`: `Library/LibraryViews.swift:110, 271-292`. Setlist > Start Show `⌘↩` and Rehearse `⌥⌘↩` act on the shown setlist only (`App/Commands/SetlistCommands.swift:19-24`); `MenuAndAboutTests` requires every declared chord to be unique (`MenuAndAboutTests.swift:11-13`).
 
 ## 4. Data model and schema
@@ -105,8 +105,7 @@ public struct SlotArrangement: Sendable, Hashable, Codable {
     /// Every part of the song when the arrangement was last saved; parts of the current song
     /// not in this list (and not in `passes`) are "New in the song" (R123).
     public var knownParts: [KnownPart]
-    public var length: TimeInterval?          // unchanged meaning (R122)
-    public init(passes: [ArrangementPass], knownParts: [KnownPart] = [], length: TimeInterval? = nil)
+    public init(passes: [ArrangementPass], knownParts: [KnownPart] = [])
     public static func fullSong(_ units: [SongSectionUnit]) -> Self   // every part once, Full, song order; knownParts = all units
     public var shownPasses: [ArrangementPass] { get }                // mode != .skip
     public var problems: [ArrangementProblem] { get }                // the validator (4.4)
@@ -132,15 +131,13 @@ public struct SlotArrangement: Sendable, Hashable, Codable {
   "knownParts": [
     {"section": "Intro", "occurrence": 1, "fp": "4f1a9c02"},
     {"loose": 1, "fp": "77e1b0d2"}
-  ],
-  "length": 215
+  ]
 }
 ```
 
 - Anchor keys are exactly today's (`section`/`occurrence`, or `loose`/`after`/`afterOccurrence`), shared by passes and known parts.
 - `mode` is omitted for `full`; an unrecognised `mode` string decodes as `full` (lenient within schema 6). `plays` is never written and is ignored if present.
 - `knownParts` is written on every save from the song's current units; absent or empty on read means "the parts named in `passes`" (so a hand-written or migrated file still works).
-- `length` is omitted when nil or not positive (today's rule).
 
 ### 4.4 Invariants and the validator
 
@@ -160,7 +157,7 @@ public struct SlotArrangement: Sendable, Hashable, Codable {
 
 P8-3 (section 4 of its spec) is written against these names; they are final here.
 
-1. **Pass type and mode**: `PassMode` (`full`, `chordsOnly`, `firstLine`, `skip`; coded `full/chords/first/skip`), `ArrangementPass { anchor, fingerprint, mode }`, `SlotArrangement { passes, knownParts, length }` with the memberwise init and `fullSong(_:)` (section 4.2). P8-3's editor writes `knownParts = SongSections.units(of:)` mapped to `KnownPart` on every save (a helper `KnownPart.all(_ units:)` is provided).
+1. **Pass type and mode**: `PassMode` (`full`, `chordsOnly`, `firstLine`, `skip`; coded `full/chords/first/skip`), `ArrangementPass { anchor, fingerprint, mode }`, `SlotArrangement { passes, knownParts }` with the memberwise init and `fullSong(_:)` (section 4.2). P8-3's editor writes `knownParts = SongSections.units(of:)` mapped to `KnownPart` on every save (a helper `KnownPart.all(_ units:)` is provided).
 2. **Limits and validator**: `SlotArrangement.maxPasses = 48`, `problems: [ArrangementProblem]` with `.noShownPass`, `.tooManyPasses`.
 3. **New-section detection**: by `knownParts` (P8-3 question 3 answered: passes may be removed freely; a part never needs a Skip pass to stay "known"). `ArrangementResolution.applied(..., newSections:)` lists the song's units matching neither a pass nor a known part.
 4. **Resolver**:
@@ -340,8 +337,8 @@ Pure, in LiveLayout (`StagePasses`), so it is tested without a window:
 
 ### 13.2 How a one-song session runs
 
-- `AppModel.startSongSession(_:kind:slot:onEnd:)` (section 5, item 12): flushes the open editor and refreshes the library (as `startShow`), builds an in-memory one-entry `Setlist` (fresh `SetlistID` and `SetlistItemID`, name = the song's title, the entry's overrides and arrangement from `slot`, else none: the full song as written), and starts a `ShowController` with an **unsaved environment**: `ShowEnvironment.store` becomes optional and nil means an unsaved run: `start` skips the claim, `persist()` records the write as done without touching disk, `end()` returns `ShowEnding(record, diff: nil, gigLogEntry: nil)`, and `durations` is nil. Structurally nothing reaches `shows/`, the gig log, the plays projection, play stats, the resume prompt or the launch auto-close (R150).
-- No pre-show checklist, no Gig Mode Shortcut and no rehearsal timing samples (mockup C: "the pre-show checklist is skipped"; R158 Q8); the metronome pulse follows the remembered setting; the rehearsal click starts off.
+- `AppModel.startSongSession(_:kind:slot:onEnd:)` (section 5, item 12): flushes the open editor and refreshes the library (as `startShow`), builds an in-memory one-entry `Setlist` (fresh `SetlistID` and `SetlistItemID`, name = the song's title, the entry's overrides and arrangement from `slot`, else none: the full song as written), and starts a `ShowController` with an **unsaved environment**: `ShowEnvironment.store` becomes optional and nil means an unsaved run: `start` skips the claim, `persist()` records the write as done without touching disk, and `end()` returns `ShowEnding(record, diff: nil, gigLogEntry: nil)`. Structurally nothing reaches `shows/`, the gig log, the plays projection, play stats, the resume prompt or the launch auto-close (R150).
+- No pre-show checklist and no Gig Mode Shortcut (mockup C: "the pre-show checklist is skipped"; R158 Q8); the metronome pulse follows the remembered setting; the rehearsal click starts off.
 - `LiveSession` gains `scope: StageScope` (`.setlist`, `.song`). With `.song`: no progress dots; the footer's end state reads "End of song" with "Cmd-. ends the rehearsal" / "Cmd-. ends"; the End dialog says "End this song?" and "A single song is never added to the gig log."; the keep-awake reason is "Rehearsing <title>" / "Performing <title>". Everything else (keys, map, jump, loop in a rehearsal, search, requests) works as on any stage, and nothing is logged.
 - `finishRun` for `.song`: ends the controller, closes the stage, records the analytics in 13.3, and skips `recordShowEnded`, `countCompletedShow`, the end Shortcut and the review reload. `onEnd` is called last.
 - Page Down at the bottom of the only song: P8-1's "last song stays put" rule applies.
@@ -403,7 +400,7 @@ Fast in-process suites carry the behaviour; the layout engine is pure and takes 
 - Chip click and keys 1-9 jump (scroll offset, `pinned`, the toast text, the VoiceOver announcement); a digit past the last pass flashes and does not move.
 - Loop: `L` in a gig flashes and does nothing; in a rehearsal it loops the current pass; with a scripted scroll clock the wrap seeks to the top and holds for one bar, the metronome grid restarts at the wrap, the click plays only when on; Page Down while looping wraps; Page Down without a loop is unchanged (the existing paging tests stay green); song change, jump elsewhere and `L` clear it.
 - Metronome: pips count per meter, numeral beyond 8 and with Reduce Motion, placed at the right end of the status band (not in the header) and hidden while the request panel shows, count-in shows pips with the pulse off.
-- Single song: starts with no checklist; no file appears in `shows/`; after End there is no gig log entry, no play in the projection, `countCompletedShow` is not reached, no durations are recorded; the `.song` chrome texts; `onEnd` is called; Library menu items (R158 Q5) enabled only with a focused song and no shown setlist, and never together with Setlist > Rehearse (the clash-test exception asserted by the enablement predicates).
+- Single song: starts with no checklist; no file appears in `shows/`; after End there is no gig log entry, no play in the projection, `countCompletedShow` is not reached; the `.song` chrome texts; `onEnd` is called; Library menu items (R158 Q5) enabled only with a focused song and no shown setlist, and never together with Setlist > Rehearse (the clash-test exception asserted by the enablement predicates).
 
 ### 16.4 XCUITest (one new class, plus updates)
 
@@ -451,7 +448,7 @@ Closed by Ryan on 2026-10-30 (**R158**; letters refer to the options as they wer
 5. **Single-song shortcuts.** (a) Library menu "Rehearse Song" `⌥⌘↩` (shared with Setlist > Rehearse, never enabled together, one tested clash-test exception) and "Play Song Live" `⇧⌘↩` (R158 Q5; section 13.1).
 6. **Map kind stripe colours.** (a) Section band colours on both the editor chips and the map (R158 Q6; section 7.2).
 7. **Songs with fewer than two passes.** (a) The 58 pt band stays reserved and empty (R158 Q7; section 7.1).
-8. **Single-song sessions: timing and Shortcuts.** (a) No rehearsal timing samples, no pre-show checklist, no Gig Mode Shortcut (R158 Q8; section 13.2).
+8. **Single-song sessions: checklist and Shortcuts.** (a) No pre-show checklist, no Gig Mode Shortcut (R158 Q8; section 13.2).
 9. **The PDF export's repeat rule.** (a) Phase 4 gets its own repeats option, default written out in full like the stage; the note is in `docs/phases/4-export.md` rule 6 (R158 Q9).
 
 Related rulings since: R156 ("Rehearse this" in P8-3 passes the slot to `startSongSession`, section 5 item 12, as already specified).

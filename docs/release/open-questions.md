@@ -518,7 +518,7 @@ Taken as stated unless Ryan objects.
 | B-20 | WS2b-15 | Quick Look rendering | View-based preview reusing the app's renderer and fonts | Matches the app pixel for pixel; size is not a concern |
 | B-21 | WS2b-16 | WS2b sequencing | See section 5 | |
 | B-22 | WS2b-17 | Consent contract with WS3 | WS3's `ConsentStore` wins | See I-1 |
-| B-23 | WS2b-20 | Archive scope | Include `songs/`, `setlists/`, `shows/`, `timings/`; exclude `.segue/` | R16 asks only for export; the index can be rebuilt |
+| B-23 | WS2b-20 | Archive scope | Include `songs/`, `setlists/`, `shows/`, `filters/`; exclude `.segue/` | R16 asks only for export; the index can be rebuilt |
 | B-24 | WS3-6 | Bug-report transport | Post the previewed envelope ourselves | Only way to send exactly what was previewed (R22) and to detect offline |
 | B-25 | WS3-12 | TestFlight builds in analytics | Mark them as TelemetryDeck test data | Keeps product charts clean |
 | B-26 | WS4-9 | App's bundled changelog path | App bundles the generated `website/changelog.json`; drop WS4's separate bundled-copy output | See I-2 |

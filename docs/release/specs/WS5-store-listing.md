@@ -110,7 +110,7 @@ The final screenshots and videos are derived binaries. They live under `.build/`
 | Name | `Segue - Setlists & Chords` | 25 / 30 chars | R3 |
 | Subtitle | `Lyrics & chords for live gigs` | 29 / 30 chars | R3 |
 | Promotional text | section 4.2 | 162 / 170 chars | |
-| Description | section 4.3 | 3,954 / 4,000 chars (P3-9 draft, before the claim pass; recount after) | |
+| Description | section 4.3 | 3,969 / 4,000 chars (P3-9 draft, before the claim pass; recount after) | |
 | Keywords | section 4.5 | 97 / 100 bytes | R37, unchanged (R129) |
 | Copyright | `2026 Ryan Rony Dsilva` | Apple renders the symbol; must match Info.plist `NSHumanReadableCopyright` (`© 2026 Ryan Rony Dsilva`) | R30 |
 | Support URL | `https://segue.ryandsilva.dev/support` | must show `segue@ryandsilva.dev` | R28, R29 |
@@ -152,7 +152,7 @@ Segue starts with a small Welcome library: a few original demo songs and a demo 
 PASTE A SONG, CHECK IT, DONE
 - Copy a chord sheet from a website or a note and choose File > New Song from Clipboard. Segue turns it into a ChordPro song with its sections and title, and shows you the result before it saves.
 - Text and .crd files convert the same way, several in one review.
-- Optional on-device AI double-checks section labels, title and artist. It works with Apple Intelligence, or with a free local model you can download in Settings. It never rewrites your lyrics or chords, and nothing you paste leaves your Mac.
+- Optional on-device AI double-checks section labels and title. It works with Apple Intelligence, or with a free local model you can download in Settings. It never rewrites your lyrics or chords, and nothing you paste leaves your Mac.
 
 YOUR SONGS, AS FILES
 - One ChordPro file per song, in a folder you choose. No account, no sign-in.
@@ -163,7 +163,7 @@ YOUR SONGS, AS FILES
 - Export your whole library as one archive. Quick Look and Open With in the Finder.
 
 AN EDITOR THAT KEEPS UP
-- A song card for key, tempo (tap it in), length, capo, time signature and tags: controls, not syntax. Time it measures a song's length for you.
+- A song card for artists, Movie / Album, key, tempo (tap it in), capo, time signature and tags: controls, not syntax.
 - Edit the ChordPro text, or place chords on syllables in the visual editor. Select lines and press V, C or B to mark a verse, chorus or bridge.
 - Transpose in one step, with a capo that shows shapes or concert pitch, and Nashville numbers.
 - Guitar chord diagrams with alternate tunings and your own shapes, plus piano voicings.
@@ -172,7 +172,7 @@ AN EDITOR THAT KEEPS UP
 SETLISTS IN MINUTES
 - Tick songs in the order you want them, then fine-tune the order.
 - Or type a request like "45 min, songs I know well, upbeat start" and Segue fills the set. Lock the songs you want and rebuild the rest.
-- Breaks between sets, changeover time and a running total for each part. Songs without a length are listed, never guessed.
+- Breaks between sets, changeover time and a running total for each part, timed from each song's tempo and the bars you play. Songs with no tempo are listed, never guessed.
 - Arrange a song for one gig: skip, repeat or reorder its sections without changing the song.
 
 STAGE MODE
@@ -231,13 +231,13 @@ If a row fails, **delete its line from the description**. Never ship a claim on 
 | Tags, proficiency marks and smart filters | shipped, R72 | Visible in the library; create a smart filter and apply it. |
 | Export library archive | R16 (nice) | File menu item produces an archive that reopens. |
 | Quick Look and Open With in Finder | R16 (nice) | Space on a `.cho` in Finder shows a preview; Open With lists Segue. (T) |
-| Song card: key, tempo with tap, length, capo, time signature, tags; Time it | R80, R91, R111 | Open a song's card; tap tempo; Time it fills Length. |
+| Song card: artists, Movie / Album, key, tempo with tap, capo, time signature, tags | R80, R111, R172 | Open a song's card; add a second artist chip; tap tempo. |
 | Select lines, V / C / B marks a section | R82 | Visual editor: select two lines, press C. |
 | Visual editor, transpose, capo, Nashville, diagrams with tunings, custom shapes, piano | shipped | Existing E2E suites; eyeball. |
 | Spell-check and autocorrect off in lyrics | shipped | Type a misspelling; it is not underlined or corrected. |
 | Tick songs in order (Pick), fine-tune (Arrange) | R84 | Pick: Space ticks in order; Arrange: Option-Down moves. |
 | Type a request, Segue fills the set; lock and rebuild | R65, R114, R115 | Arrange: type "45 min, songs I know well, upbeat start", Build; lock one, Rebuild keeps it. |
-| Breaks, changeover time, per-part totals; unknown lengths listed, never guessed | R85, R86, R88, R91 | Add a break row; set a changeover; a song with no length makes "N unknown", which lists it. |
+| Breaks, changeover time, per-part totals from tempo and bars; unknown times listed, never guessed | R85, R86, R172 | Add a break row; set a changeover; a song with no tempo makes "N unknown", which lists it with a Tempo field. |
 | Arrange a song for one gig | R122, R123 | Slot popover > Arrangement: untick a section; the stage skips it; the `.cho` is unchanged. |
 | Visual metronome; click in rehearsal | R90, R118 | On stage M shows the pulsing dot for a song with a tempo; in a rehearsal K toggles the click. |
 | Auto-fit, min lyric size, auto-scroll controls, Up next, request search and queue, skip, pre-show checklist, keep awake, crash resume, gig log | shipped (phase 2) | `SegueLiveE2ETests`; keep-awake was checked in the real gig (section 14.3). |
@@ -393,7 +393,7 @@ Rules:
 
 Click path: App Store Connect > Apps > Segue > App Accessibility (sidebar, under General) > Add Accessibility Support > macOS. Tick the features, then Publish. This path is from Apple's help as read in `03`; verify it on the day.
 
-A label is claimed **only** if the WS2b audit (`docs/release/accessibility-audit.md`) records a pass for **every common task** (R15): the full Welcome flow (library step, Welcome-songs step, the two-row consent step), library, editor (both modes), setlist builder (including Setlist > Add Selected Song to Setlist, A33), stage mode enter, play and exit, Settings (all panes, including Appearance per R36 and AI per R73), Report a Problem..., import and delete, and the phase 3 surfaces (R79): paste review sheet (single and batch), song card and Time it, section band, section notes, set builder Pick / Arrange with break rows and the missing-lengths list, the set assistant bar and chips, smart filters, the Arrange Sections sheet, the metronome overlay and the live repeat message. The audit decides; this section never overrides it.
+A label is claimed **only** if the WS2b audit (`docs/release/accessibility-audit.md`) records a pass for **every common task** (R15): the full Welcome flow (library step, Welcome-songs step, the two-row consent step), library, editor (both modes), setlist builder (including Setlist > Add Selected Song to Setlist, A33), stage mode enter, play and exit, Settings (all panes, including Appearance per R36 and AI per R73), Report a Problem..., import and delete, and the phase 3 surfaces (R79): paste review sheet (single and batch), song card, section band, section notes, set builder Pick / Arrange with break rows and the unknown-time list, the set assistant bar and chips, smart filters, the Arrange Sections sheet, the metronome overlay and the live repeat message. The audit decides; this section never overrides it.
 
 | Label | Claim if | Default expectation (`03` section 7) |
 |---|---|---|
@@ -505,7 +505,7 @@ Content rules:
 
 #### 8.4.1 Screenshot-only songs and setlist (A48)
 
-Original titles written for these screenshots (R128), artist "Segue Originals", **titles and chords only** (`{title}`, `{artist}`, `{key}`, `{tempo}`, `{duration}`, section labels and chord-only lines; no lyrics). They exist only to make the library and builder look like a real repertoire. They are never shipped:
+Original titles written for these screenshots (R128), artist "Segue Originals", **titles and chords only** (`{title}`, `{artist}`, `{key}`, `{tempo}`, section labels and chord-only lines; no lyrics). They exist only to make the library and builder look like a real repertoire. They are never shipped:
 
 - they live as string literals in `App/Sources/Debug/ScreenshotSongs.swift`, compiled only under `#if DEBUG`;
 - the composite flag writes them into the screenshot folder after the Welcome seeder runs;
@@ -513,19 +513,19 @@ Original titles written for these screenshots (R128), artist "Segue Originals", 
 
 Approved titles (R128, 2026-10-20: five, deliberately fewer than the old 6-10 guideline). Each went through the title search (Apple Music, Spotify, Google "<title> song"); any hit drops the title unless Ryan keeps it. Log: `docs/research/phase3-store-ai.md` section 7.
 
-| # | Title | Key | Tempo | Duration | Title search (2026-10-20) |
-|---|---|---|---|---|---|
-| 1 | Lanterns on Pier Nine | D | 92 | 3:48 | clean |
-| 2 | Chai at Platform Four | Em | 96 | 3:40 | clean |
-| 3 | Northbound at First Light | Bb | 76 | 4:30 | clean on Apple Music (R129: replaces the R128 title that hit an existing song) |
-| 4 | Saltwater Telegraph | Am | 100 | 3:35 | clean |
-| 5 | Last Tram to Wexley | G | 132 | 3:10 | clean |
+| # | Title | Key | Tempo | Title search (2026-10-20) |
+|---|---|---|---|---|
+| 1 | Lanterns on Pier Nine | D | 92 | clean |
+| 2 | Chai at Platform Four | Em | 96 | clean |
+| 3 | Northbound at First Light | Bb | 76 | clean on Apple Music (R129: replaces the R128 title that hit an existing song) |
+| 4 | Saltwater Telegraph | Am | 100 | clean |
+| 5 | Last Tram to Wexley | G | 132 | clean |
 
 Dropped (R128): Second Set Shuffle, Tin Roof Weather, Neeli Cycle Ka Safar, Copper Kettle Waltz, Open Mic at the Laundromat.
 
 Tags and proficiency marks are set so the library shows a realistic mix (some "Ready", a few "Learning", two "Pro").
 
-Screenshot-only setlist **"JamFest Opener"** (R128; also Debug-only, created by the composite flag): every approved screenshot-only song plus the Welcome songs except "Kitaabon Wali Gali", so 8 entries with five approved titles, with "Ferry Lights Over Calder Bay" in position 3 (so shot 1 has an Up next song) and "Kitaabon Wali Gali" deliberately **not** in the set, so the request in shot 6 and in the preview (9.2) is a real request. Its target length is chosen so the running total sits a little under target. Example with the five R128 titles: Last Tram to Wexley (3:10), Lanterns on Pier Nine (3:48), Ferry Lights Over Calder Bay (4:40), Chai at Platform Four (3:40), Soundcheck at Seven (3:20), Saltwater Telegraph (3:35), Kettle On, Lights Low (3:05), Northbound at First Light (4:30) = 29:48 against a 30:00 target. Final order and target are fixed in `ScreenshotSongs.swift`.
+Screenshot-only setlist **"JamFest Opener"** (R128; also Debug-only, created by the composite flag): every approved screenshot-only song plus the Welcome songs except "Kitaabon Wali Gali", so 8 entries with five approved titles, with "Ferry Lights Over Calder Bay" in position 3 (so shot 1 has an Up next song) and "Kitaabon Wali Gali" deliberately **not** in the set, so the request in shot 6 and in the preview (9.2) is a real request. Its target is chosen so the running total (each song's tempo times its bars) sits a little under target, with nothing unknown. Final order and target are fixed in `ScreenshotSongs.swift`.
 
 ### 8.5 Export
 

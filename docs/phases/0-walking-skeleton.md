@@ -63,13 +63,13 @@ lyricLine  := ( chordToken | text )+
 chordToken := "[" chordText "]"                         ; chordText kept verbatim in v0
 ```
 
-Directives understood in v0: `title|t`, `subtitle|st`, `artist`, `key`, `capo`, `tempo`, `time`, `duration`, `comment|c`, `start_of_verse|sov`, `end_of_verse|eov`, `start_of_chorus|soc`, `end_of_chorus|eoc`, `start_of_bridge|sob`, `end_of_bridge|eob`, `chorus` (repeat reference), plus `start_of_<x>`/`end_of_<x>` generic sections with optional label (`{start_of_verse: Verse 2}`). Unknown directives are kept as `.unknown(name, value)` and re-serialized verbatim.
+Directives understood in v0: `title|t`, `subtitle|st`, `artist`, `key`, `capo`, `tempo`, `time`, `comment|c`, `start_of_verse|sov`, `end_of_verse|eov`, `start_of_chorus|soc`, `end_of_chorus|eoc`, `start_of_bridge|sob`, `end_of_bridge|eob`, `chorus` (repeat reference), plus `start_of_<x>`/`end_of_<x>` generic sections with optional label (`{start_of_verse: Verse 2}`). Unknown directives are kept as `.unknown(name, value)` and re-serialized verbatim.
 
 ### AST
 
 ```swift
 struct SongDocument: Sendable, Equatable { var metadata: Metadata; var blocks: [Block] }
-struct Metadata { title, subtitle, artists: [String], key, capo: Int?, tempo: Double?, time, duration: TimeInterval?, extra: [String: [String]] }
+struct Metadata { title, subtitle, artists: [String], key, capo: Int?, tempo: Double?, time, extra: [String: [String]] }
 enum Block { case section(Section), line(Line), comment(String), directive(UnknownDirective), chorusRef(label: String?), blank }
 struct Section { kind: SectionKind /* verse, chorus, bridge, tab, custom(String) */; label: String?; lines: [Line] }
 struct Line { var segments: [Segment] }          // lyric line

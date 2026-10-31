@@ -83,7 +83,7 @@ Shot ids name files in `guide/public/shots/` (section 5.6); every shot exists in
 
 | Slug | Title | Purpose and sections | Shots / clip |
 |---|---|---|---|
-| `song-card` | The song card | Title, artist, key, tempo (tap tempo, `#tempo`), length and Time it (`#length`), capo, time signature, proficiency, tags; set essentials (key, length, tempo) and their dots (`#essentials`); the Missing essentials filter. | `card`, `card-time-it` (crop) |
+| `song-card` | The song card | Title, artists, Movie / Album, key, tempo (tap tempo, `#tempo`), capo, time signature, proficiency, tags; set essentials (key and tempo) and their dots (`#essentials`); the Missing essentials filter. | `card` |
 | `edit-a-song` | Edit a song | Visual and Text modes (`#modes`); move a chord by dragging (`#chords`); autosave and `⌘S` (`#autosave`); undo; spell-check off in lyrics (`#spelling`); file changed on disk. | `editor-visual` |
 | `sections` | Sections and the section band | Select lines, press V / C / B / I or a chip (`#make`); drag a band's edge (`#resize`); relabel; collapse repeats on stage (`#repeats`). | `band` (crop) |
 | `section-notes` | Section notes | One note per section; "Show on stage only" (`#stage-only`); how notes show on stage. | `notes-sheet`, `notes-stage` (dark only) |
@@ -95,9 +95,9 @@ Shot ids name files in `guide/public/shots/` (section 5.6); every shot exists in
 | Slug | Title | Purpose and sections | Shots / clip |
 |---|---|---|---|
 | `build-a-set` | Build a set for a gig | New Setlist `⇧⌘N`; Pick (`⌘1`): Space ticks, `⌘A` ticks the filtered list, tick order is set order (`#pick`); Arrange (`⌘2`): `⌥↑` `⌥↓` and drag (`#arrange`); add from the main library with multi-select (`#from-library`); each song once per set (`#once`); per-show key and capo (`#key-and-capo`); undo. | `builder-pick`, `builder-arrange`; clip `build-a-set` |
-| `set-assistant` | Ask the assistant for a set | Type a request above the set, Build (`#build`); chips and removing them (`#chips`); why a song was picked (`#why`); lock rows, Rebuild (`#lock`); songs with no length are left out (`#left-out`); request words Segue understands (`#words`); suggested chips come only from the downloaded model (`#model-chips`). | `assistant-bar`, `assistant-why` (crop) |
-| `running-time` | Breaks, changeover and running time | Insert Break `⇧⌘B`, per-part totals (`#breaks`); break length (`#break-length`); changeover time and its default (`#changeover`); unknown lengths stay unknown, the "N unknown" button lists them (`#unknown`). | `timeline`, `missing-lengths` (crop) |
-| `arrange-sections` | Arrange sections for one gig | Arrange Sections... `⇧⌘A`: tick, repeat, reorder for this slot only (`#arrange`); the song file never changes, Reset to full song (`#reset`); slot length (`#slot-length`); out of date (`#out-of-date`); Play Again Later (`#play-again`). | `arrange-sheet` |
+| `set-assistant` | Ask the assistant for a set | Type a request above the set, Build (`#build`); chips and removing them (`#chips`); why a song was picked (`#why`); lock rows, Rebuild (`#lock`); songs with no time are left out (`#left-out`); request words Segue understands (`#words`); suggested chips come only from the downloaded model (`#model-chips`). | `assistant-bar`, `assistant-why` (crop) |
+| `running-time` | Breaks, changeover and running time | Insert Break `⇧⌘B`, per-part totals (`#breaks`); break length (`#break-length`); changeover time and its default (`#changeover`); each song's time from its tempo and bars; songs with no time stay unknown, the "N unknown" button lists them with a Tempo field (`#unknown`). | `timeline`, `missing-times` (crop) |
+| `arrange-sections` | Arrange sections for one gig | Arrange Sections... `⇧⌘A`: tick, repeat, reorder for this slot only (`#arrange`); the song file never changes, Reset to full song (`#reset`); the slot's time in the footer; out of date (`#out-of-date`); Play Again Later (`#play-again`). | `arrange-sheet` |
 | `smart-filters` | Tags and smart filters | Tags on the card (`#tags`); rename, merge, delete (`#manage`); a smart filter from conditions (`#smart`); Missing essentials (`#missing`). | `filter-editor` |
 
 **Play the show**
@@ -315,7 +315,7 @@ docs-shots: ## Guide screenshots from the App Store flavour (needs the screen; O
 | Song card | `?` in the card's header menu | `/guide/song-card` |
 | Section Notes sheet | `?` help button | `/guide/section-notes` |
 | Set builder, Arrange, assistant bar | `?` at the bar's end | `/guide/set-assistant` |
-| "N unknown" missing-lengths popover | "About lengths" link | `/guide/running-time#unknown` |
+| "N unknown" unknown-time popover | "Running time" help | `/guide/running-time#unknown` |
 | Arrange Sections sheet | `?` help button | `/guide/arrange-sections` |
 | Smart filter editor sheet | `?` help button | `/guide/smart-filters#smart` |
 | Pre-show checklist | `?` help button | `/guide/go-on-stage#checklist` |
@@ -435,7 +435,7 @@ Two sessions if needed: steps 1-3 and 6 (no app capture) in the first; 4-5 and 7
 
 What landed, and where it differs from the sections above (this list wins where they disagree):
 
-- **Landed:** the guide site (direction C, system appearance only), all 27 pages written from the App Store build's UI strings, `/help` redirects, Guide nav, the guide CSP, CI job, Dependabot, the generated keyboard reference (menus, editor keys, stage keys), `SegueLinks.Guide` with Help buttons (paste review, batch import, section notes, smart filter editor, Arrange Sections sheet, pre-show checklist, set assistant bar, missing-lengths list, song card, Settings > Live / AI / Privacy / Data, Gig Mode section, Keyboard Shortcuts window, empty library link) and Learn More on all six tips, the capture layer and `make docs-shots` / `make docs-clips`, and a first set of 17 captures. The song card's own Help button (trailing end of the token row; off on the paste review's draft card, whose sheet has one) landed at the wave 3 gate.
+- **Landed:** the guide site (direction C, system appearance only), all 27 pages written from the App Store build's UI strings, `/help` redirects, Guide nav, the guide CSP, CI job, Dependabot, the generated keyboard reference (menus, editor keys, stage keys), `SegueLinks.Guide` with Help buttons (paste review, batch import, section notes, smart filter editor, Arrange Sections sheet, pre-show checklist, set assistant bar, unknown-time list, song card, Settings > Live / AI / Privacy / Data, Gig Mode section, Keyboard Shortcuts window, empty library link) and Learn More on all six tips, the capture layer and `make docs-shots` / `make docs-clips`, and a first set of 17 captures. The song card's own Help button (trailing end of the token row; off on the paste review's draft card, whose sheet has one) landed at the wave 3 gate.
 - **Formats and URLs:** Astro `build.format: 'preserve'` (not `'file'`, which made Starlight write `.html` into every link); the guide home is moved to `website/guide.html` by `guide/scripts/postbuild.mjs`, so `/guide` serves without a redirect; canonical and search-result URLs drop `.html` (Head and Search overrides).
 - **Heading ids:** `{#id}` heading attributes through Astro 7's Satteri processor (`headingAttributes: true`); syntax highlighting is off (it writes style attributes).
 - **CSP:** both `/guide` and `/guide/*` rules detach the site CSP; `img-src 'self' data:` (Pagefind draws its icons as data: images). Starlight's Search, MobileMenuToggle, Sidebar, Footer, PageTitle, Head, SiteTitle, ThemeProvider and ThemeSelect are overridden so no inline script, inline style or style attribute ships; zero CSP violations measured in headless Chrome.

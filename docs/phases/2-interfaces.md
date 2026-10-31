@@ -24,9 +24,8 @@ Support ── ChordPro ── MusicTheory ── Diagrams ── Editing
 - **Layout on disk.** These follow the existing conventions, which differ from the spec's sketch:
   - `setlists/<slug>.setlist.json` (slug filenames as in phase 0; the JSON key stays `entries`)
   - `shows/<ulid>.show.json`
-  - `timings/<ulid>.rehearsal.json`
 
-  `LibraryRoot` has `showsDirectory`, `timingsDirectory`, `showSuffix` and `rehearsalSuffix`.
+  `LibraryRoot` has `showsDirectory` and `showSuffix`.
 - **Time and IDs** always come from the injected `Clock` / `IDGenerator`, and dates are stamped with `SegueJSON.stamp`. Calendar dates (gig date) are `CalendarDay` ("2026-10-23"), which never shifts with the time zone.
 - **Versioning** follows the sidecar rules everywhere: older versions migrate forward in memory, newer ones open read-only, and unreadable files are reported, never deleted.
 - **Command naming.** The spec's `ShowCommand` is `LiveCommand`, which covers both gigs and rehearsals. Argument-free commands (bindable to keys, pedals and MIDI) are `LiveCommand`. Actions with arguments (from search, the request panel or the drawer) are `ShowAction`. `LiveCommand.showAction` bridges the two.
@@ -63,20 +62,19 @@ It can be split into **A1** (the `Shows` module) and **A2** (Setlists and Librar
 | Type / function | Contract |
 |---|---|
 | `ShowID`, `ShowRequestID`, `ShowItemID` (= `SetlistItemID`) | ULID wrappers. |
-| `ShowKind` | `.gig` / `.rehearsal`. A rehearsal is never written to `shows/` and never in the gig log; it only emits `DurationSample`s. |
+| `ShowKind` | `.gig` / `.rehearsal`. A rehearsal is never written to `shows/` and never in the gig log. |
 | `ItemOrigin`, `ItemState`, `ShowItem`, `ShowRequest`, `ShowEvent(.Kind)`, `GigDetails`, `ShowClosure` | The data model, documented in `ShowRecord.swift`. Events carry `itemId` (became current / acted on), `fromItemId` (left / interrupted) and `requestId`. |
 | `ShowRecord` | `shows/<ulid>.show.json`, schema 1. `planned` is the setlist entries at start; `items` is in performed order; also `currentItemId`, `scrollPosition` 0...1, `requests`, `events`, `startedAt`/`updatedAt`/`endedAt`, `closure` and `gig` (prefilled venue from the setlist, date = setlist date or the start day). Derived: `isFinished`, `currentIndex`, `currentItem`, `queuedRequests`. |
 | `ShowSongSource` | `cachedSong(id:)` reads memory only; `freshSong(id:)` re-reads from disk. `LibraryStore` conforms (through A2's `reloadSong`). |
 | `ShowAction` | `next`, `previous`, `skipCurrent`, `skip`, `unskip`, `jump`, `playNow(SongID)`, `insertNext`, `addRequest(_:note:)`, `playNextRequest`, `playRequest`, `dropRequest`, `move(fromOffsets:toOffset:)`. The semantics are in the doc comments; see also open questions 4 and 5. |
 | `ShowState { record, current: ShowSlot?, upNext: UpNext? }` | Replaced wholesale after each action. `ShowSlot.song` is the in-memory snapshot: taken when the item becomes current, never refreshed mid-song, and kept if the file disappears. `UpNext.request` wins over the next item. |
-| `ShowEnvironment` | `store`, `songs`, `clock`, `ids`, `durations` sink and `scrollWriteInterval` (0.75 s: with the stage's 0.25 s flush tick a scroll change is on disk within 1 s). |
+| `ShowEnvironment` | `store`, `songs`, `clock`, `ids` and `scrollWriteInterval` (0.75 s: with the stage's 0.25 s flush tick a scroll change is on disk within 1 s). |
 | `ShowController` (actor) | Methods: `start(setlist:kind:omitting:environment:)`, `resume(_:environment:)`, `state`, `perform(_:)`, `updateScrollPosition(_:)`, `flushScrollPositionIfDue()`, `end() -> ShowEnding`. A gig is written atomically on every action that changes state. Scroll is written with the next action or at most once per `scrollWriteInterval`. `omitting` starts missing-song entries as `skipped`. |
 | `ShowEnding { record, diff?, gigLogEntry? }` | `diff` is nil when nothing changed (no sheet) and always nil for a rehearsal. |
 | `ShowStore` (actor) | `load(root:)` loads shows and rebuilds the play projection; `save` writes atomically (a finished show also replaces its plays); also `show(id:)`, `gigLog()` (newest first), `updateGigDetails`, `delete`, `launchCheck() -> LaunchShowCheck { resumable?, autoClosed: [ShowEnding] }`. `staleInterval` is 12 h. A stale show is closed with `closure = .stale` and `endedAt = updatedAt`. |
 | `PlayHistoryIndex` | Has `replacePlays(forShow:with:)` and `replaceAllPlays(_:)`. `LibraryStore` conforms. |
 | `GigLogEntry(_ record:)`, `PlayedSong`, `ShowRecord.playedSongs` / `.playRecords` | The played list comes from events: start = the last time the item became current, end = advanced past it as played. |
 | `ReorderDiff` | `compute(_:)` returns nil when the items are the planned entries in planned order with nothing inserted. Rows are `.unchanged` / `.moved(fromPosition:)` (not in the longest kept run) / `.inserted(origin)`. `entries(including:)` builds what Save writes. |
-| `DurationSample`, `DurationSampleSink`, `RehearsalTimingStore` | One sample per completed song. Rehearsals write `timings/<run ulid>.rehearsal.json` atomically after each sample. `loadAll(root:fileSystem:)` is for phase 3. |
 | `LiveCommand`, `InputBindingTable`, `KeyStroke`, `KeyModifiers`, `InputTrigger`, `InputBinding` | Implemented. Each command has a `scope` (`.show` / `.viewport` / `.chrome`), a `showAction` and a `title`. In `bindings.json`, a trigger is written `{"key": "k", "modifiers": ["command"]}`; phase 6 adds a MIDI trigger case. |
 | `LiveSettings`, `ChecklistItem` | Implemented value types. The UI persists them. |
 
@@ -112,14 +110,14 @@ It can be split into **A1** (the `Shows` module) and **A2** (Setlists and Librar
 | `LayoutEngine.plan(_:metrics:) -> LayoutPlan` | Implements the spec's auto-fit steps 1-6 (largest size wins, ties go to fewer columns, columns break only at section boundaries, scroll below the minimum, zoom multiplies but never goes below the minimum). Deterministic and pure. |
 | `LayoutPlan { lyricSize, chordSize, fit, columns, contentHeight, viewport, pageStops, lineCount }`, `overflow`, `needsScroll` | Fully positioned: `LayoutColumn` contains `LayoutBlock`s (label, `isChorusLabel`, `SectionTint`, content `.rows` / `.collapsed(line:differing:)` / `.notes`, cues), which contain `LayoutRow`s (baselines and `PlacedText` runs with `x`, `width`, `role` and `ChordKind`). C draws exactly this and never re-flows text. |
 | `RepeatCollapser.collapse(_:enabled:) -> [CollapsedSection]` | The first occurrence is in full. A later equal section (normalized lyrics plus display chords) and every `{chorus}` repeat collapse to a reference with any differing items. |
-| `ScrollSpeedModel.speed(_ ScrollSpeedInput) -> ScrollSpeed` | Speed is the overflow over (`{duration}` minus the lead-in). Without a duration it is estimated from `{tempo}`/`{time}` and `lineCount`; otherwise `defaultSpeed`. It is multiplied by `factor` (`LivePrefs.scrollSpeedFactor`), and `nudgeStep` is 1.1. |
+| `ScrollSpeedModel.speed(_ ScrollSpeedInput) -> ScrollSpeed` | Speed is the overflow over (the song's time from its timeline, P8-8, minus the lead-in). When the time is unknown, speed is estimated from `{tempo}`/`{time}` and `lineCount`; otherwise `defaultSpeed`. It is multiplied by `factor` (`LivePrefs.scrollSpeedFactor`), and `nudgeStep` is 1.1. |
 | `AutoScroller` | A value type driven by injected instants (no timers). Methods: `offset(at:)`, `start`, `pause`, `restart`, `seek(to:at:)`, `setSpeed(_:at:)`, `setOverflow(_:at:)`. It never moves before `start`. |
 | `StageTextMetrics` (SegueUI) | Core Text with the bundled Schibsted Grotesk faces and the monospaced face for verbatim lines. |
 | `StageTypography.font(_:size:)` (SegueUI) | The same face table as SwiftUI `Font`s, so what C draws is exactly what B measured. |
 
 **Tests (B):**
 - Pure unit tests for golden layouts with `FixedAdvanceMetrics`: the minimum-font scroll fallback, `collapseRepeats` on and off, forced columns and zoom clamping.
-- Scroll-speed derivation for duration, tempo and fallback.
+- Scroll-speed derivation for the timeline time, tempo and fallback.
 - An `AutoScroller` timeline that reaches the bottom of a `3:00` song at about 180 s, and holds while paused.
 - One acceptance test with `StageTextMetrics`: every fixture of up to 40 lines fits at 22pt on a 13" viewport.
 
@@ -146,14 +144,14 @@ C implements:
 - **Shortcuts and checklist:**
   - A `ShortcutRunner` port: the real one uses `NSWorkspace.open(shortcuts://run-shortcut?name=...)` and then re-asserts the stage as key; a recording fake is selected by a Debug launch argument for E2E #9.
   - A power-source reader for the "charger connected" row.
-- **Rehearse run:** `startShow(_, kind: .rehearsal)` skips the checklist and Shortcuts, and passes a `RehearsalTimingStore` as the `durations` sink.
+- **Rehearse run:** `startShow(_, kind: .rehearsal)` skips the checklist and Shortcuts.
 - **E2E:** the spec's E2E 1-9, using new Debug-only launch arguments in `LaunchOptions` (for example a test clock for auto-scroll E2E #3, and the fake Shortcut runner). C also owns the snapshot tests of the stage at 13" and 16".
 
 ## Unit D - Setlist builder and library metadata UI (`SegueUI/Setlists/**`, `Library/**`, `GigLog/**`, `Components/**`)
 
 D implements:
 - **Setlist builder**, layout **a** (`S3-Setlist-a`):
-  - Left: the library column with search and filter (`SongFilter.parse`), rows showing key, tempo and length, "In set" dimmed, and a `+` button. Right: the set with columns #, title, key (after overrides), capo, length and start time.
+  - Left: the library column with search and filter (`SongFilter.parse`), rows showing key and tempo, "In set" dimmed, and a `+` button. Right: the set with columns #, title, key (after overrides), capo, time and start time.
   - Header: the name, running total vs target with a bar, and **Start show** (`app.startShow(setlist, kind: .gig)`) plus **Rehearse** (`.rehearsal`).
   - Drag from the library into the set; drag to reorder.
   - Per-item overrides and note; venue, date and target.
@@ -164,11 +162,11 @@ D implements:
   - "last played" and "times played" from `playStats()`.
 - **Gig log:** a sidebar destination with a list (newest first) and a detail view (played in order with request markers, skipped items, venue, date, notes and rating editing through `updateGigDetails`, and delete).
 - **The real `ReorderDiffSheet`** (same `init`).
-- **Core, pure:** `SongFilter` (`matches`, `parse`) and `SetlistTiming`, each with unit tests. `SetlistTiming` gives each row's start, the total of the known lengths and how many lengths are unknown (the build ruling: no made-up fallback length). Notation, through `ItemTiming.startText` and `SetlistTiming.totalText`:
-  - a row with an unknown length shows `--:--` and adds nothing;
+- **Core, pure:** `SongFilter` (`matches`, `parse`) and `SetlistTiming`, each with unit tests. `SetlistTiming` gives each row's start, the total of the known times and how many are unknown (the build ruling: no made-up fallback time). Notation, through `ItemTiming.startText` and `SetlistTiming.totalText`:
+  - a row with an unknown time shows `--:--` and adds nothing;
   - every later start is a lower bound, written `≥13:50`;
   - a lower bound of zero says nothing, so that start reads `--:--`;
-  - the total reads `38:20`, `≥38:20 + 2 unknown`, or `2 unknown` when no length is known.
+  - the total reads `38:20`, `≥38:20 + 2 unknown`, or `2 unknown` when no time is known.
 
 ## File ownership
 
@@ -198,13 +196,13 @@ Shared rules:
 3. **PgDn when the song fits or is at its bottom.** It does **nothing**; it never advances to the next song. Pedal users bind a separate key to `next`. (The alternative is turning the page into the next song at the end.)
 4. **What `next` picks.** The first `pending` item from the **top** of the order, so songs passed over by Play now are revisited before later ones. This is what puts song 3 back after song 7 in E2E #6.
 5. **Where `R` (play next request) puts the request.** **Before current**: current goes back to pending, so `next` returns to the interrupted song. This matches E2E #1's "9 played, 1 skipped, 1 request".
-6. **Rehearsal.** No crash-safe resume, no reorder sheet, no pre-show checklist and no Shortcuts. Timings go to `timings/<ulid>.rehearsal.json`.
+6. **Rehearsal.** No crash-safe resume, no reorder sheet, no pre-show checklist and no Shortcuts. Nothing is recorded.
 7. **Missing songs at start ("Perform without them").** They start as `skipped` and the gig log lists them as skipped.
 8. **Gig rating scale.** 1-5, optional.
 9. **Cue anchoring.** A section label (case-insensitive) plus an optional 1-based occurrence; nil means every occurrence. A cue whose label no longer exists is shown in the notes block.
 10. **"Smart filters" in the brief vs the spec.** The spec puts smart and saved filters in phase 3 (a non-goal here). D builds **simple** filtering only: typed tokens in the search field ("ready, upbeat, key G") plus chips. Nothing is saved.
-11. **Unknown song length in the builder.** Superseded by the build ruling: never estimated. The row shows `--:--`, later starts are lower bounds (`≥13:50`) and the total reads `≥38:20 + 2 unknown` (see unit D's `SetlistTiming` notation above).
-    - *Phase 3: R70 (estimates) was itself superseded by R91 (docs/release/decisions.md): no estimates; this rule stands. A length is entered on the song card or filled by "Time it", and the "N unknown" total becomes a button listing the songs without one (R88).*
+11. **Unknown song time in the builder.** Superseded by the build ruling: never estimated. The row shows `--:--`, later starts are lower bounds (`≥13:50`) and the total reads `≥38:20 + 2 unknown` (see unit D's `SetlistTiming` notation above).
+    - *This rule stands (R172): a slot's time comes from its tempo and played bars, and the "N unknown" total is a button listing the songs without one.*
 12. **Minimum lyric size range** in Settings: 16-48pt (default 22).
 13. **`bindings.json` location.** Application Support (per machine). There is no editor UI in phase 2; defaults apply when the file is missing or malformed (the error is reported).
 14. **Stage presentation.** The stage stays the phase 0 borderless window that hides the menu bar and Dock (the spec's "full screen" step reads as this). The "Shortcut from full screen" verification in `0-walking-skeleton.md` is **still open and needs one manual run by Ryan**. C re-asserts the stage window as key after `NSWorkspace.open(shortcuts://...)` regardless, and confirms with the real in-app call.

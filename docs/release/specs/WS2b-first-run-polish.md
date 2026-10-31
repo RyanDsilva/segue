@@ -52,7 +52,7 @@ Conventions for the session:
 | B-20 | Quick Look: view-based preview reusing the app's renderer and fonts | 4.7 |
 | B-21 | Sequencing per open-questions section 5 | 6 |
 | B-22 / I-1 | WS3's `ConsentStore` is the single consent store and writer | 3, 4.1, 4.6 |
-| B-23 | Archive includes `songs/`, `setlists/`, `shows/`, `timings/`; excludes `.segue/` | 4.8 |
+| B-23 | Archive includes `songs/`, `setlists/`, `shows/`, `filters/`; excludes `.segue/` | 4.8 |
 | B-26 / I-2 | The app bundles the generated `website/changelog.json`; WS4's schema 1 | 4.3 |
 | I-3 | No remote changelog fetch anywhere (WS2a drops `changelogFeed`) | 4.3 |
 | I-4 | WS2b owns the seeder and `-SegueSeedWelcome`; WS5's `-SegueScreenshotLibrary YES` composes it | 4.2 |
@@ -75,7 +75,7 @@ Out of scope: consent storage, consent UI pieces and vendor wiring (WS3; this sp
 ## 2. Current state (code evidence, 2026-10-17)
 
 - First run: `LibraryChooserView` (`Packages/SegueUI/Sources/SegueUI/SegueRootView.swift:37-114`) with "Create Library in Music…" / "Choose Existing Folder…"; `AppModel.start()` / `createLibrary()` / `chooseLibrary()` (`Packages/SegueUI/Sources/SegueUI/App/AppModel.swift`); bookmark in `LibraryLocation` (`App/LibraryLocation.swift`, key `libraryFolderBookmark`). No sample content, no onboarding, no consent.
-- Library layout: `Packages/SegueCore/Sources/Support/LibraryRoot.swift` (`songs/<slug>.cho` + `<slug>.segue.json`, `setlists/<slug>.setlist.json`, `shows/`, `timings/`, `.segue/index.sqlite`). Only `.cho` is scanned.
+- Library layout: `Packages/SegueCore/Sources/Support/LibraryRoot.swift` (`songs/<slug>.cho` + `<slug>.segue.json`, `setlists/<slug>.setlist.json`, `shows/`, `.segue/index.sqlite`). Only `.cho` is scanned.
 - Song creation: `LibraryStore.createSong(source:)` (unique slug, new sidecar). Sidecar metadata and live prefs: internal `LibraryStore.updateMetadata(id:_:)` and `updateLivePrefs(id:_:)` (`Library/LibraryStore+Phase2.swift:108`, `:127`). `LivePrefs.columns` pins a column count (`Library/Sidecar.swift:87`).
 - Setlists: `SetlistStore.create(name:)`, `insertSongs`, `updateEntry`, `updateDetails` (`Setlists/SetlistStore.swift`); `SetlistOverrides.transpose/capo`, `SetlistEntry.note`, `Setlist.targetDuration`.
 - Settings: one "Live" tab (`Settings/LiveSettingsView.swift`, which also declares `SegueSettingsView` today): minimum lyric size, default columns, Gig Mode Shortcuts, pre-show checklist rows. Stored by `LiveSettingsStore` (keys `live.settings`, `live.rehearsalShortcuts`). The Library menu has Refresh, Rebuild Index, Choose Library Folder… (`SegueRootView.swift`, `SegueCommands`).
@@ -155,14 +155,14 @@ WS2b adds only the page chrome: the "Step n of m" label and a **Continue** butto
 
 **What the four songs demonstrate.**
 
-| Song | Key / capo | Tempo, time, length | Shows off |
+| Song | Key / capo | Tempo, time | Shows off |
 |---|---|---|---|
-| Soundcheck at Seven | G shapes, capo 2 (concert A) | 96, 4/4, 3:20 | Capo, verse/chorus/bridge, collapsed repeat choruses, a cue, Pro mark |
-| Kitaabon Wali Gali | Am | 84, 4/4, 4:05 | Romanized Hindi, spelling-tolerant search, a `{comment}`, a setlist transpose override (-2), Ready mark |
-| Kettle On, Lights Low | G shapes, capo 3 (concert Bb) | 72, 3/4, 3:05 | Waltz, `{time}`, `{define}` (custom Cadd9 shape), Em7/D/F#/Am7, intro chord line, Ready mark |
-| Ferry Lights Over Calder Bay | D | 120, 4/4, 4:40 | The **2-column** song: long form with intro, two identical pre-choruses (collapse demo), bridge, outro, slash chords and Asus4; sidecar pins `live.columns = 2`; Learning mark |
+| Soundcheck at Seven | G shapes, capo 2 (concert A) | 96, 4/4 | Capo, verse/chorus/bridge, collapsed repeat choruses, a cue, Pro mark |
+| Kitaabon Wali Gali | Am | 84, 4/4 | Romanized Hindi, spelling-tolerant search, a `{comment}`, a setlist transpose override (-2), Ready mark |
+| Kettle On, Lights Low | G shapes, capo 3 (concert Bb) | 72, 3/4 | Waltz, `{time}`, `{define}` (custom Cadd9 shape), Em7/D/F#/Am7, intro chord line, Ready mark |
+| Ferry Lights Over Calder Bay | D | 120, 4/4 | The **2-column** song: long form with intro, two identical pre-choruses (collapse demo), bridge, outro, slash chords and Asus4; sidecar pins `live.columns = 2`; Learning mark |
 
-**Demo setlist "Welcome Set"**: Soundcheck at Seven, Kitaabon Wali Gali (override `transpose: -2`, so the key chip shows Gm), Kettle On, Lights Low (note "Brushes, start soft"), Ferry Lights Over Calder Bay (note "Closer: big finish"); `targetDuration` 1200 s (20:00), so the builder shows 15:10 of 20:00. No venue or date (a date would go stale).
+**Demo setlist "Welcome Set"**: Soundcheck at Seven, Kitaabon Wali Gali (override `transpose: -2`, so the key chip shows Gm), Kettle On, Lights Low (note "Brushes, start soft"), Ferry Lights Over Calder Bay (note "Closer: big finish"); `targetDuration` 1200 s (20:00); every song has a tempo, so the builder shows the whole set's time from tempo and bars against 20:00 with nothing unknown. No venue or date (a date would go stale).
 
 **Bundling (B-18).** The content ships in the SegueUI resource bundle, the same mechanism as the fonts and licence texts, so both app targets (and therefore the App Store target) carry it and `swift test` can load it with `Bundle.module`:
 - `Packages/SegueUI/Sources/SegueUI/App/WelcomeLibrary/manifest.json`
@@ -208,7 +208,7 @@ WS2b adds only the page chrome: the "Step n of m" label and a **Continue** butto
   - With `-SegueLibraryPath <dir>` (Debug-Personal, `/private/tmp/segue-e2e/`), it seeds that folder: this is what WS2b's own E2E tests use.
   - Without a library path, it seeds and opens the fixed in-container folder `Library/Application Support/Segue-Screenshots/Library`, defined once as `LaunchOptions.screenshotLibraryFolder` (WS2b adds the constant). No sandbox exception, no entitlement drift, and the user's real library bookmark is never touched.
 - WS5 owns the composite flag `-SegueScreenshotLibrary YES` (defined in `LaunchOptions` by WS5, `#if DEBUG`). It wipes `LaunchOptions.screenshotLibraryFolder`, then applies `-SegueSeedWelcome YES`, then seeds WS5's screenshot-only songs by calling the same `seedSongs(fromManifestFolder:)` with WS5's own schema-1 manifest folder (content, tag, location and approval are WS5's, A48; they never ship), plus `-SegueOnboarding done`, `-SegueTips hide`, consent declined through WS3's `ConsentStore`, and no What's New or review prompt. WS2b's job is only that the seeder, the folder constant and the three WS2b flags it composes work as specified here.
-- Deterministic content: fixed text, fixed setlist order and durations. IDs are generated, so tests and screenshots address songs by title, never by ID.
+- Deterministic content: fixed text, fixed setlist order and tempos. IDs are generated, so tests and screenshots address songs by title, never by ID.
 
 ### 4.3 What's New sheet
 
@@ -334,7 +334,7 @@ Every library-affecting control is disabled while performing (`app.isPerforming`
 
 - Entry points: WS2b fills WS2a's File-menu export-archive hook ("Export Library Archive…", no shortcut; I-5) and Settings > Data. Disabled while performing or without an open library.
 - Save panel: default name `Segue Library YYYY-MM-DD.zip` (local date), allowed type `.zip`. Debug-only `-SegueExportPath <file>` bypasses the panel for tests.
-- Contents (B-23): one top folder `Segue Library YYYY-MM-DD/` containing `songs/` (`.cho` and `.segue.json`), `setlists/`, `shows/`, `timings/`, as they are on disk. Excluded: `.segue/` (the rebuildable index and app-private state), `.DS_Store`, and anything else at the library root that is not one of those four folders (a user's own files there are theirs, not Segue's). Empty or missing folders are simply absent.
+- Contents (B-23): one top folder `Segue Library YYYY-MM-DD/` containing `songs/` (`.cho` and `.segue.json`), `setlists/`, `shows/`, `filters/`, as they are on disk. Excluded: `.segue/` (the rebuildable index and app-private state), `.DS_Store`, and anything else at the library root that is not one of those four folders (a user's own files there are theirs, not Segue's). Empty or missing folders are simply absent.
 - Mechanism (no third-party code, works in the sandbox): copy the four folders into a staging directory under `FileManager.temporaryDirectory`, then `NSFileCoordinator.coordinate(readingItemAt:options: .forUploading)`, which yields a zip of the staging folder, then move it to the chosen URL (replacing an existing file the user confirmed in the panel). Core logic in `Packages/SegueCore/Sources/Library/LibraryArchive.swift` (pure Foundation, injectable file system and clock for the date); the panel and progress in SegueUI. Runs off the main actor with a small progress indicator in the Data pane / a sheet; large libraries are text and stay small.
 - Errors (no space, destination not writable, folder unreadable mid-copy): no partial file at the destination; the error banner with the `UserMessage` text. The staging folder is always removed.
 
@@ -463,8 +463,8 @@ Each implementation step ends with `make quick` and the targeted `make e2e-one T
 Integration and E2E first (decisions.md "Testing"); unit tests only for tricky pure logic. Every E2E starts from a reset baseline (`-SegueResetState YES`, a fresh `/private/tmp/segue-e2e/run-<uuid>` library from `SetlistFixture.makeRoot()` or an empty folder). Budget: `make quick` after each small change, `make e2e-one TEST=<Class>` for the class touched, one `make check` at the end.
 
 **SegueCore (`swift test`, real parser, real file store, real index)**
-- `WelcomeLibraryTests`: each bundled song parses with zero diagnostics, round-trips byte-identical, has title, artist "Segue Originals", key, tempo and duration; detected key agrees with `{key}`; every chord parses strictly; lyrics are ASCII and contain no Devanagari; the Hindi song's search finds it by "kitabon" and "kitaabon" (romanization-tolerant index); the manifest references only existing files; seeding into an empty temp library creates 4 songs with the manifest's tags, proficiency, cues and `live.columns`; seeding twice creates nothing new; seeding into a library that already has songs leaves them untouched; a second manifest folder with a different tag and no setlist seeds alongside without touching the Welcome songs (the WS5 path); a read-only library fails with a typed error and no partial sidecars without `.cho`.
-- `LibraryArchiveTests`: archive a seeded temp library; unzip with `/usr/bin/ditto -x -k` into another temp dir; the tree equals `songs/`, `setlists/`, `shows/`, `timings/` byte for byte; `.segue/` and stray root files are absent; the name uses the injected clock's date; failure to write the destination leaves no file and removes staging.
+- `WelcomeLibraryTests`: each bundled song parses with zero diagnostics, round-trips byte-identical, has title, artist "Segue Originals", key and tempo, and no `{duration}`; detected key agrees with `{key}`; every chord parses strictly; lyrics are ASCII and contain no Devanagari; the Hindi song's search finds it by "kitabon" and "kitaabon" (romanization-tolerant index); the manifest references only existing files; seeding into an empty temp library creates 4 songs with the manifest's tags, proficiency, cues and `live.columns`; seeding twice creates nothing new; seeding into a library that already has songs leaves them untouched; a second manifest folder with a different tag and no setlist seeds alongside without touching the Welcome songs (the WS5 path); a read-only library fails with a typed error and no partial sidecars without `.cho`.
+- `LibraryArchiveTests`: archive a seeded temp library; unzip with `/usr/bin/ditto -x -k` into another temp dir; the tree equals `songs/`, `setlists/`, `shows/`, `filters/` byte for byte; `.segue/` and stray root files are absent; the name uses the injected clock's date; failure to write the destination leaves no file and removes staging.
 
 **SegueUI (`swift test`)**
 - `WhatsNewTests`: decodes the real generated `website/changelog.json` (via `#filePath`) under the app-side schema 1 rules (kinds, title 60, text 120, `help` is site-relative, newest-first order, unique versions); fixture-based cases: version comparison table (`0.5` == `0.5.0`, `0.10` > `0.9.1`); range selection; a range with no `showInApp: true` release is silent; `help` resolves to `SegueLinks.site` + path; unknown keys ignored; unknown schema major ignored. Release check `testRunningVersionHasEntry` (the bundled file has a non-draft entry for `MARKETING_VERSION`) runs only when `SEGUE_RELEASE_CHECK=1`, which WS5's release checklist sets; it is skipped otherwise, because the 0.5 entry stays `draft` until release time.
@@ -507,7 +507,7 @@ Integration and E2E first (decisions.md "Testing"); unit tests only for tricky p
 8. The five TipKit tips appear only under their rules, at most one per day, never in the stage window.
 9. Settings has General, Appearance (Match System default / Light / Dark), Live, Privacy, Data; restores the last pane; loses none of today's Live settings.
 10. `.cho` files show the Segue document icon and type name in Finder (unless another app exports the type), "Open With > Segue" routes as in 4.7, and Quick Look previews them from the sandboxed extension in both flavors; `make verify-appstore` checks the extension.
-11. Export Library Archive produces a zip with exactly `songs/`, `setlists/`, `shows/`, `timings/` under one dated folder; failures leave nothing behind.
+11. Export Library Archive produces a zip with exactly `songs/`, `setlists/`, `shows/`, `filters/` under one dated folder; failures leave nothing behind.
 12. Ryan approved the progress-dot before/after render and picked a direction for each of the three designed items before they were built; the picks are in `design/directions/ws2b/README.md`.
 13. All state indicators and control edges (per A43's recorded route) meet 3:1, text 4.5:1, in both appearances and with Increase Contrast; the contrast test enforces it.
 14. `docs/release/accessibility-audit.md` lists each label as claimed or not, with evidence, and only passing labels are claimed.
@@ -561,7 +561,6 @@ Each block is the exact file content (UTF-8, LF line endings, final newline).
 {key: G}
 {capo: 2}
 {tempo: 96}
-{duration: 3:20}
 
 {start_of_verse: Verse 1}
 [G]Van door slides and the [D]street lamps hum,
@@ -601,7 +600,6 @@ Each block is the exact file content (UTF-8, LF line endings, final newline).
 {artist: Segue Originals}
 {key: Am}
 {tempo: 84}
-{duration: 4:05}
 
 {comment: Slow intro, guitar only}
 
@@ -647,7 +645,6 @@ Gloss for review (not shipped): "The lane of books" - an old lane with a booksho
 {capo: 3}
 {time: 3/4}
 {tempo: 72}
-{duration: 3:05}
 {define: Cadd9 base-fret 1 frets x 3 2 0 3 3}
 
 {start_of_intro: Intro}
@@ -694,7 +691,6 @@ Its sidecar pins `live.columns = 2` (manifest), so the stage shows two columns r
 {artist: Segue Originals}
 {key: D}
 {tempo: 120}
-{duration: 4:40}
 
 {start_of_intro: Intro}
 [D]  [A/C#]  [Bm]  [G]
@@ -746,5 +742,3 @@ Its sidecar pins `live.columns = 2` (manifest), so the stage shows two columns r
 
 {comment: Let the last D ring}
 ```
-
-Total set length: 3:20 + 4:05 + 3:05 + 4:40 = 15:10.

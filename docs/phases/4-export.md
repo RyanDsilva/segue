@@ -11,7 +11,7 @@ Get charts and setlists out of Segue as paper or shareable PDFs. **Ships in v0.5
 1. **Single chart PDF** - one song, current display settings applied.
 2. **Songbook PDF** - a whole setlist as one document:
    - cover page with setlist name, date and venue (if set);
-   - a setlist page with song order, key, capo and duration;
+   - a setlist page with song order, key and capo;
    - a **table of contents** with page numbers (can share the setlist page when it fits; TOC entries are PDF outline/bookmark links too);
    - then each song, starting on a new page.
 3. **Print** - both PDF types go through the macOS print panel (`NSPrintOperation` with the PDF as the source).

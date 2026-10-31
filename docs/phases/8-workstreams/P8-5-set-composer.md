@@ -14,9 +14,9 @@ Phase 8 workstream (2026-10-30). Rulings: `docs/release/decisions.md` **R153**, 
 
 ## 1. Goal
 
-A 12-song set is typed, not clicked: ⌘L, type a few letters of each song, Return, next. The best library match shows as a ghost completion with its key and length, romanized Hindi spelling variants find the right song, "in A" sets that slot's gig key in the same line, "---" splits the set, and a song already in the set is flagged instead of added twice. Target: typing plus one Return per song (section 3).
+A 12-song set is typed, not clicked: ⌘L, type a few letters of each song, Return, next. The best library match shows as a ghost completion with its key and time, romanized Hindi spelling variants find the right song, "in A" sets that slot's gig key in the same line, "---" splits the set, and a song already in the set is flagged instead of added twice. Target: typing plus one Return per song (section 3).
 
-**In scope (R153):** the composer row at the end of the set list in both Pick and Arrange; ⌘L; ghost completion with key and length; Return appends and keeps focus (Things-style); ↑/↓ and Tab / ⇧Tab cycle alternatives; inline key token ("kesariya in A", "(Am)", "key of D") stored as `SetlistOverrides.transpose`, with the relative major or minor meaning no change (R158 Q2); "---" inserts a break; structural duplicate block; "No song matches"; the whole-line matcher; the R157 short-word rules in `RomanNormalizer` (search improves everywhere); analytics; accessibility; guide page.
+**In scope (R153):** the composer row at the end of the set list in both Pick and Arrange; ⌘L; ghost completion with key and time; Return appends and keeps focus (Things-style); ↑/↓ and Tab / ⇧Tab cycle alternatives; inline key token ("kesariya in A", "(Am)", "key of D") stored as `SetlistOverrides.transpose`, with the relative major or minor meaning no change (R158 Q2); "---" inserts a break; structural duplicate block; "No song matches"; the whole-line matcher; the R157 short-word rules in `RomanNormalizer` (search improves everywhere); analytics; accessibility; guide page.
 
 **"No match" offers nothing else** (R153): the row only says so.
 
@@ -60,7 +60,7 @@ How it is measured:
 - **Anatomy (aligned with `SetEntryRow`'s columns, so the ghost reads as the row it will become):**
   - `#` column: the next song number, muted (e.g. "13"); blank while the line is a break.
   - Title column: the text field (Schibsted Grotesk semibold 16, ink) with the ghost completion (muted) and, under it, one muted status line when there is something to say (section 4.2).
-  - Key, Capo, Length columns: the best match's values as the new slot would show them (muted, not ink): Key after the key token if one is typed, else the song's display key with no overrides; Capo as `SetlistEntryDisplay.capoText`; Length from `SetlistTiming.directiveLength`, "-" when unknown (never a guessed value). Start column blank.
+  - Key, Capo, Time columns: the best match's values as the new slot would show them (muted, not ink): Key after the key token if one is typed, else the song's display key with no overrides; Capo as `SetlistEntryDisplay.capoText`; Time from `SlotTimes.song` of the shown candidate (P8-8 section 5.3), "-" when unknown (never a guessed value). Start column blank.
   - Leading 4 pt edge: the colour of the part the row would join (`PartPalette`), dimmed.
 - **Placeholder** (empty, unfocused or focused): "Add a song - type its name" with a trailing muted "⌘L" key hint (the hint is hidden while focused).
 - **Ghost completion:** when the best match's title starts with the typed song text (compared after `RomanNormalizer.words` folding, ignoring case and diacritics), the rest of the title is drawn muted right after the caret ("Kesa|riya"). Otherwise the full title is drawn muted after a gap and an arrow: "kesriya  → Kesariya". The ghost never changes the typed text; nothing the user typed is ever rewritten or "corrected".
@@ -72,7 +72,7 @@ How it is measured:
 | Line typed | Ghost / cells | Status line | Return |
 | --- | --- | --- | --- |
 | empty | none | none | nothing |
-| a song query with a match | best match + key + length | none, or "Close spelling" (fuzzy tier) / "From the first line: <first line>" (first-line tier) | appends the shown candidate, clears, keeps focus |
+| a song query with a match | best match + key + time | none, or "Close spelling" (fuzzy tier) / "From the first line: <first line>" (first-line tier) | appends the shown candidate, clears, keeps focus |
 | a query whose shown candidate is already in the set | the candidate, with an "In set" badge in the Key column's place | "Already in the set at #4" (warning glyph, as `entryRepeat` styles it) | does **not** add; the existing row is selected and scrolled into view with a brief highlight; the typed text stays, all selected, so the next keystroke replaces it |
 | a query with no match | none | "No song matches" | nothing (no beep; the row already says it) |
 | a query + key token, song has a key | candidate, Key cell shows the gig key | none | appends with `overrides.transpose` set (section 7) |
@@ -94,7 +94,7 @@ How it is measured:
 | ⌘A | selects the field's text | Pick's ⌘A (tick all shown) only applies when the checklist has focus, unchanged |
 | ⌘1 / ⌘2 | switch mode; the composer keeps its text and focus | |
 
-**Alternatives:** up to 5 candidates (section 6.5). Cycling changes the ghost and the Key / Capo / Length cells; a counter "2 of 5" appears at the trailing end of the title column while cycling. A compact list of the alternatives also drops down under the row from the first ↓ / Tab (direction B, R158 Q3; section 12). Typing any character resets the cycle to the new best match.
+**Alternatives:** up to 5 candidates (section 6.5). Cycling changes the ghost and the Key / Capo / Time cells; a counter "2 of 5" appears at the trailing end of the title column while cycling. A compact list of the alternatives also drops down under the row from the first ↓ / Tab (direction B, R158 Q3; section 12). Typing any character resets the cycle to the new best match.
 
 ### 4.4 Mouse
 
@@ -141,7 +141,7 @@ Only at the **end** of the line, keywords case-insensitive, the key itself parse
 
 ## 6. Matcher design (pure, SegueCore `Library/SongMatcher.swift`)
 
-A whole-line scorer that answers "which song does this line name", scoring **titles** (with the file-name fallback) and **first lines** as a weaker signal, **never lyrics bodies, artists or tags**. It reuses `RomanNormalizer.words` / `normalizeWord` / `looseWord` / `editDistance`, so the composer and the library search agree on spelling variants.
+A whole-line scorer that answers "which song does this line name", scoring **titles** (with the file-name fallback) and **first lines** as a weaker signal, **never lyrics bodies or tags**; artists only as a trailing qualifier or the lowest tier (amended by P8-8 section 3.5.1). It reuses `RomanNormalizer.words` / `normalizeWord` / `looseWord` / `editDistance`, so the composer and the library search agree on spelling variants.
 
 ### 6.1 Types
 
@@ -311,7 +311,7 @@ New file `SegueCore/Sources/Services/AnalyticsEvent+Composer.swift`, a new row i
 
 ## 11. Accessibility
 
-- The field: label "Add a song by name", identifier `segue.setlist.composer`; the container keeps `segue.setlist.dropZone`. Ghost and cells: `segue.setlist.composer.{ghost,key,capo,length,status,counter}`. Add them to `AccessibilityID+Setlists.swift`.
+- The field: label "Add a song by name", identifier `segue.setlist.composer`; the container keeps `segue.setlist.dropZone`. Ghost and cells: `segue.setlist.composer.{ghost,key,capo,time,status,counter}`. Add them to `AccessibilityID+Setlists.swift`.
 - The accessibility value of the field reads the suggestion: "Suggestion: Kesariya, key A, 4:05. 1 of 3." The status line is part of the value ("Already in the set at number 4", "No song matches").
 - After an add, post an announcement: "Added Kesariya, number 13" (or "Added break, Set 2"); for the duplicate block, "Kesariya is already number 4".
 - Alternatives are reachable with the same keys under VoiceOver; the counter is text, never colour alone; muted ghost text meets AA against `ground` (check `muted` in both themes; if it fails, use `mutedStrong` or the token the brand uses for secondary text).
@@ -319,7 +319,7 @@ New file `SegueCore/Sources/Services/AnalyticsEvent+Composer.swift`, a new row i
 
 ## 12. Design directions (step 0, R39)
 
-**Direction B - ghost row + alternatives list** (R158 Q3; renders in the session scratchpad `p8-5/`, light and dark, Pick and Arrange): the composer looks exactly like a set row with muted values; alternatives cycle in place with the "2 of 5" counter, plus a compact list (up to 5 rows: title, key, length, "In set" badge) that drops under the row from the first ↓ / Tab, Things-style.
+**Direction B - ghost row + alternatives list** (R158 Q3; renders in the session scratchpad `p8-5/`, light and dark, Pick and Arrange): the composer looks exactly like a set row with muted values; alternatives cycle in place with the "2 of 5" counter, plus a compact list (up to 5 rows: title, key, time, "In set" badge) that drops under the row from the first ↓ / Tab, Things-style.
 
 **Direction B is chosen** (R158 Q3: the alternatives list is visible). Step 0 renders B only, light and dark, Pick and Arrange, with the four states of section 4.2 (match, close spelling, already in set, no match) and the open alternatives list, for Ryan to confirm before step 4.
 
@@ -399,7 +399,7 @@ G song, no capo, "in A" -> +2; "in G" -> no override; "in F#" -> -1; "in C#" -> 
 
 Why an XCUITest: focus, the field editor's key handling, ⌘L through the menu and the real set list scrolling cannot be proven in-process end to end.
 
-- Fresh temp library seeded with `SetlistE2E.makeRoot()` / `song(_:)` (`UITests/SegueSetlistE2ESupport.swift`): the 16 corpus songs with keys and `{duration}` (Kesariya `{key: G}` `{duration: 4:28}`, Tum Hi Ho `{key: Bb}`, Channa Mereya `{key: Em}`, ...), launched with the existing `launch()` helper on a clean state.
+- Fresh temp library seeded with `SetlistE2E.makeRoot()` / `song(_:)` (`UITests/SegueSetlistE2ESupport.swift`): the 16 corpus songs with keys and tempos (Kesariya `{key: G}`, Tum Hi Ho `{key: Bb}`, Channa Mereya `{key: Em}`, ...), launched with the existing `launch()` helper on a clean state.
 - New setlist (⇧⌘N, name, Return), then ⌘L, then type, each followed by Return, through one counting helper:
   `kesariyaa in A`, `tum hi ho`, `chana mereya`, `kitabon wali`, `---`, `pehla nasha`, `fir le aya dil`, `diwana hai dekho`, `kabhie kabhi`, `ae dil hain mushkil`, `tujh mein rab`, `wonderwall`, `tum hi ho bandhu`.
   That is 12 songs + 1 break: assert the actions counter is 14 (⌘L + 13 Returns), i.e. section 3's ⌘L + 12 Returns for the songs plus one for the break, with no Tab or ↓ needed.
@@ -430,7 +430,7 @@ Why an XCUITest: focus, the field editor's key handling, ⌘L through the menu a
 ## 16. Done criteria
 
 - The composer row is the last row of the set list in Pick and Arrange; ⌘L focuses it from anywhere in the builder; read-only setlists show no field.
-- Typing shows the best match as a ghost with key and length; Return appends it as one undo step, clears the row and keeps focus; ↑/↓ and Tab / ⇧Tab cycle up to 5 alternatives.
+- Typing shows the best match as a ghost with key and time; Return appends it as one undo step, clears the row and keeps focus; ↑/↓ and Tab / ⇧Tab cycle up to 5 alternatives.
 - "in A", "(Am)" and "key of D" set the slot's displayed key through `overrides.transpose` in the same undo step; a song without a key says so and is added plain.
 - "---" appends a break; a song already in the set is flagged and never added; "No song matches" offers nothing else.
 - Every corpus row of 13.1-13.3 passes, including all romanized Hindi variants and the R157 short-word rows (18b, 18c); library search finds "tuj mai rab" too, after the one-time index rebuild; the matcher never reads lyrics beyond the first line; nothing the user typed is rewritten.

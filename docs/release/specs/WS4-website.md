@@ -1079,7 +1079,7 @@ Each help page uses `partial:help-nav` (a left column on desktop, a top list on 
 - **`/help/setlists` Setlists**
   - `#new` New Setlist (Shift-Cmd-N); adding (including Setlist > Add Selected Song to Setlist), reordering, removing songs.
   - `#overrides` Per-show key and capo.
-  - `#running-time` Running time: a length comes from the song card or "Time it" and is never estimated (R91); unknown stays unknown and the total's "N unknown" lists the songs without one (R88); changeover time (R86) and break rows with per-part totals (R85). Now the guide's running-time page (R126).
+  - `#running-time` Running time: each slot's time comes from the song's tempo and the bars played (R172); a song with no tempo or no chords stays unknown and the total's "N unknown" lists the songs without one; changeover time (R86) and break rows with per-part totals (R85). Now the guide's running-time page (R126).
   - `#undo` Undo in the builder.
   - `#start` Start Show (Cmd-Return) and Rehearse (Opt-Cmd-Return): the difference.
 - **`/help/live` Stage mode**

@@ -81,7 +81,7 @@ Parser produces a concrete syntax tree that keeps whitespace, comments, unknown 
 - **Chord autocomplete** on `[`: suggests chords already in the song first, then diatonic chords of the key, then common extensions; typing filters; Return inserts `[Chord]`.
 - **Text input settings for lyrics:** automatic spelling correction, continuous spell-checking, grammar checking, text replacement, smart quotes, smart dashes and automatic capitalization are all off in both editor modes (lyrics are often romanized Hindi, and macOS would "correct" them into English). Set on the TextKit 2 view, not left to system defaults, and asserted in an E2E test.
 - **Chord autocomplete triggers only on `[`** (and the visual-mode chord popover), never on plain word typing, so Hindi words that happen to look like chord names ("Am", "Dm", "Bas") are never suggested or converted.
-- Directive completion on `{` (title, artist, key, capo, tempo, time, duration, sections, define).
+- Directive completion on `{` (title, artist, key, capo, tempo, time, sections, define).
 - Inline diagnostics: unknown chord, unclosed section, malformed directive.
 
 ### Visual mode

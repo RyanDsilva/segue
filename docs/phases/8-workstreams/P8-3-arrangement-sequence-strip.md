@@ -38,7 +38,7 @@ Arranging a slot becomes "build the sequence you will play": the song's parts in
 ### 3.1 Sheet (`Packages/SegueUI/Sources/SegueUI/Setlists/ArrangementEditorSheet.swift`)
 
 - `ArrangementEditorSheet` (:14-58) resolves the slot, song record and units, builds an `ArrangementDraft` from the saved `entry.arrangement` on every render, and saves each edit through `model.setArrangement` in a fire-and-forget `Task` (:35-44).
-- `ArrangementEditorContent` (:60-278): 920 x 640 sheet (:88); header "Arrange Sections" plus "<title> · this gig only, the song is not changed" and "N of M sections play" (:94-116); out-of-date banner with Update (:118-142); a `List` of rows, 470 wide (:146-181) with a "New in the song" section, `onMove`, and keys Space, ⌥↑/⌥↓, +/=/-, ⌘D (:171, :205-232); footer with guide help, "Length for this gig" `LengthField` (slot target), "Song: 4:40" hint, Reset to Full Song, Done (:244-272).
+- `ArrangementEditorContent` (:60-278): 920 x 640 sheet (:88); header "Arrange Sections" plus "<title> · this gig only, the song is not changed" and "N of M sections play" (:94-116); out-of-date banner with Update (:118-142); a `List` of rows, 470 wide (:146-181) with a "New in the song" section, `onMove`, and keys Space, ⌥↑/⌥↓, +/=/-, ⌘D (:171, :205-232); footer with guide help, Reset to Full Song, Done (:244-272).
 - `edit(_:_:)` (:235-240) copies the draft, applies the change, saves. Because the draft is re-derived from the saved model, two quick edits before the first save lands both start from the same stale draft and the first is lost. This spec fixes that (section 6.6).
 - `ArrangementRowView` (:282-427): checkbox, kind colour cap (`SectionBandStyle.dynamicColor(for:)`), title + ordinal + "again", first line, x1-x9 stepper, context menu and VoiceOver actions.
 - `ArrangementPreview` (:431-499): a 1024 x 640 stage scaled into the right pane. **Bug:** its `LayoutRequest` (:487-498) hard-codes `minLyricSize: 22`, passes `columns: prefs.columns` (the song's own choice only) instead of `settings.columns(for: prefs)` (`Packages/SegueCore/Sources/Shows/LiveSettings.swift:61`, song choice else the Settings > Live default, clamped), and omits `zoom: prefs.zoom` and the header `notes` that the real stage passes (`Packages/SegueUI/Sources/SegueUI/Live/LiveSession+Viewport.swift:90-104`, minimum lyric size from `LiveSession.minLyricSize` at `LiveSession.swift:148`). So the preview can disagree with the stage on size, columns and line breaks. It also passes `collapseRepeats`, which R147 removes.
@@ -56,7 +56,7 @@ Arranging a slot becomes "build the sequence you will play": the song's parts in
 
 ### 3.4 Model (`Packages/SegueCore/Sources/Library/`)
 
-- `SlotArrangement.swift`: `SectionRef`, `SectionAnchor` (:10-52), `ArrangementStep` with `plays` (:55-122), `SlotArrangement { steps, length }` (:126-186), `SongSectionUnit` (:192-216), `SongSections.units/ordinal/fingerprint/repeatTarget` (:219-401). P8-2 replaces steps-with-plays by passes-with-modes.
+- `SlotArrangement.swift`: `SectionRef`, `SectionAnchor` (:10-52), `ArrangementStep` with `plays` (:55-122), `SlotArrangement { steps }` (:126-186), `SongSectionUnit` (:192-216), `SongSections.units/ordinal/fingerprint/repeatTarget` (:219-401). P8-2 replaces steps-with-plays by passes-with-modes.
 - `ArrangementResolver.swift`: `PlayedSection { index, plays }`, `ArrangementResolution.applied/outOfDate`, `resolve(_:units:)`, `unit(for:in:)` (:10-82), `ArrangedSections.build` (:98-128). P8-2 changes these to passes.
 
 ### 3.5 Other readers of the editor's text
@@ -71,7 +71,7 @@ Arranging a slot becomes "build the sequence you will play": the song's parts in
 
 This spec is written against these names. If P8-2 names them differently, use P8-2's names; if a capability is missing, stop and ask.
 
-1. **Pass type.** `ArrangementPass { anchor: SectionAnchor, fingerprint: String?, mode: PassMode }` and `PassMode: CaseIterable { full, chordsOnly, firstLine, skip }` with stable coded values. `SlotArrangement { passes: [ArrangementPass], length: TimeInterval? }` with a memberwise init and `static func fullSong(_ units:)` (every part once, Full, song order).
+1. **Pass type.** `ArrangementPass { anchor: SectionAnchor, fingerprint: String?, mode: PassMode }` and `PassMode: CaseIterable { full, chordsOnly, firstLine, skip }` with stable coded values. `SlotArrangement { passes: [ArrangementPass] }` with a memberwise init and `static func fullSong(_ units:)` (every part once, Full, song order).
 2. **Limits and invariants** as public constants and one validator the editor calls: `SlotArrangement.maxPasses` (recommend 48), "at least one pass is not Skip". The editor refuses edits that break them; decode behaviour is P8-2's.
 3. **New-section detection without one chip per part.** B1 lets a pass be removed, so "every part is listed" (P3-16 section 3) no longer holds by construction. The editor needs P8-2 to record which parts the arrangement knew when saved (recommended: a `knownParts: [anchor + fingerprint]` list written on every save, replacing "skipped rows stay"), so a part added to the song later shows as **New** (R123). P8-2 records `knownParts` (its section 5 item 3), so Remove really removes (R158 P8-3 Q3).
 4. **Resolver per pass.** `ArrangementResolver.unit(for: ArrangementPass, in:)` (anchor + fingerprint match, legacy fingerprint accepted, as today) and `resolve(_:units:) -> .applied(order: [PlayedPass], newSections:) | .outOfDate(missing: [ArrangementPass])`, where `PlayedPass` carries the part index, the mode and the pass's position in `passes` (the preview scrolls to it, section 6.4).
@@ -87,7 +87,7 @@ This spec is written against these names. If P8-2 names them differently, use P8
 
 ## 5. Decisions
 
-1. **Layout is mockup B1** (R149): palette on top, lane, inspector for the selected chip, roadmap field, keyboard hint line; live stage preview on the right; footer with the slot length. The sheet keeps the name **"Arrange Sections"** and every entry point (popover row, slot context menu, Setlist > Arrange Sections… ⇧⌘A, pre-show checklist Edit) (R123).
+1. **Layout is mockup B1** (R149): palette on top, lane, inspector for the selected chip, roadmap field, keyboard hint line; live stage preview on the right; footer with the slot's time (P8-8). The sheet keeps the name **"Arrange Sections"** and every entry point (popover row, slot context menu, Setlist > Arrange Sections… ⇧⌘A, pre-show checklist Edit) (R123).
 2. **One chip per pass.** No play-count stepper and no `x2` badge anywhere in the editor; repeats are visible as chips with "2 of 3". "Play Again Later" (R123 question 2) becomes Duplicate plus drag, and "Play Again at End".
 3. **Every edit saves at once as one builder undo step** (as today, R16), except the roadmap field, which previews live and commits once (decision 7).
 4. **Edits apply to the newest draft, saves are serialized.** The sheet keeps a local draft that is authoritative while saves are in flight, and each save is awaited in order (no fire-and-forget `Task` per edit). Re-derive from the model only when no save is pending (external change, undo, redo). Matches R154's serialized undo snapshots.
@@ -121,7 +121,7 @@ Sheet: **1200 x 760** pt, background `Theme.color.ground` for the preview pane a
     4. The **roadmap** block (6.5).
     5. **Hint line**, medium 12, `muted`: "← → select · ⌥← ⌥→ move · F C 1 S mode · ⌫ remove · ⌘D duplicate".
   - **Right pane**, the rest of the width, the **stage preview** (6.4), 1 pt `line` rule on its left.
-- **Footer**, 52 pt high, 18 pt side padding, 10 pt gaps, 1 pt `line` rule above, 13 pt `muted`: guide help button (`GuideHelpButton(.arrangeSections)`), "Length for this gig", the slot `LengthField` with Time it (unchanged behaviour), "Song: 4:05" hint (unchanged), spacer, then "<n> passes play · <m> skipped · this gig only, the song is not changed" (the "· <m> skipped" part only when m > 0; "1 pass plays" singular).
+- **Footer**, 52 pt high, 18 pt side padding, 10 pt gaps, 1 pt `line` rule above, 13 pt `muted`: guide help button (`GuideHelpButton(.arrangeSections)`), "Time for this gig: 2:40" (or "No tempo" with "Set Tempo...", P8-8 section 5.5), spacer, then "<n> passes play · <m> skipped · this gig only, the song is not changed" (the "· <m> skipped" part only when m > 0; "1 pass plays" singular).
 
 ### 6.2 Palette
 
@@ -218,7 +218,7 @@ Sheet: **1200 x 760** pt, background `Theme.color.ground` for the preview pane a
 | Tab / ⇧Tab | Move focus: lane, inspector, roadmap, footer, header buttons, palette | - |
 | ⌥⌘↩ | Rehearse this | - |
 
-- Mode keys ignore Command and Control (⌘C copies nothing here and must not set Chords only). They act only when the lane has focus, never while typing in the roadmap or length fields.
+- Mode keys ignore Command and Control (⌘C copies nothing here and must not set Chords only). They act only when the lane has focus, never while typing in the roadmap or a field.
 - ⌥⌘↩ is the Setlist > Rehearse shortcut; while the sheet is open the menu item is disabled so the sheet's button wins. Verify with the shortcut clash test (`MenuAndAboutTests`).
 - Esc closes the sheet (as Done); in the roadmap field Esc first reverts the field.
 
@@ -289,7 +289,6 @@ struct ArrangementDraft: Equatable {
     private(set) var chips: [Chip]
     private(set) var missing: [ArrangementPass]
     private(set) var newParts: [SongSectionUnit]
-    var length: TimeInterval?
     let isCustom: Bool
     func apply(_ edit: Edit, selection: Int) -> Swift.Result<Result, Refusal>
     var roadmap: String
@@ -348,7 +347,7 @@ Fast in-process tests carry the logic; one XCUITest covers the core edit flow.
 
 ### 10.4 E2E: rewrite `UITests/SegueArrangementE2ETests.swift` (the one XCUITest)
 
-Fresh library, seeded set (as today): open the slot popover > Sections > the sheet shows 6 chips -> select the Bridge chip, press S -> the file has the Bridge pass as skip -> hover the last Chorus chip, click "+" -> 7 passes on disk -> type `I V1 C V2 C -B C O:1` in the roadmap, Return -> the sheet is still open and the file matches -> length 2:40 -> Done -> the row shows the mark and 2:40 -> Rehearse this from the sheet (reopen it) -> the stage map shows no Bridge and a "2 of 2" Chorus (P8-2 identifiers) -> end -> the sheet is open again -> Done. Keep the out-of-date half (rename a section -> "out of date"). The gig log assertion moves to whichever test still starts a full show (keep `playTheShow` with P8-2's new texts).
+Fresh library, seeded set (as today): open the slot popover > Sections > the sheet shows 6 chips -> select the Bridge chip, press S -> the file has the Bridge pass as skip -> hover the last Chorus chip, click "+" -> 7 passes on disk -> type `I V1 C V2 C -B C O:1` in the roadmap, Return -> the sheet is still open and the file matches -> Done -> the row shows the mark and the time of the played passes -> Rehearse this from the sheet (reopen it) -> the stage map shows no Bridge and a "2 of 2" Chorus (P8-2 identifiers) -> end -> the sheet is open again -> Done. Keep the out-of-date half (rename a section -> "out of date"). The gig log assertion moves to whichever test still starts a full show (keep `playTheShow` with P8-2's new texts).
 
 The stage half of this class depends on P8-2's identifiers and texts: land it after P8-2 (R158 P8-3 Q6: P8-3 owns the whole class).
 

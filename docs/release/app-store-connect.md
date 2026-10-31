@@ -118,7 +118,7 @@ Claim only what `docs/release/accessibility-audit.md` records as walked and pass
 |---|---|---|---|
 | Version | `0.5` (= `MARKETING_VERSION` in `Config/Version.xcconfig`) | | R5 |
 | Promotional Text | 7.1 | 162 chars / 162 bytes, max 170 | WS5 4.2 |
-| Description | 7.2 | 3954 chars / 3954 bytes, max 4,000 | WS5 4.3 |
+| Description | 7.2 | 3969 chars / 3969 bytes, max 4,000 | WS5 4.3 |
 | Keywords | 7.3 | max 100 bytes | R37, WS5 4.5 |
 | Support URL | `https://segue.ryandsilva.dev/support` | | R28, R29 |
 | Marketing URL | `https://segue.ryandsilva.dev` | | R27 |
@@ -137,7 +137,7 @@ The paste-led line (R129):
 Your chart, your set, your cue. Paste a chord sheet from any site, build tonight's set in minutes, and play it from a stage view that fits every song. No account.
 ```
 
-### 7.2 Description (3954 chars / 3954 bytes)
+### 7.2 Description (3969 chars / 3969 bytes)
 
 Before pasting, the claim pass in WS5 4.4 must have verified every line on the built App Store flavour; delete any line that fails.
 
@@ -152,7 +152,7 @@ Segue starts with a small Welcome library: a few original demo songs and a demo 
 PASTE A SONG, CHECK IT, DONE
 - Copy a chord sheet from a website or a note and choose File > New Song from Clipboard. Segue turns it into a ChordPro song with its sections and title, and shows you the result before it saves.
 - Text and .crd files convert the same way, several in one review.
-- Optional on-device AI double-checks section labels, title and artist. It works with Apple Intelligence, or with a free local model you can download in Settings. It never rewrites your lyrics or chords, and nothing you paste leaves your Mac.
+- Optional on-device AI double-checks section labels and title. It works with Apple Intelligence, or with a free local model you can download in Settings. It never rewrites your lyrics or chords, and nothing you paste leaves your Mac.
 
 YOUR SONGS, AS FILES
 - One ChordPro file per song, in a folder you choose. No account, no sign-in.
@@ -163,7 +163,7 @@ YOUR SONGS, AS FILES
 - Export your whole library as one archive. Quick Look and Open With in the Finder.
 
 AN EDITOR THAT KEEPS UP
-- A song card for key, tempo (tap it in), length, capo, time signature and tags: controls, not syntax. Time it measures a song's length for you.
+- A song card for artists, Movie / Album, key, tempo (tap it in), capo, time signature and tags: controls, not syntax.
 - Edit the ChordPro text, or place chords on syllables in the visual editor. Select lines and press V, C or B to mark a verse, chorus or bridge.
 - Transpose in one step, with a capo that shows shapes or concert pitch, and Nashville numbers.
 - Guitar chord diagrams with alternate tunings and your own shapes, plus piano voicings.
@@ -172,7 +172,7 @@ AN EDITOR THAT KEEPS UP
 SETLISTS IN MINUTES
 - Tick songs in the order you want them, then fine-tune the order.
 - Or type a request like "45 min, songs I know well, upbeat start" and Segue fills the set. Lock the songs you want and rebuild the rest.
-- Breaks between sets, changeover time and a running total for each part. Songs without a length are listed, never guessed.
+- Breaks between sets, changeover time and a running total for each part, timed from each song's tempo and the bars you play. Songs with no tempo are listed, never guessed.
 - Arrange a song for one gig: skip, repeat or reorder its sections without changing the song.
 
 STAGE MODE

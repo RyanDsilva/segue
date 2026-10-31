@@ -91,7 +91,7 @@ App-level setting (not per song): `live.minLyricFont` (default 22pt), editable i
 6. The per-song zoom offset (from the sidecar) then scales the result. If the user pinches or uses Cmd +/-, the new offset is saved to that song.
 
 **Auto-scroll:**
-- **Speed** comes from the song's `duration` directive (scroll the overflow height over the duration minus an intro offset). If there's no duration, it's estimated from `tempo` and `time` (beats per line). Otherwise a default speed is used.
+- **Speed** comes from the song's time: its tempo times the bars played, from its timeline (R172, P8-8). The overflow height scrolls over that time minus an intro offset. With no time but a tempo, it's estimated from `tempo` and `time` (beats per line). Otherwise a default speed is used, adjusted with [ and ].
 - **Controls:** pause/resume, nudge faster or slower (saved per song), and restart from the top.
 - **Start:** never moves until the user starts it, or until the first advance if "auto-start" is set per song.
 
@@ -172,7 +172,7 @@ Integration-first: tests drive real components (real ChordPro parser, real file 
 - **E2E (XCUITest)** - the primary suite:
   1. **Friday gig:** start a 10-song set and advance through 3. Skip song 4. Cmd-K for a song not in the set, add it to requests, play it (R), continue. End the show. The gig log shows 9 played, 1 skipped and 1 request in order, and the library shows "last played" updated.
   2. **Crash resume:** start a show, advance to song 5, scroll halfway, kill the process, relaunch. The app offers resume and lands on song 5 at the same scroll position.
-  3. **Auto-scroll:** a long song with `duration: 3:00` scrolls to the bottom in about 3 minutes (injected clock), and pause holds the position.
+  3. **Auto-scroll:** a long song whose timeline lasts 3:00 scrolls to the bottom in about 3 minutes (injected clock), and pause holds the position.
   4. **Zoom memory:** zoom song A, advance to song B, then go back. A keeps its zoom and B is unaffected.
   5. **Live reorder:** drag song 8 to next. The footer updates. On ending the show the diff sheet appears; Discard leaves the setlist file unchanged, and a second run with Save persists the new order.
   6. **Play now:** mid-song 3, Cmd-K "Play now" on song 7. Song 7 becomes current, song 3 is back to pending in its slot and is reachable later.
@@ -208,7 +208,7 @@ See `docs/decisions.md` (Phase 2).
 7. **Proficiency:** three levels, Learning / Ready / Pro, stored as strings in the sidecar. Implication: phase 3 scoring and filters use the same three levels.
 8. **Unfinished show older than 12 hours:** auto-closed into the gig log on next launch, and the reorder diff (Save/Discard) is offered then. Implication: no show data is ever silently discarded.
 9. **Shortcut focus behaviour from full screen** is a verification task in phase 0 (see `0-walking-skeleton.md`); this phase follows its result.
-10. **Rehearse-setlist run (from phase 3 round 2):** a rehearsal mode that runs a setlist through the live view without creating a show or gig-log entry, timing every song. Implication: the show-state machine gets a `rehearsal` flavor that writes timings only.
+10. **Rehearse-setlist run (from phase 3 round 2):** a rehearsal mode that runs a setlist through the live view without creating a show or gig-log entry. Implication: the show-state machine gets a `rehearsal` flavor that writes nothing.
 
 ## Open questions
 
