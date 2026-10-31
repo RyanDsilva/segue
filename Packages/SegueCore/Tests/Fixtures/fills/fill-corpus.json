@@ -1,0 +1,6037 @@
+{
+ "schema": 1,
+ "ticksPerQuarter": 24,
+ "description": "Abstracted bass fills (chord functions, tick rhythm, note functions). See docs/research/phase8-fill-corpus.md for the schema and vocabulary. No tab or note-for-note transcription is reproduced; sources attest existence.",
+ "families": [
+  "anticipation",
+  "approachNote",
+  "chordArpeggio",
+  "chromaticLine",
+  "dominantApproach",
+  "dominantPedal",
+  "hold",
+  "machineGun",
+  "melodicUnison",
+  "octavePops",
+  "pentatonicRun",
+  "pickup8",
+  "quarterWalk",
+  "restPickup",
+  "rootFiveOctave",
+  "scaleRun",
+  "sixteenRun",
+  "slideInto",
+  "stopTime",
+  "tihai",
+  "tripletRun",
+  "turnaround"
+ ],
+ "examples": [
+  {
+   "id": "sec-walk-this-way-run",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Walk This Way (Aerosmith, Tom Hamilton): run into the chorus",
+   "transition": "preChorus>chorus",
+   "key": "E",
+   "mode": "major",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "V | I (riff-based)",
+   "span": [
+    {
+     "chord": "B",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "E",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -24,
+     "len": 6,
+     "n": "R"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "b3"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "4"
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "#4"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "sixteenRun",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "key",
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.talkingbass.net/walk-this-way-the-brilliance-of-tom-hamilton/"
+   ],
+   "note": "Source: a 'fast little run just before the chorus'; direction and notes not stated.",
+   "checks": {
+    "expectFamily": "sixteenRun",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 4
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-walk-this-way-slide",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Walk This Way: slide up the neck at the end of the post-chorus bar",
+   "transition": "chorus>postChorus",
+   "key": "E",
+   "mode": "major",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "I | I",
+   "span": [
+    {
+     "chord": "E",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "E",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -12,
+     "len": 12,
+     "n": "8",
+     "art": [
+      "slide"
+     ]
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "slideInto",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "key",
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.talkingbass.net/walk-this-way-the-brilliance-of-tom-hamilton/"
+   ],
+   "checks": {
+    "expectFamily": "slideInto",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 1
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-lead-me-to-the-cross",
+   "category": "section",
+   "genre": "worship",
+   "generatorGenre": "worship",
+   "title": "Lead Me to the Cross (Hillsong United): neighbour pair, pull-off, step down to E",
+   "transition": "preChorus>bridge",
+   "key": "E",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "slow",
+   "progression": "bVII | V -> I",
+   "span": [
+    {
+     "chord": "D",
+     "fn": "bVII",
+     "beats": 4
+    },
+    {
+     "chord": "B",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "E",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -48,
+     "len": 6,
+     "n": "9",
+     "art": [
+      "pull"
+     ]
+    },
+    {
+     "at": -42,
+     "len": 6,
+     "n": "R"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "b7"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "S"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T+2"
+    },
+    {
+     "at": 0,
+     "len": 48,
+     "n": "T"
+    }
+   ],
+   "family": "scaleRun",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://chordu.com/chords-tabs-lead-me-to-the-cross-bass-tutorial-id_KqavOEBwJeg"
+   ],
+   "note": "Chord markers D, B, E and the contour are from the tutorial; rhythm 'really simple', not stated.",
+   "checks": {
+    "expectFamily": "scaleRun",
+    "mustContain": [
+     "T+2"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "direction": "down"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-baby-love-pickup",
+   "category": "section",
+   "genre": "funk",
+   "generatorGenre": "rock",
+   "title": "Baby Love (Mother's Finest): 16th pickup before each heavy downbeat",
+   "transition": "phrase",
+   "key": "G",
+   "mode": "minor",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "i | i",
+   "span": [
+    {
+     "chord": "Gm",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Gm",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -6,
+     "len": 6,
+     "n": "T",
+     "art": [
+      "ghost"
+     ]
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "restPickup",
+   "evidence": "sourced",
+   "derived": [
+    "notes"
+   ],
+   "sources": [
+    "https://bonedo.de/artikel/einzelansicht/die-besten-bass-riffs-in-tabs-und-noten-mothers-finest-baby-love.html"
+   ],
+   "checks": {
+    "expectFamily": "restPickup",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 1
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-baby-love-octaves",
+   "category": "section",
+   "genre": "funk",
+   "generatorGenre": "rock",
+   "title": "Baby Love: slapped-octave fill at the end of the 4-bar phrase",
+   "transition": "phrase",
+   "key": "G",
+   "mode": "minor",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "i (4 bars) | i",
+   "span": [
+    {
+     "chord": "Gm",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Gm",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -24,
+     "len": 6,
+     "n": "R"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "8"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "R"
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "8"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "octavePops",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://bonedo.de/artikel/einzelansicht/die-besten-bass-riffs-in-tabs-und-noten-mothers-finest-baby-love.html"
+   ],
+   "checks": {
+    "expectFamily": "octavePops",
+    "mustContain": [
+     "8"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-invisible-touch",
+   "category": "section",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Invisible Touch (Genesis): major-pentatonic 16th fill every second chorus bar",
+   "transition": "phrase",
+   "key": "Eb",
+   "mode": "major",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "I | I",
+   "span": [
+    {
+     "chord": "Eb",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Eb",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -24,
+     "len": 6,
+     "n": "6"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "5"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "3"
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "2"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pentatonicRun",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.bonedo.de/artikel/die-besten-bass-riffs-in-noten-und-tabs-genesis-invisible-touch/"
+   ],
+   "note": "Source: pure Eb major pentatonic (1 2 3 5 6), 16ths; order of notes is ours.",
+   "checks": {
+    "expectFamily": "pentatonicRun",
+    "mustContain": [],
+    "mustNotContain": [
+     "4",
+     "7"
+    ],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-kershaw-fill-bar",
+   "category": "section",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "I Won't Let the Sun Go Down on Me (Nik Kershaw): E minor pentatonic fill bar into the chorus",
+   "transition": "bridge>chorus",
+   "key": "A",
+   "mode": "major",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "V IV II bVII | fill bar | I",
+   "span": [
+    {
+     "chord": "E",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "A",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -48,
+     "len": 6,
+     "n": "R"
+    },
+    {
+     "at": -42,
+     "len": 6,
+     "n": "b3",
+     "art": [
+      "hammer"
+     ]
+    },
+    {
+     "at": -36,
+     "len": 6,
+     "n": "4"
+    },
+    {
+     "at": -30,
+     "len": 6,
+     "n": "5"
+    },
+    {
+     "at": -24,
+     "len": 6,
+     "n": "b7"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "8"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "b7",
+     "art": [
+      "pull"
+     ]
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "5"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pentatonicRun",
+   "evidence": "sourced",
+   "derived": [
+    "chords",
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.bonedo.de/artikel/die-besten-bass-riffs-in-noten-und-tabs-nik-kershaw-i-wont-let-the-sun-go-down-on-me"
+   ],
+   "note": "The chord under the fill bar is not stated; E (V) assumed. The b3 (G) over E is a blues inflection.",
+   "checks": {
+    "expectFamily": "pentatonicRun",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-born-to-be-my-baby-pre",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Born to Be My Baby (Bon Jovi, Hugh McDonald): pentatonic lick over IV, scale walk over V",
+   "transition": "preChorus>chorus",
+   "key": "C",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "IV | V -> vi",
+   "span": [
+    {
+     "chord": "F",
+     "fn": "IV",
+     "beats": 4
+    },
+    {
+     "chord": "G",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Am",
+    "fn": "vi",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -84,
+     "len": 6,
+     "n": "8"
+    },
+    {
+     "at": -78,
+     "len": 6,
+     "n": "6"
+    },
+    {
+     "at": -72,
+     "len": 12,
+     "n": "5"
+    },
+    {
+     "at": -60,
+     "len": 12,
+     "n": "3"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "2"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "scaleRun",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.premierguitar.com/pro-advice/on-bass/on-bass-deconstructing-a-perfect-bass-line"
+   ],
+   "note": "'a descending major-pentatonic lick ... on the F chord', 'a quick walk up the major scale ... over the G chord'.",
+   "checks": {
+    "expectFamily": "scaleRun",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "direction": "up"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-born-to-be-my-baby-chorus",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Born to Be My Baby: half step the 'wrong' way, then chromatic climb to V",
+   "transition": "withinChorus",
+   "key": "C",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "vi IV | V",
+   "span": [
+    {
+     "chord": "F",
+     "fn": "IV",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "G",
+    "fn": "V",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -48,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "T-3"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "T-2"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "chromaticLine",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.premierguitar.com/pro-advice/on-bass/on-bass-deconstructing-a-perfect-bass-line"
+   ],
+   "note": "'goes a half-step in the wrong direction down to E, and then climbs up chromatically to a G'.",
+   "checks": {
+    "expectFamily": "chromaticLine",
+    "mustContain": [
+     "T-1",
+     "T-2"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-livin-prayer-anticipation",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Livin' on a Prayer (Hugh McDonald): the move to C anticipated an 8th early",
+   "transition": "preChorus>chorus",
+   "key": "Em",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "i | VI (pushed)",
+   "span": [
+    {
+     "chord": "Em",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "C",
+    "fn": "VI",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -12,
+     "len": 36,
+     "n": "T"
+    }
+   ],
+   "family": "anticipation",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://bassmusicianmagazine.com/2013/06/bass-transcription-livin-on-a-prayer-revisited-by-rob-collier/"
+   ],
+   "note": "Anticipations 'on the and of 2' in alternate bars; we encode the push as T an 8th early.",
+   "checks": {
+    "expectFamily": "anticipation",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "anticipates": true
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-livin-prayer-neighbour",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Livin' on a Prayer: lower neighbour then chromatic passing tone into D",
+   "transition": "preChorus",
+   "key": "Em",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "VI | VII",
+   "span": [
+    {
+     "chord": "C",
+     "fn": "VI",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "D",
+    "fn": "VII",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -48,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "7"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "chromaticLine",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://bassmusicianmagazine.com/2013/06/bass-transcription-livin-on-a-prayer-revisited-by-rob-collier/"
+   ],
+   "checks": {
+    "expectFamily": "chromaticLine",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-good-vibrations",
+   "category": "section",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Good Vibrations (Carol Kaye): straight quarter run in the last verse bar sets up the walk",
+   "transition": "verse>chorus",
+   "key": "Gb",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "(Bb ->) Db pivot | I",
+   "span": [
+    {
+     "chord": "Db",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Gb",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 24,
+     "n": "R"
+    },
+    {
+     "at": -72,
+     "len": 24,
+     "n": "2"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "3"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "5"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "quarterWalk",
+   "evidence": "sourced",
+   "derived": [
+    "notes"
+   ],
+   "sources": [
+    "https://www.talkingbass.net/the-legendary-bass-of-carol-kaye-tutorial/"
+   ],
+   "note": "Rhythm (straight quarters replacing the syncopated verse) and the Db pivot are sourced; pitches are ours. Ends on Ab = T+2 into Gb.",
+   "checks": {
+    "expectFamily": "quarterWalk",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 4
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-keep-me-hangin-on",
+   "category": "section",
+   "genre": "soul",
+   "generatorGenre": "pop",
+   "title": "You Keep Me Hangin' On (Jamerson, per lesson): F raised to F#, semitone below the new root",
+   "transition": "phrase",
+   "key": "Bb",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "... | bVI (F#)",
+   "span": [
+    {
+     "chord": "Bb",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "F#",
+    "fn": "bVI",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -24,
+     "len": 24,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "approachNote",
+   "evidence": "sourced",
+   "derived": [
+    "key",
+    "rhythm"
+   ],
+   "sources": [
+    "https://nzmusician.co.nz/lessons/funk-meets-jazz-%c2%96-james-jamerson-1936-1983/"
+   ],
+   "checks": {
+    "expectFamily": "approachNote",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 1
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-reach-out",
+   "category": "section",
+   "genre": "soul",
+   "generatorGenre": "pop",
+   "title": "Reach Out I'll Be There (Jamerson, per lesson): Abm7 approached from G, pushed 8th",
+   "transition": "phrase",
+   "key": "Ab",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "... | i",
+   "span": [
+    {
+     "chord": "Gb",
+     "fn": "bVII",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Abm7",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "approachNote",
+   "evidence": "sourced",
+   "derived": [
+    "chords"
+   ],
+   "sources": [
+    "https://nzmusician.co.nz/lessons/funk-meets-jazz-%c2%96-james-jamerson-1936-1983/"
+   ],
+   "note": "'approached by G (semitone below), not Gb' - the chromatic note beats the scale note.",
+   "checks": {
+    "expectFamily": "approachNote",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [
+     "T-2"
+    ],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-step-into-christmas",
+   "category": "section",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Step Into Christmas (Dee Murray): chromatic climb E-F-F# over beats 3 and 4",
+   "transition": "withinChorus",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "fast",
+   "progression": "V | I",
+   "span": [
+    {
+     "chord": "D",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "G",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 12,
+     "n": "T-3"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "T-2"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "chromaticLine",
+   "evidence": "sourced",
+   "derived": [
+    "chords"
+   ],
+   "sources": [
+    "https://www.notreble.com/buzz/2016/12/25/bass-transcription-dee-murray-bass-line-on-elton-john-step-into-christmas/"
+   ],
+   "note": "'a bluesy, chromatic climb (E-F-F#) over 3&4'; F natural over D is a weak-beat cross-relation the clash rule must allow inside a chromatic line.",
+   "checks": {
+    "expectFamily": "chromaticLine",
+    "mustContain": [
+     "T-1",
+     "T-2",
+     "T-3"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-machine-gun",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Beatles 'machine-gun' bass (Paperback Writer and others): repeated high note into a section",
+   "transition": "intro>verse",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "I | I",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "G",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -24,
+     "len": 6,
+     "n": "8"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "8"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "8"
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "8"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "machineGun",
+   "evidence": "sourced",
+   "derived": [
+    "key",
+    "notes"
+   ],
+   "sources": [
+    "https://www.beatlesbible.com/forum/recording-and-musicology/machine-gun-bass/"
+   ],
+   "checks": {
+    "expectFamily": "machineGun",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-yamaha-i-vi-ii-v",
+   "category": "section",
+   "genre": "blues",
+   "generatorGenre": "rock",
+   "title": "Yamaha turnarounds: I-vi-ii-V, two beats each, back to I",
+   "transition": "turnaround",
+   "key": "E",
+   "mode": "major",
+   "feel": "shuffle",
+   "tempoBand": "mid",
+   "progression": "I vi | ii V -> I",
+   "span": [
+    {
+     "chord": "E7",
+     "fn": "I",
+     "beats": 2
+    },
+    {
+     "chord": "C#m7",
+     "fn": "vi",
+     "beats": 2
+    },
+    {
+     "chord": "F#m7",
+     "fn": "ii",
+     "beats": 2
+    },
+    {
+     "chord": "B7",
+     "fn": "V",
+     "beats": 2
+    }
+   ],
+   "landing": {
+    "chord": "E7",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -192,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -144,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "turnaround",
+   "evidence": "sourced",
+   "derived": [
+    "notes"
+   ],
+   "sources": [
+    "https://hub.yamaha.com/guitars/bass/a-bassists-guide-to-turnarounds/"
+   ],
+   "note": "Chord-level turnaround; the D# approach is ours.",
+   "checks": {
+    "expectFamily": "turnaround",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-yamaha-walkdown",
+   "category": "section",
+   "genre": "blues",
+   "generatorGenre": "rock",
+   "title": "Yamaha turnarounds: walkdown bVII -> V over two bars",
+   "transition": "turnaround",
+   "key": "E",
+   "mode": "major",
+   "feel": "shuffle",
+   "tempoBand": "mid",
+   "progression": "bVII | -> V",
+   "span": [
+    {
+     "chord": "D",
+     "fn": "bVII",
+     "beats": 8
+    }
+   ],
+   "landing": {
+    "chord": "B7",
+    "fn": "V",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -192,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": -96,
+     "len": 48,
+     "n": "T+2"
+    },
+    {
+     "at": -48,
+     "len": 48,
+     "n": "T+1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "chromaticLine",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://hub.yamaha.com/guitars/bass/a-bassists-guide-to-turnarounds/"
+   ],
+   "checks": {
+    "expectFamily": "chromaticLine",
+    "mustContain": [
+     "T+1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "direction": "down"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-yamaha-walkup",
+   "category": "section",
+   "genre": "blues",
+   "generatorGenre": "rock",
+   "title": "Yamaha turnarounds: walkup iii -> V over two bars",
+   "transition": "turnaround",
+   "key": "E",
+   "mode": "major",
+   "feel": "shuffle",
+   "tempoBand": "mid",
+   "progression": "iii | -> V",
+   "span": [
+    {
+     "chord": "G#m7",
+     "fn": "iii",
+     "beats": 8
+    }
+   ],
+   "landing": {
+    "chord": "B7",
+    "fn": "V",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -192,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": -96,
+     "len": 48,
+     "n": "T-2"
+    },
+    {
+     "at": -48,
+     "len": 48,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "chromaticLine",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://hub.yamaha.com/guitars/bass/a-bassists-guide-to-turnarounds/"
+   ],
+   "checks": {
+    "expectFamily": "chromaticLine",
+    "mustContain": [
+     "T-1",
+     "T-2"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "direction": "up"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-tb-arpeggio",
+   "category": "section",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "TalkingBass 4 simple fills, fill 1: V7 arpeggio up and down into I",
+   "transition": "phrase",
+   "key": "D",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "I vi ii | V7 -> I",
+   "span": [
+    {
+     "chord": "A7",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Dmaj7",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -84,
+     "len": 12,
+     "n": "3"
+    },
+    {
+     "at": -72,
+     "len": 12,
+     "n": "5"
+    },
+    {
+     "at": -60,
+     "len": 12,
+     "n": "b7"
+    },
+    {
+     "at": -48,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "b7"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "5"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "chordArpeggio",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.talkingbass.net/4-simple-bass-fills-beginners/"
+   ],
+   "note": "The last arpeggio note (C#, the 3 of A7) is also T-1.",
+   "checks": {
+    "expectFamily": "chordArpeggio",
+    "mustContain": [
+     "3",
+     "b7"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-tb-sixteenth-triplet",
+   "category": "section",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "TalkingBass 4 simple fills, fill 3: 16th-triplet figure on beat 4",
+   "transition": "phrase",
+   "key": "D",
+   "mode": "major",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "V7 -> I",
+   "span": [
+    {
+     "chord": "A7",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Dmaj7",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 72,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 4,
+     "n": "5"
+    },
+    {
+     "at": -20,
+     "len": 4,
+     "n": "b7"
+    },
+    {
+     "at": -16,
+     "len": 4,
+     "n": "8"
+    },
+    {
+     "at": -12,
+     "len": 4,
+     "n": "b7"
+    },
+    {
+     "at": -8,
+     "len": 4,
+     "n": "5"
+    },
+    {
+     "at": -4,
+     "len": 4,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "tripletRun",
+   "evidence": "sourced",
+   "derived": [
+    "notes"
+   ],
+   "sources": [
+    "https://www.talkingbass.net/4-simple-bass-fills-beginners/"
+   ],
+   "checks": {
+    "expectFamily": "tripletRun",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-tb-slide-double-stop",
+   "category": "section",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "TalkingBass 4 simple fills, fill 4: slide into the 3 and b7 of V7",
+   "transition": "phrase",
+   "key": "D",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "V7 -> I",
+   "span": [
+    {
+     "chord": "A7",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Dmaj7",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -36,
+     "len": 24,
+     "n": "3",
+     "art": [
+      "slide",
+      "doubleStop"
+     ]
+    },
+    {
+     "at": -36,
+     "len": 24,
+     "n": "b7",
+     "art": [
+      "slide",
+      "doubleStop"
+     ]
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "slideInto",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.talkingbass.net/4-simple-bass-fills-beginners/"
+   ],
+   "checks": {
+    "expectFamily": "slideInto",
+    "mustContain": [
+     "3",
+     "b7"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "generatorScope": "partial"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-tb-chromatic",
+   "category": "section",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "TalkingBass killer chromatic fills: B-C-C# into the tonic",
+   "transition": "phrase",
+   "key": "D",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "V7 -> I",
+   "span": [
+    {
+     "chord": "A7",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Dmaj7",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "T-3"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "T-2"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "chromaticLine",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.talkingbass.net/create-killer-chromatic-bass-fills-like-pro/"
+   ],
+   "note": "C natural over A7 is a same-letter cross-relation with C# (R165 clash) yet idiomatic as a passing tone.",
+   "checks": {
+    "expectFamily": "chromaticLine",
+    "mustContain": [
+     "T-1",
+     "T-2"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-tb-awesome-pentatonic",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "TalkingBass awesome fills: C# minor pentatonic 16ths back to i",
+   "transition": "phrase",
+   "key": "C#m",
+   "mode": "minor",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "i | i",
+   "span": [
+    {
+     "chord": "C#m",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "C#m",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -24,
+     "len": 6,
+     "n": "8"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "b7"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "5"
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "4"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pentatonicRun",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.talkingbass.net/how-to-play-awesome-bass-fills/"
+   ],
+   "checks": {
+    "expectFamily": "pentatonicRun",
+    "mustContain": [],
+    "mustNotContain": [
+     "b6",
+     "2"
+    ],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-tb-awesome-fifths",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "TalkingBass awesome fills, fill 4: fifth leaps (C#-G#, B-F#)",
+   "transition": "phrase",
+   "key": "C#m",
+   "mode": "minor",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "i | i",
+   "span": [
+    {
+     "chord": "C#m",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "C#m",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -24,
+     "len": 6,
+     "n": "R"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "5"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "b7"
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "4"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "rootFiveOctave",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.talkingbass.net/how-to-play-awesome-bass-fills/"
+   ],
+   "checks": {
+    "expectFamily": "rootFiveOctave",
+    "mustContain": [
+     "5"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-gbp8-pentatonic",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Bass Essentials GBP #8: Em pentatonic plus chromatic flavour in the 4th bar",
+   "transition": "phrase",
+   "key": "Em",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "i (riff x3) | i",
+   "span": [
+    {
+     "chord": "Em7",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Em7",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 12,
+     "n": "b3"
+    },
+    {
+     "at": -36,
+     "len": 6,
+     "n": "4"
+    },
+    {
+     "at": -30,
+     "len": 6,
+     "n": "#4"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "5"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "b7"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pentatonicRun",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://bassessentials.com/gbp-8-using-minor-pentatonic-scale-in-bass-fills/"
+   ],
+   "checks": {
+    "expectFamily": "pentatonicRun",
+    "mustContain": [
+     "b3",
+     "b7"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-posidovega-verse-chorus",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Posidovega bass fills: last bar of the verse, minor pentatonic with slides",
+   "transition": "verse>chorus",
+   "key": "Am",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "v | i",
+   "span": [
+    {
+     "chord": "Em",
+     "fn": "v",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Am",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 12,
+     "n": "b3"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "4"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "5",
+     "art": [
+      "slide"
+     ]
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "b7"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pentatonicRun",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "key",
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://posidovega.com/bass-fills"
+   ],
+   "note": "The page also says the video uses a major scale; contradiction unresolved at source.",
+   "checks": {
+    "expectFamily": "pentatonicRun",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-bonedo-rnb-blues",
+   "category": "section",
+   "genre": "soul",
+   "generatorGenre": "pop",
+   "title": "Bonedo 6 Tipps, ex 1: slow R&B, A minor blues pentatonic over two beats into D7",
+   "transition": "phrase",
+   "key": "Am",
+   "mode": "minor",
+   "feel": "straight16",
+   "tempoBand": "slow",
+   "progression": "i7 | IV7",
+   "span": [
+    {
+     "chord": "Am7",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "D7",
+    "fn": "IV",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 6,
+     "n": "R"
+    },
+    {
+     "at": -42,
+     "len": 6,
+     "n": "b3"
+    },
+    {
+     "at": -36,
+     "len": 6,
+     "n": "4"
+    },
+    {
+     "at": -30,
+     "len": 6,
+     "n": "b5"
+    },
+    {
+     "at": -24,
+     "len": 6,
+     "n": "5"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "b7"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pentatonicRun",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.bonedo.de/artikel/6-tipps-fuer-bass-fills"
+   ],
+   "note": "Ends on A, the fifth of D7 (T:5 = 8 of the sounding chord).",
+   "checks": {
+    "expectFamily": "pentatonicRun",
+    "mustContain": [
+     "b5"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-bonedo-octave",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Bonedo 6 Tipps, ex 2 (alternative): just the root an octave higher",
+   "transition": "phrase",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "I | I",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "G",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -12,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "octavePops",
+   "evidence": "sourced",
+   "derived": [],
+   "sources": [
+    "https://www.bonedo.de/artikel/6-tipps-fuer-bass-fills"
+   ],
+   "checks": {
+    "expectFamily": "octavePops",
+    "mustContain": [
+     "8"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 1
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-bonedo-full-bar",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Bonedo 6 Tipps, ex 2: full-bar G minor pentatonic fill, ending an 8th past the downbeat",
+   "transition": "phrase",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "I (bar 8 of 8) | I",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "G",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -84,
+     "len": 12,
+     "n": "b3"
+    },
+    {
+     "at": -72,
+     "len": 12,
+     "n": "4"
+    },
+    {
+     "at": -60,
+     "len": 12,
+     "n": "5"
+    },
+    {
+     "at": -48,
+     "len": 12,
+     "n": "b7"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "b7"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "5"
+    },
+    {
+     "at": 0,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": 12,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pentatonicRun",
+   "evidence": "sourced",
+   "derived": [
+    "notes"
+   ],
+   "sources": [
+    "https://www.bonedo.de/artikel/6-tipps-fuer-bass-fills"
+   ],
+   "note": "Overhang: the fill plays through the downbeat (on the octave root) and settles an 8th later.",
+   "checks": {
+    "expectFamily": "pentatonicRun",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "8",
+    "overhang": 12
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-gospelchops-1",
+   "category": "section",
+   "genre": "gospel",
+   "generatorGenre": "country",
+   "title": "Gospelchops part 3, fill 1: 16th fill from the 'e' of beat 4 of the penultimate bar",
+   "transition": "turnaround",
+   "key": "Ab",
+   "mode": "major",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "IV/V | V -> I",
+   "span": [
+    {
+     "chord": "Db/Eb",
+     "fn": "V",
+     "beats": 4
+    },
+    {
+     "chord": "Eb",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Ab",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -114,
+     "len": 6,
+     "n": "R"
+    },
+    {
+     "at": -108,
+     "len": 6,
+     "n": "2"
+    },
+    {
+     "at": -102,
+     "len": 6,
+     "n": "3"
+    },
+    {
+     "at": -96,
+     "len": 12,
+     "n": "5"
+    },
+    {
+     "at": -84,
+     "len": 6,
+     "n": "6"
+    },
+    {
+     "at": -78,
+     "len": 6,
+     "n": "5"
+    },
+    {
+     "at": -72,
+     "len": 6,
+     "n": "3"
+    },
+    {
+     "at": -66,
+     "len": 6,
+     "n": "2"
+    },
+    {
+     "at": -48,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -36,
+     "len": 6,
+     "n": "3"
+    },
+    {
+     "at": -30,
+     "len": 6,
+     "n": "4"
+    },
+    {
+     "at": -24,
+     "len": 6,
+     "n": "5"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "6"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "7"
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "8"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "sixteenRun",
+   "evidence": "sourced",
+   "derived": [
+    "notes"
+   ],
+   "sources": [
+    "https://www.bonedo.de/artikel/gospelchops-for-bass-gospel-bass-lernen-teil-3"
+   ],
+   "note": "102 bpm; start offset and landing sourced, pitches ours.",
+   "checks": {
+    "expectFamily": "sixteenRun",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "minStart": -120
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "sec-gospelchops-2",
+   "category": "section",
+   "genre": "gospel",
+   "generatorGenre": "country",
+   "title": "Gospelchops part 3, fill 2: scale sequence over Db/Eb into Ab",
+   "transition": "turnaround",
+   "key": "Ab",
+   "mode": "major",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "IV/V -> I",
+   "span": [
+    {
+     "chord": "Db/Eb",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Ab",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -48,
+     "len": 6,
+     "n": "R"
+    },
+    {
+     "at": -42,
+     "len": 6,
+     "n": "2"
+    },
+    {
+     "at": -36,
+     "len": 6,
+     "n": "3"
+    },
+    {
+     "at": -30,
+     "len": 6,
+     "n": "2"
+    },
+    {
+     "at": -24,
+     "len": 6,
+     "n": "3"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "4"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "5"
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "scaleRun",
+   "evidence": "sourced",
+   "derived": [
+    "notes"
+   ],
+   "sources": [
+    "https://www.bonedo.de/artikel/gospelchops-for-bass-gospel-bass-lernen-teil-3"
+   ],
+   "checks": {
+    "expectFamily": "scaleRun",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-ninth-lick",
+   "category": "section",
+   "genre": "soul",
+   "generatorGenre": "pop",
+   "title": "TalkingBass must-know melodic lick (Deacon/Palladino): R 5 9, back to the root via the 5",
+   "transition": "phrase",
+   "key": "C",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "ii | V -> I",
+   "span": [
+    {
+     "chord": "G7",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Cmaj7",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 24,
+     "n": "R"
+    },
+    {
+     "at": -72,
+     "len": 24,
+     "n": "5"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "9"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "5"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "chordArpeggio",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.talkingbass.net/the-must-know-melodic-bass-lick/"
+   ],
+   "checks": {
+    "expectFamily": "chordArpeggio",
+    "mustContain": [
+     "9"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-country-walk-up",
+   "category": "section",
+   "genre": "country",
+   "generatorGenre": "country",
+   "title": "No Treble country lesson: I-IV walk-up 1-2-3 | 4 on beats 3 and 4",
+   "transition": "verse>chorus",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "I | IV",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "C",
+    "fn": "IV",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "2"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "quarterWalk",
+   "evidence": "sourced",
+   "derived": [],
+   "sources": [
+    "https://www.notreble.com/buzz/2026/01/14/country-bass-lesson-how-to-use-transitions-and-dead-notes-to-connect-a-1-4-5-groove/"
+   ],
+   "checks": {
+    "expectFamily": "quarterWalk",
+    "mustContain": [
+     "3"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-bluegrass-walk-down",
+   "category": "section",
+   "genre": "country",
+   "generatorGenre": "country",
+   "title": "TalkBass bluegrass: walk down 8 7 6 5 | 4",
+   "transition": "phrase",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "fast",
+   "progression": "I | IV",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "C",
+    "fn": "IV",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 24,
+     "n": "8"
+    },
+    {
+     "at": -72,
+     "len": 24,
+     "n": "7"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "6"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "5"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "quarterWalk",
+   "evidence": "sourced",
+   "derived": [],
+   "sources": [
+    "https://www.talkbass.com/threads/bass-lines-for-bluegrass.1364204/"
+   ],
+   "checks": {
+    "expectFamily": "quarterWalk",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "direction": "down"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-studybass-fifth",
+   "category": "section",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "StudyBass fifth approach: the next chord's 5 on the last 8th",
+   "transition": "phrase",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "I | IV",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "C",
+    "fn": "IV",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 84,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T:5"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "dominantApproach",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.studybass.com/lessons/harmony/the-fifth-approach/"
+   ],
+   "checks": {
+    "expectFamily": "dominantApproach",
+    "mustContain": [
+     "T:5"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 1
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-no-treble-sharp4",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "No Treble / StudyBass connector 3-4-#4-5 into V",
+   "transition": "preChorus>chorus",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "IV | V",
+   "span": [
+    {
+     "chord": "C",
+     "fn": "IV",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "D",
+    "fn": "V",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 24,
+     "n": "R"
+    },
+    {
+     "at": -72,
+     "len": 24,
+     "n": "T-3"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "T-2"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "quarterWalk",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.studybass.com/lessons/harmony/chromatic-tones-in-basslines/"
+   ],
+   "checks": {
+    "expectFamily": "quarterWalk",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-worship-restraint",
+   "category": "section",
+   "genre": "worship",
+   "generatorGenre": "worship",
+   "title": "Yamaha art of fills / worship practice: no fill, hold the root into the chorus",
+   "transition": "verse>chorus",
+   "key": "D",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "slow",
+   "progression": "IV | I",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "IV",
+     "beats": 8
+    }
+   ],
+   "landing": {
+    "chord": "D",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -192,
+     "len": 192,
+     "n": "R"
+    },
+    {
+     "at": 0,
+     "len": 96,
+     "n": "T"
+    }
+   ],
+   "family": "hold",
+   "evidence": "sourced",
+   "derived": [
+    "key",
+    "chords"
+   ],
+   "sources": [
+    "https://hub.yamaha.com/guitars/bass/the-art-of-bass-fills"
+   ],
+   "checks": {
+    "expectFamily": "hold",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 0,
+    "holdRanksFirst": true
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-written-walkdown",
+   "category": "section",
+   "genre": "worship",
+   "generatorGenre": "worship",
+   "title": "Walkdown archetype I - V6 - vi: the written slash line is the fill",
+   "transition": "phrase",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "slow",
+   "progression": "I | V/3 | vi",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "I",
+     "beats": 4
+    },
+    {
+     "chord": "D/F#",
+     "fn": "V6",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Em",
+    "fn": "vi",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -192,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": -96,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": 0,
+     "len": 96,
+     "n": "T"
+    }
+   ],
+   "family": "hold",
+   "evidence": "sourced",
+   "derived": [],
+   "sources": [
+    "https://en.wikipedia.org/wiki/Walkdown"
+   ],
+   "checks": {
+    "expectFamily": "hold",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 0,
+    "holdRanksFirst": true
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-pop-octave-pickup",
+   "category": "section",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Pop octave pickup: root-5-octave of the departing chord on beats 3 and 4",
+   "transition": "preChorus>chorus",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "V | I",
+   "span": [
+    {
+     "chord": "D",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "G",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "5"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "8"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "rootFiveOctave",
+   "evidence": "sourced",
+   "derived": [
+    "rhythm"
+   ],
+   "sources": [
+    "https://www.studybass.com/lessons/common-bass-patterns/common-patterns-summary/"
+   ],
+   "checks": {
+    "expectFamily": "rootFiveOctave",
+    "mustContain": [
+     "5",
+     "8"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "note": ""
+  },
+  {
+   "id": "sec-rock-stop-pickup",
+   "category": "section",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Rock band stop: rest on beats 2-4, 8th pickup into the chorus",
+   "transition": "preChorus>chorus",
+   "key": "A",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "fast",
+   "progression": "V (hit) | I",
+   "span": [
+    {
+     "chord": "E",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "A",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 12,
+     "n": "R",
+     "art": [
+      "staccato"
+     ]
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "stopTime",
+   "evidence": "theory",
+   "note": "Common arrangement device; no source for a specific song reached.",
+   "checks": {
+    "expectFamily": "stopTime",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "allowsSilence": true
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "sources": []
+  },
+  {
+   "id": "kc-man-in-the-mirror",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Man in the Mirror (Michael Jackson): G -> Ab direct lift on 'change'",
+   "transition": "chorus>lastChorus",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "... V | +1 -> I'",
+   "span": [
+    {
+     "chord": "D",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Ab",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 1,
+    "kind": "direct",
+    "newKey": "Ab"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 72,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "T:5"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pickup8",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://en.wikipedia.org/wiki/Man_in_the_Mirror",
+    "https://www.secretsofsongwriting.com/2014/06/06/adding-a-semitone-upward-key-change-to-your-song/",
+    "https://www.classicfm.com/discover-music/music-theory/best-key-changes-in-pop-music/"
+   ],
+   "note": "Departing chord assumed V; T:5 = Eb (new key's 5), T-1 = G, the old tonic, which a +1 lift always provides.",
+   "checks": {
+    "expectFamily": "pickup8",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "newKeySpelling": true
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-love-on-top",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Love on Top (Beyonce): four successive +1 lifts C->Db->D->Eb->E, no pivot",
+   "transition": "lastChorus>lastChorus'",
+   "key": "C",
+   "mode": "major",
+   "feel": "shuffle",
+   "tempoBand": "mid",
+   "progression": "... V | +1 -> I' (x4)",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Db",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 1,
+    "kind": "direct",
+    "newKey": "Db",
+    "repeats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 84,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "approachNote",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://en.wikipedia.org/wiki/Love_on_Top",
+    "https://adambsilverman.com/2015/03/decoding-the-love-on-top-modulations/"
+   ],
+   "note": "Melody reaches the new key at the pickup, before the band. Repeated lifts: register must not drift past the top of the range.",
+   "checks": {
+    "expectFamily": "approachNote",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 2,
+    "registerStable": true
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-love-on-top-chain",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Love on Top, last lift Eb -> E: same move after three earlier lifts",
+   "transition": "lastChorus>lastChorus'",
+   "key": "Eb",
+   "mode": "major",
+   "feel": "shuffle",
+   "tempoBand": "mid",
+   "progression": "... V | +1 -> I'",
+   "span": [
+    {
+     "chord": "Bb",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "E",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 1,
+    "kind": "direct",
+    "newKey": "E"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 72,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pickup8",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://en.wikipedia.org/wiki/Love_on_Top"
+   ],
+   "note": "Spelling check: the new key is E (sharps) after Eb (flats); T-1 must spell D#, not Eb.",
+   "checks": {
+    "expectFamily": "pickup8",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "newKeySpelling": true,
+    "spelling": {
+     "T-1": "D#"
+    }
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-i-will-always-love-you",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "I Will Always Love You (Whitney Houston): A -> B into the final chorus",
+   "transition": "verse>lastChorus",
+   "key": "A",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "slow",
+   "progression": "... V | +2 -> I'",
+   "span": [
+    {
+     "chord": "E",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "B",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 2,
+    "kind": "breakStop",
+    "newKey": "B"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 24,
+     "n": "R",
+     "art": [
+      "staccato"
+     ]
+    },
+    {
+     "at": 0,
+     "len": 48,
+     "n": "T",
+     "art": [
+      "accent"
+     ]
+    }
+   ],
+   "family": "stopTime",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "chords",
+    "rhythm",
+    "notes",
+    "modulation"
+   ],
+   "sources": [
+    "https://en.wikipedia.org/wiki/I_Will_Always_Love_You_(Whitney_Houston_song)"
+   ],
+   "note": "Interval inferred from the article's key labels; the break before the lift is our abstraction.",
+   "checks": {
+    "expectFamily": "stopTime",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 0,
+    "allowsSilence": true
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-come-on-eileen",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Come On Eileen: chorus rises C -> D; the new key's 5 then its leading tone",
+   "transition": "verse>chorus",
+   "key": "C",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "fast",
+   "progression": "... V | +2 -> I'",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "D",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 2,
+    "kind": "direct",
+    "newKey": "D"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 72,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "T:5"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "NK:7"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "dominantApproach",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.musicnotes.com/now/tips/a-complete-guide-to-musical-modulation/"
+   ],
+   "note": "A = new key's 5, C# = its 7; C# over G is a cross-relation with the old key's C, but on a weak 8th into the lift.",
+   "checks": {
+    "expectFamily": "dominantApproach",
+    "mustContain": [
+     "T:5"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "newKeySpelling": true
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-livin-prayer-shift",
+   "category": "keyChange",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Livin' on a Prayer: last chorus up a minor third, the bass pattern just shifts up three frets",
+   "transition": "bridge>lastChorus",
+   "key": "Em",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "... | +3 -> i'",
+   "span": [
+    {
+     "chord": "D",
+     "fn": "VII",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Gm",
+    "fn": "i'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 3,
+    "kind": "direct",
+    "newKey": "Gm"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "hold",
+   "evidence": "sourced",
+   "derived": [
+    "chords"
+   ],
+   "sources": [
+    "https://bassmusicianmagazine.com/?p=18846",
+    "https://en.wikipedia.org/wiki/Livin%27_on_a_Prayer"
+   ],
+   "note": "Source: 'the bass pattern simply shifts up three frets'; embellishments come later in that chorus.",
+   "checks": {
+    "expectFamily": "hold",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 0
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-livin-prayer-short-bar",
+   "category": "keyChange",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Livin' on a Prayer: a 3/4 bar just before the shift",
+   "transition": "bridge>lastChorus",
+   "key": "Em",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "... | VII (3 beats) | +3 -> i'",
+   "span": [
+    {
+     "chord": "D",
+     "fn": "VII",
+     "beats": 3
+    }
+   ],
+   "landing": {
+    "chord": "Gm",
+    "fn": "i'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 3,
+    "kind": "direct",
+    "newKey": "Gm"
+   },
+   "events": [
+    {
+     "at": -72,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pickup8",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.classicfm.com/discover-music/music-theory/best-key-changes-in-pop-music/"
+   ],
+   "note": "Short bar: a fill template must fit into 72 ticks, not 96.",
+   "checks": {
+    "expectFamily": "pickup8",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "spanTicks": 72
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-lovers-concerto",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "A Lover's Concerto (The Toys): C -> Db prepared by Ab, the new key's V",
+   "transition": "chorus>lastChorus",
+   "key": "C",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "ii V I vi ii V I | bVI (= V') | +1 -> I'",
+   "span": [
+    {
+     "chord": "C",
+     "fn": "I",
+     "beats": 4
+    },
+    {
+     "chord": "Ab",
+     "fn": "V'",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Db",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 1,
+    "kind": "dominantPrepared",
+    "newKey": "Db"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "5"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "dominantApproach",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.secretsofsongwriting.com/2014/06/06/adding-a-semitone-upward-key-change-to-your-song/"
+   ],
+   "note": "The 3 of Ab (C) is T-1 and the old tonic: a common tone of both keys and the leading tone.",
+   "checks": {
+    "expectFamily": "dominantApproach",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-hello-i-love-you",
+   "category": "keyChange",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Hello, I Love You (The Doors): abrupt +1 with no preparation chord",
+   "transition": "chorus>verse",
+   "key": "A",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "I | +1 -> I'",
+   "span": [
+    {
+     "chord": "A",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Bb",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 1,
+    "kind": "direct",
+    "newKey": "Bb"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 84,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "R",
+     "art": [
+      "slide"
+     ]
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "slideInto",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "key",
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.secretsofsongwriting.com/2014/06/06/adding-a-semitone-upward-key-change-to-your-song/"
+   ],
+   "note": "Slide from the old root (= T-1) up one fret.",
+   "checks": {
+    "expectFamily": "slideInto",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 1
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-show-must-go-on",
+   "category": "keyChange",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "The Show Must Go On (Queen): Bm -> C#m at verse 2",
+   "transition": "chorus>verse",
+   "key": "Bm",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "... i | +2 -> i'",
+   "span": [
+    {
+     "chord": "Bm",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "C#m",
+    "fn": "i'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 2,
+    "kind": "direct",
+    "newKey": "C#m"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 72,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "chromaticLine",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.classicfm.com/discover-music/music-theory/best-key-changes-in-pop-music/"
+   ],
+   "note": "B (T-2) to C natural (T-1, spelled B# in C#m) to C#: two-note chromatic climb.",
+   "checks": {
+    "expectFamily": "chromaticLine",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-street-life",
+   "category": "keyChange",
+   "genre": "soul",
+   "generatorGenre": "pop",
+   "title": "Street Life (Randy Crawford): up a semitone at the chorus, then again",
+   "transition": "verse>chorus",
+   "key": "Bb",
+   "mode": "minor",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "... | +1 -> i'",
+   "span": [
+    {
+     "chord": "F",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Bm",
+    "fn": "i'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 1,
+    "kind": "direct",
+    "newKey": "Bm"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 84,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 36,
+     "n": "T"
+    }
+   ],
+   "family": "anticipation",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "key",
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.classicfm.com/discover-music/music-theory/best-key-changes-in-pop-music/"
+   ],
+   "checks": {
+    "expectFamily": "anticipation",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "anticipates": true
+   },
+   "meter": "4/4",
+   "note": ""
+  },
+  {
+   "id": "kc-because-the-night",
+   "category": "keyChange",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Because the Night: up a whole step at the end",
+   "transition": "chorus>outroChorus",
+   "key": "A",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "... i | +2 -> i'",
+   "span": [
+    {
+     "chord": "Am",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Bm",
+    "fn": "i'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 2,
+    "kind": "direct",
+    "newKey": "Bm"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pickup8",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "key",
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://en.wikipedia.org/wiki/Truck_driver%27s_gear_change"
+   ],
+   "checks": {
+    "expectFamily": "pickup8",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "note": ""
+  },
+  {
+   "id": "kc-bvii-route",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Semitone lift via bVII and its minor: C ... F Bb Bbm Absus4 Ab -> Db",
+   "transition": "bridge>lastChorus",
+   "key": "C",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "IV bVII bvii | V'sus V' | +1 -> I'",
+   "span": [
+    {
+     "chord": "Bbm",
+     "fn": "ii'",
+     "beats": 4
+    },
+    {
+     "chord": "Ab",
+     "fn": "V'",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Db",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 1,
+    "kind": "dominantPrepared",
+    "newKey": "Db"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "2"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pickup8",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.secretsofsongwriting.com/2014/06/06/adding-a-semitone-upward-key-change-to-your-song/"
+   ],
+   "note": "Walk Ab Bb C | Db: scale of the NEW key over its V.",
+   "checks": {
+    "expectFamily": "pickup8",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "passScaleKey": "new"
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-aug6-route",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Semitone lift via an augmented 6th heard as V: C G/B Am Ab7 -> Db",
+   "transition": "bridge>lastChorus",
+   "key": "C",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "I V/3 vi | bVI7 (= V7') | +1 -> I'",
+   "span": [
+    {
+     "chord": "G/B",
+     "fn": "V6",
+     "beats": 4
+    },
+    {
+     "chord": "Am",
+     "fn": "vi",
+     "beats": 4
+    },
+    {
+     "chord": "Ab7",
+     "fn": "V7'",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Db",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 1,
+    "kind": "dominantPrepared",
+    "newKey": "Db"
+   },
+   "events": [
+    {
+     "at": -288,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": -192,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "5"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "8"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "rootFiveOctave",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.secretsofsongwriting.com/2014/06/06/adding-a-semitone-upward-key-change-to-your-song/"
+   ],
+   "note": "Written descending line C B A Ab: nothing inside it; the fill goes only on the last chord.",
+   "checks": {
+    "expectFamily": "rootFiveOctave",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "noFillBefore": -96
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-biii-route",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Lift via bIII turned ii of the new key: ... Dm Eb Ebm7 -> Db",
+   "transition": "bridge>lastChorus",
+   "key": "C",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "ii bIII | ii' | -> I' (+1)",
+   "span": [
+    {
+     "chord": "Ebm7",
+     "fn": "ii'",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Db",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 1,
+    "kind": "pivot",
+    "newKey": "Db"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 72,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T+1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "chromaticLine",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.secretsofsongwriting.com/2014/06/06/adding-a-semitone-upward-key-change-to-your-song/"
+   ],
+   "note": "Approach from above: Eb D Db.",
+   "checks": {
+    "expectFamily": "chromaticLine",
+    "mustContain": [
+     "T+1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "direction": "down"
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-mirrors-relative",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Mirrors (Justin Timberlake): C minor -> Eb major, the relative key",
+   "transition": "verse>chorus",
+   "key": "Cm",
+   "mode": "minor",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "VI | VII (= V') -> I'",
+   "span": [
+    {
+     "chord": "Ab",
+     "fn": "VI",
+     "beats": 4
+    },
+    {
+     "chord": "Bb",
+     "fn": "V'",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Eb",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 3,
+    "kind": "pivot",
+    "newKey": "Eb"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 24,
+     "n": "R"
+    },
+    {
+     "at": -72,
+     "len": 24,
+     "n": "9"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "3"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "quarterWalk",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.musicnotes.com/now/tips/a-complete-guide-to-musical-modulation/"
+   ],
+   "note": "Relative modulation shares every scale note; the walk needs no new accidentals.",
+   "checks": {
+    "expectFamily": "quarterWalk",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-happy-together",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Happy Together (The Turtles): F#m -> F# major via B, common to both",
+   "transition": "verse>chorus",
+   "key": "F#m",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "iv (= IV') | -> I'",
+   "span": [
+    {
+     "chord": "B",
+     "fn": "IV'",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "F#",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 0,
+    "kind": "parallel",
+    "newKey": "F#"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "NK:3"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "T+2"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "quarterWalk",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.musicnotes.com/now/tips/a-complete-guide-to-musical-modulation/"
+   ],
+   "note": "Walk down B A# G# F#: the passing tones take the NEW mode (A#, not A).",
+   "checks": {
+    "expectFamily": "quarterWalk",
+    "mustContain": [
+     "NK:3"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "direction": "down",
+    "passScaleKey": "new"
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-save-me",
+   "category": "keyChange",
+   "genre": "rock",
+   "generatorGenre": "rock",
+   "title": "Save Me (Queen): G major -> D major via the shared G chord",
+   "transition": "verse>chorus",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "slow",
+   "progression": "I (= IV') | -> I'",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "IV'",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "D",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 7,
+    "kind": "pivot",
+    "newKey": "D"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "3"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "NK:7"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "quarterWalk",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.musicnotes.com/now/tips/a-complete-guide-to-musical-modulation/"
+   ],
+   "note": "G B C# | D: the C# of the new key replaces C.",
+   "checks": {
+    "expectFamily": "quarterWalk",
+    "mustContain": [
+     "NK:7"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "passScaleKey": "new"
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-whole-step-sharp1-cue",
+   "category": "keyChange",
+   "genre": "worship",
+   "generatorGenre": "worship",
+   "title": "Worship whole-step lift cued by the new key's V (II of the old key)",
+   "transition": "bridge>lastChorus",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "IV | II (= V') -> I' (+2)",
+   "span": [
+    {
+     "chord": "C",
+     "fn": "IV",
+     "beats": 4
+    },
+    {
+     "chord": "E",
+     "fn": "V'",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "A",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 2,
+    "kind": "dominantPrepared",
+    "newKey": "A"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "5"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 48,
+     "n": "T"
+    }
+   ],
+   "family": "dominantApproach",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://www.secretsofsongwriting.com/2014/06/06/adding-a-semitone-upward-key-change-to-your-song/",
+    "https://thefretboard.co.uk/discussion/comment/162099"
+   ],
+   "note": "Forum cue: '#1' chord for a whole-step rise; here the V of A. G# (3 of E) = T-1.",
+   "checks": {
+    "expectFamily": "dominantApproach",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-half-step-sharp5-pedal",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Half-step lift cued by #5 (Eb in G, V of Ab): dominant pedal 8ths",
+   "transition": "chorus>lastChorus",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "V | #V (= V') -> I' (+1)",
+   "span": [
+    {
+     "chord": "D",
+     "fn": "V",
+     "beats": 4
+    },
+    {
+     "chord": "Eb",
+     "fn": "V'",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Ab",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 1,
+    "kind": "dominantPrepared",
+    "newKey": "Ab"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -84,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -72,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -60,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "dominantPedal",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://thefretboard.co.uk/discussion/comment/162099"
+   ],
+   "checks": {
+    "expectFamily": "dominantPedal",
+    "mustContain": [
+     "T:5"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "note": ""
+  },
+  {
+   "id": "kc-ii-v-leadin",
+   "category": "keyChange",
+   "genre": "pop",
+   "generatorGenre": "pop",
+   "title": "Forum advice: play ii and V of the new key before the change (G -> C)",
+   "transition": "bridge>lastChorus",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "ii' | V' -> I'",
+   "span": [
+    {
+     "chord": "Dm7",
+     "fn": "ii'",
+     "beats": 4
+    },
+    {
+     "chord": "G",
+     "fn": "V'",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "C",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 5,
+    "kind": "dominantPrepared",
+    "newKey": "C"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 72,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "5"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pickup8",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://forums.taxi.com/post121753.html"
+   ],
+   "note": "Over G the 3 (B) is T-1 into C. F over Dm7 is the new key's natural 4 (no F#).",
+   "checks": {
+    "expectFamily": "pickup8",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "passScaleKey": "new"
+   },
+   "meter": "4/4"
+  },
+  {
+   "id": "kc-common-tone-hold",
+   "category": "keyChange",
+   "genre": "worship",
+   "generatorGenre": "worship",
+   "title": "Common-tone lift: hold a note both keys share, then step to the new root",
+   "transition": "bridge>lastChorus",
+   "key": "D",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "slow",
+   "progression": "V | +2 -> I'",
+   "span": [
+    {
+     "chord": "A",
+     "fn": "V",
+     "beats": 8
+    }
+   ],
+   "landing": {
+    "chord": "E",
+    "fn": "I'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 2,
+    "kind": "commonTone",
+    "newKey": "E"
+   },
+   "events": [
+    {
+     "at": -192,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": -96,
+     "len": 72,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 48,
+     "n": "T"
+    }
+   ],
+   "family": "approachNote",
+   "evidence": "theory",
+   "sources": [
+    "https://milnepublishing.geneseo.edu/fundamentals-function-form/?p=12025"
+   ],
+   "note": "A is both the old V and the new IV; the move to E is a fifth down, D# (T-1) is the new leading tone.",
+   "checks": {
+    "expectFamily": "approachNote",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "commonTone": "A"
+   },
+   "meter": "4/4",
+   "derived": []
+  },
+  {
+   "id": "bw-dum-maro-dum-ostinato",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Dum Maro Dum (R.D. Burman) style: root-fifth ostinato with a passing note back to i",
+   "transition": "phrase",
+   "key": "Em",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "i | i",
+   "span": [
+    {
+     "chord": "Em",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Em",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 24,
+     "n": "R"
+    },
+    {
+     "at": -72,
+     "len": 24,
+     "n": "5"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "8"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "5"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "b7"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "rootFiveOctave",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "key",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://musicmaster.in/blog/top-10-bass-guitar-hindi-songs/"
+   ],
+   "note": "Source: 'mostly outlines the root and fifth, with passing notes'; this cycle is ours.",
+   "checks": {
+    "expectFamily": "rootFiveOctave",
+    "mustContain": [
+     "5"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "bw-rock-n-roll-soniye",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Rock N Roll Soniye (Shankar-Ehsaan-Loy) style: walking I-IV-V, boogie walk into IV",
+   "transition": "phrase",
+   "key": "A",
+   "mode": "major",
+   "feel": "swing8",
+   "tempoBand": "fast",
+   "progression": "I | IV",
+   "span": [
+    {
+     "chord": "A",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "D",
+    "fn": "IV",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 24,
+     "n": "R"
+    },
+    {
+     "at": -72,
+     "len": 24,
+     "n": "3"
+    },
+    {
+     "at": -48,
+     "len": 24,
+     "n": "5"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "6"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "quarterWalk",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "key",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://musicmaster.in/blog/top-10-bass-guitar-hindi-songs/"
+   ],
+   "note": "Source: 'a walking rhythm, progressing through the I-IV-V'.",
+   "checks": {
+    "expectFamily": "quarterWalk",
+    "mustContain": [
+     "3",
+     "5"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "bw-koi-kahe-staccato",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Koi Kahe Kehta Rahe (Shankar-Ehsaan-Loy) style: staccato, kick-locked 8th pickup",
+   "transition": "verse>chorus",
+   "key": "G",
+   "mode": "major",
+   "feel": "straight16",
+   "tempoBand": "fast",
+   "progression": "V | I",
+   "span": [
+    {
+     "chord": "D",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "G",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 6,
+     "n": "R",
+     "art": [
+      "staccato"
+     ]
+    },
+    {
+     "at": -60,
+     "len": 6,
+     "n": "R",
+     "art": [
+      "staccato"
+     ]
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "T-1",
+     "art": [
+      "staccato"
+     ]
+    },
+    {
+     "at": 0,
+     "len": 6,
+     "n": "T",
+     "art": [
+      "staccato"
+     ]
+    }
+   ],
+   "family": "restPickup",
+   "evidence": "sourcedExistence",
+   "derived": [
+    "key",
+    "chords",
+    "rhythm",
+    "notes"
+   ],
+   "sources": [
+    "https://musicmaster.in/blog/top-10-bass-guitar-hindi-songs/"
+   ],
+   "note": "Source: 'always in motion', staccato, locked to the kick.",
+   "checks": {
+    "expectFamily": "restPickup",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 1
+   },
+   "meter": "4/4",
+   "modulation": null
+  },
+  {
+   "id": "bw-harmonic-v-i",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Harmonic-minor V -> i with the augmented second (F G# | Am)",
+   "transition": "preChorus>chorus",
+   "key": "Am",
+   "mode": "harmonicMinor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "V | i",
+   "span": [
+    {
+     "chord": "E",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Am",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 72,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "b9"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pickup8",
+   "evidence": "theory",
+   "sources": [
+    "https://archives.ismir.net/ismir2013/paper/000103.pdf"
+   ],
+   "note": "Matches R161 and WalkUpCorpus 'F G#' for Bollywood; G# is both the 3 of E and T-1.",
+   "checks": {
+    "expectFamily": "pickup8",
+    "mustContain": [
+     "b9",
+     "T-1"
+    ],
+    "mustNotContain": [
+     "b3"
+    ],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": []
+  },
+  {
+   "id": "bw-harmonic-descent",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Harmonic-minor descent i -> V: A G# F | E",
+   "transition": "antara>mukhda",
+   "key": "Am",
+   "mode": "harmonicMinor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "i | V",
+   "span": [
+    {
+     "chord": "Am",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "E",
+    "fn": "V",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 60,
+     "n": "R"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "7"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "b6"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "scaleRun",
+   "evidence": "theory",
+   "note": "G# over Am is chromatic to the chord but is the mode's 7; the clash rule must use the mode, not natural minor.",
+   "checks": {
+    "expectFamily": "scaleRun",
+    "mustContain": [
+     "7",
+     "b6"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "direction": "down"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "sources": []
+  },
+  {
+   "id": "bw-dadra-pickup",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Dadra (6/8) pickup: R 5 and the leading note over the last three 8ths",
+   "transition": "antara>mukhda",
+   "key": "D",
+   "mode": "major",
+   "feel": "compound",
+   "tempoBand": "mid",
+   "meter": "6/8",
+   "progression": "V | I",
+   "span": [
+    {
+     "chord": "A",
+     "fn": "V",
+     "beats": 6
+    }
+   ],
+   "landing": {
+    "chord": "D",
+    "fn": "I",
+    "beats": 6
+   },
+   "events": [
+    {
+     "at": -72,
+     "len": 36,
+     "n": "R"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "5"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 36,
+     "n": "T"
+    }
+   ],
+   "family": "pickup8",
+   "evidence": "theory",
+   "note": "6/8 bar = 72 ticks, two dotted-quarter pulses (R118). 3 of A = C# = T-1.",
+   "checks": {
+    "expectFamily": "pickup8",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "spanTicks": 72
+   },
+   "modulation": null,
+   "derived": [],
+   "sources": []
+  },
+  {
+   "id": "bw-tihai-cadence",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Tihai cadence: a 3-note cell played three times, the last note on sam",
+   "transition": "interlude>antara",
+   "key": "Am",
+   "mode": "harmonicMinor",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "V | i",
+   "span": [
+    {
+     "chord": "E",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Am",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 36,
+     "n": "R"
+    },
+    {
+     "at": -60,
+     "len": 6,
+     "n": "T+3"
+    },
+    {
+     "at": -54,
+     "len": 6,
+     "n": "T+2"
+    },
+    {
+     "at": -48,
+     "len": 6,
+     "n": "T"
+    },
+    {
+     "at": -36,
+     "len": 6,
+     "n": "T+3"
+    },
+    {
+     "at": -30,
+     "len": 6,
+     "n": "T+2"
+    },
+    {
+     "at": -24,
+     "len": 6,
+     "n": "T"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "T+3"
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "T+2"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T",
+     "art": [
+      "accent"
+     ]
+    }
+   ],
+   "family": "tihai",
+   "evidence": "theory",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Tihai"
+   ],
+   "note": "The device is documented for Hindustani rhythm; no source applies it to a film bass part.",
+   "checks": {
+    "expectFamily": "tihai",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "cellRepeats": 3
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": []
+  },
+  {
+   "id": "bw-interlude-unison",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Interlude hook doubled by the bass in octaves (melodic unison)",
+   "transition": "interlude>antara",
+   "key": "Em",
+   "mode": "minor",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "i | i",
+   "span": [
+    {
+     "chord": "Em",
+     "fn": "i",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Em",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -48,
+     "len": 6,
+     "n": "M"
+    },
+    {
+     "at": -42,
+     "len": 6,
+     "n": "M"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "M"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "M"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "M"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "melodicUnison",
+   "evidence": "theory",
+   "note": "Out of generator scope: it needs the melody. Kept so the doc's gap is visible in data.",
+   "checks": {
+    "expectFamily": "melodicUnison",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "generatorScope": "out"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "sources": []
+  },
+  {
+   "id": "bw-ballad-slide",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Slow film ballad: slide up from a whole step below into the new section",
+   "transition": "antara>mukhda",
+   "key": "C",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "slow",
+   "progression": "IV | V",
+   "span": [
+    {
+     "chord": "F",
+     "fn": "IV",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "G",
+    "fn": "V",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 84,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-2",
+     "art": [
+      "slide"
+     ]
+    },
+    {
+     "at": 0,
+     "len": 48,
+     "n": "T"
+    }
+   ],
+   "family": "slideInto",
+   "evidence": "theory",
+   "checks": {
+    "expectFamily": "slideInto",
+    "mustContain": [
+     "T-2"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 1
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "sources": [],
+   "note": ""
+  },
+  {
+   "id": "bw-rock-cadence-hold",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "bVI - bVII - i in a minor film song: the roots already walk, nothing first",
+   "transition": "preChorus>chorus",
+   "key": "Am",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "bVI | bVII | i",
+   "span": [
+    {
+     "chord": "F",
+     "fn": "bVI",
+     "beats": 4
+    },
+    {
+     "chord": "G",
+     "fn": "bVII",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Am",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -192,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": -96,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "hold",
+   "evidence": "theory",
+   "note": "R162 Q1: 'nothing' shows first for bVI-bVII-i in every feel.",
+   "checks": {
+    "expectFamily": "hold",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 0,
+    "holdRanksFirst": true
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "sources": []
+  },
+  {
+   "id": "bw-andalusian-written",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Andalusian descent i - bVII - bVI - V: the written line is the walk",
+   "transition": "mukhda",
+   "key": "Am",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "i | bVII | bVI | V",
+   "span": [
+    {
+     "chord": "Am",
+     "fn": "i",
+     "beats": 4
+    },
+    {
+     "chord": "G",
+     "fn": "bVII",
+     "beats": 4
+    },
+    {
+     "chord": "F",
+     "fn": "bVI",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "E",
+    "fn": "V",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -288,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": -192,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": -96,
+     "len": 96,
+     "n": "R"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "hold",
+   "evidence": "theory",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Andalusian_cadence"
+   ],
+   "checks": {
+    "expectFamily": "hold",
+    "mustContain": [],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 0
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "note": ""
+  },
+  {
+   "id": "bw-chaal-pickup",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Bhangra-pop (chaal swing): root then shuffled fifth pickup, dhol-locked",
+   "transition": "verse>chorus",
+   "key": "D",
+   "mode": "major",
+   "feel": "shuffle",
+   "tempoBand": "fast",
+   "progression": "IV | I",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "IV",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "D",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 16,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 16,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 16,
+     "n": "R"
+    },
+    {
+     "at": -8,
+     "len": 8,
+     "n": "T:5"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "restPickup",
+   "evidence": "theory",
+   "note": "T:5 = A on the last triplet 8th.",
+   "checks": {
+    "expectFamily": "restPickup",
+    "mustContain": [
+     "T:5"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 2
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "sources": []
+  },
+  {
+   "id": "bw-ballad-fifth",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Piano-led romantic ballad: sparse, a single fifth approach into the chorus",
+   "transition": "preChorus>chorus",
+   "key": "E",
+   "mode": "major",
+   "feel": "straight8",
+   "tempoBand": "slow",
+   "progression": "V | vi",
+   "span": [
+    {
+     "chord": "B",
+     "fn": "V",
+     "beats": 8
+    }
+   ],
+   "landing": {
+    "chord": "C#m",
+    "fn": "vi",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -192,
+     "len": 168,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 24,
+     "n": "T:5"
+    },
+    {
+     "at": 0,
+     "len": 96,
+     "n": "T"
+    }
+   ],
+   "family": "dominantApproach",
+   "evidence": "theory",
+   "checks": {
+    "expectFamily": "dominantApproach",
+    "mustContain": [
+     "T:5"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "maxNotes": 1
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "sources": [],
+   "note": ""
+  },
+  {
+   "id": "bw-bhairav-run",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Raga Bhairav colour: R b2 3 over I into IV (augmented second)",
+   "transition": "antara>mukhda",
+   "key": "C",
+   "mode": "bhairav",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "I | IV",
+   "span": [
+    {
+     "chord": "C",
+     "fn": "I",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "F",
+    "fn": "IV",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 60,
+     "n": "R"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "b9"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pickup8",
+   "evidence": "theory",
+   "note": "Bhairav = 1 b2 3 4 5 b6 7; E (3) is T-1. Needs a raga/mode-aware passScale.",
+   "checks": {
+    "expectFamily": "pickup8",
+    "mustContain": [
+     "b9",
+     "T-1"
+    ],
+    "mustNotContain": [
+     "2"
+    ],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "sources": []
+  },
+  {
+   "id": "bw-bhoopali-pentatonic",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Folk/Bhoopali (major pentatonic) 16th descent over V into I",
+   "transition": "interlude>antara",
+   "key": "C",
+   "mode": "majorPentatonic",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "V | I",
+   "span": [
+    {
+     "chord": "G",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "C",
+    "fn": "I",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 72,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 6,
+     "n": "2"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "6"
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "5"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pentatonicRun",
+   "evidence": "theory",
+   "note": "A G E D over G are the key's pentatonic (C D E G A); D = T+2.",
+   "checks": {
+    "expectFamily": "pentatonicRun",
+    "mustContain": [],
+    "mustNotContain": [
+     "3",
+     "7"
+    ],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "sources": []
+  },
+  {
+   "id": "bw-last-mukhda-lift",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Last mukhda lifted a semitone: old root becomes the approach",
+   "transition": "antara>lastMukhda",
+   "key": "Am",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "mid",
+   "progression": "V | +1 -> i'",
+   "span": [
+    {
+     "chord": "E",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Bbm",
+    "fn": "i'",
+    "beats": 4
+   },
+   "modulation": {
+    "semitones": 1,
+    "kind": "direct",
+    "newKey": "Bbm"
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 72,
+     "n": "R"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "T-1"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "pickup8",
+   "evidence": "theory",
+   "note": "No source found for a Hindi film key lift (searched); the shape mirrors the pop lifts.",
+   "checks": {
+    "expectFamily": "pickup8",
+    "mustContain": [
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T",
+    "newKeySpelling": true
+   },
+   "meter": "4/4",
+   "derived": [],
+   "sources": []
+  },
+  {
+   "id": "bw-disco-octaves",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "80s filmi disco: octave 8ths into the chorus",
+   "transition": "preChorus>chorus",
+   "key": "Em",
+   "mode": "minor",
+   "feel": "straight8",
+   "tempoBand": "fast",
+   "progression": "iv | i",
+   "span": [
+    {
+     "chord": "Am",
+     "fn": "iv",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Em",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -84,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": -72,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -60,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": -48,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -36,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": -24,
+     "len": 12,
+     "n": "R"
+    },
+    {
+     "at": -12,
+     "len": 12,
+     "n": "8"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "octavePops",
+   "evidence": "theory",
+   "checks": {
+    "expectFamily": "octavePops",
+    "mustContain": [
+     "8"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "sources": [],
+   "note": ""
+  },
+  {
+   "id": "bw-interlude-harmonic-run",
+   "category": "bollywood",
+   "genre": "bollywood",
+   "generatorGenre": "bollywood",
+   "title": "Interlude -> antara: ascending harmonic-minor 16th run over V up to i",
+   "transition": "interlude>antara",
+   "key": "Am",
+   "mode": "harmonicMinor",
+   "feel": "straight16",
+   "tempoBand": "mid",
+   "progression": "V | i",
+   "span": [
+    {
+     "chord": "E",
+     "fn": "V",
+     "beats": 4
+    }
+   ],
+   "landing": {
+    "chord": "Am",
+    "fn": "i",
+    "beats": 4
+   },
+   "events": [
+    {
+     "at": -96,
+     "len": 48,
+     "n": "R"
+    },
+    {
+     "at": -48,
+     "len": 6,
+     "n": "R"
+    },
+    {
+     "at": -42,
+     "len": 6,
+     "n": "b9"
+    },
+    {
+     "at": -36,
+     "len": 6,
+     "n": "3"
+    },
+    {
+     "at": -30,
+     "len": 6,
+     "n": "4"
+    },
+    {
+     "at": -24,
+     "len": 6,
+     "n": "5"
+    },
+    {
+     "at": -18,
+     "len": 6,
+     "n": "b6"
+    },
+    {
+     "at": -12,
+     "len": 6,
+     "n": "b7"
+    },
+    {
+     "at": -6,
+     "len": 6,
+     "n": "3"
+    },
+    {
+     "at": 0,
+     "len": 24,
+     "n": "T"
+    }
+   ],
+   "family": "sixteenRun",
+   "evidence": "theory",
+   "note": "E F G# A B C D G#' A': the D (b7 of E7) and the leaping G# leading tone.",
+   "checks": {
+    "expectFamily": "sixteenRun",
+    "mustContain": [
+     "b9",
+     "T-1"
+    ],
+    "mustNotContain": [],
+    "landsOn": "T"
+   },
+   "meter": "4/4",
+   "modulation": null,
+   "derived": [],
+   "sources": []
+  }
+ ]
+}
