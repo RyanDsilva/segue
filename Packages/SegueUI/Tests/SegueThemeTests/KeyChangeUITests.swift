@@ -37,17 +37,27 @@ struct KeyChangeUITests {
         var library: LibraryViewModel
         var editor: SongEditorViewModel
         var song: SongRecord
+        var recorder: RecordingAnalytics
+
+        /// Row 28's events as "action interval".
+        var keyChanges: [String] {
+            recorder.log.entries().filter { $0["name"] as? String == "Segue.Timing.keyChange" }
+                .compactMap { $0["params"] as? [String: String] }
+                .map { "\($0["segue.action"] ?? "") \($0["segue.interval"] ?? "")" }
+        }
     }
 
     private func open() async throws -> Opened {
         let env = try TestEnvironment()
         let library = try await env.openLibrary()
+        let recorder = RecordingAnalytics(env)
+        library.services = recorder.hub
         let song = try await library.createSong(source: Self.song)
         library.beginEditing(song)
         let editor = try #require(library.editor)
         editor.sourceEditor.undoManager.groupsByEvent = false
         try await AISettingsTests.waitUntil(timeout: .seconds(30)) { editor.renderModel != nil }
-        return Opened(env: env, library: library, editor: editor, song: song)
+        return Opened(env: env, library: library, editor: editor, song: song, recorder: recorder)
     }
 
     private func gesture(_ opened: Opened, _ action: () -> Void) {
@@ -103,6 +113,8 @@ struct KeyChangeUITests {
         #expect(opened.editor.source
             .contains("{end_of_chorus}\n\n{key: A}\n{start_of_chorus}\n[A]"))
         try await rendered(opened) { opened.editor.keyChangeSuggestions().isEmpty }
+        #expect(opened.recorder.features == ["keyChangeChip"])
+        #expect(opened.keyChanges == ["confirmed wholeUp"])
         opened.editor.sourceEditor.undoManager.undo()
         #expect(opened.editor.source == Self.song)
     }
@@ -117,6 +129,7 @@ struct KeyChangeUITests {
         await opened.editor.bassTask?.value
         let saved = try #require(try await opened.library.store.song(id: opened.song.id))
         #expect(saved.sidecar.bass.timing.dismissedKeys.map(\.key.name) == ["A"])
+        #expect(opened.keyChanges == ["dismissed wholeUp"])
         #expect(try opened.env.read(opened.song.relativePath) == cho)
         // Undo brings the chip back.
         opened.editor.sourceEditor.undoManager.undo()
@@ -152,6 +165,12 @@ struct KeyChangeUITests {
             #expect(opened.editor.insertDirective(.time, value: "3/4", before: chorus) == nil)
         }
         #expect(opened.editor.source.contains("{time: 3/4}\n{start_of_chorus}\n[A]"))
+        #expect(opened.recorder.features == ["chartDirective"])
+        gesture(opened) {
+            #expect(opened.editor.insertDirective(.key, value: "Ab", before: line) == nil)
+        }
+        #expect(opened.keyChanges == ["inserted halfUp"])
+        opened.editor.sourceEditor.undoManager.undo()
         opened.editor.sourceEditor.undoManager.undo()
         opened.editor.sourceEditor.undoManager.undo()
         #expect(opened.editor.source == Self.song)

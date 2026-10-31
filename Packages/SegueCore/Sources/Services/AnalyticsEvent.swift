@@ -81,6 +81,11 @@ public enum AnalyticsEvent: Sendable, Hashable {
     case setlistComposerSession(songs: SmallBucket, cycles: SmallBucket)
     /// Row 25 (P8-4b 8.12): a walk-up chosen in the picker (daily per kind, rank and feel).
     case walkUpPicked(WalkUpPickSummary)
+    /// Row 27 (P8-7 15): a Tap Timing review kept or discarded (per occurrence).
+    case timingTapCaptured(TapCapturedSummary)
+    /// Row 28 (P8-7 15): a key change confirmed from the chip, dismissed, or inserted from
+    /// the menus (daily per action and interval).
+    case timingKeyChange(action: KeyChangeAction, interval: KeyChangeInterval)
 }
 
 // MARK: - Grouped parameters (cases with more than four values)
@@ -344,6 +349,7 @@ extension AnalyticsEvent {
         case .aiAssistantUsed, .aiModelDownload, .aiPasteFinished, .aiSmartFilterUsed: "AI"
         case .notesEdited: "Notes"
         case .walkUpPicked: "Bass"
+        case .timingKeyChange, .timingTapCaptured: "Timing"
         }
     }
 
@@ -372,6 +378,8 @@ extension AnalyticsEvent {
         case .setlistComposed: "composed"
         case .setlistComposerSession: "composerSession"
         case .walkUpPicked: "walkUpPicked"
+        case .timingTapCaptured: "tapCaptured"
+        case .timingKeyChange: "keyChange"
         }
     }
 
@@ -474,6 +482,16 @@ extension AnalyticsEvent {
                 "segue.rank": summary.rank.rawValue,
                 "segue.genre": summary.genre.rawValue,
             ]
+        case let .timingTapCaptured(summary):
+            [
+                "segue.mode": summary.mode.rawValue,
+                "segue.outcome": summary.outcome.rawValue,
+                "segue.chords": summary.chords.rawValue,
+                "segue.skipped": summary.skipped.rawValue,
+                "segue.tempoSet": String(summary.tempoSet),
+            ]
+        case let .timingKeyChange(action, interval):
+            ["segue.action": action.rawValue, "segue.interval": interval.rawValue]
         }
     }
 }

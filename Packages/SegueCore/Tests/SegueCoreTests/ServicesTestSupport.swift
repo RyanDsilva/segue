@@ -173,6 +173,29 @@ enum VocabularySample {
                 genre: feels[row % feels.count],
             ))
         }
+        events += timingEvents
+        return events
+    }
+
+    /// Rows 27 and 28 (P8-7): every tap mode, outcome and key-change action and interval.
+    private static var timingEvents: [AnalyticsEvent] {
+        let modes = TapCaptureMode.allCases, outcomes = TapCaptureOutcome.allCases
+        var events = (0 ..< max(modes.count, outcomes.count)).map { row in
+            AnalyticsEvent.timingTapCaptured(TapCapturedSummary(
+                mode: modes[row % modes.count],
+                outcome: outcomes[row % outcomes.count],
+                chords: SmallBucket(row * 3),
+                skipped: SmallBucket(row),
+                tempoSet: row.isMultiple(of: 2),
+            ))
+        }
+        let actions = KeyChangeAction.allCases, intervals = KeyChangeInterval.allCases
+        events += (0 ..< max(actions.count, intervals.count)).map { row in
+            .timingKeyChange(
+                action: actions[row % actions.count],
+                interval: intervals[row % intervals.count],
+            )
+        }
         return events
     }
 

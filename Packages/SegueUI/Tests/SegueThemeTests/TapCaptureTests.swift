@@ -38,11 +38,23 @@ struct TapCaptureTests {
         var song: SongRecord
         var playAlong: PlayAlong
         var tap: TapCapture
+        var recorder: RecordingAnalytics
+
+        /// Row 27's events as (outcome, mode, chords) strings.
+        var captures: [String] {
+            recorder.log.entries().filter { $0["name"] as? String == "Segue.Timing.tapCaptured" }
+                .compactMap { $0["params"] as? [String: String] }
+                .map { params in
+                    ["segue.outcome", "segue.mode", "segue.chords"]
+                        .map { params[$0] ?? "" }.joined(separator: " ")
+                }
+        }
     }
 
     private func open(_ source: String = Self.song) async throws -> Opened {
         let env = try TestEnvironment()
-        let rig = SoundRig(env)
+        let recorder = RecordingAnalytics(env)
+        let rig = SoundRig(env, services: recorder.hub)
         let library = try await env.openLibrary()
         library.sound = rig.session
         let song = try await library.createSong(source: source)
@@ -63,6 +75,7 @@ struct TapCaptureTests {
             song: song,
             playAlong: playAlong,
             tap: tap,
+            recorder: recorder,
         )
     }
 
@@ -145,6 +158,8 @@ struct TapCaptureTests {
             .tap, .tap, .rule,
         ])
         #expect(try opened.env.read(opened.song.relativePath) == cho)
+        #expect(opened.recorder.features.contains("timingTap"))
+        #expect(opened.captures == ["kept click 2-4"])
         opened.editor.sourceEditor.undoManager.undo()
         #expect(try await saved(opened).sidecar.bass.timing.chords.isEmpty)
     }
@@ -160,6 +175,7 @@ struct TapCaptureTests {
         #expect(opened.tap.proposal?.changed.count == 1)
         opened.tap.discard()
         #expect(opened.playAlong.tap == nil)
+        #expect(opened.captures == ["discarded click 0"])
         #expect(try await saved(opened).sidecar.bass.timing.chords.isEmpty)
         // Esc before any tap closes the panel.
         opened.playAlong.beginTapCapture()
@@ -211,6 +227,7 @@ struct TapCaptureTests {
         gesture(opened) { opened.tap.setSongTempo() }
         #expect(opened.tap.tempoSet)
         #expect(opened.editor.source.contains("{tempo: 96}"))
+        #expect(opened.recorder.features.contains("chartDirective"))
         gesture(opened) { opened.tap.keep() }
         // Equal lengths: nothing to save, and the timing is untouched.
         #expect(try await saved(opened).sidecar.bass.timing.chords.isEmpty)

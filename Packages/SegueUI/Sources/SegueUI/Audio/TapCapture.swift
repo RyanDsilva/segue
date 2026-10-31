@@ -3,6 +3,7 @@ import Foundation
 import Library
 import Observation
 import Playback
+import Services
 import SwiftUI
 
 /// Tap Timing (P8-7 section 7, R167 Q6): tap along to the play-along bar's range to set each
@@ -235,6 +236,9 @@ final class TapCapture {
 
     /// Discard: nothing written.
     func discard() {
+        if phase == .review {
+            recordCapture(.discarded, chords: 0)
+        }
         cancel()
     }
 
@@ -274,11 +278,24 @@ final class TapCapture {
                     timing.chords.append(write.new)
                 }
             }
+            playAlong.session.settings.services.record(.featureUsed(.timingTap, playAlong.context))
         }
+        recordCapture(.kept, chords: writes.count)
         cancel()
     }
 
     // MARK: Internals
+
+    /// Row 27: how a review closed.
+    private func recordCapture(_ outcome: TapCaptureOutcome, chords: Int) {
+        playAlong.session.settings.services.record(.timingTapCaptured(TapCapturedSummary(
+            mode: mode == .click ? .click : .free,
+            outcome: outcome,
+            chords: SmallBucket(chords),
+            skipped: SmallBucket(proposal?.skipped ?? 0),
+            tempoSet: tempoSet,
+        )))
+    }
 
     private func begin() {
         playAlong.stop()
@@ -406,6 +423,7 @@ extension TapCapture {
         guard offersSongTempo, let tempo = proposal?.tempo else { return }
         playAlong.writeDirective?(.setDirective(name: "tempo", value: Self.tempoText(tempo)))
         tempoSet = true
+        playAlong.session.settings.services.record(.featureUsed(.chartDirective, playAlong.context))
     }
 
     /// "96" or "96.5".

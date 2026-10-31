@@ -31,13 +31,14 @@ struct ServicesVocabularyTests {
             #expect(crumb.data == signal.params)
         }
         // Rows 1-18 of section 5, the phase 3 AI rows 19-22, the section notes row 23
-        // (P3-17), one signal name each, the set composer row 24 (P8-5), two signals, and the
-        // walk-up row 25 (P8-4b).
-        #expect(names.count == 26)
+        // (P3-17), one signal name each, the set composer row 24 (P8-5), two signals, the
+        // walk-up row 25 (P8-4b) and the timing rows 27 and 28 (P8-7).
+        #expect(names.count == 28)
         #expect(names.isSuperset(of: [
             "Segue.AI.pasteFinished", "Segue.AI.modelDownload", "Segue.AI.assistantUsed",
             "Segue.AI.smartFilterUsed", "Segue.Notes.edited", "Segue.Setlist.composed",
             "Segue.Setlist.composerSession", "Segue.Bass.walkUpPicked",
+            "Segue.Timing.tapCaptured", "Segue.Timing.keyChange",
         ]))
     }
 

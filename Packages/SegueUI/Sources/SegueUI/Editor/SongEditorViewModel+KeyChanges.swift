@@ -3,6 +3,7 @@ import Editing
 import Foundation
 import Library
 import MusicTheory
+import Services
 
 /// A directive the editor can insert at a point (P8-7 section 6.1, R167 Q2): one per action.
 enum ChartDirective: String, CaseIterable, Identifiable, Sendable {
@@ -94,8 +95,11 @@ extension SongEditorViewModel {
 
     /// The chip's "Insert {key: A}": the directive before the section's header.
     func acceptKeyChange(_ suggestion: KeyChangeSuggestion) {
-        guard let path = suggestion.insertBefore else { return }
-        insertDirective(.key, value: suggestion.key.name, before: path)
+        guard let path = suggestion.insertBefore,
+              write(.key, value: suggestion.key.name, before: path) == nil
+        else { return }
+        recordFeature(.keyChangeChip)
+        recordKeyChange(.confirmed, from: suggestion.from, to: suggestion.key)
     }
 
     /// The chip's "x": remembered in the sidecar (not the `.cho`), one undo step.
@@ -105,12 +109,28 @@ extension SongEditorViewModel {
         guard !prefs.timing.dismissedKeys.contains(suggestion.dismissal) else { return }
         prefs.timing.dismissedKeys.append(suggestion.dismissal)
         setBassPrefs(prefs, actionName: "Dismiss Key Change")
+        recordKeyChange(.dismissed, from: suggestion.from, to: suggestion.key)
     }
 
-    /// Writes `{name: value}` as its own line before `path`. Returns the problem when the
-    /// value cannot be written or the point is not a line or section.
+    /// Insert ... Change Here (the menus): writes `{name: value}` as its own line before
+    /// `path`. Returns the problem when the value cannot be written or the point is not a
+    /// line or section.
     @discardableResult
     func insertDirective(_ directive: ChartDirective, value: String, before path: BlockPath)
+        -> String?
+    {
+        let before = directive == .key ? keyInEffect(before: path) : nil
+        if let problem = write(directive, value: value, before: path) {
+            return problem
+        }
+        recordFeature(.chartDirective)
+        if let before, let key = SongKey(parsing: value) {
+            recordKeyChange(.inserted, from: before, to: key)
+        }
+        return nil
+    }
+
+    private func write(_ directive: ChartDirective, value: String, before path: BlockPath)
         -> String?
     {
         let value = value.trimmingCharacters(in: .whitespaces)
@@ -123,6 +143,23 @@ extension SongEditorViewModel {
             before: path,
         )
         return perform(operation) ? nil : "Can't insert a change here"
+    }
+
+    /// The written key in effect at `path` (before anything is inserted there).
+    private func keyInEffect(before path: BlockPath) -> SongKey? {
+        let timeline = editorTimeline()
+        let chord = timeline?.chords.first { !$0.isSilent && $0.line >= path }
+        return chord?.key ?? timeline?.keys.initial
+    }
+
+    /// Row 28: by the step up from the key in effect.
+    private func recordKeyChange(_ action: KeyChangeAction, from: SongKey, to: SongKey) {
+        services.record(.timingKeyChange(
+            action: action,
+            interval: KeyChangeInterval(
+                semitones: from.tonic.pitchClass.semitones(to: to.tonic.pitchClass),
+            ),
+        ))
     }
 
     /// The popover's starting values at `path`.

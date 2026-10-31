@@ -19,7 +19,7 @@ public extension AnalyticsEvent {
         switch self {
         case .aiAssistantUsed, .aiModelDownload, .aiPasteFinished, .analyticsEnabled,
              .feedbackSent, .libraryCreated, .setlistComposerSession, .showEnded, .showStarted,
-             .songImported:
+             .songImported, .timingTapCaptured:
             return .perOccurrence
         case .appLaunched, .librarySnapshot, .songDeleted:
             return .daily(key: name)
@@ -52,6 +52,8 @@ public extension AnalyticsEvent {
         case let .walkUpPicked(summary):
             return .daily(key: "\(name)|\(summary.kind.rawValue)|\(summary.rank.rawValue)|"
                 + summary.genre.rawValue)
+        case let .timingKeyChange(action, interval):
+            return .daily(key: "\(name)|\(action.rawValue)|\(interval.rawValue)")
         }
     }
 }
