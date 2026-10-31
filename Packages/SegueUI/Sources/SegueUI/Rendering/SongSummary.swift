@@ -17,12 +17,16 @@ enum SongSummary {
         return (fileName as NSString).deletingPathExtension
     }
 
-    /// Artists joined for a list subtitle; nil when there are none.
+    /// Artists joined for a list subtitle ("A, B", `ArtistNames.display`); nil when there
+    /// are none.
     static func artist(_ metadata: Metadata) -> String? {
-        let artists = metadata.artists
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-        return artists.isEmpty ? nil : artists.joined(separator: ", ")
+        ArtistNames.display(metadata.artists)
+    }
+
+    /// The song's credits: "A, B · Kalank" (artists, then Movie / Album); nil when neither.
+    static func credits(artists: [String], album: String?) -> String? {
+        let parts = [ArtistNames.display(artists), album].compactMap(\.self)
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     /// Key, capo and tempo as one line, brand.md section 7: "G, capo 2, 96". Nil when the
@@ -63,15 +67,12 @@ enum SongSummary {
         )
     }
 
-    /// Artist and performance line for a rendered song: "Artist  ·  G, capo 2, 96". The key
-    /// is the displayed key (transposed, Nashville header in Nashville view), marked when
-    /// it was inferred; the capo only shows in Shapes mode, where the chords are shapes.
+    /// Credits and performance line for a rendered song: "A, B · Kalank  ·  G, capo 2, 96".
+    /// The key is the displayed key (transposed, Nashville header in Nashville view), marked
+    /// when it was inferred; the capo only shows in Shapes mode, where the chords are shapes.
     static func subtitle(_ model: RenderModel) -> String {
-        let artists = model.header.artists
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-        return [
-            artists.isEmpty ? nil : artists.joined(separator: ", "),
+        [
+            credits(artists: model.header.artists, album: model.header.album),
             performanceLine(model),
         ].compactMap(\.self).joined(separator: "  ·  ")
     }

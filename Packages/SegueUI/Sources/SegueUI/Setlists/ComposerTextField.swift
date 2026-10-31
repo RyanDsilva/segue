@@ -37,6 +37,9 @@
         var onFocusChange: (Bool) -> Void
         /// Returns whether the key was handled.
         var onCommand: (ComposerCommand) -> Bool
+        /// Backspace, before the field editor deletes (the artist chip field selects and
+        /// removes chips with it in an empty input); returns whether it was handled.
+        var onDeleteBackward: (() -> Bool)?
 
         func makeCoordinator() -> Coordinator {
             Coordinator(self)
@@ -121,6 +124,9 @@
                 textView _: NSTextView,
                 doCommandBy selector: Selector,
             ) -> Bool {
+                if selector == #selector(NSResponder.deleteBackward(_:)) {
+                    return parent.onDeleteBackward?() ?? false
+                }
                 guard let command = Self.command(for: selector) else { return false }
                 return parent.onCommand(command)
             }

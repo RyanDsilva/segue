@@ -16,6 +16,15 @@ public extension AccessibilityID {
     static let songCardTitle = "segue.songCard.title"
     /// The Artist field (or "Add artist").
     static let songCardArtist = "segue.songCard.artist"
+    /// The artist chip field (P8-8 section 9), one chip, its input, a chip's Split button and
+    /// a library suggestion.
+    static let songCardArtists = "segue.songCard.artists"
+    static let songCardArtistChip = "segue.songCard.artistChip"
+    static let songCardArtistInput = "segue.songCard.artistInput"
+    static let songCardArtistSplit = "segue.songCard.artistSplit"
+    static let songCardArtistSuggestion = "segue.songCard.artistSuggestion"
+    /// The Movie / Album field.
+    static let songCardAlbum = "segue.songCard.album"
     /// The key picker's Major / Minor switch.
     static let songCardKeyMode = "segue.songCard.keyMode"
     /// One key in the key picker (label = the key).

@@ -85,15 +85,23 @@ extension LibraryViewModel {
         manager.setActionName(actionName)
     }
 
-    /// Distinct artists in the catalog, most songs first (the Artist field's completion).
+    /// Distinct artists in the catalog as stored, most songs first (the chip field's
+    /// suggestions; a legacy "Vishal & Shekhar" is offered whole, P8-8 section 3.3).
     var knownArtists: [String] {
+        Self.mostSongsFirst(catalog.flatMap(\.document.metadata.artists))
+    }
+
+    /// Distinct Movie / Album values, most songs first (the album field's suggestions).
+    var knownAlbums: [String] {
+        Self.mostSongsFirst(catalog.compactMap(\.document.metadata.album))
+    }
+
+    nonisolated static func mostSongsFirst(_ values: [String]) -> [String] {
         var counts: [String: Int] = [:]
-        for record in catalog {
-            for artist in record.document.metadata.artists {
-                let trimmed = artist.trimmingCharacters(in: .whitespaces)
-                if !trimmed.isEmpty {
-                    counts[trimmed, default: 0] += 1
-                }
+        for value in values {
+            let trimmed = value.trimmingCharacters(in: .whitespaces)
+            if !trimmed.isEmpty {
+                counts[trimmed, default: 0] += 1
             }
         }
         return counts.sorted { ($0.value, $1.key) > ($1.value, $0.key) }.map(\.key)

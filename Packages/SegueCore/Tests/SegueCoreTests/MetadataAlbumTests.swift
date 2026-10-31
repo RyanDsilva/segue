@@ -3,7 +3,7 @@ import Editing
 import Testing
 
 /// `Metadata.album` (P8-8 section 4.1): the first `{album}`, set and cleared through
-/// `setDirective`.
+/// `setDirective`, and carried to the rendered header (section 4.2).
 struct MetadataAlbumTests {
     @Test(arguments: [
         ("{title: Ghar More Pardesiya}\n{album: Kalank}\n", "Kalank" as String?),
@@ -32,5 +32,13 @@ struct MetadataAlbumTests {
             in: SourceSnapshot(text: withAlbum),
         )
         #expect(withAlbum.applying(clear.edits) == source)
+    }
+
+    @Test
+    func `the rendered header carries the album`() {
+        let document = ChordProParser.parse("{title: Kalank}\n{album: Kalank}\n[Am]Kalank\n").0
+        #expect(RenderModel(document: document, options: DisplayOptions()).header.album == "Kalank")
+        let none = ChordProParser.parse("{title: S}\n").0
+        #expect(RenderModel(document: none, options: DisplayOptions()).header.album == nil)
     }
 }

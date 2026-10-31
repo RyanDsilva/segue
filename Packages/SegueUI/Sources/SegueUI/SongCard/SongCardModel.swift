@@ -12,7 +12,10 @@ import MusicTheory
 /// `focus(.length)` from the missing-lengths list).
 public enum SongCardField: String, Sendable, Hashable, CaseIterable {
     case title
+    /// The artists (a chip field, P8-8 section 3.3).
     case artist
+    /// Movie / Album (`{album}`, P8-8 section 4).
+    case album
     case key
     case tempo
     case length
@@ -23,7 +26,10 @@ public enum SongCardField: String, Sendable, Hashable, CaseIterable {
 /// The song card's values, read from a parsed song.
 struct SongCardValues: Equatable {
     var title: String
-    var artist: String
+    /// Every `{artist}` in source order (P8-8: a song has a list of artists).
+    var artists: [String]
+    /// "Movie / Album": the first `{album}`, nil when absent.
+    var album: String?
     /// `{key}` as written (nil when absent).
     var key: String?
     var tempo: Double?
@@ -36,7 +42,8 @@ struct SongCardValues: Equatable {
     init(document: SongDocument) {
         let metadata = document.metadata
         title = metadata.title ?? ""
-        artist = metadata.artists.first ?? ""
+        artists = metadata.artists
+        album = metadata.album
         key = metadata.key
         tempo = metadata.tempo
         length = metadata.duration
@@ -65,8 +72,15 @@ enum SongCardWrite {
         .setDirective(name: "title", value: cleaned(text))
     }
 
-    static func artist(_ text: String) -> EditOperation {
-        .setDirective(name: "artist", value: cleaned(text))
+    /// The whole artist list, one `{artist}` line each (P8-8 section 3.2): unchanged lines
+    /// keep their bytes, and an unchanged list is no edit.
+    static func artists(_ list: [String]) -> EditOperation {
+        .setArtists(list)
+    }
+
+    /// "Movie / Album" (`{album}`); blank clears.
+    static func album(_ text: String) -> EditOperation {
+        .setDirective(name: "album", value: cleaned(text))
     }
 
     static func key(_ key: SongKey?) -> EditOperation {

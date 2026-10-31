@@ -79,6 +79,7 @@ public struct RenderModel: Sendable, Equatable {
                 title: metadata.title,
                 subtitle: metadata.subtitle,
                 artists: metadata.artists,
+                album: metadata.album,
                 key: headerKey,
                 keyStatus: transform.key.status,
                 capo: capo,
@@ -152,6 +153,8 @@ public struct RenderHeader: Sendable, Equatable {
     public var title: String?
     public var subtitle: String?
     public var artists: [String]
+    /// "Movie / Album": the first `{album}` (P8-8 section 4.2).
+    public var album: String?
     /// Displayed key: `displayKey.name`, or `Nashville.header(for:)` in Nashville view
     /// ("Am (rel. C)"); `nil` when unknown.
     public var key: String?
@@ -168,6 +171,7 @@ public struct RenderHeader: Sendable, Equatable {
         title: String?,
         subtitle: String?,
         artists: [String],
+        album: String? = nil,
         key: String?,
         keyStatus: KeyStatus,
         capo: Int?,
@@ -178,6 +182,7 @@ public struct RenderHeader: Sendable, Equatable {
         self.title = title
         self.subtitle = subtitle
         self.artists = artists
+        self.album = album
         self.key = key
         self.keyStatus = keyStatus
         self.capo = capo

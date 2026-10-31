@@ -3,6 +3,7 @@ import Editing
 import Foundation
 import Library
 import Observation
+import Services
 import Support
 import SwiftUI
 
@@ -19,14 +20,19 @@ struct SongCardHost {
     var isReadOnly = false
     /// The song's sidecar metadata, nil where the host has none (the editor strip).
     var metadata: SongMetadata?
-    /// Artists already in the library, for the Artist field's completion.
+    /// Artists already in the library, for the artist chips' suggestions.
     var knownArtists: [String] = []
+    /// Movie / Album values already in the library, for the album field's suggestions.
+    var knownAlbums: [String] = []
     /// Tags already in the library, for the tag field.
     var knownTags: [String] = []
     /// Applies one operation as one undoable edit.
     let perform: (EditOperation) -> Void
     /// Changes the sidecar metadata (proficiency, tags) as one undoable edit.
     var editMetadata: ((@escaping (inout SongMetadata) -> Void) -> Void)?
+    /// Records a song card feature (artists, Movie / Album, Split) in the host's context;
+    /// nil where nothing is recorded (a draft: the review sheet records its own).
+    var recordFeature: ((FeatureKey) -> Void)?
 
     var values: SongCardValues {
         SongCardValues(document: document)
@@ -40,6 +46,7 @@ extension SongCardHost {
         metadata: Binding<SongMetadata>? = nil,
         songID: SongID,
         knownArtists: [String] = [],
+        knownAlbums: [String] = [],
         knownTags: [String] = [],
     ) -> Self {
         SongCardHost(
@@ -47,6 +54,7 @@ extension SongCardHost {
             songID: songID,
             metadata: metadata?.wrappedValue,
             knownArtists: knownArtists,
+            knownAlbums: knownAlbums,
             knownTags: knownTags,
             perform: { operation in
                 let snapshot = SourceSnapshot(text: source.wrappedValue)

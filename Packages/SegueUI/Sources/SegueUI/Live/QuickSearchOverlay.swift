@@ -102,7 +102,7 @@
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(Theme.color.muted)
                         .accessibilityHidden(true)
-                    TextField("Search title, artist, first line or tag", text: $search.query)
+                    TextField("Search title, artist, movie, first line or tag", text: $search.query)
                         .textFieldStyle(.plain)
                         .font(SchibstedGrotesk.medium.font(size: 22))
                         .foregroundStyle(Theme.color.ink)
@@ -200,7 +200,7 @@
         }
     }
 
-    /// One search result: title and artist, then key, capo and proficiency.
+    /// One search result: title, artists and Movie / Album, then key, capo and proficiency.
     private struct SearchResultRow: View {
         let song: SongRecord
         let isSelected: Bool
@@ -215,12 +215,9 @@
                         .font(SchibstedGrotesk.semiBold.font(size: 17))
                         .foregroundStyle(Theme.color.ink)
                         .lineLimit(1)
-                    if let artist = SongSummary.artist(metadata) {
-                        Text(artist)
-                            .font(Theme.font.label)
-                            .foregroundStyle(Theme.color.muted)
-                            .lineLimit(1)
-                    }
+                    SongCreditsLine(artists: metadata.artists, album: metadata.album)
+                        .font(Theme.font.label)
+                        .foregroundStyle(Theme.color.muted)
                 }
                 Spacer(minLength: 12)
                 if let badge = StandingBadge.text(standing) {

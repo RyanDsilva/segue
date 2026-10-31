@@ -52,7 +52,7 @@
             .accessibilityIdentifier(AccessibilityID.songCard)
             .onAppear {
                 draftTitle = values.title
-                draftArtist = values.artist
+                draftArtist = values.artists.first ?? ""
                 takeFocusRequest()
             }
             .onChange(of: router.pending) { _, _ in takeFocusRequest() }
@@ -61,9 +61,9 @@
                     draftTitle = new
                 }
             }
-            .onChange(of: values.artist) { _, new in
+            .onChange(of: values.artists) { _, new in
                 if focus != .artist {
-                    draftArtist = new
+                    draftArtist = new.first ?? ""
                 }
             }
         }
@@ -120,8 +120,9 @@
         }
 
         private func commitArtist(_ values: SongCardValues) {
-            guard draftArtist.trimmingCharacters(in: .whitespaces) != values.artist else { return }
-            host.perform(SongCardWrite.artist(draftArtist))
+            let first = draftArtist.trimmingCharacters(in: .whitespaces)
+            guard first != (values.artists.first ?? "") else { return }
+            host.perform(SongCardWrite.artists([first] + values.artists.dropFirst()))
         }
 
         private func label(_ text: String) -> some View {
@@ -291,7 +292,7 @@
         private func takeFocusRequest() {
             guard let field = router.take(for: host.songID) else { return }
             switch field {
-            case .artist, .title:
+            case .album, .artist, .title:
                 if layout == .expanded {
                     focus = field
                 }

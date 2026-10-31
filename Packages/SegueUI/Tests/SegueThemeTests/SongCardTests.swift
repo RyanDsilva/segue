@@ -45,7 +45,8 @@ struct SongCardTests {
         (SongCardWrite.key(SongKey(parsing: "Am")), "{key: Am}"),
         (SongCardWrite.capo(2), "{capo: 2}"),
         (EditOperation.setLength(245), "{duration: 4:05}"),
-        (SongCardWrite.artist("Segue Originals"), "{artist: Segue Originals}"),
+        (SongCardWrite.artists(["Segue Originals"]), "{artist: Segue Originals}"),
+        (SongCardWrite.album("Dilli Nights"), "{album: Dilli Nights}"),
         (try? SongCardWrite.tempo("84").get(), "{tempo: 84}"),
         (try? SongCardWrite.time("3/4").get(), "{time: 3/4}"),
     ])

@@ -351,7 +351,8 @@
         }
     }
 
-    /// A song row (layout a): title and artist, the key chip and the proficiency mark.
+    /// A song row (layout a): title, then "A, B · Movie" and the play count, the key chip and
+    /// the proficiency mark.
     private struct SongRow: View {
         let record: SongRecord
         let stats: PlayStats?
@@ -389,12 +390,13 @@
                                 .help("Read-only")
                         }
                     }
-                    if !detail.isEmpty {
-                        Text(detail)
-                            .font(SchibstedGrotesk.medium.font(size: 13))
-                            .foregroundStyle(Theme.color.muted)
-                            .lineLimit(1)
-                    }
+                    SongCreditsLine(
+                        artists: record.document.metadata.artists,
+                        album: record.document.metadata.album,
+                        trailing: stats.map { SongSummary.timesPlayed($0.timesPlayed) },
+                    )
+                    .font(SchibstedGrotesk.medium.font(size: 13))
+                    .foregroundStyle(Theme.color.muted)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 SongEssentialsMark(record: record)
@@ -429,13 +431,6 @@
                 .frame(width: 82, height: 16, alignment: .leading)
             }
             .fixedSize()
-        }
-
-        private var detail: String {
-            [
-                SongSummary.artist(record.document.metadata),
-                stats.map { SongSummary.timesPlayed($0.timesPlayed) },
-            ].compactMap(\.self).joined(separator: "  ·  ")
         }
     }
 

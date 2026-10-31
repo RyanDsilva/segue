@@ -239,7 +239,7 @@
                 SongCardWrite.title(headingDraft)
             case .artist where headingDraft.trimmingCharacters(in: .whitespaces)
                 != (metadata.artists.first ?? ""):
-                SongCardWrite.artist(headingDraft)
+                SongCardWrite.artists([headingDraft] + metadata.artists.dropFirst())
             default:
                 nil
             }
@@ -257,6 +257,7 @@
                 isReadOnly: record.isReadOnly,
                 metadata: SongMetadata(record.sidecar),
                 knownArtists: model.knownArtists,
+                knownAlbums: model.knownAlbums,
                 knownTags: model.tagNames,
                 perform: { operation in
                     Task { await model.editSongSource(id: id, operation) }
@@ -264,6 +265,7 @@
                 editMetadata: { change in
                     Task { await model.editMetadata(id: id, change) }
                 },
+                recordFeature: { model.services.record(.featureUsed($0, .library)) },
             )
         }
 
