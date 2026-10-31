@@ -4,6 +4,7 @@ import Library
 import MusicTheory
 import Playback
 @testable import SegueUI
+import Setlists
 import Testing
 
 /// Play along in the editor and library (P8-6 10.3, 15.2) through the real editor, store and
@@ -42,6 +43,7 @@ struct PlayAlongTests {
     private func open(
         _ source: String = Self.song,
         walkUps: WalkUpDensity? = nil,
+        fill: Bool = false,
     ) async throws -> Opened {
         let env = try TestEnvironment()
         let recorder = RecordingAnalytics(env)
@@ -54,7 +56,10 @@ struct PlayAlongTests {
             instrument.setWalkUps(walkUps)
             library.instrument = instrument
         }
-        let song = try await library.createSong(source: source)
+        var song = try await library.createSong(source: source)
+        if fill {
+            song = try await library.store.updateParts(id: song.id, [Self.fill(song)])
+        }
         library.beginEditing(song)
         let editor = try #require(library.editor)
         try await AISettingsTests.waitUntil(timeout: .seconds(30)) { editor.renderModel != nil }
@@ -326,5 +331,67 @@ struct PlayAlongTests {
         opened.library.showPlayAlong(second, render: SongSummary.renderModel(second))
         #expect(!library.isPlaying)
         #expect(library.timeline.timeline.chords.map(\.token) == ["A"])
+    }
+}
+
+/// Saved fills in play-along (P8-7 section 13, R168 Q4): the sidecar's parts play in the
+/// editor, the library and the stage, and cover their walk-ups.
+extension PlayAlongTests {
+    /// A fill over the verse's C into the chorus's D: D on beat 4 of C (deg 2 over C).
+    static func fill(_ song: SongRecord) throws -> Part {
+        let sections = SongSummary.renderModel(song).sections
+        let units = SongSections.units(of: song.document)
+        func anchor(_ section: Int, _ chord: Int) throws -> ChordAnchor {
+            try #require(ChordAnchors.anchor(
+                at: ChordPosition(section: section, chord: chord),
+                units: units,
+                sections: sections,
+            ))
+        }
+        return try Part(
+            span: SpanAnchor(start: anchor(0, 1), end: anchor(1, 0), spanBass: ["C", "D"]),
+            events: [PartEvent(chord: 0, at: 1440, len: 480, deg: 2)],
+        )
+    }
+
+    @Test
+    func `a saved fill plays in the editor and covers its walk-up`() async throws {
+        let opened = try await open(walkUps: .everyChange, fill: true)
+        let source = try #require(opened.editor.playAlongSource)
+        let covered = try #require(source.changes.first { $0.fromName == "C" })
+        #expect(covered.shown == nil)
+        #expect(source.changes.first { $0.fromName == "G" }?.shown != nil)
+        let fills = opened.playAlong.timeline.fills
+        #expect(fills.count == 1)
+        #expect(fills.first?.notes.map { $0.midi % 12 } == [2])
+        // The library's bar plays it too.
+        let record = opened.song
+        #expect(record.sidecar.parts.count == 1)
+        opened.library.closeEditor()
+        let library = try #require(opened.library.playAlong)
+        opened.library.showPlayAlong(record, render: SongSummary.renderModel(record))
+        #expect(library.timeline.fills.count == 1)
+    }
+
+    @Test
+    func `the stage resolves the saved fill for its played passes`() async throws {
+        let opened = try await open(fill: true)
+        let record = opened.song
+        let model = StageRequest.renderModel(record, overrides: SetlistOverrides())
+        let order = ArrangementResolver.fullSong(SongSections.units(of: record.document))
+        let fills = LiveSession.playAlongFills(
+            song: record,
+            model: model,
+            order: order,
+            profile: nil,
+        )
+        let range = LiveSession.playAlongTimeline(
+            song: record,
+            model: model,
+            order: order,
+            range: .whole,
+            profile: nil,
+        )
+        #expect(fills(range).count == 1)
     }
 }

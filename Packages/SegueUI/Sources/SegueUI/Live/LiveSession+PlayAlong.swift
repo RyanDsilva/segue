@@ -43,6 +43,10 @@
         func attachSound(_ sound: SoundSession) {
             guard playAlong == nil else { return }
             playAlong = StagePlayAlong(kind: kind, sound: sound)
+            // The current song's saved fills play where they apply (R168 Q4).
+            playAlong?.fillProvider = { [weak self] timeline in
+                self?.playAlongFills()?(timeline) ?? []
+            }
         }
 
         /// Whether play-along is sounding (the header pill).
@@ -71,15 +75,17 @@
             }
         }
 
-        /// Plays from shown pass `index`: the looped pass over and over when it is the one
-        /// looping, else to the end of the song.
-        @discardableResult
-        func startPlayAlong(from index: Int) -> Bool {
-            guard let playAlong, let slot = state.current, let song = slot.song,
-                  let model = currentModel
-            else { return false }
-            // The played passes, as the stage laid them out (P8-2): the slot's arrangement,
-            // else the full song.
+        /// The current slot's song, its stage model and its played passes.
+        struct PlayAlongSong {
+            var song: SongRecord
+            var model: RenderModel
+            /// As the stage laid them out (P8-2): the slot's arrangement, else the full song.
+            var order: [PlayedPass]
+        }
+
+        private var playAlongSong: PlayAlongSong? {
+            guard let slot = state.current, let song = slot.song, let model = currentModel
+            else { return nil }
             var order = ArrangementResolver.fullSong(SongSections.units(of: song.document))
             if case let .applied(passes, _) = StageRequest.resolution(
                 slot.item.arrangement,
@@ -87,7 +93,28 @@
             ) {
                 order = passes
             }
-            guard order.indices.contains(index) else { return false }
+            return PlayAlongSong(song: song, model: model, order: order)
+        }
+
+        /// The current song's saved fills, resolved for its played passes.
+        func playAlongFills() -> PlayAlongFills? {
+            guard let current = playAlongSong else { return nil }
+            return Self.playAlongFills(
+                song: current.song,
+                model: current.model,
+                order: current.order,
+                profile: context.instrument?.profile,
+            )
+        }
+
+        /// Plays from shown pass `index`: the looped pass over and over when it is the one
+        /// looping, else to the end of the song.
+        @discardableResult
+        func startPlayAlong(from index: Int) -> Bool {
+            guard let playAlong, let current = playAlongSong,
+                  current.order.indices.contains(index)
+            else { return false }
+            let (song, model, order) = (current.song, current.model, current.order)
             let looping = loopPass == index
             let timeline = Self.playAlongTimeline(
                 song: song,
@@ -260,14 +287,20 @@
                 timing: prefs.timing,
                 order: nil,
             )
-            // Walk-ups follow the chart's density: none while Off (R170).
+            // Walk-ups follow the chart's density: none while Off (R170); a change a saved fill
+            // covers in its pass plays the fill instead (P8-7 section 13).
             var context = BassLineContext(
                 transform: model.transform,
                 genre: prefs.genre ?? profile?.genre ?? .pop,
                 density: profile?.walkUps ?? .off,
                 timeline: written,
             )
-            context.apply(prefs, parts: [], units: units, sections: model.sections)
+            context.apply(
+                prefs,
+                parts: song.sidecar.parts,
+                units: units,
+                sections: model.sections,
+            )
             let arranged = ArrangedSections.build(model.sections, order: order)
             let changes = BassLine.changes(
                 arranged.map(\.section),
@@ -284,6 +317,43 @@
                 ),
                 range: range,
                 changes: changes,
+                transform: model.transform,
+                placement: SoundSession.placement(for: model, profile: profile),
+            )
+        }
+
+        /// The song's saved fills for play-along in the played `order`: resolved against the
+        /// written song, played where a pass plays them (the timeline in `order` counts the
+        /// plays for "Last time").
+        static func playAlongFills(
+            song: SongRecord,
+            model: RenderModel,
+            order: [PlayedPass],
+            profile: InstrumentProfile?,
+        ) -> PlayAlongFills {
+            let units = SongSections.units(of: song.document)
+            let timing = song.sidecar.bass.timing
+            let written = SongTimeline.build(
+                document: song.document,
+                sections: model.sections,
+                units: units,
+                timing: timing,
+                order: nil,
+            )
+            return PlayAlongFills(
+                parts: song.sidecar.parts.isEmpty ? .empty : PartAnchors.resolve(
+                    song.sidecar.parts,
+                    timeline: written,
+                    units: units,
+                    sections: model.sections,
+                ),
+                song: SongTimeline.build(
+                    document: song.document,
+                    sections: model.sections,
+                    units: units,
+                    timing: timing,
+                    order: order,
+                ),
                 transform: model.transform,
                 placement: SoundSession.placement(for: model, profile: profile),
             )

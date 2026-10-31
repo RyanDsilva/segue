@@ -18,7 +18,12 @@ extension SongEditorViewModel {
     /// The change `id` names in the preview as rendered now, with its section and feel.
     func walkUpDetails(_ id: ChangeID) -> WalkUpDetails? {
         guard let renderModel else { return nil }
-        let changes = BassLine.changes(renderModel, document: snapshot.document, prefs: bassPrefs)
+        let changes = BassLine.changes(
+            renderModel,
+            document: snapshot.document,
+            prefs: bassPrefs,
+            parts: parts,
+        )
         guard let change = changes.first(where: { $0.id == id }) else { return nil }
         let section = renderModel.sections.indices.contains(change.section)
             ? SectionNotes.label(of: renderModel.sections[change.section]) : nil
@@ -86,12 +91,15 @@ extension SongEditorViewModel {
         }
     }
 
-    /// The song's saved bass prefs and their writer, handed over by the library.
+    /// The song's saved bass prefs and fills, and the prefs' writer, handed over by the
+    /// library.
     func attachBassPrefs(
         _ prefs: BassPrefs,
+        parts: [Part] = [],
         persist: @escaping (SongID, BassPrefs) async throws -> SongRecord,
     ) {
         bassPrefs = prefs
+        self.parts = parts
         persistBassPrefs = persist
         scheduleRender(delay: .zero)
     }
@@ -118,7 +126,12 @@ extension SongEditorViewModel {
         let concert = renderModel.transform.concertKey
         return WalkUpsSource(
             title: renderModel.header.title ?? "Untitled",
-            changes: BassLine.changes(renderModel, document: document, prefs: bassPrefs),
+            changes: BassLine.changes(
+                renderModel,
+                document: document,
+                prefs: bassPrefs,
+                parts: parts,
+            ),
             sectionLabel: { index in
                 sections.indices.contains(index) ? SectionNotes.label(of: sections[index]) : nil
             },

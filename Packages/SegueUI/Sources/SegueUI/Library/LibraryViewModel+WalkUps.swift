@@ -38,6 +38,7 @@ extension LibraryViewModel {
                     model,
                     document: record.document,
                     prefs: record.sidecar.bass,
+                    parts: record.sidecar.parts,
                 )
                 guard let found = changes.first(where: { $0.id == change }) else { return nil }
                 let section = model.sections.indices.contains(found.section)
@@ -62,7 +63,12 @@ extension LibraryViewModel {
         let concert = model.transform.concertKey
         return WalkUpsSource(
             title: SongSummary.title(record),
-            changes: BassLine.changes(model, document: record.document, prefs: prefs),
+            changes: BassLine.changes(
+                model,
+                document: record.document,
+                prefs: prefs,
+                parts: record.sidecar.parts,
+            ),
             sectionLabel: { index in
                 sections.indices.contains(index) ? SectionNotes.label(of: sections[index]) : nil
             },

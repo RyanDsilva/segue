@@ -65,6 +65,7 @@ extension SongEditorViewModel {
         needsCanvas: Bool = false,
         userShapes: UserShapeLibrary,
         bassPrefs: BassPrefs = BassPrefs(),
+        parts: [Part] = [],
     ) -> (preview: RenderModel, canvas: RenderModel) {
         var preview = options
         preview.bass = bass
@@ -73,6 +74,7 @@ extension SongEditorViewModel {
             RenderModel(document: document, options: preview, userShapes: userShapes),
             document: document,
             prefs: bassPrefs,
+            parts: parts,
         )
         guard needsCanvas else { return (model, model) }
         var chart = options
@@ -80,10 +82,12 @@ extension SongEditorViewModel {
         return (model, RenderModel(document: document, options: chart))
     }
 
-    /// The user's bass view and the song's walk-up picks, for one background render.
+    /// The user's bass view, the song's walk-up picks and its fills, for one background
+    /// render.
     struct BassRender: Sendable {
         var view: BassView?
         var prefs: BassPrefs
+        var parts: [Part]
     }
 
     /// One background render: the preview, the snapshot's diagnostics and the canvas model.
@@ -109,6 +113,7 @@ extension SongEditorViewModel {
                 needsCanvas: needsCanvas,
                 userShapes: userShapes,
                 bassPrefs: bass.prefs,
+                parts: bass.parts,
             )
             return Rendered(
                 preview: models.preview,

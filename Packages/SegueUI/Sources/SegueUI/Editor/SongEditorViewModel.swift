@@ -146,6 +146,9 @@ public final class SongEditorViewModel {
     @ObservationIgnored var renderTask: Task<Void, Never>?
     /// The song's walk-up picks and feel (sidecar `bass`, P8-4b), writer, last write.
     var bassPrefs = BassPrefs()
+    /// The song's saved fills (sidecar `parts`, P8-7c): a fill covers its changes in the
+    /// preview, the Walk-ups list and play-along.
+    var parts: [Part] = []
     @ObservationIgnored var persistBassPrefs: ((SongID, BassPrefs) async throws -> SongRecord)?
     @ObservationIgnored var bassTask: Task<Void, Never>?
     @ObservationIgnored var prefsTask: Task<Void, Never>?
@@ -356,7 +359,7 @@ public final class SongEditorViewModel {
         renderTask?.cancel()
         let snapshot = snapshot
         let options = options
-        let bass = BassRender(view: instrument?.bassView, prefs: bassPrefs)
+        let bass = BassRender(view: instrument?.bassView, prefs: bassPrefs, parts: parts)
         let needsCanvas = bass.view?.notes == true && editorMode == .visual
         let revision = revision
         let userShapes = userShapes

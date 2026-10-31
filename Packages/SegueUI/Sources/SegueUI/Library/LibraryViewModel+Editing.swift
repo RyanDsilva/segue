@@ -221,7 +221,11 @@ extension LibraryViewModel {
         )
         editor.librarySectionKinds = librarySectionKinds
         editor.sound = sound
-        editor.attachBassPrefs(record.sidecar.bass, persist: persistBassPrefs(following: base))
+        editor.attachBassPrefs(
+            record.sidecar.bass,
+            parts: record.sidecar.parts,
+            persist: persistBassPrefs(following: base),
+        )
         closeEditor()
         selection = id
         detail = .song(id)

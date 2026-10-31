@@ -75,13 +75,15 @@
         }
 
         /// Walk-ups on stage (P8-4b): only in the bass-note view with walk-ups on, the song's
-        /// pick else the top candidate, never alternates.
+        /// pick else the top candidate, never alternates, none on a change a saved fill
+        /// covers in that pass (P8-7c).
         static func walkUps(_ model: RenderModel, song: SongRecord) -> BassLineContext? {
             guard model.transform.options.bass?.notes == true,
                   let context = BassLine.context(
                       for: model,
                       document: song.document,
                       prefs: song.sidecar.bass,
+                      parts: song.sidecar.parts,
                   ),
                   context.density != .off
             else { return nil }

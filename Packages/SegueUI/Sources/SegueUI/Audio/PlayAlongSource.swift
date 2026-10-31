@@ -29,14 +29,19 @@ struct PlayAlongSource: Equatable {
     var hasWalkUps: Bool
     /// Whether timing can be saved (a saved, writable song).
     var canEdit: Bool
+    /// The song's saved fills, played instead of the bass line where they apply.
+    var fills: PlayAlongFills
 
-    /// The source for a song rendered as `model` with its sidecar `prefs`. Walk-ups follow
-    /// the chart's density (none while Off, R170); they are worked out even when the
-    /// bass-note view is off, so the Walk-ups toggle can turn them on.
+    /// The source for a song rendered as `model` with its sidecar `prefs` and `parts` (its
+    /// saved fills). Walk-ups follow the chart's density (none while Off, R170); they are
+    /// worked out even when the bass-note view is off, so the Walk-ups toggle can turn them
+    /// on. A change a fill covers plays the fill, not a walk-up (P8-7 section 13).
     @MainActor static func make(
+        // swiftlint:disable:previous function_parameter_count
         model: RenderModel,
         document: SongDocument,
         prefs: BassPrefs,
+        parts: [Part],
         profile: InstrumentProfile?,
         canEdit: Bool,
     ) -> Self {
@@ -55,7 +60,8 @@ struct PlayAlongSource: Equatable {
             density: density,
             timeline: timeline,
         )
-        context.apply(prefs, parts: [], units: units, sections: model.sections)
+        context.apply(prefs, parts: parts, units: units, sections: model.sections)
+        let placement = SoundSession.placement(for: model, profile: profile)
         return Self(
             timeline: timeline,
             sections: model.sections,
@@ -67,10 +73,16 @@ struct PlayAlongSource: Equatable {
                 context: context,
             ),
             transform: model.transform,
-            placement: SoundSession.placement(for: model, profile: profile),
+            placement: placement,
             chartsShowWalkUps: model.transform.options.bass?.notes == true && density != .off,
             hasWalkUps: density != .off,
             canEdit: canEdit,
+            fills: PlayAlongFills(
+                parts: context.parts,
+                song: timeline,
+                transform: model.transform,
+                placement: placement,
+            ),
         )
     }
 
@@ -116,6 +128,29 @@ struct PlayAlongSource: Equatable {
             }
         }
         return nil
+    }
+}
+
+/// A song's saved fills as play-along plays them (P8-7 section 13, R168 Q4): its parts
+/// resolved against the written song, and the timeline every play-along range is cut from
+/// (so "Shows on: Last time" is the song's last play, R170). Called as the play-along's
+/// `fillProvider` with the range it voices.
+struct PlayAlongFills: Equatable {
+    var parts: ResolvedParts
+    /// The timeline the range is cut from, in the order played.
+    var song: SongTimeline
+    var transform: DisplayTransform
+    var placement: BassPlacement
+
+    func callAsFunction(_ range: PlayAlongTimeline) -> [PlayAlongFill] {
+        guard !parts.applied.isEmpty else { return [] }
+        return PlayAlongFill.fills(
+            parts,
+            in: range,
+            song: song,
+            transform: transform,
+            placement: placement,
+        )
     }
 }
 

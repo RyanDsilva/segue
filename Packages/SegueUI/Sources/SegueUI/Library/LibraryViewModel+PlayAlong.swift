@@ -16,6 +16,8 @@ extension LibraryViewModel {
                 guard let self, let id = playAlongSong else { return }
                 Task { await self.editSongSource(id: id, operation) }
             }
+            // The song's saved fills replace the bass line where they apply (P8-7 13).
+            model.fillProvider = { [weak model] built in model?.source?.fills(built) ?? [] }
             return model
         }
     }
@@ -31,6 +33,7 @@ extension LibraryViewModel {
             model: render,
             document: record.document,
             prefs: record.sidecar.bass,
+            parts: record.sidecar.parts,
             profile: instrument?.profile,
             canEdit: !record.isReadOnly,
         ))
