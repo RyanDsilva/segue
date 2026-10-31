@@ -80,8 +80,11 @@ struct StageFillLayoutTests {
         ))
         let model = RenderModel(document: document, options: options)
         let verse = try part(
-            [ChordPosition(section: 0, chord: 0), ChordPosition(section: 0, chord: 1),
-             ChordPosition(section: 0, chord: 2)],
+            [
+                ChordPosition(section: 0, chord: 0),
+                ChordPosition(section: 0, chord: 1),
+                ChordPosition(section: 0, chord: 2),
+            ],
             bass: ["G", "C", "D"],
             events: [
                 PartEvent(chord: 0, at: 960, len: 480, deg: 0),
