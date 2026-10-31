@@ -185,9 +185,10 @@ struct FillCandidateTests {
         print(report.joined(separator: "\n"))
         #expect(total.values.reduce(0, +) >= 80)
     }
+}
 
-    // MARK: Named rows (11.5)
-
+/// The named rows (P8-7 section 11.5).
+extension FillCandidateTests {
     /// A span of concert chords, `pulses` each (4/4 unless `meter`), in `key` (the landing in
     /// `landingKey` when given), on `tuning`.
     static func context(
@@ -292,6 +293,20 @@ struct FillCandidateTests {
         let run = top.first { !$0.isHold }
         let names = try Self.fillNames(#require(run), context)
         #expect(names.last == "G", "\(names)")
+    }
+
+    @Test
+    func `a break-stop hits beat 1, holds the silence and lands with no pickup`() throws {
+        let context = try Self.context(["E", "A"], key: "A")
+        let stop = try #require(Fill.all(context).first { $0.template == "breakStop" })
+        let notes = PlacedFillNote.notes(stop, context: context)
+        #expect(notes.map(\.at) == [-1920, 0])
+        #expect(notes.first?.event.articulations == [.staccato])
+        #expect(notes.first?.pitch == context.span.first?.bass)
+        // Into a new key the stop is always the break: the pickup variant is not offered.
+        let lift = try Self.context(["E", "B"], key: "A", landingKey: "B")
+        let templates = Set(Fill.all(lift).map(\.template))
+        #expect(templates.contains("breakStop") && !templates.contains("stopTime"))
     }
 
     @Test
