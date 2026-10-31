@@ -20,7 +20,9 @@ A Bollywood song usually has several singers and comes from a movie. Today Segue
 
 **In scope (R172):** an ordered artist list edited as chips (byte-identical files until edited); "A, B" everywhere; any-artist matching in search, smart filters, the set composer, the set assistant and the near-duplicate check; the deterministic artist splitter on paste and convert-import with merge-back chips in the review; the AI refinement never inventing, splitting differently or re-spelling an artist; `{album}` as "Movie / Album" (editor, under the title, FTS, smart filters, set requests); the index version bump; removing song length (field, `{duration}` reading, columns, preview, "Time it", slot lengths, rehearsal timing samples, length analytics, the Length smart filter condition); slot time from `SongTimeline`; totals and the assistant on slot time; unknown time and the quick tempo affordance; auto-scroll on stage reading the same time; the docs, guide, site and store cleanup; analytics; one E2E.
 
-**Unchanged:** break rows and their intermission, changeover, the setlist target and the "45 min" request (they are set times, not song lengths); the gig log's played times (section 17 Q4); `{tempo}` / `{time}` / `{key}` handling and P8-7's timeline layers; tap tempo on the song card; P8-7b's Insert Tempo Change Here.
+Also in scope (R173): the one-time move of the `timings/` folder to the Trash with a note (5.8); the one-time library cleanup that offers to remove `{duration}` lines (5.7); the Gig Log's per-song played times removed (5.1).
+
+**Unchanged:** break rows and their intermission, changeover, the setlist target and the "45 min" request (they are set times, not song lengths); the gig's own start and end time and the show-ended duration bucket (the show's length); `{tempo}` / `{time}` / `{key}` handling and P8-7's timeline layers; tap tempo on the song card; P8-7b's Insert Tempo Change Here.
 
 ## 2. Current behaviour (verified 2026-10-31)
 
@@ -83,18 +85,19 @@ public struct ArtistSplit: Sendable, Hashable {
 public enum ArtistSeparator: String, Sendable, CaseIterable { case comma, ampersand, feat }
 ```
 
-**Split rules:** separators are "," , "&", and the words "feat." and "ft." (case-insensitive, each a whole word, the dot required; R172), plus a `(feat. X)` / `(ft. X)` parenthesis whose brackets are dropped. Never "and", "x", "with", "/" or "-" (section 17 Q7). Each part is trimmed of whitespace and of a leading or trailing separator; empty parts dropped; a part equal to an earlier one ignoring case and diacritics is dropped (first spelling kept). The parts keep the source's exact spelling and case: no capitalisation, no romanization change, no "correction". Table (`ArtistNamesTests`):
+**Split rules:** separators are "," , "&", and the words "feat.", "ft." (the dot required) and "featuring" (case-insensitive, each a whole word; R172, R173), plus a `(feat. X)` / `(ft. X)` / `(featuring X)` parenthesis whose brackets are dropped. Never "and", "x", "with", "/" or "-" (section 17 Q7). Each part is trimmed of whitespace and of a leading or trailing separator; empty parts dropped; a part equal to an earlier one ignoring case and diacritics is dropped (first spelling kept). The parts keep the source's exact spelling and case: no capitalisation, no romanization change, no "correction". Table (`ArtistNamesTests`):
 
 | Value | Parts |
 | --- | --- |
 | `Vishal & Shekhar` | Vishal, Shekhar |
 | `Arijit Singh, Shreya Ghoshal` | Arijit Singh, Shreya Ghoshal |
 | `DJ Saahil ft. Rhea` | DJ Saahil, Rhea |
+| `Atif Aslam featuring Shreya Ghoshal` | Atif Aslam, Shreya Ghoshal |
 | `Badshah feat. Aastha Gill & Neha Kakkar` | Badshah, Aastha Gill, Neha Kakkar |
 | `Atif Aslam (feat. Shreya Ghoshal)` | Atif Aslam, Shreya Ghoshal |
 | `Simon and Garfunkel` | Simon and Garfunkel (never "and") |
 | `Salim-Sulaiman`, `Shankar Ehsaan Loy` | unchanged |
-| `Featherstone`, `Daft Punk ft` | unchanged (whole word with the dot only) |
+| `Featherstone`, `Daft Punk ft`, `A feat B` | unchanged (whole word, "feat" / "ft" with the dot only) |
 | `arijit singh, Arijit Singh` | arijit singh (dedup keeps the first) |
 | `, A ,, B,` | A, B |
 
@@ -212,14 +215,15 @@ Album columns (section 4.3) change the FTS table: `SongIndex.schemaVersion` 3 ->
 | `DurationSample`, `DurationSampleSink`, `RehearsalTimingStore`, `ShowEnvironment.durations`, the controller's sample queue, `LibraryRoot.timingsDirectory` / `rehearsalSuffix`, "timings" in the archive | section 2.2; files policy in 5.8 |
 | `FeatureKey.timeIt`, the analytics context note about Time it | section 2.2 |
 | `openSongForLength`, `SegueLinks.unknownLengths` (renamed, 5.5) | `SegueRootView.swift:306-308`, `SegueLinks.swift:63, 91` |
+| The Gig Log's per-song played times: `PlayedSong.duration` and the played row's length (R173; the gig's own start, end and the show-ended bucket stay) | `GigLog.swift:23`, `GigLog/GigDetailView.swift:256`, `GigText.length` if nothing else uses it |
 
 ### 5.2 Slot time (SegueCore `Library/Timing/SlotTime.swift`, pure)
 
 ```swift
 public enum SlotTime: Sendable, Hashable {
     /// `seconds` at the tempo map; `bars` from the timeline's bar grid; `tempo` the BPM in
-    /// effect at the first played chord; `estimated` when every played chord's length came
-    /// from the rule layer (`TimingSource.rule`).
+    /// effect at the first played chord; `estimated` when any played chord's length came
+    /// from the rule layer (`TimingSource.rule`), shown as "~3:40" (R173).
     case known(seconds: TimeInterval, bars: Int, tempo: Double, estimated: Bool)
     case unknown(UnknownTime)
 }
@@ -249,7 +253,7 @@ public enum SlotTimes {
 - `SetlistTiming.init(entries:times:target:changeover:)` with `times: [SetlistItemID: SlotTime]` (per slot, not per song: two slots of one song may be arranged differently). `SongLengthSource` becomes `.song` (full song timeline), `.arrangement` (an applied arrangement's passes) and `.intermission` (a break). `ItemTiming` gains `unknown: UnknownTime?`; `PartTiming` and the whole set keep `unknownItemIds`.
 - Arithmetic is unchanged: starts accumulate known times; a changeover after every song but the last of each part (R86); a break's intermission counts in the whole total only (R105); an unknown adds nothing and makes every later start and every total that includes it a lower bound: "≥13:50", "≥38:20 + 2 unknown", "2 unknown" (the existing notation, which is R172's "flagged as incomplete"). The part totals flag only their own unknowns.
 - `SetlistTiming(setlist:songs:defaultChangeover:)` (`SetlistEntryDisplay.swift:42-61`) computes each slot's `SlotTimes.slot` through the cache (5.9).
-- **Rows:** the column header and cell become **Time** (section 17 Q10); a known time reads "3:40" with the help "96 BPM, 72 bars" plus ", chord lengths estimated" when `estimated` (section 17 Q6); unknown reads "--:--" with the help "No tempo" or "No chords to time". The arranged mark is unchanged.
+- **Rows:** the column header and cell become **Time** (section 17 Q10); a known time reads "3:40" with the help "96 BPM, 72 bars"; a time that rests on any default chord length (any played chord timed by the rule layer, `TimingSource.rule`) reads "~3:40" with ", chord lengths estimated" added to the help (R173, section 17 Q6). So `SlotTime.known`'s `estimated` is true when **any** played chord is rule-timed, not only when every one is (5.2); a set total that includes an estimated slot also reads "~" (before any "≥"), and the composer ghost's cell the same; unknown reads "--:--" with the help "No tempo" or "No chords to time". The arranged mark is unchanged.
 - **Header:** the total and target as today; the "N unknown" button opens the list in 5.5. VoiceOver: "38 minutes 20 seconds so far, incomplete: 2 songs have no time".
 - **Composer ghost:** the Time cell shows `SlotTimes.song` of the shown candidate (cached), "-" when unknown (never a guess).
 
@@ -268,18 +272,20 @@ public enum SlotTimes {
 
 ### 5.6 Stage auto-scroll
 
-`ScrollSpeedInput.duration` becomes `time: TimeInterval?` = `SlotTimes.time(of:)` of the stage's own timeline for the item being shown (the played passes P8-2 lays out, the arrangement only when it is applied, as `LiveSession+Viewport.swift:157-162` decides today); `ScrollSpeedSource.duration` becomes `.timeline`. Without a known time it falls back as today to the per-line tempo estimate (a chordless song with a tempo), then the default speed. The stage builds the timeline once per song preparation (P8-7 5.8), never per frame. This is a behaviour change on stage that R172 does not name (section 17 Q13).
+`ScrollSpeedInput.duration` becomes `time: TimeInterval?` = `SlotTimes.time(of:)` of the stage's own timeline for the item being shown (the played passes P8-2 lays out, the arrangement only when it is applied, as `LiveSession+Viewport.swift:157-162` decides today); `ScrollSpeedSource.duration` becomes `.timeline`. Without a known time it falls back as today to the per-line tempo estimate (a chordless song with a tempo); a song with no tempo starts at the default speed, adjusted with [ and ] as today, and the stage shows a quiet hint to add a tempo (R173). The stage builds the timeline once per song preparation (P8-7 5.8), never per frame. This is a behaviour change on stage that R172 does not name (section 17 Q13).
 
 ### 5.7 `{duration}` in files
 
-Ignored on read: no field, no diagnostic, no completion, no index column. The line stays in the file byte-for-byte; no edit, save, import or migration removes it; Text mode shows it as an ordinary directive. Segue offers no cleanup (section 17 Q14). Welcome songs and app-owned seeds lose their `{duration}` lines in the bundle (P8-8c); copies already in users' libraries are untouched.
+Ignored on read: no field, no diagnostic, no completion, no index column. The line stays in the file byte-for-byte; no edit, save or import removes it; Text mode shows it as an ordinary directive.
+
+**One-time library cleanup (R173, section 17 Q14):** the first time a library is opened with this build and any song holds a `{duration}` line, Segue offers once (a dismissable note: "Song length is now worked out from tempo. Remove the old length lines from N songs?" with Remove and Not Now) to remove them. Remove deletes each `{duration}` line (with its line ending) and nothing else, one library undo step for the whole batch, read-only songs skipped. Not Now and Remove both record the offer as made in the library's `.segue/` state, so it never appears again for that library; the offer also stays reachable as a library menu command for later. No other line of any file changes. Welcome songs and app-owned seeds lose their `{duration}` lines in the bundle (P8-8c); copies already in users' libraries are untouched.
 
 ### 5.8 The `timings/` folder
 
 - New builds never create, write or read `timings/`; rehearsals record nothing beyond the show file they already write.
-- An existing `timings/` folder and its `.rehearsal.json` files are **left exactly as they are** (bytes and dates): no delete, no move, no rename, no "unreadable file" report.
-- The archive export (`LibraryArchive.includedFolders`) drops "timings"; the Settings note reads "One zip of your songs, setlists, shows and filters". The folder stays in the library on disk.
-- Ryan's library has such files: P8-8c's last step tells the orchestrator, for Ryan, that `<library>/timings/` is now unused and he may move it to the Trash himself (a manual step). Recommendation and alternatives: section 17 Q2.
+- An existing `timings/` folder **moves to the Trash once on upgrade** (R173, section 17 Q2): the first open of a library with this build moves the whole folder with `FileManager.trashItem` (recoverable from the Trash, never deleted), then shows a one-time note: "Rehearsal timings are no longer used. The old timings folder was moved to the Trash." A failed move (permissions, no Trash on the volume) leaves the folder exactly as it is and says nothing; it is tried again on the next open. No "unreadable file" report.
+- The archive export (`LibraryArchive.includedFolders`) drops "timings"; the Settings note reads "One zip of your songs, setlists, shows and filters".
+- Ryan's library has such files: P8-8c's last step tells the orchestrator, for Ryan, that the folder is in the Trash after the first open and can be restored from there.
 
 ### 5.9 Cost and caching
 
@@ -290,7 +296,7 @@ Ignored on read: no field, no diagnostic, no completion, no index column. The li
 After P8-8c nothing in the repo describes song length, "Time it", slot lengths or rehearsal timings as a feature, except R172 itself. Follow the `d234a4e` / `abf097c` / `77da825` precedent:
 
 - **Decision logs:** in `docs/release/decisions.md`, drop entries that concern only the removed feature (R78, R88, R91, R107) with survivors' R-numbers unchanged, and trim mixed entries to their kept content (the line-46 note, R71 "length", R80's card fields, R81's value pickers, R110's essentials, R122's slot length, any later mention found by grep). In `docs/decisions.md`, lines 46 and 135-136. Keep R172 whole (section 17 Q1).
-- **Specs:** `docs/phases/3-workstreams/P3-5-durations.md` is removed (`trash`), and every link to it updated; P3-6, P3-7, P3-9, P3-10, P3-12, P3-16, `docs/phases/2-interfaces.md`, `3-ai-entry-and-assistant.md`, P8-2, P8-3, P8-4, P8-5 (its ghost "key and length", the E2E's `{duration}` seeds, the matcher's "never artists" now amended), P8-6, P8-7 lose length lines; `docs/00-vision.md:41, 45-46` (auto-scroll "duration/tempo-based" becomes "timeline/tempo-based"; the Library row drops lengths; the assistant row keeps "a target length"). Release specs: WS2b, WS3 (row 8 vocabulary), WS4 (`#running-time` at 1082), WS5 (166, 175, 234, 240, 508, 516), WS6, `app-store-connect.md:166, 175`, `docs/release/README.md`, `open-questions.md`, `walkthrough.md` (hunk by hunk). Research docs (`docs/research/phase3-spikes.md`, `phase3-store-ai.md`, `phase8-time-model-and-fills.md`, `docs/release/research/04-store-listing.md`) lose lines that describe song length as a Segue feature; competitor descriptions and video "Length 15-30 s" rows are not about it and stay. `JOURNAL.md` is session history and stays (section 17 Q15).
+- **Specs:** `docs/phases/3-workstreams/P3-5-durations.md` is removed (`trash`), and every link to it updated; P3-6, P3-7, P3-9, P3-10, P3-12, P3-16, `docs/phases/2-interfaces.md`, `3-ai-entry-and-assistant.md`, P8-2, P8-3, P8-4, P8-5 (its ghost "key and length", the E2E's `{duration}` seeds, the matcher's "never artists" now amended), P8-6, P8-7 lose length lines; `docs/00-vision.md:41, 45-46` (auto-scroll "duration/tempo-based" becomes "timeline/tempo-based"; the Library row drops lengths; the assistant row keeps "a target length"). Release specs: WS2b, WS3 (row 8 vocabulary), WS4 (`#running-time` at 1082), WS5 (166, 175, 234, 240, 508, 516), WS6, `app-store-connect.md:166, 175`, `docs/release/README.md`, `open-questions.md`, `walkthrough.md` (hunk by hunk). Research docs (`docs/research/phase3-spikes.md`, `phase3-store-ai.md`, `phase8-time-model-and-fills.md`, `docs/release/research/04-store-listing.md`) lose lines that describe song length as a Segue feature; competitor descriptions and video "Length 15-30 s" rows are not about it and stay. `JOURNAL.md` is covered too (R173, section 17 Q15): its lines that describe song length, Time it, slot lengths or rehearsal timings as a feature are trimmed the same way.
 - **Guide** (section 10), **website** (`website/index.html:137` aria-label "key, capo, length and start time" -> "key, capo, time and start time"), **store** (`store/screenshots.json`, the listing copy in WS5 / app-store-connect), `content/changelog.json:16` (the draft 0.5 highlight: "The song card: key, tempo, capo and tags as controls, nothing to memorise." plus one highlight for artists and Movie / Album), `guide/src/data/shots.json` ("length", "missing-lengths", "card-time-it" shots replaced).
 - **Code comments and names:** every comment naming R91, R88, R107, `{duration}`, Time it or lengths as a feature (grep list in section 2.2 plus `ShowRecord.swift:66`, `ShowTypes.swift:127, 146`, `SmartFilter.swift:1-4`, `SongFilter.swift:3-7`, `SetBuilder.swift:1-6`, `SlotArrangement.swift:145-160`, `AutoScroll.swift:5-9, 33`). Test names and ids follow (`testPickArrangeBreaksAndMissingLengths`, `missingLengths*` ids).
 - **The check** (P8-8c's last cleanup step, results in the commit message): `git grep -n -i -E 'duration|song length|lengths?\b|time it|timeit|timings|R91|R88|R107'` over `docs guide/src website store content Packages App UITests scripts`, every remaining hit justified in the message (show length, break length, target length, chord length, fill length, video length, `Duration` the Swift type, R172).
@@ -301,25 +307,25 @@ After P8-8c nothing in the repo describes song length, "Time it", slot lengths o
 
 | File | On open | On a later save |
 | --- | --- | --- |
-| `.cho` with one `{artist}`, `{album}`, `{duration}` | nothing | only the edited directive changes (3.2, 4.1); `{duration}` never |
+| `.cho` with one `{artist}`, `{album}`, `{duration}` | nothing (the one-time `{duration}` cleanup is offered, 5.7) | only the edited directive changes (3.2, 4.1); `{duration}` lines only when the user accepts the cleanup |
 | sidecar | nothing | nothing new (no schema change) |
 | `setlists/*.setlist.json` with `arrangement.length` | ignored | dropped when that setlist is next saved (section 17 Q3) |
 | `filters/*.filter.json` with `length` | ignored (the filter matches without it) | dropped when that filter is next saved; the editor shows "The Length condition was removed in this version" until then (section 17 Q3) |
 | `shows/*.show.json` (an arrangement snapshot with `length`) | ignored | never rewritten for this |
-| `timings/` | untouched | untouched (5.8) |
+| `timings/` | moved to the Trash once, with a one-time note (5.8) | |
 | `.segue/index.sqlite` | rebuilt once (version 4) | |
 
 No schema version is bumped for setlists, filters or sidecars: no build that reads them has shipped (v0.5 is unreleased), and the new filter conditions are additive.
 
 ### 7.2 Safety rules
 
-- No migration pass, no batch rewrite, no "upgrade library" step. Every change to a user file is a user edit with an undo step.
+- No silent migration pass and no "upgrade library" step. Every change to a user file is a user edit with an undo step; the only batch edit is the `{duration}` cleanup the user accepts (5.7, one undo step). The `timings/` folder is moved to the Trash, never deleted (5.8).
 - The splitter never runs on stored files; only on paste and convert-import (3.7) and the explicit Split button (3.3).
 - A read-only song (newer sidecar, non-UTF-8 file) shows its artists and album but the chip field is disabled (as the card is today).
 
 ### 7.3 Proof on a copy (P8-8c, before the E2E)
 
-Copy Ryan's library folder to the session scratchpad (never open the original), open the copy with the new build, and record in the step commit: the index rebuilt once; `git diff --no-index` (or a byte compare) of every `.cho`, sidecar, setlist, filter and show file and the `timings/` folder against the original shows **no** change after open, browse, opening a set, a rehearsal start and end, and an archive export; then edit one two-artist song's artists and confirm only its `{artist}` lines changed. If Ryan's library path is not known, ask the orchestrator for it (a manual answer from Ryan).
+Copy Ryan's library folder to the session scratchpad (never open the original), open the copy with the new build, and record in the step commit: the index rebuilt once; `git diff --no-index` (or a byte compare) of every `.cho`, sidecar, setlist, filter and show file against the original shows **no** change after open (other than `timings/` now in the Trash with the note shown once, and the `{duration}` cleanup offered once: answer Not Now here, then run Remove on a second copy and confirm only `{duration}` lines left), browse, opening a set, a rehearsal start and end, and an archive export; then edit one two-artist song's artists and confirm only its `{artist}` lines changed. If Ryan's library path is not known, ask the orchestrator for it (a manual answer from Ryan).
 
 ## 8. Analytics (non-PII, closed vocabulary, WS3)
 
@@ -340,7 +346,7 @@ Enums, booleans and buckets only: never names, titles, albums or typed text. New
 
 - Chip field: each chip is an element "Arijit Singh, artist 1 of 2" with actions Remove, Move Left, Move Right (and Split when shown); the input's label "Add artist"; ids `segue.songCard.artists`, `.artistChip`, `.artistInput`, `.artistSplit`. Movie / Album: label "Movie or album", id `segue.songCard.album`.
 - Review split line: "Split from Zoya and The Village Band. Keep as one, button."
-- Time cells: value "3 minutes 40 seconds" or "Unknown, no tempo"; totals as in 5.3. Muted text meets AA in both themes.
+- Time cells: value "3 minutes 40 seconds", "About 3 minutes 40 seconds" for a "~" time, or "Unknown, no tempo"; totals as in 5.3. Muted text meets AA in both themes.
 - New UI joins the R79 accessibility walk.
 
 ## 10. Guide pages and site
@@ -387,8 +393,10 @@ Also rendered: the review sheet's split line, the set row Time cell (known, esti
 - `SetlistTimingTests` (rewrite on times): per-slot times for two slots of one song; unknown flagged in the part and the whole total; changeover and intermission unchanged; "≥" starts.
 - `SetAssistantTests` / `SetAssistantIntegrationTests`: left out for no time under a target, named; packing to a target over slot times; arranged kept slots count their passes.
 - `AutoScrollTests` (extend): `.timeline` source from a known time; chordless song with tempo -> `.tempo`; neither -> `.fallback`.
-- `ShowScenarioTests` / `ShowRecoveryTests` / `ShowStoreTests` (update): a rehearsal writes no `timings/`; a pre-existing `timings/` folder is byte-identical after a rehearsal and an archive export.
+- `ShowScenarioTests` / `ShowRecoveryTests` / `ShowStoreTests` (update): a rehearsal writes no `timings/`; a pre-existing `timings/` folder is moved to the Trash once on open (an injected trash function in tests) and the note is shown once; a failed move leaves it in place; the archive export has no `timings`.
 - `DurationIgnoredTests`: a `.cho` with `{duration: 4:05}` opens without a diagnostic, its line survives every other edit byte-for-byte, nothing reads it.
+- `DurationCleanupTests`: the offer counts songs with `{duration}`, Remove deletes only those lines (one undo step, read-only songs skipped), the offer is made once per library.
+- `SlotTimeTests` also: one rule-timed chord among corrected ones sets `estimated`.
 - `ServicesVocabularyTests`: the new names and values.
 
 ### 13.2 SegueUI, in-process
@@ -457,8 +465,8 @@ Assert no `timings/` folder exists at the end. Add the class to `UITests/e2e-map
 3. `MissingTimesList`, Arrange Sections footer, "Set Tempo..." (remove slot length and its draft action in the same step). Suites: `MissingTimesListTests`, `ArrangementEditorTests`.
 4. Set assistant on times, `LeftOutTimes`. Suites: `SetAssistantTests`, `SetAssistantIntegrationTests`, `SetAssistantUITests`.
 5. Stage auto-scroll on the timeline time. Suites: `AutoScrollTests`, `LiveModeTests`.
-6. Remove song length: `{duration}` reading, `LengthValue`, card token, Time it, essentials, editor items, builder column meta, the Length filter condition (with the editor note of 7.1), `timeIt`. Suites: `DurationIgnoredTests`, `SongCardTests`, `SmartFilterTests`, `SmartFilterSessionTests`, `EditorCompletionTests`.
-7. Remove rehearsal timing samples and `timings/` handling (5.8), archive folders, Settings and stage copy; analytics row 30, the composer / assistant / snapshot params. Suites: `ShowScenarioTests`, `ShowRecoveryTests`, `ShowStoreTests`, `ServicesVocabularyTests`; record the 5.9 numbers.
+6. Remove song length: `{duration}` reading, `LengthValue`, card token, Time it, essentials, editor items, builder column meta, the Length filter condition (with the editor note of 7.1), `timeIt`; the one-time `{duration}` cleanup offer (5.7); the Gig Log's per-song played times (5.1). Suites: `DurationIgnoredTests`, `DurationCleanupTests`, `GigLogTests`, `SongCardTests`, `SmartFilterTests`, `SmartFilterSessionTests`, `EditorCompletionTests`.
+7. Remove rehearsal timing samples; the one-time move of `timings/` to the Trash and its note (5.8); archive folders, Settings and stage copy; analytics row 30, the composer / assistant / snapshot params. Suites: `ShowScenarioTests`, `ShowRecoveryTests`, `ShowStoreTests`, `ServicesVocabularyTests`; record the 5.9 numbers.
 8. Seeds: Welcome songs, screenshot songs, fixtures, UI seeds without `{duration}` (tempos checked so the Welcome Set has a full time). Suites: `WelcomeLibraryTests`, `WelcomeSeedingTests`.
 9. Section 7.3's proof on a copy of Ryan's library.
 10. Docs and mentions (section 6), with the grep check in the commit message.
@@ -471,29 +479,29 @@ Assert no `timings/` folder exists at the end. Add the class to `UITests/e2e-map
 - Paste and convert-import split on ",", "&", "feat.", "ft." (never "and"), the review offers Keep as one, directive values and already-ChordPro files are not split, and no model output adds, splits, merges or re-spells an artist.
 - Search, smart filters, the composer, the assistant and the near-duplicate check match any artist, including legacy combined values.
 - Movie / Album is `{album}`, shown under the title, searchable after the one index rebuild, a smart filter condition and a set request.
-- No length field, `{duration}` reading, length column or preview, Time it, slot length, Length condition or rehearsal timing sample exists; `{duration}` lines and the `timings/` folder are untouched on disk.
+- No length field, `{duration}` reading, length column or preview, Time it, slot length, Length condition or rehearsal timing sample exists; `{duration}` lines stay on disk unless the user accepts the one-time cleanup; the `timings/` folder is in the Trash after the first open, with the note shown once; the Gig Log shows no per-song played times; a time resting on a default chord length reads "~".
 - Slot times, set totals and the assistant's packing come from `SlotTimes` (tempo x the bars of the played passes, Skip adding nothing); a song with no tempo or no chords is unknown, never guessed, and every total including one reads "≥ ... + N unknown"; a tempo can be typed or tapped straight from the set's list and Arrange Sections.
 - Analytics rows and keys as in section 8, closed vocabulary only, documented in WS3.
 - The section 6 grep shows only justified hits; the guide, site and store copy describe the new behaviour.
 - Every 13.1-13.2 suite passes; `make quick` green; `make e2e-one` green for `SegueSongMetadataE2ETests` and each 13.6 class; the proof of 7.3 recorded; the app launched for Ryan.
 
-## 17. Open questions
+## 17. Closed questions
 
-Each has a recommendation; the body assumes it.
+Closed by `docs/release/decisions.md` **R173** (Ryan, 2026-10-31). Where R173 differs from the original recommendation the body above follows R173.
 
-1. **Decision-log cleanup.** R172 keeps the history, and Ryan's usual rule is append-only ADRs. *Recommendation:* follow the `d234a4e` precedent anyway (drop R78, R88, R91, R107; trim mixed entries; R-numbers unchanged), since that is how R170's clean state was applied. Confirm that `d234a4e` / `abf097c` / `77da825` is the "clean-state rule" meant (decisions.md's R170 text does not state it).
-2. **`timings/` files.** (a) Leave on disk untouched, stop reading and writing, drop from the archive, tell Ryan he may trash the folder by hand; (b) keep exporting it in the archive as an opaque folder; (c) move it into `.segue/legacy/`. *Recommendation: (a)*: nothing reads the files today, so nothing is lost by not exporting them, and only Ryan deletes his data.
-3. **Stale `arrangement.length` and filter `length` keys.** Dropped when that setlist or filter is next saved (with the filter editor's one-line note), or kept forever as unknown keys. *Recommendation: drop on next save*: they mean nothing now and keeping dead keys contradicts the clean state.
-4. **Gig log played times** (`GigDetailView.swift:256`, `GigLog.swift:23`) and the show-ended duration bucket. *Recommendation: keep*: they record when a show happened, not a song length, and no time is derived from them.
-5. **What the splitter applies to.** Only credit lines and headers in paste and convert-import; not `{artist}` directives in a paste, not already-ChordPro imports (R109). *Recommendation: as stated*: the source already declared those as one artist each.
-6. **Estimated chord lengths.** Most songs are timed by the one-bar-per-chord rule. *Recommendation:* no visual marker on the time; the help says "chord lengths estimated" and row 30 counts it. A "≈" on most rows would be noise.
-7. **More separators** ("feat"/"ft" without a dot, "featuring", "x", "with", "/"). *Recommendation:* add "featuring" only; the rest stay out (R172 lists the set, and "x" / "with" / "/" appear inside real names).
-8. **Comma in the editor's chip field.** *Recommendation:* "," commits a chip like Return; "&" stays literal when typing by hand.
-9. **Design direction** (section 11). *Recommendation: A*, credits in the library heading and two compact tokens in the editor strip, so the library pane does not show artists twice.
-10. **Set row column name.** *Recommendation: "Time"* (it is derived, not typed); "Length" stays only for breaks and the target.
-11. **Movie / Album on stage.** *Recommendation: no* (the stage header is for the performer; the rendered page header and the future PDF show it).
-12. **Split button on a legacy combined chip.** *Recommendation: yes*, one click, one undo step; nothing splits stored values automatically.
-13. **Stage auto-scroll** follows the timeline time instead of `{duration}` (R172 does not name it). *Recommendation: yes*, falling back to today's per-line tempo estimate for chordless songs; the alternative, leaving `{duration}` read for scrolling only, keeps a length feature alive.
-14. **`{duration}` in Ryan's files.** *Recommendation:* ignore silently and offer no cleanup; a one-shot "remove {duration} lines" command would be a batch rewrite of user files for no gain.
-15. **Research docs and `JOURNAL.md`.** *Recommendation:* scrub research docs of lines describing song length as a Segue feature (as `abf097c` did); leave `JOURNAL.md` as session history.
-16. **The composer and assistant name rules** (3.5.1 artist tier at 4+ letters, base 40; "by X" / "X songs" / "from X", smart filter names before albums). *Recommendation: as specced*; say if any phrasing Ryan uses is missing.
+1. **Decision-log cleanup.** Follow the `d234a4e` / `abf097c` / `77da825` precedent (drop R78, R88, R91, R107; trim mixed entries; R-numbers unchanged; R172 kept whole). R173 names no change, so the recommendation stands.
+2. **`timings/` files.** *R173:* the folder moves to the Trash once on upgrade (recoverable), with a one-time note, and is excluded from the archive export (5.8). Differs from the recommendation (leave on disk).
+3. **Stale `arrangement.length` and filter `length` keys.** *R173:* dropped on the next save of that setlist or filter (7.1), as recommended.
+4. **Gig log played times.** *R173:* the Gig Log drops played times (5.1). Differs from the recommendation (keep). The gig's own start and end and the show-ended bucket are the show's length, not a song's, and stay.
+5. **What the splitter applies to.** *R173:* pasted credit lines and headers only; `{artist}` directives and already-ChordPro files stay whole (3.7), as recommended.
+6. **Estimated chord lengths.** *R173:* a slot time that rests on any default chord length shows as "~3:40" (5.3). Differs from the recommendation (no marker).
+7. **More separators.** *R173:* ",", "&", "feat.", "ft." and "featuring" (3.1), as recommended.
+8. **Comma in the chip field.** *R173:* a comma or Return commits a chip (3.3), as recommended.
+9. **Design direction.** Not ruled by R173: P8-8b step 0 renders A and B and Ryan picks (section 11).
+10. **Set row column name.** *R173:* "Time", as recommended.
+11. **Movie / Album on stage.** *R173:* not shown on stage, as recommended.
+12. **Split button on a legacy combined chip.** *R173:* a combined chip offers Split, as recommended.
+13. **Stage auto-scroll.** *R173:* follows tempo times the played bars; with no tempo it starts at the default speed, adjusted with [ and ], with a hint to add a tempo (5.6).
+14. **`{duration}` in Ryan's files.** *R173:* a one-time library cleanup offers to remove `{duration}` lines from charts (5.7). Differs from the recommendation (no cleanup).
+15. **Research docs and `JOURNAL.md`.** *R173:* the cleanup covers every doc including `JOURNAL.md` (section 6). Differs from the recommendation (leave `JOURNAL.md`).
+16. **Composer and assistant name rules.** *R173:* the composer accepts "by <artist>" and the assistant understands "by <artist>", "<artist> songs" and "from <movie>" (3.5.1, 3.5.2).
