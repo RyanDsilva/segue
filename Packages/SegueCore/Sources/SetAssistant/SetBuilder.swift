@@ -98,9 +98,32 @@ public struct SetBuilder: Sendable {
         if let tempo = request.tempo {
             guard let bpm = song.tempo, tempo.contains(bpm) else { return false }
         }
+        guard admitsCredits(song, request) else { return false }
         return request.smartFilters.allSatisfy { id in
             smartFilterMatches[id]?.contains(song.id) ?? false
         }
+    }
+
+    /// Artist and album chips (P8-8 section 3.5): any of each, ANDed with the other kinds;
+    /// an excluded artist or album keeps the song out.
+    static func admitsCredits(_ song: AssistantSong, _ request: SetRequest) -> Bool {
+        if !request.artists.isEmpty,
+           song.artistForms.isDisjoint(with: SongFilter.artistForms(request.artists))
+        {
+            return false
+        }
+        if !song.artistForms.isDisjoint(with: SongFilter.artistForms(request.excludeArtists)) {
+            return false
+        }
+        if !request.albums.isEmpty {
+            guard let album = song.albumForm,
+                  SongFilter.albumForms(request.albums).contains(album)
+            else { return false }
+        }
+        if let album = song.albumForm, SongFilter.albumForms(request.excludeAlbums).contains(album) {
+            return false
+        }
+        return true
     }
 
     /// Builds a set.

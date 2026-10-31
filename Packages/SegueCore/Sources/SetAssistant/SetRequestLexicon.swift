@@ -59,11 +59,20 @@ public struct SetRequestLexicon: Sendable {
     private let tagsByKey: [String: String]
     private let filtersByKey: [String: SmartFilterName]
     private let longestName: Int
+    /// The library's artists and albums (P8-8 section 3.5.2).
+    let credits: CreditNames
 
     /// - Parameters:
     ///   - tags: the tags in use in the library, as spelled there.
     ///   - smartFilters: the library's saved smart filters.
-    public init(tags: [String], smartFilters: [SmartFilterName] = []) {
+    ///   - artists: the library's stored artist values (`Metadata.artists`, any song).
+    ///   - albums: the library's Movie / Album values.
+    public init(
+        tags: [String],
+        smartFilters: [SmartFilterName] = [],
+        artists: [String] = [],
+        albums: [String] = [],
+    ) {
         var tagsByKey: [String: String] = [:]
         var longest = 1
         for tag in tags {
@@ -86,6 +95,7 @@ public struct SetRequestLexicon: Sendable {
         self.tagsByKey = tagsByKey
         self.filtersByKey = filtersByKey
         longestName = longest
+        credits = CreditNames(artists: artists, albums: albums)
     }
 
     /// The library tag a phrase names ("Crowd Pleasers" -> "crowd pleaser"), if any.
@@ -103,6 +113,7 @@ public struct SetRequestLexicon: Sendable {
         readPhrases(&scan)
         readSlotWithTag(&scan)
         scan.readKeys()
+        readCredits(&scan)
         readNames(&scan)
         return LexiconResult(
             chips: scan.orderedChips(),
@@ -299,7 +310,7 @@ public struct SetRequestLexicon: Sendable {
     }
 
     /// The index of a negator right before `index` (fillers between allowed), if any.
-    private func negatorBefore(_ index: Int, in scan: Scan) -> Int? {
+    func negatorBefore(_ index: Int, in scan: Scan) -> Int? {
         var cursor = index - 1
         while cursor >= 0, !scan.used[cursor] {
             let word = scan.tokens[cursor].word
@@ -312,11 +323,11 @@ public struct SetRequestLexicon: Sendable {
         return nil
     }
 
-    private func longestTag(in scan: Scan, at index: Int) -> (String, Int)? {
+    func longestTag(in scan: Scan, at index: Int) -> (String, Int)? {
         longest(in: scan, at: index) { tagsByKey[$0] }
     }
 
-    private func longestFilter(in scan: Scan, at index: Int) -> (SmartFilterName, Int)? {
+    func longestFilter(in scan: Scan, at index: Int) -> (SmartFilterName, Int)? {
         longest(in: scan, at: index) { filtersByKey[$0] }
     }
 

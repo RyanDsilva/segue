@@ -231,8 +231,10 @@ extension NearDuplicateIndex {
         return Double(lhs.intersection(rhs).count) / Double(union)
     }
 
+    /// `ArtistNames.forms`: each value split first, so a legacy `{artist: Vishal & Shekhar}`
+    /// meets a paste split into Vishal, Shekhar (P8-8 section 3.5).
     static func artistForms(_ artists: [String]) -> Set<String> {
-        Set(artists.map(RomanNormalizer.normalize).filter { !$0.isEmpty })
+        ArtistNames.forms(artists)
     }
 
     private static func isBetter(

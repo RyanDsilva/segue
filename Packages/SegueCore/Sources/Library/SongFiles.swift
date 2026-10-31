@@ -107,6 +107,7 @@ struct LoadedSong: Sendable, Equatable {
             firstLine: firstLine,
             lyrics: lyrics,
             tags: indexedTags,
+            album: metadata.album ?? "",
         )
     }
 

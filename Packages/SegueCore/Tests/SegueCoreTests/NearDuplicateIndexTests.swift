@@ -268,6 +268,26 @@ struct NearDuplicateIndexTests {
         #expect(full.count == 398)
     }
 
+    /// P8-8 section 3.5: a legacy combined artist meets its split form.
+    @Test
+    func `a combined library artist meets a split paste`() throws {
+        #expect(NearDuplicateIndex.artistSimilarity(
+            NearDuplicateIndex.artistForms(["Vishal", "Shekhar"]),
+            NearDuplicateIndex.artistForms(["Vishal & Shekhar"]),
+        ) == 1)
+        let library = Self.song(Self.source(
+            title: "Dilli Nights",
+            artist: "Vishal & Shekhar",
+            lyrics: Self.lines(Self.base),
+        ))
+        let index = NearDuplicateIndex([library])
+        let incoming = "{title: Dilli Nights}\n{artist: Vishal}\n{artist: Shekhar}\n"
+            + Self.sameLyrics + "\n"
+        let match = try #require(Self.match(index, incoming))
+        #expect(match.breakdown.artist == 1)
+        #expect(match.songId == library.id)
+    }
+
     private static func rounded(_ value: Double) -> Double {
         (value * 100).rounded() / 100
     }

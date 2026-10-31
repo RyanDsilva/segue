@@ -67,6 +67,11 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
     public var length: SmartFilterRange?
     /// Never played in a finished show.
     public var neverPlayed: Bool
+    /// "Artist is any of" (P8-8 section 3.5): names as written; a song matches when any of
+    /// its artists (split, `ArtistNames.forms`) meets any of these.
+    public var artists: [String]
+    /// "Movie / Album is any of" (P8-8 section 4.4): whole names, compared normalized.
+    public var albums: [String]
 
     public init(
         allTags: [String] = [],
@@ -77,6 +82,8 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         tempo: SmartFilterRange? = nil,
         length: SmartFilterRange? = nil,
         neverPlayed: Bool = false,
+        artists: [String] = [],
+        albums: [String] = [],
     ) {
         self.allTags = allTags
         self.anyTags = anyTags
@@ -86,6 +93,8 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         self.tempo = tempo
         self.length = length
         self.neverPlayed = neverPlayed
+        self.artists = artists
+        self.albums = albums
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -97,6 +106,8 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         case tempo
         case length
         case neverPlayed
+        case artists
+        case albums
     }
 
     /// Missing keys take their empty value, so a hand-written file may list only what it
@@ -112,6 +123,8 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         tempo = try container.decodeIfPresent(SmartFilterRange.self, forKey: .tempo)
         length = try container.decodeIfPresent(SmartFilterRange.self, forKey: .length)
         neverPlayed = try container.decodeIfPresent(Bool.self, forKey: .neverPlayed) ?? false
+        artists = try container.decodeIfPresent([String].self, forKey: .artists) ?? []
+        albums = try container.decodeIfPresent([String].self, forKey: .albums) ?? []
     }
 
     /// How many conditions are set (analytics' conditions bucket, the sidebar's summary).
@@ -129,7 +142,7 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         [
             !allTags.isEmpty, !anyTags.isEmpty, !noneTags.isEmpty, !proficiencies.isEmpty,
             !keys.isEmpty, tempo.map { !$0.isOpen } ?? false, length.map { !$0.isOpen } ?? false,
-            neverPlayed,
+            neverPlayed, !artists.isEmpty, !albums.isEmpty,
         ]
     }
 
@@ -147,6 +160,8 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
             anyTags: Set(anyTags),
             excludedTags: Set(noneTags),
             keys: Set(keys),
+            artists: SongFilter.artistForms(artists),
+            albums: SongFilter.albumForms(albums),
         )
         if let tempo, !tempo.isOpen {
             filter.tempo = SongFilter.Bounds(lower: tempo.min, upper: tempo.max)

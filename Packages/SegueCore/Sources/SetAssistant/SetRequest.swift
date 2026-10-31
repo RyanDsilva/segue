@@ -97,6 +97,15 @@ public enum SetChip: Sendable, Hashable, Codable {
     case closer(tag: String)
     /// Score recently played songs down (on by default).
     case avoidRecent(Bool)
+    /// A song by this artist (several artist chips: any of them; P8-8 section 3.5.2). The
+    /// name as the library spells it.
+    case artist(String)
+    /// No song by this artist.
+    case excludeArtist(String)
+    /// A song from this movie or album (several: any of them; P8-8 section 4.4).
+    case album(String)
+    /// No song from this movie or album.
+    case excludeAlbum(String)
 
     /// Chips of the same slot replace each other (a second length replaces the first);
     /// tag and key chips accumulate, one per value.
@@ -114,6 +123,8 @@ public enum SetChip: Sendable, Hashable, Codable {
         case .opener: "opener"
         case .closer: "closer"
         case .avoidRecent: "recent"
+        case let .artist(name), let .excludeArtist(name): "artist:" + SetRequest.fold(name)
+        case let .album(name), let .excludeAlbum(name): "album:" + SetRequest.fold(name)
         }
     }
 }
@@ -169,6 +180,12 @@ public struct SetRequest: Sendable, Hashable, Codable {
     public var openerTag: String?
     public var closerTag: String?
     public var avoidRecent: Bool
+    /// Any of these artists (`ArtistNames.forms` matching); empty = no constraint.
+    public var artists: [String] = []
+    public var excludeArtists: [String] = []
+    /// Any of these movies or albums (normalized whole names); empty = no constraint.
+    public var albums: [String] = []
+    public var excludeAlbums: [String] = []
 
     public init(
         targetLength: TimeInterval? = nil,
@@ -221,6 +238,28 @@ public struct SetRequest: Sendable, Hashable, Codable {
         case let .closer(tag): closerTag = tag
         case let .avoidRecent(on): avoidRecent = on
         case .excludeKey, .excludeTag, .key, .smartFilter, .tag: applyListChip(kind)
+        case .album, .artist, .excludeAlbum, .excludeArtist: applyCreditChip(kind)
+        }
+    }
+
+    /// Artists and albums accumulate like tags; including one drops its exclusion and the
+    /// other way round.
+    private mutating func applyCreditChip(_ kind: SetChip) {
+        switch kind {
+        case let .artist(name):
+            excludeArtists.removeAll { Self.fold($0) == Self.fold(name) }
+            Self.appendUnique(name, to: &artists)
+        case let .excludeArtist(name):
+            artists.removeAll { Self.fold($0) == Self.fold(name) }
+            Self.appendUnique(name, to: &excludeArtists)
+        case let .album(name):
+            excludeAlbums.removeAll { Self.fold($0) == Self.fold(name) }
+            Self.appendUnique(name, to: &albums)
+        case let .excludeAlbum(name):
+            albums.removeAll { Self.fold($0) == Self.fold(name) }
+            Self.appendUnique(name, to: &excludeAlbums)
+        default:
+            break
         }
     }
 
@@ -292,6 +331,10 @@ public extension SetChip {
         case let .smartFilter(id): filterName(id) ?? "Smart filter"
         case let .avoidRecent(on): on ? "Avoid recent" : "Recent OK"
         case .closer, .excludeKey, .excludeTag, .key, .opener, .tag: nameTitle
+        case let .artist(name): "by \(name)"
+        case let .excludeArtist(name): "not by \(name)"
+        case let .album(name): "from \(name)"
+        case let .excludeAlbum(name): "not from \(name)"
         }
     }
 
@@ -319,15 +362,20 @@ public extension SetChip {
 
 public extension SetRequest {
     /// The song conditions of the request as a library matcher (NL picks in the library
-    /// search and on stage): tags (any of), excluded tags, keys, the proficiency floor and
-    /// the tempo range. Lengths, counts, slots and smart filters do not apply to a search.
-    /// Nil when the request holds none of them.
+    /// search and on stage): tags (any of), excluded tags, keys, the proficiency floor, the
+    /// tempo range, and artists and albums (any of, and their exclusions). Lengths, counts,
+    /// slots and smart filters do not apply to a search. Nil when the request holds none of
+    /// them.
     var songFilter: SongFilter? {
         var filter = SongFilter(
             anyTags: Set(includeTags),
             excludedTags: Set(excludeTags),
             keys: Set(keys),
+            artists: SongFilter.artistForms(artists),
+            albums: SongFilter.albumForms(albums),
         )
+        filter.excludedArtists = SongFilter.artistForms(excludeArtists)
+        filter.excludedAlbums = SongFilter.albumForms(excludeAlbums)
         switch proficiency {
         case .anything, .notLearning: break
         case .ready: filter.proficiencies = [.ready, .pro]

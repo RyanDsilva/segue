@@ -257,6 +257,52 @@ struct SmartFilterTests {
             .contains("Unknown"))
     }
 
+    /// P8-8 sections 3.5 and 4.4: "Artist is any of" over split forms, "Movie / Album is
+    /// any of" over normalized whole names.
+    @Test
+    func `artists and albums match any of`() async throws {
+        let lib = try TestLibrary()
+        let store = try await lib.openStore()
+        for source in [
+            "{title: Ghar More}\n{artist: Shreya Ghoshal}\n{album: Kalank}\nLa\n",
+            "{title: Dilli}\n{artist: Vishal}\n{artist: Shekhar}\nLa\n",
+            "{title: Dus}\n{artist: Vishal & Shekhar}\n{album: Dus}\nLa\n",
+            "{title: Plain}\nLa\n",
+        ] {
+            _ = try await store.createSong(source: source)
+        }
+        let songs = try await store.allSongs()
+        func titles(_ conditions: SmartFilterConditions) -> [String] {
+            songs.filter(conditions.compiled().matches).titles.sorted()
+        }
+        #expect(titles(SmartFilterConditions(artists: ["Shekhar"])) == ["Dilli", "Dus"])
+        #expect(titles(SmartFilterConditions(artists: ["vishal & shekhar"])) == ["Dilli", "Dus"])
+        #expect(titles(SmartFilterConditions(artists: ["shreya ghoshal", "Nobody"]))
+            == ["Ghar More"])
+        #expect(titles(SmartFilterConditions(albums: ["kalank", "Dus"])) == ["Dus", "Ghar More"])
+        #expect(titles(SmartFilterConditions(albums: ["Kalaank"])) == ["Ghar More"])
+        #expect(titles(SmartFilterConditions(artists: ["Vishal"], albums: ["Dus"])) == ["Dus"])
+        #expect(SmartFilterConditions(artists: ["A"], albums: ["B"]).count == 2)
+    }
+
+    @Test
+    func `artist and album conditions read from a hand-written file`() async throws {
+        let lib = try TestLibrary()
+        let text = """
+        {"id": "01JAAAAAAAAAAAAAAAAAAAAAAA", "name": "Kalank", "schemaVersion": 1,
+         "createdAt": "2026-01-01T00:00:00Z", "updatedAt": "2026-01-01T00:00:00Z",
+         "conditions": {"artists": ["Arijit Singh"], "albums": ["Kalank"]}}
+        """
+        try lib.write(text, to: "filters/kalank.filter.json")
+        let store = try await Self.store(lib)
+        let filter = try #require(await store.all().first)
+        #expect(filter.conditions == SmartFilterConditions(
+            artists: ["Arijit Singh"],
+            albums: ["Kalank"],
+        ))
+        #expect(try lib.read("filters/kalank.filter.json") == text)
+    }
+
     @Test
     func `the store evaluates a saved filter by id`() async throws {
         let fix = try await Self.library()

@@ -41,6 +41,16 @@ public struct SongFilter: Sendable, Equatable {
     public var playedSongs: Set<SongID>?
     /// Only songs missing a set essential (key, length or tempo; `SongEssentials`, R110).
     public var missingEssentials: Bool
+    /// "Artist is any of" (P8-8 section 3.5): matching forms (`ArtistNames.forms`) of the
+    /// listed names; a song matches when its own forms meet any of them. Empty = any.
+    public var artists: Set<String>
+    /// "Movie / Album is any of" (P8-8 section 4.4): `RomanNormalizer.normalize` of each
+    /// whole album name; a song matches when its normalized `{album}` is one. Empty = any.
+    public var albums: Set<String>
+    /// No song by any of these artists (forms, as `artists`).
+    public var excludedArtists: Set<String> = []
+    /// No song from any of these albums (normalized, as `albums`).
+    public var excludedAlbums: Set<String> = []
 
     public init(
         text: String = "",
@@ -54,6 +64,8 @@ public struct SongFilter: Sendable, Equatable {
         length: Bounds? = nil,
         playedSongs: Set<SongID>? = nil,
         missingEssentials: Bool = false,
+        artists: Set<String> = [],
+        albums: Set<String> = [],
     ) {
         self.text = text
         self.tags = tags
@@ -66,6 +78,24 @@ public struct SongFilter: Sendable, Equatable {
         self.length = length
         self.playedSongs = playedSongs
         self.missingEssentials = missingEssentials
+        self.artists = artists
+        self.albums = albums
+    }
+
+    /// The artists one stored value names (`ArtistNames.split`'s parts), for callers that
+    /// cannot see ChordPro.
+    public static func artistParts(_ value: String) -> [String] {
+        ArtistNames.split(value).parts
+    }
+
+    /// The `artists` value for a list of artist names as written.
+    public static func artistForms(_ names: [String]) -> Set<String> {
+        ArtistNames.forms(names)
+    }
+
+    /// The `albums` value for a list of album names as written.
+    public static func albumForms(_ names: [String]) -> Set<String> {
+        Set(names.map(RomanNormalizer.normalize).filter { !$0.isEmpty })
     }
 
     /// Inclusive numeric bounds; a nil side is open.
@@ -94,7 +124,8 @@ public struct SongFilter: Sendable, Equatable {
     public var hasConstraints: Bool {
         !tags.isEmpty || !proficiencies.isEmpty || key != nil || !anyTags.isEmpty
             || !excludedTags.isEmpty || !keys.isEmpty || tempo != nil || length != nil
-            || playedSongs != nil || missingEssentials
+            || playedSongs != nil || missingEssentials || !artists.isEmpty || !albums.isEmpty
+            || !excludedArtists.isEmpty || !excludedAlbums.isEmpty
     }
 
     /// Whether `song` satisfies every constraint (not `text`).
@@ -110,6 +141,30 @@ public struct SongFilter: Sendable, Equatable {
             return false
         }
         return matchesTags(song) && matchesKey(song) && matchesNumbers(song.document.metadata)
+            && matchesCredits(song.document.metadata)
+    }
+
+    /// Artists and Movie / Album, any of each, and their exclusions; a song without one
+    /// never matches a set list.
+    private func matchesCredits(_ metadata: Metadata) -> Bool {
+        guard !artists.isEmpty || !albums.isEmpty || !excludedArtists.isEmpty
+            || !excludedAlbums.isEmpty
+        else { return true }
+        let forms = ArtistNames.forms(metadata.artists)
+        if !artists.isEmpty, forms.isDisjoint(with: artists) {
+            return false
+        }
+        if !forms.isDisjoint(with: excludedArtists) {
+            return false
+        }
+        let album = metadata.album.map(RomanNormalizer.normalize)
+        if !albums.isEmpty {
+            guard let album, albums.contains(album) else { return false }
+        }
+        if let album, excludedAlbums.contains(album) {
+            return false
+        }
+        return true
     }
 
     private func matchesTags(_ song: SongRecord) -> Bool {

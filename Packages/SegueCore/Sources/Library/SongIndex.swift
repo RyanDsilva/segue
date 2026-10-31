@@ -16,6 +16,8 @@ struct IndexedSong: Sendable, Equatable {
     var lyrics: String
     /// The song's tags (normalized, see `SongMetadata.normalizedTags`), one per line.
     var tags: String
+    /// "Movie / Album": the first `{album}`, "" when none (P8-8 section 4.3).
+    var album: String = ""
 }
 
 /// What the indexer needs to decide whether a file changed.
@@ -55,8 +57,9 @@ struct SongIndex: Sendable {
     /// Bump on any change to the tables below.
     ///
     /// History: 1 = phase 0 (songs + FTS); 2 = phase 2 (tags in `songs` and FTS, the
-    /// `plays` projection); 3 = the loose (vowel quality) FTS columns.
-    static let schemaVersion = 3
+    /// `plays` projection); 3 = the loose (vowel quality) FTS columns; 4 = the album
+    /// (Movie / Album) columns, P8-8.
+    static let schemaVersion = 4
 
     /// Stored in `PRAGMA user_version`; covers both schema and normalization rules.
     static var version: Int {
@@ -64,12 +67,15 @@ struct SongIndex: Sendable {
     }
 
     /// FTS5 columns, in table order (`song_id` is unindexed).
-    private static let originalColumns = "{title artist lyrics tags}"
-    private static let normalizedColumns = "{norm_title norm_artist norm_lyrics norm_tags}"
-    private static let looseColumns = "{loose_title loose_artist loose_lyrics loose_tags}"
-    /// bm25 weights per FTS column: song_id, title, artist, lyrics, tags, then norm_* and
-    /// loose_* in the same order.
-    private static let rankExpression = "bm25(songs_fts, 0, 10, 5, 1, 5, 10, 5, 1, 5, 10, 5, 1, 5)"
+    private static let originalColumns = "{title artist lyrics tags album}"
+    private static let normalizedColumns =
+        "{norm_title norm_artist norm_lyrics norm_tags norm_album}"
+    private static let looseColumns =
+        "{loose_title loose_artist loose_lyrics loose_tags loose_album}"
+    /// bm25 weights per FTS column: song_id, title, artist, lyrics, tags, album, then norm_*
+    /// and loose_* in the same order.
+    private static let rankExpression =
+        "bm25(songs_fts, 0, 10, 5, 1, 5, 5, 10, 5, 1, 5, 5, 10, 5, 1, 5, 5)"
 
     let pool: DatabasePool
 
@@ -134,9 +140,9 @@ struct SongIndex: Sendable {
             );
             CREATE VIRTUAL TABLE songs_fts USING fts5(
                 song_id UNINDEXED,
-                title, artist, lyrics, tags,
-                norm_title, norm_artist, norm_lyrics, norm_tags,
-                loose_title, loose_artist, loose_lyrics, loose_tags,
+                title, artist, lyrics, tags, album,
+                norm_title, norm_artist, norm_lyrics, norm_tags, norm_album,
+                loose_title, loose_artist, loose_lyrics, loose_tags, loose_album,
                 tokenize = 'unicode61 remove_diacritics 2'
             );
             CREATE TABLE plays (
@@ -231,21 +237,24 @@ struct SongIndex: Sendable {
         )
         try db.execute(
             sql: """
-            INSERT INTO songs_fts (song_id, title, artist, lyrics, tags,
-                                   norm_title, norm_artist, norm_lyrics, norm_tags,
-                                   loose_title, loose_artist, loose_lyrics, loose_tags)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO songs_fts (song_id, title, artist, lyrics, tags, album,
+                                   norm_title, norm_artist, norm_lyrics, norm_tags, norm_album,
+                                   loose_title, loose_artist, loose_lyrics, loose_tags,
+                                   loose_album)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             arguments: [
-                song.id, song.title, song.artist, song.lyrics, song.tags,
+                song.id, song.title, song.artist, song.lyrics, song.tags, song.album,
                 RomanNormalizer.normalize(song.title),
                 RomanNormalizer.normalize(song.artist),
                 RomanNormalizer.normalize(song.lyrics),
                 RomanNormalizer.normalize(song.tags),
+                RomanNormalizer.normalize(song.album),
                 RomanNormalizer.loose(song.title),
                 RomanNormalizer.loose(song.artist),
                 RomanNormalizer.loose(song.lyrics),
                 RomanNormalizer.loose(song.tags),
+                RomanNormalizer.loose(song.album),
             ],
         )
     }

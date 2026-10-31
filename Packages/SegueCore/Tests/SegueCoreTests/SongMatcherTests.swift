@@ -64,7 +64,7 @@ struct SongMatcherTests {
             switch tier {
             case .exactTitle, .titlePrefix: .strong
             case .titleWords: .likely
-            case .firstLine, .fuzzyTitle: .weak
+            case .artist, .firstLine, .fuzzyTitle: .weak
             case nil: nil
             }
         }

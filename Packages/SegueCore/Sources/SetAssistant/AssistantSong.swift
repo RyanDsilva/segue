@@ -20,6 +20,10 @@ public struct AssistantSong: Sendable, Hashable, Identifiable {
     /// `{duration}` in seconds; nil = unknown (R91).
     public var length: TimeInterval?
     public var lastPlayed: Date?
+    /// The artists' matching forms (`SongFilter.artistForms`), for artist chips.
+    public var artistForms: Set<String>
+    /// The Movie / Album, `RomanNormalizer.normalize`d, for album chips; nil when none.
+    public var albumForm: String?
 
     public init(
         id: SongID,
@@ -32,6 +36,8 @@ public struct AssistantSong: Sendable, Hashable, Identifiable {
         tempo: Double? = nil,
         length: TimeInterval? = nil,
         lastPlayed: Date? = nil,
+        artists: [String] = [],
+        album: String? = nil,
     ) {
         self.id = id
         self.title = title
@@ -43,6 +49,8 @@ public struct AssistantSong: Sendable, Hashable, Identifiable {
         self.tempo = tempo
         self.length = length.flatMap { $0 > 0 ? $0 : nil }
         self.lastPlayed = lastPlayed
+        artistForms = SongFilter.artistForms(artists)
+        albumForm = album.map(RomanNormalizer.normalize).flatMap { $0.isEmpty ? nil : $0 }
     }
 
     /// Reads `record` (with its play stats, if it was ever played).
@@ -59,6 +67,8 @@ public struct AssistantSong: Sendable, Hashable, Identifiable {
             tempo: metadata.tempo,
             length: metadata.duration,
             lastPlayed: stats?.lastPlayed,
+            artists: metadata.artists,
+            album: metadata.album,
         )
     }
 
