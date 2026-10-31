@@ -28,19 +28,16 @@
         var body: some View {
             VStack(alignment: .leading, spacing: 10) {
                 titleRow
-                HStack(spacing: 10) {
-                    modePicker
-                    Spacer(minLength: 0)
-                    smallButton("Duplicate", key: "⌘D", id: AccessibilityID.arrangementDuplicate) {
-                        if let chip {
-                            perform(.duplicate(chip.id))
-                        }
+                // One row where the pane is wide enough; else the buttons under the picker.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) {
+                        modePicker
+                        Spacer(minLength: 0)
+                        passButtons
                     }
-                    .disabled(!canAppend)
-                    smallButton("Remove", key: "⌫", id: AccessibilityID.arrangementRemove) {
-                        if let chip {
-                            perform(.remove(chip.id))
-                        }
+                    VStack(alignment: .leading, spacing: 8) {
+                        modePicker
+                        passButtons
                     }
                 }
                 .disabled(isReadOnly || chip == nil)
@@ -52,6 +49,23 @@
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(Theme.color.line, lineWidth: 1)
             }
+        }
+
+        private var passButtons: some View {
+            HStack(spacing: 10) {
+                smallButton("Duplicate", key: "⌘D", id: AccessibilityID.arrangementDuplicate) {
+                    if let chip {
+                        perform(.duplicate(chip.id))
+                    }
+                }
+                .disabled(!canAppend)
+                smallButton("Remove", key: "⌫", id: AccessibilityID.arrangementRemove) {
+                    if let chip {
+                        perform(.remove(chip.id))
+                    }
+                }
+            }
+            .fixedSize()
         }
 
         private var titleRow: some View {

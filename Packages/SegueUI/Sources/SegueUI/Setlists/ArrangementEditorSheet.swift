@@ -14,14 +14,22 @@
         let slot: ArrangingSlot
         let model: SetlistsViewModel
         let library: LibraryViewModel
+        /// The content size of the window the sheet opens over (nil: not known yet).
+        var windowSize: CGSize?
         @Environment(\.dismiss) private var dismiss
         @Environment(\.arrangementStage) private var stage
         @State private var editor: ArrangementEditor
 
-        init(slot: ArrangingSlot, model: SetlistsViewModel, library: LibraryViewModel) {
+        init(
+            slot: ArrangingSlot,
+            model: SetlistsViewModel,
+            library: LibraryViewModel,
+            windowSize: CGSize? = nil,
+        ) {
             self.slot = slot
             self.model = model
             self.library = library
+            self.windowSize = windowSize
             _editor = State(initialValue: ArrangementEditor(slot: slot, model: model))
         }
 
@@ -39,6 +47,7 @@
                     editor: editor,
                     isReadOnly: setlist.readOnly != nil || library.isPerforming,
                     stage: stage,
+                    size: Self.size(in: windowSize),
                     done: { dismiss() },
                     rehearse: { rehearse(songID) },
                 )
@@ -80,6 +89,8 @@
         let editor: ArrangementEditor
         let isReadOnly: Bool
         let stage: ArrangementStage?
+        /// The sheet's size (`ArrangementEditorSheet.size(in:)`).
+        let size: CGSize
         let done: () -> Void
         let rehearse: () -> Void
 
@@ -117,7 +128,7 @@
                 Rule()
                 HStack(spacing: 0) {
                     leftPane(draft)
-                        .frame(width: 640)
+                        .frame(width: ArrangementEditorSheet.paneWidth(sheetWidth: size.width))
                         .background(Theme.color.surfaceAlt.opacity(0.35))
                     Rule(axis: .vertical)
                     ArrangementPreview(
@@ -133,7 +144,7 @@
                 Rule()
                 footer(draft)
             }
-            .frame(width: 1200, height: 760)
+            .frame(width: size.width, height: size.height)
             .background(Theme.color.ground)
             .onAppear {
                 roadmapText = draft.roadmap
@@ -179,6 +190,8 @@
                     .foregroundStyle(Theme.color.muted)
                     .lineLimit(1)
                     .truncationMode(.tail)
+                    // In a narrow sheet the subtitle gives way, never the buttons.
+                    .layoutPriority(-1)
                 Spacer(minLength: 8)
                 Button(action: rehearse) {
                     HStack(spacing: 6) {
@@ -345,9 +358,14 @@
                 .disabled(isReadOnly)
                 Text(songLengthHint)
                     .help("The song's own length stays in the song; this slot has its own.")
-                Spacer()
-                Text(draft.footerCounts + " · this gig only, the song is not changed")
-                    .lineLimit(1)
+                Spacer(minLength: 8)
+                // The note drops before anything else does in a narrow sheet.
+                ViewThatFits(in: .horizontal) {
+                    Text(draft.footerCounts + " · this gig only, the song is not changed")
+                    Text(draft.footerCounts)
+                }
+                .lineLimit(1)
+                .layoutPriority(-1)
             }
             .font(SchibstedGrotesk.medium.font(size: 13))
             .foregroundStyle(Theme.color.muted)

@@ -25,6 +25,8 @@
         @AppStorage(ChangeoverSetting.defaultsKey) private var defaultChangeover = 0
         /// The set assistant's command bar state (P3-7), made on first appearance.
         @State private var assistant: SetAssistantModel?
+        /// The window's content size: Arrange Sections fits itself to it.
+        @State private var windowSize: CGSize?
         @Environment(\.smartFilterList) private var smartFilters
 
         var body: some View {
@@ -117,8 +119,14 @@
                 get: { model.arranging.flatMap { $0.setlist == setlist.id ? $0 : nil } },
                 set: { model.arranging = $0 },
             )) { slot in
-                ArrangementEditorSheet(slot: slot, model: model, library: library)
+                ArrangementEditorSheet(
+                    slot: slot,
+                    model: model,
+                    library: library,
+                    windowSize: windowSize,
+                )
             }
+            .windowContentSize($windowSize)
             .sheet(item: $naming) { purpose in
                 SetlistNameSheet(purpose: purpose) { name in
                     Task { await model.rename(setlist.id, to: name) }
