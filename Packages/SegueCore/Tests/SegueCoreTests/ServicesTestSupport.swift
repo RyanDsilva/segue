@@ -174,7 +174,28 @@ enum VocabularySample {
             ))
         }
         events += timingEvents
+        events += fillEvents
         return events
+    }
+
+    /// Row 26 (P8-7): every family, rank, view, feel and "Shows on" at least once.
+    private static var fillEvents: [AnalyticsEvent] {
+        let families = FillSavedFamily.allCases, ranks = FillSavedRank.allCases
+        let views = FillSavedView.allCases, feels = WalkUpFeel.allCases
+        let shows = FillSavedShows.allCases
+        return (0 ..< max(families.count, ranks.count, views.count, feels.count)).map { row in
+            .fillSaved(FillSavedSummary(
+                family: families[row % families.count],
+                rank: ranks[row % ranks.count],
+                edited: row.isMultiple(of: 2),
+                view: views[row % views.count],
+                chords: SmallBucket(row + 2),
+                keyChange: row.isMultiple(of: 3),
+                genre: feels[row % feels.count],
+                shows: shows[row % shows.count],
+                estimated: !row.isMultiple(of: 2),
+            ))
+        }
     }
 
     /// Rows 27 and 28 (P8-7): every tap mode, outcome and key-change action and interval.

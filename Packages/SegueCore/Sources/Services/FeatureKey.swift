@@ -71,4 +71,9 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case timingTap
     case chartDirective
     case keyChangeChip
+    /// P8-7 section 15: the fill editor opened from a span (editor, library), a candidate or
+    /// the draft played in it, its piano roll used (once per sheet).
+    case fillEditor
+    case fillAudition
+    case fillPianoRoll
 }

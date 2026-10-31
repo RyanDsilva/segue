@@ -52,6 +52,9 @@ public extension AnalyticsEvent {
         case let .walkUpPicked(summary):
             return .daily(key: "\(name)|\(summary.kind.rawValue)|\(summary.rank.rawValue)|"
                 + summary.genre.rawValue)
+        case let .fillSaved(summary):
+            return .daily(key: "\(name)|\(summary.family.rawValue)|\(summary.rank.rawValue)|"
+                + String(summary.edited))
         case let .timingKeyChange(action, interval):
             return .daily(key: "\(name)|\(action.rawValue)|\(interval.rawValue)")
         }

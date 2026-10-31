@@ -27,6 +27,16 @@ public struct TapCapturedSummary: Sendable, Hashable {
         self.skipped = skipped
         self.tempoSet = tempoSet
     }
+
+    var params: [String: String] {
+        [
+            "segue.mode": mode.rawValue,
+            "segue.outcome": outcome.rawValue,
+            "segue.chords": chords.rawValue,
+            "segue.skipped": skipped.rawValue,
+            "segue.tempoSet": String(tempoSet),
+        ]
+    }
 }
 
 /// With Segue's click, or tempo-free (`TapMode`'s raw values).
