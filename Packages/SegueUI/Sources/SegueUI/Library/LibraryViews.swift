@@ -355,16 +355,23 @@
     private struct SongRow: View {
         let record: SongRecord
         let stats: PlayStats?
-        /// The selected row also offers Rehearse and Live (R150).
+        /// The selected row offers Rehearse and Live (R150) in place of its key chip and
+        /// proficiency mark, which the preview beside it shows, so the title keeps the room
+        /// it has on every other row (beside all four, it was squeezed to nothing).
         var isSelected = false
 
         var body: some View {
-            HStack(spacing: 10) {
-                content
-                if isSelected {
-                    SongSessionButtons(songID: record.id, size: .small)
+            content
+                .overlay(alignment: .trailing) {
+                    if isSelected {
+                        sessionButtons
+                    }
                 }
-            }
+        }
+
+        private var sessionButtons: some View {
+            SongSessionButtons(songID: record.id, size: .small)
+                .fixedSize()
         }
 
         private var content: some View {
@@ -391,6 +398,24 @@
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 SongEssentialsMark(record: record)
+                // The trailing slot is as wide as the wider of its two contents, so the
+                // title truncates at the same point whether or not the row is selected.
+                ZStack(alignment: .trailing) {
+                    accessories
+                        .opacity(isSelected ? 0 : 1)
+                    if isSelected {
+                        sessionButtons.hidden()
+                    }
+                }
+            }
+            .padding(.vertical, 6)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier(AccessibilityID.songRow)
+        }
+
+        /// The key chip and the proficiency mark.
+        private var accessories: some View {
+            HStack(spacing: 12) {
                 if let key = SongSummary.writtenKey(record) {
                     KeyChip(key: key)
                 }
@@ -403,9 +428,7 @@
                 }
                 .frame(width: 82, height: 16, alignment: .leading)
             }
-            .padding(.vertical, 6)
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier(AccessibilityID.songRow)
+            .fixedSize()
         }
 
         private var detail: String {
