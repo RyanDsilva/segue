@@ -260,11 +260,11 @@
                 timing: prefs.timing,
                 order: nil,
             )
-            let density = profile?.walkUps ?? .off
+            // Walk-ups follow the chart's density: none while Off (R170).
             let context = BassLineContext(
                 transform: model.transform,
                 genre: prefs.genre ?? profile?.genre ?? .pop,
-                density: density == .off ? .sections : density,
+                density: profile?.walkUps ?? .off,
                 timeline: written,
                 picks: prefs.walkUps.isEmpty ? .empty
                     : ChordAnchors.resolve(prefs.walkUps, units: units, sections: model.sections),

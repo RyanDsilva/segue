@@ -142,9 +142,14 @@
 
         private func voice(_ title: String, _ voice: VoiceToggle) -> some View {
             let isOn = model.voices.contains(voice)
+            // Walk-ups follow the chart's density: none while it is Off (R170).
+            let isOff = voice == .walkUps && model.source?.hasWalkUps == false
             return SegmentButton(title: title, isOn: isOn) { model.setVoice(voice, !isOn) }
+                .disabled(isOff)
+                .opacity(isOff ? 0.45 : 1)
                 .accessibilityIdentifier(AccessibilityID.playAlongVoice(voice.rawValue))
-                .help(isOn ? "Mute the \(title.lowercased())" : "Play the \(title.lowercased())")
+                .help(isOff ? "Walk-ups are Off in Settings > Instrument"
+                    : isOn ? "Mute the \(title.lowercased())" : "Play the \(title.lowercased())")
         }
     }
 

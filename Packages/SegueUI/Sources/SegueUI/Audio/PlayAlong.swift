@@ -149,7 +149,8 @@ final class PlayAlong {
 
     // MARK: Voices and tempo
 
-    /// The toggled voices; Walk-ups follows the charts until it is set.
+    /// The toggled voices; Walk-ups follows the charts until it is set, and is never on
+    /// while the chart's walk-ups are Off.
     var voices: Set<VoiceToggle> {
         let settings = session.settings.settings
         var voices: Set<VoiceToggle> = []
@@ -162,7 +163,9 @@ final class PlayAlong {
         if settings.playAlongClick {
             voices.insert(.click)
         }
-        if settings.playAlongWalkUps ?? source?.chartsShowWalkUps ?? false {
+        if source?.hasWalkUps != false,
+           settings.playAlongWalkUps ?? source?.chartsShowWalkUps ?? false
+        {
             voices.insert(.walkUps)
         }
         return voices

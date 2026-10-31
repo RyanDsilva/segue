@@ -24,12 +24,15 @@ struct PlayAlongSource: Equatable {
     /// Whether the charts show walk-ups (the bass-note view with walk-ups not Off): the
     /// Walk-ups toggle's default.
     var chartsShowWalkUps: Bool
+    /// Whether the chart's walk-up density is not Off. Off, play-along plays no walk-ups
+    /// and the Walk-ups toggle is unavailable (R170).
+    var hasWalkUps: Bool
     /// Whether timing can be saved (a saved, writable song).
     var canEdit: Bool
 
-    /// The source for a song rendered as `model` with its sidecar `prefs`. Walk-ups are
-    /// worked out even when the charts hide them, so the Walk-ups toggle can turn them on:
-    /// at the profile's density, else into sections.
+    /// The source for a song rendered as `model` with its sidecar `prefs`. Walk-ups follow
+    /// the chart's density (none while Off, R170); they are worked out even when the
+    /// bass-note view is off, so the Walk-ups toggle can turn them on.
     @MainActor static func make(
         model: RenderModel,
         document: SongDocument,
@@ -49,7 +52,7 @@ struct PlayAlongSource: Equatable {
         let context = BassLineContext(
             transform: model.transform,
             genre: prefs.genre ?? profile?.genre ?? .pop,
-            density: density == .off ? .sections : density,
+            density: density,
             timeline: timeline,
             picks: prefs.walkUps.isEmpty ? .empty
                 : ChordAnchors.resolve(prefs.walkUps, units: units, sections: model.sections),
@@ -67,6 +70,7 @@ struct PlayAlongSource: Equatable {
             transform: model.transform,
             placement: SoundSession.placement(for: model, profile: profile),
             chartsShowWalkUps: model.transform.options.bass?.notes == true && density != .off,
+            hasWalkUps: density != .off,
             canEdit: canEdit,
         )
     }

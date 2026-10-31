@@ -39,13 +39,21 @@ struct PlayAlongTests {
         var recorder: RecordingAnalytics
     }
 
-    private func open(_ source: String = Self.song) async throws -> Opened {
+    private func open(
+        _ source: String = Self.song,
+        walkUps: WalkUpDensity? = nil,
+    ) async throws -> Opened {
         let env = try TestEnvironment()
         let recorder = RecordingAnalytics(env)
         let rig = SoundRig(env, services: recorder.hub)
         rig.session.settings.update { $0.chordStyle = .block }
         let library = try await env.openLibrary()
         library.sound = rig.session
+        if let walkUps {
+            let instrument = InstrumentProfileStore(defaults: env.defaults)
+            instrument.setWalkUps(walkUps)
+            library.instrument = instrument
+        }
         let song = try await library.createSong(source: source)
         library.beginEditing(song)
         let editor = try #require(library.editor)
@@ -142,6 +150,38 @@ struct PlayAlongTests {
         #expect(!events.contains { $0.event.voice == .chord })
         // Only the count-in clicks (the count-in always sounds).
         #expect(events.count { $0.event.voice != .bass } == 4)
+    }
+
+    @Test
+    func `walk-ups follow the chart's density: Off plays none even with the toggle on`()
+        async throws
+    {
+        // The roots alone: G G C C D D G G from 2 s.
+        let roots = [
+            "31@2.0",
+            "31@3.0",
+            "36@4.0",
+            "36@5.0",
+            "38@6.0",
+            "38@7.0",
+            "31@8.0",
+            "31@9.0",
+        ]
+        for density in [WalkUpDensity.off, .sections] {
+            let opened = try await open(walkUps: density)
+            opened.playAlong.setVoice(.walkUps, true)
+            #expect(opened.playAlong.voices.contains(.walkUps) == (density != .off))
+            let start = now(opened)
+            opened.playAlong.play()
+            run(opened, for: 10)
+            let bass = bassNotes(opened, from: start)
+            if density == .off {
+                #expect(bass == roots)
+            } else {
+                // Into the chorus, the C bar walks up to D (R170: no fallback when Off).
+                #expect(bass != roots)
+            }
+        }
     }
 
     @Test
