@@ -65,8 +65,6 @@ public enum FillPitch: Sendable, Hashable {
     case ninth
     /// Consecutive `approach` slots take the walk-up candidates into the landing (11.2).
     case approach
-    /// `k` semitones from the landing bass on the approach side (a chromatic line).
-    case chromatic(Int)
     /// Consecutive `scaleUp` / `scaleDown` slots: a passing-scale run into the landing.
     case scaleUp
     case scaleDown
@@ -80,6 +78,21 @@ public enum FillPitch: Sendable, Hashable {
     case target
     /// `k` passing-scale steps above the landing bass (a tihai cell).
     case targetStep(Int)
+    /// The half step below the landing bass (every corpus `approachNote`).
+    case halfStepBelow
+    /// Consecutive slots: the walk-up into the landing that arrives from a half step below
+    /// (every corpus `pickup8` row), else the sounding chord's octave then the half step.
+    case leadIn
+    /// Consecutive slots: a passing-scale run into the landing, the shorter way.
+    case scaleToward
+    /// Consecutive slots: the departing root, then half steps into the landing. From a root
+    /// within a major third of it the line starts on the root and covers the distance (B C
+    /// into C#); from farther away the root then the last three half steps (A B C C# into
+    /// D); the slots it does not need are dropped from the front.
+    case chromaticLine
+    /// The departing bass when it sits within a whole step of the landing (or on it, as
+    /// the octave), else the approach: where a slide starts (every corpus `slideInto` row).
+    case slideStart
 
     /// The spec vocabulary letter.
     public var function: FillFunction {
@@ -87,8 +100,9 @@ public enum FillPitch: Sendable, Hashable {
         case .root, .target: .root
         case .octave: .octave
         case .fifth, .ninth, .seventh, .third: .chordTone
-        case .approach, .chromatic, .targetStep: .approach
-        case .pentatonicDown, .pentatonicUp, .scaleDown, .scaleUp: .scale
+        case .approach, .chromaticLine, .halfStepBelow, .leadIn, .slideStart, .targetStep:
+            .approach
+        case .pentatonicDown, .pentatonicUp, .scaleDown, .scaleToward, .scaleUp: .scale
         case .dominant: .dominant
         }
     }
@@ -101,6 +115,9 @@ public enum FillPitch: Sendable, Hashable {
         case .scaleDown: 3
         case .pentatonicDown: 4
         case .pentatonicUp: 5
+        case .leadIn: 6
+        case .scaleToward: 7
+        case .chromaticLine: 8
         default: nil
         }
     }
@@ -115,6 +132,9 @@ public struct FillSlot: Sendable, Hashable {
     public var articulations: Set<Articulation>
     /// Only in compound meters (a 6/8 pickup has three eighths).
     public var compoundOnly: Bool
+    /// Dropped unless it falls inside the departing span after its first onset (a root
+    /// re-struck on the last bar line of a chord longer than a bar).
+    public var optional: Bool
 
     public init(
         _ at: FillTime,
@@ -122,12 +142,14 @@ public struct FillSlot: Sendable, Hashable {
         _ pitch: FillPitch,
         articulations: Set<Articulation> = [],
         compoundOnly: Bool = false,
+        optional: Bool = false,
     ) {
         self.at = at
         self.len = len
         self.pitch = pitch
         self.articulations = articulations
         self.compoundOnly = compoundOnly
+        self.optional = optional
     }
 }
 
@@ -138,6 +160,30 @@ public enum FillCondition: Sendable, Hashable {
     case preparedLift
     /// The song's feel is Bollywood (R168: a tihai only then).
     case bollywood
+    /// The landing is in the same key: into a new key a stop is the true break, with no
+    /// pickup giving the new key away before the band (the corpus's only stop at a lift).
+    case sameKey
+    /// The landing is a different chord: there is a change to anticipate (an anticipation
+    /// over a repeated chord pushes nothing).
+    case change
+}
+
+/// What a template's shape does, which the situation it is offered in rewards or not
+/// (`FillWeights.situation`, section 11.3).
+public enum FillTrait: String, Sendable, Hashable, CaseIterable {
+    /// Aims at the landing from outside it (a walk, a chromatic line, an approach note):
+    /// nothing to aim at when the chord repeats.
+    case approach
+    /// Chord-scale material of the sounding chord (a pentatonic run, octaves, root-fifth):
+    /// what a fill plays over a repeated chord.
+    case chordScale
+    /// Spells the sounding chord out (its arpeggio): what a dominant seventh invites.
+    case arpeggio
+    /// Marks the new downbeat itself (an anticipation, a slide, a repeated note, a stop):
+    /// what the start of a new section invites.
+    case accent
+    /// A rhythmic cadence (a tihai): only into a new section.
+    case cadence
 }
 
 /// One rhythm template (section 11.3).
@@ -155,6 +201,10 @@ public struct FillTemplate: Sendable, Hashable, Identifiable {
     public var simpleOnly: Bool
     /// The landing note is part of the template (an anticipation, an overhang, a tihai).
     public var ownsLanding: Bool
+    /// The last note is made to lead into the landing; false for a break-stop, whose last
+    /// note is the band's hit before the silence.
+    public var leads: Bool
+    public var traits: Set<FillTrait>
     /// The corpus example ids it was derived from.
     public var corpus: [String]
 
@@ -167,6 +217,8 @@ public struct FillTemplate: Sendable, Hashable, Identifiable {
         condition: FillCondition = .always,
         simpleOnly: Bool = false,
         ownsLanding: Bool = false,
+        leads: Bool = true,
+        traits: Set<FillTrait> = [],
         corpus: [String],
     ) {
         self.id = id
@@ -177,6 +229,8 @@ public struct FillTemplate: Sendable, Hashable, Identifiable {
         self.condition = condition
         self.simpleOnly = simpleOnly
         self.ownsLanding = ownsLanding
+        self.leads = leads
+        self.traits = traits
         self.corpus = corpus
     }
 }

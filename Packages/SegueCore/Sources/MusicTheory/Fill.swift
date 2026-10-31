@@ -70,6 +70,9 @@ public enum FillTerm: String, Sendable, Hashable, CaseIterable {
     case keyChange
     case downbeat
     case walkUpAgreement
+    /// How the template's shape meets the span's situation (a repeated chord, a dominant
+    /// seventh, a new section, a key change; `FillTrait`).
+    case situation
     /// The hold candidate's restraint bonus (R168: first for written lines, bVI-bVII-i and
     /// slow Worship, top two at a key change).
     case restraint
@@ -219,9 +222,9 @@ public struct FillCandidate: Sendable, Hashable {
 }
 
 public enum Fill {
-    /// Up to `weights.limit` candidates (A-D, then "More"), at most one per family plus the
-    /// hold candidate, best first; deterministic. `[]` only for a span the generator cannot
-    /// read (fewer than two chords).
+    /// Up to `weights.limit` candidates (A-D, then "More"), at most one per corpus pattern
+    /// family (R170) plus the hold candidate, best first; deterministic. `[]` only for a span
+    /// the generator cannot read (fewer than two chords).
     public static func candidates(
         _ context: FillContext,
         weights: FillWeights = .standard,
@@ -230,7 +233,8 @@ public enum Fill {
         FillGenerator(context: context, weights: weights, templates: templates)?.ranked() ?? []
     }
 
-    /// Every template's candidate that fits (before choosing one per family), best first.
+    /// Every template's candidate that fits (before choosing one per corpus family), best
+    /// first.
     public static func all(
         _ context: FillContext,
         weights: FillWeights = .standard,

@@ -24,11 +24,32 @@ extension FillGenerator {
         return (lead + [near], side)
     }
 
+    /// `count` notes arriving from a half step below the landing (the corpus `pickup8`): the
+    /// best walk-up that ends on T-1, else the sounding chord's octave leading to T-1.
+    func leadInLine(count: Int, from chord: Int) -> [PitchClass] {
+        let below = target.transposed(by: -1)
+        let index = landingIndex - 1
+        let candidates = WalkUp.candidates(
+            from: span[index].bass,
+            to: target,
+            context: Self.walkContext(context, from: index, beats: count + 1),
+        )
+        if let walk = candidates.first(where: { candidate in
+            candidate.kind != .hold && candidate.notes.count == count
+                && candidate.offsets.last == -1
+        }) {
+            return inMode(walk.notes.map(\.pitchClass), over: chord, direction: 1)
+        }
+        return Array(repeating: span[chord].bass, count: max(0, count - 1)) + [below]
+    }
+
     /// Under a raga or pentatonic mode, each approach note outside the passing scale moves to
     /// its in-scale neighbour (D to Db in Bhairav; R168 mode-aware pass scales); the last note
     /// a half step from the landing stays.
     func inMode(_ pitches: [PitchClass], over chord: Int, direction: Int) -> [PitchClass] {
-        guard let mode = context.mode, ![.major, .minor, .harmonicMinor].contains(mode) else {
+        guard let mode = context.mode,
+              ![.major, .minor, .harmonicMinor, .melodicMinor].contains(mode)
+        else {
             return pitches
         }
         let scale = passScale(chord, approach: true)
@@ -157,9 +178,16 @@ extension FillGenerator {
             return Set(FillMode.majorPentatonic.degrees
                 .map { key.tonic.pitchClass.transposed(by: $0) })
         }
+        if context.mode == .minorPentatonic, let key = chord.key, key.mode == .minor {
+            return Set(FillMode.minorPentatonic.degrees
+                .map { key.tonic.pitchClass.transposed(by: $0) })
+        }
         let root = chord.chord.root.pitchClass
         let minor = Set(chord.chord.formula.intervals.map { $0 % 12 }).contains(3)
-        let degrees = minor ? [0, 3, 5, 7, 10] : [0, 2, 4, 7, 9]
+        // Over a minor chord in a rock or pop feel the blues scale: the pentatonic plus b5
+        // (corpus doc section 6 item 2).
+        let blues = minor && [.pop, .rock, nil].contains(context.genre)
+        let degrees = minor ? [0, 3, 5, 7, 10] + (blues ? [6] : []) : [0, 2, 4, 7, 9]
         return Set(degrees.map { root.transposed(by: $0) })
     }
 
@@ -175,17 +203,33 @@ extension FillGenerator {
     /// run moves), from the first chord's placed bass; octaves an octave above the root they
     /// follow; folded into range.
     func place(_ notes: inout [Note]) {
+        // The register that folds the fewest notes: as placed, else an octave up or down (a
+        // walk down from a low root starts on its octave; corpus doc section 6 item 8).
+        var best = notes
+        place(&best, shift: 0)
+        for shift in [12, -12] where best.contains(where: \.folded) {
+            var shifted = notes
+            place(&shifted, shift: shift)
+            if shifted.count(where: \.folded) < best.count(where: \.folded) {
+                best = shifted
+            }
+        }
+        notes = best
+    }
+
+    /// `place` from the first chord's placed bass moved by `shift` semitones.
+    func place(_ notes: inout [Note], shift: Int) {
         guard !notes.isEmpty else { return }
-        var reference = span[sounding(notes[0].at)].placed
+        var reference = span[sounding(notes[0].at)].placed + shift
         var root = reference
         var lastChord = -1
         for index in notes.indices {
             let chord = notes[index].isLanding ? landingIndex : sounding(notes[index].at)
             if chord != lastChord {
-                root = span[chord].placed
+                root = span[chord].placed + shift
                 lastChord = chord
             }
-            var midi = index == 0 && notes[index].isRoot ? span[chord].placed
+            var midi = index == 0 && notes[index].isRoot ? span[chord].placed + shift
                 : Self.midi(notes[index], reference: reference, root: root)
             if notes[index].isRoot {
                 root = midi

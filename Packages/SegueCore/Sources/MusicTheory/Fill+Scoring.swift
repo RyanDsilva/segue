@@ -96,8 +96,12 @@ extension FillGenerator {
         if note.pitch == target, note.at + note.len > 0 {
             return false
         }
-        let isApproach = index == fill.count - 1
-            && abs(WalkUp.signedDistance(note.pitch, target)) == 1
+        // The last note before a chord, a half step from its bass, approaches it (the
+        // landing, or a chord inside a walk).
+        let next = index + 1 < fill.count ? fill[index + 1].at : 0
+        let into = next >= 0 ? landingIndex : sounding(next)
+        let isApproach = (index == fill.count - 1 || starts[into] == next)
+            && abs(WalkUp.signedDistance(note.pitch, span[into].bass)) == 1
         if isApproach || note.chromaticRun && !isStrong(note.at) {
             return false
         }
@@ -175,6 +179,7 @@ extension FillGenerator {
             + (arpeggiatesDominant(fill) ? weights.keyChangeArpeggio : 0)
         terms[.downbeat] = 0
         terms[.walkUpAgreement] = agreesWithWalkUp(fill) ? weights.walkUpAgreement : 0
+        terms[.situation] = situation(template, fill: fill)
         let breakdown = terms.filter { $0.key == .templatePrior || $0.value != 0 }
         guard let encoded = encode(notes) else { return nil }
         return FillCandidate(
@@ -188,23 +193,98 @@ extension FillGenerator {
         )
     }
 
-    /// `log(1 + count) / log(1 + most) * priorScale` for the feel (all feels when unknown).
+    /// How the template's traits meet the span (`FillWeights.situation`): chord-scale
+    /// material or an accent, not an approach, over a repeated chord; an arpeggio over a
+    /// dominant seventh; an accent (in the same key) or a cadence into a new section; the
+    /// mode's colour; few notes in a slow song; into a new key not prepared by V', the walk
+    /// through a pivot, else few notes.
+    func situation(_ template: FillTemplate, fill: [Note]) -> Double {
+        let last = span[landingIndex - 1]
+        let vamp = last.bass == target
+        let dominant = Set(last.chord.formula.intervals.map { $0 % 12 }).isSuperset(of: [4, 10])
+        let section = context.intoSection
+        let rewards = [
+            Reward(when: vamp, trait: .chordScale, weight: weights.vampChordScale),
+            Reward(when: vamp, trait: .approach, weight: weights.vampApproach),
+            Reward(when: vamp, trait: .accent, weight: weights.vampAccent),
+            Reward(when: dominant, trait: .arpeggio, weight: weights.arpeggioDominant),
+            // Into a new key the key itself is the event (an accent adds nothing).
+            Reward(when: section && lift == nil, trait: .accent, weight: weights.accentSection),
+            Reward(when: section, trait: .cadence, weight: weights.cadenceSection),
+        ]
+        var fit = rewards.reduce(0.0) { total, reward in
+            reward.when && template.traits.contains(reward.trait) ? total + reward.weight : total
+        }
+        if soundsMode(fill) {
+            fit += weights.modeColour
+        }
+        let extra = Double(max(0, fillNotes(fill) - weights.shortFillNotes))
+        if restrained {
+            fit += extra * weights.restrainedBusy
+        }
+        if let lift, !lift.prepared {
+            fit += extra * weights.liftBusy
+            if lift.lastFitsNewKey, template.coversSpan {
+                fit += weights.pivotWalk
+            }
+        }
+        return fit
+    }
+
+    /// One `situation` rule: `weight` when the span is in that situation and the template
+    /// has the trait.
+    struct Reward {
+        var when: Bool
+        var trait: FillTrait
+        var weight: Double
+    }
+
+    /// The fill sounds its mode's colour (`FillWeights.modeColour`): both notes of the
+    /// augmented second of harmonic minor (b6, 7) or Bhairav (b2, 3), or a run of three or
+    /// more notes inside the pentatonic under a pentatonic mode; false under the key's own
+    /// scale.
+    func soundsMode(_ fill: [Note]) -> Bool {
+        guard let mode = context.mode, !fill.isEmpty,
+              let key = span[landingIndex - 1].key, mode.quality == key.mode
+        else { return false }
+        let tonic = key.tonic.pitchClass
+        let pitches = Set(fill.map(\.pitch))
+        switch mode {
+        case .harmonicMinor:
+            return pitches.isSuperset(of: [tonic.transposed(by: 8), tonic.transposed(by: 11)])
+        case .bhairav:
+            return pitches.isSuperset(of: [tonic.transposed(by: 1), tonic.transposed(by: 4)])
+        case .majorPentatonic, .minorPentatonic:
+            // A run in the mode, not a single note that happens to sit in it.
+            let scale = Set(mode.degrees.map { tonic.transposed(by: $0) })
+            return fill.count >= 3 && pitches.isSubset(of: scale)
+        case .major, .melodicMinor, .minor:
+            return false
+        }
+    }
+
+    /// `log(1 + count) / log(1 + most) * priorScale` for the feel, smoothed toward all feels
+    /// (all feels when unknown).
     func templatePrior(_ family: String) -> Double {
         let counts = templates.counts
-        func count(_ family: String) -> Int {
-            guard let genre = context.genre else {
-                return counts[family]?.values.reduce(0, +) ?? 0
-            }
-            return counts[family]?[genre] ?? 0
+        let feels = Double(BassGenre.allCases.count)
+        func count(_ family: String) -> Double {
+            let all = Double(counts[family]?.values.reduce(0, +) ?? 0)
+            guard let genre = context.genre else { return all }
+            return Double(counts[family]?[genre] ?? 0) + weights.priorSmoothing * all / feels
         }
         let most = counts.keys.map(count).max() ?? 0
         guard most > 0 else { return 0 }
-        return log(1 + Double(count(family))) / log(1 + Double(most)) * weights.priorScale
+        return log(1 + count(family)) / log(1 + most) * weights.priorScale
     }
 
     /// The last fill note a half step from the landing bass, a whole step, or its fifth.
     func resolution(_ last: Note?) -> Double {
         guard let last else { return 0 }
+        // A pushed landing (an anticipation) resolves by arriving.
+        if last.pitch == target, last.at + last.len > 0 {
+            return weights.resolutionHalfStep
+        }
         switch abs(WalkUp.signedDistance(last.pitch, target)) {
         case 1: return weights.resolutionHalfStep
         case 2: return weights.resolutionWholeStep
@@ -232,13 +312,13 @@ extension FillGenerator {
     }
 
     /// Into a new key: the last note is the landing's dominant, a half step from the new
-    /// root, or the old root (11.2).
+    /// root, the old root (11.2), or the new root pushed early.
     func keyChangeEnding(_ last: Note?) -> Bool {
         guard let lift, let last else { return false }
         let fifth = span[landingIndex].chord.root.pitchClass.transposed(by: 7)
         let old = lift.newKey.tonic.pitchClass.transposed(by: -lift.semitones)
         return last.pitch == fifth || abs(WalkUp.signedDistance(last.pitch, target)) == 1
-            || last.pitch == old
+            || last.pitch == old || last.pitch == target && last.at + last.len > 0
     }
 
     /// A prepared lift's V' arpeggio: every fill note a tone of V', the last its third (the new

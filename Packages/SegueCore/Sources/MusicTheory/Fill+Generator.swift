@@ -47,6 +47,8 @@ struct FillGenerator {
         var folded = false
         /// Inside a stepwise chromatic run into the landing (R168 exemption).
         var chromaticRun = false
+        /// A slot its line did not need (a short chromatic line), removed before placing.
+        var dropped = false
     }
 
     init?(context: FillContext, weights: FillWeights, templates: FillTemplates) {
@@ -91,16 +93,18 @@ struct FillGenerator {
 
     // MARK: Ranking
 
-    /// The best candidate per family plus hold, best first, at most `weights.limit`.
+    /// The best candidate per corpus pattern family plus hold, best first, at most
+    /// `weights.limit` (R170: diversity is per corpus family, so the four shown and "More"
+    /// are the five best-fitting different patterns).
     func ranked() -> [FillCandidate] {
-        var best: [FillFamily: FillCandidate] = [:]
-        for candidate in all() where !candidate.isHold {
-            guard let family = candidate.family else { continue }
-            if best[family] == nil {
-                best[family] = candidate
+        var seen: Set<String> = []
+        var list: [FillCandidate] = []
+        for candidate in all() {
+            let family = templates.template(candidate.template)?.corpusFamily ?? candidate.template
+            if seen.insert(family).inserted {
+                list.append(candidate)
             }
         }
-        var list = best.values.sorted(by: ranksBefore)
         list.append(hold(others: list.map(\.score)))
         return Array(list.sorted(by: ranksBefore).prefix(weights.limit))
     }
@@ -175,21 +179,28 @@ struct FillGenerator {
 extension FillGenerator {
     // MARK: Realising a template
 
-    func realise(_ template: FillTemplate) -> FillCandidate? {
-        switch template.condition {
-        case .always: break
-        case .preparedLift:
-            guard lift?.prepared == true else { return nil }
-        case .bollywood:
-            guard context.genre == .bollywood else { return nil }
-        }
+    /// The template's condition holds for this span.
+    func offers(_ template: FillTemplate) -> Bool {
         let last = span[landingIndex - 1]
         if template.simpleOnly, last.meter.compound {
-            return nil
+            return false
         }
-        guard var notes = template.coversSpan ? walk() : slots(template) else { return nil }
+        return switch template.condition {
+        case .always: true
+        case .preparedLift: lift?.prepared == true
+        case .bollywood: context.genre == .bollywood
+        case .sameKey: lift == nil
+        case .change: last.chord != span[landingIndex].chord
+        }
+    }
+
+    func realise(_ template: FillTemplate) -> FillCandidate? {
+        guard offers(template), var notes = template.coversSpan ? walk() : slots(template)
+        else { return nil }
         if !template.ownsLanding {
-            lead(&notes)
+            if template.leads {
+                lead(&notes)
+            }
             notes.append(Note(
                 at: 0,
                 len: min(span[landingIndex].length, span[landingIndex].meter.ticksPerPulse),
@@ -210,7 +221,10 @@ extension FillGenerator {
         let last = span[landingIndex - 1]
         let pulse = last.meter.ticksPerPulse
         let bar = last.meter.ticksPerBar
-        let slots = template.slots.filter { !$0.compoundOnly || last.meter.compound }
+        let slots = template.slots.filter { slot in
+            (!slot.compoundOnly || last.meter.compound)
+                && !(slot.optional && slot.at.ticks(pulse: pulse, bar: bar) <= -departingLength)
+        }
         var notes = slots.map { slot in
             Note(
                 at: slot.at.ticks(pulse: pulse, bar: bar),
@@ -220,6 +234,10 @@ extension FillGenerator {
             )
         }
         guard let first = notes.first, first.at >= -departingLength else { return nil }
+        // A held note (the root re-struck on the bar line) lasts until the next one.
+        for index in notes.indices.dropLast() {
+            notes[index].len = min(notes[index].len, notes[index + 1].at - notes[index].at)
+        }
         var index = 0
         while index < slots.count {
             let pitch = slots[index].pitch
@@ -232,6 +250,7 @@ extension FillGenerator {
             guard resolve(pitch, notes: &notes, range: index ..< end) else { return nil }
             index = end
         }
+        notes.removeAll(where: \.dropped)
         return notes
     }
 
@@ -254,21 +273,27 @@ extension FillGenerator {
             pitch,
             chord: chord,
             count: range.count,
-        ),
-            line.pitches.count >= range.count
+        ), !line.pitches.isEmpty, line.pitches.count <= range.count,
+        line.pitches.count == range.count || pitch == .chromaticLine
         else { return false }
-        for (offset, index) in range.enumerated() {
+        // A shorter line takes the last slots; the ones before it are dropped.
+        let first = range.upperBound - line.pitches.count
+        for index in range.lowerBound ..< first {
+            notes[index].dropped = true
+        }
+        for (offset, index) in (first ..< range.upperBound).enumerated() {
             notes[index].pitch = line.pitches[offset]
             notes[index].direction = offset == 0 ? line.lead : line.direction
             notes[index].approach = line.approach
         }
-        notes[range.lowerBound].isRoot = line.isRoot
-        notes[range.lowerBound].isOctave = line.isOctave
+        notes[first].isRoot = line.isRoot
+        notes[first].isOctave = line.isOctave
         return true
     }
 
-    /// One-note functions: chord tones, the dominant, the landing and its steps, a chromatic
-    /// step. nil for groups (and for a function the chord cannot supply, as an empty line).
+    /// One-note functions: chord tones, the dominant, the landing and its steps, the half step
+    /// below, a slide's start. nil for groups (and for a function the chord cannot supply, as
+    /// an empty line).
     func toneLine(_ pitch: FillPitch, chord: Int) -> Line? {
         let symbol = span[chord].chord
         let bass = span[chord].bass
@@ -286,16 +311,38 @@ extension FillGenerator {
         case .target:
             return Line(pitches: [target], approach: true)
         case let .targetStep(steps):
-            let scale = passScale(landingIndex, approach: true)
-            let above = (1 ... 11).map { target.transposed(by: $0) }.filter { scale[$0] != nil }
-            guard above.count >= steps else { return Line(pitches: []) }
-            return Line(pitches: [above[steps - 1]], approach: true)
-        case let .chromatic(steps):
-            let side = approachSide(from: bass)
-            return Line(pitches: [target.transposed(by: -side * steps)], lead: side, approach: true)
-        case .approach, .pentatonicDown, .pentatonicUp, .scaleDown, .scaleUp:
+            return targetStepLine(steps)
+        case .halfStepBelow:
+            return Line(pitches: [target.transposed(by: -1)], lead: 1, approach: true)
+        case .slideStart:
+            return slideLine(from: chord)
+        case .approach, .chromaticLine, .leadIn, .pentatonicDown, .pentatonicUp, .scaleDown,
+             .scaleToward, .scaleUp:
             return nil
         }
+    }
+
+    /// `steps` passing-scale steps above the landing bass (a tihai cell).
+    func targetStepLine(_ steps: Int) -> Line {
+        let scale = passScale(landingIndex, approach: true)
+        let above = (1 ... 11).map { target.transposed(by: $0) }.filter { scale[$0] != nil }
+        guard above.count >= steps else { return Line(pitches: []) }
+        return Line(pitches: [above[steps - 1]], approach: true)
+    }
+
+    /// Where a slide into the landing starts: the departing bass within a whole step of the
+    /// landing (its octave on the same note), else the single approach note.
+    func slideLine(from chord: Int) -> Line {
+        let bass = span[chord].bass
+        let distance = WalkUp.signedDistance(bass, target)
+        if distance == 0 {
+            return Line(pitches: [bass], isOctave: true)
+        }
+        if abs(distance) <= 2 {
+            return Line(pitches: [bass], approach: true)
+        }
+        guard let line = approachLine(count: 1, from: chord) else { return Line(pitches: []) }
+        return Line(pitches: line.pitches, lead: line.direction, approach: true)
     }
 
     /// Group functions: the walk-up approach, scale runs and pentatonic runs.
@@ -304,8 +351,21 @@ extension FillGenerator {
         case .approach:
             guard let line = approachLine(count: count, from: chord) else { return nil }
             return Line(pitches: line.pitches, direction: line.direction, approach: true)
-        case .scaleDown, .scaleUp:
-            let up = pitch == .scaleUp
+        case .leadIn:
+            let line = leadInLine(count: count, from: chord)
+            return Line(pitches: line, direction: 1, approach: true)
+        case .chromaticLine:
+            let bass = span[chord].bass
+            let side = approachSide(from: bass)
+            let distance = abs(WalkUp.signedDistance(bass, target))
+            let steps = (2 ... count).contains(distance) && WalkUp
+                .signedDistance(bass, target) * side > 0 ? distance - 1 : count - 1
+            let line = [bass] + (1 ... steps).reversed().map { target.transposed(by: -side * $0) }
+            return Line(pitches: line, direction: side, isRoot: true)
+        case .scaleDown, .scaleToward, .scaleUp:
+            // A scale run toward the landing takes the shorter way (up on a tritone).
+            let up = pitch == .scaleToward
+                ? WalkUp.signedDistance(span[chord].bass, target) >= 0 : pitch == .scaleUp
             let scale = passScale(chord, approach: true)
             var run = (1 ... 11).map { target.transposed(by: up ? -$0 : $0) }
                 .filter { scale[$0] != nil }.prefix(count).reversed().map(\.self)

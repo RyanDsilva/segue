@@ -17,6 +17,10 @@ public enum FillMode: String, Sendable, Hashable, Codable, CaseIterable {
     case bhairav
     /// Raga Bhoopali: 1 2 3 5 6.
     case majorPentatonic
+    /// The raised 6th and 7th (the jazz melodic minor, both ways).
+    case melodicMinor
+    /// 1 b3 4 5 b7.
+    case minorPentatonic
 
     /// The semitones above the tonic.
     public var degrees: [Int] {
@@ -26,19 +30,25 @@ public enum FillMode: String, Sendable, Hashable, Codable, CaseIterable {
         case .harmonicMinor: [0, 2, 3, 5, 7, 8, 11]
         case .bhairav: [0, 1, 4, 5, 7, 8, 11]
         case .majorPentatonic: [0, 2, 4, 7, 9]
+        case .melodicMinor: [0, 2, 3, 5, 7, 9, 11]
+        case .minorPentatonic: [0, 3, 5, 7, 10]
         }
     }
 
     /// Letter steps above the tonic's letter, per degree.
     var letterSteps: [Int] {
-        self == .majorPentatonic ? [0, 1, 2, 4, 5] : [0, 1, 2, 3, 4, 5, 6]
+        switch self {
+        case .majorPentatonic: [0, 1, 2, 4, 5]
+        case .minorPentatonic: [0, 2, 3, 4, 6]
+        default: [0, 1, 2, 3, 4, 5, 6]
+        }
     }
 
     /// The key quality this mode replaces.
     public var quality: KeyMode {
         switch self {
         case .bhairav, .major, .majorPentatonic: .major
-        case .harmonicMinor, .minor: .minor
+        case .harmonicMinor, .melodicMinor, .minor, .minorPentatonic: .minor
         }
     }
 

@@ -11,16 +11,22 @@ struct FillCandidateTests {
 
     /// The checks a row fails (corpus doc section 3), [] when it passes; nil when the row is
     /// out of the generator's scope (it needs the melody).
-    static func failures(_ row: FillCorpus.Example) throws -> [String]? {
+    static func failures(
         // swiftlint:disable:previous cyclomatic_complexity function_body_length
+        _ row: FillCorpus.Example,
+        candidates given: [FillCandidate]? = nil,
+    ) throws -> [String]? {
         if row.checks.generatorScope == "out" {
             return nil
         }
         let context = try row.context()
-        let candidates = Fill.candidates(context)
+        let candidates = given ?? Fill.candidates(context)
         let checks = row.checks
         var failed: [String] = []
-        let wanted = checks.expectFamily
+        // A corpus family without a template of its own is played by the one
+        // `FillTemplates.untemplated` names (a turnaround by the walk).
+        let wanted = FillTemplates.untemplated[checks.expectFamily]
+            .flatMap { $0.isEmpty ? nil : $0 } ?? checks.expectFamily
         guard let candidate = candidates.first(where: { candidate in
             wanted == FillCandidate.holdTemplate ? candidate.isHold
                 : FillTemplates.standard.template(candidate.template)?.corpusFamily == wanted
@@ -79,7 +85,7 @@ struct FillCandidateTests {
             failed.append("does not anticipate")
         }
         if checks.allowsSilence == true, !candidates.contains(where: { candidate in
-            candidate.template == "stopTime"
+            FillTemplates.standard.template(candidate.template)?.corpusFamily == "stopTime"
                 && PlacedFillNote.notes(candidate, context: context).count { $0.at < 0 } <= 2
         }) {
             failed.append("no stop-time candidate")
@@ -151,7 +157,9 @@ struct FillCandidateTests {
     /// Pass rates per category, recorded as floors: a failing golden is a tuning signal for
     /// `FillWeights` and `FillTemplates`, never a reason to edit the corpus (11.4). Raise a
     /// floor when tuning raises the rate.
-    static let floors: [String: Double] = ["section": 0.39, "keyChange": 0.31, "bollywood": 0.47]
+    /// R170 asks for 80% per category; Bollywood stops at 13/17 (the four rows it misses need
+    /// a feel the context does not carry: docs/phases/8-workstreams/P8-7 section 11.4).
+    static let floors: [String: Double] = ["section": 0.80, "keyChange": 0.81, "bollywood": 0.76]
 
     @Test
     func `the corpus golden pass rate per category`() throws {
@@ -224,11 +232,13 @@ struct FillCandidateTests {
     }
 
     @Test
-    func `from G to C: four families, the walk ends on the top walk-up, breakdowns sum`() throws {
+    func `from G to C: four patterns, the walk ends on the top walk-up, breakdowns sum`() throws {
         let context = try Self.context(["G", "C"], key: "G")
         let candidates = Fill.candidates(context)
         #expect(candidates.count == 5)
-        let shown = candidates.prefix(4).map { $0.family?.rawValue ?? "hold" }
+        let shown = candidates.prefix(4).map { candidate in
+            FillTemplates.standard.template(candidate.template)?.corpusFamily ?? "hold"
+        }
         #expect(Set(shown).count == 4, "\(shown)")
         let walk = try #require(candidates.first { $0.family == .walk })
         #expect(Self.fillNames(walk, context).suffix(2) == ["A", "B"])

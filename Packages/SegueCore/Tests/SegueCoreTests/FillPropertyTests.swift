@@ -105,7 +105,10 @@ struct FillPropertyTests {
         let candidates = Fill.candidates(context)
         #expect(candidates == Fill.candidates(context))
         #expect(candidates.count <= 5)
-        let families = candidates.compactMap(\.family)
+        // At most one per corpus pattern family (R170).
+        let families = candidates.map { candidate in
+            FillTemplates.standard.template(candidate.template)?.corpusFamily ?? "hold"
+        }
         #expect(Set(families).count == families.count)
         for candidate in Fill.all(context) + candidates {
             try Self.check(candidate, context: context)
@@ -131,7 +134,8 @@ struct FillPropertyTests {
                 #expect(note.at + note.len <= 0, "\(candidate.template) crosses the landing")
             }
         }
-        if let last = fill.last {
+        // A break-stop's last note is the band's hit before the silence (R170).
+        if let last = fill.last, template?.leads != false {
             let close = abs(WalkUp.signedDistance(last.pitch, landing.bass)) <= 2
                 || last.pitch == fifth
             #expect(close, "\(candidate.template) ends on \(last.name.chartName)")
@@ -146,7 +150,11 @@ struct FillPropertyTests {
             let crossRelation = abs(WalkUp.signedDistance(note.pitch, third)) == 1
                 && note.name.letter.rawValue == letter
             let chromaticRun = Self.inChromaticRun(index, notes: notes)
-            #expect(!crossRelation || chromaticRun, "\(candidate.template) clashes")
+            // The last note before a chord inside a walk, a half step from its bass.
+            let next = notes[index + 1]
+            let approaches = next.chord != note.chord
+                && abs(WalkUp.signedDistance(note.pitch, context.span[next.chord].bass)) == 1
+            #expect(!crossRelation || chromaticRun || approaches, "\(candidate.template) clashes")
         }
         let part = try Part(
             span: SpanAnchor(
