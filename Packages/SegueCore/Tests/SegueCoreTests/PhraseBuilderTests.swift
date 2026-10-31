@@ -135,3 +135,128 @@ struct PhraseBuilderTests {
         #expect(phrase.length == 2)
     }
 }
+
+/// The fill editor's audition phrase (P8-7 section 12.3): its bounds and its voices.
+extension PhraseBuilderTests {
+    static let fillSong = "{key: G}\n{tempo: 60}\n[G]Hello [C]there [D]friend\n"
+
+    /// The song's timeline, and a fill over C -> D: D and E on beats 3 and 4 of C.
+    static func fillPlay(
+        _ events: [PartEvent] = [
+            PartEvent(chord: 0, at: 960, len: 480, deg: 2),
+            PartEvent(chord: 0, at: 1440, len: 480, deg: 4),
+        ],
+    ) throws -> FillPlay {
+        let (document, _) = ChordProParser.parse(fillSong)
+        let model = RenderModel(document: document, options: DisplayOptions())
+        let units = SongSections.units(of: document)
+        let timeline = SongTimeline.build(
+            document: document,
+            sections: model.sections,
+            units: units,
+            timing: ChordTiming(),
+            order: nil,
+        )
+        let anchor = try #require(FillSpan.anchor(
+            timeline: timeline,
+            chords: 1 ... 2,
+            units: units,
+            sections: model.sections,
+        ))
+        let part = Part(span: anchor, events: events)
+        let parts = PartAnchors.resolve(
+            [part],
+            timeline: timeline,
+            units: units,
+            sections: model.sections,
+        )
+        let play = try #require(parts.plays(in: timeline).first)
+        let notes = play.resolve(
+            timeline: timeline,
+            transform: model.transform,
+            tuning: placementG.tuning,
+            home: placementG.home,
+        )
+        return FillPlay(timeline: timeline, model: model, notes: notes)
+    }
+
+    struct FillPlay {
+        var timeline: SongTimeline
+        var model: RenderModel
+        var notes: [ResolvedNote]
+    }
+
+    @Test
+    func `a fill audition runs from the span start through the landing bar`() throws {
+        let play = try Self.fillPlay()
+        let (timeline, model, notes) = (play.timeline, play.model, play.notes)
+        let audition = PhraseBuilder.fill(
+            span: timeline,
+            chords: 1 ... 2,
+            notes: notes,
+            voices: Self.voices,
+            transform: model.transform,
+            click: false,
+        )
+        // The first note is in bar 2, so one bar before it would be bar 1: clamped to the span
+        // start (C, bar 2); through the end of D's bar.
+        #expect(audition.ticks == 1920 ..< 5760)
+        #expect(abs(audition.phrase.length - 8) < 1e-9)
+        // Roots until the fill, the fill's D and E, then D's root on 1 and 3.
+        #expect(Self.bass(audition.phrase) == [
+            "36@0.000",
+            "38@2.000",
+            "40@3.000",
+            "38@4.000",
+            "38@6.000",
+        ])
+        #expect(audition.phrase.events.contains { $0.voice == .chord && abs($0.onset) < 1e-9 })
+        #expect(!audition.phrase.events.contains {
+            if case .click = $0.voice {
+                true
+            } else {
+                false
+            }
+        })
+        #expect(audition.tick(atSeconds: 2) == 2880)
+    }
+
+    @Test
+    func `the audition starts one bar before a late first note and clicks when asked`() throws {
+        let play = try Self.fillPlay([PartEvent(chord: 1, at: 0, len: 480, deg: 0)])
+        let (timeline, model, notes) = (play.timeline, play.model, play.notes)
+        let window = PhraseBuilder.fillWindow(timeline: timeline, chords: 0 ... 2, notes: notes)
+        // The only note is on D (bar 3): one bar before it is bar 2, after the span start.
+        #expect(window == 1920 ..< 5760)
+        let audition = PhraseBuilder.fill(
+            span: timeline,
+            chords: 1 ... 2,
+            notes: notes,
+            voices: Self.voices,
+            transform: model.transform,
+            click: true,
+        )
+        #expect(audition.phrase.events.contains {
+            if case .click = $0.voice {
+                true
+            } else {
+                false
+            }
+        })
+    }
+
+    @Test
+    func `an empty fill plays the span's roots`() throws {
+        let play = try Self.fillPlay()
+        let (timeline, model) = (play.timeline, play.model)
+        let audition = PhraseBuilder.fill(
+            span: timeline,
+            chords: 1 ... 2,
+            notes: [],
+            voices: Self.voices,
+            transform: model.transform,
+            click: false,
+        )
+        #expect(Self.bass(audition.phrase) == ["36@0.000", "36@2.000", "38@4.000", "38@6.000"])
+    }
+}
