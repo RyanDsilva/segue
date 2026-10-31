@@ -37,6 +37,12 @@ public enum EditOperation: Sendable, Hashable {
     case setDirective(name: String, value: String?)
     /// Sets `{meta: <name> <value>}` (e.g. `tuning`); `nil` removes it.
     case setMeta(name: String, value: String?)
+    /// Sets the song's artists, one `{artist}` line each, in order (P8-8 section 3.2). Each
+    /// value is cleaned (`ArtistNames.cleaned`), blanks dropped. Existing lines are matched
+    /// by position: an equal value keeps its bytes, a different one is re-spelled in place,
+    /// extra values go after the last `{artist}` (else after `{title}`, else after the
+    /// leading metadata) and extra lines are deleted. An unchanged list is no edit.
+    case setArtists([String])
     /// Inserts one canonical `{key: A}`, `{time: 3/4}` or `{tempo: 120}` line as its own line
     /// just before the block at `before` (a section header: top-level, before it; a line
     /// inside a section: as a section item before it), applying from there (P8-7 section
@@ -214,6 +220,9 @@ public enum DocumentEditor {
         case let .setMeta(meta, value):
             planner.setMeta(name: meta, value: value)
             return "Set \(meta.capitalized)"
+        case let .setArtists(artists):
+            planner.setArtists(artists)
+            return "Set Artists"
         case let .setDefine(definition):
             planner.setDefine(definition)
             return "Set Chord Shape"

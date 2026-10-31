@@ -107,6 +107,15 @@ public extension Metadata {
         "album", "arranger", "composer", "copyright", "lyricist", "sorttitle", "year",
     ]
 
+    /// "Movie / Album": the first `{album}` (P8-8 section 4.1), trimmed; nil when absent or
+    /// blank. Derived from `extra["album"]`, which keeps every value for other readers.
+    var album: String? {
+        guard let first = extra["album"]?.first?.trimmingCharacters(in: .whitespaces),
+              !first.isEmpty
+        else { return nil }
+        return first
+    }
+
     /// Collects metadata from the directives in `blocks` (including inside sections).
     internal init(blocks: [Block]) {
         self.init()

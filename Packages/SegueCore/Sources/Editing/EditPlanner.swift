@@ -218,6 +218,27 @@ struct EditPlanner {
         setDirectiveLine(existing?.line, name: "meta", value: value.map { "\(spelled) \($0)" })
     }
 
+    /// See `EditOperation.setArtists`.
+    mutating func setArtists(_ artists: [String]) {
+        let wanted = artists.compactMap(ArtistNames.cleaned)
+        let existing = snapshot.directiveLines(named: "artist")
+        for (entry, value) in zip(existing, wanted) where entry.directive.value != value {
+            let source = snapshot.map.lines[entry.line]
+            guard let directive = DirectiveLine(source.text) else { continue }
+            builder.replace(source.contentRange, with: directive.replacingValue(with: value))
+        }
+        for entry in existing.dropFirst(wanted.count) {
+            deleteLine(entry.line)
+        }
+        let extra = wanted.dropFirst(existing.count)
+        guard !extra.isEmpty else { return }
+        let anchor = existing.last?.line
+            ?? snapshot.directiveLines(named: "title").first?.line
+            ?? snapshot.leadingMetadataEnd
+        let lines = extra.map { DirectiveLine.canonical(name: "artist", value: $0) }
+        snapshot.insertLines(lines, afterLine: anchor, into: &builder)
+    }
+
     mutating func setDefine(_ definition: ChordDefinition) {
         let lines = snapshot.defineLines.filter { $0.name == definition.name }
         setDirectiveLine(lines.first?.line, name: "define", value: definition.directiveValue)
@@ -340,6 +361,15 @@ extension SourceSnapshot {
             }
         }
         return last
+    }
+
+    /// Inserts `lines` as whole lines after line `index` (at the top for `nil`), in order,
+    /// using the file's line ending.
+    func insertLines(_ lines: [String], afterLine index: Int?, into builder: inout EditBuilder) {
+        guard !lines.isEmpty else { return }
+        let ending = index.map { map.lines[$0] }.flatMap { $0.hasEnding ? $0.ending : nil }
+            ?? map.defaultEnding
+        insertLine(lines.joined(separator: ending), afterLine: index, into: &builder)
     }
 
     /// Inserts `text` as a whole line after line `index` (at the top for `nil`), using the
