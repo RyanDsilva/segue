@@ -163,33 +163,6 @@ struct ShowStoreTests {
         #expect((object["gig"] as? [String: Any])?["date"] as? String == "2026-10-23")
         #expect(json.hasSuffix("}\n"))
     }
-
-    @Test
-    func `rehearsal timings load per run and report unreadable files`() async throws {
-        let lib = try TestLibrary()
-        let run = lib.ids.next()
-        let store = RehearsalTimingStore(
-            fileSystem: lib.fileSystem,
-            root: lib.root,
-            runId: run,
-            setlistName: "Set",
-        )
-        #expect(try RehearsalTimingStore.loadAll(root: lib.root, fileSystem: lib.fileSystem)
-            .isEmpty)
-        let sample = DurationSample(
-            songId: SongID(lib.ids.next()),
-            seconds: 201.5,
-            source: .rehearsal,
-            runId: run,
-            recordedAt: SegueJSON.stamp(lib.clock.now()),
-        )
-        try await store.record(sample)
-        try lib.write("nope", to: "timings/broken\(LibraryRoot.rehearsalSuffix)")
-        let report = try RehearsalTimingStore.loadReport(root: lib.root, fileSystem: lib.fileSystem)
-        #expect(report.samples == [sample])
-        #expect(report.issues.map(\.relativePath) == ["timings/broken.rehearsal.json"])
-        #expect(try lib.read("timings/\(run).rehearsal.json").contains("\"setlistName\" : \"Set\""))
-    }
 }
 
 /// Pure logic: the planned-vs-performed diff.

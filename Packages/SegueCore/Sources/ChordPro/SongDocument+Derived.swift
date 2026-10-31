@@ -141,7 +141,6 @@ public extension Metadata {
         switch name {
         case "artist": artists.append(value)
         case "capo": capo = capo ?? Int(value)
-        case "duration": duration = duration ?? Self.parseDuration(value)
         case "key": key = key ?? value
         case "meta": addMeta(value)
         case "subtitle": subtitle = subtitle ?? value
@@ -171,25 +170,11 @@ public extension Metadata {
         return tempo
     }
 
-    /// Seconds from `ss`, `mm:ss` or `h:mm:ss`.
-    internal static func parseDuration(_ value: String) -> TimeInterval? {
-        let parts = value.split(separator: ":", omittingEmptySubsequences: false)
-        guard (1 ... 3).contains(parts.count) else { return nil }
-        var total = 0.0
-        for part in parts {
-            guard let number = Double(part), number.isFinite, number >= 0 else { return nil }
-            total = total * 60 + number
-        }
-        return total
-    }
-
     /// A diagnostic message if a metadata value cannot be understood, else `nil`.
     static func valueProblem(name: String, value: String) -> String? {
         switch name {
         case "capo" where Int(value) == nil:
             "Capo '\(value)' is not a whole number"
-        case "duration" where parseDuration(value) == nil:
-            "Duration '\(value)' is not seconds, mm:ss or h:mm:ss"
         case "tempo" where parseTempo(value) == nil:
             "Tempo '\(value)' is not a positive number"
         case "time" where parseTime(value) == nil:

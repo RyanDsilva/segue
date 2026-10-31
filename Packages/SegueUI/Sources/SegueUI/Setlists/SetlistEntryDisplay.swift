@@ -1,6 +1,7 @@
 import Editing
 import Foundation
 import Library
+import Services
 import Setlists
 
 /// What a setlist row shows for its song with the slot's overrides applied: the key the
@@ -75,6 +76,27 @@ extension SetlistTiming {
                 for: setlist.changeoverSeconds,
                 default: defaultChangeover,
             ),
+        )
+    }
+}
+
+extension SetlistTiming {
+    /// Row 30's closed-vocabulary summary of these timings (counts and buckets only).
+    func summary(arranged: Int, tolerance: TimeInterval) -> SetlistTimedSummary {
+        let songs = items.compactMap(\.slot)
+        let known = items.compactMap(\.time).filter { $0.source != .intermission }
+        let target: SetlistTimedTarget = if let target = self.target, target > 0 {
+            abs(total - target) <= tolerance ? .within : total < target ? .under : .over
+        } else {
+            .noTarget
+        }
+        return SetlistTimedSummary(
+            songs: SmallBucket(songs.count),
+            noTempo: SmallBucket(songs.count { $0.unknown == .noTempo }),
+            noChords: SmallBucket(songs.count { $0.unknown == .noChords }),
+            arranged: SmallBucket(arranged),
+            estimatedOnly: !known.isEmpty && known.allSatisfy(\.estimated),
+            target: target,
         )
     }
 }

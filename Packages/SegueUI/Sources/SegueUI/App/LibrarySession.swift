@@ -72,6 +72,11 @@
         @ObservationIgnored var restore: SessionRestore?
         /// The New Setlist name sheet is up (sidebar button or Setlist > New Setlist…).
         public var isNamingNewSetlist = false
+        /// A one-time note of this open (the old timings folder moved to the Trash, P8-8 5.8).
+        public var upgradeNote: String?
+        /// The `{duration}` cleanup offer: how many songs hold a `{duration}` line, shown
+        /// once per library (P8-8 5.7); nil when not offered.
+        public var durationOffer: Int?
         /// A song waiting on "Move to Trash?" because setlists use it (A23).
         public internal(set) var songTrashConfirmation: SongTrashConfirmation?
 
@@ -206,6 +211,7 @@
                 importPanel: dependencies.importPanel,
             )
             await session.loadSmartFilters()
+            session.runUpgradeSteps(fileSystem: dependencies.fileSystem)
             session.restore = SessionRestore(defaults: dependencies.location.defaults, root: root)
             return session
         }

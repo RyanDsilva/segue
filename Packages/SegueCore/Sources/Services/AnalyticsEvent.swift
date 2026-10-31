@@ -90,32 +90,11 @@ public enum AnalyticsEvent: Sendable, Hashable {
     case timingKeyChange(action: KeyChangeAction, interval: KeyChangeInterval)
     /// Row 29 (P8-8 8): an accepted song whose artist a paste or import split (daily).
     case songArtistSplit(ArtistSplitSummary)
+    /// Row 30 (P8-8 8): the builder left a setlist with songs (daily per target).
+    case setlistTimed(SetlistTimedSummary)
 }
 
 // MARK: - Grouped parameters (cases with more than four values)
-
-/// Row 3 parameters.
-public struct LibrarySnapshot: Sendable, Hashable {
-    public var songs: SongBucket
-    public var setlists: SmallBucket
-    public var gigs: SmallBucket
-    public var welcomeSongsLeft: WelcomeSongsLeft
-    public var customShapes: Bool
-
-    public init(
-        songs: SongBucket,
-        setlists: SmallBucket,
-        gigs: SmallBucket,
-        welcomeSongsLeft: WelcomeSongsLeft,
-        customShapes: Bool,
-    ) {
-        self.songs = songs
-        self.setlists = setlists
-        self.gigs = gigs
-        self.welcomeSongsLeft = welcomeSongsLeft
-        self.customShapes = customShapes
-    }
-}
 
 /// Row 12 parameters.
 public struct ShowSummary: Sendable, Hashable {
@@ -343,7 +322,7 @@ extension AnalyticsEvent {
         case .songArtistSplit, .songCreated, .songDeleted, .songImported: "Song"
         case .featureUsed: "Feature"
         case .editorChordPalette, .editorOpened: "Editor"
-        case .setlistComposed, .setlistComposerSession, .setlistCreated: "Setlist"
+        case .setlistComposed, .setlistComposerSession, .setlistCreated, .setlistTimed: "Setlist"
         case .showEnded, .showStarted: "Show"
         case .milestoneReached: "Milestone"
         case .helpOpened: "Help"
@@ -386,6 +365,7 @@ extension AnalyticsEvent {
         case .timingTapCaptured: "tapCaptured"
         case .timingKeyChange: "keyChange"
         case .songArtistSplit: "artistSplit"
+        case .setlistTimed: "timed"
         }
     }
 
@@ -407,6 +387,7 @@ extension AnalyticsEvent {
                 "segue.gigs": snapshot.gigs.rawValue,
                 "segue.welcomeSongsLeft": snapshot.welcomeSongsLeft.rawValue,
                 "segue.customShapes": String(snapshot.customShapes),
+                "segue.noTempo": snapshot.noTempo.rawValue,
             ]
         case let .libraryCreated(location):
             ["segue.location": location.rawValue]
@@ -495,6 +476,7 @@ extension AnalyticsEvent {
         case let .timingKeyChange(action, interval):
             ["segue.action": action.rawValue, "segue.interval": interval.rawValue]
         case let .songArtistSplit(summary): summary.params
+        case let .setlistTimed(summary): summary.params
         }
     }
 }

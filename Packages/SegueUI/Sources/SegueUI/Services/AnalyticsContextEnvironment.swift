@@ -4,8 +4,7 @@
 
     extension EnvironmentValues {
         /// Where a shared control sits, for `featureUsed` rows recorded inside it (the song
-        /// card's Time it: library by default, the editor's strip and the builder's
-        /// missing-lengths list say otherwise).
+        /// card: library by default, the editor's strip says otherwise).
         @Entry var analyticsContext: FeatureContext = .library
     }
 #endif

@@ -36,24 +36,8 @@ final class ShowHarness {
         try await loadStores()
     }
 
-    func environment(durations: (any DurationSampleSink)? = nil) -> ShowEnvironment {
-        ShowEnvironment(
-            store: shows,
-            songs: library,
-            clock: lib.clock,
-            ids: lib.ids,
-            durations: durations,
-        )
-    }
-
-    /// A rehearsal timing sink for run `run`.
-    func timings(run: ULID, setlist: Setlist) -> RehearsalTimingStore {
-        RehearsalTimingStore(
-            fileSystem: fileSystem,
-            root: lib.root,
-            runId: run,
-            setlistName: setlist.name,
-        )
+    func environment() -> ShowEnvironment {
+        ShowEnvironment(store: shows, songs: library, clock: lib.clock, ids: lib.ids)
     }
 
     /// Creates `count` songs titled "Song 1"... and a setlist of them, in order.
@@ -110,5 +94,13 @@ struct SeededGenerator: RandomNumberGenerator {
         mixed = (mixed ^ (mixed >> 30)) &* 0xBF58_476D_1CE4_E5B9
         mixed = (mixed ^ (mixed >> 27)) &* 0x94D0_49BB_1331_11EB
         return mixed ^ (mixed >> 31)
+    }
+}
+
+extension PlayedSong {
+    /// How long the engine recorded the song as current (its start and end stamps; the
+    /// gig log no longer shows it per song, R174).
+    var elapsed: TimeInterval {
+        endedAt.timeIntervalSince(startedAt)
     }
 }

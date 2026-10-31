@@ -53,6 +53,9 @@ public enum EditOperation: Sendable, Hashable {
     /// after the leading metadata directives.
     case setDefine(ChordDefinition)
     case removeDefine(name: String)
+    /// Deletes every directive line named `name` with its line ending, and nothing else (the
+    /// one-time `{duration}` cleanup, P8-8 section 5.7).
+    case removeDirectives(name: String)
 
     // MARK: Sections (P3-11, the section band; the slash menu's wrap uses `wrapSection`)
 
@@ -212,10 +215,6 @@ public enum DocumentEditor {
         case let .setDirective(directive, value):
             let name = DirectiveLine.canonicalName(directive)
             planner.setDirective(name: name, value: value)
-            // `{duration}` is the song's length everywhere the UI names it (R80).
-            if name == "duration" {
-                return value == nil ? "Clear Length" : "Set Length"
-            }
             return "Set \(directive.capitalized)"
         case let .setMeta(meta, value):
             planner.setMeta(name: meta, value: value)
@@ -229,6 +228,9 @@ public enum DocumentEditor {
         case let .removeDefine(define):
             planner.removeDefine(name: define)
             return "Remove Chord Shape"
+        case let .removeDirectives(name):
+            planner.removeDirectives(named: DirectiveLine.canonicalName(name))
+            return "Remove \(name.capitalized) Lines"
         case .changeSectionKind, .createSection, .deleteChord, .duplicateChord, .editComments,
              .editLyrics, .insertChord, .insertComment, .insertDirective, .joinWithPrevious,
              .mergeSections, .moveChord,

@@ -6,9 +6,9 @@ import Library
 
 extension SetEssential {
     /// The help tag on every essentials dot.
-    static let help = "Set essential: used for set timing and flow"
+    static let help = "Set essential: used to time a set and plan its flow"
 
-    /// "Missing key, length and tempo", for VoiceOver.
+    /// "Missing key and tempo", for VoiceOver.
     static func spokenMissing(_ missing: [Self]) -> String {
         let names = missing.map(\.rawValue)
         let list = switch names.count {

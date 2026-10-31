@@ -1,6 +1,6 @@
 import Foundation
 
-// Song metadata analytics (P8-8 section 8): row 29 of the closed vocabulary. Enums and
+// Song metadata analytics (P8-8 section 8): rows 29 and 30 of the closed vocabulary. Enums and
 // buckets only: never a name, a title, an album or typed text.
 
 /// Row 29: `Segue.Song.artistSplit`, one per accepted song whose artist the paste or import
@@ -66,4 +66,53 @@ public enum ArtistSplitOutcome: String, Sendable, CaseIterable {
     case kept
     case merged
     case edited
+}
+
+/// Row 30: `Segue.Setlist.timed`, when the builder leaves a setlist with 1+ songs, daily per
+/// target: does timeline time cover real sets, how many songs lack a tempo, do arranged slots
+/// matter.
+public struct SetlistTimedSummary: Sendable, Hashable {
+    public var songs: SmallBucket
+    public var noTempo: SmallBucket
+    public var noChords: SmallBucket
+    public var arranged: SmallBucket
+    /// Every known slot rests on default chord lengths.
+    public var estimatedOnly: Bool
+    public var target: SetlistTimedTarget
+
+    public init(
+        songs: SmallBucket,
+        noTempo: SmallBucket,
+        noChords: SmallBucket,
+        arranged: SmallBucket,
+        estimatedOnly: Bool,
+        target: SetlistTimedTarget,
+    ) {
+        self.songs = songs
+        self.noTempo = noTempo
+        self.noChords = noChords
+        self.arranged = arranged
+        self.estimatedOnly = estimatedOnly
+        self.target = target
+    }
+
+    var params: [String: String] {
+        [
+            "segue.songs": songs.rawValue,
+            "segue.noTempo": noTempo.rawValue,
+            "segue.noChords": noChords.rawValue,
+            "segue.arranged": arranged.rawValue,
+            "segue.estimatedOnly": String(estimatedOnly),
+            "segue.target": target.rawValue,
+        ]
+    }
+}
+
+/// The set's known total against its target: none set, under, within the assistant's
+/// tolerance, or over.
+public enum SetlistTimedTarget: String, Sendable, CaseIterable {
+    case noTarget = "none"
+    case under
+    case within
+    case over
 }

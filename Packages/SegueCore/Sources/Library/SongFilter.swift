@@ -2,9 +2,8 @@
 //
 // Phase 2 simple filtering: tags, proficiency, key. Phase 3 (P3-6) extends it compatibly
 // with the conditions a saved `SmartFilter` compiles to (any / none tags, several keys,
-// tempo and length ranges, never played, missing essentials); their defaults constrain nothing, so
-// phase 2
-// callers see no change.
+// tempo range, never played, missing essentials); their defaults constrain nothing, so
+// phase 2 callers see no change.
 
 import ChordPro
 import Editing
@@ -33,13 +32,10 @@ public struct SongFilter: Sendable, Equatable {
     public var keys: Set<String>
     /// `{tempo}` in BPM within these bounds; a song without a tempo never matches.
     public var tempo: Bounds?
-    /// `{duration}` in seconds within these bounds; a song without a length never matches
-    /// (R91).
-    public var length: Bounds?
     /// "Never played": when set, the song must not be among these played songs (the play
     /// snapshot a `SmartFilter` compiles in, so `matches(_:)` needs no other input).
     public var playedSongs: Set<SongID>?
-    /// Only songs missing a set essential (key, length or tempo; `SongEssentials`, R110).
+    /// Only songs missing a set essential (key or tempo; `SongEssentials`, R110).
     public var missingEssentials: Bool
     /// "Artist is any of" (P8-8 section 3.5): matching forms (`ArtistNames.forms`) of the
     /// listed names; a song matches when its own forms meet any of them. Empty = any.
@@ -61,7 +57,6 @@ public struct SongFilter: Sendable, Equatable {
         excludedTags: Set<String> = [],
         keys: Set<String> = [],
         tempo: Bounds? = nil,
-        length: Bounds? = nil,
         playedSongs: Set<SongID>? = nil,
         missingEssentials: Bool = false,
         artists: Set<String> = [],
@@ -75,7 +70,6 @@ public struct SongFilter: Sendable, Equatable {
         self.excludedTags = excludedTags
         self.keys = keys
         self.tempo = tempo
-        self.length = length
         self.playedSongs = playedSongs
         self.missingEssentials = missingEssentials
         self.artists = artists
@@ -123,7 +117,7 @@ public struct SongFilter: Sendable, Equatable {
     /// True when no constraint is set (the text may still be non-empty).
     public var hasConstraints: Bool {
         !tags.isEmpty || !proficiencies.isEmpty || key != nil || !anyTags.isEmpty
-            || !excludedTags.isEmpty || !keys.isEmpty || tempo != nil || length != nil
+            || !excludedTags.isEmpty || !keys.isEmpty || tempo != nil
             || playedSongs != nil || missingEssentials || !artists.isEmpty || !albums.isEmpty
             || !excludedArtists.isEmpty || !excludedAlbums.isEmpty
     }
@@ -185,13 +179,10 @@ public struct SongFilter: Sendable, Equatable {
         return keys.isEmpty || keys.contains { Self.sameKey($0, written) }
     }
 
-    /// Tempo and length: a song without the value never matches a set range.
+    /// Tempo: a song without a tempo never matches a set range.
     private func matchesNumbers(_ metadata: Metadata) -> Bool {
         if let tempo {
             guard let bpm = metadata.tempo, tempo.contains(bpm) else { return false }
-        }
-        if let length {
-            guard let seconds = metadata.duration, length.contains(seconds) else { return false }
         }
         return true
     }

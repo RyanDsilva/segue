@@ -40,23 +40,25 @@ struct WelcomeSeedingTests {
             == "The Welcome songs are already in your library.")
     }
 
-    /// R78 / P3-5: every seeded Welcome song has a length, so set timing works out of the
-    /// box. Songs added for the WS5 screenshots need `{duration}` too.
+    /// P8-8: every seeded Welcome song has a tempo and chords, so it has a time in a set
+    /// out of the box (tempo x bars, one bar per chord: "~"), and no `{duration}` line.
     @Test
-    func `seeded welcome songs carry their lengths`() async throws {
+    func `seeded welcome songs each have a time from tempo and bars`() async throws {
         let env = try TestEnvironment()
         let app = try await env.openApp()
         let session = try #require(app.session)
         #expect(await app.seedWelcomeLibrary())
-        var lengths: [String: TimeInterval] = [:]
+        var times: [String: String] = [:]
         for song in session.library.catalog {
-            let metadata = song.document.metadata
-            lengths[metadata.title ?? ""] = metadata.duration
+            times[song.document.metadata.title ?? ""] = session.library.times.song(song).clock
+            #expect(!song.source.contains("{duration"))
         }
-        #expect(lengths == [
-            "Ferry Lights Over Calder Bay": 280, "Kettle On, Lights Low": 185,
-            "Kitaabon Wali Gali": 245, "Soundcheck at Seven": 200,
+        #expect(times == [
+            "Ferry Lights Over Calder Bay": "~2:18", "Kettle On, Lights Low": "~2:08",
+            "Kitaabon Wali Gali": "~3:09", "Soundcheck at Seven": "~2:35",
         ])
+        // No first-open cleanup offer: nothing to clean.
+        #expect(session.durationOffer == nil)
     }
 
     @Test

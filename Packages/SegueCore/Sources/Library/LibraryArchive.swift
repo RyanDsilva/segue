@@ -10,8 +10,8 @@ public enum LibraryArchiveError: Error, Equatable {
 }
 
 /// Exports a library as one zip (WS2b 4.8, B-23): a single top folder
-/// `Segue Library YYYY-MM-DD/` holding `songs/`, `setlists/`, `shows/`, `timings/` and
-/// `filters/` (saved smart filters, phase 3) as they are on disk. Excluded: `.segue/` (the
+/// `Segue Library YYYY-MM-DD/` holding `songs/`, `setlists/`, `shows/` and `filters/`
+/// (saved smart filters, phase 3) as they are on disk. Excluded: `.segue/` (the
 /// rebuildable index and app-private state), hidden files such as `.DS_Store`, and anything
 /// else at the library root (a user's own files there are theirs, not Segue's). Empty or
 /// missing folders are simply absent.
@@ -25,7 +25,7 @@ public enum LibraryArchiveError: Error, Equatable {
 /// Synchronous and `Sendable`: callers run it off the main actor.
 public struct LibraryArchive: Sendable {
     /// The library folders an archive carries, in archive order.
-    public static let includedFolders = ["songs", "setlists", "shows", "timings", "filters"]
+    public static let includedFolders = ["songs", "setlists", "shows", "filters"]
 
     private let fileSystem: any FileSystem
     private let clock: any Clock

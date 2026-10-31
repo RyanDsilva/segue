@@ -4,7 +4,6 @@
 {capo: 3}
 {time: 3/4}
 {tempo: 72}
-{duration: 3:05}
 {define: Cadd9 base-fret 1 frets x 3 2 0 3 3}
 
 {start_of_intro: Intro}

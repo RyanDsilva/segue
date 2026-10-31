@@ -203,6 +203,8 @@ public struct AssistantUsedSummary: Sendable, Hashable {
     /// ("from kalank"), included or excluded.
     public var artistChips: Bool
     public var albumChips: Bool
+    /// Songs left out under a length target because they have no time.
+    public var leftOut: SmallBucket
 
     public init(
         context: AssistantContext,
@@ -213,6 +215,7 @@ public struct AssistantUsedSummary: Sendable, Hashable {
         rebuilt: Bool,
         artistChips: Bool = false,
         albumChips: Bool = false,
+        leftOut: SmallBucket = .zero,
     ) {
         self.context = context
         self.lexiconChips = lexiconChips
@@ -222,6 +225,7 @@ public struct AssistantUsedSummary: Sendable, Hashable {
         self.rebuilt = rebuilt
         self.artistChips = artistChips
         self.albumChips = albumChips
+        self.leftOut = leftOut
     }
 }
 
@@ -272,6 +276,7 @@ extension AnalyticsEvent {
                 "segue.rebuilt": String(summary.rebuilt),
                 "segue.artistChips": String(summary.artistChips),
                 "segue.albumChips": String(summary.albumChips),
+                "segue.leftOut": summary.leftOut.rawValue,
             ]
         case let .aiSmartFilterUsed(action, conditions):
             ["segue.action": action.rawValue, "segue.conditions": conditions.rawValue]

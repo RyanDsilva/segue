@@ -9,7 +9,7 @@ import MusicTheory
 // standard ChordPro through one `EditOperation` (one undo step) or the sidecar.
 
 /// A field of the song card, for focus requests (`focus(.title)` from Start blank,
-/// `focus(.length)` from the missing-lengths list).
+/// `focus(.tempo)` from the no-time list).
 public enum SongCardField: String, Sendable, Hashable, CaseIterable {
     case title
     /// The artists (a chip field, P8-8 section 3.3).
@@ -18,7 +18,6 @@ public enum SongCardField: String, Sendable, Hashable, CaseIterable {
     case album
     case key
     case tempo
-    case length
     case capo
     case time
 }
@@ -33,7 +32,6 @@ struct SongCardValues: Equatable {
     /// `{key}` as written (nil when absent).
     var key: String?
     var tempo: Double?
-    var length: TimeInterval?
     var capo: Int
     var time: String?
     /// The key `KeyDetector` hears in the chords, offered as a suggestion only.
@@ -46,7 +44,6 @@ struct SongCardValues: Equatable {
         album = metadata.album
         key = metadata.key
         tempo = metadata.tempo
-        length = metadata.duration
         capo = metadata.capo ?? 0
         time = metadata.time
         detectedKey = document.detectedKey

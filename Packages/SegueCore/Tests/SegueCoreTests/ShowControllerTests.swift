@@ -49,7 +49,7 @@ struct ShowControllerTests {
         #expect(ending.record.items.allSatisfy { $0.state != .current })
         let entry = try #require(ending.gigLogEntry)
         #expect(Set(entry.played.map(\.item.itemId)).count == entry.played.count)
-        #expect(entry.played.allSatisfy { $0.duration >= 0 })
+        #expect(entry.played.allSatisfy { $0.elapsed >= 0 })
         if let diff = ending.diff {
             let saved = diff.entries(including: diff.defaultIncluded)
             #expect(Set(saved.map(\.itemId)).count == saved.count)

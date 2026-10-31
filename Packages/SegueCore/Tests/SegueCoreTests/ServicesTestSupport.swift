@@ -176,6 +176,7 @@ enum VocabularySample {
         events += timingEvents
         events += fillEvents
         events += artistSplitEvents
+        events += setlistTimedEvents
         return events
     }
 
@@ -195,6 +196,20 @@ enum VocabularySample {
                 genre: feels[row % feels.count],
                 shows: shows[row % shows.count],
                 estimated: !row.isMultiple(of: 2),
+            ))
+        }
+    }
+
+    /// Row 30 (P8-8): every target at least once.
+    private static var setlistTimedEvents: [AnalyticsEvent] {
+        SetlistTimedTarget.allCases.enumerated().map { index, target in
+            .setlistTimed(SetlistTimedSummary(
+                songs: SmallBucket(index + 1),
+                noTempo: SmallBucket(index),
+                noChords: SmallBucket(0),
+                arranged: SmallBucket(index),
+                estimatedOnly: index.isMultiple(of: 2),
+                target: target,
             ))
         }
     }

@@ -21,8 +21,8 @@ struct SmartFilterSessionTests {
         managers.keep(manager)
         session.undoManager = manager
         for (title, extra, tags) in [
-            ("Harbour", "{key: G}\n{tempo: 96}\n{duration: 3:30}", ["upbeat"]),
-            ("Lantern", "{key: Am}\n{tempo: 70}\n{duration: 5:00}", ["ballad"]),
+            ("Harbour", "{key: G}\n{tempo: 96}", ["upbeat"]),
+            ("Lantern", "{key: Am}\n{tempo: 70}", ["ballad"]),
             ("Unfinished", "", ["upbeat"]),
         ] {
             let song = try await session.library
@@ -160,7 +160,6 @@ struct SmartFilterSessionTests {
             proficiencies: [.pro, .ready],
             keys: ["G", "Em"],
             tempo: SmartFilterRange(min: 90),
-            length: SmartFilterRange(min: 150, max: 300),
             neverPlayed: true,
             artists: ["Arijit Singh", "Vishal & Shekhar"],
             albums: ["Kalank"],
@@ -172,22 +171,22 @@ struct SmartFilterSessionTests {
             .proficiency,
             .keys,
             .tempo,
-            .length,
             .neverPlayed,
             .artists,
             .albums,
         ])
-        #expect(draft.rows[7].names == ["Arijit Singh", "Vishal & Shekhar"])
-        #expect(draft.rows[8].kind.field == .album)
-        #expect(draft.rows[5].lower == "2:30")
+        #expect(draft.rows[6].names == ["Arijit Singh", "Vishal & Shekhar"])
+        #expect(draft.rows[7].kind.field == .album)
+        #expect(draft.rows[4].lower == "90")
+        #expect(!draft.hadRemovedLength)
         var expected = conditions
         expected.proficiencies = [.ready, .pro]
         #expect(draft.conditions == expected)
         #expect(draft.problem == nil)
 
-        draft.rows[5].upper = "4.5"
-        #expect(draft.problem == "Enter lengths as m:ss, for example 3:30.")
-        draft.rows[5].upper = ""
+        draft.rows[4].upper = "fast"
+        #expect(draft.problem == "Enter tempos as BPM, for example 96.")
+        draft.rows[4].upper = ""
         draft.name = "  "
         #expect(draft.problem == "Give the filter a name.")
 

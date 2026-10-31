@@ -1,5 +1,6 @@
 #if os(macOS)
     import Library
+    import SetAssistant
     import Setlists
     import Shows
     import SwiftUI
@@ -86,6 +87,7 @@
                 }
             }
             .navigationTitle(setlist.name)
+            .onDisappear { recordTimed() }
             .toolbar {
                 ToolbarItem(placement: .principal) { modePicker }
                 menu
@@ -249,6 +251,20 @@
                 .accessibilityLabel("Setlist")
                 .accessibilityIdentifier(AccessibilityID.setlistMenu)
             }
+        }
+
+        /// Row 30 (P8-8 8): the builder leaves a setlist with songs.
+        private func recordTimed() {
+            guard let current = model.setlist(setlist.id), current.songCount > 0 else { return }
+            let timing = SetlistTiming(
+                setlist: current,
+                library: library,
+                defaultChangeover: defaultChangeover,
+            )
+            model.services.record(.setlistTimed(timing.summary(
+                arranged: current.entries.count { $0.arrangement != nil },
+                tolerance: AssistantConfig().toleranceSeconds,
+            )))
         }
     }
 

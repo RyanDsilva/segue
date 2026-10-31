@@ -4,7 +4,7 @@
     import SwiftUI
 
     /// Library (WS2a 3.5.4): Refresh, Rehearse Song and Play Song Live (R150), Rebuild Index,
-    /// Show Library in Finder, Choose Library Folder….
+    /// Remove Old Length Lines… (P8-8 5.7), Show Library in Finder, Choose Library Folder….
     struct LibraryCommands: Commands {
         let app: AppModel
         @FocusedValue(\.focusedSongID) private var focusedSongID
@@ -31,6 +31,11 @@
                     Task { await session.library.rebuildIndex() }
                 }
                 .disabled(app.session == nil || app.isPerforming)
+                // The one-time offer stays reachable here (P8-8 5.7).
+                Button("Remove Old Length Lines…") {
+                    app.session?.durationOffer = songsToClean.count
+                }
+                .disabled(app.isPerforming || songsToClean.isEmpty)
                 Divider()
                 Button("Show Library in Finder") { app.session?.revealLibrary() }
                     .disabled(app.session == nil)
@@ -46,6 +51,11 @@
                 .disabled(!app.canSwitchLibrary)
                 .help(app.canSwitchLibrary ? "" : "End the show before switching libraries.")
             }
+        }
+
+        /// Songs holding a `{duration}` line.
+        private var songsToClean: [SongID] {
+            app.session?.library.songsWithDurationLines ?? []
         }
 
         private func startSong(_ kind: ShowKind) {

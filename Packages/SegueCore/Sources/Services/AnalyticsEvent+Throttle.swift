@@ -57,6 +57,8 @@ public extension AnalyticsEvent {
                 + String(summary.edited))
         case let .timingKeyChange(action, interval):
             return .daily(key: "\(name)|\(action.rawValue)|\(interval.rawValue)")
+        case let .setlistTimed(summary):
+            return .daily(key: "\(name)|\(summary.target.rawValue)")
         case let .songArtistSplit(summary):
             return .daily(key: "\(name)|\(summary.source.rawValue)|"
                 + "\(summary.separator.rawValue)|\(summary.outcome.rawValue)")

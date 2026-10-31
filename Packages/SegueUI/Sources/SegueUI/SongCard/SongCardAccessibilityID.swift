@@ -1,6 +1,5 @@
 // P3-10: accessibility identifiers of the song card (direction 2, tokens) and the R110
 // essentials dot. Mirror new IDs in the UITests target (it cannot import SegueUI).
-// `songCardLength` and `songCardTimeIt` are P3-5's (LengthField.swift).
 
 public extension AccessibilityID {
     // MARK: Song card (direction 2, tokens)

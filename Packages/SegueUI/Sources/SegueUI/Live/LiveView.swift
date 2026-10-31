@@ -444,7 +444,7 @@
             }
             return session.kind == .gig
                 ? "The set is saved to the gig log. You can review any reordering next."
-                : "Song timings are kept. Rehearsals never go in the gig log."
+                : "Rehearsals never go in the gig log."
         }
     }
 

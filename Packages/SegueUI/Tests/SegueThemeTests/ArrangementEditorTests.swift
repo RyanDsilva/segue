@@ -369,21 +369,4 @@ struct ArrangementEditorTests { // swiftlint:disable:this type_body_length
         item.arrangementState = .outOfDate
         #expect(GigPlayedListLines.arrangementLine(item) == "Full song (arrangement out of date)")
     }
-
-    @Test
-    func `time it runs for one slot at a time, apart from songs`() {
-        let clock = ManualClock()
-        let timeIt = TimeItModel(clock: clock)
-        let slot = TimeItTarget.slot(SetlistItemID(ULID(
-            milliseconds: 1,
-            randomness: Array(repeating: 3, count: 10),
-        )))
-        let song = SongID(ULID(milliseconds: 1, randomness: Array(repeating: 4, count: 10)))
-        #expect(timeIt.start(slot))
-        #expect(!timeIt.start(song))
-        #expect(timeIt.isTimingOther(than: song))
-        clock.advance(by: 95)
-        #expect(timeIt.stop(slot) == 95)
-        #expect(timeIt.start(song))
-    }
 }

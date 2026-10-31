@@ -38,7 +38,6 @@ struct SlashMenuTests {
             "Movie / Album…",
             "Key…",
             "Tempo…",
-            "Length…",
             "Capo…",
             "Time…",
         ])

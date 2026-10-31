@@ -279,6 +279,7 @@ final class SetAssistantModel {
             rebuilt: rebuilt,
             artistChips: kinds.contains { $0.isArtistChip },
             albumChips: kinds.contains { $0.isAlbumChip },
+            leftOut: SmallBucket(result?.leftOutNoTime.count ?? 0),
         )))
     }
 }

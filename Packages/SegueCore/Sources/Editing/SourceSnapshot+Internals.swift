@@ -153,7 +153,7 @@ extension SourceSnapshot {
             range = Self.trimmed(line)
         } else if message.contains("irective") || message.contains("'{'")
             || message.contains("'}'") || message.hasPrefix("Capo ")
-            || message.hasPrefix("Tempo ") || message.hasPrefix("Duration ")
+            || message.hasPrefix("Tempo ")
             || message.hasPrefix("Time ")
         {
             kind = .malformedDirective

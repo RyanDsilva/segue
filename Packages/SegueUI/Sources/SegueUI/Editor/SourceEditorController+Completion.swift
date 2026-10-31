@@ -15,7 +15,7 @@
             case slash(query: String, start: Int)
             /// The slash menu filtering a selection it will wrap.
             case slashSelection(SlashSelectionSession)
-            /// The value of `{key: `, `{time: `, `{capo: `, `{tempo: ` or `{duration: `.
+            /// The value of `{key: `, `{time: `, `{capo: ` or `{tempo: `.
             case value(name: String, prefix: String, start: Int)
         }
 

@@ -244,7 +244,7 @@ struct SetlistBreakTests {
         let played = try #require(ending.gigLogEntry).played
         // Song 3's time starts when the break ended, not when it became current.
         #expect(played.map(\.item.title) == ["Song 1", "Song 2", "Song 3"])
-        #expect(played.last?.duration == 240)
+        #expect(played.last?.elapsed == 240)
         // The show-end save keeps the break where it was.
         #expect(ending.diff == nil)
         #expect(ending.record.omittedEntries.isEmpty)

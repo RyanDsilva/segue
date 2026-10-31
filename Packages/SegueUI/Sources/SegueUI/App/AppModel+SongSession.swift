@@ -68,7 +68,6 @@
                         songs: stores.library,
                         clock: stores.clock,
                         ids: stores.ids,
-                        durations: nil,
                     ),
                 )
                 services.record(.featureUsed(

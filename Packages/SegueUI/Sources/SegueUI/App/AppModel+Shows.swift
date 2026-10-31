@@ -326,20 +326,11 @@
             setlistName: String,
         ) -> ShowEnvironment {
             let stores = session.stores
-            let durations: (any DurationSampleSink)? = kind == .rehearsal
-                ? RehearsalTimingStore(
-                    fileSystem: stores.fileSystem,
-                    root: session.root,
-                    runId: runId,
-                    setlistName: setlistName,
-                )
-                : nil
             return ShowEnvironment(
                 store: stores.shows,
                 songs: stores.library,
                 clock: stores.clock,
                 ids: stores.ids,
-                durations: durations,
             )
         }
 

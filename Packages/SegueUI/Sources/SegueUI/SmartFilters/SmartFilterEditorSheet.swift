@@ -108,9 +108,9 @@
             let matcher = draft.conditions.compiled(playStats: playStats)
             let count = songs.count(where: matcher.matches)
             let songsText = count == 1 ? "1 song matches." : "\(count) songs match."
-            return draft.conditions.length == nil
-                ? songsText
-                : songsText + " Songs without a length are left out."
+            return draft.hadRemovedLength
+                ? songsText + " The Length condition was removed in this version."
+                : songsText
         }
 
         private func save() {
@@ -263,8 +263,6 @@
                 keys
             case .tempo:
                 range(prompt: "BPM", unit: "BPM")
-            case .length:
-                range(prompt: "m:ss", unit: nil)
             case .neverPlayed:
                 Text("in any show")
                     .font(Theme.font.body)

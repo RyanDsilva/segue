@@ -247,6 +247,13 @@ struct EditPlanner {
         }
     }
 
+    /// See `EditOperation.removeDirectives`.
+    mutating func removeDirectives(named name: String) {
+        for entry in snapshot.directiveLines(named: name) {
+            deleteLine(entry.line)
+        }
+    }
+
     mutating func removeDefine(name: String) {
         for line in snapshot.defineLines where line.name == name {
             deleteLine(line.line)

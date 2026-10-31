@@ -48,7 +48,10 @@ struct WelcomeLibraryTests {
         #expect(metadata.title.map(Self.titles.contains) == true)
         #expect(metadata.artists == ["Segue Originals"])
         #expect(metadata.tempo != nil)
-        #expect(metadata.duration != nil)
+        // Every Welcome song has a time in a set: a tempo and chords (P8-8), no {duration}.
+        let id = SongID(ULID(milliseconds: 1, randomness: Array(repeating: 0, count: 10)))
+        #expect(try SlotTimes.song(TestSongs.record(source: source, id: id)).seconds != nil)
+        #expect(!source.contains("{duration"))
         let declared = try #require(metadata.key.flatMap(SongKey.init(parsing:)))
 
         let chordTexts = Self.chordTexts(document.blocks)

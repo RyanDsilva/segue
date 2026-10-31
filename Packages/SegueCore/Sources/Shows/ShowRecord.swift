@@ -63,7 +63,7 @@ public enum ShowKind: String, Sendable, Hashable, Codable {
     /// A real gig: persisted on every action, becomes a gig log entry, feeds play stats.
     case gig
     /// A rehearse-setlist run: written like a gig so it can be resumed after a crash, but
-    /// never in the gig log or play stats; its output is song timings (`DurationSampleSink`).
+    /// never in the gig log or play stats.
     case rehearsal
 }
 

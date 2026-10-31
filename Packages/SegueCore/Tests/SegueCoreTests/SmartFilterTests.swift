@@ -20,7 +20,6 @@ struct SmartFilterTests {
         let lib = try TestLibrary()
         let store = try await Self.store(lib)
         var conditions = SmartFilterConditions(anyTags: ["upbeat", "crowd pleaser"])
-        conditions.length = SmartFilterRange(min: 120, max: 300)
         conditions.neverPlayed = true
         let created = try await store.create(name: "Openers", conditions: conditions)
 
@@ -227,14 +226,6 @@ struct SmartFilterTests {
             (SmartFilterConditions(keys: ["F#", "C"]), ["Charlie", "Delta"]), // enharmonic Gb
             (SmartFilterConditions(tempo: SmartFilterRange(min: 96, max: 120)), ["Alpha", "Delta"]),
             (SmartFilterConditions(tempo: SmartFilterRange(max: 100)), ["Bravo", "Delta"]),
-            (
-                SmartFilterConditions(length: SmartFilterRange(min: 210)),
-                ["Alpha", "Bravo", "Delta"],
-            ),
-            (
-                SmartFilterConditions(length: SmartFilterRange(max: 240)),
-                ["Alpha", "Charlie", "Delta"],
-            ),
             (SmartFilterConditions(neverPlayed: true), ["Charlie", "Delta", "Unknown"]),
             (
                 SmartFilterConditions(anyTags: ["upbeat"], neverPlayed: true),
@@ -247,13 +238,12 @@ struct SmartFilterTests {
     }
 
     @Test
-    func `songs without a length or tempo never match those conditions`() async throws {
+    func `songs without a tempo never match a tempo condition`() async throws {
         let fix = try await Self.library()
         let wide = SmartFilterRange(min: 0, max: 100_000)
-        #expect(try await !fix.titles(SmartFilterConditions(length: wide)).contains("Unknown"))
         #expect(try await !fix.titles(SmartFilterConditions(tempo: wide)).contains("Unknown"))
         // An open range is no condition at all.
-        #expect(try await fix.titles(SmartFilterConditions(length: SmartFilterRange()))
+        #expect(try await fix.titles(SmartFilterConditions(tempo: SmartFilterRange()))
             .contains("Unknown"))
     }
 
@@ -334,7 +324,6 @@ struct SmartFilterTests {
             allTags: ["a"],
             keys: ["G"],
             tempo: SmartFilterRange(min: 90),
-            length: SmartFilterRange(),
             neverPlayed: true,
         )
         #expect(conditions.count == 4)
@@ -343,7 +332,7 @@ struct SmartFilterTests {
 
 extension SmartFilterTests {
     @Test
-    func `essentials are a written key, a length and a tempo`() async throws {
+    func `essentials are a written key and a tempo`() async throws {
         let fix = try await Self.library()
         let missing = try await fix.store.allSongs().map { song in
             "\(song.document.metadata.title ?? ""): "
@@ -354,7 +343,7 @@ extension SmartFilterTests {
             "Bravo: ",
             "Charlie: ",
             "Delta: ",
-            "Unknown: key,length,tempo",
+            "Unknown: key,tempo",
         ])
         let partial = try await fix.store.createSong(source: """
         {title: Partial}
@@ -364,7 +353,7 @@ extension SmartFilterTests {
 
         """)
         // A key detected from the chords, or an invalid {key}, does not count.
-        #expect(SongEssentials.missing(in: partial.document) == [.key, .length])
+        #expect(SongEssentials.missing(in: partial.document) == [.key])
         let builtIn = SongFilter(missingEssentials: true)
         #expect(try await fix.store.allSongs().filter(builtIn.matches).titles == [
             "Partial",
@@ -414,7 +403,6 @@ struct SmartFilterPerformanceTests {
                 proficiencies: [.ready, .pro],
                 keys: ["G", "Am", "C", "D"],
                 tempo: SmartFilterRange(min: 60, max: 200),
-                length: SmartFilterRange(min: 60, max: 600),
                 neverPlayed: true,
             ),
         )
@@ -429,5 +417,32 @@ struct SmartFilterPerformanceTests {
         }
         #expect(count > 0)
         #expect(best < .milliseconds(50), "best of 5: \(best)")
+    }
+}
+
+extension SmartFilterTests {
+    /// P8-8 7.1: a filter saved with the old Length condition still loads, matches without
+    /// it, is not rewritten by loading, and drops the key on its next save.
+    @Test
+    func `a hand-written Length condition is ignored and dropped on the next save`(
+    ) async throws {
+        let lib = try TestLibrary()
+        let id = lib.ids.next()
+        let file = #"""
+        {"schemaVersion": 1, "id": "\#(id)", "name": "Long ones",
+         "createdAt": "2026-10-01T10:00:00Z", "updatedAt": "2026-10-01T10:00:00Z",
+         "conditions": {"anyTags": ["upbeat"], "length": {"min": 240}}}
+        """#
+        try lib.write(file, to: "filters/long-ones.filter.json")
+        let store = try await Self.store(lib)
+        let loaded = try #require(await store.all().first)
+        #expect(loaded.conditions.hadRemovedLength)
+        #expect(loaded.conditions.anyTags == ["upbeat"])
+        #expect(loaded.conditions.count == 1)
+        #expect(try lib.read("filters/long-ones.filter.json") == file)
+        _ = try await store.update(loaded.id, conditions: loaded.conditions)
+        let saved = try lib.read("filters/long-ones.filter.json")
+        #expect(!saved.contains("length"))
+        #expect(saved.contains("upbeat"))
     }
 }

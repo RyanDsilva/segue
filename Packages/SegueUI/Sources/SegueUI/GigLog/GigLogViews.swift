@@ -115,13 +115,5 @@
         static func time(_ date: Date) -> String {
             date.formatted(date: .omitted, time: .shortened)
         }
-
-        /// "3:40" for a duration in seconds.
-        static func length(_ seconds: TimeInterval) -> String {
-            let whole = max(Int(seconds.rounded()), 0)
-            return whole >= 3600
-                ? String(format: "%d:%02d:%02d", whole / 3600, whole % 3600 / 60, whole % 60)
-                : String(format: "%d:%02d", whole / 60, whole % 60)
-        }
     }
 #endif

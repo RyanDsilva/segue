@@ -149,25 +149,25 @@ struct ShowRecoveryTests {
         #expect(again.current?.song?.document.metadata.title == "Song 2")
     }
 
-    /// Rehearse-setlist runs: crash resume like a show, timings to `timings/`, never in the
-    /// gig log, play stats or reorder sheet.
+    /// Rehearse-setlist runs: crash resume like a show, never in the gig log, play stats or
+    /// reorder sheet, and no timings anywhere (P8-8 5.8: nothing creates `timings/`).
     @Test
-    func `rehearsal resumes after a crash and only records timings`() async throws {
+    func `rehearsal resumes after a crash and records nothing beyond its show file`(
+    ) async throws {
         let harness = try await ShowHarness()
-        let (setlist, songs) = try await harness.makeSet(4)
-        var timings = harness.timings(run: harness.lib.ids.next(), setlist: setlist)
+        let (setlist, _) = try await harness.makeSet(4)
         var show: ShowController? = try await ShowController.start(
             setlist: setlist,
             kind: .rehearsal,
-            environment: harness.environment(durations: timings),
+            environment: harness.environment(),
         )
-        let id = try #require(await show?.state.record.id)
+        _ = try #require(await show?.state.record.id)
         harness.lib.clock.advance(by: 150)
         try await show?.perform(.next)
         harness.lib.clock.advance(by: 210)
         try await show?.perform(.move(fromOffsets: [3], toOffset: 2))
         try await show?.perform(.next)
-        #expect(harness.lib.exists("timings/\(id)\(LibraryRoot.rehearsalSuffix)"))
+        #expect(!harness.lib.exists("timings"))
 
         show = nil // kill -9
         harness.lib.clock.advance(by: 30)
@@ -175,26 +175,14 @@ struct ShowRecoveryTests {
         let pending = try #require(try await harness.shows.launchCheck().resumable)
         #expect(pending.kind == .rehearsal)
         #expect(pending.currentItem?.title == "Song 4")
-        timings = harness.timings(run: id.ulid, setlist: setlist)
-        let resumed = try await ShowController.resume(
-            pending,
-            environment: harness.environment(durations: timings),
-        )
+        let resumed = try await ShowController.resume(pending, environment: harness.environment())
         harness.lib.clock.advance(by: 100)
         let ending = try await resumed.end()
         #expect(ending.diff == nil)
         #expect(ending.gigLogEntry == nil)
         #expect(ending.record.isFinished)
 
-        let samples = try RehearsalTimingStore.loadAll(
-            root: harness.lib.root,
-            fileSystem: harness.fileSystem,
-        )
-        // Song 4 counts from the resume (100 s), not across the 30 s the app was down.
-        #expect(samples.map(\.seconds) == [150, 210, 100])
-        #expect(samples.map(\.songId) == [songs[0].id, songs[1].id, songs[3].id])
-        #expect(samples.allSatisfy { $0.source == .rehearsal && $0.runId == id.ulid })
-        #expect(try await timings.samples == samples)
+        #expect(!harness.lib.exists("timings"))
 
         try await harness.relaunch()
         #expect(await harness.shows.gigLog().isEmpty)

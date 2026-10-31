@@ -14,7 +14,7 @@ import Testing
 struct SetComposerViewModelTests {
     private static let fridayID = "01JC0000000000000000000F01"
     private static let songs = [
-        ("kesariya", "{title: Kesariya}\n{key: G}\n{duration: 4:28}\n[G]Mujhko itna bataaye koi\n"),
+        ("kesariya", "{title: Kesariya}\n{key: G}\n[G]Mujhko itna bataaye koi\n"),
         (
             "tum-hi-ho",
             "{title: Tum Hi Ho}\n{artist: Arijit Singh}\n{key: Bb}\n[Bb]Hum tere bin\n",

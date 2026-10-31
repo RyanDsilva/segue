@@ -44,7 +44,6 @@ struct SongCardTests {
     @Test(arguments: [
         (SongCardWrite.key(SongKey(parsing: "Am")), "{key: Am}"),
         (SongCardWrite.capo(2), "{capo: 2}"),
-        (EditOperation.setLength(245), "{duration: 4:05}"),
         (SongCardWrite.artists(["Segue Originals"]), "{artist: Segue Originals}"),
         (SongCardWrite.album("Dilli Nights"), "{album: Dilli Nights}"),
         (try? SongCardWrite.tempo("84").get(), "{tempo: 84}"),
@@ -78,9 +77,7 @@ struct SongCardTests {
         let fixture = try await library()
         let (env, model, id) = (fixture.env, fixture.model, fixture.id)
         await model.editSongSource(id: id, SongCardWrite.key(SongKey(parsing: "Am")))
-        await model.editSongSource(id: id, .setLength(200))
         await model.editSongSource(id: id, SongCardWrite.key(nil))
-        await model.editSongSource(id: id, .setLength(nil))
         await model.editSongSource(id: id, SongCardWrite.capo(0))
         #expect(try env.read(Self.file) == Self.source)
     }
@@ -162,11 +159,14 @@ struct SongCardTests {
     }
 
     @Test
-    func `missing essentials name key length and tempo`() {
+    func `missing essentials name key and tempo`() {
         let blank = SourceSnapshot(text: "{title: X}\n").document
-        #expect(SongEssentials.missing(in: blank) == [.key, .length, .tempo])
-        #expect(SetEssential
-            .spokenMissing([.key, .length, .tempo]) == "Missing key, length and tempo")
+        #expect(SongEssentials.missing(in: blank) == [.key, .tempo])
+        #expect(SetEssential.spokenMissing([.key, .tempo]) == "Missing key and tempo")
+        // A {duration} line counts for nothing (P8-8: song length is gone).
+        let timed = SourceSnapshot(text: "{title: X}\n{duration: 4:05}\n").document
+        #expect(SongEssentials.missing(in: timed) == [.key, .tempo])
+        #expect(!SongCardField.allCases.map(\.rawValue).contains("length"))
         #expect(SetEssential.spokenMissing([.tempo]) == "Missing tempo")
         #expect(SetEssential.spokenMissing([]).isEmpty)
     }
@@ -195,9 +195,9 @@ struct SongCardTests {
     func `a focus request reaches only the card it names`() throws {
         let router = SongCardFocusRouter()
         let id = try SongID(#require(ULID(string: Self.songID)))
-        router.focus(.length, songID: id)
+        router.focus(.tempo, songID: id)
         #expect(router.take(for: .standIn()) == nil)
-        #expect(router.take(for: id) == .length)
+        #expect(router.take(for: id) == .tempo)
         #expect(router.take(for: id) == nil)
         router.focus(.title)
         #expect(router.take(for: .standIn()) == .title)

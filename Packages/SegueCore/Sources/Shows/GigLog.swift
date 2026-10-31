@@ -19,10 +19,6 @@ public struct PlayedSong: Sendable, Hashable {
         self.endedAt = endedAt
         self.fromRequest = fromRequest
     }
-
-    public var duration: TimeInterval {
-        endedAt.timeIntervalSince(startedAt)
-    }
 }
 
 /// A finished gig show as the gig log shows it.

@@ -143,8 +143,6 @@ public struct ShowEnvironment: Sendable {
     public var songs: any ShowSongSource
     public var clock: any Clock
     public var ids: any IDGenerator
-    /// Receives one sample per completed song (gig and rehearsal), for phase 3.
-    public var durations: (any DurationSampleSink)?
     /// Minimum seconds between scroll-only writes. With the stage's flush tick
     /// (`LiveSession.flushTick`, 0.25 s) a scroll change reaches disk within a second, so
     /// kill -9 loses at most a second of scrolling.
@@ -155,14 +153,12 @@ public struct ShowEnvironment: Sendable {
         songs: any ShowSongSource,
         clock: any Clock,
         ids: any IDGenerator,
-        durations: (any DurationSampleSink)? = nil,
         scrollWriteInterval: TimeInterval = 0.75,
     ) {
         self.store = store
         self.songs = songs
         self.clock = clock
         self.ids = ids
-        self.durations = durations
         self.scrollWriteInterval = scrollWriteInterval
     }
 }

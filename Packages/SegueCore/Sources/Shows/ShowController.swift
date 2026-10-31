@@ -45,8 +45,6 @@ public actor ShowController {
     /// The write loop in flight; later `persist()` calls wait for it (it picks up their
     /// record), so a caller never returns before its record landed.
     private var writeTask: Task<Void, any Error>?
-    private var pendingSamples: [DurationSample] = []
-    private var sendingSamples = false
     /// This run's hold on the show (released when it ends); nil for an unsaved run.
     private let claim: ShowClaim?
 
@@ -179,10 +177,10 @@ public actor ShowController {
         currentState
     }
 
-    /// True while a change (action, scroll position, timing sample) is not on disk yet,
+    /// True while a change (an action, a scroll position) is not on disk yet,
     /// e.g. after a failed write that has not been retried successfully.
     public var hasUnsavedChanges: Bool {
-        needsWrite || !pendingSamples.isEmpty || writeTask != nil
+        needsWrite || writeTask != nil
     }
 
     /// Applies `action`, persists and returns the new state. Actions that do nothing (e.g.
@@ -194,7 +192,7 @@ public actor ShowController {
         let now = SegueJSON.stamp(environment.clock.now())
         var next = record
         let ids = environment.ids
-        let completed = try next.apply(
+        _ = try next.apply(
             action,
             TransitionContext(now: now, newID: { ids.next() }, songTitle: title),
         )
@@ -202,12 +200,11 @@ public actor ShowController {
         let previousCurrent = record.currentItemId
         next.updatedAt = now
         record = next
-        queueSamples(for: completed, at: now)
         if record.currentItemId != previousCurrent {
             await takeSnapshotOfCurrent()
         }
         await refreshState()
-        try await persistAndSendSamples()
+        try await persist()
         return currentState
     }
 
@@ -253,7 +250,7 @@ public actor ShowController {
     /// Writes a pending scroll position if one is due. The stage calls this on a timer
     /// (about every 0.5 s) so the last position reaches disk without another action.
     public func flushScrollPositionIfDue() async throws {
-        guard needsWrite || !pendingSamples.isEmpty else { return }
+        guard needsWrite else { return }
         let now = SegueJSON.stamp(environment.clock.now())
         if let lastWrite, now.timeIntervalSince(lastWrite) < environment.scrollWriteInterval {
             return
@@ -262,7 +259,7 @@ public actor ShowController {
             record.updatedAt = now
             currentState.record.updatedAt = now
         }
-        try await persistAndSendSamples()
+        try await persist()
     }
 
     /// Ends the run: current (if any) is marked played, `endedAt` set, the file written, the
@@ -272,14 +269,13 @@ public actor ShowController {
     public func end() async throws -> ShowEnding {
         if !record.isFinished {
             let now = SegueJSON.stamp(environment.clock.now())
-            let completed = record.finish(at: now, closure: .ended)
-            queueSamples(for: completed.map { [$0] } ?? [], at: now)
+            _ = record.finish(at: now, closure: .ended)
             snapshots = [:]
             await refreshState()
-        } else if !needsWrite, pendingSamples.isEmpty {
+        } else if !needsWrite {
             throw ShowError.finished(record.id)
         }
-        try await persistAndSendSamples()
+        try await persist()
         guard let claim else {
             // An unsaved run: no file, no diff, no gig log entry (R150).
             return ShowEnding(record: record, diff: nil, gigLogEntry: nil)
@@ -374,39 +370,6 @@ public actor ShowController {
 // MARK: - Persistence
 
 extension ShowController {
-    private func queueSamples(for completed: [ShowItemID], at now: Date) {
-        guard environment.durations != nil, !completed.isEmpty else { return }
-        let played = record.playedSongs
-        for itemId in completed {
-            guard let song = played.first(where: { $0.item.itemId == itemId }) else { continue }
-            pendingSamples.append(DurationSample(
-                songId: song.item.songId,
-                seconds: song.duration,
-                source: record.kind == .gig ? .show : .rehearsal,
-                runId: record.id.ulid,
-                recordedAt: now,
-            ))
-        }
-    }
-
-    private func persistAndSendSamples() async throws {
-        needsWrite = true
-        var failure: (any Error)?
-        do {
-            try await persist()
-        } catch {
-            failure = error
-        }
-        do {
-            try await sendSamples()
-        } catch {
-            failure = failure ?? error
-        }
-        if let failure {
-            throw failure
-        }
-    }
-
     /// Writes the latest record and returns once it is on disk. While a write is in flight,
     /// a later call marks the record dirty and waits for the in-flight loop, which writes
     /// again until nothing is dirty, so it covers the caller's record too (or throws).
@@ -438,20 +401,6 @@ extension ShowController {
                 needsWrite = true
                 throw ShowError.writeFailed(Self.message(error))
             }
-        }
-    }
-
-    private func sendSamples() async throws {
-        guard let sink = environment.durations, !sendingSamples else { return }
-        sendingSamples = true
-        defer { sendingSamples = false }
-        while let sample = pendingSamples.first {
-            do {
-                try await sink.record(sample)
-            } catch {
-                throw ShowError.writeFailed(Self.message(error))
-            }
-            pendingSamples.removeFirst()
         }
     }
 

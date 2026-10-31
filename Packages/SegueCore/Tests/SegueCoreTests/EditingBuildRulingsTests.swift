@@ -196,26 +196,17 @@ struct EditingBuildRulingsTests {
     }
 }
 
-// MARK: - `{duration}` is the song's length in undo names (R80)
+// MARK: - Undo names follow the directive (P8-8: `{duration}` is an ordinary directive)
 
 extension EditingBuildRulingsTests {
     @Test
-    func `setting and clearing duration names the undo step Set and Clear Length`() throws {
+    func `a directive's undo step is named after it`() throws {
         let snapshot = SourceSnapshot(text: "{title: Harbour}\n{duration: 4:05}\nLine\n")
-        let set = try DocumentEditor.change(
-            for: .setDirective(name: "duration", value: "3:30"),
-            in: snapshot,
-        )
-        #expect(set.actionName == "Set Length")
-        let clear = try DocumentEditor.change(
-            for: .setDirective(name: "duration", value: nil),
-            in: snapshot,
-        )
-        #expect(clear.actionName == "Clear Length")
         let tempo = try DocumentEditor.change(
             for: .setDirective(name: "tempo", value: "90"),
             in: snapshot,
         )
         #expect(tempo.actionName == "Set Tempo")
+        #expect(snapshot.text.applying(tempo.edits).contains("{duration: 4:05}\n"))
     }
 }

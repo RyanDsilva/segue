@@ -253,7 +253,6 @@
                         title: played.item.title,
                         marker: marker(played),
                         time: GigText.time(played.startedAt),
-                        length: GigText.length(played.duration),
                         detail: GigPlayedListLines.arrangementLine(played.item),
                     )
                     .accessibilityIdentifier(AccessibilityID.gigPlayedRow)
@@ -270,7 +269,7 @@
                         .padding(.top, 24)
                         .padding(.bottom, 8)
                     ForEach(entry.skipped) { item in
-                        row(number: "-", title: item.title, marker: nil, time: "", length: "")
+                        row(number: "-", title: item.title, marker: nil, time: "")
                             .opacity(0.6)
                             .accessibilityIdentifier(AccessibilityID.gigSkippedRow)
                     }
@@ -290,7 +289,6 @@
             title: String,
             marker: String?,
             time: String,
-            length: String,
             detail: String? = nil,
         ) -> some View {
             HStack(spacing: 8) {
@@ -316,9 +314,6 @@
                 Text(time)
                     .foregroundStyle(Theme.color.muted)
                     .frame(width: 64, alignment: .trailing)
-                Text(length)
-                    .foregroundStyle(Theme.color.muted)
-                    .frame(width: 56, alignment: .trailing)
             }
             .font(SchibstedGrotesk.medium.font(size: 14))
             .padding(.vertical, 9)

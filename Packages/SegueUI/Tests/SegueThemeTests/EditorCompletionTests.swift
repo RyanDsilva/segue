@@ -36,7 +36,8 @@ struct EditorCompletionTests {
         #expect(repeatItem.detail == "{chorus}")
         let plain = all.filter { $0.title.first?.isUppercase == true }
         #expect(plain.count == all.count)
-        #expect(all.first { $0.body == "duration: " }?.title == "Length")
+        // Song length is gone (P8-8): no Length item.
+        #expect(!all.contains { $0.body == "duration: " })
     }
 
     @Test(arguments: [
@@ -61,7 +62,6 @@ struct EditorCompletionTests {
     @Test
     func `metadata prefixes still find their directive`() {
         #expect(items("ti").first == "title: ")
-        #expect(items("len").first == "duration: ")
         #expect(items("time").first == "time: ")
         #expect(items("al").first == "album: ")
     }

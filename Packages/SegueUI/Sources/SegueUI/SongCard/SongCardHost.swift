@@ -15,7 +15,7 @@ import SwiftUI
 struct SongCardHost {
     /// The song as it is now.
     let document: SongDocument
-    /// The card's identity: the song, or a draft's stand-in ID (Time it is keyed to it).
+    /// The card's identity: the song, or a draft's stand-in ID.
     let songID: SongID
     var isReadOnly = false
     /// The song's sidecar metadata, nil where the host has none (the editor strip).
@@ -70,8 +70,7 @@ extension SongCardHost {
 }
 
 extension SongID {
-    /// A stand-in ID for a card whose song has none yet (a new song, a draft): Time it
-    /// runs are keyed to it.
+    /// A stand-in ID for a card whose song has none yet (a new song, a draft).
     static func standIn() -> SongID {
         SongID(ULID(
             timestamp: Date(),

@@ -28,7 +28,7 @@
                             .accessibilityIdentifier(AccessibilityID.exportArchive)
                         }
                     }
-                    SettingsNote(text: "One zip of your songs, setlists, shows and timings, "
+                    SettingsNote(text: "One zip of your songs, setlists, shows and filters, "
                         + "as they are in the library folder.")
                     LabeledContent("Index") {
                         Button("Rebuild Index") {

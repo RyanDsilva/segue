@@ -118,7 +118,7 @@ struct Phase2HardeningTests {
         harness.lib.clock.advance(by: 120)
         let ending = try #require(try await show?.end())
         let entry = try #require(ending.gigLogEntry)
-        #expect(entry.played.map(\.duration) == [120])
+        #expect(entry.played.map(\.elapsed) == [120])
     }
 
     // MARK: #9 a show can only be held by one run

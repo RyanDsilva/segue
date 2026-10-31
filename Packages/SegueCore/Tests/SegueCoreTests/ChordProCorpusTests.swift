@@ -23,7 +23,6 @@ struct ChordProCorpusTests {
                 capo: 2,
                 tempo: 92,
                 time: "4/4",
-                duration: 225,
             ),
             sectionLabels: ["Verse 1", nil, "Verse 2", "Chorus", nil, "Final Chorus"],
             lyricLine: "Lanterns on the water, drifting out to the bay",

@@ -72,11 +72,10 @@ struct ShowScenarioTests {
         let harness = try await ShowHarness()
         let (setlist, songs) = try await harness.makeSet(10)
         let request = try await harness.song("Pyaar Ki Raah")
-        let samples = SampleRecorder()
         let show = try await ShowController.start(
             setlist: setlist,
             kind: .gig,
-            environment: harness.environment(durations: samples),
+            environment: harness.environment(),
         )
         let id = await show.state.record.id
         #expect(await show.state.currentTitle == "Song 1")
@@ -116,8 +115,6 @@ struct ShowScenarioTests {
         let ending = try await show.end()
 
         try await checkAftermath(of: ending, harness, songs: songs, request: request)
-        #expect(await samples.samples.map(\.seconds) == ending.gigLogEntry?.played.map(\.duration))
-        #expect(await samples.samples.allSatisfy { $0.source == .show && $0.runId == id.ulid })
         let diff = try #require(ending.diff)
         let saved = diff.entries(including: diff.defaultIncluded)
         #expect(saved.count == 11)
@@ -142,8 +139,8 @@ struct ShowScenarioTests {
         #expect(entry.skipped.map(\.title) == ["Song 4"])
         #expect(entry.details.venue == "The Anchor")
         #expect(entry.details.date == CalendarDay("2026-10-23"))
-        #expect(entry.played.first?.duration == 180)
-        #expect(entry.played.last?.duration == 200)
+        #expect(entry.played.first?.elapsed == 180)
+        #expect(entry.played.last?.elapsed == 200)
 
         // On disk: finished, and the gig log reads it back after a relaunch.
         try await harness.relaunch()
@@ -345,14 +342,5 @@ struct ShowScenarioTests {
                 #expect(try harness.lib.bytes(path) == before)
             }
         }
-    }
-}
-
-/// A `DurationSampleSink` that keeps samples in memory.
-actor SampleRecorder: DurationSampleSink {
-    private(set) var samples: [DurationSample] = []
-
-    func record(_ sample: DurationSample) async throws {
-        samples.append(sample)
     }
 }

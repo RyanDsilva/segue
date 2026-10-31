@@ -49,8 +49,6 @@ public struct Metadata: Sendable, Equatable, Hashable {
     public var tempo: Double?
     /// `{time}`, verbatim (e.g. "4/4").
     public var time: String?
-    /// `{duration}` in seconds (source may be `mm:ss`, `h:mm:ss` or seconds).
-    public var duration: TimeInterval?
     /// Other metadata: `{meta: name value}` plus the standard metadata directives without a
     /// dedicated field (`sorttitle`, `composer`, `lyricist`, `arranger`, `copyright`,
     /// `album`, `year`), keyed by lowercased name, values in source order.
@@ -64,7 +62,6 @@ public struct Metadata: Sendable, Equatable, Hashable {
         capo: Int? = nil,
         tempo: Double? = nil,
         time: String? = nil,
-        duration: TimeInterval? = nil,
         extra: [String: [String]] = [:],
     ) {
         self.title = title
@@ -74,7 +71,6 @@ public struct Metadata: Sendable, Equatable, Hashable {
         self.capo = capo
         self.tempo = tempo
         self.time = time
-        self.duration = duration
         self.extra = extra
     }
 }

@@ -32,15 +32,15 @@ struct ServicesVocabularyTests {
         }
         // Rows 1-18 of section 5, the phase 3 AI rows 19-22, the section notes row 23
         // (P3-17), one signal name each, the set composer row 24 (P8-5), two signals, the
-        // walk-up row 25 (P8-4b), the fill row 26, the timing rows 27 and 28 (P8-7) and the
-        // artist split row 29 (P8-8).
-        #expect(names.count == 30)
+        // walk-up row 25 (P8-4b), the fill row 26, the timing rows 27 and 28 (P8-7), the
+        // artist split row 29 and the setlist time row 30 (P8-8).
+        #expect(names.count == 31)
         #expect(names.isSuperset(of: [
             "Segue.AI.pasteFinished", "Segue.AI.modelDownload", "Segue.AI.assistantUsed",
             "Segue.AI.smartFilterUsed", "Segue.Notes.edited", "Segue.Setlist.composed",
             "Segue.Setlist.composerSession", "Segue.Bass.walkUpPicked",
             "Segue.Bass.fillSaved", "Segue.Timing.tapCaptured", "Segue.Timing.keyChange",
-            "Segue.Song.artistSplit",
+            "Segue.Song.artistSplit", "Segue.Setlist.timed",
         ]))
     }
 
@@ -95,6 +95,46 @@ struct ServicesVocabularyTests {
         #expect(event.throttle == .daily(key: "Segue.Song.artistSplit|paste|ampersand|merged"))
         #expect(ComposerTier(rawValue: "artist") == .artist)
         #expect(FeatureKey(rawValue: "songArtists") == .songArtists)
+    }
+
+    /// Row 30 and the P8-8 time params (section 8): buckets and Bools only; Time it is gone.
+    @Test
+    func `the setlist time row and the no-time params`() {
+        let event = AnalyticsEvent.setlistTimed(SetlistTimedSummary(
+            songs: SmallBucket(12),
+            noTempo: SmallBucket(2),
+            noChords: SmallBucket(0),
+            arranged: SmallBucket(1),
+            estimatedOnly: true,
+            target: .within,
+        ))
+        #expect(event.render().name == "Segue.Setlist.timed")
+        #expect(event.render().params == [
+            "segue.songs": "10-19", "segue.noTempo": "2-4", "segue.noChords": "0",
+            "segue.arranged": "1", "segue.estimatedOnly": "true", "segue.target": "within",
+        ])
+        #expect(event.throttle == .daily(key: "Segue.Setlist.timed|within"))
+        #expect(FeatureKey(rawValue: "timeIt") == nil)
+        #expect(FeatureKey(rawValue: "tempoFromSet") == .tempoFromSet)
+        let assistant = AnalyticsEvent.aiAssistantUsed(AssistantUsedSummary(
+            context: .builder,
+            lexiconChips: SmallBucket(1),
+            suggestedShown: SmallBucket(0),
+            suggestedAccepted: SmallBucket(0),
+            provider: .noProvider,
+            rebuilt: false,
+            leftOut: SmallBucket(3),
+        ))
+        #expect(assistant.render().params["segue.leftOut"] == "2-4")
+        let snapshot = AnalyticsEvent.librarySnapshot(LibrarySnapshot(
+            songs: SongBucket(40),
+            setlists: SmallBucket(1),
+            gigs: SmallBucket(0),
+            welcomeSongsLeft: .noneLeft,
+            customShapes: false,
+            noTempo: SongBucket(5),
+        ))
+        #expect(snapshot.render().params["segue.noTempo"] == SongBucket(5).rawValue)
     }
 
     @Test

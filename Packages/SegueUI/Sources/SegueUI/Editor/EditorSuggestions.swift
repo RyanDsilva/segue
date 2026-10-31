@@ -151,7 +151,6 @@ enum DirectiveSuggestions {
         Item(title: "Capo", body: "capo: "),
         Item(title: "Tempo", body: "tempo: "),
         Item(title: "Time signature", body: "time: "),
-        Item(title: "Length", body: "duration: "),
     ]
 
     static let trailing: [Item] = [
@@ -294,7 +293,7 @@ enum SlashMenu {
         /// A `{comment: }` with the caret in it: a chart note on the current section (P3-13).
         case note
         /// Writes this metadata directive at the top (replacing one already there) and opens
-        /// its value choices: `key`, `tempo`, `duration`, `capo`, `time` (`album` has none).
+        /// its value choices: `key`, `tempo`, `capo`, `time` (`album` has none).
         case value(String)
     }
 
@@ -380,12 +379,6 @@ enum SlashMenu {
             detail: "{tempo}",
             aliases: ["bpm", "tempo"],
         ),
-        Item(
-            title: "Length…",
-            action: .value("duration"),
-            detail: "{duration}",
-            aliases: ["len", "length", "duration"],
-        ),
         Item(title: "Capo…", action: .value("capo"), detail: "{capo}", aliases: ["capo"]),
         Item(
             title: "Time…",
@@ -448,9 +441,9 @@ enum SlashMenu {
     }
 }
 
-/// Value help after `{key: `, `{time: `, `{capo: `, `{tempo: ` and `{duration: ` (R81): the
-/// card's choices as a list (keys with the one heard in the chords first, common time
-/// signatures, capo frets), or, for tempo and length, the format as the list's header.
+/// Value help after `{key: `, `{time: `, `{capo: ` and `{tempo: ` (R81): the card's choices
+/// as a list (keys with the one heard in the chords first, common time signatures, capo
+/// frets), or, for tempo, the format as the list's header.
 enum ValueSuggestions {
     struct Choice: Equatable {
         let title: String
@@ -459,7 +452,7 @@ enum ValueSuggestions {
         let value: String
     }
 
-    static let names: Set = ["key", "time", "capo", "tempo", "duration"]
+    static let names: Set = ["key", "time", "capo", "tempo"]
 
     /// The header shown above the choices ("Key", "Tempo: beats per minute, like 96").
     static func header(for name: String) -> String {
@@ -468,7 +461,6 @@ enum ValueSuggestions {
         case "time": "Time signature"
         case "capo": "Capo fret"
         case "tempo": "Tempo: beats per minute, like 96"
-        case "duration": "Length: m:ss, like 4:05"
         default: name
         }
     }

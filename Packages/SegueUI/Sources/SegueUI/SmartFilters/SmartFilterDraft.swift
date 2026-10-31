@@ -15,7 +15,6 @@ struct SmartFilterDraft: Equatable {
         case proficiency
         case keys
         case tempo
-        case length
         case neverPlayed
         /// P8-8 sections 3.5 and 4.4.
         case artists
@@ -32,7 +31,6 @@ struct SmartFilterDraft: Equatable {
             case .proficiency: .proficiency
             case .keys: .key
             case .tempo: .tempo
-            case .length: .length
             case .neverPlayed: .plays
             case .artists: .artist
             case .albums: .album
@@ -47,7 +45,7 @@ struct SmartFilterDraft: Equatable {
             case .noneTags: "has none of"
             case .proficiency: "is"
             case .albums, .artists, .keys: "is any of"
-            case .length, .tempo: "between"
+            case .tempo: "between"
             case .neverPlayed: "never played"
             }
         }
@@ -59,7 +57,6 @@ struct SmartFilterDraft: Equatable {
         case proficiency = "Proficiency"
         case key = "Key"
         case tempo = "Tempo"
-        case length = "Length"
         case plays = "Plays"
         case artist = "Artist"
         case album = "Movie / Album"
@@ -83,17 +80,21 @@ struct SmartFilterDraft: Equatable {
         var keys: [String] = []
         /// Artist or Movie / Album names, as written.
         var names: [String] = []
-        /// Tempo in BPM or length as typed (`mm:ss`); blank = open.
+        /// Tempo in BPM as typed; blank = open.
         var lower = ""
         var upper = ""
     }
 
     var name: String
     var rows: [Row]
+    /// The saved file still holds the old Length condition (P8-8 7.1): the sheet says it was
+    /// removed; Save writes the filter without it.
+    let hadRemovedLength: Bool
 
     /// A draft of `conditions` (a new filter starts with one empty Tags row).
     init(name: String, conditions: SmartFilterConditions) {
         self.name = name
+        hadRemovedLength = conditions.hadRemovedLength
         var rows: [Row] = []
         if !conditions.allTags.isEmpty {
             rows.append(Row(kind: .allTags, tags: conditions.allTags))
@@ -115,13 +116,6 @@ struct SmartFilterDraft: Equatable {
                 kind: .tempo,
                 lower: tempo.min.map(Self.bpm) ?? "",
                 upper: tempo.max.map(Self.bpm) ?? "",
-            ))
-        }
-        if let length = conditions.length, !length.isOpen {
-            rows.append(Row(
-                kind: .length,
-                lower: length.min.flatMap(LengthValue.init(seconds:))?.text ?? "",
-                upper: length.max.flatMap(LengthValue.init(seconds:))?.text ?? "",
             ))
         }
         if conditions.neverPlayed {
@@ -153,12 +147,6 @@ struct SmartFilterDraft: Equatable {
                     max: Self.number(row.upper),
                 )
                 result.tempo = range.isOpen ? nil : range
-            case .length:
-                let range = SmartFilterRange(
-                    min: Self.seconds(row.lower),
-                    max: Self.seconds(row.upper),
-                )
-                result.length = range.isOpen ? nil : range
             case .neverPlayed: result.neverPlayed = true
             case .artists: result.artists = row.names
             case .albums: result.albums = row.names
@@ -172,17 +160,11 @@ struct SmartFilterDraft: Equatable {
         if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return "Give the filter a name."
         }
-        for row in rows where row.kind == .tempo || row.kind == .length {
-            let isLength = row.kind == .length
+        for row in rows where row.kind == .tempo {
             for text in [row.lower, row.upper] where !text.trimmingCharacters(in: .whitespaces)
-                .isEmpty
+                .isEmpty && Self.number(text) == nil
             {
-                let valid = isLength ? Self.seconds(text) != nil : Self.number(text) != nil
-                if !valid {
-                    return isLength
-                        ? "Enter lengths as m:ss, for example 3:30."
-                        : "Enter tempos as BPM, for example 96."
-                }
+                return "Enter tempos as BPM, for example 96."
             }
         }
         return nil
@@ -222,9 +204,5 @@ struct SmartFilterDraft: Equatable {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         guard let value = Double(trimmed), value.isFinite, value > 0 else { return nil }
         return value
-    }
-
-    private static func seconds(_ text: String) -> Double? {
-        (try? LengthValue.parse(text))?.interval
     }
 }

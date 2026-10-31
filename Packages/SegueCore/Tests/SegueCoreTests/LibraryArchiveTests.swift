@@ -57,7 +57,8 @@ struct LibraryArchiveTests {
         #expect(archived.keys.contains("songs/archive-test-song.segue.json"))
         #expect(archived.keys.contains { $0.hasPrefix("setlists/") })
         #expect(archived.keys.contains("shows/01JTEST.show.json"))
-        #expect(archived.keys.contains("timings/01JTEST.rehearsal.json"))
+        // An old `timings/` folder is not Segue's any more (P8-8 5.8): never archived.
+        #expect(!archived.keys.contains { $0.hasPrefix("timings/") })
         #expect(archived.keys.contains("filters/ready-songs.filter.json"))
         #expect(!archived.keys.contains { $0.hasPrefix(".segue") || $0.contains(".DS_Store") })
         #expect(!archived.keys.contains("notes.txt"))
@@ -70,7 +71,7 @@ struct LibraryArchiveTests {
         let lib = try TestLibrary()
         let store = try await lib.openStore()
         _ = try await store.createSong(source: Self.song)
-        // `setlists/` exists but is empty; `shows/` and `timings/` were never created.
+        // `setlists/` exists but is empty; `shows/` was never created.
         let work = try WorkFolder()
         lib.clock.set(Self.exportDate)
         let destination = work.url.appending(path: "existing.zip")

@@ -218,6 +218,7 @@
                 Text("Segue could not save them to the song’s file. Save them as a new song, "
                     + "or discard them.")
             }
+            .modifier(LibraryUpgradeAlert(session: session))
         }
 
         private var isConfirmingSongTrash: Binding<Bool> {

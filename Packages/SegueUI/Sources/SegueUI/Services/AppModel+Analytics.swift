@@ -52,7 +52,6 @@
             session.gigLog.services = services
             session.smartFilters.services = services
             session.library.aiRouter = ai.router
-            TimeItModel.shared.services = services
             liveSettings.services = services
             instrumentProfile.services = services
             sound.settings.services = services
@@ -70,6 +69,7 @@
                 gigs: SmallBucket(gigs),
                 welcomeSongsLeft: WelcomeSongs.left(in: songs),
                 customShapes: !session.library.userShapes.entries.isEmpty,
+                noTempo: SongBucket(songs.count { $0.document.metadata.tempo == nil }),
             )))
         }
 

@@ -15,7 +15,7 @@ struct SmartFilterRenderTests {
             anyTags: ["upbeat", "crowd pleaser"],
             proficiencies: [.ready, .pro],
             keys: ["G", "Em"],
-            length: SmartFilterRange(min: 150, max: 300),
+            tempo: SmartFilterRange(min: 80, max: 120),
             neverPlayed: true,
         )
         for dark in [false, true] {

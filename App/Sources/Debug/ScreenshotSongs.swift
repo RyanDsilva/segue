@@ -17,7 +17,6 @@
             let title: String
             let key: String
             let tempo: Int
-            let duration: String
             let tags: [String]
             let proficiency: String
             let body: String
@@ -28,7 +27,6 @@
                 {artist: Segue Originals}
                 {key: \(key)}
                 {tempo: \(tempo)}
-                {duration: \(duration)}
 
                 \(body)
                 """
@@ -51,7 +49,6 @@
                 title: "Lanterns on Pier Nine",
                 key: "D",
                 tempo: 92,
-                duration: "3:48",
                 tags: ["folk"],
                 proficiency: "pro",
                 body: """
@@ -79,7 +76,6 @@
                 title: "Chai at Platform Four",
                 key: "Em",
                 tempo: 96,
-                duration: "3:40",
                 tags: ["upbeat"],
                 proficiency: "ready",
                 body: """
@@ -99,7 +95,6 @@
                 title: "Northbound at First Light",
                 key: "Bb",
                 tempo: 76,
-                duration: "4:30",
                 tags: ["ballad"],
                 proficiency: "ready",
                 body: """
@@ -123,7 +118,6 @@
                 title: "Saltwater Telegraph",
                 key: "Am",
                 tempo: 100,
-                duration: "3:35",
                 tags: ["folk"],
                 proficiency: "learning",
                 body: """
@@ -143,7 +137,6 @@
                 title: "Last Tram to Wexley",
                 key: "G",
                 tempo: 132,
-                duration: "3:10",
                 tags: ["upbeat"],
                 proficiency: "ready",
                 body: """

@@ -1,7 +1,6 @@
 // Phase 3 (P3-6, R71, R72): saved smart filters. A smart filter is a named predicate over
 // the library, stored as `filters/<slug>.filter.json` and compiled to the in-memory
-// `SongFilter` matcher. Lengths come from `{duration}` (R91); the play-history condition
-// is "never played".
+// `SongFilter` matcher. The play-history condition is "never played".
 
 import Foundation
 import Support
@@ -63,8 +62,6 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
     public var keys: [String]
     /// `{tempo}` in BPM; a song without a tempo never matches.
     public var tempo: SmartFilterRange?
-    /// `{duration}` in seconds; a song without a length never matches (R91).
-    public var length: SmartFilterRange?
     /// Never played in a finished show.
     public var neverPlayed: Bool
     /// "Artist is any of" (P8-8 section 3.5): names as written; a song matches when any of
@@ -72,6 +69,9 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
     public var artists: [String]
     /// "Movie / Album is any of" (P8-8 section 4.4): whole names, compared normalized.
     public var albums: [String]
+    /// The file still holds the old Length condition (P8-8 7.1): ignored when matching,
+    /// never written, so it is dropped on the filter's next save; the editor says so.
+    public var hadRemovedLength = false
 
     public init(
         allTags: [String] = [],
@@ -80,7 +80,6 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         proficiencies: [Proficiency] = [],
         keys: [String] = [],
         tempo: SmartFilterRange? = nil,
-        length: SmartFilterRange? = nil,
         neverPlayed: Bool = false,
         artists: [String] = [],
         albums: [String] = [],
@@ -91,7 +90,6 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         self.proficiencies = proficiencies
         self.keys = keys
         self.tempo = tempo
-        self.length = length
         self.neverPlayed = neverPlayed
         self.artists = artists
         self.albums = albums
@@ -104,10 +102,14 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         case proficiencies
         case keys
         case tempo
-        case length
         case neverPlayed
         case artists
         case albums
+    }
+
+    /// The removed Length condition's key, read only to say it was dropped.
+    private enum RemovedKeys: String, CodingKey {
+        case length
     }
 
     /// Missing keys take their empty value, so a hand-written file may list only what it
@@ -121,10 +123,10 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
             .decodeIfPresent([Proficiency].self, forKey: .proficiencies) ?? []
         keys = try container.decodeIfPresent([String].self, forKey: .keys) ?? []
         tempo = try container.decodeIfPresent(SmartFilterRange.self, forKey: .tempo)
-        length = try container.decodeIfPresent(SmartFilterRange.self, forKey: .length)
         neverPlayed = try container.decodeIfPresent(Bool.self, forKey: .neverPlayed) ?? false
         artists = try container.decodeIfPresent([String].self, forKey: .artists) ?? []
         albums = try container.decodeIfPresent([String].self, forKey: .albums) ?? []
+        hadRemovedLength = try decoder.container(keyedBy: RemovedKeys.self).contains(.length)
     }
 
     /// How many conditions are set (analytics' conditions bucket, the sidebar's summary).
@@ -141,8 +143,8 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
     private var setFlags: [Bool] {
         [
             !allTags.isEmpty, !anyTags.isEmpty, !noneTags.isEmpty, !proficiencies.isEmpty,
-            !keys.isEmpty, tempo.map { !$0.isOpen } ?? false, length.map { !$0.isOpen } ?? false,
-            neverPlayed, !artists.isEmpty, !albums.isEmpty,
+            !keys.isEmpty, tempo.map { !$0.isOpen } ?? false, neverPlayed, !artists.isEmpty,
+            !albums.isEmpty,
         ]
     }
 
@@ -165,9 +167,6 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         )
         if let tempo, !tempo.isOpen {
             filter.tempo = SongFilter.Bounds(lower: tempo.min, upper: tempo.max)
-        }
-        if let length, !length.isOpen {
-            filter.length = SongFilter.Bounds(lower: length.min, upper: length.max)
         }
         if neverPlayed {
             filter.playedSongs = Set(playStats.filter { $0.value.timesPlayed > 0 }.keys)

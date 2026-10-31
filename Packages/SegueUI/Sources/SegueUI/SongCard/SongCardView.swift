@@ -6,7 +6,7 @@
     import SwiftUI
 
     /// The song card (R80, direction 2 "Tokens"): one line of value tokens (Key, Tempo,
-    /// Length, Capo, Time); each opens a small popover with its control. Missing set
+    /// Capo, Time); each opens a small popover with its control. Missing set
     /// essentials are dashed tokens with a dot. `.expanded` (Start blank, draft mode) also
     /// shows Title and Artist fields and every token, so nothing hides behind "+".
     struct SongCardView: View {
@@ -25,14 +25,12 @@
         /// Artists and Movie / Album as the strip's first two tokens, each opening its field
         /// in a popover (P8-8 section 3.6: the editor's strip).
         var showsCreditTokens = false
-        var timeIt: TimeItModel = .shared
         var router: SongCardFocusRouter = .shared
 
         @State private var open: SongCardField?
         @State private var draftTitle = ""
         @State private var draftArtist = ""
         @FocusState private var focus: SongCardField?
-        @FocusState private var lengthFocused: Bool
 
         var body: some View {
             let values = host.values
@@ -145,7 +143,6 @@
                 }
                 keyToken(values)
                 tempoToken(values)
-                lengthToken(values)
                 if values.capo > 0 || layout == .expanded || open == .capo {
                     capoToken(values)
                 }
@@ -206,33 +203,6 @@
                 TempoEditorView(current: values.tempo) { text in
                     write(SongCardWrite.tempo(text))
                 }
-            }
-        }
-
-        private func lengthToken(_ values: SongCardValues) -> some View {
-            let running = timeIt.isTiming(host.songID)
-            let title = values.length
-                .map { SetlistTiming.format($0) } ?? (running ? "Timing…" : nil)
-            return token(.length, title: title, placeholder: "Length", essential: true) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Length")
-                        .font(Theme.font.label)
-                        .foregroundStyle(Theme.color.muted)
-                    LengthField(
-                        songID: host.songID,
-                        length: values.length,
-                        timeIt: timeIt,
-                        focus: $lengthFocused,
-                    ) { seconds in
-                        host.perform(.setLength(seconds))
-                    }
-                    Text("m:ss, or seconds. Used for set timing.")
-                        .font(SchibstedGrotesk.medium.font(size: 11))
-                        .foregroundStyle(Theme.color.muted)
-                }
-                .padding(12)
-                .frame(width: 250, alignment: .leading)
-                .onAppear { lengthFocused = true }
             }
         }
 
