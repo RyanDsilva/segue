@@ -22,6 +22,9 @@
         /// The Help button opening the guide's song card page; off where the surrounding
         /// sheet has its own (the paste review's draft card).
         var showsHelp = true
+        /// Artists and Movie / Album as the strip's first two tokens, each opening its field
+        /// in a popover (P8-8 section 3.6: the editor's strip).
+        var showsCreditTokens = false
         var timeIt: TimeItModel = .shared
         var router: SongCardFocusRouter = .shared
 
@@ -136,6 +139,10 @@
 
         private func tokens(_ values: SongCardValues) -> some View {
             FlowLayout(spacing: 7) {
+                if showsCreditTokens {
+                    artistsToken(values)
+                    albumToken(values)
+                }
                 keyToken(values)
                 tempoToken(values)
                 lengthToken(values)
@@ -149,6 +156,31 @@
                     addMenu(values)
                 }
             }
+        }
+
+        // MARK: Credits (P8-8)
+
+        /// "Arijit Singh +1": the first artist and how many more; the popover holds the chips.
+        private func artistsToken(_ values: SongCardValues) -> some View {
+            token(
+                .artist,
+                title: Self.artistsTitle(values.artists),
+                placeholder: "Artists",
+                essential: false,
+            ) {
+                ArtistsEditor(host: host, artists: values.artists)
+            }
+        }
+
+        private func albumToken(_ values: SongCardValues) -> some View {
+            token(.album, title: values.album, placeholder: "Movie / Album", essential: false) {
+                AlbumEditor(host: host, album: values.album) { open = nil }
+            }
+        }
+
+        static func artistsTitle(_ artists: [String]) -> String? {
+            guard let first = artists.first else { return nil }
+            return artists.count == 1 ? first : "\(first) +\(artists.count - 1)"
         }
 
         private func keyToken(_ values: SongCardValues) -> some View {

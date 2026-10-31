@@ -12,6 +12,7 @@
     /// caret.
     struct EditorSongStrip: View {
         let model: SongEditorViewModel
+        @Environment(\.libraryNames) private var names
         @State private var standIn = SongID.standIn()
 
         var body: some View {
@@ -19,9 +20,13 @@
                 host: SongCardHost(
                     document: document,
                     songID: songID,
+                    knownArtists: names.artists,
+                    knownAlbums: names.albums,
                     perform: { _ = model.perform($0) },
+                    recordFeature: { model.recordFeature($0) },
                 ),
                 layout: model.startedAsNew ? .expanded : .strip,
+                showsCreditTokens: !model.startedAsNew,
             )
             .environment(\.analyticsContext, .editor)
             .padding(.horizontal, 16)

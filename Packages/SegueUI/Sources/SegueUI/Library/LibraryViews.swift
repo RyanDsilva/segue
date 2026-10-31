@@ -459,6 +459,11 @@
                 Task { await model.finishEditing() }
             }
             .id(ObjectIdentifier(editor))
+            // The library's names for the strip's artist and album suggestions.
+            .environment(\.libraryNames, LexiconCredits(
+                artists: model.knownArtists,
+                albums: model.knownAlbums,
+            ))
             .safeAreaInset(edge: .top, spacing: 0) {
                 if let conflict = model.saveConflict {
                     SaveConflictBar(conflict: conflict) { choice in

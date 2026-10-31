@@ -202,4 +202,22 @@ struct SongCardTests {
         router.focus(.title)
         #expect(router.take(for: .standIn()) == .title)
     }
+
+    /// P8-8: the card reads every artist and the album; the strip's Artists token names the
+    /// first artist and how many more.
+    @Test
+    func `the card reads every artist and the album`() {
+        let values = SongCardValues(document: SourceSnapshot(text: """
+        {title: Kala Chashma}
+        {artist: Amar Arshi}
+        {artist: Badshah}
+        {artist: Neha Kakkar}
+        {album: Baar Baar Dekho}
+        """).document)
+        #expect(values.artists == ["Amar Arshi", "Badshah", "Neha Kakkar"])
+        #expect(values.album == "Baar Baar Dekho")
+        #expect(SongCardView.artistsTitle(values.artists) == "Amar Arshi +2")
+        #expect(SongCardView.artistsTitle(["Arijit Singh"]) == "Arijit Singh")
+        #expect(SongCardView.artistsTitle([]) == nil)
+    }
 }
