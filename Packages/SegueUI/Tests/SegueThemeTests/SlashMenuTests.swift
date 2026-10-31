@@ -22,7 +22,8 @@ struct SlashMenuTests {
     @Test(arguments: [
         ("cho", "Chorus"), ("ch", "Chorus"), ("c", "Chorus"), ("soc", "Chorus"),
         ("v", "Verse"), ("sov", "Verse"), ("bri", "Bridge"), ("rep", "Chorus (repeat)"),
-        ("no", "Note"), ("out", "Outro"), ("Intro", "Intro"),
+        ("no", "Note"), ("out", "Outro"), ("Intro", "Intro"), ("movie", "Movie / Album…"),
+        ("film", "Movie / Album…"), ("album", "Movie / Album…"),
     ])
     func `fuzzy matching finds the item by word or alias`(query: String, title: String) {
         #expect(SlashMenu.matches(query, sections: .all).first?.title == title)
@@ -34,6 +35,7 @@ struct SlashMenuTests {
         #expect(outside == [
             "Chorus (repeat)",
             "Note",
+            "Movie / Album…",
             "Key…",
             "Tempo…",
             "Length…",

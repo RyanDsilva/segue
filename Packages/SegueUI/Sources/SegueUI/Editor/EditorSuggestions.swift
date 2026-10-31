@@ -146,6 +146,7 @@ enum DirectiveSuggestions {
     static let metadata: [Item] = [
         Item(title: "Title", body: "title: "),
         Item(title: "Artist", body: "artist: "),
+        Item(title: "Movie / Album", body: "album: "),
         Item(title: "Key", body: "key: "),
         Item(title: "Capo", body: "capo: "),
         Item(title: "Tempo", body: "tempo: "),
@@ -293,7 +294,7 @@ enum SlashMenu {
         /// A `{comment: }` with the caret in it: a chart note on the current section (P3-13).
         case note
         /// Writes this metadata directive at the top (replacing one already there) and opens
-        /// its value choices: `key`, `tempo`, `duration`, `capo`, `time`.
+        /// its value choices: `key`, `tempo`, `duration`, `capo`, `time` (`album` has none).
         case value(String)
     }
 
@@ -365,6 +366,12 @@ enum SlashMenu {
             action: .note,
             detail: "{comment}",
             aliases: ["n", "note", "comment", "cue"],
+        ),
+        Item(
+            title: "Movie / Album…",
+            action: .value("album"),
+            detail: "{album}",
+            aliases: ["movie", "film", "album"],
         ),
         Item(title: "Key…", action: .value("key"), detail: "{key}", aliases: ["k", "key"]),
         Item(

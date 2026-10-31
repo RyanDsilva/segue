@@ -63,6 +63,7 @@ struct EditorCompletionTests {
         #expect(items("ti").first == "title: ")
         #expect(items("len").first == "duration: ")
         #expect(items("time").first == "time: ")
+        #expect(items("al").first == "album: ")
     }
 
     @Test
