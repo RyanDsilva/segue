@@ -53,8 +53,10 @@ public struct ResolvedParts: Sendable, Hashable {
     /// Every play of every applied part in `timeline`'s order (written order in the editor
     /// and library, P8-2's played passes on stage): the pass plays the start chord, the
     /// landing follows in the next played chords exactly as written, and the pass passes the
-    /// part's "Shows on" filter. In played order.
-    public func plays(in timeline: SongTimeline) -> [PartPlay] {
+    /// part's "Shows on" filter. In played order. `timeline` may be a slice of `song` (the
+    /// passes a play-along loop plays): plays are counted in the whole `song`, so "Last
+    /// time" is the song's last play of the section, never the loop's (R170).
+    public func plays(in timeline: SongTimeline, song: SongTimeline? = nil) -> [PartPlay] {
         var result: [PartPlay] = []
         let chords = timeline.chords
         for applied in applied {
@@ -67,7 +69,7 @@ public struct ResolvedParts: Sendable, Hashable {
                 guard zip(window, applied.positions).allSatisfy({ chord, position in
                     !chord.isSilent && chord.position == position
                 }) else { continue }
-                let plays = Self.plays(of: start, in: timeline)
+                let plays = Self.plays(of: start, in: timeline, song: song ?? timeline)
                 guard applied.part.passes.admits(occurrence: start.occurrence, of: plays)
                 else { continue }
                 result.append(PartPlay(applied: applied, chords: index ... index + count - 1))
@@ -76,11 +78,11 @@ public struct ResolvedParts: Sendable, Hashable {
         return result.sorted { $0.chords.lowerBound < $1.chords.lowerBound }
     }
 
-    /// How many times the start chord's section plays in `timeline`.
-    static func plays(of chord: TimedChord, in timeline: SongTimeline) -> Int {
+    /// How many times the start chord's section (its pass in `timeline`) plays in `song`.
+    static func plays(of chord: TimedChord, in timeline: SongTimeline, song: SongTimeline) -> Int {
         guard timeline.passes.indices.contains(chord.pass) else { return chord.occurrence }
         let content = timeline.passes[chord.pass].content
-        return timeline.passes.filter { $0.content == content }.map(\.occurrence).max()
+        return song.passes.filter { $0.content == content }.map(\.occurrence).max()
             ?? chord.occurrence
     }
 
