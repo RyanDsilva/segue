@@ -1,6 +1,6 @@
 # P8-4 - Bass: instrument profile, bass-note view, Nashville roots, mini neck, bass chart PDF, fretboard and walk-ups
 
-Phase 8 (2026-10-30 review round). Rulings: `docs/release/decisions.md` **R152** (bass support, all four levels; supersedes R137 / N7 for bass only, other extra instruments stay declined), **R155** (build order), **R158** (this spec's open questions closed, section 15), **R160** (walk-ups and hearing chords went to research first), **R161** (walk-up and audio rulings closing that research; P8-4b unblocked, audio is sibling P8-6), **R162** (P8-4b's open questions closed, section 16; no owner-review CSV gate). Research: `docs/research/phase8-bass-patterns.md` (the walk-up rules, section 8) and `docs/research/phase8-audio-engine.md` (audio, built in `P8-6-audio.md`). Related rulings: R113 (test budget), R122/R123 (slot arrangements), R147 (stage shows every section expanded; sibling spec P8-2 removes repeat collapsing from the stage), R149 (per-pass show modes), phase 1 spec `docs/phases/1-editor-and-music-theory.md` (capo semantics, Nashville rules, spelling rules, tunings), phase 1 interfaces `docs/phases/1-interfaces.md` (`DisplayOptions`, `DisplayTransform`, `RenderModel`).
+Phase 8 (2026-10-30 review round). Rulings: `docs/release/decisions.md` **R152** (bass support, all four levels; supersedes R137 / N7 for bass only, other extra instruments stay declined), **R155** (build order), **R158** (this spec's open questions closed, section 15), **R160** (walk-ups and hearing chords went to research first), **R161** (walk-up and audio rulings closing that research; P8-4b unblocked, audio is sibling P8-6), **R162** (P8-4b's open questions closed, section 16; no owner-review CSV gate), **R166** (the mini neck and strip show every chord tone), **R167** (one `SongTimeline` for walk-up beats, play-along and fills; mid-song `{key}` honoured; a fill wins over a pick; sibling `P8-7-time-model-and-fills.md`, which amends P8-4b in section 8.14 below). Research: `docs/research/phase8-bass-patterns.md` (the walk-up rules, section 8) and `docs/research/phase8-audio-engine.md` (audio, built in `P8-6-audio.md`). Related rulings: R113 (test budget), R122/R123 (slot arrangements), R147 (stage shows every section expanded; sibling spec P8-2 removes repeat collapsing from the stage), R149 (per-pass show modes), phase 1 spec `docs/phases/1-editor-and-music-theory.md` (capo semantics, Nashville rules, spelling rules, tunings), phase 1 interfaces `docs/phases/1-interfaces.md` (`DisplayOptions`, `DisplayTransform`, `RenderModel`).
 
 Ryan's situation: he plays bass in a band. Charts are usually written by or for the guitarist, often with `{capo}` and shapes. Today Segue's instrument is a per-song diagram choice (guitar or piano), and nothing tells a bassist which note to play at sounding pitch.
 
@@ -92,7 +92,7 @@ A bassist turns on "I play bass" once in Settings, picks 4 or 5 strings and a tu
 14. **Passing notes come from the departing chord (R161).** The scale a walk-up steps through is the key's scale with chord A's own tones overriding it, so E to Am walks F# G# (pop, rock, worship) or F G# (Bollywood feel), and A7 to Dm in C walks B C# (section 8.3).
 15. **Feel is per song (R161).** A song's feel (pop, rock, worship, country / gospel, Bollywood) is a sidecar field; unset means the profile's default feel (Pop). It only reorders candidates; it never invents notes outside the candidate kinds.
 16. **Picks live in the sidecar, never the `.cho` (R161).** A pick is stored per chord change with an anchor that survives edits (section 8.11); the stage shows it; a change whose pick no longer matches falls back to the rules.
-17. **Beats are estimated, never required (R161).** Bar lines, beat marks and `{time}` give a chord's beats when the chart has them; otherwise a walk-up is at most two notes (section 8.5). The same estimate feeds P8-6's play-along timing.
+17. **Beats are estimated, never required (R161).** Bar lines, beat marks and `{time}` give a chord's beats when the chart has them; otherwise a walk-up is at most two notes (section 8.5). The same estimate feeds P8-6's play-along timing. *Amended by P8-7 (R167 Q1): beats now come from `SongTimeline`, which adds grids and the user's corrections as known lengths; the two-note cap on estimated (rule-only) chords stands (section 8.14).*
 18. **bVI-bVII-i and other written stepwise lines (R161):** both a "nothing" candidate and a passing-note candidate are offered, and the user chooses; "nothing" ranks first in every feel (section 8.3, R162 Q1).
 
 ## 6. P8-4a - profile, bass-note view, Nashville plus note, scale
@@ -450,6 +450,8 @@ Rules, per lyric line, first match wins:
 
 A chord's estimate never reads past its own line. Walk-ups use `beats` for `maxNotes` (8.3); P8-6 uses the same estimates as the first layer of its play-along timing (P8-6 section 6).
 
+*Amended by P8-7 (R167 Q1, Q4): `ChordBeats` becomes the chart-marks layer inside P8-7a's `SongTimeline` (P8-7 section 5.4). Beats per bar come from the `{time}` in effect at the line (a mid-song `{time}` counts), grid sections are timed by P8-7's `GridParser` (so the "a grid section contributes nothing" row of `ChordBeatsTests` changes), and walk-ups read a chord's length from the timeline (section 8.14), never from `ChordBeats` directly.*
+
 ### 8.6 Applying it to a song (`Library/BassLine.swift`, pure)
 
 ```swift
@@ -604,6 +606,17 @@ The anchor reuses the slot-arrangement and section-note approach (`SectionAnchor
 3. **By-ear check** (after P8-6a lands, a manual step for Ryan; R162 Q5): there is no owner-review CSV and no acceptance-rate gate. Once P8-6a's audition exists, Ryan plays the walk-ups in his own songs through the popover and the Walk-ups list; any change he judges wrong (or that should be silent) becomes a golden case, and tuning changes only `WalkUpWeights.standard`. Recorded as a manual step and in the done criteria of P8-6a (P8-6 sections 10.2 and 16), not P8-4b's.
 4. **Analytics** (8.12) after release: kind shown, alternate picked, nothing picked, per feel.
 
+### 8.14 Amendments from P8-7 (R167)
+
+P8-4b has landed; these changes are **built by P8-7's sessions** (named per item), not by a P8-4b session, and the closed questions in sections 15-16 are unchanged.
+
+1. **One timing system (P8-7a, R167 Q1).** `BassLineContext` gains `timeline: SongTimeline` (P8-7 section 5) and loses `time`. A walk-up's `WalkUpContext.beats` is the departing chord's length in pulses when its timeline source is chart, grid, user or tap, and **unknown** when it is the song's rule, so the R161 rule "otherwise at most two notes" is unchanged for unmarked charts while a user's correction (or a tap) now counts as a known length. `meterLine` stays a chart source. `BassLine.Walk` no longer calls `ChordBeats.estimate` (`Library/BassLine.swift:187`).
+2. **Key in effect (P8-7a, R167 Q3).** `WalkUpContext.key`, the passing scale and the spelling use the `{key}` in effect at chord A (the last `{key}` written before it), transposed to concert pitch, instead of the song's first key; a walk-up into a last chorus written a step up is planned and spelled in the new key. Nashville degrees on approach runs follow the same key (P8-7 section 21 Q2).
+3. **A fill wins over a pick (P8-7c, R167 Q8).** On every change inside an applied fill's span, in the passes the fill applies to, `ChordChange.shown` is nil and `ChordChange.coveredBy` names the fill: no approach run, no neck path, no play-along walk-up there. The pick stays in the sidecar and still applies on passes the fill skips and after the fill is deleted. The walk-up popover on a covered change says "A fill covers this change" with "Edit Fill..." and still allows picking; the Walk-ups list gains a "Fills" group (open, rename, delete, and unmatched fills with Remove).
+4. **Sidecar.** `bass.timing` overrides gain optional `ticks`, `push`, `source`, and `timing` gains `dismissedKeys` (still schema 5; P8-7 section 5.6). Fills live in a new top-level `parts` (schema 6, P8-7c), never inside `bass`.
+5. **Grid chords (P8-7a).** `ChordAnchors` (`WrittenChords`) includes chords parsed from grid sections, so picks and timing corrections can anchor to them; no walk-up run is drawn inside a grid's verbatim text.
+6. **Stage and neck (P8-7e).** Fill note runs use the approach run's role and placement (8.8) and replace it on covered chords; the mini neck numbers a fill's notes instead of the walk-up path while the reading-line chord is inside a fill (P8-7 section 14.4).
+
 ## 9. Interaction with sibling specs
 
 - **P8-2 (stage passes, R147):** P8-4a's stage-layout step (step 2) starts after P8-2's layout step has landed, so it measures chord units inside P8-2's expanded passes and its new chord rows; `SongPreparation`, `SongMeasurement` and `LineLayout` edits are coordinated by hunk. The mini neck reads P8-2's `StagePasses` (reading line, current pass); if P8-2's names differ when P8-4a gets there, stop and ask. P8-4b's walk-up hook runs on P8-2's played passes, and needs each pass to carry its source section index (8.6); P8-2 edits `SlotArrangement.swift` too, where P8-4b factors the `SectionAnchor` coding (8.10).
@@ -612,6 +625,7 @@ The anchor reuses the slot-arrangement and section-note approach (`SectionAnchor
 - **Slot arrangements and show modes (R122, R149):** the bass view needs nothing from them; a "Chords only" pass shows bass notes in bass view like any chord row, and the mini neck follows the current pass.
 - **Phase 4 export:** the "Bass chart" option (7.4); P8-4b's walk-up runs print in it like the preview (8.8).
 - **P8-6 (audio, R161):** builds on P8-4b's `WalkUp.candidates`, `BassLine.changes`, the pick storage and the popover (it adds play buttons and A/B there), `ChordBeats` and `ChordAnchors` (its play-along timing overrides use the same anchors and the `bass.timing` field P8-4b already decodes). P8-4b must not add any sound, audio dependency or engine code.
+- **P8-7 (time model and fills, R167):** builds the `SongTimeline` that walk-up beats, play-along and fills share, honours mid-song `{key}` / `{time}` / `{tempo}`, and adds bass fills as sidecar `parts` that win over picks on their span; its changes to P8-4b's code are listed in section 8.14.
 
 ## 10. Romanized Hindi and text
 

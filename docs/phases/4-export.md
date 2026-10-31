@@ -107,3 +107,5 @@ See `docs/decisions.md`.
 ## Open questions
 
 None new.
+
+Phase 8 hook (R167, R168): the bass chart PDF also prints saved bass fills as note names or tab; see docs/phases/8-workstreams/P8-7-time-model-and-fills.md section 14.5.
