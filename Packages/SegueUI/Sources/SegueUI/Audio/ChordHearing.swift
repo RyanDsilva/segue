@@ -102,11 +102,11 @@ extension SoundSession {
         return true
     }
 
-    /// Where the bass sits for a song: the profile's tuning when "I play bass" is on, else
-    /// EADG; home from the concert key, else the song's first bass note (P8-6 6.2).
+    /// Where the bass sits for a song: the Settings > Instrument strings and tuning for
+    /// anyone, with or without "I play bass", as the mini neck does (R163); EADG without a
+    /// profile. Home from the concert key, else the song's first bass note (P8-6 6.2).
     static func placement(for model: RenderModel, profile: InstrumentProfile?) -> BassPlacement {
-        let tuning = profile?.playsBass == true ? profile?.tuning ?? .bassStandard4
-            : .bassStandard4
+        let tuning = profile?.tuning ?? .bassStandard4
         let first = model.sections.lazy.flatMap(\.items).compactMap { item -> PitchClass? in
             guard case let .lyrics(line) = item else { return nil }
             return line.chords.lazy.compactMap { chord -> PitchClass? in

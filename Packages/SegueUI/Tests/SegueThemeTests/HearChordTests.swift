@@ -63,6 +63,24 @@ struct HearChordTests {
         #expect(recorder.features == ["hearChord"])
     }
 
+    /// R163: the bass sounds on the Settings strings and tuning for anyone, as the mini neck
+    /// shows them, with or without "I play bass" (EADG would put D on the A string, 38).
+    @Test(arguments: [false, true])
+    func `the bass follows the Settings tuning with or without I play bass`(
+        playsBass: Bool,
+    ) async throws {
+        let env = try TestEnvironment()
+        let rig = SoundRig(env)
+        let (_, editor) = try await editor(env, "{key: D}\n[D]La\n", rig: rig) {
+            $0.playsBass = playsBass
+            $0.strings = 5
+            $0.tuning = .bassStandard5
+        }
+        let hearing = try #require(editor.chordHearing)
+        try hearing.play(#require(Self.chords(editor.renderModel).first))
+        #expect(rig.notes(.bass) == [26])
+    }
+
     @Test
     func `a second chord stops the first, and N.C. plays nothing`() async throws {
         let env = try TestEnvironment()
