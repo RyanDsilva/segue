@@ -9,6 +9,9 @@ import MusicTheory
 struct RenderSectionBuilder {
     let transform: DisplayTransform
     private var result: [RenderSection] = []
+    /// The `{key}` in effect per line (P8-7 section 5.3): a mid-song `{key}` re-spells and
+    /// re-numbers the chords after it (R168 Q2).
+    private var keys: KeyTrack?
 
     init(transform: DisplayTransform) {
         self.transform = transform
@@ -16,8 +19,22 @@ struct RenderSectionBuilder {
 
     func sections(of document: SongDocument) -> [RenderSection] {
         var builder = self
+        let keys = KeyTrack(document: document)
+        builder.keys = keys.changes.isEmpty ? nil : keys
         builder.build(document)
         return builder.result
+    }
+
+    /// The transform for a line at `path`: the song's, or one keyed to a later `{key}`.
+    private func transform(at path: BlockPath) -> DisplayTransform {
+        guard let keys, let first = keys.changes.first, first.path < path else {
+            return transform
+        }
+        return DisplayTransform(
+            options: transform.options,
+            key: keys.context(at: path),
+            capo: transform.capo,
+        )
     }
 
     private mutating func build(_ document: SongDocument) {
@@ -125,6 +142,7 @@ struct RenderSectionBuilder {
     }
 
     private func renderLine(_ line: Line, path: BlockPath) -> RenderLine {
+        let transform = transform(at: path)
         var runs: [String] = []
         var offset = 0
         var chords: [RenderChord] = []

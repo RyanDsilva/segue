@@ -53,18 +53,7 @@ public struct TranspositionRewrite: Sendable, Hashable {
         let keyContext = KeyContext(document: snapshot.document)
         let transposer = Transposer(semitones: semitones, sourceKey: keyContext.writtenKey)
         var builder = EditBuilder(text: snapshot.text)
-
-        // Chords: (old text, new text) per occurrence, rewritten in place.
-        var rewritten: [(old: String, new: String)] = []
-        for occurrence in snapshot.chords {
-            let new = transposer.transpose(occurrence.token).original
-            rewritten.append((occurrence.token.original, new))
-            if new != occurrence.token.original,
-               let range = snapshot.sourceRange(of: occurrence.ref)
-            {
-                builder.replace(range.lowerBound + 1 ..< range.upperBound - 1, with: new)
-            }
-        }
+        let rewritten = rewriteChords(semitones: semitones, in: snapshot, into: &builder)
 
         // {key}: every parseable one moves by the same interval (a mid-song key change
         // stays a key change); unparseable values are left alone.
@@ -111,6 +100,32 @@ public struct TranspositionRewrite: Sendable, Hashable {
             newKey: newKey,
             flaggedDefines: flags(snapshot.defineLines, rewritten: rewritten, addedLine: addedLine),
         )
+    }
+
+    /// Every chord rewritten in place: (old text, new text) per occurrence. A chord after a
+    /// mid-song `{key}` is spelled in that key (P8-7 section 5.3).
+    private static func rewriteChords(
+        semitones: Int,
+        in snapshot: SourceSnapshot,
+        into builder: inout EditBuilder,
+    ) -> [(old: String, new: String)] {
+        let keys = KeyTrack(document: snapshot.document)
+        let song = Transposer(semitones: semitones, sourceKey: keys.song.writtenKey)
+        var rewritten: [(old: String, new: String)] = []
+        for occurrence in snapshot.chords {
+            let spelling = keys.changes.isEmpty ? song : Transposer(
+                semitones: semitones,
+                sourceKey: keys.key(at: occurrence.ref.line),
+            )
+            let new = spelling.transpose(occurrence.token).original
+            rewritten.append((occurrence.token.original, new))
+            if new != occurrence.token.original,
+               let range = snapshot.sourceRange(of: occurrence.ref)
+            {
+                builder.replace(range.lowerBound + 1 ..< range.upperBound - 1, with: new)
+            }
+        }
+        return rewritten
     }
 
     /// Defines whose name no chord carries any more (`unused`), or whose name now sits on

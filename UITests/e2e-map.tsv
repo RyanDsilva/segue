@@ -143,3 +143,4 @@ Packages/SegueUI/Sources/SegueUI/Live/*Bass*	SegueBassE2ETests
 Packages/SegueUI/Sources/SegueUI/Settings/Instrument*	SegueBassE2ETests
 Packages/SegueUI/Sources/SegueUI/Editor/*Bass*	SegueBassE2ETests
 Packages/SegueCore/Sources/Editing/InstrumentProfile.swift	SegueBassE2ETests
+Packages/SegueCore/Sources/Library/Timing/*	SegueBassE2ETests

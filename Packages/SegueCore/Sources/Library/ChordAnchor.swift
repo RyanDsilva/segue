@@ -44,24 +44,24 @@ public enum ChordAnchors {
         return result
     }
 
-    /// Timing overrides resolved the same way (no target): beats by chord, and the
-    /// overrides that no longer match.
+    /// Timing overrides resolved the same way (no target): each override by chord (grid
+    /// chords included), and the overrides that no longer match.
     public static func resolve(
         _ overrides: [ChordBeatsOverride],
         units: [SongSectionUnit],
         sections: [RenderSection],
-    ) -> (beats: [ChordPosition: Int], unmatched: [ChordBeatsOverride]) {
+    ) -> (applied: [ChordPosition: ChordBeatsOverride], unmatched: [ChordBeatsOverride]) {
         let song = WrittenChords(sections)
-        var beats: [ChordPosition: Int] = [:]
+        var applied: [ChordPosition: ChordBeatsOverride] = [:]
         var unmatched: [ChordBeatsOverride] = []
         for override in overrides {
             if let position = song.resolve(override.anchor, to: nil, units: units) {
-                beats[position] = override.beats
+                applied[position] = override
             } else {
                 unmatched.append(override)
             }
         }
-        return (beats, unmatched)
+        return (applied, unmatched)
     }
 
     /// The anchor that saves the chord at `position`: its section's anchor and fingerprint,
@@ -91,7 +91,8 @@ public enum ChordAnchors {
     }
 }
 
-/// The `.chord`-kind chords of a song's sections with their written basses.
+/// The `.chord`-kind chords of a song's sections with their written basses, grid chords
+/// included (P8-7 section 5.5) so corrections and picks can anchor to them.
 private struct WrittenChords {
     struct Chord {
         var text: String
@@ -101,11 +102,23 @@ private struct WrittenChords {
     let sections: [RenderSection]
     /// By section index, in order.
     let chords: [Int: [Chord]]
+    /// Grid sections: a walk-up chain passes through them, so a pick's target skips them.
+    let grids: Set<Int>
 
     init(_ sections: [RenderSection]) {
         self.sections = sections
         var chords: [Int: [Chord]] = [:]
+        var grids = Set<Int>()
         for (index, section) in sections.enumerated() {
+            if GridParser.isGrid(section) {
+                grids.insert(index)
+                for chord in GridParser.writtenChords(section) {
+                    if let bass = ChordAnchors.writtenBass(chord.token) {
+                        chords[index, default: []].append(Chord(text: bass.text, pitch: bass.pitch))
+                    }
+                }
+                continue
+            }
             for item in section.items {
                 guard case let .lyrics(line) = item else { continue }
                 for chord in line.chords where chord.kind == .chord {
@@ -116,6 +129,7 @@ private struct WrittenChords {
             }
         }
         self.chords = chords
+        self.grids = grids
     }
 
     func resolve(_ anchor: ChordAnchor, to: String?, units: [SongSectionUnit]) -> ChordPosition? {
@@ -165,12 +179,13 @@ private struct WrittenChords {
         return next(section: section, chord: chord)?.pitch == wanted
     }
 
-    /// The next `.chord` in written order; a `{chorus}` repeat leads to its chorus's first.
+    /// The next `.chord` in written order as a walk-up chain reaches it: a `{chorus}` repeat
+    /// leads to its chorus's first, and grids are passed through.
     private func next(section: Int, chord: Int) -> Chord? {
         if let following = chords[section]?[safe: chord + 1] {
             return following
         }
-        for index in sections.indices where index > section {
+        for index in sections.indices where index > section && !grids.contains(index) {
             let target = sections[index].isRepeat && sections[index].items.isEmpty
                 ? SongSections.repeatTarget(of: index, in: sections) ?? index
                 : index
