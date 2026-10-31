@@ -15,17 +15,25 @@ public struct AudioSettings: Sendable, Hashable, Codable {
     public var bassSound: BassSound
     /// The output level, 0 ... 1 (default 70%).
     public var volume: Double
+    /// "Play through": the chosen output device's UID; nil = the system output (default).
+    public var outputUID: String?
+    /// That device's name when it was chosen, for "<name> (not connected)" while it is gone.
+    public var outputName: String?
 
     public init(
         chordSound: ChordSound = .piano,
         chordStyle: ChordStyle = .strum,
         bassSound: BassSound = .finger,
         volume: Double = 0.7,
+        outputUID: String? = nil,
+        outputName: String? = nil,
     ) {
         self.chordSound = chordSound
         self.chordStyle = chordStyle
         self.bassSound = bassSound
         self.volume = min(max(volume, 0), 1)
+        self.outputUID = outputUID
+        self.outputName = outputUID == nil ? nil : outputName
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -33,6 +41,8 @@ public struct AudioSettings: Sendable, Hashable, Codable {
         case chordStyle
         case bassSound
         case volume
+        case outputUID
+        case outputName
     }
 
     public init(from decoder: any Decoder) throws {
@@ -46,6 +56,8 @@ public struct AudioSettings: Sendable, Hashable, Codable {
             chordStyle: field(.chordStyle, defaults.chordStyle),
             bassSound: field(.bassSound, defaults.bassSound),
             volume: field(.volume, defaults.volume),
+            outputUID: field(.outputUID, defaults.outputUID),
+            outputName: field(.outputName, defaults.outputName),
         )
     }
 }
@@ -84,6 +96,10 @@ public final class AudioSettingsStore {
         onChange?(next)
         if next.chordSound == .cleanGuitar, old.chordSound != .cleanGuitar {
             services.record(.featureUsed(.chordSoundGuitar, .settings))
+        }
+        // Only that a non-default output was chosen, never which (P8-6 section 14).
+        if let uid = next.outputUID, uid != old.outputUID {
+            services.record(.featureUsed(.audioOutput, .settings))
         }
     }
 

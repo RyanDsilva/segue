@@ -1,6 +1,7 @@
 #if os(macOS)
     import AudioToolbox
     import AVFoundation
+    import CoreAudio
     import Foundation
     import Playback
     import Shows
@@ -44,6 +45,8 @@
         private var chordSound = ChordSound.piano
         private var bassSound = BassSound.finger
         private var volume: Float = 0.7
+        /// The chosen output device's UID; nil = the system output.
+        private var outputUID: String?
         private var configurationObserver: (any NSObjectProtocol)?
         private var reportedFallback = false
 
@@ -107,6 +110,20 @@
             }
         }
 
+        /// Where sound goes (Settings > Audio "Play through"): a device UID, or nil for the
+        /// system output. A change tears a built engine down (the caller has stopped what was
+        /// playing); the next sound builds it on the new device. A UID that is not connected
+        /// plays through the system output.
+        public func setOutputDevice(uid: String?) {
+            queue.async { [self] in
+                guard uid != outputUID else { return }
+                outputUID = uid
+                if engine != nil, !offline {
+                    teardown()
+                }
+            }
+        }
+
         /// Builds the engine and loads the bank without making a sound.
         public func prepare() {
             queue.async { [self] in
@@ -159,36 +176,6 @@
             }
         }
 
-        // MARK: Offline rendering (tests)
-
-        /// Renders `seconds` of audio offline (left channel), after scheduling has been done.
-        /// Only for an engine made with `init(offlineBank:)`.
-        func renderOffline(seconds: TimeInterval) -> [Float] {
-            queue.sync {
-                guard offline, let engine = running(),
-                      let buffer = AVAudioPCMBuffer(
-                          pcmFormat: engine.manualRenderingFormat,
-                          frameCapacity: engine.manualRenderingMaximumFrameCount,
-                      )
-                else { return [] }
-                var samples: [Float] = []
-                let total = Int(seconds * Self.offlineRate)
-                while samples.count < total {
-                    let frames = min(buffer.frameCapacity, AVAudioFrameCount(total - samples.count))
-                    guard (try? engine.renderOffline(frames, to: buffer)) == .success,
-                          let data = buffer.floatChannelData
-                    else { break }
-                    samples += UnsafeBufferPointer(start: data[0], count: Int(buffer.frameLength))
-                }
-                return samples
-            }
-        }
-
-        /// Waits for everything queued so far (tests).
-        func drain() {
-            queue.sync {}
-        }
-
         // MARK: Engine
 
         private func offlineNow() -> TimeInterval {
@@ -219,6 +206,9 @@
 
         private func build() {
             let engine = AVAudioEngine()
+            if !offline {
+                route(engine)
+            }
             let player = AVAudioPlayerNode()
             let bass = AVAudioUnitSampler()
             let chords = AVAudioUnitSampler()
@@ -265,6 +255,24 @@
                     self?.configurationChanged()
                 }
             }
+        }
+
+        /// Points the output unit at the chosen device before anything is connected (so the
+        /// main mixer takes that device's format); else it stays on the system output.
+        private func route(_ engine: AVAudioEngine) {
+            guard let outputUID,
+                  var device = CoreAudioDevices.deviceID(forUID: outputUID),
+                  let unit = engine.outputNode.audioUnit
+            else { return }
+            // A refusal (the device went away just now) leaves the system output.
+            _ = AudioUnitSetProperty(
+                unit,
+                kAudioOutputUnitProperty_CurrentDevice,
+                kAudioUnitScope_Global,
+                0,
+                &device,
+                UInt32(MemoryLayout<AudioDeviceID>.size),
+            )
         }
 
         /// Apple's peak limiter, the safety net before the output.
@@ -373,87 +381,41 @@
         }
     }
 
-    /// A sampler with its pending MIDI: note-ons and note-offs at absolute times (seconds on
-    /// the host clock, or on the offline render's clock), handed to the unit by a pre-render
-    /// observer in the cycle each falls in.
-    private final class Sampler: @unchecked Sendable {
-        struct Pending {
-            /// Seconds; `-infinity` = at the start of the next cycle.
-            var time: Double
-            var bytes: [UInt8]
+    /// Tests: the routed device, offline rendering, draining the queue.
+    extension AudioEngineHost {
+        /// The output device UID the next build routes to (tests).
+        var routedOutputUID: String? {
+            queue.sync { outputUID }
         }
 
-        /// The queue the render observer drains (its own object, so the observer never
-        /// holds the sampler).
-        final class Queue: Sendable {
-            let items = Mutex<[Pending]>([])
-        }
+        // MARK: Offline rendering (tests)
 
-        let unit: AVAudioUnitSampler
-        private let pending = Queue()
-        private var token: Int?
-
-        init(_ unit: AVAudioUnitSampler, offline: Bool) {
-            self.unit = unit
-            let audioUnit = unit.auAudioUnit
-            let rate = unit.outputFormat(forBus: 0).sampleRate
-            guard let send = audioUnit.scheduleMIDIEventBlock else { return }
-            let pending = pending
-            token = audioUnit.token { flags, timestamp, frames, _ in
-                guard flags.contains(.unitRenderAction_PreRender) else { return }
-                let stamp = timestamp.pointee
-                let cycleStart: Double = if !offline,
-                                            stamp.mFlags.contains(.hostTimeValid)
-                {
-                    AVAudioTime.seconds(forHostTime: stamp.mHostTime)
-                } else {
-                    stamp.mSampleTime / rate
+        /// Renders `seconds` of audio offline (left channel), after scheduling has been done.
+        /// Only for an engine made with `init(offlineBank:)`.
+        func renderOffline(seconds: TimeInterval) -> [Float] {
+            queue.sync {
+                guard offline, let engine = running(),
+                      let buffer = AVAudioPCMBuffer(
+                          pcmFormat: engine.manualRenderingFormat,
+                          frameCapacity: engine.manualRenderingMaximumFrameCount,
+                      )
+                else { return [] }
+                var samples: [Float] = []
+                let total = Int(seconds * Self.offlineRate)
+                while samples.count < total {
+                    let frames = min(buffer.frameCapacity, AVAudioFrameCount(total - samples.count))
+                    guard (try? engine.renderOffline(frames, to: buffer)) == .success,
+                          let data = buffer.floatChannelData
+                    else { break }
+                    samples += UnsafeBufferPointer(start: data[0], count: Int(buffer.frameLength))
                 }
-                let cycleEnd = cycleStart + Double(frames) / rate
-                let due: [Pending] = pending.items.withLock { items in
-                    guard items.contains(where: { $0.time < cycleEnd }) else { return [] }
-                    let due = items.filter { $0.time < cycleEnd }
-                    items.removeAll { $0.time < cycleEnd }
-                    return due
-                }
-                for item in due {
-                    var bytes = item.bytes
-                    let offset = max(0, (item.time - cycleStart) * rate)
-                    send(
-                        AUEventSampleTime(stamp.mSampleTime + offset.rounded(.down)),
-                        0,
-                        bytes.count,
-                        &bytes,
-                    )
-                }
+                return samples
             }
         }
 
-        /// Queues `event`'s note-on and note-off, its onset counted from `start`.
-        func enqueue(_ event: NoteEvent, at start: Double) {
-            let on = start + event.onset
-            pending.items.withLock { items in
-                items.append(Pending(time: on, bytes: [0x90, event.note, event.velocity]))
-                items.append(Pending(time: on + event.duration, bytes: [0x80, event.note, 0]))
-                // A note-off and a re-strike of the same note at one instant: off first.
-                items.sort { ($0.time, $0.bytes[0] & 0xF0 == 0x90 ? 1 : 0)
-                    < ($1.time, $1.bytes[0] & 0xF0 == 0x90 ? 1 : 0)
-                }
-            }
-        }
-
-        /// Drops everything pending; the next cycle releases every sounding note.
-        func cancelAll() {
-            pending.items.withLock { items in
-                items = [Pending(time: -.infinity, bytes: [0xB0, 123, 0])]
-            }
-        }
-
-        func detach() {
-            if let token {
-                unit.auAudioUnit.removeRenderObserver(token)
-            }
-            token = nil
+        /// Waits for everything queued so far (tests).
+        func drain() {
+            queue.sync {}
         }
     }
 #endif

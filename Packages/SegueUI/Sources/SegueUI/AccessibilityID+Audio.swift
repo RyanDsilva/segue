@@ -16,6 +16,7 @@ public extension AccessibilityID {
     static let walkUpsPlay = "segue.walkUps.play"
 
     /// Settings > Audio controls.
+    static let settingsAudioOutput = "segue.settings.audio.output"
     static let settingsAudioChordSound = "segue.settings.audio.chordSound"
     static let settingsAudioChordStyle = "segue.settings.audio.chordStyle"
     static let settingsAudioBassSound = "segue.settings.audio.bassSound"

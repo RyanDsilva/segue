@@ -73,6 +73,7 @@ final class TestEnvironment {
         // and a recorder as the output (P8-6).
         dependencies.audio = AudioEngineHost(bank: nil, systemBank: nil)
         dependencies.makeSoundOutput = { _ in RecordingSoundOutput(clock: nil) }
+        dependencies.audioDevices = FixedAudioDeviceDirectory()
         return dependencies
     }
 

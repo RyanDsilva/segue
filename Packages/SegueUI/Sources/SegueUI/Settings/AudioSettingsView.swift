@@ -2,8 +2,8 @@
     import Playback
     import SwiftUI
 
-    /// Settings > Audio (P8-6 section 11): how heard chords and walk-ups sound. The output
-    /// picker comes with P8-6c; until then sound follows the system output.
+    /// Settings > Audio (P8-6 section 11): where sound goes, and how heard chords and walk-ups
+    /// sound.
     struct AudioSettingsView: View {
         let sound: SoundSession
 
@@ -13,6 +13,18 @@
 
         var body: some View {
             Form {
+                Section {
+                    Picker("Play through", selection: outputBinding) {
+                        Text(sound.systemOutputTitle).tag(String?.none)
+                        ForEach(sound.outputChoices) { choice in
+                            Text(choice.title).tag(Optional(choice.uid))
+                        }
+                    }
+                    .accessibilityIdentifier(AccessibilityID.settingsAudioOutput)
+                    if let note = sound.usbNote {
+                        SettingsNote(text: note)
+                    }
+                }
                 Section {
                     Picker("Chord sound", selection: binding(\.chordSound)) {
                         Text("Piano").tag(ChordSound.piano)
@@ -64,6 +76,13 @@
                 }
             }
             .formStyle(.grouped)
+        }
+
+        private var outputBinding: Binding<String?> {
+            Binding(
+                get: { settings.outputUID },
+                set: { uid in sound.chooseOutput(uid) },
+            )
         }
 
         private func binding<Value>(_ keyPath: WritableKeyPath<AudioSettings, Value>)

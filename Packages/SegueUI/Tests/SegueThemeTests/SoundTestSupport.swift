@@ -99,15 +99,23 @@ struct SoundRig {
     let session: SoundSession
     let outputs = SoundOutputs()
 
-    init(_ env: TestEnvironment, services: ServicesHub = .disabled) {
+    let devices: FixedAudioDeviceDirectory
+
+    init(
+        _ env: TestEnvironment,
+        services: ServicesHub = .disabled,
+        devices: FixedAudioDeviceDirectory = FixedAudioDeviceDirectory(),
+    ) {
         let outputs = outputs
         let clock = env.clock
         let settings = AudioSettingsStore(defaults: env.defaults)
         settings.services = services
+        self.devices = devices
         session = SoundSession(
             host: AudioEngineHost(bank: nil, systemBank: nil),
             settings: settings,
             clock: clock,
+            devices: devices,
             makeOutput: { outputs.make(clock) },
         )
     }

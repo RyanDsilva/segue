@@ -67,6 +67,9 @@
             AudioEngineSoundOutput(host: $0)
         }
 
+        /// The Mac's audio outputs for Settings > Audio "Play through" (a fixed list in tests).
+        public var audioDevices: any AudioDeviceDirectory = CoreAudioDeviceDirectory()
+
         public init(
             fileSystem: any FileSystem,
             clock: any Clock,
@@ -201,6 +204,7 @@
                 host: host,
                 settings: AudioSettingsStore(defaults: dependencies.live.settings.defaults),
                 clock: dependencies.live.scrollClock,
+                devices: dependencies.audioDevices,
                 makeOutput: { makeOutput(host) },
             )
             dependencies.polish.router.app = self
