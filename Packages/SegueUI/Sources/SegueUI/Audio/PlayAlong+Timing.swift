@@ -12,10 +12,11 @@ extension PlayAlong {
         source?.canEdit == true
     }
 
-    /// The chord's length in pulses (fractions for a sub-beat length).
+    /// The chord's length in pulses (fractions for a sub-beat length), on the bar grid: a
+    /// push does not change it (P8-7 section 8).
     func pulses(of index: Int) -> Double {
         guard let chord = chord(index) else { return 0 }
-        return Double(chord.length) / Double(chord.meter.ticksPerPulse)
+        return Double(gridTicks(of: index)) / Double(chord.meter.ticksPerPulse)
     }
 
     /// The saved correction that applies to chord `index`, if any.
@@ -122,12 +123,12 @@ extension PlayAlong {
         return pass.flatMap { source.timeline.passes.indices.contains($0) ? $0 : nil }
     }
 
-    private func chord(_ index: Int) -> TimedChord? {
+    func chord(_ index: Int) -> TimedChord? {
         let chords = timeline.timeline.chords
         return chords.indices.contains(index) ? chords[index] : nil
     }
 
-    private func save(_ actionName: String, _ change: @escaping (inout ChordTiming) -> Void) {
+    func save(_ actionName: String, _ change: @escaping (inout ChordTiming) -> Void) {
         writeTiming(actionName, change)
         session.settings.services.record(.featureUsed(.playAlongTiming, context))
     }

@@ -1,4 +1,5 @@
 #if os(macOS)
+    import AppKit
     import Library
     import Playback
     import SwiftUI
@@ -6,19 +7,22 @@
     /// The chord-length lane (P8-6 section 7.4, P8-7 section 8): one block per chord of the
     /// range, as wide as it lasts, labelled as the chart row shows it, over thin bar ticks,
     /// with a playhead while playing. The edge says where the length came from: solid for
-    /// the chart's marks or a grid, dashed for the song's rule, a dot for a correction.
-    /// Click a block to select it; then the Beats stepper, a digit 1-9, a drag on its right
-    /// edge (snapping to beats) or Delete. P8-7b extends this file (sub-beat lengths, pushes,
-    /// tap capture, markers, span selection), so the layout and selection stay open.
+    /// the chart's marks or a grid, dashed for the song's rule, a dot for a correction, a dot
+    /// with a tick for a tapped one. Click a block to select it (shift-click spans); then the
+    /// Beats field ("2.5" or "2½"), a digit 1-9, a drag on its right edge (beats; eighths
+    /// with ⌥, sixteenths with ⌥⇧), `<` to push it early, or Delete. Key, time and tempo
+    /// changes are marked above the block where they start.
     struct TimelineStrip: View {
         @Bindable var model: PlayAlong
         @FocusState private var focused: Bool
-        /// The block whose right edge is being dragged, and its length in pulses so far.
-        @State private var drag: (index: Int, pulses: Int)?
+        /// The block whose right edge is being dragged, and its grid length in ticks so far.
+        @State private var drag: (index: Int, ticks: Int)?
 
         /// Points per quarter note.
         static let pointsPerQuarter: CGFloat = 18
         static let blockHeight: CGFloat = 34
+        /// The marker row above the blocks, when the range has a change.
+        static let markerHeight: CGFloat = 16
 
         var body: some View {
             VStack(alignment: .leading, spacing: 6) {
@@ -45,10 +49,19 @@
                 model.setBeats(selected, digit)
                 return .handled
             }
+            .onKeyPress(characters: CharacterSet(charactersIn: "<"), phases: .down) { _ in
+                guard let selected = model.selected, model.canEditTiming else { return .ignored }
+                model.cyclePush(selected)
+                return .handled
+            }
             .onKeyPress(.delete) { clearSelected() }
             .onKeyPress(.deleteForward) { clearSelected() }
-            .onKeyPress(.leftArrow) { moveSelection(by: -1) }
-            .onKeyPress(.rightArrow) { moveSelection(by: 1) }
+            .onKeyPress(.leftArrow, phases: .down) { press in
+                moveSelection(by: -1, extending: press.modifiers.contains(.shift))
+            }
+            .onKeyPress(.rightArrow, phases: .down) { press in
+                moveSelection(by: 1, extending: press.modifiers.contains(.shift))
+            }
             .onKeyPress(.space) {
                 model.togglePlay()
                 return .handled
@@ -61,19 +74,26 @@
         private var lane: some View {
             let grid = model.timeline.timeline
             let width = max(Self.x(grid.totalTicks), 1)
+            let markers = model.laneMarkers
+            let top: CGFloat = markers.isEmpty ? 0 : Self.markerHeight
             return ZStack(alignment: .topLeading) {
-                barTicks(grid, width: width)
-                ForEach(model.timeline.timeline.chords.indices, id: \.self) { index in
-                    block(index)
+                barTicks(grid)
+                    .offset(y: top)
+                ForEach(markers, id: \.self) { marker in
+                    markerLabel(marker)
+                }
+                ForEach(grid.chords.indices, id: \.self) { index in
+                    block(index, top: top)
                         .id(index)
                 }
                 Playhead(model: model)
+                    .offset(y: top)
             }
-            .frame(width: width + 8, height: Self.blockHeight + 10, alignment: .topLeading)
+            .frame(width: width + 8, height: top + Self.blockHeight + 10, alignment: .topLeading)
         }
 
-        /// A thin tick at each bar line, a bar number every fourth.
-        private func barTicks(_ grid: SongTimeline, width _: CGFloat) -> some View {
+        /// A thin tick at each bar line.
+        private func barTicks(_ grid: SongTimeline) -> some View {
             var bars: [Int] = []
             var bar = 1
             while true {
@@ -91,25 +111,39 @@
             }
         }
 
-        private func block(_ index: Int) -> some View {
-            let chord = model.timeline.timeline.chords[index]
-            let pulses = drag?.index == index ? drag?.pulses : nil
-            let length = pulses.map { $0 * chord.meter.ticksPerPulse } ?? chord.length
+        /// "Key: A", "3/4", "♩ 120" over the block where it changes.
+        private func markerLabel(_ marker: LaneMarker) -> some View {
+            let chord = model.timeline.timeline.chords[marker.index]
+            return Text(marker.text)
+                .font(SchibstedGrotesk.semiBold.font(size: 11))
+                .foregroundStyle(Theme.color.muted)
+                .lineLimit(1)
+                .fixedSize()
+                .offset(x: Self.x(chord.onset) + 1)
+                .accessibilityLabel(marker.spoken)
+                .accessibilityIdentifier(AccessibilityID.playAlongMarker)
+        }
+
+        private func block(_ index: Int, top: CGFloat) -> some View {
+            let chords = model.timeline.timeline.chords
+            let chord = chords[index]
+            let length = drag?.index == index
+                ? (drag?.ticks ?? 0) + chord.length - model.gridTicks(of: index)
+                : chord.length
             let shift = drag.map { drag in
-                drag.index < index
-                    ? (drag.pulses * model.timeline.timeline.chords[drag.index].meter.ticksPerPulse)
-                    - model.timeline.timeline.chords[drag.index].length : 0
+                drag.index < index ? drag.ticks - model.gridTicks(of: drag.index) : 0
             } ?? 0
             return TimelineBlock(
                 title: title(index),
                 chord: chord,
-                isSelected: model.selected == index,
+                isSelected: model.selected == index || model.span?.contains(index) == true,
                 isCurrent: model.current == index,
-                corrected: chord.source == .user || chord.source == .tap,
+                edge: LaneEdge(chord.source),
+                push: chord.push,
                 width: max(Self.x(length) - 2, 6),
                 spoken: spoken(index),
                 onSelect: {
-                    model.selected = index
+                    model.select(index, extending: NSEvent.modifierFlags.contains(.shift))
                     focused = true
                 },
                 adjust: { delta in
@@ -121,15 +155,15 @@
                     edgeHandle(index)
                 }
             }
-            .offset(x: Self.x(chord.onset + shift), y: 4)
+            .offset(x: Self.x(chord.onset + shift), y: top + 4)
         }
 
-        /// The block's right edge: drag to change its length in whole beats (one write and
-        /// one undo step when the drag ends).
+        /// The block's right edge: drag to change its length, in beats (eighths with ⌥,
+        /// sixteenths with ⌥⇧). One write and one undo step when the drag ends.
         private func edgeHandle(_ index: Int) -> some View {
             let chord = model.timeline.timeline.chords[index]
-            let pulse = Self.x(chord.meter.ticksPerPulse)
-            let start = max(1, Int(model.pulses(of: index).rounded()))
+            let start = model.gridTicks(of: index)
+            let pulse = chord.meter.ticksPerPulse
             return Color.clear
                 .frame(width: 8, height: Self.blockHeight)
                 .contentShape(Rectangle())
@@ -137,12 +171,17 @@
                 .gesture(
                     DragGesture(minimumDistance: 2)
                         .onChanged { value in
-                            let pulses = start + Int((value.translation.width / pulse).rounded())
-                            drag = (index, min(max(pulses, 1), SongTimeline.maximumPulses))
+                            let flags = NSEvent.modifierFlags
+                            let snap = LaneSnap(
+                                option: flags.contains(.option),
+                                shift: flags.contains(.shift),
+                            )
+                            let raw = start + Self.ticks(value.translation.width)
+                            drag = (index, snap.snap(raw, ticksPerPulse: pulse))
                         }
                         .onEnded { _ in
-                            if let drag, drag.index == index {
-                                model.setBeats(index, drag.pulses)
+                            if let drag, drag.index == index, drag.ticks != start {
+                                model.setLength(index, ticks: drag.ticks)
                             }
                             drag = nil
                         },
@@ -156,15 +195,11 @@
             return model.source?.cue(for: chord)?.text ?? chord.token
         }
 
-        /// "G, 4 beats, from the chart" / "estimated" / "your change".
+        /// "G, 2½ beats, from the chart, pushed an eighth early".
         private func spoken(_ index: Int) -> String {
             let chord = model.timeline.timeline.chords[index]
             let pulses = model.pulses(of: index)
-            let count = pulses == pulses.rounded() ? "\(Int(pulses))" : String(
-                format: "%.1f",
-                pulses,
-            )
-            let beats = "\(count) \(pulses == 1 ? "beat" : "beats")"
+            let beats = "\(BeatsText.format(pulses)) \(pulses == 1 ? "beat" : "beats")"
             let origin = switch chord.source {
             case .chart, .grid: "from the chart"
             case .rule: "estimated"
@@ -172,11 +207,16 @@
             case .tap: "tapped"
             }
             let name = chord.isSilent ? "No chord" : title(index)
-            return "\(name), \(beats), \(origin)"
+            let push = chord.push.map { ", pushed \(BeatsText.spoken($0)) early" } ?? ""
+            return "\(name), \(beats), \(origin)\(push)"
         }
 
         static func x(_ ticks: Int) -> CGFloat {
             CGFloat(ticks) / CGFloat(Ticks.perQuarter) * pointsPerQuarter
+        }
+
+        static func ticks(_ x: CGFloat) -> Int {
+            Int((x / pointsPerQuarter * CGFloat(Ticks.perQuarter)).rounded())
         }
 
         private func clearSelected() -> KeyPress.Result {
@@ -185,11 +225,12 @@
             return .handled
         }
 
-        private func moveSelection(by step: Int) -> KeyPress.Result {
+        private func moveSelection(by step: Int, extending: Bool) -> KeyPress.Result {
             let count = model.timeline.timeline.chords.count
             guard count > 0 else { return .ignored }
-            let next = (model.selected ?? (step > 0 ? -1 : count)) + step
-            model.selected = min(max(next, 0), count - 1)
+            let from = extending ? (model.spanEnd ?? model.selected) : model.selected
+            let next = min(max((from ?? (step > 0 ? -1 : count)) + step, 0), count - 1)
+            model.select(next, extending: extending)
             return .handled
         }
     }
@@ -200,7 +241,8 @@
         let chord: TimedChord
         let isSelected: Bool
         let isCurrent: Bool
-        let corrected: Bool
+        let edge: LaneEdge
+        let push: Push?
         let width: CGFloat
         let spoken: String
         let onSelect: () -> Void
@@ -220,7 +262,7 @@
         private var stroke: StrokeStyle {
             StrokeStyle(
                 lineWidth: isSelected ? 2 : 1,
-                dash: chord.isEstimated && !isSelected ? [4, 3] : [],
+                dash: edge == .estimated && !isSelected ? [4, 3] : [],
             )
         }
 
@@ -248,7 +290,8 @@
                 .font(SchibstedGrotesk.bold.font(size: 13))
                 .foregroundStyle(chord.isSilent ? Theme.color.muted : Theme.color.cueText)
                 .lineLimit(1)
-                .padding(.horizontal, 6)
+                .padding(.leading, push == nil ? 6 : 9)
+                .padding(.trailing, 6)
                 .frame(width: width, height: TimelineStrip.blockHeight, alignment: .leading)
                 .background(shape.fill(fill))
                 .overlay {
@@ -258,15 +301,55 @@
                     )
                 }
                 .overlay(alignment: .topTrailing) {
-                    if corrected {
-                        Circle()
-                            .fill(Theme.color.cueText)
-                            .frame(width: 5, height: 5)
+                    if edge == .corrected || edge == .tapped {
+                        SourceMark(tapped: edge == .tapped)
                             .padding(5)
-                            .accessibilityHidden(true)
+                    }
+                }
+                .overlay(alignment: .leading) {
+                    if let push {
+                        PushNotch(width: TimelineStrip.x(push.ticks))
                     }
                 }
                 .clipShape(shape)
+        }
+    }
+
+    /// A correction's dot; a tapped one has a tick beside it.
+    private struct SourceMark: View {
+        let tapped: Bool
+
+        var body: some View {
+            HStack(spacing: 2) {
+                if tapped {
+                    Capsule()
+                        .fill(Theme.color.cueText)
+                        .frame(width: 1.5, height: 7)
+                }
+                Circle()
+                    .fill(Theme.color.cueText)
+                    .frame(width: 5, height: 5)
+            }
+            .accessibilityHidden(true)
+        }
+    }
+
+    /// The early part of a pushed block: a notch cut into its left edge, as wide as the
+    /// push, ending at the beat the chord would start on.
+    private struct PushNotch: View {
+        let width: CGFloat
+
+        var body: some View {
+            ZStack(alignment: .trailing) {
+                Rectangle()
+                    .fill(Theme.color.cueText.opacity(0.10))
+                    .frame(width: width)
+                Rectangle()
+                    .fill(Theme.color.cueText.opacity(0.55))
+                    .frame(width: 1, height: TimelineStrip.blockHeight * 0.4)
+            }
+            .frame(height: TimelineStrip.blockHeight)
+            .accessibilityHidden(true)
         }
     }
 
@@ -290,31 +373,59 @@
         }
     }
 
-    /// "Beats" for the selected chord: - / value / +, and "Use the Song's Rule" when it has
-    /// a correction.
+    /// "Beats" for the selected chord: - / a field ("2.5", "2½") / +, its push, and "Use the
+    /// Song's Rule" when it has a correction.
     private struct BeatsControl: View {
         let model: PlayAlong
+        @State private var text = ""
+        @FocusState private var editing: Bool
 
         var body: some View {
             HStack(spacing: 6) {
                 BarLabel("Beats")
                 if let selected = model.selected {
-                    let pulses = Int(model.pulses(of: selected).rounded())
+                    let pulses = model.pulses(of: selected)
+                    let whole = Int(pulses.rounded())
                     StepButton(symbol: "minus", label: "Fewer beats") {
-                        model.setBeats(selected, pulses - 1)
+                        model.setBeats(selected, Int(pulses.rounded(.up)) - 1)
                     }
                     .disabled(!model.canEditTiming || pulses <= 1)
-                    Text("\(pulses)")
+                    TextField("Beats", text: $text)
+                        .textFieldStyle(.plain)
                         .font(SchibstedGrotesk.semiBold.font(size: 13))
                         .monospacedDigit()
+                        .multilineTextAlignment(.center)
                         .foregroundStyle(Theme.color.ink)
-                        .frame(minWidth: 22)
+                        .frame(width: 40, height: 26)
+                        .background(Theme.color.ground, in: RoundedRectangle(cornerRadius: 6))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(
+                                    editing ? Theme.color.cueText : Theme.color.controlBorder,
+                                    lineWidth: 1,
+                                )
+                        }
+                        .focused($editing)
+                        .disabled(!model.canEditTiming)
+                        .onSubmit { commit(selected) }
+                        .onChange(of: editing) { _, isEditing in
+                            if !isEditing {
+                                commit(selected)
+                            }
+                        }
+                        .onAppear { text = BeatsText.format(pulses) }
+                        .onChange(of: pulses) { _, new in text = BeatsText.format(new) }
+                        .onChange(of: selected) { text = BeatsText.format(pulses) }
+                        .help("Type a length in beats: 3, 2.5 or 2½")
                         .accessibilityLabel("Beats")
+                        .accessibilityValue(BeatsText.format(pulses))
                         .accessibilityIdentifier(AccessibilityID.playAlongBeats)
                     StepButton(symbol: "plus", label: "More beats") {
-                        model.setBeats(selected, pulses + 1)
+                        model.setBeats(selected, Int(pulses.rounded(.down)) + 1)
                     }
-                    .disabled(!model.canEditTiming || pulses >= SongTimeline.maximumPulses)
+                    .disabled(!model.canEditTiming || whole >= SongTimeline.maximumPulses)
+                    PushMenu(model: model, index: selected)
+                        .padding(.leading, 6)
                     if model.correction(of: selected) != nil {
                         Button("Use the Song's Rule") { model.clearCorrection(selected) }
                             .buttonStyle(.segueSecondary)
@@ -327,6 +438,55 @@
                         .foregroundStyle(Theme.color.muted)
                 }
             }
+        }
+
+        private func commit(_ index: Int) {
+            let shown = BeatsText.format(model.pulses(of: index))
+            guard text != shown else { return }
+            if !model.setLength(index, text: text) {
+                NSSound.beep()
+                text = shown
+            }
+        }
+    }
+
+    /// "Push": on the beat, an eighth or a sixteenth early (`<` cycles them).
+    struct PushMenu: View {
+        let model: PlayAlong
+        let index: Int
+
+        var body: some View {
+            let push = model.push(of: index)
+            Menu {
+                choice("On the Beat", nil, push)
+                choice("An Eighth Early", .eighth, push)
+                choice("A Sixteenth Early", .sixteenth, push)
+            } label: {
+                Text(push.map { "Push: \(BeatsText.short($0))" } ?? "Push")
+                    .font(SchibstedGrotesk.semiBold.font(size: 13))
+            }
+            .menuStyle(.button)
+            .fixedSize()
+            .disabled(!model.canEditTiming || model.timeline.timeline.chords[safe: index]?
+                .isSilent != false)
+            .help("Start this chord early, ahead of the beat (<)")
+            .accessibilityLabel("Push")
+            .accessibilityValue(push.map { "\(BeatsText.spoken($0)) early" } ?? "on the beat")
+            .accessibilityIdentifier(AccessibilityID.playAlongPush)
+        }
+
+        private func choice(_ title: String, _ value: Push?, _ current: Push?) -> some View {
+            Toggle(title, isOn: Binding(get: { current == value }, set: { isOn in
+                if isOn {
+                    model.setPush(index, value)
+                }
+            }))
+        }
+    }
+
+    private extension Array {
+        subscript(safe index: Int) -> Element? {
+            indices.contains(index) ? self[index] : nil
         }
     }
 #endif

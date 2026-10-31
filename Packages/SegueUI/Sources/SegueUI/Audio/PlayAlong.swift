@@ -41,6 +41,8 @@ final class PlayAlong {
     private(set) var sessionTempo: Double?
     /// The strip's selected chord (an index into `timeline.timeline.chords`).
     var selected: Int?
+    /// The other end of a shift-click span in the lane (P8-7 section 8); `span` reads it.
+    var spanEnd: Int?
     /// The chord at the playhead while playing.
     private(set) var current: Int?
     /// The range voiced.
@@ -107,6 +109,7 @@ final class PlayAlong {
             loops = false
         }
         selected = nil
+        spanEnd = nil
         rebuild()
         if isPlaying {
             play()
@@ -138,6 +141,9 @@ final class PlayAlong {
         timeline = built
         if let selected, !built.timeline.chords.indices.contains(selected) {
             self.selected = nil
+        }
+        if let spanEnd, selected == nil || !built.timeline.chords.indices.contains(spanEnd) {
+            self.spanEnd = nil
         }
     }
 
