@@ -24,6 +24,10 @@ public struct BassLineContext: Sendable {
     public var parts: ResolvedParts
     /// The song's scale for passing notes (R170); nil = each key's own.
     public var mode: FillMode?
+    /// The timeline in the order annotated when that is not written order (P8-2's played
+    /// passes on stage: pass `i` is annotated section `i`), for drawing fills where they
+    /// play (P8-7 section 14); nil = `timeline`.
+    public var played: SongTimeline?
 
     public init(
         transform: DisplayTransform,
@@ -102,7 +106,8 @@ public enum BassLine {
     }
 
     /// `sections` with `RenderChord.approach` set on each departing chord that shows a
-    /// walk-up (nothing while the density is Off).
+    /// walk-up, and the saved fills drawn where they play (P8-7 section 14: `FillRun`s, or
+    /// `.fillTab` blocks); nothing while the density is Off (fills follow it, R168 Q7).
     public static func annotate(
         _ sections: [RenderSection],
         origins: [Int],
@@ -120,7 +125,7 @@ public enum BassLine {
             line.chords[place.chord].approach = run(shown, change: change, context: context)
             result[place.section].items[place.item] = .lyrics(line)
         }
-        return result
+        return drawFills(result, timeline: context.played ?? context.timeline, context: context)
     }
 
     /// The run drawn for `candidate` on `change`.

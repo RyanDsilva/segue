@@ -20,6 +20,9 @@ public struct PlacedChordRef: Sendable, Hashable {
     /// (its numbered path), R166.
     public var written: String?
     public var walkUp: ApproachRun?
+    /// The saved fill's notes over the chord, in the current pass (P8-7 14.4): the neck
+    /// numbers them as the fill's path instead of a walk-up.
+    public var fill: FillRun?
 
     public init(
         pass: Int,
@@ -29,6 +32,7 @@ public struct PlacedChordRef: Sendable, Hashable {
         dimmed: Bool = false,
         written: String? = nil,
         walkUp: ApproachRun? = nil,
+        fill: FillRun? = nil,
     ) {
         self.pass = pass
         self.text = text
@@ -37,6 +41,7 @@ public struct PlacedChordRef: Sendable, Hashable {
         self.dimmed = dimmed
         self.written = written
         self.walkUp = walkUp
+        self.fill = fill
     }
 
     /// The note without a Nashville prefix ("3 · B" -> "B").
@@ -94,6 +99,7 @@ public extension StagePasses {
                             y: block.y + row.y,
                             written: run.written,
                             walkUp: run.walkUp,
+                            fill: run.fill,
                         ))
                     }
                 }

@@ -40,6 +40,16 @@ public extension AccessibilityID {
     static let fillRevert = "segue.fill.revert"
     /// The fill editor's mini tab preview (P8-7 section 12.6).
     static let fillMiniTab = "segue.fill.miniTab"
+    /// A saved fill's note names after a chord unit in a preview, and its tab block (P8-7
+    /// section 14).
+    static let sheetFillRun = "segue.sheet.fillRun"
+    static let sheetFillTab = "segue.sheet.fillTab"
+    /// The same on stage.
+    static let liveFillRun = "segue.live.fillRun"
+    static let liveFillTab = "segue.live.fillTab"
+    /// "Fills as Tab" in the editor's Bass menu and Settings > Instrument's "Show fills as".
+    static let editorFillsAsTab = "segue.editor.fillsAsTab"
+    static let settingsInstrumentFillsAs = "segue.settings.instrument.fillsAs"
     /// The Walk-ups list's "Fills" group.
     static let walkUpsFills = "segue.walkUps.fills"
     static func walkUpsFill(_ index: Int) -> String {

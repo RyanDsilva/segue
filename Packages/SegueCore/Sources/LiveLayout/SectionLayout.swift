@@ -15,6 +15,8 @@ struct LaidUnit {
     var inkTop: Double?
     /// A lyric line that needed more than one row.
     var wrapped = false
+    /// A fill's tab: never split from the line above it.
+    var keepsWithPrevious = false
 }
 
 /// A section laid out at one size, ready to be packed into columns (whole or split between
@@ -185,17 +187,7 @@ struct SectionLayout {
             let size = context.lyricSize * style.commentScale
             return stack(textRows(paragraph, size: size, kind: .comment, path: path))
         case let .verbatim(text, measured, path):
-            let size = context.lyricSize * style.verbatimScale
-            let paragraph = MeasuredParagraph(
-                words: [LyricPiece(
-                    text: text, start: 0, width: measured, inkWidth: measured, endsWord: true,
-                )],
-                role: .verbatim,
-            )
-            if measured * size / referenceSize > width {
-                broke = true
-            }
-            return stack(textRows(paragraph, size: size, kind: .verbatim, path: path))
+            return verbatim(text, measured: measured, path: path, broke: &broke)
         case let .stanzaBreak(path):
             let height = context.textBand * style.stanzaBreakScale
             let row = LayoutRow(
@@ -213,7 +205,51 @@ struct SectionLayout {
             return stack(chordRows(chords, path: path))
         case let .moreLines(paragraph):
             return moreLines(paragraph)
+        case let .fillTab(block, height):
+            return fillTab(block, baseHeight: height)
         }
+    }
+
+    /// A fill's mini tab (P8-7 14.2): full width, its glyphs at the chord detail size (a
+    /// walk-up run's), a quarter of that size clear above and below.
+    private func fillTab(_ block: FillTabBlock, baseHeight: Double) -> LaidUnit {
+        let size = context.chordSize * ChordUnit.detailScale
+        let inset = size * 0.25
+        let height = baseHeight * size / PlacedFillTab.baseSize
+        let row = LayoutRow(
+            kind: .fillTab,
+            y: 0,
+            height: height + 2 * inset,
+            chordBaseline: nil,
+            textBaseline: height + inset,
+            chords: [],
+            text: [],
+            source: nil,
+            fillTab: PlacedFillTab(block: block, size: size, inset: inset, height: height),
+        )
+        var unit = LaidUnit(rows: [row], height: row.height, isBreak: false, inkTop: nil)
+        unit.keepsWithPrevious = true
+        return unit
+    }
+
+    /// A tab/grid line at the verbatim size; `broke` when it is wider than the column.
+    private func verbatim(
+        _ text: String,
+        measured: Double,
+        path: BlockPath,
+        broke: inout Bool,
+    ) -> LaidUnit {
+        let size = context.lyricSize * style.verbatimScale
+        let paragraph = MeasuredParagraph(
+            words: [LyricPiece(
+                text: text, start: 0, width: measured, inkWidth: measured, endsWord: true,
+            )],
+            role: .verbatim,
+        )
+        if measured * size / referenceSize > width {
+            broke = true
+        }
+        return stack(textRows(paragraph, size: size, kind: .verbatim, path: path))
     }
 
     func textRows(

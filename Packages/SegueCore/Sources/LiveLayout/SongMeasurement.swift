@@ -37,6 +37,8 @@ struct MeasuredChord {
     /// The token as written and the walk-up run, carried to the chord run for the neck.
     var written: String?
     var walkUp: ApproachRun?
+    /// The saved fill over the chord (P8-7 14.1): drawn in `approach`'s place.
+    var fill: FillRun?
 
     /// The whole chord unit at the reference size: the chord, the detail after a gap, then
     /// the walk-up run after another.
@@ -62,6 +64,7 @@ struct MeasuredChord {
             size: size,
             written: written,
             walkUp: walkUp,
+            fill: fill,
         )]
         if let detail {
             runs.append(PlacedText(
@@ -80,6 +83,7 @@ struct MeasuredChord {
                 width: approachWidth * scale,
                 role: .approach,
                 size: size * ChordUnit.detailScale,
+                fill: fill?.drawn,
             ))
         }
         return runs
@@ -120,6 +124,8 @@ enum MeasuredItem {
     case chordRow([MeasuredChord], BlockPath)
     /// "+ N more lines (first line only)" under a First line pass (P8-2).
     case moreLines(MeasuredParagraph)
+    /// A saved fill's mini tab (P8-7 14.2) and its height at `PlacedFillTab.baseSize`.
+    case fillTab(FillTabBlock, height: Double)
 }
 
 /// One shown pass as auto-fit sees it (R147: never collapsed).
@@ -231,17 +237,29 @@ struct Measurer {
                     size: referenceSize * ChordUnit.detailScale,
                 )
             } ?? 0,
-            approach: chord.approach?.text,
-            approachWidth: chord.approach.map { run in
+            // A fill's notes take the walk-up's place, in its style (P8-7 14.1); a fill shown
+            // as a tab draws neither (its block does), but the neck still reads it.
+            approach: shownRun(chord),
+            approachWidth: shownRun(chord).map { text in
                 metrics.width(
-                    of: run.text,
+                    of: text,
                     role: .approach,
                     size: referenceSize * ChordUnit.detailScale,
                 )
             } ?? 0,
             written: chord.original,
-            walkUp: chord.approach,
+            walkUp: chord.fill == nil ? chord.approach : nil,
+            fill: chord.fill,
         )
+    }
+
+    /// The run drawn after a chord unit: a fill's names, else its walk-up (none beside a
+    /// fill shown as a tab).
+    private func shownRun(_ chord: RenderChord) -> String? {
+        if let fill = chord.fill {
+            return fill.drawn?.text
+        }
+        return chord.approach?.text
     }
 
     /// Piece boundaries in lyric offsets: chord positions and ends of whitespace runs, each

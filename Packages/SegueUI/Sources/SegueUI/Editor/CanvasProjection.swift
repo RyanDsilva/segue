@@ -113,8 +113,9 @@
                     ))
                     gap = 0
                 }
+                // The canvas edits the text: a fill's tab block is a preview of the sidecar.
                 for item in section.items {
-                    var paragraph = Self.paragraph(for: item)
+                    guard var paragraph = Self.paragraph(for: item) else { continue }
                     paragraph.spaceBefore = gap
                     gap = 0
                     paragraphs.append(paragraph)
@@ -129,7 +130,7 @@
             self.init(paragraphs: paragraphs)
         }
 
-        private static func paragraph(for item: RenderItem) -> CanvasParagraph {
+        private static func paragraph(for item: RenderItem) -> CanvasParagraph? {
             switch item {
             case let .lyrics(line):
                 CanvasParagraph(text: line.lyrics, role: .lyrics(line))
@@ -139,6 +140,8 @@
                 CanvasParagraph(text: "", role: .stanzaBreak(path))
             case let .verbatim(text, path):
                 CanvasParagraph(text: text, role: .verbatim(path))
+            case .fillTab:
+                nil
             }
         }
 

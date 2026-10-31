@@ -177,7 +177,7 @@ struct ColumnPacker {
         guard remaining.count > 1 else { return nil }
         for count in 1 ..< remaining.count {
             let range = remaining.lowerBound ..< remaining.lowerBound + count
-            if units[range.upperBound - 1].isBreak {
+            if units[range.upperBound - 1].isBreak || units[range.upperBound].keepsWithPrevious {
                 continue
             }
             guard height(index, range, part: part) <= room else { break }

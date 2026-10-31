@@ -383,7 +383,7 @@ public enum SongSections {
             case let .verbatim(text, _):
                 let trimmed = text.trimmingCharacters(in: .whitespaces)
                 return trimmed.isEmpty ? nil : "v:" + trimmed
-            case .stanzaBreak:
+            case .fillTab, .stanzaBreak:
                 return nil
             }
         }
@@ -416,7 +416,7 @@ public enum SongSections {
                 if !trimmed.isEmpty {
                     return trimmed
                 }
-            case .stanzaBreak:
+            case .fillTab, .stanzaBreak:
                 continue
             }
         }

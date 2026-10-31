@@ -118,7 +118,7 @@ struct SongPreparation {
                     continue
                 }
                 result.append(self.item(item))
-            case .comment, .verbatim:
+            case .comment, .fillTab, .verbatim:
                 result.append(self.item(item))
             }
         }
@@ -141,6 +141,12 @@ struct SongPreparation {
             return nil
         }
         result.append(item(items[first]))
+        // A fill whose tab sits under the first line still shows.
+        var next = first + 1
+        while next < items.count, case .fillTab = items[next] {
+            result.append(item(items[next]))
+            next += 1
+        }
         let more = items[(first + 1)...].count(where: Self.isLine)
         if more > 0 {
             let text = more == 1
@@ -165,7 +171,7 @@ struct SongPreparation {
     private static func isLine(_ item: RenderItem) -> Bool {
         switch item {
         case .lyrics, .verbatim: true
-        case .comment, .stanzaBreak: false
+        case .comment, .fillTab, .stanzaBreak: false
         }
     }
 
@@ -181,6 +187,8 @@ struct SongPreparation {
             return .verbatim(text: text, width: width, path: path)
         case let .stanzaBreak(path):
             return .stanzaBreak(path)
+        case let .fillTab(block):
+            return .fillTab(block, height: PlacedFillTab.baseHeight(for: block.tuning))
         }
     }
 

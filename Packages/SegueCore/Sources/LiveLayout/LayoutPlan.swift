@@ -5,6 +5,7 @@
 // drawn is exactly what auto-fit measured.
 
 import ChordPro
+import Diagrams
 import Editing
 import Foundation
 import Library
@@ -71,6 +72,9 @@ public struct PlacedText: Sendable, Hashable {
     /// neck shows the chord's tones and the walk-up's path from them (R166).
     public var written: String?
     public var walkUp: ApproachRun?
+    /// The saved fill's notes over this chord (P8-7 section 14): on the chord run for the
+    /// neck's fill path, and on the `.approach` run that draws them (as a pick, ink at 70%).
+    public var fill: FillRun?
 
     public init(
         text: String,
@@ -81,6 +85,7 @@ public struct PlacedText: Sendable, Hashable {
         size: Double = 0,
         written: String? = nil,
         walkUp: ApproachRun? = nil,
+        fill: FillRun? = nil,
     ) {
         self.text = text
         self.x = x
@@ -90,6 +95,65 @@ public struct PlacedText: Sendable, Hashable {
         self.size = size
         self.written = written
         self.walkUp = walkUp
+        self.fill = fill
+    }
+}
+
+/// A saved fill's mini tab placed in a row (P8-7 section 14.2): `TabLayout` at the row's full
+/// width, in a face of `size` points (its metrics are for 10 pt, so they scale by size / 10).
+public struct PlacedFillTab: Sendable, Hashable {
+    public var block: FillTabBlock
+    /// The point size of the tab's glyphs: the chord detail size (a walk-up run's).
+    public var size: Double
+    /// The tab's top, from the row's top.
+    public var inset: Double
+    /// The tab's own height (the row adds `inset` above and below).
+    public var height: Double
+
+    public init(block: FillTabBlock, size: Double, inset: Double, height: Double) {
+        self.block = block
+        self.size = size
+        self.inset = inset
+        self.height = height
+    }
+
+    /// `TabLayout.Metrics` at this size.
+    public var metrics: TabLayout.Metrics {
+        Self.metrics(scale: size / Self.baseSize)
+    }
+
+    /// The face size `TabLayout.Metrics()` suits.
+    public static let baseSize = 10.0
+
+    /// The default metrics scaled by `scale`.
+    public static func metrics(scale: Double) -> TabLayout.Metrics {
+        let base = TabLayout.Metrics()
+        return TabLayout.Metrics(
+            lineGap: base.lineGap * scale,
+            chordRow: base.chordRow * scale,
+            markRow: base.markRow * scale,
+            rulerRow: base.rulerRow * scale,
+            tickLength: base.tickLength * scale,
+            glyphHeight: base.glyphHeight * scale,
+            labelGap: base.labelGap * scale,
+            onsetInset: base.onsetInset * scale,
+            glyphGap: base.glyphGap * scale,
+            linePad: base.linePad * scale,
+        )
+    }
+
+    /// A tab's height at `TabLayout.Metrics()` for `tuning` (it does not depend on the notes
+    /// or the width).
+    public static func baseHeight(for tuning: Tuning) -> Double {
+        TabLayout.layout(
+            notes: [],
+            chords: [],
+            ticks: 0 ..< 1,
+            pulses: [],
+            bars: [],
+            tuning: tuning,
+            width: 0,
+        ) { _ in 0 }.height
     }
 }
 
@@ -120,6 +184,8 @@ public struct LayoutRow: Sendable, Hashable {
         case chordRow
         /// A First line pass's "+ N more lines (first line only)" (P8-2).
         case moreLines
+        /// A saved fill's mini tab (P8-7 section 14.2): no runs, `fillTab` set.
+        case fillTab
     }
 
     public var kind: Kind
@@ -134,6 +200,8 @@ public struct LayoutRow: Sendable, Hashable {
     public var text: [PlacedText]
     /// The source line, for section highlighting and tests.
     public var source: BlockPath?
+    /// The mini tab of a `.fillTab` row.
+    public var fillTab: PlacedFillTab?
 
     public init(
         kind: Kind,
@@ -144,6 +212,7 @@ public struct LayoutRow: Sendable, Hashable {
         chords: [PlacedText],
         text: [PlacedText],
         source: BlockPath?,
+        fillTab: PlacedFillTab? = nil,
     ) {
         self.kind = kind
         self.y = y
@@ -153,6 +222,7 @@ public struct LayoutRow: Sendable, Hashable {
         self.chords = chords
         self.text = text
         self.source = source
+        self.fillTab = fillTab
     }
 }
 

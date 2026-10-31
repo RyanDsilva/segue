@@ -141,19 +141,9 @@ struct FillGrid: Equatable {
             ))
         }
         let region = PhraseBuilder.fillWindow(timeline: timeline, chords: span, notes: [])
-        var pulses: [Int] = []
-        var bars: [Bar] = []
-        var tick = region.lowerBound - region.lowerBound % Ticks.sixteenth
-        while tick < region.upperBound {
-            let position = timeline.barBeat(at: tick)
-            if tick >= region.lowerBound, position.tick == 0 {
-                pulses.append(tick)
-                if position.beat == 1 {
-                    bars.append(Bar(tick: tick, number: position.bar))
-                }
-            }
-            tick += Ticks.sixteenth
-        }
+        let grid = timeline.grid(in: region)
+        let pulses = grid.pulses
+        let bars = grid.bars.map { Bar(tick: $0.tick, number: $0.number) }
         return Self(
             chords: chords,
             region: region,

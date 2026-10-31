@@ -237,6 +237,9 @@ public enum RenderItem: Sendable, Equatable {
     case stanzaBreak(path: BlockPath)
     /// A tab/grid body line, verbatim (monospaced, read-only).
     case verbatim(text: String, path: BlockPath)
+    /// A saved fill as a mini tab, after the lyric line holding its first chord (P8-7
+    /// section 14.2); set by `BassLine.annotate` in the bass-note view only.
+    case fillTab(FillTabBlock)
 }
 
 /// A lyric line with its display chords.
@@ -335,6 +338,10 @@ public struct RenderChord: Sendable, Equatable {
     /// The walk-up drawn after the chord unit into the next chord (P8-4 section 8.8); set by
     /// `BassLine.annotate`, nil otherwise.
     public var approach: ApproachRun?
+    /// The notes of a saved fill over this chord, drawn after the chord unit in place of a
+    /// walk-up (P8-7 section 14.1) unless the fill shows as a tab (`FillRun.inTab`, then
+    /// only the stage neck reads it); set by `BassLine.annotate`, nil otherwise.
+    public var fill: FillRun?
 
     public init(
         ref: ChordRef,
@@ -344,6 +351,7 @@ public struct RenderChord: Sendable, Equatable {
         kind: Kind,
         detail: String? = nil,
         approach: ApproachRun? = nil,
+        fill: FillRun? = nil,
     ) {
         self.ref = ref
         self.offset = offset
@@ -352,6 +360,7 @@ public struct RenderChord: Sendable, Equatable {
         self.kind = kind
         self.detail = detail
         self.approach = approach
+        self.fill = fill
     }
 }
 

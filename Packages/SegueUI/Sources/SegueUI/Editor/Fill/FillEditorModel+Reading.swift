@@ -207,22 +207,18 @@ extension FillEditorModel {
     /// What the mini tab draws: the draft's notes, then the landing root in the landing bar
     /// (unless a note already starts there), exactly what the stage lays out (section 12.6).
     var tabNotes: [TabNote] {
-        let notes = resolved(draft.events).filter { !$0.outside }.map { TabNote($0) }
-        guard let chord = grid.chords.last else { return notes }
-        let tick = max(chord.onset, grid.region.lowerBound)
-        guard !notes.contains(where: { $0.tick == tick }) else { return notes }
-        return notes + [TabNote(
-            tick: tick,
-            length: max(1, grid.region.upperBound - tick),
-            position: PartPitch.position(
-                chord.placed,
-                pin: nil,
-                tuning: grid.tuning,
-                home: grid.home,
-            ),
-            name: (chord.symbol.bass ?? chord.symbol.root).chartName,
-            isLanding: true,
-        )]
+        let notes = resolved(draft.events)
+        guard let chord = grid.chords.last else {
+            return notes.filter { !$0.outside }.map { TabNote($0) }
+        }
+        return PartPlay.tabNotes(
+            notes,
+            landing: chord.symbol,
+            onset: chord.onset,
+            region: grid.region,
+            tuning: grid.tuning,
+            home: grid.home,
+        )
     }
 
     /// The chord names over the mini tab.

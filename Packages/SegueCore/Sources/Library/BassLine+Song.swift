@@ -9,12 +9,14 @@ public extension BassLine {
     /// The context for a song rendered as `model` (its bass view) with its saved `prefs` and
     /// `parts` (the sidecar's fills): the song's timeline in written order (lengths, tempo and
     /// `{key}` in effect, P8-7 section 5.7), its picks, its fills and its scale (R170); nil
-    /// without a bass view.
+    /// without a bass view. With `order` (a stage's played passes) and a fill that applies,
+    /// `played` is the timeline in that order, so fills draw where they play (P8-7 14).
     static func context(
         for model: RenderModel,
         document: SongDocument,
         prefs: BassPrefs,
         parts: [Part] = [],
+        order: [PlayedPass]? = nil,
     ) -> BassLineContext? {
         guard let bass = model.transform.options.bass else { return nil }
         let units = SongSections.units(of: document)
@@ -32,6 +34,15 @@ public extension BassLine {
             timeline: timeline,
         )
         context.apply(prefs, parts: parts, units: units, sections: model.sections)
+        if let order, !context.parts.applied.isEmpty {
+            context.played = SongTimeline.build(
+                document: document,
+                sections: model.sections,
+                units: units,
+                timing: prefs.timing,
+                order: order,
+            )
+        }
         return context
     }
 

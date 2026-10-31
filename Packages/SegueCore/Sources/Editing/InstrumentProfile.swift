@@ -24,6 +24,9 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
     public var walkUps: WalkUpDensity
     /// The default feel for songs without their own (P8-4b section 8.7; default Pop).
     public var genre: BassGenre
+    /// "Fills as tab" (P8-7 section 14.2, R168 Q8): every saved fill draws as a mini tab,
+    /// whatever its own choice (`t` on stage, the editor's Bass menu, Settings). Default off.
+    public var fillsAsTab: Bool
 
     public init(
         playsBass: Bool = false,
@@ -35,6 +38,7 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
         fretboard: Bool = true,
         walkUps: WalkUpDensity = .off,
         genre: BassGenre = .pop,
+        fillsAsTab: Bool = false,
     ) {
         self.playsBass = playsBass
         self.strings = strings
@@ -45,6 +49,7 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
         self.fretboard = fretboard
         self.walkUps = walkUps
         self.genre = genre
+        self.fillsAsTab = fillsAsTab
         normalize()
     }
 
@@ -62,6 +67,7 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
             fretboard: playsBass && fretboard,
             walkUps: walkUps,
             genre: genre,
+            fillsAsTab: fillsAsTab,
         )
     }
 
@@ -103,6 +109,7 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
         case fretboard
         case walkUps
         case genre
+        case fillsAsTab
     }
 
     public init(from decoder: any Decoder) throws {
@@ -120,6 +127,7 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
         fretboard = field(.fretboard, defaults.fretboard)
         walkUps = field(.walkUps, defaults.walkUps)
         genre = field(.genre, defaults.genre)
+        fillsAsTab = field(.fillsAsTab, defaults.fillsAsTab)
         normalize()
     }
 }
@@ -141,6 +149,8 @@ public struct BassView: Sendable, Hashable {
     public var walkUps: WalkUpDensity
     /// The default feel for songs without their own (P8-4b).
     public var genre: BassGenre
+    /// Every saved fill as a mini tab (P8-7 section 14.2); else each fill's own choice.
+    public var fillsAsTab: Bool
 
     public init(
         notes: Bool = true,
@@ -150,6 +160,7 @@ public struct BassView: Sendable, Hashable {
         fretboard: Bool = false,
         walkUps: WalkUpDensity = .off,
         genre: BassGenre = .pop,
+        fillsAsTab: Bool = false,
     ) {
         self.notes = notes
         self.chordBeside = chordBeside
@@ -158,6 +169,7 @@ public struct BassView: Sendable, Hashable {
         self.fretboard = fretboard
         self.walkUps = walkUps
         self.genre = genre
+        self.fillsAsTab = fillsAsTab
     }
 }
 

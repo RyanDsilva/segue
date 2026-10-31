@@ -40,20 +40,7 @@ public extension PhraseBuilder {
         chords: ClosedRange<Int>,
         notes: [ResolvedNote],
     ) -> Range<Int> {
-        guard timeline.chords.indices.contains(chords.lowerBound),
-              timeline.chords.indices.contains(chords.upperBound)
-        else { return 0 ..< 0 }
-        let start = timeline.chords[chords.lowerBound].onset
-        let first = notes.filter { !$0.outside }.map(\.tick).min() ?? start
-        let bar = timeline.barBeat(at: max(0, first)).bar
-        let before = timeline.tick(of: BarBeat(bar: max(1, bar - 1), beat: 1, tick: 0))
-        let from = max(start, min(before, first))
-        let landing = timeline.chords[chords.upperBound]
-        let downbeat = landing.onset + (landing.push?.ticks ?? 0)
-        let landingBar = timeline.barBeat(at: max(0, downbeat)).bar
-        var through = timeline.tick(of: BarBeat(bar: landingBar + 1, beat: 1, tick: 0))
-        through = min(max(through, landing.onset + 1), max(timeline.totalTicks, landing.onset + 1))
-        return from ..< max(from + 1, through)
+        PartPlay.window(timeline: timeline, chords: chords, notes: notes)
     }
 
     /// A fill heard against its chords (section 12.3): the chords as play-along voices them,

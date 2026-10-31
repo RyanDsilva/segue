@@ -136,8 +136,18 @@
                             x: lyricOrigin + row.chords[chord].x,
                             baseline: row.y + chordBaseline,
                         )
-                        .accessibilityIdentifier(Self.identifier(row.chords[chord].role))
+                        .accessibilityIdentifier(Self.identifier(row.chords[chord]))
                     }
+                }
+                if let tab = row.fillTab {
+                    // A saved fill's mini tab across the lyric width (P8-7 14.2).
+                    MiniTabView(
+                        block: tab.block,
+                        size: tab.size,
+                        identifier: AccessibilityID.liveFillTab,
+                    )
+                    .frame(width: max(1, column.width - lyricOrigin), alignment: .leading)
+                    .offset(x: lyricOrigin, y: row.y + tab.inset)
                 }
                 ForEach(row.text.indices, id: \.self) { run in
                     placed(
@@ -175,10 +185,12 @@
             .accessibilityIdentifier(AccessibilityID.liveCue)
         }
 
-        /// The chord row's identifiers: chord, the chord beside a bass note, a walk-up run.
-        private static func identifier(_ role: TextRole) -> String {
-            switch role {
+        /// The chord row's identifiers: chord, the chord beside a bass note, a walk-up run,
+        /// a saved fill's notes.
+        private static func identifier(_ run: PlacedText) -> String {
+            switch run.role {
             case .chordDetail: AccessibilityID.liveChordDetail
+            case .approach where run.fill != nil: AccessibilityID.liveFillRun
             case .approach: AccessibilityID.liveWalkUp
             default: AccessibilityID.sheetChord
             }
@@ -222,6 +234,9 @@
             case .chord:
                 run.chordKind == .chord || run.chordKind == nil
                     ? Theme.color.cueText : Theme.color.muted
+            case .approach where run.fill != nil:
+                // A saved fill is yours: ink at 70%, like a pick (P8-7 14.1).
+                Theme.color.ink.opacity(0.7)
             case .approach, .chordDetail, .comment, .labelDetail, .modeTag, .moreLines, .note,
                  .sectionLabel:
                 Theme.color.muted

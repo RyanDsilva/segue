@@ -1,37 +1,8 @@
 import ChordPro
 import Editing
 import Library
+import LiveLayout
 import SwiftUI
-
-/// Sizes for rendering a song body. Colours come from `Theme.color` and resolve per
-/// appearance, so the same view draws the light editor preview and the dark stage.
-struct SongSheetStyle: Equatable {
-    /// Lyric point size; chords are `FontTokens.chordToLyricRatio` of it.
-    var lyricSize: CGFloat
-    /// Width of the section label column (brand.md section 7: 64).
-    var gutterWidth: CGFloat = 64
-    /// Vertical space between sections.
-    var sectionSpacing: CGFloat
-
-    var chordSize: CGFloat {
-        FontTokens.liveChordSize(forLyricSize: lyricSize)
-    }
-
-    /// Extra space between wrapped rows (line height 1.25).
-    var rowSpacing: CGFloat {
-        lyricSize * 0.25
-    }
-
-    /// Gap between a chord and the lyric below it.
-    var chordGap: CGFloat {
-        1
-    }
-
-    /// Editor preview and song detail (mockup E2 a: 18pt lyrics, 15pt chords).
-    static let preview = Self(lyricSize: 18, gutterWidth: 76, sectionSpacing: 22)
-    /// Live view (brand.md section 6: default 24).
-    static let stage = Self(lyricSize: 24, sectionSpacing: 32)
-}
 
 /// Renders a song body from a `RenderModel`: a section label gutter on the left, lyric
 /// lines with each display chord above its character. Used by the editor preview, the song
@@ -228,6 +199,16 @@ private struct ItemView: View {
                 .font(.system(size: style.lyricSize * 0.75, design: .monospaced))
                 .foregroundStyle(Theme.color.ink)
                 .fixedSize(horizontal: true, vertical: false)
+        case let .fillTab(block):
+            // A saved fill as a mini tab under its first chord's line (P8-7 14.2), at the
+            // walk-up run size.
+            MiniTabView(
+                block: block,
+                size: style.chordSize * ChordUnit.detailScale,
+                identifier: AccessibilityID.sheetFillTab,
+            )
+            .frame(maxWidth: 560, alignment: .leading)
+            .padding(.vertical, 2)
         }
     }
 }
@@ -274,7 +255,14 @@ struct LyricLineView: View {
                                     .font(SchibstedGrotesk.medium.font(size: style.chordSize * 0.6))
                                     .foregroundStyle(Theme.color.muted)
                             }
-                            if let approach = token.approach {
+                            if let fill = token.fill?.drawn {
+                                // A saved fill's notes over the chord (P8-7 14.1): yours, so
+                                // ink at 70% like a pick.
+                                Text(fill.text)
+                                    .font(SchibstedGrotesk.medium.font(size: style.chordSize * 0.6))
+                                    .foregroundStyle(Theme.color.ink.opacity(0.7))
+                                    .accessibilityIdentifier(AccessibilityID.sheetFillRun)
+                            } else if token.fill == nil, let approach = token.approach {
                                 // The walk-up into the next chord (P8-4b 8.8).
                                 let size = style.chordSize * 0.6
                                 WalkUpRunView(
@@ -337,6 +325,7 @@ struct LyricLineView: View {
             token.chord.map { chord in
                 spokenChord(chord, detail: token.detail)
                     + (span(token).map { ", \($0)" } ?? "")
+                    + (token.fill?.drawn.map { ", \($0.accessibility)" } ?? "")
                     + (token.approach.map { ", \($0.accessibility)" } ?? "")
             }
         }
@@ -359,6 +348,8 @@ struct LyricToken: Identifiable, Equatable {
     var detail: String?
     /// The walk-up run after the chord unit (P8-4b 8.8).
     var approach: ApproachRun?
+    /// A saved fill's notes after the chord unit, in the walk-up's place (P8-7 14.1).
+    var fill: FillRun?
     /// The chord the unit shows, for hearing it (P8-6 10.1).
     var source: RenderChord?
     /// The line may wrap after this piece: its text ends in whitespace, or it is the last
@@ -400,6 +391,7 @@ struct LyricToken: Identifiable, Equatable {
                         isUnknown: segment.isUnknown,
                         detail: segment.detail,
                         approach: segment.approach,
+                        fill: segment.fill,
                         source: segment.source,
                     ))
                 }
@@ -414,6 +406,7 @@ struct LyricToken: Identifiable, Equatable {
                     isUnknown: offset == 0 && segment.isUnknown,
                     detail: offset == 0 ? segment.detail : nil,
                     approach: offset == 0 ? segment.approach : nil,
+                    fill: offset == 0 ? segment.fill : nil,
                     source: offset == 0 ? segment.source : nil,
                 ))
             }
@@ -427,6 +420,7 @@ struct LyricToken: Identifiable, Equatable {
         var isUnknown = false
         var detail: String?
         var approach: ApproachRun?
+        var fill: FillRun?
         var source: RenderChord?
     }
 
@@ -462,6 +456,7 @@ struct LyricToken: Identifiable, Equatable {
                 isUnknown: chord.kind == .unknown,
                 detail: chord.detail,
                 approach: chord.approach,
+                fill: chord.fill,
                 source: chord,
             ))
         }

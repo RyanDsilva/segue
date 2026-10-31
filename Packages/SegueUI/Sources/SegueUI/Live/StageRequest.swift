@@ -69,21 +69,28 @@
                 cues: song.sidecar.cues,
                 notes: notes,
                 passes: passes,
-                walkUps: walkUps(model, song: song),
+                walkUps: walkUps(model, song: song, passes: passes),
             )
             return (request, resolution)
         }
 
         /// Walk-ups on stage (P8-4b): only in the bass-note view with walk-ups on, the song's
         /// pick else the top candidate, never alternates, none on a change a saved fill
-        /// covers in that pass (P8-7c).
-        static func walkUps(_ model: RenderModel, song: SongRecord) -> BassLineContext? {
+        /// covers in that pass (P8-7c). The saved fills draw where the played `passes` (nil =
+        /// the full song) play them (P8-7e), on a timeline in that order built once per plan.
+        static func walkUps(
+            _ model: RenderModel,
+            song: SongRecord,
+            passes: [PlayedPass]? = nil,
+        ) -> BassLineContext? {
             guard model.transform.options.bass?.notes == true,
                   let context = BassLine.context(
                       for: model,
                       document: song.document,
                       prefs: song.sidecar.bass,
                       parts: song.sidecar.parts,
+                      order: passes
+                          ?? ArrangementResolver.fullSong(SongSections.units(of: song.document)),
                   ),
                   context.density != .off
             else { return nil }

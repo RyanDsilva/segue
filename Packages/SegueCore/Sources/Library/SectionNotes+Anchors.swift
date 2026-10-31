@@ -128,6 +128,7 @@ struct Anchors {
         case let .comment(_, _, path): path
         case let .stanzaBreak(path): path
         case let .verbatim(_, path): path
+        case .fillTab: nil
         }
     }
 }

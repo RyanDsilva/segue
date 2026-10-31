@@ -125,6 +125,8 @@ extension SongTimeline {
                 case let .lyrics(line): return line.path
                 case let .comment(_, _, path), let .stanzaBreak(path), let .verbatim(_, path):
                     return path
+                case .fillTab:
+                    continue
                 }
             }
             return nil

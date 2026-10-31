@@ -65,6 +65,136 @@ public struct ApproachRun: Sendable, Hashable {
     }
 }
 
+/// The notes of a saved fill sounding over one chord of its span, drawn after the chord unit
+/// like a walk-up run (P8-7 section 14.1). Set by `BassLine.annotate` on every chord of the
+/// span but the landing, in each pass the fill applies to.
+public struct FillRun: Sendable, Hashable {
+    /// The fill's `PartID`, as its string (Editing cannot see Library's type).
+    public var part: String
+    /// "E", "F#" (or degrees "5", "6" with the song's Nashville toggle on), in played order.
+    public var notes: [String]
+    /// Per note: outside the chord's passing scale (drawn with a trailing small "°").
+    public var chromatic: [Bool]
+    /// The span's last departing chord: its run ends in "›" into the landing.
+    public var isLast: Bool
+    /// "fill: E, F sharp, G sharp into A".
+    public var accessibility: String
+    /// The notes at concert pitch, played order (the stage neck's numbered path).
+    public var pitches: [PitchClass]
+    /// Per note: the pinned position when the note has a string pin, else nil (the neck
+    /// walks it from the chord's suggested position).
+    public var pins: [FretPosition?]
+    /// The 1-based number of this run's first note in the whole fill (the neck numbers the
+    /// fill across its chords: "3, 4, 5" over the second chord).
+    public var firstNumber: Int
+    /// The fill's notes over every departing chord.
+    public var total: Int
+    /// The fill shows as a mini tab (its `.fillTab` block): this run is not drawn, it only
+    /// tells the stage neck the chord's notes (P8-7 14.4).
+    public var inTab: Bool
+
+    public init(
+        part: String,
+        notes: [String],
+        chromatic: [Bool],
+        isLast: Bool,
+        accessibility: String,
+        pitches: [PitchClass] = [],
+        pins: [FretPosition?] = [],
+        firstNumber: Int = 1,
+        total: Int = 0,
+        inTab: Bool = false,
+    ) {
+        self.part = part
+        self.notes = notes
+        self.chromatic = chromatic
+        self.isLast = isLast
+        self.accessibility = accessibility
+        self.pitches = pitches
+        self.pins = pins
+        self.firstNumber = firstNumber
+        self.total = total
+        self.inTab = inTab
+    }
+
+    /// The run when it is drawn as names (nil when the fill shows as a tab).
+    public var drawn: Self? {
+        inTab ? nil : self
+    }
+
+    /// The run as drawn: "E F# G#" and, on the last departing chord, " ›"; chromatic notes
+    /// with a trailing "°".
+    public var text: String {
+        zip(notes, chromatic).map { $0 + ($1 ? "\u{00B0}" : "") }.joined(separator: " ")
+            + (isLast ? " \u{203A}" : "")
+    }
+}
+
+/// A chord name over a fill's mini tab, at its onset tick.
+public struct FillTabChord: Sendable, Hashable {
+    public var tick: Int
+    public var name: String
+
+    public init(tick: Int, name: String) {
+        self.tick = tick
+        self.name = name
+    }
+}
+
+/// A saved fill drawn as a mini tab under the lyric line holding its first chord (P8-7
+/// section 14.2): the `TabLayout` input, laid out at whatever width draws it.
+public struct FillTabBlock: Sendable, Hashable {
+    /// The fill's `PartID`, as its string.
+    public var part: String
+    public var notes: [TabNote]
+    public var chords: [FillTabChord]
+    public var ticks: Range<Int>
+    public var pulses: [Int]
+    public var bars: [Int]
+    public var tuning: Tuning
+    /// "Tab: A string 7, 9, D string 7, then A".
+    public var accessibility: String
+
+    public init(
+        part: String,
+        notes: [TabNote],
+        chords: [FillTabChord],
+        ticks: Range<Int>,
+        pulses: [Int],
+        bars: [Int],
+        tuning: Tuning,
+        accessibility: String,
+    ) {
+        self.part = part
+        self.notes = notes
+        self.chords = chords
+        self.ticks = ticks
+        self.pulses = pulses
+        self.bars = bars
+        self.tuning = tuning
+        self.accessibility = accessibility
+    }
+
+    /// The tab laid out at `width` with `measure` (the face the caller draws in).
+    public func layout(
+        width: Double,
+        metrics: TabLayout.Metrics = TabLayout.Metrics(),
+        measure: (String) -> Double,
+    ) -> TabLayout {
+        TabLayout.layout(
+            notes: notes,
+            chords: chords.map { (tick: $0.tick, name: $0.name) },
+            ticks: ticks,
+            pulses: pulses,
+            bars: bars,
+            tuning: tuning,
+            width: width,
+            metrics: metrics,
+            measure: measure,
+        )
+    }
+}
+
 /// A bass fretboard cell of the editor's diagram strip (section 7.2).
 public struct BassDiagram: Sendable, Equatable {
     /// The bass note at concert pitch ("B").
