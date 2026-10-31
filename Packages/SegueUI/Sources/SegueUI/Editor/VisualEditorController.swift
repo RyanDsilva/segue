@@ -43,6 +43,8 @@
         var hoveredEdge: BandEdgeHit?
         /// The floating chip bar shown while lines are selected.
         lazy var chipBar = SectionChipBarHost(controller: self)
+        /// "Looks like a key change" chips at the right of the bands' caps (P8-7 6.2).
+        lazy var keyChips = KeyChangeChipHosts(controller: self)
         /// Section notes per section (P3-13 fills this; the band leaves a badge slot).
         var sectionNoteCount: (BlockPath) -> Int = { _ in 0 }
 
@@ -102,6 +104,7 @@
         func redrawOverlay() {
             container.overlay.needsDisplay = true
             updateChipBar()
+            keyChips.layout()
         }
 
         func focus() {
@@ -127,6 +130,7 @@
             }
             restoreCaret(fallback: caretBefore)
             resolveSelection()
+            keyChips.refresh()
             redrawOverlay()
         }
 

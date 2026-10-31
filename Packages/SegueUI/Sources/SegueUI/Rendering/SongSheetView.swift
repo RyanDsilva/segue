@@ -1,5 +1,6 @@
 import ChordPro
 import Editing
+import Library
 import SwiftUI
 
 /// Sizes for rendering a song body. Colours come from `Theme.color` and resolve per
@@ -38,12 +39,14 @@ struct SongSheetStyle: Equatable {
 struct SongSheetView: View {
     let sections: [RenderSection]
     let style: SongSheetStyle
+    /// The editor's "Looks like a key change" chips, each above its section (P8-7 6.2).
+    var keyChanges: [KeyChangeSuggestion] = []
 
     var body: some View {
         // One lazy row per item: a 200-line song only builds the rows on screen, and typing
         // re-renders only the row whose content changed (rows are Equatable).
         LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(SheetRow.rows(of: sections, style: style)) { row in
+            ForEach(SheetRow.rows(of: sections, style: style, keyChanges: keyChanges)) { row in
                 SheetRowView(row: row, style: style).equatable()
             }
         }
@@ -56,6 +59,8 @@ struct SheetRow: Identifiable, Equatable {
     enum Content: Equatable {
         case item(RenderItem)
         case repeatNote(String)
+        /// The key-change chip above a section (the editor's preview only).
+        case keyChange(KeyChangeSuggestion)
     }
 
     /// Section id and item index: stable while the structure is unchanged.
@@ -64,12 +69,28 @@ struct SheetRow: Identifiable, Equatable {
     let isChorus: Bool
     let content: Content
     let topSpacing: CGFloat
+    /// The section's header, on its first row (where a directive can go before it).
+    var sectionPath: BlockPath?
 
-    static func rows(of sections: [RenderSection], style: SongSheetStyle) -> [Self] {
+    static func rows(
+        of sections: [RenderSection],
+        style: SongSheetStyle,
+        keyChanges: [KeyChangeSuggestion] = [],
+    ) -> [Self] {
         var rows: [Self] = []
         for section in sections {
-            let sectionSpacing = rows.isEmpty ? 0 : style.sectionSpacing
+            var sectionSpacing = rows.isEmpty ? 0 : style.sectionSpacing
             let isChorus = section.kind == .chorus
+            if let chip = keyChanges.first(where: { $0.section == section.id }) {
+                rows.append(Self(
+                    id: "\(section.id).chip",
+                    label: nil,
+                    isChorus: isChorus,
+                    content: .keyChange(chip),
+                    topSpacing: sectionSpacing,
+                ))
+                sectionSpacing = 8
+            }
             if section.isRepeat {
                 rows.append(Self(
                     id: "\(section.id)",
@@ -87,6 +108,7 @@ struct SheetRow: Identifiable, Equatable {
                     isChorus: isChorus,
                     content: .item(item),
                     topSpacing: index == 0 ? sectionSpacing : style.rowSpacing,
+                    sectionPath: index == 0 ? section.path : nil,
                 ))
             }
         }
@@ -129,7 +151,11 @@ private struct SheetRowView: View, Equatable {
                 .padding(.trailing, 12)
                 .accessibilityIdentifier(row.label == nil ? "" : AccessibilityID.sheetSectionLabel)
                 .accessibilityHidden(row.label == nil)
+                .directiveInsertMenu(before: row.sectionPath)
             switch row.content {
+            case let .keyChange(suggestion):
+                KeyChangeChipRow(suggestion: suggestion)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             case let .repeatNote(text):
                 Text(text)
                     .font(Theme.font.liveLyric(size: style.lyricSize))
@@ -140,6 +166,7 @@ private struct SheetRowView: View, Equatable {
                 // baseline, so the label sits on the first lyric, not on the chord above it.
                 ItemView(item: .lyrics(line), style: style)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .directiveInsertMenu(before: line.path)
             case let .item(item):
                 ItemView(item: item, style: style)
                     .frame(maxWidth: .infinity, alignment: .leading)

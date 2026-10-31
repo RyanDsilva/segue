@@ -23,4 +23,16 @@ public extension AccessibilityID {
     static func playAlongTapMode(_ mode: String) -> String {
         "segue.playAlong.tap.mode.\(mode)"
     }
+
+    /// The "Looks like a key change" chip (P8-7 section 6.2) and its buttons.
+    static let keyChangeChip = "segue.keyChange.chip"
+    static let keyChangeInsert = "segue.keyChange.insert"
+    static let keyChangeDismiss = "segue.keyChange.dismiss"
+
+    /// The Insert ... Change Here popover (P8-7 section 6.1).
+    static let directiveInsertPopover = "segue.directiveInsert.popover"
+    static let directiveInsertKey = "segue.directiveInsert.key"
+    static let directiveInsertValue = "segue.directiveInsert.value"
+    static let directiveInsertCommit = "segue.directiveInsert.commit"
+    static let directiveInsertProblem = "segue.directiveInsert.problem"
 }

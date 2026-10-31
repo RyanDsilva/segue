@@ -302,6 +302,7 @@
                     )
                 })
             }
+            addDirectiveItems(to: menu, before: path, band: index)
             return menu
         }
 

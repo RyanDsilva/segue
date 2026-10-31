@@ -1,5 +1,6 @@
 import Diagrams
 import Editing
+import Library
 import SwiftUI
 
 /// A rendered song on paper: title, artist and performance line, then the body, then the
@@ -13,6 +14,8 @@ struct SongPageView: View {
     var selectable = true
     /// Called when a diagram is picked to customise (editor only).
     var onCustomize: ((RenderDiagram) -> Void)?
+    /// The editor's "Looks like a key change" chips (P8-7 section 6.2).
+    var keyChanges: [KeyChangeSuggestion] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -36,7 +39,7 @@ struct SongPageView: View {
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.muted)
             } else {
-                SongSheetView(sections: model.sections, style: .preview)
+                SongSheetView(sections: model.sections, style: .preview, keyChanges: keyChanges)
             }
             if !model.diagrams.isEmpty {
                 StripSnapshot(

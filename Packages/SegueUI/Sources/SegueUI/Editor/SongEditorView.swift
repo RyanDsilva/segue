@@ -219,8 +219,10 @@
                             model: renderModel,
                             selectable: false,
                             onCustomize: onCustomize,
+                            keyChanges: model.keyChangeSuggestions(renderModel),
                         )
                         .environment(\.chordHearing, model.chordHearing)
+                        .environment(\.chartDirectives, ChartDirectiveActions(model: model))
                         .environment(\.playAlongCue, model.playAlong?.cue)
                         .padding(.horizontal, 40)
                         .padding(.vertical, 24)
