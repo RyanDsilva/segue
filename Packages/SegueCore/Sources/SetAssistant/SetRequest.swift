@@ -1,6 +1,6 @@
 // Phase 3 P3-7 (spec section 7, R65, R71, R92): a set request as chips. The lexicon fills the
 // chips instantly, the async model pass adds suggested ones, the user edits them; the builder
-// reads the confirmed chips as a `SetRequest`. No energy (R71); tempo is a filter only (R92).
+// reads the confirmed chips as a `SetRequest`. Tempo is a filter only (R92).
 
 import Foundation
 import Library

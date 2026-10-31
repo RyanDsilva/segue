@@ -1,6 +1,6 @@
 // Phase 2 frozen interface (docs/phases/2-interfaces.md). Owner: unit A.
 //
-// Learned-duration capture hooks for phase 3: every completed song yields a sample. Gig
+// Duration samples: every completed song yields one. Gig
 // samples can always be re-derived from show files (`ShowRecord.playedSongs`); rehearsal
 // samples exist only in `timings/<run ulid>.rehearsal.json`.
 

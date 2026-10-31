@@ -39,8 +39,7 @@ public struct LibraryRoot: Sendable, Hashable {
         url.appending(path: "shows", directoryHint: .isDirectory)
     }
 
-    /// `<root>/timings`: song timings from rehearse-setlist runs (`.rehearsal.json`), the raw
-    /// input for phase 3 learned durations alongside finished shows.
+    /// `<root>/timings`: song timings from rehearse-setlist runs (`.rehearsal.json`).
     public var timingsDirectory: URL {
         url.appending(path: "timings", directoryHint: .isDirectory)
     }

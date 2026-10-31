@@ -9,7 +9,7 @@ import MusicTheory
 public enum SetEssential: String, Sendable, Hashable, CaseIterable {
     /// `{key}`, written and valid (a key only detected from the chords does not count).
     case key
-    /// `{duration}`, a valid length (never estimated, R91).
+    /// `{duration}`, a valid length (R91).
     case length
     /// `{tempo}`, a valid BPM.
     case tempo

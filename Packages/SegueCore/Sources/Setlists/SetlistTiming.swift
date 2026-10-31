@@ -15,8 +15,7 @@
 import Foundation
 import Library
 
-/// Where a length came from. Song lengths come only from `{duration}` (R91: nothing is
-/// learned or estimated).
+/// Where a length came from. Song lengths come only from `{duration}` (R91).
 public enum SongLengthSource: Sendable, Hashable {
     /// The song's `{duration}` directive.
     case directive

@@ -20,7 +20,7 @@ public enum LibraryArchiveError: Error, Equatable {
 /// injected `FileSystem` into a staging folder under `temporaryDirectory`, the system zips
 /// the staged folder (`NSFileCoordinator` with `.forUploading`), and the zip is written to
 /// the destination atomically, so a failure never leaves a partial file there. The staging
-/// folder is always removed. No restore in 0.5.
+/// folder is always removed.
 ///
 /// Synchronous and `Sendable`: callers run it off the main actor.
 public struct LibraryArchive: Sendable {

@@ -5,7 +5,7 @@
     import UniformTypeIdentifiers
 
     // WS2b 4.8: File > Export Library Archive… and Settings > Data: the save panel, then the
-    // archive written off the main actor. Restore is not in 0.5 (B-23).
+    // archive written off the main actor.
 
     public extension AppModel {
         /// Export is possible: a library is open, no show, no export already running.

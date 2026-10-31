@@ -88,7 +88,7 @@ public struct LineClassesWire: Codable, Sendable, Equatable {
     }
 }
 
-/// `SetRequestTask`'s answer (spike v3 without energy, R71). The tags are constrained to the
+/// `SetRequestTask`'s answer (spike v3). The tags are constrained to the
 /// library's own tags at run time (`WireSchemas.setRequest`).
 @Generable
 public struct SetRequestWire: Codable, Sendable, Equatable {

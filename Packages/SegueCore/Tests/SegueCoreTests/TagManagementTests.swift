@@ -172,7 +172,7 @@ struct TagManagementTests {
     }
 
     @Test
-    func `starter tags are the six from the spec and none is energy`() {
+    func `starter tags are the six from the spec`() {
         #expect(StarterTags.all == [
             "upbeat",
             "ballad",

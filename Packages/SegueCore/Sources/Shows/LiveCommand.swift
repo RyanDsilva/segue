@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Every argument-free live-mode action. Keyboard now, HID pedals and MIDI later (phase 6)
+/// Every argument-free live-mode action. Keyboard now, MIDI later (phase 6): input sources
 /// map raw input to these through an `InputBindingTable`; nothing else needs to change when
 /// a new input source arrives. (The spec's `ShowCommand`.)
 ///

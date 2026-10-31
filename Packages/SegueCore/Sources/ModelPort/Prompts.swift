@@ -120,7 +120,7 @@ public enum ModelPrompts {
 
     // MARK: - Set requests
 
-    /// Spike v3, without energy (R71): the lexicon handles numbers, lengths, keys and tempo.
+    /// Spike v3: the lexicon handles numbers, lengths, keys and tempo.
     public static let setRequestInstructions = """
     Map the words of a musician's request for a set or a song pick to filters. Use "any", an empty \
     string or an empty list for anything the words do not ask for. Numbers, lengths, keys and \

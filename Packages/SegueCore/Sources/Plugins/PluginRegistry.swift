@@ -3,8 +3,7 @@ import Synchronization
 // Plugin seam for restricted, personal-build-only modules (phase 5). Core defines the
 // protocols; `SeguePersonalModules` implements them. Core never knows that package exists.
 // The capability protocols are intentionally empty beyond identity in phase 0; phase 5
-// adds their real requirements. Two capabilities remain, LRCLIB lyrics and URL import
-// (R133); audio analysis left the roadmap with audio-to-chart (R132).
+// adds their real requirements. The two capabilities are LRCLIB lyrics and URL import.
 
 /// Common identity of every plugin.
 public protocol Plugin: Sendable {

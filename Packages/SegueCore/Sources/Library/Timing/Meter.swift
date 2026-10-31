@@ -3,7 +3,7 @@
 
 import ChordPro
 
-/// The timeline's unit: 480 ticks per quarter note (MIDI export's PPQ; R168 Q1).
+/// The timeline's unit: 480 ticks per quarter note (R168 Q1).
 public enum Ticks {
     public static let perQuarter = 480
     /// A whole note.

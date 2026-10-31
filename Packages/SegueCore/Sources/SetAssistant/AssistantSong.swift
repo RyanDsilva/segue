@@ -17,7 +17,7 @@ public struct AssistantSong: Sendable, Hashable, Identifiable {
     public var capo: Int
     public var tuning: [Int]
     public var tempo: Double?
-    /// `{duration}` in seconds; nil = unknown (R91: never estimated).
+    /// `{duration}` in seconds; nil = unknown (R91).
     public var length: TimeInterval?
     public var lastPlayed: Date?
 

@@ -1,7 +1,7 @@
 // Phase 3 P3-7 (spec section 7 step 4): weighted signals, each candidate with a breakdown
-// (signal -> weighted contribution) that sums to its total. No energy (R71); tempo never
-// scores (R92); slot fit only when the request asks (R92). A song appears at most once per
-// setlist: that is the packer's invariant, never a score term.
+// (signal -> weighted contribution) that sums to its total. Tempo never scores (R92);
+// slot fit only when the request asks (R92). A song appears at most once per setlist:
+// that is the packer's invariant, never a score term.
 
 import Foundation
 import Library

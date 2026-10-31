@@ -16,7 +16,7 @@ let strictSettings: [SwiftSetting] = [
 
 let package = Package(
     name: "SegueCore",
-    platforms: [.macOS("26.0"), .iOS("26.0")],
+    platforms: [.macOS("26.0")],
     products: [
         .library(
             name: "SegueCore",

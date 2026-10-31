@@ -20,7 +20,7 @@ struct SetRequestLexiconTests {
     }
 
     /// The spike's prompts (`research/phase3-spikes/.../Types.swift` `setRequests`), against
-    /// the spike's tag vocabulary. Energy words stay leftover (R71).
+    /// the spike's tag vocabulary.
     static let spikePrompts: [Case] = [
         Case(
             text: "45 min set, mostly songs I know well, upbeat start",

@@ -34,7 +34,7 @@ public struct SongFilter: Sendable, Equatable {
     /// `{tempo}` in BPM within these bounds; a song without a tempo never matches.
     public var tempo: Bounds?
     /// `{duration}` in seconds within these bounds; a song without a length never matches
-    /// (R91: lengths are never estimated).
+    /// (R91).
     public var length: Bounds?
     /// "Never played": when set, the song must not be among these played songs (the play
     /// snapshot a `SmartFilter` compiles in, so `matches(_:)` needs no other input).

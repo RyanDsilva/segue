@@ -1,7 +1,7 @@
 // Phase 3 (P3-6, R71, R72): saved smart filters. A smart filter is a named predicate over
 // the library, stored as `filters/<slug>.filter.json` and compiled to the in-memory
-// `SongFilter` matcher. No energy (R71); lengths are `{duration}` only (R91); no
-// last-played date conditions in 0.5 (only "never played").
+// `SongFilter` matcher. Lengths come from `{duration}` (R91); the play-history condition
+// is "never played".
 
 import Foundation
 import Support

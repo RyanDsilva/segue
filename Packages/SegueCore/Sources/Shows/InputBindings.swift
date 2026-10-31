@@ -88,8 +88,8 @@ public struct KeyStroke: Sendable, Hashable, Codable, CustomStringConvertible {
     }
 }
 
-/// A raw input event a binding matches. Phase 6 adds `.hid` (pedals that are not keyboards)
-/// and `.midi` cases here; input sources produce triggers, the table maps them.
+/// A raw input event a binding matches. Phase 6 adds a `.midi` case here; input sources
+/// produce triggers, the table maps them.
 ///
 /// On disk a trigger is a flat object keyed by its source: `{"key": "k", "modifiers":
 /// ["command"]}` (phase 6 adds e.g. `{"midi": ...}`).

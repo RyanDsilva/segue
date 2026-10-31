@@ -183,7 +183,7 @@ public struct ShowRequest: Sendable, Hashable, Codable, Identifiable {
 }
 
 /// One entry of the show's action timeline. Timestamps come from the injected clock and are
-/// the raw input for the gig log's played list and phase 3's learned song durations.
+/// the raw input for the gig log's played list.
 public struct ShowEvent: Sendable, Hashable, Codable {
     public enum Kind: String, Sendable, Hashable, Codable {
         /// The show started; `itemId` = the first current item.

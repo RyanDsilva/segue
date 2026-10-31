@@ -4,7 +4,7 @@ import Setlists
 import Support
 import Testing
 
-/// `SetlistTiming` (phase 2, unit D): start times, total and estimate count for the
+/// `SetlistTiming` (phase 2, unit D): start times, total and unknown count for the
 /// builder's "library to set" layout.
 struct SetlistTimingTests {
     private let songs = (0 ..< 4).map { index in

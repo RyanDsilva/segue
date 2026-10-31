@@ -4,7 +4,7 @@
     import Services
     import Shows
 
-    /// The single dispatcher of live commands (keys now, pedals and MIDI in phase 6).
+    /// The single dispatcher of live commands (keys now, MIDI in phase 6).
     public extension LiveSession {
         /// Handles `command`. Returns false when it does not apply right now.
         @discardableResult
