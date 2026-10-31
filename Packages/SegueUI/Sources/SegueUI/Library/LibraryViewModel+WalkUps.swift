@@ -59,6 +59,7 @@ extension LibraryViewModel {
         let prefs = record.sidecar.bass
         let key = model.transform.key.writtenKey
         let sections = model.sections
+        let concert = model.transform.concertKey
         return WalkUpsSource(
             title: SongSummary.title(record),
             changes: BassLine.changes(model, document: record.document, prefs: prefs),
@@ -69,12 +70,19 @@ extension LibraryViewModel {
                 .map { ($0, $0.savedSummary(key: key)) },
             feel: prefs.genre,
             defaultFeel: instrument?.profile.genre ?? .pop,
+            scale: prefs.mode,
+            defaultScale: FillMode.standard(genre: feel(record), key: concert),
+            scales: FillMode.choices(for: concert),
             density: instrument?.profile.walkUps ?? .off,
             readOnlyHelp: record.isReadOnly ? "This song was saved by a newer Segue" : nil,
             picking: walkUpPicking(songID: id),
             setFeel: { [weak self] genre in
                 self?.writeBassPrefs(songID: id) { $0.genre = genre }
                 self?.services.record(.featureUsed(.songFeel, .library))
+            },
+            setScale: { [weak self] mode in
+                self?.writeBassPrefs(songID: id) { $0.mode = mode }
+                self?.services.record(.featureUsed(.songScale, .library))
             },
             remove: { [weak self] picks in
                 self?.writeBassPrefs(songID: id) { prefs in

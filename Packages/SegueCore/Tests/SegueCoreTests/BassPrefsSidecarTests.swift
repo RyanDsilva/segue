@@ -65,6 +65,24 @@ struct BassPrefsSidecarTests {
     }
 
     @Test
+    func `a song's scale round-trips, and an unknown one reads as the default`() throws {
+        let saved = try JSONDecoder().decode(
+            BassPrefs.self,
+            from: Data(#"{"genre": "bollywood", "mode": "bhairav"}"#.utf8),
+        )
+        #expect(saved.mode == .bhairav)
+        let again = try JSONDecoder().decode(BassPrefs.self, from: JSONEncoder().encode(saved))
+        #expect(again == saved)
+        let unknown = try JSONDecoder().decode(
+            BassPrefs.self,
+            from: Data(#"{"genre": "rock", "mode": "dorian"}"#.utf8),
+        )
+        #expect(unknown == BassPrefs(genre: .rock))
+        let plain = try JSONEncoder().encode(BassPrefs(genre: .rock))
+        #expect(String(bytes: plain, encoding: .utf8)?.contains("mode") == false)
+    }
+
+    @Test
     func `timing is preserved`() throws {
         let json = """
         {"walkUps": [], "timing": {"rule": {"line": 2}, "chords": [

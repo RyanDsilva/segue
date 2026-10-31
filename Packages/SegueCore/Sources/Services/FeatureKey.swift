@@ -44,10 +44,12 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case bassNotes
     case bassNeck
     /// P8-4b 8.12: walk-ups on charts turned on (Settings), a walk-up pick or "Nothing
-    /// here" saved, a song's feel set (editor or library).
+    /// here" saved, a song's feel set (editor or library); R170: a song's scale set (editor
+    /// or library).
     case walkUps
     case walkUpPick
     case songFeel
+    case songScale
     /// P8-3 section 9: a pass's show mode set in Arrange Sections (no song data), a roadmap
     /// committed, "Rehearse this" started.
     case arrangementMode
@@ -63,4 +65,10 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case playAlongTiming
     case audioOutput
     case chordSoundGuitar
+    /// P8-7 section 15: a Tap Timing capture kept (editor, library), a `{key}`, `{time}` or
+    /// `{tempo}` inserted from the editor's menus or the tap review, the key-change chip
+    /// confirmed (editor).
+    case timingTap
+    case chartDirective
+    case keyChangeChip
 }

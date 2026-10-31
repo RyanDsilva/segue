@@ -106,6 +106,27 @@ struct BassLineTests {
         #expect(rock.first?.shown?.notes.map(\.chartName) == ["B"])
     }
 
+    @Test
+    func `the song's scale sets the walk-ups' passing notes, defaulting from feel and key`() {
+        let (model, document) = Self.model("{key: C}\n[C]Hello there [F]my friend\n")
+        func shown(_ prefs: BassPrefs) -> [String] {
+            BassLine.changes(model, document: document, prefs: prefs).first?.shown?.notes
+                .map(\.chartName) ?? []
+        }
+        #expect(shown(BassPrefs()) == ["D", "E"])
+        #expect(shown(BassPrefs(mode: .bhairav)) == ["Db", "E"])
+        // A minor key with a Bollywood feel walks in harmonic minor by default (R161, R170).
+        let (minor, minorDocument) = Self.model("{key: Am}\n[Am]Hello there [Dm]my friend\n")
+        let context = BassLine.context(
+            for: minor,
+            document: minorDocument,
+            prefs: BassPrefs(genre: .bollywood),
+        )
+        #expect(context?.mode == .harmonicMinor)
+        #expect(BassLine.context(for: minor, document: minorDocument, prefs: BassPrefs())?
+            .mode == .minor)
+    }
+
     /// A pick for the first change (G into C), saved through the anchor helpers.
     static func pick(_ kind: WalkUpKind, offsets: [Int], model: RenderModel, document: SongDocument)
         -> WalkUpPick?

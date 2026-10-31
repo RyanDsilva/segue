@@ -3,11 +3,13 @@
 
 import ChordPro
 import Editing
+import MusicTheory
 
 public extension BassLine {
     /// The context for a song rendered as `model` (its bass view) with its saved `prefs` and
     /// `parts` (the sidecar's fills): the song's timeline in written order (lengths, tempo and
-    /// `{key}` in effect, P8-7 section 5.7), its picks and its fills; nil without a bass view.
+    /// `{key}` in effect, P8-7 section 5.7), its picks, its fills and its scale (R170); nil
+    /// without a bass view.
     static func context(
         for model: RenderModel,
         document: SongDocument,
@@ -16,11 +18,6 @@ public extension BassLine {
     ) -> BassLineContext? {
         guard let bass = model.transform.options.bass else { return nil }
         let units = SongSections.units(of: document)
-        let picks = prefs.walkUps.isEmpty ? ResolvedPicks.empty : ChordAnchors.resolve(
-            prefs.walkUps,
-            units: units,
-            sections: model.sections,
-        )
         let timeline = SongTimeline.build(
             document: document,
             sections: model.sections,
@@ -28,19 +25,14 @@ public extension BassLine {
             timing: prefs.timing,
             order: nil,
         )
-        return BassLineContext(
+        var context = BassLineContext(
             transform: model.transform,
             genre: prefs.genre ?? bass.genre,
             density: bass.walkUps,
             timeline: timeline,
-            picks: picks,
-            parts: parts.isEmpty ? .empty : PartAnchors.resolve(
-                parts,
-                timeline: timeline,
-                units: units,
-                sections: model.sections,
-            ),
         )
+        context.apply(prefs, parts: parts, units: units, sections: model.sections)
+        return context
     }
 
     /// `model` with walk-ups drawn: only in the bass-note view and while the density is not
@@ -76,5 +68,30 @@ public extension BassLine {
             return []
         }
         return changes(model.sections, origins: Array(model.sections.indices), context: context)
+    }
+}
+
+public extension BassLineContext {
+    /// The song's sidecar applied: its walk-up picks and its fills (`parts`) resolved against
+    /// the written song (`units`, `sections`, this context's timeline), and its scale (R170,
+    /// else the default from this context's feel and key).
+    mutating func apply(
+        _ prefs: BassPrefs,
+        parts: [Part],
+        units: [SongSectionUnit],
+        sections: [RenderSection],
+    ) {
+        picks = prefs.walkUps.isEmpty ? .empty : ChordAnchors.resolve(
+            prefs.walkUps,
+            units: units,
+            sections: sections,
+        )
+        self.parts = parts.isEmpty ? .empty : PartAnchors.resolve(
+            parts,
+            timeline: timeline,
+            units: units,
+            sections: sections,
+        )
+        mode = FillMode.resolved(prefs.mode, genre: genre, key: key)
     }
 }

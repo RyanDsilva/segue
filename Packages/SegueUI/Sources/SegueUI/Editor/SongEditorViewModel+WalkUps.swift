@@ -115,6 +115,7 @@ extension SongEditorViewModel {
         let document = snapshot.document
         let key = renderModel.transform.key.writtenKey
         let sections = renderModel.sections
+        let concert = renderModel.transform.concertKey
         return WalkUpsSource(
             title: renderModel.header.title ?? "Untitled",
             changes: BassLine.changes(renderModel, document: document, prefs: bassPrefs),
@@ -125,10 +126,14 @@ extension SongEditorViewModel {
                 .map { ($0, $0.savedSummary(key: key)) },
             feel: bassPrefs.genre,
             defaultFeel: instrument?.profile.genre ?? .pop,
+            scale: bassPrefs.mode,
+            defaultScale: FillMode.standard(genre: songFeel, key: concert),
+            scales: FillMode.choices(for: concert),
             density: instrument?.profile.walkUps ?? .off,
             readOnlyHelp: canPickWalkUps ? nil : "Save the song first",
             picking: walkUpPicking,
             setFeel: { [weak self] genre in self?.setSongFeel(genre) },
+            setScale: { [weak self] mode in self?.setSongScale(mode) },
             remove: { [weak self] picks in self?.removeWalkUps(picks) },
         )
     }
@@ -140,6 +145,15 @@ extension SongEditorViewModel {
         prefs.genre = genre
         setBassPrefs(prefs, actionName: "Change Feel")
         services.record(.featureUsed(.songFeel, .editor))
+    }
+
+    /// The song's own scale (nil: the default from its feel and key, R170), one undo step.
+    func setSongScale(_ mode: FillMode?) {
+        guard canPickWalkUps, mode != bassPrefs.mode else { return }
+        var prefs = bassPrefs
+        prefs.mode = mode
+        setBassPrefs(prefs, actionName: "Change Scale")
+        services.record(.featureUsed(.songScale, .editor))
     }
 
     /// Removes saved picks that no longer match the song, one undo step.

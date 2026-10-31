@@ -1,8 +1,8 @@
-// P8-7c (docs/phases/8-workstreams/P8-7-time-model-and-fills.md section 9.2, R161, R168).
-// The passing scale over a chord, mode-aware (harmonic minor, Bhairav, the major pentatonic,
-// docs/research/phase8-fill-corpus.md section 6 item 6), and how a fill note is spelled. The
-// generator and the part resolver share it, so a fill reads the same in the editor and on
-// stage. Pure.
+// P8-7c (docs/phases/8-workstreams/P8-7-time-model-and-fills.md section 9.2, R161, R168,
+// R170). The passing scale over a chord, mode-aware (natural, harmonic and melodic minor,
+// Bhairav, the major and minor pentatonics: the song's Scale, docs/research/phase8-fill-
+// corpus.md section 6 item 6), and how a fill note is spelled. The generator, the walk-ups
+// and the part resolver share it, so a fill reads the same in the editor and on stage. Pure.
 
 import Tonic
 
@@ -21,6 +21,38 @@ public enum FillMode: String, Sendable, Hashable, Codable, CaseIterable {
     case melodicMinor
     /// 1 b3 4 5 b7.
     case minorPentatonic
+
+    /// The menu name (the Walk-ups list's Scale picker).
+    public var title: String {
+        switch self {
+        case .major: "Major"
+        case .minor: "Natural minor"
+        case .harmonicMinor: "Harmonic minor"
+        case .melodicMinor: "Melodic minor"
+        case .bhairav: "Bhairav"
+        case .majorPentatonic: "Major pentatonic"
+        case .minorPentatonic: "Minor pentatonic"
+        }
+    }
+
+    /// The scale a song uses when it names none (R170): harmonic minor for a Bollywood feel
+    /// in a minor key (R161), else the key's own; major without a key.
+    public static func standard(genre: BassGenre?, key: SongKey?) -> Self {
+        guard key?.mode == .minor else { return .major }
+        return genre == .bollywood ? .harmonicMinor : .minor
+    }
+
+    /// The scales a song in `key` can choose (its quality's; a mode of the other quality
+    /// would change nothing); [] without a key.
+    public static func choices(for key: SongKey?) -> [Self] {
+        guard let key else { return [] }
+        return allCases.filter { $0.quality == key.mode }
+    }
+
+    /// `mode` when the song names one, else `standard` (R170).
+    public static func resolved(_ mode: Self?, genre: BassGenre?, key: SongKey?) -> Self {
+        mode ?? standard(genre: genre, key: key)
+    }
 
     /// The semitones above the tonic.
     public var degrees: [Int] {

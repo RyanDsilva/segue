@@ -119,6 +119,7 @@ extension FillGenerator {
                 to: into.bass,
                 next: index + 2 < span.count ? span[index + 2].bass : nil,
             ),
+            mode: context.mode,
         )
     }
 

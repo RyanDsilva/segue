@@ -2,6 +2,7 @@ import ChordPro
 import Diagrams
 import Editing
 import Library
+import MusicTheory
 @testable import SegueUI
 import SwiftUI
 import Testing
@@ -105,10 +106,14 @@ extension DiagramSnapshotTests {
                 )],
                 feel: .rock,
                 defaultFeel: .pop,
+                scale: nil,
+                defaultScale: .major,
+                scales: FillMode.choices(for: SongKey(parsing: "G")),
                 density: .off,
                 readOnlyHelp: nil,
                 picking: picking,
                 setFeel: { _ in },
+                setScale: { _ in },
                 remove: { _ in },
             )
         })

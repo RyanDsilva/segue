@@ -39,11 +39,12 @@ public extension AccessibilityID {
     static let walkUpBreakdown = "segue.walkUp.breakdown"
 
     /// The Walk-ups list (P8-4b 8.9): its openers in the editor and the library, the sheet,
-    /// its feel picker, rows, and the unmatched footer.
+    /// its feel and scale pickers, rows, and the unmatched footer.
     static let editorWalkUps = "segue.editor.walkUps"
     static let librarySongWalkUps = "segue.library.song.walkUps"
     static let walkUpsSheet = "segue.walkUps.sheet"
     static let walkUpsFeel = "segue.walkUps.feel"
+    static let walkUpsScale = "segue.walkUps.scale"
     static let walkUpsDone = "segue.walkUps.done"
     static let walkUpsUnmatched = "segue.walkUps.unmatched"
     static let walkUpsRemoveAll = "segue.walkUps.removeAll"

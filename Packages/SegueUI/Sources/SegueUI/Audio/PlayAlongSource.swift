@@ -49,14 +49,13 @@ struct PlayAlongSource: Equatable {
             order: nil,
         )
         let density = profile?.walkUps ?? .off
-        let context = BassLineContext(
+        var context = BassLineContext(
             transform: model.transform,
             genre: prefs.genre ?? profile?.genre ?? .pop,
             density: density,
             timeline: timeline,
-            picks: prefs.walkUps.isEmpty ? .empty
-                : ChordAnchors.resolve(prefs.walkUps, units: units, sections: model.sections),
         )
+        context.apply(prefs, parts: [], units: units, sections: model.sections)
         return Self(
             timeline: timeline,
             sections: model.sections,

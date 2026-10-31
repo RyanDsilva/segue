@@ -22,6 +22,8 @@ public struct BassLineContext: Sendable {
     /// The song's saved fills, resolved against the written song (P8-7 section 9.3): a fill
     /// covers the changes of its span on the plays it applies to, and wins there.
     public var parts: ResolvedParts
+    /// The song's scale for passing notes (R170); nil = each key's own.
+    public var mode: FillMode?
 
     public init(
         transform: DisplayTransform,
@@ -30,6 +32,7 @@ public struct BassLineContext: Sendable {
         timeline: SongTimeline,
         picks: ResolvedPicks = .empty,
         parts: ResolvedParts = .empty,
+        mode: FillMode? = nil,
     ) {
         self.transform = transform
         self.genre = genre
@@ -37,6 +40,7 @@ public struct BassLineContext: Sendable {
         self.timeline = timeline
         self.picks = picks
         self.parts = parts
+        self.mode = mode
     }
 
     /// The song's concert key (its first `{key}`, or the detected key).
@@ -397,6 +401,7 @@ private struct Walk {
                 to: bass(to),
                 next: next.map(bass),
             ),
+            mode: context.mode,
         )
     }
 

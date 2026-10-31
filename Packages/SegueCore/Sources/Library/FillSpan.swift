@@ -56,9 +56,10 @@ public enum FillSpan {
     /// The generator's facts for `chords` on `timeline` (section 11.1): each chord at concert
     /// pitch through `transform` in the key in effect, its length, meter, bar position and
     /// placed bass on `tuning` around `home`; the feel; whether the landing starts a section
-    /// of `sections` (render sections in the timeline's order of origins) and its energy. A
-    /// Bollywood feel in a minor key plans in harmonic minor (R161, R168) unless `mode` says
-    /// otherwise. nil when the span has a problem.
+    /// of `sections` (render sections in the timeline's order of origins) and its energy; the
+    /// song's scale `mode` (the sidecar's, R170), else the default from the feel and key (a
+    /// Bollywood feel in a minor key plans in harmonic minor, R161, R168). nil when the span
+    /// has a problem.
     public static func context(
         // swiftlint:disable:previous function_parameter_count
         timeline: SongTimeline,
@@ -104,12 +105,11 @@ public enum FillSpan {
                 sections.indices.contains($0) ? BassLine.sectionEnergy(sections[$0]) : nil
             }
             : nil
-        let minor = span.first?.key?.mode == .minor
         return FillContext(
             span: span,
             genre: genre,
             tempo: last.tempo,
-            mode: mode ?? (genre == .bollywood && minor ? .harmonicMinor : nil),
+            mode: FillMode.resolved(mode, genre: genre, key: span.first?.key),
             range: PartPitch.range(of: tuning),
             intoSection: intoSection,
             energyUp: energy,

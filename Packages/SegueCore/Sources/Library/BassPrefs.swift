@@ -1,6 +1,6 @@
 // P8-4b (docs/phases/8-workstreams/P8-4-bass.md section 8.10, R161, R162 Q6). The sidecar's
-// `bass` object (schema 5): a song's walk-up feel and saved picks, and the play-along timing
-// P8-6 fills (decoded and preserved here).
+// `bass` object (schema 5): a song's walk-up feel, its scale (R170, optional, still schema 6)
+// and saved picks, and the play-along timing P8-6 fills (decoded and preserved here).
 
 import Foundation
 import MusicTheory
@@ -9,6 +9,9 @@ import MusicTheory
 public struct BassPrefs: Sendable, Hashable, Codable {
     /// nil = the profile's default feel.
     public var genre: BassGenre?
+    /// The song's scale for passing notes in walk-ups and fills (R170); nil = the default
+    /// from the feel and key (`FillMode.standard`).
+    public var mode: FillMode?
     /// Saved walk-up picks, one per (anchor, target).
     public var walkUps: [WalkUpPick]
     /// Filled by P8-6 (its section 7.3); P8-4b only preserves it.
@@ -16,17 +19,19 @@ public struct BassPrefs: Sendable, Hashable, Codable {
 
     public init(
         genre: BassGenre? = nil,
+        mode: FillMode? = nil,
         walkUps: [WalkUpPick] = [],
         timing: ChordTiming = .init(),
     ) {
         self.genre = genre
+        self.mode = mode
         self.walkUps = walkUps
         self.timing = timing
     }
 
     /// Nothing saved.
     public var isEmpty: Bool {
-        genre == nil && walkUps.isEmpty && timing.isEmpty
+        genre == nil && mode == nil && walkUps.isEmpty && timing.isEmpty
     }
 
     /// `pick` saved, replacing any pick with the same anchor and target.
@@ -45,15 +50,17 @@ public struct BassPrefs: Sendable, Hashable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case genre
+        case mode
         case walkUps
         case timing
     }
 
-    /// Lenient per field: a bad `genre` reads nil, picks decode one by one (a bad one is
-    /// dropped, the rest survive), a malformed `timing` reads empty.
+    /// Lenient per field: a bad `genre` or `mode` reads nil, picks decode one by one (a bad
+    /// one is dropped, the rest survive), a malformed `timing` reads empty.
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         genre = try? container.decodeIfPresent(BassGenre.self, forKey: .genre)
+        mode = try? container.decodeIfPresent(FillMode.self, forKey: .mode)
         walkUps = (try? container.decodeIfPresent([Lenient<WalkUpPick>].self, forKey: .walkUps))?
             .compactMap(\.value) ?? []
         timing = (try? container.decodeIfPresent(ChordTiming.self, forKey: .timing)) ?? .init()
@@ -62,6 +69,7 @@ public struct BassPrefs: Sendable, Hashable, Codable {
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(genre, forKey: .genre)
+        try container.encodeIfPresent(mode, forKey: .mode)
         try container.encode(walkUps, forKey: .walkUps)
         try container.encode(timing, forKey: .timing)
     }

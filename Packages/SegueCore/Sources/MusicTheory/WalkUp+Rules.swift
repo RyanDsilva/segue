@@ -149,8 +149,9 @@ struct WalkUpMove {
             && intervals.contains(3) && !intervals.contains(4)
     }
 
-    /// The key's scale with every letter chord A alters replaced by A's tone (its third,
-    /// fifth and seventh as spelled); with `melodic` and `raisesSixth`, the raised 6 too.
+    /// The key's scale (in the song's mode, R170) with every letter chord A alters replaced by
+    /// A's tone (its third, fifth and seventh as spelled); with `melodic` and `raisesSixth`,
+    /// the raised 6 too.
     /// No key: chord A's tones only.
     func scale(melodic: Bool) -> PassingScale {
         guard let key = context.key else {
@@ -166,7 +167,7 @@ struct WalkUpMove {
             return PassingScale(notes: notes)
         }
         var byLetter: [Letter: NoteClass] = [:]
-        for note in key.scaleNotes {
+        for note in FillSpelling.scaleNotes(key, mode: context.mode) {
             byLetter[note.letter] = note
         }
         for tone in [third, fifth, seventh].compactMap(\.self) {

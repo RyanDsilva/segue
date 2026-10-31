@@ -79,6 +79,9 @@ public struct WalkUpContext: Sendable, Hashable {
     public var energyUp: Bool?
     /// A -> B sits in a written stepwise bass line (rule S2).
     public var writtenLine: Bool
+    /// The song's scale (R170): the passing scale for a key of its quality; nil = the key's
+    /// own.
+    public var mode: FillMode?
 
     public init(
         key: SongKey?,
@@ -90,6 +93,7 @@ public struct WalkUpContext: Sendable, Hashable {
         intoSection: Bool = false,
         energyUp: Bool? = nil,
         writtenLine: Bool = false,
+        mode: FillMode? = nil,
     ) {
         self.key = key
         self.departing = departing
@@ -100,6 +104,7 @@ public struct WalkUpContext: Sendable, Hashable {
         self.intoSection = intoSection
         self.energyUp = energyUp
         self.writtenLine = writtenLine
+        self.mode = mode
     }
 
     /// The pre-research rule's context: unknown genre, unknown beats, no section facts.

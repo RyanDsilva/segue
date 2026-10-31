@@ -162,6 +162,18 @@ struct WalkUpPickerTests {
         await editor.bassTask?.value
         #expect(try await library.store.song(id: song.id)?.sidecar.bass.genre == nil)
 
+        // The scale (R170): G major offers the major-quality scales, defaults to Major, and
+        // is one undo step.
+        #expect(source.scale == nil)
+        #expect(source.defaultScale == .major)
+        #expect(source.scales == [.major, .bhairav, .majorPentatonic])
+        source.setScale(.majorPentatonic)
+        #expect(editor.walkUpsSource?.scale == .majorPentatonic)
+        await editor.bassTask?.value
+        #expect(try await library.store.song(id: song.id)?.sidecar.bass.mode == .majorPentatonic)
+        editor.sourceEditor.undoManager.undo()
+        #expect(editor.walkUpsSource?.scale == nil)
+
         // A pick whose target changed no longer matches: listed, then removed.
         let change = try #require(source.changes.first)
         editor.pickWalkUp(change, change.candidates.first)
@@ -206,6 +218,9 @@ struct WalkUpPickerTests {
         source.setFeel(.worship)
         await library.walkUpWrite?.value
         #expect(library.song(id: song.id)?.sidecar.bass.genre == .worship)
+        source.setScale(.bhairav)
+        await library.walkUpWrite?.value
+        #expect(library.song(id: song.id)?.sidecar.bass.mode == .bhairav)
 
         let picked = try #require(library.walkUpsSource(songID: song.id)?.changes.first)
         source.picking.reset(picked)

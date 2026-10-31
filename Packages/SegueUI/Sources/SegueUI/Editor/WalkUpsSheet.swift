@@ -1,7 +1,7 @@
 // P8-4b (docs/phases/8-workstreams/P8-4-bass.md sections 8.7, 8.9). The Walk-ups list: the
-// song's feel, every chord change grouped under its section with the walk-up shown (or
-// "Nothing"), the picker beside a row, and saved walk-ups that no longer match the song.
-// Shared by the editor (undoable) and the library (no undo).
+// song's feel and scale (R170), every chord change grouped under its section with the walk-up
+// shown (or "Nothing"), the picker beside a row, and saved walk-ups that no longer match the
+// song. Shared by the editor (undoable) and the library (no undo).
 
 import Editing
 import Library
@@ -21,11 +21,17 @@ struct WalkUpsSource {
     /// The song's own feel; nil = the profile's default.
     var feel: BassGenre?
     var defaultFeel: BassGenre
+    /// The song's own scale (R170); nil = `defaultScale`, from the feel and key.
+    var scale: FillMode?
+    var defaultScale: FillMode
+    /// The scales a key of the song's quality can use; [] without a key (nothing to choose).
+    var scales: [FillMode]
     var density: WalkUpDensity
     /// Set for a song saved by a newer Segue: nothing can change.
     var readOnlyHelp: String?
     var picking: WalkUpPicking
     var setFeel: @MainActor (BassGenre?) -> Void
+    var setScale: @MainActor (FillMode?) -> Void
     var remove: @MainActor ([WalkUpPick]) -> Void
 }
 
@@ -81,29 +87,9 @@ struct WalkUpsSheet: View {
                         .truncationMode(.tail)
                 }
                 Spacer(minLength: 12)
-                Menu {
-                    Picker("Feel", selection: Binding(
-                        get: { source.feel },
-                        set: { source.setFeel($0) },
-                    )) {
-                        Text("Default (\(source.defaultFeel.title))").tag(BassGenre?.none)
-                        Divider()
-                        ForEach(BassGenre.allCases, id: \.self) { genre in
-                            Text(genre.title).tag(BassGenre?.some(genre))
-                        }
-                    }
-                    .pickerStyle(.inline)
-                } label: {
-                    Text("Feel: " + (source.feel?.title ?? "Default (\(source.defaultFeel.title))"))
-                        .font(SchibstedGrotesk.semiBold.font(size: 13))
-                }
-                .menuStyle(.button)
-                .buttonStyle(.segueSecondary)
-                .controlSize(.small)
-                .fixedSize()
-                .disabled(source.readOnlyHelp != nil)
-                .help(source.readOnlyHelp ?? "Reorders this song's walk-ups for its style")
-                .accessibilityIdentifier(AccessibilityID.walkUpsFeel)
+                feelMenu(source)
+                // The scale's default follows the feel, so it sits after it.
+                scaleMenu(source)
             }
             if source.density == .off {
                 Text("Walk-ups are off on charts. Turn them on in Settings > Instrument.")
@@ -117,6 +103,63 @@ struct WalkUpsSheet: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
+    }
+
+    /// The song's feel, which orders its walk-ups.
+    private func feelMenu(_ source: WalkUpsSource) -> some View {
+        Menu {
+            Picker("Feel", selection: Binding(
+                get: { source.feel },
+                set: { source.setFeel($0) },
+            )) {
+                Text("Default (\(source.defaultFeel.title))").tag(BassGenre?.none)
+                Divider()
+                ForEach(BassGenre.allCases, id: \.self) { genre in
+                    Text(genre.title).tag(BassGenre?.some(genre))
+                }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            Text("Feel: " + (source.feel?.title ?? "Default (\(source.defaultFeel.title))"))
+                .font(SchibstedGrotesk.semiBold.font(size: 13))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.segueSecondary)
+        .controlSize(.small)
+        .fixedSize()
+        .disabled(source.readOnlyHelp != nil)
+        .help(source.readOnlyHelp ?? "Reorders this song's walk-ups for its style")
+        .accessibilityIdentifier(AccessibilityID.walkUpsFeel)
+    }
+
+    /// The song's scale for passing notes (R170), beside the feel.
+    private func scaleMenu(_ source: WalkUpsSource) -> some View {
+        let fallback = "Default (\(source.defaultScale.title))"
+        return Menu {
+            Picker("Scale", selection: Binding(
+                get: { source.scale },
+                set: { source.setScale($0) },
+            )) {
+                Text(fallback).tag(FillMode?.none)
+                Divider()
+                ForEach(source.scales, id: \.self) { mode in
+                    Text(mode.title).tag(FillMode?.some(mode))
+                }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            Text("Scale: " + (source.scale?.title ?? fallback))
+                .font(SchibstedGrotesk.semiBold.font(size: 13))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.segueSecondary)
+        .controlSize(.small)
+        .fixedSize()
+        .disabled(source.readOnlyHelp != nil || source.scales.isEmpty)
+        .help(source.readOnlyHelp ?? (source.scales.isEmpty
+                ? "Set the song's key to choose its scale"
+                : "The scale this song's walk-ups and fills pass through"))
+        .accessibilityIdentifier(AccessibilityID.walkUpsScale)
     }
 
     /// The changes grouped under their sections, in written order.
