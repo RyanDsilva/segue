@@ -10,10 +10,10 @@
       "draft": true,
       "highlights": [
         { "kind": "new", "text": "Paste a chord sheet from a website: Segue turns it into ChordPro and shows you the result before saving.", "help": "/guide/paste-a-song" },
-        { "kind": "new", "text": "On-device AI checks the sections, title and artist of a paste. Nothing you paste leaves your Mac.", "help": "/guide/ai" },
+        { "kind": "new", "text": "On-device AI checks the sections and title of a paste. Nothing you paste leaves your Mac.", "help": "/guide/ai" },
         { "kind": "new", "text": "Stage mode that fits every song on one screen, never below your minimum size.", "help": "/guide/go-on-stage#minimum-size" },
         { "kind": "new", "text": "Build a set by ticking songs in order or typing a request, with per-show key and capo, breaks and running totals.", "help": "/guide/build-a-set" },
-        { "kind": "new", "text": "The song card: key, tempo, length (with Time it), capo and tags as controls, nothing to memorise.", "help": "/guide/song-card" },
+        { "kind": "new", "text": "The song card: several artists as chips, Movie / Album, key, tempo, capo and tags, nothing to memorise.", "help": "/guide/song-card" },
         { "kind": "new", "text": "Arrange a song for one gig: skip, repeat or reorder its sections without changing the song.", "help": "/guide/arrange-sections" },
         { "kind": "new", "text": "A visual metronome on stage, and a click in rehearsals.", "help": "/guide/metronome" },
         { "kind": "new", "text": "Import ChordPro, text and .crd files by dragging them onto the library.", "help": "/guide/import-files" }
