@@ -175,6 +175,7 @@ enum VocabularySample {
         }
         events += timingEvents
         events += fillEvents
+        events += artistSplitEvents
         return events
     }
 
@@ -194,6 +195,20 @@ enum VocabularySample {
                 genre: feels[row % feels.count],
                 shows: shows[row % shows.count],
                 estimated: !row.isMultiple(of: 2),
+            ))
+        }
+    }
+
+    /// Row 29 (P8-8): every source, separator and outcome at least once.
+    private static var artistSplitEvents: [AnalyticsEvent] {
+        let sources = ArtistSplitSource.allCases, separators = ArtistSplitSeparator.allCases
+        let outcomes = ArtistSplitOutcome.allCases
+        return (0 ..< max(sources.count, separators.count, outcomes.count)).map { row in
+            .songArtistSplit(ArtistSplitSummary(
+                source: sources[row % sources.count],
+                parts: SmallBucket(row + 2),
+                separator: separators[row % separators.count],
+                outcome: outcomes[row % outcomes.count],
             ))
         }
     }

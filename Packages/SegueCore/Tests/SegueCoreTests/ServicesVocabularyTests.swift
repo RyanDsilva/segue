@@ -32,14 +32,40 @@ struct ServicesVocabularyTests {
         }
         // Rows 1-18 of section 5, the phase 3 AI rows 19-22, the section notes row 23
         // (P3-17), one signal name each, the set composer row 24 (P8-5), two signals, the
-        // walk-up row 25 (P8-4b), the fill row 26 and the timing rows 27 and 28 (P8-7).
-        #expect(names.count == 29)
+        // walk-up row 25 (P8-4b), the fill row 26, the timing rows 27 and 28 (P8-7) and the
+        // artist split row 29 (P8-8).
+        #expect(names.count == 30)
         #expect(names.isSuperset(of: [
             "Segue.AI.pasteFinished", "Segue.AI.modelDownload", "Segue.AI.assistantUsed",
             "Segue.AI.smartFilterUsed", "Segue.Notes.edited", "Segue.Setlist.composed",
             "Segue.Setlist.composerSession", "Segue.Bass.walkUpPicked",
             "Segue.Bass.fillSaved", "Segue.Timing.tapCaptured", "Segue.Timing.keyChange",
+            "Segue.Song.artistSplit",
         ]))
+    }
+
+    /// Row 29 (P8-8): the separator from a split's separators, daily per (source,
+    /// separator, outcome).
+    @Test
+    func `the artist split row`() {
+        #expect(ArtistSplitSeparator(separators: ["comma"]) == .comma)
+        #expect(ArtistSplitSeparator(separators: ["feat", "ampersand"]) == .mixed)
+        #expect(ArtistSplitSeparator(separators: []) == nil)
+        #expect(ArtistSplitSeparator(separators: ["mixed"]) == nil)
+        let event = AnalyticsEvent.songArtistSplit(ArtistSplitSummary(
+            source: .paste,
+            parts: SmallBucket(2),
+            separator: .ampersand,
+            outcome: .merged,
+        ))
+        #expect(event.render().name == "Segue.Song.artistSplit")
+        #expect(event.render().params == [
+            "segue.source": "paste", "segue.parts": "2-4", "segue.separator": "ampersand",
+            "segue.outcome": "merged",
+        ])
+        #expect(event.throttle == .daily(key: "Segue.Song.artistSplit|paste|ampersand|merged"))
+        #expect(ComposerTier(rawValue: "artist") == .artist)
+        #expect(FeatureKey(rawValue: "songArtists") == .songArtists)
     }
 
     @Test

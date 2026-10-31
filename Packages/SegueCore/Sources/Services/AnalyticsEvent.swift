@@ -88,6 +88,9 @@ public enum AnalyticsEvent: Sendable, Hashable {
     /// Row 28 (P8-7 15): a key change confirmed from the chip, dismissed, or inserted from
     /// the menus (daily per action and interval).
     case timingKeyChange(action: KeyChangeAction, interval: KeyChangeInterval)
+    /// Row 29 (P8-8 8): an accepted song whose artist the paste or import split (daily per
+    /// source, separator and outcome).
+    case songArtistSplit(ArtistSplitSummary)
 }
 
 // MARK: - Grouped parameters (cases with more than four values)
@@ -338,7 +341,7 @@ extension AnalyticsEvent {
         case .analyticsEnabled: "Privacy"
         case .appLaunched: "App"
         case .libraryCreated, .librarySnapshot: "Library"
-        case .songCreated, .songDeleted, .songImported: "Song"
+        case .songArtistSplit, .songCreated, .songDeleted, .songImported: "Song"
         case .featureUsed: "Feature"
         case .editorChordPalette, .editorOpened: "Editor"
         case .setlistComposed, .setlistComposerSession, .setlistCreated: "Setlist"
@@ -383,6 +386,7 @@ extension AnalyticsEvent {
         case .fillSaved: "fillSaved"
         case .timingTapCaptured: "tapCaptured"
         case .timingKeyChange: "keyChange"
+        case .songArtistSplit: "artistSplit"
         }
     }
 
@@ -491,6 +495,8 @@ extension AnalyticsEvent {
             summary.params
         case let .timingKeyChange(action, interval):
             ["segue.action": action.rawValue, "segue.interval": interval.rawValue]
+        case let .songArtistSplit(summary):
+            summary.params
         }
     }
 }

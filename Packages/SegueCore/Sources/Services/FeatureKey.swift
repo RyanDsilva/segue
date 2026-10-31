@@ -26,6 +26,11 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     case shapeEditor
     case showInFinder
     case undoInBuilder
+    /// P8-8 section 8: a song's artist list changed in the chip field (editor, library), its
+    /// Movie / Album set, a combined artist chip split with Split.
+    case songArtists
+    case songAlbum
+    case artistSplit
     /// The song card's Time it timer was stopped into a length (R91).
     case timeIt
     /// The stage metronome was switched on (R90, P3-14).

@@ -48,6 +48,8 @@ public enum ComposerTier: String, Sendable, CaseIterable {
     case titleWords
     case fuzzyTitle
     case firstLine
+    /// P8-8 section 3.5.1: the line named an artist and the song is theirs.
+    case artist
     case noTier = "none"
 }
 
