@@ -19,6 +19,9 @@ public struct BassLineContext: Sendable {
     public var timeline: SongTimeline
     /// The song's saved picks, resolved against the written song (section 8.11).
     public var picks: ResolvedPicks
+    /// The song's saved fills, resolved against the written song (P8-7 section 9.3): a fill
+    /// covers the changes of its span on the plays it applies to, and wins there.
+    public var parts: ResolvedParts
 
     public init(
         transform: DisplayTransform,
@@ -26,12 +29,14 @@ public struct BassLineContext: Sendable {
         density: WalkUpDensity,
         timeline: SongTimeline,
         picks: ResolvedPicks = .empty,
+        parts: ResolvedParts = .empty,
     ) {
         self.transform = transform
         self.genre = genre
         self.density = density
         self.timeline = timeline
         self.picks = picks
+        self.parts = parts
     }
 
     /// The song's concert key (its first `{key}`, or the detected key).
@@ -70,8 +75,11 @@ public struct ChordChange: Sendable, Equatable, Identifiable {
     public var pick: WalkUpPick?
     /// The pick rebuilt at concert pitch.
     public var pickCandidate: WalkUpCandidate?
-    /// What charts show: the pick, else the top candidate; nil for hold or none.
+    /// What charts show: the pick, else the top candidate; nil for hold or none, and nil on
+    /// a change a fill covers in this play (R167 Q8: the fill wins, the pick is kept).
     public var shown: WalkUpCandidate?
+    /// The fill covering this change in this play.
+    public var coveredBy: PartID?
     /// The meter and `{tempo}` in effect at the departing chord (the audition plays in them).
     public var meter: Meter
     public var tempo: Double?
@@ -178,6 +186,9 @@ private struct Walk {
         var isSectionLast: Bool
         /// Reached through a `{chorus}` stub: a target only, never a departure.
         var viaStub: Bool
+        /// 1-based play of its section's content in this order, and how many plays it has.
+        var occurrence = 1
+        var plays = 1
     }
 
     enum Element {
@@ -195,6 +206,7 @@ private struct Walk {
         func chords(of index: Int) -> (list: [Chord], breaks: Bool) {
             Self.chords(of: index, sections: sections, origins: origins, context: context)
         }
+        let plays = SectionPlays(sections: sections, origins: origins)
         var elements: [Element] = []
         for index in sections.indices {
             let section = sections[index]
@@ -210,7 +222,11 @@ private struct Walk {
                 elements.append(.chainBreak)
                 continue
             }
-            let (list, breaks) = chords(of: index)
+            var (list, breaks) = chords(of: index)
+            for offset in list.indices {
+                list[offset].occurrence = plays.occurrence[index]
+                list[offset].plays = plays.total[plays.content[index]] ?? 1
+            }
             if breaks {
                 // Walk chord by chord, inserting breaks where N.C. or unknown chords sit.
                 elements += Self.withBreaks(index: index, section: section, chords: list)
@@ -360,8 +376,11 @@ private struct Walk {
         }
         let timed = timed(from)
         let intoSection = from.isSectionLast && to.isSectionFirst && to.section != from.section
+        // R169: a walk-up into a key change is planned in the new key.
+        let arriving = self.timed(to)?.key
+        let written = arriving != nil && arriving != timed?.key ? arriving : timed?.key
         return WalkUpContext(
-            key: context.concertKey(written: timed?.key),
+            key: context.concertKey(written: written),
             departing: from.concert,
             arriving: to.concert,
             genre: context.genre,
@@ -409,7 +428,9 @@ private struct Walk {
         if skipped, suppressed == nil {
             suppressed = .density
         }
-        let shown = shown(pick: pickCandidate, candidates: candidates, skipped: skipped)
+        let coveredBy = covering(from: from, to: to)
+        let shown = coveredBy == nil
+            ? shown(pick: pickCandidate, candidates: candidates, skipped: skipped) : nil
         return ChordChange(
             id: id,
             from: from.chord,
@@ -425,8 +446,19 @@ private struct Walk {
             pick: pick,
             pickCandidate: pickCandidate,
             shown: shown,
+            coveredBy: coveredBy,
             meter: timed(from)?.meter ?? context.timeline.meters.initial,
             tempo: timed(from)?.tempo ?? context.timeline.tempos.initial,
+        )
+    }
+
+    /// The fill covering `from` -> `to` on this play of `from`'s section (R167 Q8).
+    private func covering(from: Chord, to: Chord) -> PartID? {
+        context.parts.covering(
+            from: from.position,
+            to: to.position,
+            occurrence: from.occurrence,
+            plays: from.plays,
         )
     }
 
@@ -454,25 +486,5 @@ private struct Walk {
     /// outro: false), else nil.
     static func energy(of section: RenderSection) -> Bool? {
         BassLine.sectionEnergy(section)
-    }
-}
-
-public extension BassLine {
-    /// A section raises the energy (chorus, bridge, pre-chorus: true), settles it (verse,
-    /// outro: false), else nil: what walk-ups and fills into it lean on.
-    static func sectionEnergy(_ section: RenderSection) -> Bool? {
-        let label = (SectionNotes.label(of: section) ?? "").lowercased()
-        switch section.kind {
-        case .bridge, .chorus: return true
-        case .verse: return false
-        default:
-            if label.hasPrefix("pre-chorus") || label.hasPrefix("chorus") {
-                return true
-            }
-            if label.hasPrefix("outro") {
-                return false
-            }
-            return nil
-        }
     }
 }

@@ -5,13 +5,14 @@ import ChordPro
 import Editing
 
 public extension BassLine {
-    /// The context for a song rendered as `model` (its bass view) with its saved `prefs`:
-    /// the song's timeline in written order (lengths, tempo and `{key}` in effect, P8-7
-    /// section 5.7) and its picks; nil without a bass view.
+    /// The context for a song rendered as `model` (its bass view) with its saved `prefs` and
+    /// `parts` (the sidecar's fills): the song's timeline in written order (lengths, tempo and
+    /// `{key}` in effect, P8-7 section 5.7), its picks and its fills; nil without a bass view.
     static func context(
         for model: RenderModel,
         document: SongDocument,
         prefs: BassPrefs,
+        parts: [Part] = [],
     ) -> BassLineContext? {
         guard let bass = model.transform.options.bass else { return nil }
         let units = SongSections.units(of: document)
@@ -20,18 +21,25 @@ public extension BassLine {
             units: units,
             sections: model.sections,
         )
+        let timeline = SongTimeline.build(
+            document: document,
+            sections: model.sections,
+            units: units,
+            timing: prefs.timing,
+            order: nil,
+        )
         return BassLineContext(
             transform: model.transform,
             genre: prefs.genre ?? bass.genre,
             density: bass.walkUps,
-            timeline: SongTimeline.build(
-                document: document,
-                sections: model.sections,
-                units: units,
-                timing: prefs.timing,
-                order: nil,
-            ),
+            timeline: timeline,
             picks: picks,
+            parts: parts.isEmpty ? .empty : PartAnchors.resolve(
+                parts,
+                timeline: timeline,
+                units: units,
+                sections: model.sections,
+            ),
         )
     }
 
@@ -41,9 +49,10 @@ public extension BassLine {
         _ model: RenderModel,
         document: SongDocument,
         prefs: BassPrefs,
+        parts: [Part] = [],
     ) -> RenderModel {
         guard model.transform.options.bass?.notes == true,
-              let context = context(for: model, document: document, prefs: prefs),
+              let context = context(for: model, document: document, prefs: prefs, parts: parts),
               context.density != .off
         else { return model }
         var model = model
@@ -60,8 +69,10 @@ public extension BassLine {
         _ model: RenderModel,
         document: SongDocument,
         prefs: BassPrefs,
+        parts: [Part] = [],
     ) -> [ChordChange] {
-        guard let context = context(for: model, document: document, prefs: prefs) else {
+        guard let context = context(for: model, document: document, prefs: prefs, parts: parts)
+        else {
             return []
         }
         return changes(model.sections, origins: Array(model.sections.indices), context: context)

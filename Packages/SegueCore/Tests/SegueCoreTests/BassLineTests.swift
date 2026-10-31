@@ -293,6 +293,20 @@ struct BassLineTests {
     }
 
     @Test
+    func `a walk-up into a key change is planned in the new key (R169)`() throws {
+        func walk(_ source: String) throws -> String? {
+            let (model, document) = Self.model(source)
+            let changes = BassLine.changes(model, document: document, prefs: BassPrefs())
+            let change = try #require(changes.first { $0.fromName == "D" && $0.toName == "A" })
+            return change.shown?.notes.map(\.chartName).joined(separator: " ")
+        }
+        // D (still in G) into the chorus lifted to A walks A's G#, spelled in A.
+        #expect(try walk(Self.lifted) == "F# G#")
+        // The same chords with no key change walk G's G.
+        #expect(try walk(Self.lifted.replacingOccurrences(of: "{key: A}", with: "")) == "F# G")
+    }
+
+    @Test
     func `the Nashville degrees re-key after the change`() {
         let (model, document) = Self.model(Self.lifted, nashville: true)
         let runs = Self.runs(BassLine.annotated(model, document: document, prefs: BassPrefs()))
