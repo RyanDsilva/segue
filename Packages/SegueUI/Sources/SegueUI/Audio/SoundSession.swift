@@ -75,19 +75,27 @@ public final class SoundSession {
         return true
     }
 
-    /// Settings > Audio "Test": a G chord over its bass (G1) in the chosen sound and style.
-    func testSound() {
+    /// Settings > Audio "Test": a G chord over its bass in the chosen sound and style, the
+    /// bass placed on the Settings > Instrument strings and tuning as a song in G would be
+    /// (R168; EADG without a profile).
+    func testSound(tuning: Tuning = .bassStandard4) {
         guard let chord = ChordSymbol(parsing: "G") else { return }
-        let bass = Voicing.bass(
-            chord.root.pitchClass,
-            placement: BassPlacement(tuning: .bassStandard4, home: 3),
-        )
+        let bass = Voicing.bass(chord.root.pitchClass, placement: Self.testPlacement(tuning))
         play(PhraseBuilder.chord(
             chord,
             sound: settings.settings.chordSound,
             style: settings.settings.chordStyle,
             bass: bass,
         ))
+    }
+
+    /// Where the Test chord's bass sits: home from G on `tuning`.
+    static func testPlacement(_ tuning: Tuning) -> BassPlacement {
+        BassPlacement.song(
+            concertKey: SongKey(parsing: "G"),
+            firstBass: nil,
+            tuning: tuning,
+        )
     }
 
     /// Stops whatever is playing.

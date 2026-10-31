@@ -1,4 +1,5 @@
 import AppKit
+import Diagrams
 import Foundation
 import Playback
 @testable import SegueUI
@@ -59,6 +60,20 @@ struct AudioSettingsStoreTests {
         #expect(recorder.features == ["chordSoundGuitar"])
         rig.session.testSound()
         #expect(rig.outputs.last?.calls.first == .prepare(.cleanGuitar, .pick))
+        #expect(rig.notes(.bass) == [31])
+    }
+
+    @Test
+    func `the Test chord's bass follows the Settings strings and tuning`() throws {
+        let env = try TestEnvironment()
+        let rig = SoundRig(env, services: RecordingAnalytics(env).hub)
+        let five = Tuning.bassStandard(strings: 5)
+        #expect(SoundSession.testPlacement(five).tuning == five)
+        #expect(SoundSession.testPlacement(.bassStandard4).home == 3)
+        let dropD = Tuning(name: "Drop D", strings: [26, 33, 38, 43])
+        rig.session.testSound(tuning: dropD)
+        // Drop D puts G on the low string's fifth fret: still G1.
+        #expect(SoundSession.testPlacement(dropD).home == 5)
         #expect(rig.notes(.bass) == [31])
     }
 

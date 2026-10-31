@@ -1,4 +1,5 @@
 #if os(macOS)
+    import Diagrams
     import Playback
     import SwiftUI
 
@@ -6,6 +7,8 @@
     /// sound.
     struct AudioSettingsView: View {
         let sound: SoundSession
+        /// The Settings > Instrument strings and tuning the Test chord's bass uses (R168).
+        var instrument: InstrumentProfileStore?
 
         private var settings: AudioSettings {
             sound.settings.settings
@@ -65,11 +68,13 @@
                         }
                     }
                     LabeledContent("Test") {
-                        Button("Play a G Chord") { sound.testSound() }
-                            .disabled(!sound.isAvailable)
-                            .help(sound.isAvailable ? "Plays a G chord with its bass note"
-                                : SoundGate.offHelp)
-                            .accessibilityIdentifier(AccessibilityID.settingsAudioTest)
+                        Button("Play a G Chord") {
+                            sound.testSound(tuning: instrument?.profile.tuning ?? .bassStandard4)
+                        }
+                        .disabled(!sound.isAvailable)
+                        .help(sound.isAvailable ? "Plays a G chord with its bass note"
+                            : SoundGate.offHelp)
+                        .accessibilityIdentifier(AccessibilityID.settingsAudioTest)
                     }
                     SettingsNote(text: "Sound plays in the editor, the library and rehearsals. "
                         + "It never plays during a show.")

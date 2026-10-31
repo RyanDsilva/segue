@@ -44,7 +44,7 @@
                         .accessibilityIdentifier(AccessibilityID.settingsPane("instrument"))
                 }
                 Tab("Audio", systemImage: "speaker.wave.2", value: Pane.audio) {
-                    AudioSettingsView(sound: app.sound)
+                    AudioSettingsView(sound: app.sound, instrument: app.instrumentProfile)
                         .accessibilityIdentifier(AccessibilityID.settingsPane("audio"))
                 }
                 Tab("Live", systemImage: "music.mic", value: Pane.live) {
