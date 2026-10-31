@@ -342,8 +342,7 @@ import VendorServices
 
     @MainActor
     extension LaunchOptions {
-        /// The app's dependencies for this launch: the real ones, or the test doubles and
-        /// isolated defaults suite a test run asks for.
+        /// This launch's dependencies: the real ones, or a test run's doubles and defaults suite.
         func dependencies(
             fileSystem: any FileSystem,
             clock: any Support.Clock,
@@ -356,8 +355,7 @@ import VendorServices
                 AppStateReset.wipeTestState(defaults, bundleID: bundleID)
                 AppStateReset.forgetWindowFrames()
             }
-            // The container folder outlives runs, so a reset (or a capture) starts it empty;
-            // otherwise songs left by an earlier capture run leak into the Welcome library.
+            // The container outlives runs: a reset or a capture empties it, so no old songs leak.
             if screenshotLibrary || (resetState && seedWelcome && libraryPath == nil) {
                 Self.wipeScreenshotLibrary()
             }
