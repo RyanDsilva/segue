@@ -32,16 +32,18 @@ public struct EvalFixture: Sendable, Hashable {
 }
 
 /// The accepted answers for one paste (`gold.json`, or the local `gold.local.json`): each
-/// block's label or labels (an ambiguous block accepts two), title and artist (nil = none
-/// written), and the key or keys.
+/// block's label or labels (an ambiguous block accepts two), title (nil = none written),
+/// artists, and the key or keys.
 public struct GoldEntry: Sendable, Hashable {
     public var labels: [[String]]
     /// Normalised (`EvalScore.norm`); `[nil]` means the paste names none.
     public var title: [String?]
-    public var artist: [String?]
+    /// Accepted artist lists, each normalised and in order; `[]` means the paste names none.
+    /// In the file a string is one artist, a list several and `null` none (P8-8).
+    public var artist: [[String]]
     public var key: [String]
 
-    public init(labels: [[String]], title: [String?], artist: [String?], key: [String]) {
+    public init(labels: [[String]], title: [String?], artist: [[String]], key: [String]) {
         self.labels = labels
         self.title = title
         self.artist = artist
@@ -59,7 +61,7 @@ public struct GoldEntry: Sendable, Hashable {
             Self(
                 labels: (entry["labels"] as? [Any] ?? []).map(alternatives),
                 title: optionalAlternatives(entry["title"]),
-                artist: optionalAlternatives(entry["artist"]),
+                artist: artistAlternatives(entry["artist"]),
                 key: alternatives(entry["key"] ?? "unknown"),
             )
         }
@@ -67,6 +69,19 @@ public struct GoldEntry: Sendable, Hashable {
 
     private static func alternatives(_ value: Any) -> [String] {
         (value as? [String]) ?? [(value as? String) ?? ""]
+    }
+
+    /// `"A"` = [[a]], `null` = [[]], `["A", ["B", "C"], null]` = [[a], [b, c], []].
+    private static func artistAlternatives(_ value: Any?) -> [[String]] {
+        func list(_ item: Any?) -> [String] {
+            switch item {
+            case let names as [Any]: names.compactMap { EvalScore.norm($0 as? String) }
+            case let name as String: EvalScore.norm(name).map { [$0] } ?? []
+            default: []
+            }
+        }
+        guard let alternatives = value as? [Any] else { return [list(value)] }
+        return alternatives.map(list)
     }
 
     private static func optionalAlternatives(_ value: Any?) -> [String?] {

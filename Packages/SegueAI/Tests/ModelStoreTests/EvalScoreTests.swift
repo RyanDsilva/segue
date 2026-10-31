@@ -6,18 +6,24 @@ struct EvalScoreTests {
     static let gold = GoldEntry(
         labels: [["other"], ["verse"], ["chorus", "prechorus"]],
         title: [EvalScore.norm("Paper Lanterns")],
-        artist: [nil],
+        artist: [[]],
         key: ["G"],
     )
 
-    static func record(labels: [String], title: String?, artist: String? = nil) -> EvalRecord {
+    static func record(
+        labels: [String],
+        title: String?,
+        artists: [String] = [],
+        codeArtists: [String] = [],
+    ) -> EvalRecord {
         EvalRecord(
             fixture: "E01",
             provider: "mlx",
             labels: labels,
             headed: [false, true, false],
             title: title,
-            artist: artist,
+            artists: artists,
+            codeArtists: codeArtists,
             key: "G",
             calls: [],
             skipped: false,
@@ -51,7 +57,7 @@ struct EvalScoreTests {
             records: [Self.record(
                 labels: ["other", "verse", "verse"],
                 title: "Paper Lanterns",
-                artist: "Made Up",
+                artists: ["Made Up"],
             )],
             gold: ["E01": Self.gold],
         )
@@ -59,5 +65,33 @@ struct EvalScoreTests {
         #expect(worse.songsAllLabelsRight == 0)
         #expect(!worse.regressions(against: good).isEmpty)
         #expect(good.regressions(against: good).isEmpty)
+    }
+
+    @Test
+    func `artists score as whole lists, in order, code only beside with-model`() {
+        let gold = GoldEntry(
+            labels: [["other"]],
+            title: [nil],
+            artist: [[EvalScore.norm("Zoya & The Village Band")!],
+                     [EvalScore.norm("Zoya")!, EvalScore.norm("The Village Band")!]],
+            key: ["G"],
+        )
+        func score(_ artists: [String], code: [String]) -> EvalScore {
+            EvalScore(
+                records: [Self.record(
+                    labels: ["other"],
+                    title: nil,
+                    artists: artists,
+                    codeArtists: code,
+                )],
+                gold: ["E01": gold],
+            )
+        }
+        let split = score(["Zoya", "The Village Band"], code: ["Zoya", "The Village Band"])
+        #expect(split.artistsRight == 1 && split.codeArtistsRight == 1)
+        let whole = score(["Zoya & The Village Band"], code: [])
+        #expect(whole.artistsRight == 1 && whole.codeArtistsRight == 0)
+        #expect(score(["The Village Band", "Zoya"], code: []).artistsRight == 0)
+        #expect(score(["Zoya"], code: []).artistsRight == 0)
     }
 }

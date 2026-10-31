@@ -55,6 +55,36 @@ struct IngestRefinementTests {
         }
     }
 
+    /// P8-8 section 13.4: artist-list accuracy against `gold.json`, code only vs with the
+    /// replayed FM answers, over every paste fixture (fixtures without a recording ask the
+    /// model nothing, so both counts agree there). Code wins (R121), so the model can only
+    /// add an artist where code found none; it may never lose a right one.
+    @Test
+    func `artist accuracy, code only vs with the FM recordings`() async throws {
+        let gold = try PasteFixtures.gold()
+        var total = 0
+        var codeRight = 0
+        var modelRight = 0
+        for name in PasteFixtures.names {
+            let stem = PasteFixtures.stem(name)
+            guard let entry = gold[stem] else { continue }
+            let base = try PasteFixtures.ingest(name)
+            guard !base.isAlreadyChordPro else { continue }
+            let refined = Self.recordedFixtures.contains(stem)
+                ? try await PasteRefiner.refined(base, router: Self.fmRouter()).result
+                : base
+            let code = entry.artist.contains(base.metadata.artists.compactMap(LabelScore.norm))
+            let model = entry.artist
+                .contains(refined.metadata.artists.compactMap(LabelScore.norm))
+            total += 1
+            codeRight += code ? 1 : 0
+            modelRight += model ? 1 : 0
+            #expect(!code || model, "\(name): the model lost a right artist")
+        }
+        print("Artist lists: code only \(codeRight)/\(total), with FM \(modelRight)/\(total)")
+        #expect(total > 0)
+    }
+
     /// Every fixture that asks a model anything has an FM recording.
     @Test
     func `every fixture with questions has an FM recording`() throws {
