@@ -28,6 +28,8 @@
         /// The editor's one undo stack, shared with visual mode.
         let undoManager = UndoManager()
         weak var host: (any SourceEditorHost)?
+        /// Esc when no completion is showing; true when something else took it.
+        var onUnusedEscape: (() -> Bool)?
         /// Focus the text view once it is back in a window (after a mode switch).
         var pendingFocus = false
 
@@ -392,7 +394,11 @@
 
     extension SourceEditorController: SourceKeyHandling {
         func handleCommand(_ selector: Selector) -> Bool {
-            guard completion.isVisible else { return false }
+            guard completion.isVisible else {
+                // Esc nothing here used: the fill span (if any) takes it.
+                return selector == #selector(NSResponder.cancelOperation(_:))
+                    && (onUnusedEscape?() ?? false)
+            }
             if completion.items.isEmpty {
                 // A header-only hint: Esc closes it, every other key behaves as usual.
                 guard selector == #selector(NSResponder.cancelOperation(_:)) else { return false }

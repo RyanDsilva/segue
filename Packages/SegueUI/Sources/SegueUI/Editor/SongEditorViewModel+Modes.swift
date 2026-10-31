@@ -20,6 +20,16 @@ extension SongEditorViewModel {
             }
             let controller = SourceEditorController(text: source)
             controller.host = self
+            // While the text view has the keys, Esc is its own (completion, find, marked
+            // text); the span's Esc shortcut stands down and the span takes only an Esc
+            // the text view had no use for.
+            let selection = spanSelection
+            controller.textView.onFocusChange = { selection.sourceHasFocus = $0 }
+            controller.onUnusedEscape = {
+                guard selection.anchor != nil else { return false }
+                selection.clear()
+                return true
+            }
             controller.pendingFocus = editorMode == .text
             sourceController = controller
             controller.restyleAll()

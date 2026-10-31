@@ -22,6 +22,8 @@ final class ChordSpanSelection {
     private(set) var anchor: Int?
     /// The other end, set by a shift-click.
     private(set) var end: Int?
+    /// The source text view has the keyboard, so it keeps Esc (see `SpanEscape`).
+    var sourceHasFocus = false
     /// The song in written order (`{chorus}` stubs written out).
     private(set) var timeline: SongTimeline = .empty
     /// The song's saved fills resolved now (an exact span reads "Edit Bass Fill...").

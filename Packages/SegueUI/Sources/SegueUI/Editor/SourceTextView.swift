@@ -20,6 +20,24 @@
         #endif
         /// Lets the controller see Esc / arrows / Return before the text view does.
         weak var keyHandler: (any SourceKeyHandling)?
+        /// Told when the text view gains or loses the keyboard focus.
+        var onFocusChange: ((Bool) -> Void)?
+
+        override func becomeFirstResponder() -> Bool {
+            let became = super.becomeFirstResponder()
+            if became {
+                onFocusChange?(true)
+            }
+            return became
+        }
+
+        override func resignFirstResponder() -> Bool {
+            let resigned = super.resignFirstResponder()
+            if resigned {
+                onFocusChange?(false)
+            }
+            return resigned
+        }
 
         /// The text starts after the line-number column. The inset's width is half the
         /// column, so the container (view width minus twice the inset) ends at the view's

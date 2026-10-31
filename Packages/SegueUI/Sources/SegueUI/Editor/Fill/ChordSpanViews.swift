@@ -227,7 +227,7 @@ struct SpanEscape: View {
             .contentShape(Rectangle())
             .onTapGesture { selection.clear() }
             .overlay {
-                if selection.span != nil {
+                if selection.span != nil, !selection.sourceHasFocus {
                     Button("Clear Fill Span") { selection.clear() }
                         .keyboardShortcut(.cancelAction)
                         .opacity(0)

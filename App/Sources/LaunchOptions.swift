@@ -356,7 +356,9 @@ import VendorServices
                 AppStateReset.wipeTestState(defaults, bundleID: bundleID)
                 AppStateReset.forgetWindowFrames()
             }
-            if screenshotLibrary {
+            // The container folder outlives runs, so a reset (or a capture) starts it empty;
+            // otherwise songs left by an earlier capture run leak into the Welcome library.
+            if screenshotLibrary || (resetState && seedWelcome && libraryPath == nil) {
                 Self.wipeScreenshotLibrary()
             }
             if guideFixtures {
