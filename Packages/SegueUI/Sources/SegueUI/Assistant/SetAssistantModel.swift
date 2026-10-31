@@ -152,6 +152,8 @@ final class SetAssistantModel {
         SetRequestLexicon(
             tags: libraryTags,
             smartFilters: smartFilters.map { SmartFilterName(id: $0.id, name: $0.name) },
+            artists: library.knownArtists,
+            albums: library.knownAlbums,
         )
     }
 
@@ -267,6 +269,7 @@ final class SetAssistantModel {
         case .foundationModels: .fm
         case nil: .noProvider
         }
+        let kinds = chips.map(\.kind)
         setlists.services.record(.aiAssistantUsed(AssistantUsedSummary(
             context: .builder,
             lexiconChips: SmallBucket(lexicon.chips.count),
@@ -274,6 +277,26 @@ final class SetAssistantModel {
             suggestedAccepted: SmallBucket(acceptedCount),
             provider: provider,
             rebuilt: rebuilt,
+            artistChips: kinds.contains { $0.isArtistChip },
+            albumChips: kinds.contains { $0.isAlbumChip },
         )))
+    }
+}
+
+extension SetChip {
+    /// An artist chip, included or excluded (row 21's `segue.artistChips`).
+    var isArtistChip: Bool {
+        switch self {
+        case .artist, .excludeArtist: true
+        default: false
+        }
+    }
+
+    /// A Movie / Album chip, included or excluded (row 21's `segue.albumChips`).
+    var isAlbumChip: Bool {
+        switch self {
+        case .album, .excludeAlbum: true
+        default: false
+        }
     }
 }

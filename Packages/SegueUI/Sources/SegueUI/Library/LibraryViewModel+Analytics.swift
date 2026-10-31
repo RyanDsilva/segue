@@ -42,7 +42,7 @@ extension LibraryViewModel {
 
     /// Rows 8 and 17 once the library's results for `state` are on screen.
     func recordSearch(_ state: SongFilterState, _ found: SearchOutcome) {
-        let filter = state.filter(knownTags: tags.map(\.tag))
+        let filter = songFilter(state)
         if filter.hasConstraints {
             services.record(.featureUsed(.filterChips, .library))
         }
@@ -58,7 +58,7 @@ extension LibraryViewModel {
     /// context.
     func builderSearch(_ state: SongFilterState) async throws -> [SongRecord] {
         let found = try await searchWithTier(state)
-        if state.filter(knownTags: tags.map(\.tag)).text
+        if songFilter(state).text
             .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
             builderSearchRecorder.cancel()

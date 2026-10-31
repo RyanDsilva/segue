@@ -96,6 +96,16 @@ extension LibraryViewModel {
         Self.mostSongsFirst(catalog.compactMap(\.document.metadata.album))
     }
 
+    /// The library's names the request lexicon reads besides tags.
+    var lexiconCredits: LexiconCredits {
+        LexiconCredits(artists: knownArtists, albums: knownAlbums)
+    }
+
+    /// `state`'s filter, with the library's tags, artists and albums for the lexicon.
+    func songFilter(_ state: SongFilterState) -> SongFilter {
+        state.filter(knownTags: tags.map(\.tag), credits: lexiconCredits)
+    }
+
     nonisolated static func mostSongsFirst(_ values: [String]) -> [String] {
         var counts: [String: Int] = [:]
         for value in values {

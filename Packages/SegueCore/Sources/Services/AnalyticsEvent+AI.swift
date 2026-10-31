@@ -199,6 +199,10 @@ public struct AssistantUsedSummary: Sendable, Hashable {
     public var provider: AIProviderUsed
     /// The set was rebuilt from the same request.
     public var rebuilt: Bool
+    /// P8-8 section 8: the request held an artist chip ("by arijit"), a Movie / Album chip
+    /// ("from kalank"), included or excluded.
+    public var artistChips: Bool
+    public var albumChips: Bool
 
     public init(
         context: AssistantContext,
@@ -207,6 +211,8 @@ public struct AssistantUsedSummary: Sendable, Hashable {
         suggestedAccepted: SmallBucket,
         provider: AIProviderUsed,
         rebuilt: Bool,
+        artistChips: Bool = false,
+        albumChips: Bool = false,
     ) {
         self.context = context
         self.lexiconChips = lexiconChips
@@ -214,6 +220,8 @@ public struct AssistantUsedSummary: Sendable, Hashable {
         self.suggestedAccepted = suggestedAccepted
         self.provider = provider
         self.rebuilt = rebuilt
+        self.artistChips = artistChips
+        self.albumChips = albumChips
     }
 }
 
@@ -262,6 +270,8 @@ extension AnalyticsEvent {
                 "segue.suggestedAccepted": summary.suggestedAccepted.rawValue,
                 "segue.provider": summary.provider.rawValue,
                 "segue.rebuilt": String(summary.rebuilt),
+                "segue.artistChips": String(summary.artistChips),
+                "segue.albumChips": String(summary.albumChips),
             ]
         case let .aiSmartFilterUsed(action, conditions):
             ["segue.action": action.rawValue, "segue.conditions": conditions.rawValue]

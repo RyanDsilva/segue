@@ -326,7 +326,7 @@ public final class LibraryViewModel {
     /// `search(_:)` plus the index tier of the first result (nil when the free text is
     /// blank or nothing matched), for `Segue.Search.performed`.
     func searchWithTier(_ state: SongFilterState) async throws -> SearchOutcome {
-        let filter = state.filter(knownTags: tags.map(\.tag))
+        let filter = songFilter(state)
         let text = filter.text.trimmingCharacters(in: .whitespacesAndNewlines)
         let outcome = text.isEmpty
             ? SearchOutcome(records: catalog, firstTier: nil)

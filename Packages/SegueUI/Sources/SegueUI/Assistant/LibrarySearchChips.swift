@@ -8,18 +8,42 @@
     /// NL picks in the library search (P3-7, spec 7): the set assistant's lexicon reads the
     /// words `SongFilter.parse` left ("songs I know well under 100 bpm", "kuch romantic
     /// gaane", "no covers in G") into filter conditions; the rest stays the text search.
+    /// The library's names the request lexicon reads besides tags (P8-8 section 3.5.2):
+    /// stored artist values (the lexicon splits them) and Movie / Album values.
+    public struct LexiconCredits: Equatable, Sendable {
+        public var artists: [String]
+        public var albums: [String]
+
+        public init(artists: [String] = [], albums: [String] = []) {
+            self.artists = artists
+            self.albums = albums
+        }
+    }
+
     enum LibraryLexicon {
         /// The lexicon's reading of `filter.text`, or nil when it reads no song condition.
-        static func read(_ text: String, knownTags: [String]) -> LexiconResult? {
+        static func read(
+            _ text: String,
+            knownTags: [String],
+            credits: LexiconCredits = LexiconCredits(),
+        ) -> LexiconResult? {
             guard !text.allSatisfy(\.isWhitespace) else { return nil }
-            let parsed = SetRequestLexicon(tags: knownTags).parse(text)
+            let parsed = SetRequestLexicon(
+                tags: knownTags,
+                artists: credits.artists,
+                albums: credits.albums,
+            ).parse(text)
             return SetRequest(kinds: parsed.chips).songFilter == nil ? nil : parsed
         }
 
         /// Merges the lexicon's conditions into `filter` and narrows its text to the words the
         /// lexicon did not read.
-        static func apply(to filter: inout SongFilter, knownTags: [String]) {
-            guard let parsed = read(filter.text, knownTags: knownTags),
+        static func apply(
+            to filter: inout SongFilter,
+            knownTags: [String],
+            credits: LexiconCredits = LexiconCredits(),
+        ) {
+            guard let parsed = read(filter.text, knownTags: knownTags, credits: credits),
                   let read = SetRequest(kinds: parsed.chips).songFilter
             else { return }
             filter.anyTags.formUnion(read.anyTags)
@@ -30,13 +54,23 @@
                     : filter.proficiencies.intersection(read.proficiencies)
             }
             filter.tempo = read.tempo ?? filter.tempo
+            filter.artists.formUnion(read.artists)
+            filter.excludedArtists.formUnion(read.excludedArtists)
+            filter.albums.formUnion(read.albums)
+            filter.excludedAlbums.formUnion(read.excludedAlbums)
             filter.text = parsed.searchText
         }
 
         /// The chips to show for `text`: the conditions the search applies.
-        static func chips(_ text: String, knownTags: [String]) -> [SetChip] {
+        static func chips(
+            _ text: String,
+            knownTags: [String],
+            credits: LexiconCredits = LexiconCredits(),
+        ) -> [SetChip] {
             let rest = SongFilter.parse(text, knownTags: knownTags).text
-            guard let parsed = read(rest, knownTags: knownTags) else { return [] }
+            guard let parsed = read(rest, knownTags: knownTags, credits: credits) else {
+                return []
+            }
             return parsed.chips.filter { SetRequest(kinds: [$0]).songFilter != nil }
         }
     }
@@ -89,7 +123,11 @@
 
         var body: some View {
             let tags = model.tags.map(\.tag)
-            let read = LibraryLexicon.chips(model.query, knownTags: tags)
+            let read = LibraryLexicon.chips(
+                model.query,
+                knownTags: tags,
+                credits: model.lexiconCredits,
+            )
             Group {
                 if !read.isEmpty || !suggestions.chips.isEmpty {
                     FlowLayout(spacing: 6, lineSpacing: 6) {

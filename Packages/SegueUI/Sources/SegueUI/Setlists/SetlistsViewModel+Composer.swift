@@ -156,6 +156,8 @@ public extension SetlistsViewModel {
             alternative: match != nil && choice > 0,
             key: key,
             entry: entry,
+            // Trailing words named one of the song's artists (P8-8 section 3.5.1).
+            artistWords: match.map { $0.artist != nil && $0.tier != .artist } ?? false,
         )))
     }
 }

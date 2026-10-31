@@ -247,6 +247,7 @@ enum VocabularySample {
                 alternative: row.isMultiple(of: 2),
                 key: row.isMultiple(of: 3),
                 entry: entries[row % entries.count],
+                artistWords: row.isMultiple(of: 4),
             ))
         }
         events += SmallBucket.allCases.map { bucket in
@@ -374,6 +375,8 @@ enum AISample {
                 suggestedAccepted: pick(buckets, row + 2),
                 provider: pick(providers, row),
                 rebuilt: row.isMultiple(of: 2),
+                artistChips: row.isMultiple(of: 3),
+                albumChips: !row.isMultiple(of: 3),
             )))
         }
         for action in SmartFilterAction.allCases {

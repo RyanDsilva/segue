@@ -44,6 +44,35 @@ struct ServicesVocabularyTests {
         ]))
     }
 
+    /// Rows 24 and 21 (P8-8 section 8): the composer's artist qualifier and the request's
+    /// artist and Movie / Album chips, as Bools.
+    @Test
+    func `the composer and assistant carry the artist Bools`() {
+        let composed = AnalyticsEvent.setlistComposed(ComposerSummary(
+            action: .song,
+            tier: .artist,
+            form: .original,
+            alternative: false,
+            key: false,
+            entry: .click,
+            artistWords: true,
+        )).render()
+        #expect(composed.params["segue.tier"] == "artist")
+        #expect(composed.params["segue.artistWords"] == "true")
+        let used = AnalyticsEvent.aiAssistantUsed(AssistantUsedSummary(
+            context: .builder,
+            lexiconChips: SmallBucket(2),
+            suggestedShown: SmallBucket(0),
+            suggestedAccepted: SmallBucket(0),
+            provider: .noProvider,
+            rebuilt: false,
+            artistChips: true,
+            albumChips: false,
+        )).render()
+        #expect(used.params["segue.artistChips"] == "true")
+        #expect(used.params["segue.albumChips"] == "false")
+    }
+
     /// Row 29 (P8-8): the separator from a split's separators, daily per (source,
     /// separator, outcome).
     @Test

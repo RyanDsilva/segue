@@ -18,9 +18,14 @@ public struct SongFilterState: Equatable, Sendable {
 
     /// The typed tokens and the chips combined. Typed tags and chip tags are compared
     /// case-insensitively, so typing a tag whose chip is on adds nothing.
-    public func filter(knownTags: [String]) -> SongFilter {
+    /// `credits` are the library's artists and Movie / Album values, so "by arijit" and
+    /// "from kalank" read as conditions (P8-8 section 3.5.2).
+    public func filter(
+        knownTags: [String],
+        credits: LexiconCredits = LexiconCredits(),
+    ) -> SongFilter {
         var filter = SongFilter.parse(query, knownTags: knownTags)
-        LibraryLexicon.apply(to: &filter, knownTags: knownTags)
+        LibraryLexicon.apply(to: &filter, knownTags: knownTags, credits: credits)
         let typed = Set(filter.tags.map { $0.lowercased() })
         filter.tags.formUnion(tags.filter { !typed.contains($0.lowercased()) })
         filter.proficiencies.formUnion(proficiencies)

@@ -47,8 +47,11 @@ struct SetAssistantUITests {
             let seconds = 180 + (index * 37) % 120
             let length = index % 7 == 3 ? "" : "{duration: \(seconds / 60):"
                 + String(format: "%02d", seconds % 60) + "}\n"
+            // P8-8: every 4th song is Arijit Singh's from Kalank, the next a legacy duo.
+            let credits = index.isMultiple(of: 4) ? "{artist: Arijit Singh}\n{album: Kalank}\n"
+                : index % 4 == 1 ? "{artist: Vishal & Shekhar}\n" : ""
             try env.write(
-                "{title: Song \(index)}\n{key: \(keys[index % keys.count])}\n"
+                "{title: Song \(index)}\n\(credits){key: \(keys[index % keys.count])}\n"
                     + "{tempo: \(70 + index * 2)}\n\(length)[G]La la\n",
                 to: "songs/song-\(index).cho",
             )
@@ -211,6 +214,42 @@ struct SetAssistantUITests {
         #expect(filter.excludedTags == ["cover"])
         #expect(filter.tempo == SongFilter.Bounds(upper: 100))
         #expect(SongFilterState(query: "Let It Be").filter(knownTags: tags).text == "Let It Be")
+    }
+
+    /// P8-8 section 3.5.2: the library's artists and movies reach every lexicon (the
+    /// assistant, the library search and the stage), any artist matching.
+    @Test
+    func `requests by artist and movie read as chips in the assistant, library and stage`(
+    ) async throws {
+        let fix = try await Self.open()
+        let library = fix.session.library
+        fix.assistant.text = "ballads by arijit, not from kalank"
+        try await Task.sleep(for: .milliseconds(60))
+        let kinds = fix.assistant.chips.map(\.kind)
+        #expect(kinds.contains(.artist("Arijit Singh")))
+        #expect(kinds.contains(.excludeAlbum("Kalank")))
+
+        let tags = library.tags.map(\.tag)
+        #expect(LibraryLexicon.chips(
+            "shekhar songs",
+            knownTags: tags,
+            credits: library
+                .lexiconCredits,
+        ) == [.artist("Shekhar")])
+        let filter = library.songFilter(SongFilterState(query: "from kalank"))
+        let matching = library.catalog.filter(filter.matches)
+        #expect(matching.count == 10)
+        #expect(matching.allSatisfy { $0.document.metadata.album == "Kalank" })
+        let duo = library.catalog.filter(library.songFilter(SongFilterState(query: "by shekhar"))
+            .matches)
+        #expect(duo.count == 10)
+
+        let (found, chips) = try await QuickSearchModel.lexiconSearch(
+            "by arijit", in: fix.session.stores.library,
+        )
+        #expect(chips == ["by Arijit Singh"])
+        #expect(found.records.count == 10)
+        #expect(found.records.allSatisfy { $0.document.metadata.artists == ["Arijit Singh"] })
     }
 
     @Test

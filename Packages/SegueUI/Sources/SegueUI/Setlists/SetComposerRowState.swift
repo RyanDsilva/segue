@@ -86,6 +86,9 @@
                 status = .note("Close spelling")
             } else if match.tier == .firstLine, let line = record?.document.firstLyricLine {
                 status = .note("From the first line: \(line)")
+            } else if let artist = match.artist {
+                // The artist tier, or trailing words that named the artist (P8-8 3.5.1).
+                status = .note("By \(artist)")
             }
             spokenValue = spoken(
                 title: title,

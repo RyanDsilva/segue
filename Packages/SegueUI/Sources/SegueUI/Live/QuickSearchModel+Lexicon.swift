@@ -4,8 +4,9 @@
     import SwiftUI
 
     extension QuickSearchModel {
-        /// The stage's NL pick (R65, P3-7): the lexicon reads tags, keys, proficiency and BPM
-        /// out of the query ("upbeat in G", "ballads under 90 bpm") and the rest goes to the
+        /// The stage's NL pick (R65, P3-7): the lexicon reads tags, keys, proficiency, BPM,
+        /// artists and movies out of the query ("upbeat in G", "ballads under 90 bpm", "by
+        /// arijit", "from kalank", P8-8 section 3.5.2) and the rest goes to the
         /// text search; no model is loaded on stage. A query the lexicon reads nothing from
         /// is a plain text search, as before; the plain search's hits always follow the
         /// lexicon's. Returns the results and the chip titles.
@@ -14,7 +15,14 @@
             in library: LibraryStore,
         ) async throws -> (SearchOutcome, [String]) {
             let tags = try await library.allTags().map(\.tag)
-            let parsed = SetRequestLexicon(tags: tags).parse(text)
+            let songs = try await library.allSongs()
+            let parsed = SetRequestLexicon(
+                tags: tags,
+                artists: LibraryViewModel
+                    .mostSongsFirst(songs.flatMap(\.document.metadata.artists)),
+                albums: LibraryViewModel
+                    .mostSongsFirst(songs.compactMap(\.document.metadata.album)),
+            ).parse(text)
             let request = SetRequest(kinds: parsed.chips)
             guard let filter = request.songFilter else {
                 return try await (library.searchWithTier(query: text), [])
@@ -24,7 +32,7 @@
                 .map { $0.title() }
             let rest = parsed.searchText
             let found = rest.isEmpty
-                ? try await SearchOutcome(records: library.allSongs(), firstTier: nil)
+                ? SearchOutcome(records: songs, firstTier: nil)
                 : try await library.searchWithTier(query: rest)
             // The plain text search's hits follow, so a title that happens to name a tag
             // ("Rock") is still found.

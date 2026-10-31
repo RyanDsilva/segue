@@ -15,7 +15,10 @@ struct SetComposerViewModelTests {
     private static let fridayID = "01JC0000000000000000000F01"
     private static let songs = [
         ("kesariya", "{title: Kesariya}\n{key: G}\n{duration: 4:28}\n[G]Mujhko itna bataaye koi\n"),
-        ("tum-hi-ho", "{title: Tum Hi Ho}\n{key: Bb}\n[Bb]Hum tere bin\n"),
+        (
+            "tum-hi-ho",
+            "{title: Tum Hi Ho}\n{artist: Arijit Singh}\n{key: Bb}\n[Bb]Hum tere bin\n",
+        ),
         ("no-key", "{title: Naina}\nNaina lade\n"),
     ]
 
@@ -141,6 +144,32 @@ struct SetComposerViewModelTests {
         #expect(entries(fix).first?.overrides == SetlistOverrides())
     }
 
+    /// P8-8 section 3.5.1: trailing artist words qualify the title, a line naming only an
+    /// artist lists their songs; both say "By ..." and row 24 says which.
+    @Test
+    func `an artist qualifies a title or names the songs, and the status says by whom`()
+        async throws
+    {
+        let fix = try await Self.open()
+        let composer = fix.session.setlists.composer
+        for line in ["tum hi ho arijit", "arijit"] {
+            composer.setText(line, library: fix.session.library)
+            let state = try ComposerRowState(
+                composer: composer,
+                setlist: #require(fix.session.setlists.setlist(fix.friday)),
+                library: fix.session.library,
+            )
+            #expect(composer.chosen?.id == Self.id(1), "\(line)")
+            #expect(state.status == .note("By Arijit Singh"), "\(line)")
+        }
+        await compose(fix, "tum hi ho arijit")
+        let composed = fix.recording.entries()
+            .filter { $0["name"] as? String == "Segue.Setlist.composed" }
+            .compactMap { $0["params"] as? [String: String] }
+        #expect(composed.last?["segue.artistWords"] == "true")
+        #expect(composed.last?["segue.tier"] == "exactTitle")
+    }
+
     @Test
     func `three dashes append a labelled break as one undo step`() async throws {
         let fix = try await Self.open()
@@ -241,6 +270,7 @@ struct SetComposerViewModelTests {
         #expect(composed.first == [
             "segue.action": "song", "segue.tier": "fuzzyTitle", "segue.form": "normalized",
             "segue.alternative": "false", "segue.key": "true", "segue.entry": "shortcut",
+            "segue.artistWords": "false",
         ])
         let vocabulary: [String: Set<String>] = [
             "segue.action": Set(ComposerAction.allCases.map(\.rawValue)),
@@ -249,6 +279,7 @@ struct SetComposerViewModelTests {
             "segue.alternative": ["true", "false"],
             "segue.key": ["true", "false"],
             "segue.entry": Set(ComposerEntry.allCases.map(\.rawValue)),
+            "segue.artistWords": ["true", "false"],
         ]
         for params in composed {
             #expect(Set(params.keys) == Set(vocabulary.keys))

@@ -14,6 +14,9 @@ public struct ComposerSummary: Sendable, Hashable {
     /// A key token ("in A") was applied to the new slot.
     public var key: Bool
     public var entry: ComposerEntry
+    /// P8-8 section 8: trailing words naming one of the song's artists qualified the title
+    /// ("tum hi ho arijit").
+    public var artistWords: Bool
 
     public init(
         action: ComposerAction,
@@ -22,6 +25,7 @@ public struct ComposerSummary: Sendable, Hashable {
         alternative: Bool,
         key: Bool,
         entry: ComposerEntry,
+        artistWords: Bool = false,
     ) {
         self.action = action
         self.tier = tier
@@ -29,6 +33,7 @@ public struct ComposerSummary: Sendable, Hashable {
         self.alternative = alternative
         self.key = key
         self.entry = entry
+        self.artistWords = artistWords
     }
 }
 
@@ -81,6 +86,7 @@ extension AnalyticsEvent {
                 "segue.alternative": String(summary.alternative),
                 "segue.key": String(summary.key),
                 "segue.entry": summary.entry.rawValue,
+                "segue.artistWords": String(summary.artistWords),
             ]
         case let .setlistComposerSession(songs, cycles):
             ["segue.songs": songs.rawValue, "segue.cycles": cycles.rawValue]
