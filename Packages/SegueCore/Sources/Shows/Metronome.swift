@@ -3,6 +3,7 @@
 
 import ChordPro
 import Foundation
+import Library
 
 /// A song's time signature as the metronome counts it: `pulses` per bar, the first
 /// accented. `{time}` absent or unreadable counts 4/4.
@@ -26,6 +27,11 @@ public struct MetronomeMeter: Sendable, Hashable {
         } else {
             self = .common
         }
+    }
+
+    /// A timeline meter (P8-7 section 5.2: the `{time}` in effect at a chord or a pass).
+    public init(_ meter: Meter) {
+        self.init(beats: meter.beats, noteValue: meter.noteValue)
     }
 
     /// Whether this is a compound meter (6/8, 9/8, 12/8): eighths grouped in threes.

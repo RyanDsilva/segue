@@ -26,8 +26,9 @@ extension EnvironmentValues {
 }
 
 extension SoundSession {
-    /// The audition for songs rendered as `model()`: the song's `{tempo}` (else 90) and
-    /// `{time}`, the Settings sounds, the bass placed as in the previews.
+    /// The audition for songs rendered as `model()`: the `{tempo}` (else 90) and `{time}` in
+    /// effect at the change (`SongTimeline`, P8-7 section 5.3), the Settings sounds, the bass
+    /// placed as in the previews.
     func audition(
         model: @escaping @MainActor () -> RenderModel?,
         profile: @escaping @MainActor () -> InstrumentProfile?,
@@ -40,8 +41,8 @@ extension SoundSession {
                 return PhraseBuilder.audition(
                     change,
                     candidate: candidate,
-                    tempo: model.header.tempo,
-                    meter: MetronomeMeter(time: model.header.time),
+                    tempo: change.tempo,
+                    meter: MetronomeMeter(change.meter),
                     voices: PlaybackVoices(
                         sound: settings.settings.chordSound,
                         style: settings.settings.chordStyle,

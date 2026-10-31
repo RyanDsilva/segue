@@ -56,6 +56,8 @@
             }
             guard let slot = state.current, let song = slot.song else {
                 currentModel = nil
+                currentTimeline = nil
+                shownPass = nil
                 currentArrangement = nil
                 plan = nil
                 scroller = nil
@@ -73,6 +75,13 @@
                 bass: bassView,
             )
             currentModel = request.model
+            currentTimeline = SongTimeline.build(
+                document: song.document,
+                sections: request.model.sections,
+                units: SongSections.units(of: song.document),
+                timing: song.sidecar.bass.timing,
+                order: nil,
+            )
             currentArrangement = resolution.map { $0.isOutOfDate ? .outOfDate : .applied }
             recordArrangement(currentArrangement, for: slot.item)
             guard viewport.width > 0, viewport.height > 0 else { return }
@@ -81,6 +90,7 @@
             updateScroller(newPlan, item: slot.item, song: song, prefs: prefs)
             rescheduleLoopWrap()
             recordBassNeckShown()
+            noteCurrentPass(currentPass(at: context.scrollClock.now()))
         }
 
         /// Records once per item what the stage did with its arrangement (the gig log says

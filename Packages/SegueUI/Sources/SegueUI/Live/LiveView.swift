@@ -183,6 +183,11 @@
                                     .accessibilityIdentifier(AccessibilityID.liveBody)
                             }
                         }
+                        // A mid-song {tempo}, {time} or {key} switches at the pass boundary
+                        // (R168 Q2, Q3).
+                        .onChange(of: session.currentPass(at: now)) { _, pass in
+                            session.noteCurrentPass(pass)
+                        }
                 }
                 .id(session.state.current?.item.itemId)
                 .transition(.opacity)
@@ -214,33 +219,6 @@
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier(AccessibilityID.liveSongUnavailable)
-        }
-
-        /// Fades the last 32pt when more of the song is below, so a row cut by the edge
-        /// reads as "continues" rather than as a stray chord line.
-        static func edgeMask(moreBelow: Bool) -> some View {
-            VStack(spacing: 0) {
-                Rectangle()
-                LinearGradient(
-                    colors: [.black, moreBelow ? .clear : .black],
-                    startPoint: .top,
-                    endPoint: .bottom,
-                )
-                .frame(height: 32)
-            }
-        }
-
-        /// "lyric 30 fits scroll 0.50": the plan's lyric size, fit and scroll position, for
-        /// the E2E suite and VoiceOver.
-        static func bodyValue(_ plan: LayoutPlan, fraction: Double) -> String {
-            let fit = switch plan.fit {
-            case .fits: "fits"
-            case .scrollsAtMinimum: "scrolls at minimum"
-            case .scrollsZoomed: "scrolls zoomed"
-            }
-            let size = plan.lyricSize.formatted(.number.precision(.fractionLength(0 ... 1)))
-            let position = fraction.formatted(.number.precision(.fractionLength(2)))
-            return "lyric \(size) \(fit) scroll \(position) columns \(plan.columns.count)"
         }
 
         private var endOfSet: some View {
@@ -376,6 +354,35 @@
                 guard !Task.isCancelled else { return }
                 withAnimation(animation) { statusVisible = false }
             }
+        }
+    }
+
+    extension LiveView {
+        /// Fades the last 32pt when more of the song is below, so a row cut by the edge
+        /// reads as "continues" rather than as a stray chord line.
+        static func edgeMask(moreBelow: Bool) -> some View {
+            VStack(spacing: 0) {
+                Rectangle()
+                LinearGradient(
+                    colors: [.black, moreBelow ? .clear : .black],
+                    startPoint: .top,
+                    endPoint: .bottom,
+                )
+                .frame(height: 32)
+            }
+        }
+
+        /// "lyric 30 fits scroll 0.50": the plan's lyric size, fit and scroll position, for
+        /// the E2E suite and VoiceOver.
+        static func bodyValue(_ plan: LayoutPlan, fraction: Double) -> String {
+            let fit = switch plan.fit {
+            case .fits: "fits"
+            case .scrollsAtMinimum: "scrolls at minimum"
+            case .scrollsZoomed: "scrolls zoomed"
+            }
+            let size = plan.lyricSize.formatted(.number.precision(.fractionLength(0 ... 1)))
+            let position = fraction.formatted(.number.precision(.fractionLength(2)))
+            return "lyric \(size) \(fit) scroll \(position) columns \(plan.columns.count)"
         }
     }
 

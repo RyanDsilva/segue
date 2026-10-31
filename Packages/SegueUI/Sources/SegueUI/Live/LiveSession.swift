@@ -95,6 +95,11 @@
         var currentModel: RenderModel?
         /// The rendered model of the up-next song (in its arranged order).
         var upNextModel: RenderModel?
+        /// The current song's timeline in written order (P8-7): what each part's pass has in
+        /// effect (`{key}`, `{tempo}`, `{time}`).
+        @ObservationIgnored var currentTimeline: SongTimeline?
+        /// The current pass as the stage last saw it (the scale line and metronome follow it).
+        var shownPass: Int?
         /// What the stage does with the current item's arrangement (R122); nil = the item
         /// plays the full song as written.
         var currentArrangement: ArrangementState?

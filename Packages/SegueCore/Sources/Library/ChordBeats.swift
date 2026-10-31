@@ -66,15 +66,6 @@ public enum ChordBeats {
         return result
     }
 
-    /// The estimates with the song's `{time}` for every line (the pre-P8-7 signature, kept
-    /// until the walk reads the timeline).
-    public static func estimate(
-        _ sections: [RenderSection],
-        time: String?,
-    ) -> [ChordPosition: Estimate] {
-        estimate(sections, meters: MeterMap(initial: Meter(time: time)), timeWritten: time != nil)
-    }
-
     /// The estimates of one line's `.chord`-kind chords, in order. A chord's estimate never
     /// reads past its own line.
     static func estimate(_ line: RenderLine, perBar: Int, hasTime: Bool) -> [Estimate] {

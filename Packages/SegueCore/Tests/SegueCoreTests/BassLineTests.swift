@@ -234,4 +234,86 @@ struct BassLineTests {
         let hold = WalkUpPick(anchor: pick.anchor, to: "C", kind: .hold, offsets: [])
         #expect(hold.savedNotes(key: nil) == "Nothing")
     }
+
+    // MARK: The timeline (P8-7 section 5.7)
+
+    /// The most notes any candidate of the first change has.
+    static func longest(_ source: String, prefs: BassPrefs = BassPrefs()) -> Int {
+        let (model, document) = Self.model(source)
+        let changes = BassLine.changes(model, document: document, prefs: prefs)
+        return changes.first?.candidates.map(\.notes.count).max() ?? 0
+    }
+
+    @Test
+    func `a user correction is a known length, the song's rule still caps at two`() throws {
+        let source = "{key: G}\n[G]Hello there [C]my friend\n"
+        #expect(Self.longest(source) == 2)
+        let (model, document) = Self.model(source)
+        let anchor = try #require(ChordAnchors.anchor(
+            at: ChordPosition(section: 0, chord: 0),
+            units: SongSections.units(of: document),
+            sections: model.sections,
+        ))
+        let corrected = BassPrefs(timing: ChordTiming(chords: [
+            ChordBeatsOverride(anchor: anchor, beats: 4),
+        ]))
+        #expect(Self.longest(source, prefs: corrected) == 3)
+        // A different rule is still the rule: estimated, capped.
+        let rule = BassPrefs(timing: ChordTiming(rule: .beats(4)))
+        #expect(Self.longest(source, prefs: rule) == 2)
+    }
+
+    static func lifted(to key: String) -> String {
+        """
+        {key: G}
+        {start_of_verse}
+        [G]Hello [C]there [D]friend
+        {end_of_verse}
+        {key: \(key)}
+        {start_of_chorus}
+        [A]Sing it [Bm]loud [E]now
+        {end_of_chorus}
+
+        """
+    }
+
+    static let lifted = lifted(to: "A")
+
+    @Test
+    func `after a key change walk-ups are scaled and spelled in the new key`() throws {
+        func walk(_ source: String) throws -> String? {
+            let (model, document) = Self.model(source)
+            let changes = BassLine.changes(model, document: document, prefs: BassPrefs())
+            let change = try #require(changes.first { $0.fromName == "Bm" })
+            return change.shown?.notes.map(\.chartName).joined(separator: " ")
+        }
+        // Bm into E walks the A major scale's C# once the chorus is in A.
+        #expect(try walk(Self.lifted) == "C# D")
+        #expect(try walk(Self.lifted(to: "G")) == "C D")
+    }
+
+    @Test
+    func `the Nashville degrees re-key after the change`() {
+        let (model, document) = Self.model(Self.lifted, nashville: true)
+        let runs = Self.runs(BassLine.annotated(model, document: document, prefs: BassPrefs()))
+        let chords = model.sections.flatMap(\.items).flatMap { item -> [String] in
+            guard case let .lyrics(line) = item else { return [] }
+            return line.chords.map(\.text)
+        }
+        // The bass-note view numbers the chorus in A (A 1, Bm's B 2, E 5), and the walk from
+        // Bm into E numbers C# D as 3 4.
+        #expect(chords.suffix(3).map { $0.components(separatedBy: " ").first ?? "" }
+            == ["1", "2", "5"])
+        #expect(runs.contains("Bm: 3 4"), "\(runs)")
+    }
+
+    @Test
+    func `a change carries the meter and tempo in effect (the audition plays in them)`() {
+        let source = "{key: G}\n{tempo: 90}\n{time: 4/4}\n[G]a [C]b\n\n{tempo: 132}\n"
+            + "{time: 6/8}\n[D]c [G]d\n"
+        let (model, document) = Self.model(source)
+        let changes = BassLine.changes(model, document: document, prefs: BassPrefs())
+        #expect(changes.map(\.tempo) == [90, 90, 132])
+        #expect(changes.map(\.meter.description) == ["4/4", "4/4", "6/8"])
+    }
 }

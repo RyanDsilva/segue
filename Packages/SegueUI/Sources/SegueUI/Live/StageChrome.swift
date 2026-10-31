@@ -41,7 +41,7 @@
                             : "Full song: the arrangement is out of date")
                         .accessibilityIdentifier(AccessibilityID.liveArrangement)
                 }
-                if let scale = session.currentModel?.header.scale {
+                if let scale = session.currentScale {
                     StageScaleLine(scale: scale)
                 }
                 Spacer(minLength: 24)

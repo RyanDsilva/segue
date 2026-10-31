@@ -65,6 +65,7 @@
                 Task { await flushScroll() }
             }
             pinnedPass = index
+            noteCurrentPass(index)
             showJumpToast(plan.passes[index].name)
             if !recordedJump {
                 recordedJump = true

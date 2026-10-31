@@ -6,7 +6,8 @@
     import Support
 
     /// The stage metronome (R90, R108, P3-14): a quiet pulse at the current song's
-    /// `{tempo}` and `{time}`, toggled per show (pre-show checklist, remembered as the next
+    /// `{tempo}` and `{time}` (switching at a pass boundary to a mid-song change, R168 Q3),
+    /// toggled per show (pre-show checklist, remembered as the next
     /// show's default) and by `M` (this show only); in a rehearsal only, a click behind its
     /// own toggle (`K`, or the checklist's switch; off at the start of every rehearsal).
     ///
@@ -34,12 +35,20 @@
         @ObservationIgnored let click: RehearsalClick?
         /// What the track was built from, so an unrelated state change keeps the grid.
         @ObservationIgnored private var source: Source?
+        /// The current pass's tempo and meter (R168 Q3), for the item it was set on.
+        @ObservationIgnored private var passTiming: (item: ShowItemID?, timing: PassTiming)?
 
         private struct Source: Equatable {
             var item: ShowItemID?
-            var tempo: Double?
-            var time: String?
+            var timing: PassTiming
             var inBreak: Bool
+        }
+
+        /// The `{tempo}` and `{time}` in effect (the song's, or at the current pass's first
+        /// chord after a mid-song change, P8-7 section 5.3).
+        struct PassTiming: Equatable {
+            var tempo: Double?
+            var meter: MetronomeMeter
         }
 
         init(
@@ -73,17 +82,39 @@
         /// starting or ending) restarts the grid on beat 1 now.
         func follow(_ state: ShowState) {
             let metadata = state.current?.song?.document.metadata
-            let inBreak = state.record.currentBreak != nil
-            let next = Source(
-                item: state.current?.item.itemId,
+            let item = state.current?.item.itemId
+            let song = PassTiming(
                 tempo: metadata?.tempo,
-                time: metadata?.time,
-                inBreak: inBreak,
+                meter: MetronomeMeter(time: metadata?.time),
             )
+            if let passTiming, passTiming.item != item {
+                self.passTiming = nil
+            }
+            rebuild(Source(
+                item: item,
+                timing: passTiming?.timing ?? song,
+                inBreak: state.record.currentBreak != nil,
+            ))
+        }
+
+        /// The current pass of item `item` is in `timing` (R168 Q3): at a pass boundary where
+        /// the `{tempo}` or `{time}` changes, the grid restarts on beat 1 in the new values;
+        /// an unchanged pass keeps the grid running.
+        func follow(pass timing: PassTiming, item: ShowItemID?) {
+            guard let source, source.item == item else { return }
+            passTiming = (item, timing)
+            var next = source
+            next.timing = timing
+            rebuild(next)
+        }
+
+        private func rebuild(_ next: Source) {
             guard next != source else { return }
             source = next
             let start = clock.now()
-            track = inBreak ? nil : metadata.flatMap { MetronomeTrack(metadata: $0, start: start) }
+            track = next.inBreak ? nil : next.timing.tempo.flatMap { bpm in
+                MetronomeTrack(bpm: bpm, meter: next.timing.meter, start: start)
+            }
             syncClick()
         }
 

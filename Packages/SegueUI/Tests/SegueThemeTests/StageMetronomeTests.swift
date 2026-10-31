@@ -76,6 +76,54 @@ extension StageWindowSuites {
         }
 
         @Test
+        func `a mid-song tempo, time and key switch at the pass boundary`() async throws {
+            let run = try await MetronomeRun(songs: ["""
+            {title: Lift}
+            {key: G}
+            {tempo: 90}
+            {time: 4/4}
+            {start_of_verse}
+            [G]One more [C]time
+            {end_of_verse}
+            {tempo: 120}
+            {time: 3/4}
+            {key: A}
+            {start_of_chorus}
+            [A]Up a [D]step
+            {end_of_chorus}
+
+            """])
+            run.app.liveSettings.metronomeOn = true
+            let live = try await run.start(.gig)
+            live.setViewport(MapSong.viewport)
+            let metronome = live.metronome
+            #expect(metronome.track?.bpm == 90)
+            #expect(metronome.track?.meter.beats == 4)
+
+            // The chorus pass: 120 in 3/4, from beat 1 now (R168 Q3).
+            run.env.clock.advance(by: 1)
+            live.jump(toPass: 1)
+            let chorus = try #require(metronome.track)
+            #expect(chorus.bpm == 120)
+            #expect(chorus.meter.beats == 3)
+            #expect(chorus.start == run.env.clock.now())
+            // The same pass again keeps the grid running.
+            run.env.clock.advance(by: 1)
+            live.noteCurrentPass(1)
+            #expect(metronome.track?.start == chorus.start)
+            live.jump(toPass: 0)
+            #expect(metronome.track?.bpm == 90)
+
+            // The bass-note view's scale line follows the pass's key; the header keeps G.
+            live.dispatch(.toggleBassNotes)
+            #expect(live.currentScale == "G major: G A B C D E F#")
+            live.jump(toPass: 1)
+            #expect(live.currentScale == "A major: A B C# D E F# G#")
+            #expect(live.currentModel?.header.key == "G")
+            try await run.end(live)
+        }
+
+        @Test
         func `the checklist's choice is remembered as the next show's default`() async throws {
             let run = try await MetronomeRun(songs: ["{title: A}\n{tempo: 100}\n[G]La\n"])
             #expect(!run.app.liveSettings.metronomeOn)

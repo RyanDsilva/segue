@@ -108,7 +108,12 @@ struct WalkUpTests {
         let source = "{key: \(row.key ?? "C")}\n"
             + chords.map { "[\($0)]word " }.joined() + "\n"
         let model = renderBass(source)
-        let changes = BassLine.changes(model.sections, origins: [0], context: context(model))
+        let (document, _) = ChordProParser.parse(source)
+        let changes = BassLine.changes(
+            model.sections,
+            origins: [0],
+            context: context(model, document: document),
+        )
         return changes.compactMap(\.shown).map(text)
     }
 
@@ -127,13 +132,22 @@ struct WalkUpTests {
         return RenderModel(document: document, options: options)
     }
 
-    static func context(_ model: RenderModel, genre: BassGenre = .pop) -> BassLineContext {
+    static func context(
+        _ model: RenderModel,
+        document: SongDocument,
+        genre: BassGenre = .pop,
+    ) -> BassLineContext {
         BassLineContext(
             transform: model.transform,
             genre: genre,
             density: .everyChange,
-            tempo: model.header.tempo,
-            time: model.header.time,
+            timeline: SongTimeline.build(
+                document: document,
+                sections: model.sections,
+                units: SongSections.units(of: document),
+                timing: ChordTiming(),
+                order: nil,
+            ),
         )
     }
 

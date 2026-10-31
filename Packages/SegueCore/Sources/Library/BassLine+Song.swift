@@ -5,25 +5,32 @@ import ChordPro
 import Editing
 
 public extension BassLine {
-    /// The context for a song rendered as `model` (its bass view, tempo, `{time}`) with its
-    /// saved `prefs`; nil without a bass view.
+    /// The context for a song rendered as `model` (its bass view) with its saved `prefs`:
+    /// the song's timeline in written order (lengths, tempo and `{key}` in effect, P8-7
+    /// section 5.7) and its picks; nil without a bass view.
     static func context(
         for model: RenderModel,
         document: SongDocument,
         prefs: BassPrefs,
     ) -> BassLineContext? {
         guard let bass = model.transform.options.bass else { return nil }
+        let units = SongSections.units(of: document)
         let picks = prefs.walkUps.isEmpty ? ResolvedPicks.empty : ChordAnchors.resolve(
             prefs.walkUps,
-            units: SongSections.units(of: document),
+            units: units,
             sections: model.sections,
         )
         return BassLineContext(
             transform: model.transform,
             genre: prefs.genre ?? bass.genre,
             density: bass.walkUps,
-            tempo: model.header.tempo,
-            time: model.header.time,
+            timeline: SongTimeline.build(
+                document: document,
+                sections: model.sections,
+                units: units,
+                timing: prefs.timing,
+                order: nil,
+            ),
             picks: picks,
         )
     }

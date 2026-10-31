@@ -13,8 +13,10 @@ public struct BassLineContext: Sendable {
     /// The song's feel, else the profile's default.
     public var genre: BassGenre
     public var density: WalkUpDensity
-    public var tempo: Double?
-    public var time: String?
+    /// The song's timeline in written order (P8-7 section 5.7, R167 Q1): each departing
+    /// chord's length, and the tempo and `{key}` in effect there. Annotated sections in a
+    /// played order look chords up by their origin, so the written timeline serves them too.
+    public var timeline: SongTimeline
     /// The song's saved picks, resolved against the written song (section 8.11).
     public var picks: ResolvedPicks
 
@@ -22,21 +24,25 @@ public struct BassLineContext: Sendable {
         transform: DisplayTransform,
         genre: BassGenre,
         density: WalkUpDensity,
-        tempo: Double?,
-        time: String?,
+        timeline: SongTimeline,
         picks: ResolvedPicks = .empty,
     ) {
         self.transform = transform
         self.genre = genre
         self.density = density
-        self.tempo = tempo
-        self.time = time
+        self.timeline = timeline
         self.picks = picks
     }
 
-    /// The concert key.
+    /// The song's concert key (its first `{key}`, or the detected key).
     public var key: SongKey? {
         transform.concertKey
+    }
+
+    /// The concert key in effect at a chord whose written key is `written` (a mid-song
+    /// `{key}`, R168 Q2).
+    func concertKey(written: SongKey?) -> SongKey? {
+        written.map { $0.transposed(by: transform.concertSemitones) } ?? key
     }
 }
 
@@ -66,6 +72,9 @@ public struct ChordChange: Sendable, Equatable, Identifiable {
     public var pickCandidate: WalkUpCandidate?
     /// What charts show: the pick, else the top candidate; nil for hold or none.
     public var shown: WalkUpCandidate?
+    /// The meter and `{tempo}` in effect at the departing chord (the audition plays in them).
+    public var meter: Meter
+    public var tempo: Double?
 }
 
 public enum BassLine {
@@ -110,8 +119,8 @@ public enum BassLine {
     ) -> ApproachRun {
         let names = candidate.notes.map(\.chartName)
         let useDegrees = context.transform.options.nashville && !candidate.degrees.isEmpty
-        let target = context.transform.concert(ChordToken(parsing: change.to.original)).chord
-            .map { ($0.symbol.bass ?? $0.symbol.root).chartName } ?? change.toName
+        let target = ChordSymbol(parsing: change.toName)
+            .map { ($0.bass ?? $0.root).chartName } ?? change.toName
         return ApproachRun(
             change: change.id,
             notes: useDegrees ? candidate.degrees : names,
@@ -179,18 +188,12 @@ private struct Walk {
     let sections: [RenderSection]
     let context: BassLineContext
     let elements: [Element]
-    let beats: [ChordPosition: ChordBeats.Estimate]
 
     init(sections: [RenderSection], origins: [Int], context: BassLineContext) {
         self.sections = sections
         self.context = context
-        beats = ChordBeats.estimate(sections, time: context.time)
-        let transposer = Transposer(
-            semitones: context.transform.concertSemitones,
-            sourceKey: context.transform.key.writtenKey,
-        )
         func chords(of index: Int) -> (list: [Chord], breaks: Bool) {
-            Self.chords(of: index, sections: sections, origins: origins, transposer: transposer)
+            Self.chords(of: index, sections: sections, origins: origins, context: context)
         }
         var elements: [Element] = []
         for index in sections.indices {
@@ -227,10 +230,13 @@ private struct Walk {
         of index: Int,
         sections: [RenderSection],
         origins: [Int],
-        transposer: Transposer,
+        context: BassLineContext,
     ) -> (list: [Chord], breaks: Bool) {
         let section = sections[index]
         let origin = origins.indices.contains(index) ? origins[index] : index
+        let semitones = context.transform.concertSemitones
+        let songKey = context.transform.key.writtenKey
+        let song = Transposer(semitones: semitones, sourceKey: songKey)
         var list: [Chord] = []
         var hasLyrics = false
         var hasBreak = false
@@ -242,6 +248,10 @@ private struct Walk {
                 switch chord.kind {
                 case .chord:
                     let token = ChordToken(parsing: chord.original)
+                    // Spelled in the `{key}` in effect there (P8-7 section 5.3).
+                    let written = context.timeline.timed(pass: origin, chord: ordinal)?.key
+                    let transposer = written == nil || written == songKey ? song
+                        : Transposer(semitones: semitones, sourceKey: written)
                     if let concert = transposer.transpose(token).chord?.symbol,
                        let written = ChordAnchors.writtenBass(chord.original)
                     {
@@ -348,15 +358,17 @@ private struct Walk {
         func bass(_ chord: Chord) -> PitchClass {
             (chord.concert.bass ?? chord.concert.root).pitchClass
         }
-        let estimate = beats[ChordPosition(section: from.section, chord: localOrdinal(from))]
+        let timed = timed(from)
         let intoSection = from.isSectionLast && to.isSectionFirst && to.section != from.section
         return WalkUpContext(
-            key: context.key,
+            key: context.concertKey(written: timed?.key),
             departing: from.concert,
             arriving: to.concert,
             genre: context.genre,
-            beats: estimate?.beats,
-            tempo: context.tempo,
+            // A known length (chart, grid, a correction, a tap) counts; the song's rule is an
+            // estimate, so the two-note cap stays for unmarked charts (R161).
+            beats: timed.flatMap { $0.isEstimated ? nil : $0.pulses },
+            tempo: timed?.tempo,
             intoSection: intoSection,
             // Energy steers direction only into a new section (research section 2).
             energyUp: intoSection ? Self.energy(of: sections[to.section]) : nil,
@@ -413,6 +425,8 @@ private struct Walk {
             pick: pick,
             pickCandidate: pickCandidate,
             shown: shown,
+            meter: timed(from)?.meter ?? context.timeline.meters.initial,
+            tempo: timed(from)?.tempo ?? context.timeline.tempos.initial,
         )
     }
 
@@ -431,9 +445,9 @@ private struct Walk {
         return candidates.first.flatMap { $0.kind == .hold ? nil : $0 }
     }
 
-    /// The chord's ordinal within its annotated section (what the beat estimate keys).
-    private func localOrdinal(_ chord: Chord) -> Int {
-        chord.position.chord
+    /// The departing chord on the timeline: its origin section and ordinal.
+    private func timed(_ chord: Chord) -> TimedChord? {
+        context.timeline.timed(pass: chord.position.section, chord: chord.position.chord)
     }
 
     /// B's section raises the energy (chorus, bridge, pre-chorus: true), settles (verse,
