@@ -10,8 +10,19 @@ struct ChordBeatsTests {
         let header = time.map { "{time: \($0)}\n" } ?? ""
         let (document, _) = ChordProParser.parse(header + body + "\n")
         let model = RenderModel(document: document, options: DisplayOptions())
-        let result = ChordBeats.estimate(model.sections, time: model.header.time)
+        let result = estimate(document, model)
         return result.keys.sorted().compactMap { result[$0] }
+    }
+
+    /// The chart layer as `SongTimeline` reads it: the meter in effect per line.
+    static func estimate(_ document: SongDocument, _ model: RenderModel)
+        -> [ChordPosition: ChordBeats.Estimate]
+    {
+        ChordBeats.estimate(
+            model.sections,
+            meters: PositionalDirectives.scan(document, sections: model.sections).meters,
+            timeWritten: model.header.time != nil,
+        )
     }
 
     struct BarRow: Sendable, CustomTestStringConvertible {
@@ -63,9 +74,40 @@ struct ChordBeatsTests {
     }
 
     @Test
-    func `a grid section contributes nothing`() {
-        let result = Self.estimates("{start_of_grid}\n| G . . . | C . . . |\n{end_of_grid}")
-        #expect(result.isEmpty)
+    func `a grid's chords are timed by the grid`() {
+        let source = "{start_of_grid}\n| G . . . | C . . . |\n{end_of_grid}"
+        #expect(Self.estimates(source).isEmpty)
+        let (document, _) = ChordProParser.parse(source + "\n")
+        let model = RenderModel(document: document, options: DisplayOptions())
+        let timeline = SongTimeline.build(
+            document: document,
+            sections: model.sections,
+            units: SongSections.units(of: document),
+            timing: ChordTiming(),
+            order: nil,
+        )
+        #expect(timeline.chords.map(\.token) == ["G", "C"])
+        #expect(timeline.chords.map(\.length) == [1920, 1920])
+        #expect(timeline.chords.allSatisfy { $0.source == .grid })
+    }
+
+    @Test
+    func `a mid-song time signature changes the bar the marks count`() {
+        let (document, _) = ChordProParser.parse("""
+        {time: 4/4}
+        {start_of_verse}
+        | [G] | [C] |
+        {end_of_verse}
+        {time: 3/4}
+        {start_of_bridge}
+        | [D] | [G] |
+        {end_of_bridge}
+
+        """)
+        let model = RenderModel(document: document, options: DisplayOptions())
+        let result = Self.estimate(document, model)
+        #expect(result[ChordPosition(section: 0, chord: 0)]?.beats == 4)
+        #expect(result[ChordPosition(section: 1, chord: 0)]?.beats == 3)
     }
 
     @Test
@@ -80,7 +122,7 @@ struct ChordBeatsTests {
 
         """)
         let model = RenderModel(document: document, options: DisplayOptions())
-        let result = ChordBeats.estimate(model.sections, time: nil)
+        let result = Self.estimate(document, model)
         #expect(result[ChordPosition(section: 0, chord: 1)]?.beats == 4)
         #expect(result[ChordPosition(section: 1, chord: 0)]?.beats == 4)
         #expect(result[ChordPosition(section: 1, chord: 1)]?.beats == 2)

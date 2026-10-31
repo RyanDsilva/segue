@@ -1,6 +1,6 @@
 // P8-4b (docs/phases/8-workstreams/P8-4-bass.md section 8.5, R161). How many beats each
-// chord lasts, estimated from bar lines, beat marks or `{time}`. Pure; shared with P8-6's
-// play-along timing.
+// chord lasts, estimated from bar lines, beat marks or `{time}`. Pure; since P8-7a (R167 Q1)
+// the chart layer of `SongTimeline`, which every feature reads lengths from.
 
 import ChordPro
 import Editing
@@ -40,19 +40,23 @@ public enum ChordBeats {
         return barTokens.contains(trimmed) || beatMarks.contains(trimmed) || trimmed == repeatBar
     }
 
-    /// One estimate per `.chord`-kind chord of `sections`, in written order, keyed by
-    /// (section index, chord ordinal within the section). `time` is the song's `{time}`.
+    /// One estimate per `.chord`-kind chord of the lyric lines of `sections`, in written
+    /// order, keyed by (section index, chord ordinal within the section). Each line counts in
+    /// the meter in effect at its first chord (`meters`, P8-7 section 5.3); `timeWritten`:
+    /// the song writes a `{time}` (one chord on a line is then a bar). This is
+    /// `SongTimeline`'s chart layer; features read lengths from the timeline, not from here.
     public static func estimate(
         _ sections: [RenderSection],
-        time: String?,
+        meters: MeterMap,
+        timeWritten: Bool,
     ) -> [ChordPosition: Estimate] {
-        let perBar = Metadata.pulses(ofTime: time)
         var result: [ChordPosition: Estimate] = [:]
         for (sectionIndex, section) in sections.enumerated() {
             var ordinal = 0
             for item in section.items {
                 guard case let .lyrics(line) = item else { continue }
-                let estimates = estimate(line, perBar: perBar, hasTime: time != nil)
+                let meter = meters.value(at: ChordPosition(section: sectionIndex, chord: ordinal))
+                let estimates = estimate(line, perBar: meter.pulses, hasTime: timeWritten)
                 for estimate in estimates {
                     result[ChordPosition(section: sectionIndex, chord: ordinal)] = estimate
                     ordinal += 1
@@ -62,12 +66,29 @@ public enum ChordBeats {
         return result
     }
 
+    /// The estimates with the song's `{time}` for every line (the pre-P8-7 signature, kept
+    /// until the walk reads the timeline).
+    public static func estimate(
+        _ sections: [RenderSection],
+        time: String?,
+    ) -> [ChordPosition: Estimate] {
+        estimate(sections, meters: MeterMap(initial: Meter(time: time)), timeWritten: time != nil)
+    }
+
     /// The estimates of one line's `.chord`-kind chords, in order. A chord's estimate never
     /// reads past its own line.
     static func estimate(_ line: RenderLine, perBar: Int, hasTime: Bool) -> [Estimate] {
-        let tokens = tokens(of: line)
         let chordCount = line.chords.count { $0.kind == .chord }
         guard chordCount > 0 else { return [] }
+        // Most lines hold no mark at all: skip the tokenizer (the timeline reads every line
+        // on every render, P8-7 section 5.8).
+        if !mayHoldMarks(line) {
+            if hasTime, line.chords.count == 1 {
+                return [Estimate(beats: perBar, source: .meterLine)]
+            }
+            return Array(repeating: .unknown, count: chordCount)
+        }
+        let tokens = tokens(of: line)
         if tokens.contains(where: \.isBar) {
             return barLines(tokens, perBar: perBar)
         }
@@ -138,6 +159,18 @@ public enum ChordBeats {
         return result
     }
 
+    /// Whether the line has a mark chord (`[|]`) or a character a bar or beat mark is made
+    /// of; false means no bars and no beat marks.
+    private static func mayHoldMarks(_ line: RenderLine) -> Bool {
+        if line.chords.contains(where: { $0.kind == .unknown && isMark($0.original) }) {
+            return true
+        }
+        return line.lyrics.utf8.contains { byte in
+            byte == UInt8(ascii: "|") || byte == UInt8(ascii: "/") || byte == UInt8(ascii: ".")
+                || byte == UInt8(ascii: "%")
+        }
+    }
+
     private enum Token {
         /// A chord of any kind (`isChordKind` for `.chord`).
         case chord(isChordKind: Bool)
@@ -204,8 +237,15 @@ public enum ChordBeats {
             }
             word = ""
         }
+        // One walk over the text (`character(at:)` per offset would index from the start
+        // each time; the timeline reads every line on every render, P8-7 section 5.8).
+        let units = line.lyrics.utf16
+        var index = units.startIndex
         for offset in 0 ..< line.lyricCount {
-            let character = line.character(at: offset)
+            let width = line.characterStarts[offset + 1] - line.characterStarts[offset]
+            let next = units.index(index, offsetBy: width)
+            let character = line.lyrics[index ..< next]
+            index = next
             if character.allSatisfy(\.isWhitespace) {
                 flush()
             } else {

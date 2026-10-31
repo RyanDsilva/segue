@@ -80,6 +80,68 @@ struct BassPrefsSidecarTests {
     }
 
     @Test
+    func `ticks, push, source and dismissals round-trip in schema 5`() throws {
+        let json = """
+        {"timing": {"rule": {"each": "bar"}, "chords": [
+          {"section": "Chorus", "occurrence": 1, "fp": "9f8e7d6c", "chord": 0, "from": "C",
+           "beats": 2},
+          {"section": "Verse", "occurrence": 1, "fp": "1a2b3c4d", "chord": 2, "from": "D",
+           "beats": 3, "ticks": 1200, "push": "8", "source": "tap"}],
+         "dismissedKeys": [{"section": "Chorus", "occurrence": 3, "fp": "5e6f7a8b",
+           "key": "A"}]}}
+        """
+        let prefs = try JSONDecoder().decode(BassPrefs.self, from: Data(json.utf8))
+        let chords = prefs.timing.chords
+        #expect(chords.map(\.beats) == [2, 3])
+        #expect(chords.map(\.ticks) == [nil, 1200])
+        #expect(chords.map(\.push) == [nil, .eighth])
+        #expect(chords.map(\.source) == [nil, .tap])
+        #expect(try prefs.timing.dismissedKeys == [KeyChangeDismissal(
+            section: .section(SectionRef(label: "Chorus", occurrence: 3)),
+            fingerprint: "5e6f7a8b",
+            key: #require(SongKey(parsing: "A")),
+        )])
+        let encoded = try JSONEncoder().encode(prefs)
+        #expect(try JSONDecoder().decode(BassPrefs.self, from: encoded) == prefs)
+        // An old-shape override writes no new fields, and no dismissals write none.
+        let plain = try JSONEncoder().encode(ChordTiming(chords: [chords[0]]))
+        let text = String(bytes: plain, encoding: .utf8) ?? ""
+        #expect(!text.contains("ticks") && !text.contains("push") && !text.contains("source"))
+        #expect(!text.contains("dismissedKeys"))
+    }
+
+    @Test
+    func `a bad push, ticks or source drops only that field`() throws {
+        let json = """
+        {"chords": [
+          {"section": "Verse", "fp": "x", "chord": 0, "from": "G", "beats": 4, "push": "4"},
+          {"section": "Verse", "fp": "x", "chord": 1, "from": "C", "beats": 4, "ticks": 0},
+          {"section": "Verse", "fp": "x", "chord": 2, "from": "D", "beats": 4,
+           "ticks": "long", "source": "guess", "push": "16"}],
+         "dismissedKeys": [{"section": "Chorus", "fp": "y", "key": "H"}, 3]}
+        """
+        let timing = try JSONDecoder().decode(ChordTiming.self, from: Data(json.utf8))
+        #expect(timing.chords.count == 3)
+        #expect(timing.chords.map(\.push) == [nil, nil, .sixteenth])
+        #expect(timing.chords.allSatisfy { $0.ticks == nil && $0.source == nil })
+        #expect(timing.dismissedKeys.isEmpty)
+    }
+
+    @Test
+    func `a sub-beat correction writes its rounded beats beside the ticks`() {
+        let anchor = ChordAnchor(
+            section: .section(SectionRef(label: "Verse", occurrence: 1)),
+            fingerprint: "x",
+            chord: 0,
+            from: "G",
+        )
+        let override = ChordBeatsOverride(anchor: anchor, ticks: 1200, meter: .common)
+        #expect(override.beats == 3)
+        let sixEight = ChordBeatsOverride(anchor: anchor, ticks: 1080, meter: Meter(time: "6/8"))
+        #expect(sixEight.beats == 2)
+    }
+
+    @Test
     func `a malformed bass object reads empty and the song stays editable`() async throws {
         let lib = try TestLibrary()
         let store = try await lib.openStore()

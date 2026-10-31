@@ -176,27 +176,36 @@ public struct WalkUpPick: Sendable, Hashable, Codable {
     }
 }
 
-/// Play-along timing (P8-6 section 7.3): a song-wide rule and per-chord overrides.
+/// Play-along timing (P8-6 section 7.3): a song-wide rule and per-chord overrides, read by
+/// `SongTimeline` (P8-7 section 5.6), plus the key-change suggestions dismissed (P8-7 6.2).
 public struct ChordTiming: Sendable, Hashable, Codable {
     /// nil = one bar per chord.
     public var rule: TimingRule?
     public var chords: [ChordBeatsOverride]
+    /// "Looks like a key change" chips dismissed with "x" (P8-7 section 6.2).
+    public var dismissedKeys: [KeyChangeDismissal]
 
-    public init(rule: TimingRule? = nil, chords: [ChordBeatsOverride] = []) {
+    public init(
+        rule: TimingRule? = nil,
+        chords: [ChordBeatsOverride] = [],
+        dismissedKeys: [KeyChangeDismissal] = [],
+    ) {
         self.rule = rule
         self.chords = chords
+        self.dismissedKeys = dismissedKeys
     }
 
     public var isEmpty: Bool {
-        rule == nil && chords.isEmpty
+        rule == nil && chords.isEmpty && dismissedKeys.isEmpty
     }
 
     private enum CodingKeys: String, CodingKey {
         case rule
         case chords
+        case dismissedKeys
     }
 
-    /// Lenient: an unknown rule reads as absent; overrides decode one by one.
+    /// Lenient: an unknown rule reads as absent; overrides and dismissals decode one by one.
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         rule = try? container.decodeIfPresent(TimingRule.self, forKey: .rule)
@@ -204,12 +213,63 @@ public struct ChordTiming: Sendable, Hashable, Codable {
             [Lenient<ChordBeatsOverride>].self,
             forKey: .chords,
         ))?.compactMap(\.value) ?? []
+        dismissedKeys = (try? container.decodeIfPresent(
+            [Lenient<KeyChangeDismissal>].self,
+            forKey: .dismissedKeys,
+        ))?.compactMap(\.value) ?? []
     }
 
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(rule, forKey: .rule)
         try container.encode(chords, forKey: .chords)
+        if !dismissedKeys.isEmpty {
+            try container.encode(dismissedKeys, forKey: .dismissedKeys)
+        }
+    }
+}
+
+/// A dismissed "Looks like a key change to A" chip (P8-7 section 6.2): on disk
+/// `{"section": "Chorus", "occurrence": 3, "fp": "5e6f7a8b", "key": "A"}`.
+public struct KeyChangeDismissal: Sendable, Hashable, Codable {
+    public var section: SectionAnchor
+    /// "fp".
+    public var fingerprint: String
+    /// The key the chip suggested.
+    public var key: SongKey
+
+    public init(section: SectionAnchor, fingerprint: String, key: SongKey) {
+        self.section = section
+        self.fingerprint = fingerprint
+        self.key = key
+    }
+
+    private enum Keys: String, CodingKey {
+        case key
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let anchor = try decoder.container(keyedBy: AnchorCodingKeys.self)
+        section = try SectionAnchor.decode(from: anchor)
+        fingerprint = try anchor.decode(String.self, forKey: .fingerprint)
+        let container = try decoder.container(keyedBy: Keys.self)
+        let name = try container.decode(String.self, forKey: .key)
+        guard let key = SongKey(parsing: name) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .key,
+                in: container,
+                debugDescription: "not a key",
+            )
+        }
+        self.key = key
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var anchor = encoder.container(keyedBy: AnchorCodingKeys.self)
+        try section.encode(to: &anchor)
+        try anchor.encode(fingerprint, forKey: .fingerprint)
+        var container = encoder.container(keyedBy: Keys.self)
+        try container.encode(key.name, forKey: .key)
     }
 }
 
@@ -264,20 +324,65 @@ public enum TimingRule: Sendable, Hashable, Codable {
     }
 }
 
-/// A play-along override: one chord lasts `beats` (1 ... 32).
+/// A timing correction (P8-6 section 7.3, P8-7 section 5.6): one chord lasts `beats`
+/// pulses (1 ... 32), or `ticks` when set (a sub-beat length; it wins, and `beats` is
+/// written as its rounded value so a reader that knows only `beats` gets a sensible length),
+/// optionally pushed an eighth or sixteenth early. `source` is "tap" for a tapped length.
 public struct ChordBeatsOverride: Sendable, Hashable, Codable {
+    public enum Source: String, Sendable, Hashable, Codable {
+        case tap
+    }
+
     public var anchor: ChordAnchor
     public var beats: Int
+    public var ticks: Int?
+    public var push: Push?
+    public var source: Source?
 
-    public init(anchor: ChordAnchor, beats: Int) {
+    /// `ticks` beyond 32 pulses of the longest pulse are refused.
+    public static let ticksRange = 1 ... 32 * Ticks.perWhole
+
+    public init(
+        anchor: ChordAnchor,
+        beats: Int,
+        ticks: Int? = nil,
+        push: Push? = nil,
+        source: Source? = nil,
+    ) {
         self.anchor = anchor
         self.beats = beats
+        self.ticks = ticks
+        self.push = push
+        self.source = source
+    }
+
+    /// A sub-beat correction: `ticks` long in `meter`, `beats` its rounded pulses.
+    public init(
+        anchor: ChordAnchor,
+        ticks: Int,
+        meter: Meter,
+        push: Push? = nil,
+        source: Source? = nil,
+    ) {
+        let pulses = (Double(ticks) / Double(meter.ticksPerPulse)).rounded()
+        self.init(
+            anchor: anchor,
+            beats: min(32, max(1, Int(pulses))),
+            ticks: ticks,
+            push: push,
+            source: source,
+        )
     }
 
     private enum Keys: String, CodingKey {
         case beats
+        case ticks
+        case push
+        case source
     }
 
+    /// Strict on the anchor and `beats` (the sidecar then drops this override alone);
+    /// lenient on the P8-7 fields: a bad `ticks`, `push` or `source` drops only that field.
     public init(from decoder: any Decoder) throws {
         anchor = try ChordAnchor(from: decoder)
         let container = try decoder.container(keyedBy: Keys.self)
@@ -289,12 +394,19 @@ public struct ChordBeatsOverride: Sendable, Hashable, Codable {
                 debugDescription: "beats outside 1 ... 32",
             )
         }
+        ticks = (try? container.decodeIfPresent(Int.self, forKey: .ticks))
+            .flatMap { Self.ticksRange.contains($0) ? $0 : nil }
+        push = try? container.decodeIfPresent(Push.self, forKey: .push)
+        source = try? container.decodeIfPresent(Source.self, forKey: .source)
     }
 
     public func encode(to encoder: any Encoder) throws {
         try anchor.encode(to: encoder)
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(beats, forKey: .beats)
+        try container.encodeIfPresent(ticks, forKey: .ticks)
+        try container.encodeIfPresent(push, forKey: .push)
+        try container.encodeIfPresent(source, forKey: .source)
     }
 }
 
