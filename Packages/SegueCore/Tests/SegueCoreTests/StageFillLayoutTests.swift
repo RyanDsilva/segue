@@ -284,6 +284,37 @@ struct StageFillLayoutTests {
         #expect(tab == items.count - 1)
     }
 
+    /// The bass chart PDF's seam (section 14.5): with bass notes forced on, the written-order
+    /// render model carries every applied fill's runs and tab blocks.
+    @Test
+    func `a forced bass render model carries the runs and the tab blocks`() throws {
+        let (document, _) = ChordProParser.parse(Self.song)
+        let options = DisplayOptions().withBass(
+            InstrumentProfile(bassNotes: false, walkUps: .everyChange),
+            forcingNotes: true,
+        )
+        let model = RenderModel(document: document, options: options)
+        let names = try Self.song()
+        let tabbed = try Self.song(chorusShow: .tab)
+        let annotated = BassLine.annotated(
+            model,
+            document: document,
+            prefs: BassPrefs(),
+            parts: [names.parts[0], tabbed.parts[1]],
+        )
+        #expect(Self.fillRuns(annotated) == ["G: G A", "C: D E \u{203A}"])
+        let blocks = annotated.sections.flatMap(\.items).compactMap { item -> FillTabBlock? in
+            if case let .fillTab(block) = item {
+                return block
+            }
+            return nil
+        }
+        #expect(blocks.count == 1)
+        let layout = try #require(blocks.first).layout(width: 300) { Double($0.count) * 6 }
+        #expect(layout.glyphs.count == 2)
+        #expect(layout.chords.map(\.text) == ["C", "D"])
+    }
+
     /// The fill runs of a render model as "chord: run".
     static func fillRuns(_ model: RenderModel) -> [String] {
         model.sections.flatMap(\.items).flatMap { item -> [String] in

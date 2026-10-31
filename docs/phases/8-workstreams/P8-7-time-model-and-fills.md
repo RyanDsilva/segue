@@ -519,7 +519,16 @@ While the chord at the reading line is inside an applied fill's span in the curr
 
 ### 14.5 PDF: the hook only
 
-The bass chart PDF is built in the phase 4 export (`docs/phases/4-export.md:19`), not here. P8-7e provides the seam and nothing else: with bass notes forced on (`DisplayOptions.withBass(_:forcingNotes:)`), the render model already carries `RenderChord.fill` runs and `RenderItem.fillTab` blocks for the song's applied fills in written order (every pass where a fill applies), and `TabLayout` lays out a tab for any width. The phase 4 export's `ChartLayout` prints runs as dark-grey text like walk-up runs and tab blocks with `TabLayout` in the print theme. The orchestrator adds one line to `docs/phases/4-export.md`'s Bass chart note pointing at this section (this spec does not edit that file); if the export exists when P8-7e runs, stop and ask before touching it.
+The bass chart PDF is built in the phase 4 export (`docs/phases/4-export.md:19`), not here. P8-7e provides the seam and nothing else: with bass notes forced on (`DisplayOptions.withBass(_:forcingNotes:)`), the render model already carries `RenderChord.fill` runs and `RenderItem.fillTab` blocks for the song's applied fills in written order (every pass where a fill applies), and `TabLayout` lays out a tab for any width. The phase 4 export's `ChartLayout` prints runs as dark-grey text like walk-up runs (skipping a run whose `inTab` is set: its fill prints as the block) and tab blocks with `FillTabBlock.layout(width:metrics:measure:)` in the print theme. The orchestrator adds one line to `docs/phases/4-export.md`'s Bass chart note pointing at this section (this spec does not edit that file); if the export exists when P8-7e runs, stop and ask before touching it.
+
+### 14.6 As built (P8-7e)
+
+- `FillRun` and `FillTabBlock` live in `Editing/RenderModel+Bass.swift` and carry the part's id as its string (`Editing` cannot see `Library`'s `PartID`). `FillRun` also carries the neck's input: `pitches`, `pins` (a pinned note's position), `firstNumber` (its first note's number in the whole fill) and `total`.
+- A fill shown as a tab keeps its `FillRun`s with `inTab` set: they are not drawn (the block is) but the stage neck still shows the fill's path over the chord.
+- Fills follow the walk-up density (R168 Q7, overruling 14.1's second bullet): `BassLine.annotate` draws nothing while walk-ups are Off, and a fill shows on any change while they are on, as a saved pick does (R162 Q2).
+- On stage, `BassLine.context(for:document:prefs:parts:order:)` builds `BassLineContext.played`, the timeline in the played passes' order, only when a fill applies; fills are resolved and laid out once per plan in `SongPreparation`, and a tab row keeps with the line above it when a section splits between columns.
+- A span starting in a grid always draws as a tab after the grid (no names line).
+- The editor's "Bass menu" is the bassist's "Bass, BEADG" menu in the top bar; Settings > Instrument's row sits in the Walk-ups section.
 
 ## 15. Analytics (non-PII, closed vocabulary)
 
