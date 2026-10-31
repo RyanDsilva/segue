@@ -16,6 +16,10 @@
         let artists: [String]
         /// The library's artist names, most songs first (`LibraryViewModel.knownArtists`).
         let suggestions: [String]
+        /// What a chip is, for the placeholder and VoiceOver ("artist"; the smart filter's
+        /// Movie / Album row says "movie or album" and offers no Split).
+        var noun = "artist"
+        var offersSplit = true
         /// Bumped to put the caret in the input (double-click on the heading's artists).
         var focusRequest = 0
         /// Escape with nothing to dismiss, or focus leaving the field.
@@ -65,7 +69,7 @@
 
         private func chip(_ name: String, index: Int) -> some View {
             let isSelected = selectedChip == index
-            let canSplit = ArtistChipEditing.canSplit(name)
+            let canSplit = offersSplit && ArtistChipEditing.canSplit(name)
             return chipLabel(name, index: index, canSplit: canSplit)
                 .padding(.leading, 9)
                 .padding(.trailing, 5)
@@ -96,7 +100,7 @@
                     return true
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(name), artist \(index + 1) of \(artists.count)")
+                .accessibilityLabel("\(name), \(noun) \(index + 1) of \(artists.count)")
                 .accessibilityAddTraits(.isButton)
                 .accessibilityIdentifier(AccessibilityID.songCardArtistChip)
                 .accessibilityAction(named: "Remove") { remove(at: index) }
@@ -142,11 +146,11 @@
                 text: input,
                 font: Self.inputFont,
                 identifier: AccessibilityID.songCardArtistInput,
-                placeholder: artists.isEmpty ? "Add artist" : "Add",
-                accessibilityHint: "Return or comma adds an artist",
+                placeholder: artists.isEmpty ? "Add \(noun)" : "Add",
+                accessibilityHint: "Return or comma adds one",
                 focusRequest: focusRequest,
                 selectAllRequest: 0,
-                accessibilityLabel: "Add artist",
+                accessibilityLabel: "Add \(noun)",
                 accessibilityValue: input,
                 onChange: typed,
                 onFocusChange: focusChanged,

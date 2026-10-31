@@ -17,6 +17,9 @@ struct SmartFilterDraft: Equatable {
         case tempo
         case length
         case neverPlayed
+        /// P8-8 sections 3.5 and 4.4.
+        case artists
+        case albums
 
         var id: Self {
             self
@@ -31,6 +34,8 @@ struct SmartFilterDraft: Equatable {
             case .tempo: .tempo
             case .length: .length
             case .neverPlayed: .plays
+            case .artists: .artist
+            case .albums: .album
             }
         }
 
@@ -41,7 +46,7 @@ struct SmartFilterDraft: Equatable {
             case .anyTags: "has any of"
             case .noneTags: "has none of"
             case .proficiency: "is"
-            case .keys: "is any of"
+            case .albums, .artists, .keys: "is any of"
             case .length, .tempo: "between"
             case .neverPlayed: "never played"
             }
@@ -56,6 +61,8 @@ struct SmartFilterDraft: Equatable {
         case tempo = "Tempo"
         case length = "Length"
         case plays = "Plays"
+        case artist = "Artist"
+        case album = "Movie / Album"
 
         var id: Self {
             self
@@ -74,6 +81,8 @@ struct SmartFilterDraft: Equatable {
         var tags: [String] = []
         var proficiencies: Set<Proficiency> = []
         var keys: [String] = []
+        /// Artist or Movie / Album names, as written.
+        var names: [String] = []
         /// Tempo in BPM or length as typed (`mm:ss`); blank = open.
         var lower = ""
         var upper = ""
@@ -118,6 +127,12 @@ struct SmartFilterDraft: Equatable {
         if conditions.neverPlayed {
             rows.append(Row(kind: .neverPlayed))
         }
+        if !conditions.artists.isEmpty {
+            rows.append(Row(kind: .artists, names: conditions.artists))
+        }
+        if !conditions.albums.isEmpty {
+            rows.append(Row(kind: .albums, names: conditions.albums))
+        }
         self.rows = rows.isEmpty ? [Row(kind: .anyTags)] : rows
     }
 
@@ -145,6 +160,8 @@ struct SmartFilterDraft: Equatable {
                 )
                 result.length = range.isOpen ? nil : range
             case .neverPlayed: result.neverPlayed = true
+            case .artists: result.artists = row.names
+            case .albums: result.albums = row.names
             }
         }
         return result

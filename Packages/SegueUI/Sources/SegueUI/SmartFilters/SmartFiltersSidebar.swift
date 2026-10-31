@@ -249,6 +249,8 @@
                     saveTitle: "Save",
                     draft: SmartFilterDraft(name: "", conditions: SmartFilterConditions()),
                     libraryTags: library.tagNames,
+                    libraryArtists: library.knownArtists,
+                    libraryAlbums: library.knownAlbums,
                     songs: library.catalog,
                     playStats: library.playStats,
                 ) { name, conditions in
@@ -261,6 +263,8 @@
                         saveTitle: "Save",
                         draft: SmartFilterDraft(name: filter.name, conditions: filter.conditions),
                         libraryTags: library.tagNames,
+                        libraryArtists: library.knownArtists,
+                        libraryAlbums: library.knownAlbums,
                         songs: library.catalog,
                         playStats: library.playStats,
                     ) { name, conditions in

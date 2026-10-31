@@ -153,7 +153,7 @@ struct SmartFilterSessionTests {
     }
 
     @Test
-    func `the draft round trips conditions and rejects bad values`() {
+    func `the draft round trips every condition and rejects bad values`() {
         let conditions = SmartFilterConditions(
             anyTags: ["upbeat", "cover"],
             noneTags: ["ballad"],
@@ -162,6 +162,8 @@ struct SmartFilterSessionTests {
             tempo: SmartFilterRange(min: 90),
             length: SmartFilterRange(min: 150, max: 300),
             neverPlayed: true,
+            artists: ["Arijit Singh", "Vishal & Shekhar"],
+            albums: ["Kalank"],
         )
         var draft = SmartFilterDraft(name: "Openers", conditions: conditions)
         #expect(draft.rows.map(\.kind) == [
@@ -172,7 +174,11 @@ struct SmartFilterSessionTests {
             .tempo,
             .length,
             .neverPlayed,
+            .artists,
+            .albums,
         ])
+        #expect(draft.rows[7].names == ["Arijit Singh", "Vishal & Shekhar"])
+        #expect(draft.rows[8].kind.field == .album)
         #expect(draft.rows[5].lower == "2:30")
         var expected = conditions
         expected.proficiencies = [.ready, .pro]

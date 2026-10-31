@@ -11,6 +11,9 @@
         let saveTitle: String
         /// The library's tags (most used first) for the tag rows' completions.
         let libraryTags: [String]
+        /// The library's artists and Movie / Album values, for those rows' suggestions.
+        var libraryArtists: [String] = []
+        var libraryAlbums: [String] = []
         /// The songs and play history the live count is taken over.
         let songs: [SongRecord]
         let playStats: [SongID: PlayStats]
@@ -23,6 +26,8 @@
             saveTitle: String,
             draft: SmartFilterDraft,
             libraryTags: [String],
+            libraryArtists: [String] = [],
+            libraryAlbums: [String] = [],
             songs: [SongRecord],
             playStats: [SongID: PlayStats],
             onSave: @escaping (String, SmartFilterConditions) -> Void,
@@ -30,6 +35,8 @@
             self.title = title
             self.saveTitle = saveTitle
             self.libraryTags = libraryTags
+            self.libraryArtists = libraryArtists
+            self.libraryAlbums = libraryAlbums
             self.songs = songs
             self.playStats = playStats
             self.onSave = onSave
@@ -60,6 +67,8 @@
                             isFirst: row.id == draft.rows.first?.id,
                             kinds: draft.unusedKinds(besides: row),
                             libraryTags: libraryTags,
+                            libraryArtists: libraryArtists,
+                            libraryAlbums: libraryAlbums,
                             canRemove: draft.rows.count > 1,
                             canAdd: !draft.unusedKinds().isEmpty,
                             onRemove: { draft.removeRow(row.id) },
@@ -145,6 +154,8 @@
         /// The kinds this row may switch to (its own plus the unused ones).
         let kinds: [SmartFilterDraft.Kind]
         let libraryTags: [String]
+        let libraryArtists: [String]
+        let libraryAlbums: [String]
         let canRemove: Bool
         let canAdd: Bool
         let onRemove: () -> Void
@@ -258,6 +269,23 @@
                 Text("in any show")
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.muted)
+            case .artists:
+                names(suggestions: libraryArtists, noun: "artist")
+            case .albums:
+                names(suggestions: libraryAlbums, noun: "movie or album")
+            }
+        }
+
+        /// Artist or Movie / Album names as chips, with the library's names suggested (P8-8
+        /// sections 3.5 and 4.4); typed as written, no autocorrect.
+        private func names(suggestions: [String], noun: String) -> some View {
+            ArtistChipField(
+                artists: row.names,
+                suggestions: suggestions,
+                noun: noun,
+                offersSplit: false,
+            ) { change in
+                row.names = change.artists
             }
         }
 
