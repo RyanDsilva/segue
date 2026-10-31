@@ -16,7 +16,8 @@ public final class SoundSession {
     public let settings: AudioSettingsStore
     @ObservationIgnored let host: AudioEngineHost
     @ObservationIgnored private let makeOutput: @MainActor () -> any SoundOutput
-    @ObservationIgnored private let clock: any Clock
+    /// The injected clock (tap capture times taps on it).
+    @ObservationIgnored let clock: any Clock
     @ObservationIgnored let devices: any AudioDeviceDirectory
     /// The player; nil until the first sound, and dropped when a gig starts.
     public private(set) var player: SoundPlayer?

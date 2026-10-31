@@ -37,20 +37,33 @@
                         proxy.scrollTo(current, anchor: .center)
                     }
                 }
-                BeatsControl(model: model)
+                if let tap = model.tap {
+                    TapCapturePanel(tap: tap)
+                } else {
+                    BeatsControl(model: model)
+                }
             }
             .focusable()
             .focused($focused)
             .focusEffectDisabled()
+            .onChange(of: model.tap == nil) { _, closed in
+                // The tap panel takes the keys while it is open.
+                focused = !closed
+            }
+            .onKeyPress(phases: .down) { press in
+                tapKey(press)
+            }
             .onKeyPress(characters: .decimalDigits, phases: .down) { press in
-                guard let selected = model.selected, let digit = Int(press.characters),
+                guard model.tap == nil, let selected = model.selected,
+                      let digit = Int(press.characters),
                       (1 ... 9).contains(digit)
                 else { return .ignored }
                 model.setBeats(selected, digit)
                 return .handled
             }
             .onKeyPress(characters: CharacterSet(charactersIn: "<"), phases: .down) { _ in
-                guard let selected = model.selected, model.canEditTiming else { return .ignored }
+                guard model.tap == nil, let selected = model.selected, model.canEditTiming
+                else { return .ignored }
                 model.cyclePush(selected)
                 return .handled
             }
@@ -63,6 +76,7 @@
                 moveSelection(by: 1, extending: press.modifiers.contains(.shift))
             }
             .onKeyPress(.space) {
+                guard model.tap == nil else { return .ignored }
                 model.togglePlay()
                 return .handled
             }
@@ -76,6 +90,7 @@
             let width = max(Self.x(grid.totalTicks), 1)
             let markers = model.laneMarkers
             let top: CGFloat = markers.isEmpty ? 0 : Self.markerHeight
+            let review = reviewShifts()
             return ZStack(alignment: .topLeading) {
                 barTicks(grid)
                     .offset(y: top)
@@ -83,7 +98,7 @@
                     markerLabel(marker)
                 }
                 ForEach(grid.chords.indices, id: \.self) { index in
-                    block(index, top: top)
+                    block(index, top: top, review: review)
                         .id(index)
                 }
                 Playhead(model: model)
@@ -124,25 +139,50 @@
                 .accessibilityIdentifier(AccessibilityID.playAlongMarker)
         }
 
-        private func block(_ index: Int, top: CGFloat) -> some View {
+        /// Tap Timing's review: how far each block moves (the changes before it add up).
+        private func reviewShifts() -> [Int]? {
+            guard let tap = model.tap, tap.phase == .review, let proposal = tap.proposal,
+                  proposal.chords.count == model.timeline.timeline.chords.count
+            else { return nil }
+            var shifts: [Int] = []
+            var total = 0
+            for chord in proposal.chords {
+                shifts.append(total)
+                total += chord.new - chord.old
+            }
+            return shifts
+        }
+
+        private func block(_ index: Int, top: CGFloat, review: [Int]?) -> some View {
             let chords = model.timeline.timeline.chords
             let chord = chords[index]
-            let length = drag?.index == index
-                ? (drag?.ticks ?? 0) + chord.length - model.gridTicks(of: index)
-                : chord.length
-            let shift = drag.map { drag in
+            let proposed = review == nil ? nil : model.tap?.proposal?.chords[index]
+            let length = if let proposed {
+                chord.length + proposed.new - proposed.old
+            } else if drag?.index == index {
+                (drag?.ticks ?? 0) + chord.length - model.gridTicks(of: index)
+            } else {
+                chord.length
+            }
+            let shift = review?[index] ?? drag.map { drag in
                 drag.index < index ? drag.ticks - model.gridTicks(of: drag.index) : 0
             } ?? 0
+            let tapping = model.tap?.phase == .tapping
             return TimelineBlock(
                 title: title(index),
                 chord: chord,
-                isSelected: model.selected == index || model.span?.contains(index) == true,
-                isCurrent: model.current == index,
+                isSelected: model.tap == nil
+                    && (model.selected == index || model.span?.contains(index) == true),
+                isCurrent: model.current == index || (tapping && model.tap?.next == index),
                 edge: LaneEdge(chord.source),
                 push: chord.push,
                 width: max(Self.x(length) - 2, 6),
                 spoken: spoken(index),
+                review: proposed.flatMap { TapMark($0, ticksPerPulse: chord.meter.ticksPerPulse) },
+                oldWidth: proposed.map { _ in max(Self.x(chord.length) - 2, 6) },
+                oldOffset: -Self.x(shift),
                 onSelect: {
+                    guard model.tap == nil else { return }
                     model.select(index, extending: NSEvent.modifierFlags.contains(.shift))
                     focused = true
                 },
@@ -151,7 +191,7 @@
                 },
             )
             .overlay(alignment: .trailing) {
-                if model.canEditTiming, !chord.isSilent {
+                if model.canEditTiming, !chord.isSilent, model.tap == nil {
                     edgeHandle(index)
                 }
             }
@@ -219,15 +259,40 @@
             Int((x / pointsPerQuarter * CGFloat(Ticks.perQuarter)).rounded())
         }
 
+        /// Tap Timing's keys while its panel is open: Space or Page Down taps (⌥ for half a
+        /// beat), Tab skips, Return keeps the review, Esc stops, discards or closes.
+        private func tapKey(_ press: KeyPress) -> KeyPress.Result {
+            guard let tap = model.tap else { return .ignored }
+            let half = press.modifiers.contains(.option)
+            switch press.key {
+            case KeyEquivalent("\u{00A0}"), .pageDown, .space:
+                tap.tap(half: half)
+            case .tab:
+                tap.skip()
+            case .return:
+                guard tap.phase == .review else { return .ignored }
+                tap.keep()
+            case .escape:
+                switch tap.phase {
+                case .ready: tap.cancel()
+                case .tapping: tap.stop()
+                case .review: tap.discard()
+                }
+            default:
+                return .ignored
+            }
+            return .handled
+        }
+
         private func clearSelected() -> KeyPress.Result {
-            guard let selected = model.selected else { return .ignored }
+            guard model.tap == nil, let selected = model.selected else { return .ignored }
             model.clearCorrection(selected)
             return .handled
         }
 
         private func moveSelection(by step: Int, extending: Bool) -> KeyPress.Result {
             let count = model.timeline.timeline.chords.count
-            guard count > 0 else { return .ignored }
+            guard count > 0, model.tap == nil else { return .ignored }
             let from = extending ? (model.spanEnd ?? model.selected) : model.selected
             let next = min(max((from ?? (step > 0 ? -1 : count)) + step, 0), count - 1)
             model.select(next, extending: extending)
@@ -245,6 +310,11 @@
         let push: Push?
         let width: CGFloat
         let spoken: String
+        /// Tap Timing's review of this chord, and its old width (ghosted under it).
+        var review: TapMark?
+        var oldWidth: CGFloat?
+        /// Where the block started before, from where it starts now.
+        var oldOffset: CGFloat = 0
         let onSelect: () -> Void
         let adjust: (Int) -> Void
 
@@ -268,11 +338,21 @@
 
         var body: some View {
             label
+                .overlay(alignment: .bottomLeading) {
+                    // The old length, ghosted as a thin bar under where the block was.
+                    if case .changed = review, let oldWidth {
+                        Capsule()
+                            .fill(Theme.color.muted.opacity(0.45))
+                            .frame(width: max(oldWidth - 4, 2), height: 3)
+                            .offset(x: oldOffset + 2, y: 6)
+                            .accessibilityHidden(true)
+                    }
+                }
                 .contentShape(shape)
                 .onTapGesture(perform: onSelect)
-                .help(spoken)
+                .help(review.map { "\(spoken), \($0.spoken)" } ?? spoken)
                 .accessibilityElement()
-                .accessibilityLabel(spoken)
+                .accessibilityLabel(review.map { "\(spoken), \($0.spoken)" } ?? spoken)
                 .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
                 .accessibilityAction(.default, onSelect)
                 .accessibilityAdjustableAction { direction in
@@ -286,70 +366,44 @@
         }
 
         private var label: some View {
-            Text(chord.isSilent ? "N.C." : title)
-                .font(SchibstedGrotesk.bold.font(size: 13))
-                .foregroundStyle(chord.isSilent ? Theme.color.muted : Theme.color.cueText)
-                .lineLimit(1)
-                .padding(.leading, push == nil ? 6 : 9)
-                .padding(.trailing, 6)
-                .frame(width: width, height: TimelineStrip.blockHeight, alignment: .leading)
-                .background(shape.fill(fill))
-                .overlay {
-                    shape.strokeBorder(
-                        isSelected ? Theme.color.cueText : Theme.color.lineStrong,
-                        style: stroke,
-                    )
+            HStack(spacing: 5) {
+                Text(chord.isSilent ? "N.C." : title)
+                    .font(SchibstedGrotesk.bold.font(size: 13))
+                    .foregroundStyle(chord.isSilent ? Theme.color.muted : Theme.color.cueText)
+                // The review's "4 → 3" where it fits; VoiceOver and the tooltip always say it.
+                if let review,
+                   width >= CGFloat(title.count) * 9 + CGFloat(review.text.count) * 7 + 18
+                {
+                    Text(review.text)
+                        .font(SchibstedGrotesk.semiBold.font(size: 11))
+                        .monospacedDigit()
+                        .foregroundStyle(Theme.color.muted)
                 }
-                .overlay(alignment: .topTrailing) {
-                    if edge == .corrected || edge == .tapped {
-                        SourceMark(tapped: edge == .tapped)
-                            .padding(5)
-                    }
-                }
-                .overlay(alignment: .leading) {
-                    if let push {
-                        PushNotch(width: TimelineStrip.x(push.ticks))
-                    }
-                }
-                .clipShape(shape)
-        }
-    }
-
-    /// A correction's dot; a tapped one has a tick beside it.
-    private struct SourceMark: View {
-        let tapped: Bool
-
-        var body: some View {
-            HStack(spacing: 2) {
-                if tapped {
-                    Capsule()
-                        .fill(Theme.color.cueText)
-                        .frame(width: 1.5, height: 7)
-                }
-                Circle()
-                    .fill(Theme.color.cueText)
-                    .frame(width: 5, height: 5)
             }
-            .accessibilityHidden(true)
-        }
-    }
-
-    /// The early part of a pushed block: a notch cut into its left edge, as wide as the
-    /// push, ending at the beat the chord would start on.
-    private struct PushNotch: View {
-        let width: CGFloat
-
-        var body: some View {
-            ZStack(alignment: .trailing) {
-                Rectangle()
-                    .fill(Theme.color.cueText.opacity(0.10))
-                    .frame(width: width)
-                Rectangle()
-                    .fill(Theme.color.cueText.opacity(0.55))
-                    .frame(width: 1, height: TimelineStrip.blockHeight * 0.4)
+            .lineLimit(1)
+            .padding(.leading, push == nil ? 6 : 9)
+            .padding(.trailing, 6)
+            .frame(width: width, height: TimelineStrip.blockHeight, alignment: .leading)
+            .background(shape.fill(review == .skipped ? Theme.color.surfaceAlt : fill))
+            .overlay {
+                shape.strokeBorder(
+                    isSelected || review?.isChange == true
+                        ? Theme.color.cueText : Theme.color.lineStrong,
+                    style: stroke,
+                )
             }
-            .frame(height: TimelineStrip.blockHeight)
-            .accessibilityHidden(true)
+            .overlay(alignment: .topTrailing) {
+                if edge == .corrected || edge == .tapped {
+                    SourceMark(tapped: edge == .tapped)
+                        .padding(5)
+                }
+            }
+            .overlay(alignment: .leading) {
+                if let push {
+                    PushNotch(width: TimelineStrip.x(push.ticks))
+                }
+            }
+            .clipShape(shape)
         }
     }
 
@@ -373,120 +427,4 @@
         }
     }
 
-    /// "Beats" for the selected chord: - / a field ("2.5", "2½") / +, its push, and "Use the
-    /// Song's Rule" when it has a correction.
-    private struct BeatsControl: View {
-        let model: PlayAlong
-        @State private var text = ""
-        @FocusState private var editing: Bool
-
-        var body: some View {
-            HStack(spacing: 6) {
-                BarLabel("Beats")
-                if let selected = model.selected {
-                    let pulses = model.pulses(of: selected)
-                    let whole = Int(pulses.rounded())
-                    StepButton(symbol: "minus", label: "Fewer beats") {
-                        model.setBeats(selected, Int(pulses.rounded(.up)) - 1)
-                    }
-                    .disabled(!model.canEditTiming || pulses <= 1)
-                    TextField("Beats", text: $text)
-                        .textFieldStyle(.plain)
-                        .font(SchibstedGrotesk.semiBold.font(size: 13))
-                        .monospacedDigit()
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Theme.color.ink)
-                        .frame(width: 40, height: 26)
-                        .background(Theme.color.ground, in: RoundedRectangle(cornerRadius: 6))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 6)
-                                .strokeBorder(
-                                    editing ? Theme.color.cueText : Theme.color.controlBorder,
-                                    lineWidth: 1,
-                                )
-                        }
-                        .focused($editing)
-                        .disabled(!model.canEditTiming)
-                        .onSubmit { commit(selected) }
-                        .onChange(of: editing) { _, isEditing in
-                            if !isEditing {
-                                commit(selected)
-                            }
-                        }
-                        .onAppear { text = BeatsText.format(pulses) }
-                        .onChange(of: pulses) { _, new in text = BeatsText.format(new) }
-                        .onChange(of: selected) { text = BeatsText.format(pulses) }
-                        .help("Type a length in beats: 3, 2.5 or 2½")
-                        .accessibilityLabel("Beats")
-                        .accessibilityValue(BeatsText.format(pulses))
-                        .accessibilityIdentifier(AccessibilityID.playAlongBeats)
-                    StepButton(symbol: "plus", label: "More beats") {
-                        model.setBeats(selected, Int(pulses.rounded(.down)) + 1)
-                    }
-                    .disabled(!model.canEditTiming || whole >= SongTimeline.maximumPulses)
-                    PushMenu(model: model, index: selected)
-                        .padding(.leading, 6)
-                    if model.correction(of: selected) != nil {
-                        Button("Use the Song's Rule") { model.clearCorrection(selected) }
-                            .buttonStyle(.segueSecondary)
-                            .controlSize(.small)
-                            .accessibilityIdentifier(AccessibilityID.playAlongUseRule)
-                    }
-                } else {
-                    Text("Click a chord to change how long it lasts")
-                        .font(.callout)
-                        .foregroundStyle(Theme.color.muted)
-                }
-            }
-        }
-
-        private func commit(_ index: Int) {
-            let shown = BeatsText.format(model.pulses(of: index))
-            guard text != shown else { return }
-            if !model.setLength(index, text: text) {
-                NSSound.beep()
-                text = shown
-            }
-        }
-    }
-
-    /// "Push": on the beat, an eighth or a sixteenth early (`<` cycles them).
-    struct PushMenu: View {
-        let model: PlayAlong
-        let index: Int
-
-        var body: some View {
-            let push = model.push(of: index)
-            Menu {
-                choice("On the Beat", nil, push)
-                choice("An Eighth Early", .eighth, push)
-                choice("A Sixteenth Early", .sixteenth, push)
-            } label: {
-                Text(push.map { "Push: \(BeatsText.short($0))" } ?? "Push")
-                    .font(SchibstedGrotesk.semiBold.font(size: 13))
-            }
-            .menuStyle(.button)
-            .fixedSize()
-            .disabled(!model.canEditTiming || model.timeline.timeline.chords[safe: index]?
-                .isSilent != false)
-            .help("Start this chord early, ahead of the beat (<)")
-            .accessibilityLabel("Push")
-            .accessibilityValue(push.map { "\(BeatsText.spoken($0)) early" } ?? "on the beat")
-            .accessibilityIdentifier(AccessibilityID.playAlongPush)
-        }
-
-        private func choice(_ title: String, _ value: Push?, _ current: Push?) -> some View {
-            Toggle(title, isOn: Binding(get: { current == value }, set: { isOn in
-                if isOn {
-                    model.setPush(index, value)
-                }
-            }))
-        }
-    }
-
-    private extension Array {
-        subscript(safe index: Int) -> Element? {
-            indices.contains(index) ? self[index] : nil
-        }
-    }
 #endif

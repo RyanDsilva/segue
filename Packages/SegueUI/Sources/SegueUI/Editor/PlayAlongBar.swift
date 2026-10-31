@@ -12,14 +12,20 @@
         var body: some View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 10) {
-                    transport
-                    rangeMenu
-                    Toggle("Loop", isOn: Binding(get: { model.loops }, set: model.setLoops))
-                        .toggleStyle(.checkbox)
-                        .accessibilityIdentifier(AccessibilityID.playAlongLoop)
-                        .help("Repeat the range")
+                    Group {
+                        transport
+                        rangeMenu
+                        Toggle("Loop", isOn: Binding(get: { model.loops }, set: model.setLoops))
+                            .toggleStyle(.checkbox)
+                            .accessibilityIdentifier(AccessibilityID.playAlongLoop)
+                            .help("Repeat the range")
+                    }
+                    // Tap Timing owns the range and the keys while its panel is open.
+                    .disabled(model.tap != nil)
                     Spacer(minLength: 8)
+                    TapTimingButton(model: model)
                     PlayAlongTimingMenu(model: model)
+                        .disabled(model.tap != nil)
                     Button {
                         model.setOpen(false)
                     } label: {
@@ -239,6 +245,27 @@
                     model.setRule(rule)
                 }
             }))
+        }
+    }
+
+    /// "Tap Timing": tap along to set the range's chord lengths (P8-7 section 7).
+    private struct TapTimingButton: View {
+        let model: PlayAlong
+
+        var body: some View {
+            Button {
+                model.beginTapCapture()
+            } label: {
+                Label("Tap Timing", systemImage: "hand.tap")
+                    .font(SchibstedGrotesk.semiBold.font(size: 13))
+            }
+            .buttonStyle(.segueSecondary)
+            .controlSize(.small)
+            .disabled(!model.canTapTiming || model.tap != nil)
+            .opacity(model.canTapTiming && model.tap == nil ? 1 : 0.45)
+            .help(model.canEditTiming
+                ? "Tap along to set how long each chord lasts" : "Save the song first")
+            .accessibilityIdentifier(AccessibilityID.playAlongTap)
         }
     }
 

@@ -28,6 +28,9 @@ final class PlayAlong {
     /// The fills that replace the bass line in the range being played (P8-7 section 13,
     /// R168 Q4): P8-7c resolves the song's parts against the sliced timeline. Nil: none.
     @ObservationIgnored var fillProvider: (@MainActor (PlayAlongTimeline) -> [PlayAlongFill])?
+    /// Writes one directive to the song's `.cho` (Tap Timing's "Set song tempo to 96", P8-7
+    /// section 7): one undo step in the editor. Nil: not offered.
+    @ObservationIgnored var writeDirective: (@MainActor (EditOperation) -> Void)?
 
     /// The song as it is now; nil before the preview has rendered.
     private(set) var source: PlayAlongSource?
@@ -43,6 +46,8 @@ final class PlayAlong {
     var selected: Int?
     /// The other end of a shift-click span in the lane (P8-7 section 8); `span` reads it.
     var spanEnd: Int?
+    /// Tap Timing's panel while it is open (P8-7 section 7).
+    var tap: TapCapture?
     /// The chord at the playhead while playing.
     private(set) var current: Int?
     /// The range voiced.

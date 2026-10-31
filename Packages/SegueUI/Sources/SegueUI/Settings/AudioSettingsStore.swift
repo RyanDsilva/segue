@@ -1,4 +1,5 @@
 import Foundation
+import Library
 import Observation
 import Playback
 import Services
@@ -25,6 +26,11 @@ public struct AudioSettings: Sendable, Hashable, Codable {
     public var playAlongClick: Bool
     /// nil = the charts' setting (walk-ups shown on charts).
     public var playAlongWalkUps: Bool?
+    /// Tap Timing (P8-7 section 7): with the click or none, half beats, and a VoiceOver
+    /// announcement per tap (off by default).
+    public var tapMode: TapMode
+    public var tapHalfBeats: Bool
+    public var tapAnnounce: Bool
 
     public init(
         chordSound: ChordSound = .piano,
@@ -37,6 +43,9 @@ public struct AudioSettings: Sendable, Hashable, Codable {
         playAlongChords: Bool = true,
         playAlongClick: Bool = true,
         playAlongWalkUps: Bool? = nil,
+        tapMode: TapMode = .click,
+        tapHalfBeats: Bool = false,
+        tapAnnounce: Bool = false,
     ) {
         self.chordSound = chordSound
         self.chordStyle = chordStyle
@@ -48,6 +57,9 @@ public struct AudioSettings: Sendable, Hashable, Codable {
         self.playAlongChords = playAlongChords
         self.playAlongClick = playAlongClick
         self.playAlongWalkUps = playAlongWalkUps
+        self.tapMode = tapMode
+        self.tapHalfBeats = tapHalfBeats
+        self.tapAnnounce = tapAnnounce
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -61,6 +73,9 @@ public struct AudioSettings: Sendable, Hashable, Codable {
         case playAlongChords
         case playAlongClick
         case playAlongWalkUps
+        case tapMode
+        case tapHalfBeats
+        case tapAnnounce
     }
 
     public init(from decoder: any Decoder) throws {
@@ -80,6 +95,9 @@ public struct AudioSettings: Sendable, Hashable, Codable {
             playAlongChords: field(.playAlongChords, defaults.playAlongChords),
             playAlongClick: field(.playAlongClick, defaults.playAlongClick),
             playAlongWalkUps: field(.playAlongWalkUps, defaults.playAlongWalkUps),
+            tapMode: field(.tapMode, defaults.tapMode),
+            tapHalfBeats: field(.tapHalfBeats, defaults.tapHalfBeats),
+            tapAnnounce: field(.tapAnnounce, defaults.tapAnnounce),
         )
     }
 }

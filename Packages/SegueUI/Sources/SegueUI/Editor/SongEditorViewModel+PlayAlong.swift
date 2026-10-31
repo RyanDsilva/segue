@@ -13,6 +13,9 @@ extension SongEditorViewModel {
         let model = PlayAlong(session: sound, context: .editor) { [weak self] name, change in
             self?.changeTiming(name, change)
         }
+        model.writeDirective = { [weak self] operation in
+            self?.perform(operation)
+        }
         playAlongStore = model
         return model
     }

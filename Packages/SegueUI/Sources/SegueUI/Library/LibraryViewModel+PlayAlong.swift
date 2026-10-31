@@ -8,10 +8,15 @@ extension LibraryViewModel {
     func makePlayAlong() {
         playAlong?.stop()
         playAlong = sound.map { sound in
-            PlayAlong(session: sound, context: .library) { [weak self] _, change in
+            let model = PlayAlong(session: sound, context: .library) { [weak self] _, change in
                 guard let self, let id = playAlongSong else { return }
                 writeBassPrefs(songID: id) { change(&$0.timing) }
             }
+            model.writeDirective = { [weak self] operation in
+                guard let self, let id = playAlongSong else { return }
+                Task { await self.editSongSource(id: id, operation) }
+            }
+            return model
         }
     }
 
