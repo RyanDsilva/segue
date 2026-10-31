@@ -221,5 +221,10 @@ public final class PasteReviewModel {
 
     private func record(_ item: PasteReviewItem, outcome: PasteOutcome) {
         services.record(.aiPasteFinished(PasteAnalytics.summary(for: item, outcome: outcome)))
+        if outcome == .accepted {
+            for summary in PasteAnalytics.artistSplits(of: item) {
+                services.record(.songArtistSplit(summary))
+            }
+        }
     }
 }

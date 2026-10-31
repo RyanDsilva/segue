@@ -140,6 +140,9 @@
                     knownArtists: context.knownArtists,
                     knownTags: context.knownTags,
                 )
+                ForEach(item.standingSplits, id: \.original) { split in
+                    ArtistSplitLine(split: split) { item.keepAsOne(split) }
+                }
                 HStack(spacing: 10) {
                     Button("Swap Title and Artist", systemImage: "arrow.up.arrow.down") {
                         item.swapTitleAndArtist()
@@ -147,7 +150,7 @@
                     .buttonStyle(.segueSecondary)
                     .controlSize(.small)
                     .disabled(!item.canSwapTitleAndArtist)
-                    .help("Some sites write “Artist - Title”")
+                    .help(item.swapHelp)
                     .accessibilityIdentifier(AccessibilityID.pasteSwap)
                     if item.aiFields.contains(.title) {
                         HStack(spacing: 4) {
@@ -203,6 +206,40 @@
             }
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier(AccessibilityID.pasteNearDuplicate)
+        }
+    }
+
+    /// Under the draft's artists, one per split the converter made (P8-8 section 3.7):
+    /// "Split from “Zoya & The Village Band” · Keep as one". Keep as one merges the parts
+    /// back into the original value; a hand edit of those chips ends the line.
+    struct ArtistSplitLine: View {
+        let split: ArtistSplit
+        let keepAsOne: () -> Void
+
+        var body: some View {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Image(systemName: "scissors")
+                    .font(.system(size: 10, weight: .semibold))
+                    .accessibilityHidden(true)
+                Text("Split from “\(split.original)”  ·")
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Button("Keep as one", action: keepAsOne)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Theme.color.cueText)
+                    .fontWeight(.semibold)
+                    .fixedSize()
+                    .help("Make these artists one name again")
+                    .accessibilityIdentifier(AccessibilityID.pasteKeepAsOne)
+            }
+            .font(SchibstedGrotesk.medium.font(size: 12))
+            .foregroundStyle(Theme.color.muted)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+                "Split from \(split.original.replacingOccurrences(of: "&", with: "and"))",
+            )
+            .accessibilityAction(named: "Keep as one", keepAsOne)
+            .accessibilityIdentifier(AccessibilityID.pasteArtistSplit)
         }
     }
 

@@ -165,12 +165,71 @@ public final class PasteReviewItem: Identifiable {
         edit(swapped)
     }
 
-    /// Whether Swap Title and Artist has anything to swap.
+    /// Whether Swap Title and Artist has anything to swap: one artist at most (P8-8 section
+    /// 3.6; with two or more, which one would be the title?).
     public var canSwapTitleAndArtist: Bool {
         let metadata = SourceSnapshot(text: text).document.metadata
+        guard metadata.artists.count <= 1 else { return false }
         let title = metadata.title?.trimmingCharacters(in: .whitespaces) ?? ""
         let artist = metadata.artists.first?.trimmingCharacters(in: .whitespaces) ?? ""
         return title != artist
+    }
+
+    /// Why Swap is off, for its help.
+    public var swapHelp: String {
+        SourceSnapshot(text: text).document.metadata.artists.count > 1
+            ? "Swap works with one artist" : "Some sites write “Artist - Title”"
+    }
+
+    // MARK: Artist splits (P8-8 section 3.7)
+
+    /// The splits the converter made that still stand in the text: every part present, in
+    /// order and next to each other. A hand edit of those chips ends the line.
+    public var standingSplits: [ArtistSplit] {
+        let artists = SourceSnapshot(text: text).document.metadata.artists
+        return base.artistSplits.filter { Self.range(of: $0.parts, in: artists) != nil }
+    }
+
+    /// Keep as one: the split's parts become the original value again, in place (one edit
+    /// of the review text, one undo step).
+    public func keepAsOne(_ split: ArtistSplit) {
+        let artists = SourceSnapshot(text: text).document.metadata.artists
+        guard let range = Self.range(of: split.parts, in: artists) else { return }
+        var merged = artists
+        merged.replaceSubrange(range, with: [split.original])
+        let snapshot = SourceSnapshot(text: text)
+        guard let change = try? DocumentEditor.change(for: .setArtists(merged), in: snapshot)
+        else { return }
+        mergedSplits.insert(split.original)
+        edit(text.applying(change.edits))
+    }
+
+    /// Originals merged back with Keep as one (row 29's `merged`).
+    private(set) var mergedSplits: Set<String> = []
+
+    /// Row 29 for each split at Accept: merged with Keep as one, kept as split, or edited.
+    var splitOutcomes: [(ArtistSplit, ArtistSplitOutcome)] {
+        let standing = standingSplits
+        return base.artistSplits.map { split in
+            if mergedSplits.contains(split.original) {
+                (split, .merged)
+            } else if standing.contains(split) {
+                (split, .kept)
+            } else {
+                (split, .edited)
+            }
+        }
+    }
+
+    /// Where `parts` sit, contiguous and in order, in `artists`.
+    static func range(of parts: [String], in artists: [String]) -> Range<Int>? {
+        guard !parts.isEmpty, parts.count <= artists.count else { return nil }
+        for start in 0 ... artists.count - parts.count
+            where Array(artists[start ..< start + parts.count]) == parts
+        {
+            return start ..< start + parts.count
+        }
+        return nil
     }
 
     // MARK: AI marks

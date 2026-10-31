@@ -21,6 +21,23 @@ enum PasteAnalytics {
         )
     }
 
+    /// Row 29 (P8-8 section 8): one per split in an accepted song, from a paste or a file
+    /// that needed conversion; separators and counts only.
+    static func artistSplits(of item: PasteReviewItem) -> [ArtistSplitSummary] {
+        let source: ArtistSplitSource = item.fileName == nil ? .paste : .import
+        return item.splitOutcomes.compactMap { split, outcome in
+            guard let separator = ArtistSplitSeparator(
+                separators: Set(split.separators.map(\.rawValue)),
+            ) else { return nil }
+            return ArtistSplitSummary(
+                source: source,
+                parts: SmallBucket(split.parts.count),
+                separator: separator,
+                outcome: outcome,
+            )
+        }
+    }
+
     /// Which provider answered and why the preferred one did not. With no answer the last
     /// miss is the most telling (MLX not installed, then Apple Intelligence off: `fmOff`);
     /// with an answer, the miss before it.

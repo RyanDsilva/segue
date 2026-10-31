@@ -36,6 +36,10 @@ public extension AccessibilityID {
     static let pasteCancel = "segue.paste.cancel"
     /// "Looks like ... in your library" / "Already in your library as ..." beside the card.
     static let pasteNearDuplicate = "segue.paste.nearDuplicate"
+    /// The line under the draft's artists for a split the converter made, and its Keep as
+    /// one button (P8-8 section 3.7).
+    static let pasteArtistSplit = "segue.paste.artistSplit"
+    static let pasteKeepAsOne = "segue.paste.keepAsOne"
     /// One batch file row (label = file name).
     static let pasteBatchRow = "segue.paste.batchRow"
     /// A batch file's checkbox (label = file name).
