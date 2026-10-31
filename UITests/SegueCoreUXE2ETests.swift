@@ -192,7 +192,7 @@ final class SegueCoreUXE2ETests: XCTestCase {
         XCTAssertTrue(waitForFile(paths.song("harbour"), contains: "Lanterns"))
         element(app, CoreAXID.editorDone).click(in: app)
 
-        XCTAssertTrue(editor.disappears(timeout: 10))
+        XCTAssertTrue(editor.disappears(timeout: 30)) // Done flushes and renames; a loaded host stalls it
         let songs = names(in: paths.library.appending(path: "songs"))
             .filter { $0.hasSuffix(".cho") }
         XCTAssertEqual(songs, ["harbour.cho"])

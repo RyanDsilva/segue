@@ -37,7 +37,9 @@ final class SeguePasteE2ETests: XCTestCase {
     Bring her home tonight
     """
 
-    override func setUpWithError() throws {
+    // The async fixtures are main-actor isolated in XCTest, like this class; the
+    // synchronous setUpWithError()/tearDownWithError() overrides are nonisolated.
+    override func setUp() async throws {
         continueAfterFailure = false
         let base = URL(filePath: "/private/tmp/segue-e2e", directoryHint: .isDirectory)
             .appending(path: "paste-\(UUID().uuidString)", directoryHint: .isDirectory)
@@ -51,7 +53,7 @@ final class SeguePasteE2ETests: XCTestCase {
             .write(to: songs.appending(path: "river-song.cho"))
     }
 
-    override func tearDownWithError() throws {
+    override func tearDown() async throws {
         E2E.terminate(app)
         if let base {
             try? FileManager.default.removeItem(at: base)

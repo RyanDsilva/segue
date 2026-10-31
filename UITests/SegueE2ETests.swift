@@ -313,7 +313,9 @@ final class SegueE2ETests: XCTestCase {
             let sidecar = try XCTUnwrap(
                 JSONSerialization.jsonObject(with: Data(contentsOf: sidecarURL)) as? [String: Any],
             )
-            XCTAssertEqual(sidecar["schemaVersion"] as? Int, 3) // Phase 2: cues, live prefs.
+            // The sidecar is written at the current schema (5 at Phase 8 and rising); the exact
+            // number is pinned by the core codec tests, so it is not repeated here.
+            XCTAssertGreaterThanOrEqual(try XCTUnwrap(sidecar["schemaVersion"] as? Int), 5)
             let id = try XCTUnwrap(sidecar["id"] as? String)
             XCTAssertEqual(id.count, 26, "ULID expected, got \(id)")
             idsByTitle[fileName] = id

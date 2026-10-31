@@ -142,6 +142,14 @@ extension AccessibilityAuditE2ETests {
         E2E.waitUntil(timeout: 0.4) { false }
         do {
             try app.performAccessibilityAudit(for: .all) { issue in
+                // Report-only types are never resolved to their element: each property read
+                // (identifier, label, value, frame) is a separate accessibility round trip
+                // (~50 ms), and resolving every contrast and layout finding made one audit
+                // take minutes. Only the enforced type is described in full.
+                guard issue.auditType == .sufficientElementDescription else {
+                    self.findings.append("\(screen): \(issue.compactDescription)")
+                    return true
+                }
                 let element = issue.element
                 let value = (element?.value as? String).map { "'\($0.prefix(40))'" } ?? "-"
                 let frame = element.map {
