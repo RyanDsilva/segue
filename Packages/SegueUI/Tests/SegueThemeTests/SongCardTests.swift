@@ -220,4 +220,21 @@ struct SongCardTests {
         #expect(SongCardView.artistsTitle(["Arijit Singh"]) == "Arijit Singh")
         #expect(SongCardView.artistsTitle([]) == nil)
     }
+
+    /// The library pane at the smallest window: Key, Tempo and Capo fit a line but "+" does
+    /// not, so Capo moves down beside it rather than leave "+" alone on a line.
+    @Test
+    func `plus never wraps onto a line of its own`() {
+        let sizes = [30.0, 73, 63, 22].map { CGSize(width: $0, height: 24) }
+        let plain = FlowLayout(spacing: 7)
+        let strip = FlowLayout(spacing: 7, keepsLastWithPrevious: true)
+        #expect(plain.rows(sizes, width: 205).map(\.indices) == [[0, 1, 2], [3]])
+        #expect(strip.rows(sizes, width: 205).map(\.indices) == [[0, 1], [2, 3]])
+        #expect(strip.rows(sizes, width: 205).map(\.width) == [110, 92])
+        // Room for all: one line. A pair too wide for a line, or a lone item above: as is.
+        #expect(strip.rows(sizes, width: 400).map(\.indices) == [[0, 1, 2, 3]])
+        #expect(strip.rows(sizes, width: 80).map(\.indices) == [[0], [1], [2], [3]])
+        let wide = [20.0, 150, 100].map { CGSize(width: $0, height: 24) }
+        #expect(strip.rows(wide, width: 180).map(\.indices) == [[0, 1], [2]])
+    }
 }

@@ -4,6 +4,9 @@ import SwiftUI
 struct FlowLayout: Layout {
     var spacing: CGFloat = 6
     var lineSpacing: CGFloat = 6
+    /// The last subview is an accessory of the one before it (the song card's "+"): when it
+    /// would wrap onto a line of its own, the item before it moves down with it.
+    var keepsLastWithPrevious = false
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
         let rows = arrange(subviews, width: proposal.width ?? .infinity)
@@ -35,7 +38,7 @@ struct FlowLayout: Layout {
         }
     }
 
-    private struct Row {
+    struct Row: Equatable {
         var indices: [Int] = []
         var sizes: [CGSize] = []
         var width: CGFloat = 0
@@ -43,10 +46,14 @@ struct FlowLayout: Layout {
     }
 
     private func arrange(_ subviews: Subviews, width: CGFloat) -> [Row] {
+        rows(subviews.map { $0.sizeThatFits(.unspecified) }, width: width)
+    }
+
+    /// The lines for items of `sizes` in `width` (in-process tests call it directly).
+    func rows(_ sizes: [CGSize], width: CGFloat) -> [Row] {
         var rows: [Row] = []
         var row = Row()
-        for (index, subview) in subviews.enumerated() {
-            let size = subview.sizeThatFits(.unspecified)
+        for (index, size) in sizes.enumerated() {
             let needed = row.indices.isEmpty ? size.width : row.width + spacing + size.width
             if needed > width, !row.indices.isEmpty {
                 rows.append(row)
@@ -60,6 +67,29 @@ struct FlowLayout: Layout {
         if !row.indices.isEmpty {
             rows.append(row)
         }
-        return rows
+        return keepsLastWithPrevious ? Self.withoutOrphan(rows, spacing: spacing, width: width)
+            : rows
+    }
+
+    /// Moves the last item of the next-to-last row down beside a lone last item, when the
+    /// two fit on one line and the row they leave keeps an item.
+    private static func withoutOrphan(_ rows: [Row], spacing: CGFloat, width: CGFloat) -> [Row] {
+        guard rows.count >= 2, let lone = rows.last, lone.indices.count == 1,
+              rows[rows.count - 2].indices.count >= 2
+        else { return rows }
+        var above = rows[rows.count - 2]
+        let index = above.indices.removeLast()
+        let size = above.sizes.removeLast()
+        guard size.width + spacing + lone.width <= width else { return rows }
+        above.width = above.sizes.map(\.width).reduce(0, +)
+            + spacing * CGFloat(max(above.sizes.count - 1, 0))
+        above.height = above.sizes.map(\.height).max() ?? 0
+        let last = Row(
+            indices: [index] + lone.indices,
+            sizes: [size] + lone.sizes,
+            width: size.width + spacing + lone.width,
+            height: max(size.height, lone.height),
+        )
+        return rows.dropLast(2) + [above, last]
     }
 }

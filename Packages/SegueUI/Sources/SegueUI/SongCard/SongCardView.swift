@@ -130,7 +130,8 @@
         // MARK: Tokens
 
         private func tokens(_ values: SongCardValues) -> some View {
-            FlowLayout(spacing: 7) {
+            // "+" never sits alone on a line (the library pane at the smallest window).
+            FlowLayout(spacing: 7, keepsLastWithPrevious: showsAddMenu(values)) {
                 if showsCreditTokens {
                     artistsToken(values)
                     albumToken(values)
@@ -143,7 +144,7 @@
                 if values.time != nil || layout == .expanded || open == .time {
                     timeToken(values)
                 }
-                if layout == .strip, values.capo == 0 || values.time == nil {
+                if showsAddMenu(values) {
                     addMenu(values)
                 }
             }
@@ -220,6 +221,10 @@
                 }
                 .frame(minWidth: 230, alignment: .leading)
             }
+        }
+
+        private func showsAddMenu(_ values: SongCardValues) -> Bool {
+            layout == .strip && (values.capo == 0 || values.time == nil)
         }
 
         /// Adds Capo or Time when the strip hides them (absent values).
