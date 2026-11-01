@@ -199,11 +199,13 @@ extension StageWindowSuites {
         }
 
         @Test
-        func `live singer view is option-command-v, shared with paste only off stage`() {
-            #expect(MenuShortcuts.singerView.displayText == "⌥⌘V")
-            #expect(MenuShortcuts.sharedChords.contains { pair in
-                pair.0 == MenuShortcuts.newSongFromClipboard && pair.1 == MenuShortcuts.singerView
+        func `live singer view is shift-command-v and shares no chord`() {
+            #expect(MenuShortcuts.singerView.displayText == "⇧⌘V")
+            #expect(!MenuShortcuts.sharedChords.contains { pair in
+                pair.0 == MenuShortcuts.singerView || pair.1 == MenuShortcuts.singerView
             })
+            #expect(MenuShortcuts.all.filter { $0.shortcut == MenuShortcuts.singerView.shortcut }
+                .count == 1)
         }
     }
 }

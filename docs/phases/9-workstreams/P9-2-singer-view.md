@@ -120,7 +120,7 @@ It never reorders, merges or renames sections, never edits a label, never change
 
 - New `LiveCommand.toggleSingerView`, default key `v` (no modifiers), scope `.viewport` like `toggleBassNotes` (which is `.viewport` in code), `repeatsWhenHeld` false (P8-1). Title "Singer View"; help group "View".
 - `V` flips `LiveSettings.singerView` through the Live settings store, re-lays out at once and flashes "Singer view" / "Chords" in the mode indicator. Works in Live and Rehearsal, in setlist and single-song sessions (R150), and keeps the scroll position on the current pass: after the re-layout the scroller seeks to the same pass at the same progress (`StagePasses.progress`, P8-2 section 9), never back to the top.
-- Also in the Live menu ("Singer View", ⌥⌘V per R188, a checkmark when on). ⌥⌘V is also File > New Song from Clipboard (R75), which is disabled during a show, so Live > Singer View is enabled only during one and the two share the chord (`MenuShortcuts.sharedChords`, like Rehearse Song / Rehearse) and in Settings > Live ("Show lyrics only on stage (Singer view)"), so it is reachable without the keyboard.
+- Also in the Live menu ("Singer View", ⇧⌘V per R190, a checkmark when on; it works with no show up too, setting the remembered value) and in Settings > Live ("Show lyrics only on stage (Singer view)"), so it is reachable without the keyboard.
 - The stage header shows a quiet "Singer" chip (the "Rehearsal" chip's style) while it is on, identifier `segue.live.singer`, so the owner can see at a glance why there are no chords.
 
 ### 6.2 Layout input
