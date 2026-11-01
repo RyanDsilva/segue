@@ -231,6 +231,70 @@ extension StageWindowSuites {
             try await run.end(live)
         }
 
+        /// Moves the clock in 0.1 s steps, pumping the player, the follow scroll and the
+        /// member follow.
+        static func play(_ run: MetronomeRun, _ live: LiveSession, for seconds: Double) {
+            for _ in 0 ..< Int((seconds * 10).rounded()) {
+                run.env.clock.advance(by: 0.1)
+                run.app.sound.player?.pump()
+                live.followPlayAlong()
+                live.followMedley()
+            }
+        }
+
+        @Test
+        func `p plays the medley as one timeline and the audio commits each member`()
+            async throws
+        {
+            let (run, setlist) = try await MedleyStage.run()
+            let live = try await MedleyStage.start(run, setlist, kind: .rehearsal)
+            live.dispatch(.togglePlayAlong)
+            #expect(live.isPlayingAlong)
+            let playing = try #require(live.playAlong?.timeline)
+            // Two passes per member, every member: 16 chords each, one count-in only.
+            #expect(playing.passes == 0 ..< 6)
+            #expect(playing.chords.count == 48)
+            let second = playing.timeline.chords[16]
+            #expect(playing.timeline.chords[15].tempo == 92)
+            #expect(second.tempo == 120)
+            #expect(second.pass == 2)
+            // No gap: member 2 starts on member 1's last bar line.
+            #expect(second.onset == playing.timeline.chords[15].onset
+                + playing.timeline.chords[15].length)
+            #expect(playing.timeline.barBeat(at: second.onset).beat == 1)
+            // Member 1 (16 bars at 92) plus the count-in bar, and a little into member 2.
+            Self.play(run, live, for: 16 * 4 * 60 / 92 + 4 * 60 / 92 + 1.5)
+            _ = try await run.env.waitFor { live.medleyChipText == "Medley 2 of 3" ? true : nil }
+            #expect(live.isPlayingAlong)
+            #expect(live.state.record.items[0].state == .played)
+            try await run.end(live)
+        }
+
+        @Test
+        func `play-along stops at a member with no tempo`() async throws {
+            var songs = MedleyStage.songs
+            songs[2] = songs[2].replacingOccurrences(of: "{tempo: 120}\n", with: "")
+            let (run, setlist) = try await MedleyStage.run(songs: songs)
+            let live = try await MedleyStage.start(run, setlist, kind: .rehearsal)
+            live.dispatch(.togglePlayAlong)
+            #expect(live.playAlong?.timeline.passes == 0 ..< 4)
+            Self.play(run, live, for: 16 * 4 * 60 / 92 + 16 * 4 * 60 / 120 + 4 * 60 / 92 + 1)
+            #expect(!live.isPlayingAlong)
+            #expect(live.indicator == "No tempo for Channa Mereya: play-along stops here")
+            try await run.end(live)
+        }
+
+        @Test
+        func `a gig medley stays silent`() async throws {
+            let (run, setlist) = try await MedleyStage.run()
+            let live = try await MedleyStage.start(run, setlist)
+            #expect(live.playAlong == nil)
+            live.dispatch(.togglePlayAlong)
+            #expect(!live.isPlayingAlong)
+            #expect(live.indicator == "Play-along works in rehearsals")
+            try await run.end(live)
+        }
+
         /// The stage inside the medley at member 2, 1440 x 900 dark, for the review.
         @Test
         func `renders the medley stage`() async throws {

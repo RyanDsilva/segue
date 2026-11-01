@@ -45,14 +45,20 @@
         }
 
         /// Plays `timeline` with `voices` after a one-bar count-in; with `loops`, every pass
-        /// is count-in plus the range, so each wrap counts in again (R148). Returns whether it
+        /// is count-in plus the range, so each wrap counts in again (R148). `fills` (a medley's,
+        /// already in the timeline's ticks) replace the `fillProvider`'s. Returns whether it
         /// started.
         @discardableResult
-        func play(_ timeline: PlayAlongTimeline, voices: Set<VoiceToggle>, loops: Bool) -> Bool {
+        func play(
+            _ timeline: PlayAlongTimeline,
+            voices: Set<VoiceToggle>,
+            loops: Bool,
+            fills: [PlayAlongFill]? = nil,
+        ) -> Bool {
             guard sound.isAvailable, !timeline.chords.isEmpty, let player = sound.makePlayer()
             else { return false }
             var timeline = timeline
-            timeline.fills = fillProvider?(timeline) ?? []
+            timeline.fills = fills ?? fillProvider?(timeline) ?? []
             let settings = sound.settings.settings
             let body = PhraseBuilder.playAlong(
                 timeline,

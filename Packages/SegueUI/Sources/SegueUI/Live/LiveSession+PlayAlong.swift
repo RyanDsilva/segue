@@ -13,6 +13,11 @@
         var resumesScroll = false
         /// The phrase pass last seen (a loop's wrap counts it up).
         var pass = 0
+        /// In a medley plan, the plan index of the starting member's first pass: the
+        /// timeline's pass numbers start there (P9-3 9.8).
+        var passOffset = 0
+        /// The member with no tempo the medley's play-along stops before (its title).
+        var stopsAt: String?
         /// Where the follow scroll last aimed, and the ease towards it.
         var target: Double?
         var ease: Ease?
@@ -107,25 +112,55 @@
             )
         }
 
-        /// Plays from shown pass `index`: the looped pass over and over when it is the one
-        /// looping, else to the end of the song.
-        @discardableResult
-        func startPlayAlong(from index: Int) -> Bool {
-            guard let playAlong, let current = playAlongSong,
-                  current.order.indices.contains(index)
-            else { return false }
-            let (song, model, order) = (current.song, current.model, current.order)
-            let looping = loopPass == index
-            let timeline = Self.playAlongTimeline(
-                song: song,
-                model: model,
-                order: order,
-                range: looping ? .section(index) : .from(index),
-                profile: context.instrument?.profile,
-            )
-            guard playAlong.play(timeline, voices: playAlongVoices(model), loops: looping) else {
-                return false
+        /// What one press of `P` plays: the timeline, the model whose voices it uses, where
+        /// its passes sit in the plan, and (a medley) its fills and where it stops early.
+        struct PreparedPlayAlong {
+            var timeline: PlayAlongTimeline
+            var model: RenderModel
+            var passOffset = 0
+            /// Nil: the song's fills come from `fillProvider`.
+            var fills: [PlayAlongFill]?
+            var stopsAt: String?
+        }
+
+        /// The current song's played passes from shown pass `index` (or that pass alone when
+        /// it loops).
+        private func songPlayAlong(from index: Int, looping: Bool) -> PreparedPlayAlong? {
+            guard let current = playAlongSong, current.order.indices.contains(index) else {
+                return nil
             }
+            return PreparedPlayAlong(
+                timeline: Self.playAlongTimeline(
+                    song: current.song,
+                    model: current.model,
+                    order: current.order,
+                    range: looping ? .section(index) : .from(index),
+                    profile: context.instrument?.profile,
+                ),
+                model: current.model,
+            )
+        }
+
+        /// Plays from shown pass `index`: the looped pass over and over when it is the one
+        /// looping, else to the end of the song (in a medley, on through the members, P9-3
+        /// 9.8).
+        @discardableResult
+        func startPlayAlong(from planIndex: Int) -> Bool {
+            let looping = loopPass == planIndex
+            guard let playAlong,
+                  let prepared = isInMedley
+                  ? medleyPlayAlong(from: planIndex, looping: looping)
+                  : songPlayAlong(from: planIndex, looping: looping),
+                  playAlong.play(
+                      prepared.timeline,
+                      voices: playAlongVoices(prepared.model),
+                      loops: looping,
+                      fills: prepared.fills,
+                  )
+            else { return false }
+            playAlongFollow.passOffset = prepared.passOffset
+            playAlongFollow.stopsAt = prepared.stopsAt
+            let model = prepared.model
             let now = context.scrollClock.now()
             if !playAlongFollow.resumesScroll, var scroller, scroller.phase(at: now) == .running {
                 scroller.pause(at: now)
@@ -162,6 +197,7 @@
             playAlongFollow.easeTask?.cancel()
             isEasingFollow = false
             playAlongFollow.target = nil
+            playAlongFollow.stopsAt = nil
             metronome.muted = false
             guard wasFollowing else { return }
             if playAlongFollow.resumesScroll, var scroller {
@@ -179,12 +215,17 @@
             guard let playAlong, let plan else { return }
             guard playAlong.isPlaying else {
                 if playAlongFollow.task != nil {
+                    let stopsAt = playAlongFollow.stopsAt
                     stopPlayAlong()
+                    if let stopsAt {
+                        // A medley member with no tempo: the audio ended at its header.
+                        flash("No tempo for \(stopsAt): play-along stops here")
+                    }
                 }
                 return
             }
             let now = context.scrollClock.now()
-            let first = playAlong.timeline.passes.lowerBound
+            let first = playAlong.timeline.passes.lowerBound + playAlongFollow.passOffset
             if let pass = playAlong.pass, pass != playAlongFollow.pass {
                 // A new pass of the phrase: its count-in bar shows on the pips (R148).
                 playAlongFollow.pass = pass
@@ -279,28 +320,7 @@
             profile: InstrumentProfile?,
         ) -> PlayAlongTimeline {
             let units = SongSections.units(of: song.document)
-            let prefs = song.sidecar.bass
-            let written = SongTimeline.build(
-                document: song.document,
-                sections: model.sections,
-                units: units,
-                timing: prefs.timing,
-                order: nil,
-            )
-            // Walk-ups follow the chart's density: none while Off (R170); a change a saved fill
-            // covers in its pass plays the fill instead (P8-7 section 13).
-            var context = BassLineContext(
-                transform: model.transform,
-                genre: prefs.genre ?? profile?.genre ?? .pop,
-                density: profile?.walkUps ?? .off,
-                timeline: written,
-            )
-            context.apply(
-                prefs,
-                parts: song.sidecar.parts,
-                units: units,
-                sections: model.sections,
-            )
+            let context = playAlongWalkUps(song: song, model: model, profile: profile)
             let arranged = ArrangedSections.build(model.sections, order: order)
             let changes = BassLine.changes(
                 arranged.map(\.section),
@@ -312,7 +332,7 @@
                     document: song.document,
                     sections: model.sections,
                     units: units,
-                    timing: prefs.timing,
+                    timing: song.sidecar.bass.timing,
                     order: order,
                 ),
                 range: range,
@@ -320,6 +340,37 @@
                 transform: model.transform,
                 placement: SoundSession.placement(for: model, profile: profile),
             )
+        }
+
+        /// The walk-ups play-along voices for the song as `model` shows it: the chart's
+        /// density (none while Off, R170), its picks, and its fills (a change a saved fill
+        /// covers in its pass plays the fill instead, P8-7 section 13).
+        static func playAlongWalkUps(
+            song: SongRecord,
+            model: RenderModel,
+            profile: InstrumentProfile?,
+        ) -> BassLineContext {
+            let units = SongSections.units(of: song.document)
+            let prefs = song.sidecar.bass
+            var context = BassLineContext(
+                transform: model.transform,
+                genre: prefs.genre ?? profile?.genre ?? .pop,
+                density: profile?.walkUps ?? .off,
+                timeline: SongTimeline.build(
+                    document: song.document,
+                    sections: model.sections,
+                    units: units,
+                    timing: prefs.timing,
+                    order: nil,
+                ),
+            )
+            context.apply(
+                prefs,
+                parts: song.sidecar.parts,
+                units: units,
+                sections: model.sections,
+            )
+            return context
         }
 
         /// The song's saved fills for play-along in the played `order`: resolved against the
