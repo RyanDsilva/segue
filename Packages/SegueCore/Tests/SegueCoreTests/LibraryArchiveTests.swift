@@ -191,7 +191,7 @@ struct LibraryArchiveTests {
         try lib.writeBytes([0, 1, 2, 255], to: "songs/.DS_Store")
         try lib.write("private", to: "notes.txt")
         try lib.write("mine", to: "My Stuff/readme.txt")
-        #expect(lib.exists(".segue/index.sqlite"))
+        #expect(lib.exists(".segue/upgrades.json"))
     }
 
     private static func archive(_ lib: TestLibrary, _ work: WorkFolder) -> LibraryArchive {

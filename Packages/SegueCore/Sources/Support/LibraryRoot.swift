@@ -9,9 +9,12 @@ import Foundation
 ///   setlists/<slug>.setlist.json
 ///   shows/<ulid>.show.json            (phase 2: shows and the gig log)
 ///   filters/<slug>.filter.json        (phase 3: saved smart filters)
-///   .segue/index.sqlite
-///   .segue/library.lock
+///   .segue/library.json               (P9-6: the library's identity)
+///   .segue/upgrades.json              (one-time upgrade marks)
 /// ```
+///
+/// The index and the locks live outside the folder, in the library's
+/// `LibraryStateDirectory` (P9-6 5.2), so a file sync service never carries them.
 ///
 /// A plain value: security-scoped bookmark access is handled by the caller (Library/App)
 /// before a `LibraryRoot` is handed to the stores. Tests point it at a temp directory.
@@ -43,20 +46,11 @@ public struct LibraryRoot: Sendable, Hashable {
         url.appending(path: "filters", directoryHint: .isDirectory)
     }
 
-    /// `<root>/.segue`: app-private, rebuildable state.
+    /// `<root>/.segue`: per-library state that travels with the folder: its identity
+    /// (`LibraryIdentity`) and its upgrade marks. Never a database or a lock (those are in
+    /// the library's `LibraryStateDirectory`).
     public var appDirectory: URL {
         url.appending(path: ".segue", directoryHint: .isDirectory)
-    }
-
-    /// `<root>/.segue/library.lock`: held with `flock` by the copy of Segue that has the
-    /// library open (`LibraryLock`), so two copies never open the same library at once.
-    public var lockURL: URL {
-        appDirectory.appending(path: "library.lock", directoryHint: .notDirectory)
-    }
-
-    /// `<root>/.segue/index.sqlite`: the rebuildable GRDB index. Safe to delete.
-    public var indexDatabase: URL {
-        appDirectory.appending(path: "index.sqlite", directoryHint: .notDirectory)
     }
 
     /// Path extension of canonical song files.

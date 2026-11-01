@@ -119,7 +119,7 @@ struct ShowStoreTests {
             clock: harness.lib.clock,
             playHistory: nil,
         )
-        let issues = try await store.load(root: harness.lib.root)
+        let issues = try await store.load(root: harness.lib.root, state: harness.lib.state)
         #expect(issues.map(\.relativePath) == [harness.showPath(brokenID)])
         let readOnly = try #require(await store.show(id: endings[1].record.id))
         #expect(readOnly.readOnly == .newerSchema(

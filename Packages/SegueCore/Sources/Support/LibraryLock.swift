@@ -40,18 +40,9 @@ public final class LibraryLock: Sendable {
     /// directory and the lock file as needed. Throws `Failure.inUse` when another holder has
     /// it, `Failure.unavailable` when the file cannot be opened or locked, or the file
     /// system's error for the directory.
-    public convenience init(state: LibraryStateDirectory) throws {
-        try self.init(url: state.lockURL, directory: state.url)
-    }
-
-    /// Takes the lock on `root`, creating `<root>/.segue/` and the lock file as needed.
-    public convenience init(root: LibraryRoot) throws {
-        try self.init(url: root.lockURL, directory: root.appDirectory)
-    }
-
-    private init(url: URL, directory: URL) throws {
-        self.url = url
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    public init(state: LibraryStateDirectory) throws {
+        url = state.lockURL
+        try FileManager.default.createDirectory(at: state.url, withIntermediateDirectories: true)
         let fd = open(url.path(percentEncoded: false), O_RDWR | O_CREAT | O_CLOEXEC, 0o644)
         guard fd >= 0 else { throw Failure.unavailable(errno) }
         guard flock(fd, LOCK_EX | LOCK_NB) == 0 else {

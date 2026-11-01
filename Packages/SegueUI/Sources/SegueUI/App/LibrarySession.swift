@@ -24,6 +24,9 @@
         }
 
         public let root: LibraryRoot
+        /// The library's machine state outside the folder (index, locks, `state.json`),
+        /// keyed by its `LibraryIdentity` (P9-6 5.2).
+        public let state: LibraryStateDirectory
         /// The sidebar destination shown.
         public var section: Section? = .library {
             didSet {
@@ -72,8 +75,9 @@
         @ObservationIgnored var restore: SessionRestore?
         /// The New Setlist name sheet is up (sidebar button or Setlist > New Setlist…).
         public var isNamingNewSetlist = false
-        /// A one-time note of this open (the old timings folder moved to the Trash, P8-8 5.8).
-        public var upgradeNote: String?
+        /// A one-time note of this open (the old timings folder moved to the Trash, P8-8 5.8;
+        /// a Finder copy given its own identity, P9-6 5.2).
+        public var upgradeNote: LibraryNote?
         /// The `{duration}` cleanup offer: how many songs hold a `{duration}` line, shown
         /// once per library (P8-8 5.7); nil when not offered.
         public var durationOffer: Int?
@@ -92,6 +96,7 @@
 
         init(
             root: LibraryRoot,
+            state: LibraryStateDirectory,
             library: LibraryViewModel,
             setlists: SetlistsViewModel,
             stores: LibraryStores,
@@ -101,6 +106,7 @@
             importPanel: any ImportPanel,
         ) {
             self.root = root
+            self.state = state
             self.lock = lock
             self.workspace = workspace
             self.importPanel = importPanel
@@ -154,21 +160,58 @@
             }
         }
 
-        /// Opens the stores on `root`. The library lock is taken first (or `heldLock`, the
-        /// open session's own lock when the same library is re-opened), so nothing is read
-        /// while another copy of Segue has the library open.
-        static func open(
-            root: LibraryRoot,
+        /// What a re-open of the open library keeps: its lock and state directory.
+        struct Held {
+            let lock: LibraryLock?
+            let state: LibraryStateDirectory
+        }
+
+        /// `root`'s state directory and lock: `held` when re-opening the open library, else
+        /// its identity resolved (a Finder copy re-keyed) and its lock taken (P9-6 5.2).
+        private static func claim(
+            _ root: LibraryRoot,
             dependencies: AppDependencies,
-            heldLock: LibraryLock? = nil,
-        ) async throws -> LibrarySession {
-            let lock = try heldLock ?? dependencies.libraryLock.acquire(root)
-            let libraryStore = LibraryStore(
+            held: Held?,
+        ) throws -> (Held, isCopy: Bool) {
+            if let held {
+                return (held, false)
+            }
+            let (resolved, lock) = try LibraryState.open(
+                root: root,
+                location: dependencies.libraryState,
+                fileSystem: dependencies.fileSystem,
+                clock: dependencies.clock,
+                ids: dependencies.ids,
+                lock: dependencies.libraryLock.acquire,
+            )
+            return (Held(lock: lock, state: resolved.directory), resolved.isCopy)
+        }
+
+        /// The song store, opened on `root` with its index in `state`.
+        private static func openSongs(
+            _ root: LibraryRoot,
+            _ state: LibraryStateDirectory,
+            _ dependencies: AppDependencies,
+        ) async throws -> LibraryStore {
+            let store = LibraryStore(
                 fileSystem: dependencies.fileSystem,
                 clock: dependencies.clock,
                 ids: dependencies.ids,
             )
-            try await libraryStore.open(root: root)
+            try await store.open(root: root, state: state)
+            return store
+        }
+
+        /// Opens the stores on `root`. The library's identity is resolved and its lock taken
+        /// first (or `held`, the open session's own lock when the same library is re-opened),
+        /// so nothing is read while another copy of Segue has the library open.
+        static func open(
+            root: LibraryRoot,
+            dependencies: AppDependencies,
+            held: Held? = nil,
+        ) async throws -> LibrarySession {
+            let (claimed, isCopy) = try claim(root, dependencies: dependencies, held: held)
+            let libraryStore = try await openSongs(root, claimed.state, dependencies)
             let setlistStore = SetlistStore(
                 fileSystem: dependencies.fileSystem,
                 clock: dependencies.clock,
@@ -202,16 +245,17 @@
             )
             let session = LibrarySession(
                 root: root,
+                state: claimed.state,
                 library: library,
                 setlists: setlists,
                 stores: stores,
-                lock: lock,
+                lock: claimed.lock,
                 autosave: autosave,
                 workspace: dependencies.workspace,
                 importPanel: dependencies.importPanel,
             )
             await session.loadSmartFilters()
-            session.runUpgradeSteps(fileSystem: dependencies.fileSystem)
+            session.runUpgradeSteps(fileSystem: dependencies.fileSystem, isCopy: isCopy)
             session.restore = SessionRestore(defaults: dependencies.location.defaults, root: root)
             return session
         }
@@ -219,16 +263,16 @@
 
     /// How a library session claims its folder (WS1 4.8g).
     public enum LibraryLockPolicy: Sendable {
-        /// `LibraryLock` on `<root>/.segue/library.lock`: a second copy of Segue cannot open
+        /// `LibraryLock` in the library's state directory: a second copy of Segue cannot open
         /// the library while this one has it.
         case exclusive
         /// No lock: only for integration tests that deliberately run several in-process
         /// app instances on one library.
         case unlocked
 
-        func acquire(_ root: LibraryRoot) throws -> LibraryLock? {
+        func acquire(_ state: LibraryStateDirectory) throws -> LibraryLock? {
             switch self {
-            case .exclusive: try LibraryLock(root: root)
+            case .exclusive: try LibraryLock(state: state)
             case .unlocked: nil
             }
         }

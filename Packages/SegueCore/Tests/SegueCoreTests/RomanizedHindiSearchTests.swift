@@ -314,7 +314,7 @@ struct RomanizedHindiSearchTests {
         let queries = ["pyar", "dil", "hai", "kabhie", "diwana", "safer", "the", "love"]
         let before = try await queries.asyncMap { try await store.search(query: $0).map(\.id) }
 
-        try FileManager.default.removeItem(at: lib.url(".segue/index.sqlite"))
+        try FileManager.default.removeItem(at: lib.indexFile())
         let relaunched = try await lib.openStore()
         let after = try await queries.asyncMap { try await relaunched.search(query: $0).map(\.id) }
 

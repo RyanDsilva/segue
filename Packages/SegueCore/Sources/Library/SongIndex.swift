@@ -79,6 +79,11 @@ struct SongIndex: Sendable {
 
     let pool: DatabasePool
 
+    /// The database file (in the library's state directory).
+    var url: URL {
+        URL(filePath: pool.path)
+    }
+
     /// Opens the index at `url`, re-creating it empty when missing, stale or unreadable.
     static func open(at url: URL, fileSystem: any FileSystem) throws -> Self {
         do {

@@ -287,10 +287,11 @@ struct EditingSongPipelineTests {
         }
     }
 
-    /// The `key` column of the song's row in `.segue/index.sqlite`, read with plain SQLite.
+    /// The `key` column of the song's row in the index (the state directory's `index.sqlite`), read
+    /// with plain SQLite.
     static func indexedKey(_ lib: TestLibrary, id: SongID) throws -> String? {
         var db: OpaquePointer?
-        let path = lib.root.indexDatabase.path(percentEncoded: false)
+        let path = lib.state.indexDatabase.path(percentEncoded: false)
         guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
             sqlite3_close(db)
             throw CocoaError(.fileReadUnknown)

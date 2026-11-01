@@ -25,7 +25,7 @@ final class ShowHarness {
 
     private func loadStores() async throws {
         try await setlists.load(root: lib.root)
-        try await shows.load(root: lib.root)
+        try await shows.load(root: lib.root, state: lib.state)
     }
 
     /// Fresh stores on the same folder ("kill -9, relaunch").
@@ -65,7 +65,7 @@ final class ShowHarness {
     /// The show file as a fresh store reads it back.
     func reloadedShow(_ id: ShowID) async throws -> ShowRecord? {
         let store = ShowStore(fileSystem: fileSystem, clock: lib.clock, playHistory: nil)
-        try await store.load(root: lib.root)
+        try await store.load(root: lib.root, state: lib.state)
         return await store.show(id: id)
     }
 

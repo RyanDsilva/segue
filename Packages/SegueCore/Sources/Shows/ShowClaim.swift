@@ -2,7 +2,8 @@ import Foundation
 import Synchronization
 
 /// One run's hold on a show: an exclusive advisory lock (`flock`) on
-/// `shows/<ulid>.show.lock`, so a show can be performed, resumed or auto-closed by only one
+/// `shows/<ulid>.show.lock` in the library's state directory (outside the library folder,
+/// P9-6 5.2), so a show can be performed, resumed or auto-closed by only one
 /// Segue at a time (a second window or process gets `ShowError.claimedElsewhere`).
 ///
 /// The OS drops the lock when the process dies, so a crashed run never blocks its own

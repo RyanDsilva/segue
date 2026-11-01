@@ -282,7 +282,7 @@ struct LibraryMetadataTests {
         }()
 
         // Overwrite with a phase 0 index (schema 1, no tags column, no plays table).
-        let url = lib.root.indexDatabase
+        let url = lib.state.indexDatabase
         for suffix in ["", "-wal", "-shm"] {
             try? FileManager.default.removeItem(atPath: url.path(percentEncoded: false) + suffix)
         }
@@ -363,7 +363,7 @@ enum IndexProbe {
 
     private static func open(_ lib: TestLibrary, flags: Int32) throws -> OpaquePointer? {
         var db: OpaquePointer?
-        let path = lib.root.indexDatabase.path(percentEncoded: false)
+        let path = lib.state.indexDatabase.path(percentEncoded: false)
         guard sqlite3_open_v2(path, &db, flags, nil) == SQLITE_OK else {
             sqlite3_close(db)
             throw CocoaError(.fileReadUnknown)

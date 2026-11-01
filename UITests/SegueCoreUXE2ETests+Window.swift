@@ -78,7 +78,7 @@ extension SegueCoreUXE2ETests {
             "-SegueWorkspaceLog", paths.workspaceLog.path(percentEncoded: false),
             "-SegueTestDefaults", "YES",
             "-SegueUITesting", "YES",
-        ]
+        ] + E2E.statePathArguments
         app.launch()
         E2E.bringToFront(app)
         XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 15))

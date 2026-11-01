@@ -131,7 +131,7 @@ extension TestLibrary {
     /// A new `LibraryStore` on this folder that does its IO through `fileSystem`.
     func openStore(fileSystem: any FileSystem) async throws -> LibraryStore {
         let store = LibraryStore(fileSystem: fileSystem, clock: clock, ids: ids)
-        try await store.open(root: root)
+        try await store.open(root: root, state: state)
         return store
     }
 

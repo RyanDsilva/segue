@@ -31,6 +31,10 @@
         /// How an open library is claimed: the real cross-process lock, or none for tests
         /// that run several in-process app instances on one library on purpose.
         public var libraryLock: LibraryLockPolicy
+        /// Where each library's index, locks and `state.json` live (P9-6 5.2): the shared
+        /// app group in the app, a per-run folder for E2E (`-SegueStatePath`), a temp folder
+        /// in tests.
+        public var libraryState: LibraryStateLocation
         /// Menu slots later workstreams fill (Welcome, What's New, export, feedback).
         public var hooks: AppHooks
         /// Opens links and reveals files (Help links, Show in Finder).
@@ -80,6 +84,7 @@
             shapeLibraryURL: URL? = nil,
             live: LiveDependencies? = nil,
             libraryLock: LibraryLockPolicy = .exclusive,
+            libraryState: LibraryStateLocation? = nil,
             hooks: AppHooks = AppHooks(),
             workspace: (any WorkspaceActions)? = nil,
             importPanel: (any ImportPanel)? = nil,
@@ -112,6 +117,9 @@
             self.importPanel = importPanel ?? OpenPanelImportPanel()
             self.autosaveDelay = autosaveDelay
             self.libraryLock = libraryLock
+            self.libraryState = libraryState ?? .appGroup(
+                bundleID: Bundle.main.bundleIdentifier ?? "dev.ryandsilva.segue",
+            )
             self.fileSystem = fileSystem
             self.clock = clock
             self.ids = ids
@@ -270,6 +278,7 @@
         public func start() async {
             guard case .starting = state else { return }
             observeActivation()
+            prepareLibraryState()
             applyPolishPresets()
             if let override = dependencies.libraryOverride {
                 await open(override, remember: dependencies.rememberLibraryOverride)
@@ -348,8 +357,10 @@
             let previous = state
             let root = LibraryRoot(url: url)
             // Re-opening the open library keeps its lock rather than contending with itself.
-            let heldLock: LibraryLock? = if case let .ready(open) = previous, open.root == root {
-                open.lock
+            let held: LibrarySession.Held? = if case let .ready(open) = previous,
+                                                open.root == root
+            {
+                LibrarySession.Held(lock: open.lock, state: open.state)
             } else {
                 nil
             }
@@ -359,7 +370,7 @@
                 let session = try await LibrarySession.open(
                     root: root,
                     dependencies: dependencies,
-                    heldLock: heldLock,
+                    held: held,
                 )
                 if remember {
                     do {

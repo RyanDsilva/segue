@@ -65,6 +65,15 @@ enum E2E {
         "-SegueUITesting", "YES",
     ]
 
+    /// The libraries' state folder for this test run (`-SegueStatePath`, P9-6 5.2): one per
+    /// test process, under the sandbox exception, so no run reuses an earlier run's index or
+    /// locks and the shared app group is never touched. Relaunches within the run share it,
+    /// as a real Mac would.
+    static let statePathArguments = [
+        "-SegueStatePath",
+        "/private/tmp/segue-e2e/state-\(UUID().uuidString)",
+    ]
+
     /// Launches a fresh instance with `arguments` and waits until it is frontmost with its
     /// window in the accessibility tree.
     static func launch(
@@ -74,6 +83,7 @@ enum E2E {
         line: UInt = #line,
     ) {
         app.launchArguments = arguments + freshInstanceArguments
+            + (arguments.contains("-SegueStatePath") ? [] : statePathArguments)
         app.launch()
         bringToFront(app, file: file, line: line)
         XCTAssertTrue(

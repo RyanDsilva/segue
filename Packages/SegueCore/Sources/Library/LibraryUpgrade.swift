@@ -10,15 +10,19 @@ import Support
 public struct LibraryUpgradeState: Sendable, Equatable, Codable {
     /// The "remove the old length lines" offer was made (answered either way).
     public var durationCleanupOffered: Bool
+    /// The index and locks of builds before P9-6 S0 are gone from the folder (5.3).
+    public var stateMoved: Bool
 
-    public init(durationCleanupOffered: Bool = false) {
+    public init(durationCleanupOffered: Bool = false, stateMoved: Bool = false) {
         self.durationCleanupOffered = durationCleanupOffered
+        self.stateMoved = stateMoved
     }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         durationCleanupOffered = try container
             .decodeIfPresent(Bool.self, forKey: .durationCleanupOffered) ?? false
+        stateMoved = try container.decodeIfPresent(Bool.self, forKey: .stateMoved) ?? false
     }
 }
 
@@ -75,6 +79,59 @@ public enum LibraryUpgrade {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         try fileSystem.writeAtomically(encoder.encode(state), to: stateURL(root))
+    }
+
+    /// `<root>/.segue/index.sqlite`: where builds before P9-6 S0 kept the index.
+    static func inFolderIndex(_ root: LibraryRoot) -> URL {
+        root.appDirectory.appending(path: "index.sqlite", directoryHint: .notDirectory)
+    }
+
+    /// `<root>/.segue/library.lock`: where builds before P9-6 S0 kept the library lock.
+    static func inFolderLock(_ root: LibraryRoot) -> URL {
+        root.appDirectory.appending(path: "library.lock", directoryHint: .notDirectory)
+    }
+
+    /// The upgrade from in-folder state (5.3), until `stateMoved` is recorded. Best effort:
+    /// a failure leaves the old files for the next open and never fails this one.
+    static func moveStateOutOfFolder(root: LibraryRoot, fileSystem: any FileSystem) {
+        var upgrades = state(root: root, fileSystem: fileSystem)
+        guard !upgrades.stateMoved,
+              (try? removeInFolderState(root: root, fileSystem: fileSystem)) == true
+        else { return }
+        upgrades.stateMoved = true
+        try? save(upgrades, root: root, fileSystem: fileSystem)
+    }
+
+    /// Removes the state builds before P9-6 S0 kept inside the folder (5.3), once the new
+    /// index exists in the state directory: the old index and its `-wal` / `-shm` (a
+    /// projection, not user data), then `.segue/library.lock` and every
+    /// `shows/*.show.lock` that no older build holds. A held lock stays and is tried again
+    /// on the next open. True when nothing is left, so `stateMoved` can be recorded.
+    static func removeInFolderState(root: LibraryRoot, fileSystem: any FileSystem) throws
+        -> Bool
+    {
+        try SongIndex.deleteFiles(at: inFolderIndex(root), fileSystem: fileSystem)
+        var locks = [inFolderLock(root)]
+        if fileSystem.directoryExists(at: root.showsDirectory) {
+            locks += try fileSystem.contentsOfDirectory(at: root.showsDirectory)
+                .filter { $0.lastPathComponent.hasSuffix(".show.lock") }
+        }
+        var removedAll = true
+        for lock in locks where fileSystem.fileExists(at: lock) {
+            removedAll = unlinkIfFree(lock) && removedAll
+        }
+        return removedAll
+    }
+
+    /// Unlinks the lock file at `url` while holding its `flock`, so a file an older build
+    /// still holds is never removed. True when it is gone.
+    private static func unlinkIfFree(_ url: URL) -> Bool {
+        let path = url.path(percentEncoded: false)
+        let fd = open(path, O_RDWR | O_CLOEXEC)
+        guard fd >= 0 else { return errno == ENOENT }
+        defer { close(fd) }
+        guard flock(fd, LOCK_EX | LOCK_NB) == 0 else { return false }
+        return unlink(path) == 0 || errno == ENOENT
     }
 
     /// The songs the `{duration}` cleanup would change: editable songs whose source holds a

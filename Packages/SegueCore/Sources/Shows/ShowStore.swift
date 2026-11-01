@@ -53,6 +53,8 @@ public actor ShowStore {
     private let playHistory: (any PlayHistoryIndex)?
 
     private var root: LibraryRoot?
+    /// The library's state directory, where show claims live (P9-6 5.2).
+    private var state: LibraryStateDirectory?
     private var shows: [ShowID: ShowRecord] = [:]
 
     private static let migrator = SchemaMigrator(
@@ -81,9 +83,12 @@ public actor ShowStore {
     }
 
     /// Loads every show under `root` (creating `shows/`), then rebuilds the play projection
-    /// from the finished ones (`replaceAllPlays`). Unreadable files are reported.
+    /// from the finished ones (`replaceAllPlays`). Unreadable files are reported. Claims
+    /// (`claim(_:)`) are taken in `state`, the library's state directory.
     @discardableResult
-    public func load(root: LibraryRoot) async throws -> [ShowLoadIssue] {
+    public func load(root: LibraryRoot, state: LibraryStateDirectory) async throws
+        -> [ShowLoadIssue]
+    {
         try fileSystem.createDirectory(at: root.showsDirectory)
         let suffix = LibraryRoot.showSuffix
         let urls = try fileSystem.contentsOfDirectory(at: root.showsDirectory)
@@ -110,6 +115,7 @@ public actor ShowStore {
             }
         }
         self.root = root
+        self.state = state
         shows = loaded
         try await playHistory?.replaceAllPlays(
             loaded.values.sorted { $0.id < $1.id }.filter(\.isFinished).flatMap(\.playRecords),
@@ -157,8 +163,8 @@ public actor ShowStore {
     /// Claims show `id` for this run (see `ShowClaim`). Throws
     /// `ShowError.claimedElsewhere` when another window or process holds it.
     public func claim(_ id: ShowID) throws -> ShowClaim {
-        guard let root else { throw ShowError.notLoaded }
-        guard let claim = try ShowClaim.acquire(at: Self.claimURL(id, root: root)) else {
+        guard let state else { throw ShowError.notLoaded }
+        guard let claim = try ShowClaim.acquire(at: claimURL(id, state: state)) else {
             throw ShowError.claimedElsewhere(id)
         }
         return claim
@@ -166,20 +172,19 @@ public actor ShowStore {
 
     /// Whether another run holds show `id` right now.
     public func isClaimedElsewhere(_ id: ShowID) -> Bool {
-        guard let root else { return false }
-        guard let claim = try? ShowClaim.acquire(at: Self.claimURL(id, root: root)) else {
+        guard let state else { return false }
+        guard let claim = try? ShowClaim.acquire(at: claimURL(id, state: state)) else {
             return true
         }
         claim.release()
         return false
     }
 
-    static func claimURL(_ id: ShowID, root: LibraryRoot) -> URL {
-        root.showsDirectory.appending(path: id.description + claimSuffix)
+    /// `shows/<ulid>.show.lock` in the state directory (created on demand).
+    private func claimURL(_ id: ShowID, state: LibraryStateDirectory) throws -> URL {
+        try fileSystem.createDirectory(at: state.showsDirectory)
+        return state.showLockURL(id.ulid)
     }
-
-    /// The lock file next to `<ulid>.show.json`.
-    static let claimSuffix = ".show.lock"
 
     // MARK: - Reorder reviews
 

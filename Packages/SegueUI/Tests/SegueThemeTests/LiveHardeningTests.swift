@@ -271,14 +271,14 @@ extension StageWindowSuites {
 
         static func reloaded(_ id: ShowID, env: TestEnvironment) async throws -> ShowRecord? {
             let store = ShowStore(fileSystem: LiveFileSystem(), clock: env.clock, playHistory: nil)
-            try await store.load(root: LibraryRoot(url: env.libraryURL))
+            try await store.load(root: LibraryRoot(url: env.libraryURL), state: env.stateDirectory)
             return await store.show(id: id)
         }
 
         /// Waits until no run holds show `id` (the stage let go of it).
         static func waitUntilReleased(_ id: ShowID, env: TestEnvironment) async throws {
             let store = ShowStore(fileSystem: LiveFileSystem(), clock: env.clock, playHistory: nil)
-            try await store.load(root: LibraryRoot(url: env.libraryURL))
+            try await store.load(root: LibraryRoot(url: env.libraryURL), state: env.stateDirectory)
             let deadline = ContinuousClock.now + .seconds(5)
             while await store.isClaimedElsewhere(id), ContinuousClock.now < deadline {
                 try await Task.sleep(for: .milliseconds(10))

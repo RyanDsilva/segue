@@ -53,7 +53,8 @@ public struct RefreshSummary: Sendable, Equatable {
 }
 
 /// The song library: `.cho` files + sidecars on disk (canonical) and a rebuildable GRDB
-/// index at `.segue/index.sqlite` (a projection; only this store writes to it).
+/// index in the library's state directory, outside the folder (`LibraryStateDirectory`,
+/// P9-6 5.2; a projection, only this store writes to it).
 ///
 /// All IO goes through the injected `FileSystem`; timestamps and IDs come from the injected
 /// `Clock` and `IDGenerator`, so integration tests are reproducible.
@@ -93,9 +94,10 @@ public actor LibraryStore {
     }
 
     /// Opens (creating if needed) the library at `root`: ensures the folder layout, opens or
-    /// rebuilds the index, then scans files like `refresh()`. Orphan `.cho` files get a
-    /// sidecar.
-    public func open(root: LibraryRoot) throws {
+    /// rebuilds the index in `state` (the library's state directory, keyed by its
+    /// `LibraryIdentity`), then scans files like `refresh()`. Orphan `.cho` files get a
+    /// sidecar. Then the index and locks older builds kept in the folder go (P9-6 5.3).
+    public func open(root: LibraryRoot, state: LibraryStateDirectory) throws {
         if let library {
             if library.files.root != root {
                 plays = [:] // another library's history
@@ -104,10 +106,10 @@ public actor LibraryStore {
             self.library = nil
         }
         loadIssues = []
-        for directory in [root.songsDirectory, root.setlistsDirectory, root.appDirectory] {
+        for directory in [root.songsDirectory, root.setlistsDirectory, state.url] {
             try fileSystem.createDirectory(at: directory)
         }
-        let index = try SongIndex.open(at: root.indexDatabase, fileSystem: fileSystem)
+        let index = try SongIndex.open(at: state.indexDatabase, fileSystem: fileSystem)
         library = OpenLibrary(
             files: SongFiles(root: root, fileSystem: fileSystem, clock: clock, ids: ids),
             index: index,
@@ -115,6 +117,7 @@ public actor LibraryStore {
         )
         try reapplyPlays()
         try refresh()
+        LibraryUpgrade.moveStateOutOfFolder(root: root, fileSystem: fileSystem)
     }
 
     /// Creates a new song from ChordPro `source`: writes `songs/<slug>.cho` and its sidecar
@@ -292,7 +295,7 @@ public actor LibraryStore {
     /// is rethrown.
     public func rebuildIndex() throws {
         let library = try openLibrary()
-        let url = library.files.root.indexDatabase
+        let url = library.index.url
         try library.index.close()
         do {
             try SongIndex.deleteFiles(at: url, fileSystem: fileSystem)

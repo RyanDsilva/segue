@@ -16,7 +16,7 @@
             guard let session else { return }
             let shows = session.stores.shows
             do {
-                let issues = try await shows.load(root: session.root)
+                let issues = try await shows.load(root: session.root, state: session.state)
                 if let first = issues.first {
                     session.library.errorMessage = issues.count == 1
                         ? "Segue could not read the show “\(first.relativePath)” "

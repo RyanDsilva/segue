@@ -38,6 +38,27 @@ final class TestEnvironment {
         ))
     }
 
+    /// The libraries' state location (index, locks, `state.json`), as the app group's
+    /// Application Support would be (P9-6 5.2).
+    var stateLocation: LibraryStateLocation {
+        LibraryStateLocation(base: scratch.appending(path: "State", directoryHint: .isDirectory))
+    }
+
+    /// The library's state directory: the one an app opened on this library minted (its
+    /// `.segue/library.json`), else a fixed ID for `openLibrary()`.
+    var stateDirectory: LibraryStateDirectory {
+        let root = LibraryRoot(url: libraryURL)
+        if case let .valid(identity) = LibraryIdentity.read(root: root, fileSystem: fileSystem) {
+            return stateLocation.directory(for: identity.id)
+        }
+        return stateLocation.directory(for: Self.fixedLibraryID)
+    }
+
+    private static let fixedLibraryID = ULID(
+        milliseconds: 0,
+        randomness: Array(repeating: 3, count: 10),
+    )
+
     /// The stand-in Trash folder.
     var trashURL: URL {
         scratch.appending(path: "Trash", directoryHint: .isDirectory)
@@ -68,6 +89,7 @@ final class TestEnvironment {
             rememberLibraryOverride: remember,
             live: liveDependencies(),
             libraryLock: libraryLock,
+            libraryState: stateLocation,
         )
         // In-process tests never make a sound: an engine of their own that is never built,
         // and a recorder as the output (P8-6).
@@ -143,7 +165,7 @@ final class TestEnvironment {
             clock: clock,
             ids: ids,
         )
-        try await store.open(root: LibraryRoot(url: libraryURL))
+        try await store.open(root: LibraryRoot(url: libraryURL), state: stateDirectory)
         let library = LibraryViewModel(store: store, debounce: debounce)
         await library.reload()
         return library

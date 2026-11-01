@@ -64,6 +64,9 @@ import VendorServices
     /// - `-SegueTips <show|hide>`: show every tip, or none (test runs hide them by default).
     /// - `-SegueExportPath <file>`: Export Library Archive writes `<file>` without the panel.
     /// - `-SegueCompletedGigs <n>`: preset the completed-gig counter of the review prompt.
+    /// - `-SegueStatePath <dir>`: keep the libraries' index, locks and `state.json` under
+    ///   `<dir>` instead of the shared app group (P9-6 5.2), so every E2E run starts from a
+    ///   clean state. Must be under `/private/tmp/segue-e2e/` (the sandbox exception).
     /// (Capture flags: LaunchOptions+Capture.swift.)
     struct LaunchOptions: Sendable, Equatable {
         static let libraryPathFlag = "-SegueLibraryPath"
@@ -95,6 +98,7 @@ import VendorServices
         static let tipsFlag = "-SegueTips"
         static let exportPathFlag = "-SegueExportPath"
         static let completedGigsFlag = "-SegueCompletedGigs"
+        static let statePathFlag = "-SegueStatePath"
 
         /// Where `-SegueSeedWelcome` puts the library when no library path is given: inside
         /// the app's own container, so no sandbox exception is needed and the user's real
@@ -146,6 +150,7 @@ import VendorServices
         var tips: PolishLaunch.Tips?
         var exportPath: URL?
         var completedGigs: Int?
+        var statePath: URL?
         var screenshotLibrary = false
         /// `-SegueWindowFrame`, top-left origin on the main screen.
         var windowFrame: CGRect?
@@ -243,6 +248,7 @@ import VendorServices
             completedGigs = values[Self.completedGigsFlag].flatMap(Int.init).flatMap { count in
                 count >= 0 ? count : nil
             }
+            statePath = Self.path(values[Self.statePathFlag], directoryHint: .isDirectory)
             parseCapture(values)
         }
 
@@ -254,6 +260,7 @@ import VendorServices
             servicesLiveFlag, consentFlag, appearanceFlag, mailLogFlag,
             onboardingFlag, seedWelcomeFlag, changelogPathFlag, lastSeenVersionFlag,
             appVersionFlag, reviewLogFlag, tipsFlag, exportPathFlag, completedGigsFlag,
+            statePathFlag,
             screenshotLibraryFlag, windowFrameFlag, stageWindowedFlag, fixedClockFlag,
             scriptedAIFlag, guideFixturesFlag, clockRateFlag,
         ]
@@ -281,7 +288,7 @@ import VendorServices
                 || consentPreset != nil || mailLog != nil
                 || onboarding != nil || seedWelcome || changelogPath != nil
                 || lastSeenVersion != nil || appVersion != nil || reviewLog != nil
-                || tips != nil || exportPath != nil || completedGigs != nil
+                || tips != nil || exportPath != nil || completedGigs != nil || statePath != nil
                 || screenshotLibrary || windowFrame != nil || stageWindowed
                 || fixedClock != nil || scriptedAI != nil || guideFixtures || clockRate != nil
         }
@@ -300,41 +307,6 @@ import VendorServices
 
         static func isTruthy(_ value: String) -> Bool {
             ["yes", "true", "1"].contains(value.lowercased())
-        }
-    }
-
-    /// Where app state lives, and clearing it for `-SegueResetState`.
-    enum AppStateReset {
-        /// Suffix of the separate defaults suite used by test runs.
-        static let testSuiteSuffix = ".uitest"
-
-        /// The defaults store for this launch. Test runs (any test launch argument) use their own
-        /// suite, so running the E2E suite never touches the real library bookmark.
-        static func defaults(for options: LaunchOptions, bundleID: String?) -> UserDefaults {
-            guard options.isTestRun, let bundleID,
-                  let suite = UserDefaults(suiteName: bundleID + testSuiteSuffix)
-            else { return .standard }
-            return suite
-        }
-
-        /// Wipes the test suite. `-SegueResetState` always makes this a test run, so it can never
-        /// clear the user's real defaults.
-        static func wipeTestState(_ defaults: UserDefaults, bundleID: String?) {
-            guard let bundleID else { return }
-            defaults.removePersistentDomain(forName: bundleID + testSuiteSuffix)
-        }
-
-        /// AppKit autosaves window frames (`NSWindow Frame <name>`) into the app's standard
-        /// defaults, never into the test suite, so a test launch would start from whatever frame
-        /// the same bundle ID last saved (a real Personal session's 1440x900, a previous run's
-        /// moved window). `-SegueResetState` forgets them so every reset launch opens at the
-        /// scene's default size. Relaunches without a reset keep them: that is the restore test.
-        static func forgetWindowFrames(in defaults: UserDefaults = .standard) {
-            for key in defaults.dictionaryRepresentation().keys
-                where key.hasPrefix("NSWindow Frame ")
-            {
-                defaults.removeObject(forKey: key)
-            }
         }
     }
 
@@ -373,6 +345,7 @@ import VendorServices
                 rememberLibraryOverride: rememberLibrary,
                 shapeLibraryURL: isTestRun ? shapeLibraryPath : SegueApp.realShapeLibraryURL,
                 live: isTestRun ? liveDependencies(defaults: defaults) : real(defaults),
+                libraryState: statePath.map { LibraryStateLocation(base: $0) },
                 hooks: polish.router.filling(services.hooks),
                 workspace: workspaceLog.map(RecordingWorkspaceActions.init),
                 importPanel: importPanelPaths.map(FixedImportPanel.init),

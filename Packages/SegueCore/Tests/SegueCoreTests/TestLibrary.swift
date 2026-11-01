@@ -16,6 +16,16 @@ final class TestLibrary: Sendable {
     /// The library state location (index, locks, `state.json`), next to the library folder
     /// as the app group's Application Support would be (P9-6 5.2).
     let stateLocation: LibraryStateLocation
+    /// This library's state directory, under a fixed test library ID.
+    var state: LibraryStateDirectory {
+        stateLocation.directory(for: Self.libraryID)
+    }
+
+    /// The library ID the stores' state directory is keyed by in these tests.
+    static let libraryID = ULID(
+        milliseconds: 1_767_225_600_000,
+        randomness: Array(repeating: 7, count: 10),
+    )
 
     init(seed: UInt64 = 1) throws {
         let url = FileManager.default.temporaryDirectory
@@ -49,7 +59,7 @@ final class TestLibrary: Sendable {
     /// A new `LibraryStore` opened on this folder (a "relaunch" when called again).
     func openStore() async throws -> LibraryStore {
         let store = LibraryStore(fileSystem: fileSystem, clock: clock, ids: ids)
-        try await store.open(root: root)
+        try await store.open(root: root, state: state)
         return store
     }
 
@@ -58,6 +68,11 @@ final class TestLibrary: Sendable {
         let store = SetlistStore(fileSystem: fileSystem, clock: clock, ids: ids)
         let issues = try await store.load(root: root)
         return (store, issues)
+    }
+
+    /// The index database in the state directory, or one of its side files (`-wal`).
+    func indexFile(_ suffix: String = "") -> URL {
+        URL(filePath: state.indexDatabase.path(percentEncoded: false) + suffix)
     }
 
     func url(_ relativePath: String) -> URL {

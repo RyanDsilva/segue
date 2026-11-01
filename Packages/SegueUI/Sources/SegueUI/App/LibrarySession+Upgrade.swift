@@ -14,15 +14,22 @@
                 + (count == 1 ? "1 song?" : "\(count) songs?")
         }
 
-        /// Runs the one-time steps after the stores opened.
-        func runUpgradeSteps(fileSystem: any FileSystem) {
+        /// Runs the one-time steps after the stores opened. `isCopy`: the folder was a Finder
+        /// copy of another library and was just given its own identity (P9-6 5.2).
+        func runUpgradeSteps(fileSystem: any FileSystem, isCopy: Bool = false) {
+            if isCopy {
+                upgradeNote = LibraryNote(title: LibraryState.copyNote)
+            }
             let moved = LibraryUpgrade.moveTimingsToTrash(
                 root: root,
                 fileSystem: fileSystem,
                 trash: { _ = try fileSystem.trashItem(at: $0) },
             )
             if moved {
-                upgradeNote = LibraryUpgrade.timingsNote
+                upgradeNote = LibraryNote(
+                    title: LibraryUpgrade.timingsNote,
+                    message: "You can restore it from the Trash.",
+                )
             }
             let state = LibraryUpgrade.state(root: root, fileSystem: fileSystem)
             let count = LibraryUpgrade.songsWithDurationLines(library.catalog).count
@@ -41,6 +48,17 @@
             if remove {
                 await library.removeDurationLines()
             }
+        }
+    }
+
+    /// A one-time note shown in the upgrade alert (OK only).
+    public struct LibraryNote: Equatable, Sendable {
+        public var title: String
+        public var message: String?
+
+        public init(title: String, message: String? = nil) {
+            self.title = title
+            self.message = message
         }
     }
 
@@ -104,8 +122,10 @@
                     .accessibilityIdentifier(AccessibilityID.durationCleanupNotNow)
                 }
             } message: {
-                if session.upgradeNote != nil {
-                    Text("You can restore it from the Trash.")
+                if let note = session.upgradeNote {
+                    if let message = note.message {
+                        Text(message)
+                    }
                 } else {
                     Text("Only the {duration} lines are removed; nothing else in your charts "
                         + "changes. One Undo puts them back.")
@@ -115,7 +135,7 @@
 
         private var title: String {
             if let note = session.upgradeNote {
-                return note
+                return note.title
             }
             return LibrarySession.durationOfferText(session.durationOffer ?? 0)
         }

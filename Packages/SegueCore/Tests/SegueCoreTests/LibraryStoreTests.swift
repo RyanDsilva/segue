@@ -33,7 +33,7 @@ struct LibraryStoreTests {
         )
         #expect(record.sidecar.createdAt == lib.clock.now())
         #expect(record.readOnly == nil)
-        #expect(lib.exists(".segue/index.sqlite"))
+        #expect(lib.fileSystem.fileExists(at: lib.indexFile()))
 
         #expect(try await store.search(query: "gonna").map(\.id) == [record.id])
         #expect(try await store.search(query: "wonder").map(\.id) == [record.id])
@@ -203,8 +203,10 @@ struct LibraryStoreTests {
         try await store.rebuildIndex() // also exercises the explicit rebuild path
         let afterRebuild = try await queries
             .asyncMap { try await store.search(query: $0).map(\.id) }
-        for suffix in ["", "-wal", "-shm"] where lib.exists(".segue/index.sqlite\(suffix)") {
-            try FileManager.default.removeItem(at: lib.url(".segue/index.sqlite\(suffix)"))
+        for suffix in ["", "-wal", "-shm"]
+            where lib.fileSystem.fileExists(at: lib.indexFile(suffix))
+        {
+            try FileManager.default.removeItem(at: lib.indexFile(suffix))
         }
         let relaunched = try await lib.openStore()
         let afterDelete = try await queries.asyncMap {
@@ -225,10 +227,10 @@ struct LibraryStoreTests {
             record = try await store.createSong(source: Self.wonderwall)
         }
 
-        for suffix in ["-wal", "-shm"] where lib.exists(".segue/index.sqlite\(suffix)") {
-            try FileManager.default.removeItem(at: lib.url(".segue/index.sqlite\(suffix)"))
+        for suffix in ["-wal", "-shm"] where lib.fileSystem.fileExists(at: lib.indexFile(suffix)) {
+            try FileManager.default.removeItem(at: lib.indexFile(suffix))
         }
-        try lib.write("this is not a sqlite database", to: ".segue/index.sqlite")
+        try Data("this is not a sqlite database".utf8).write(to: lib.indexFile())
 
         let relaunched = try await lib.openStore()
         #expect(try await relaunched.search(query: "gonna").map(\.id) == [record.id])

@@ -1,4 +1,6 @@
 import Foundation
+import Library
+import Shows
 import Support
 import Testing
 
@@ -134,5 +136,59 @@ struct LibraryStateTests {
         #expect(lib.fileSystem.directoryExists(at: recent.directory.url))
         #expect(lib.trashedNames() == [stale.identity.id.description])
         withExtendedLifetime(busyLock) {}
+    }
+
+    @Test
+    func `the index and show claims are created only under the state directory`() async throws {
+        let harness = try await ShowHarness()
+        let lib = harness.lib
+        let (setlist, _) = try await harness.makeSet(2)
+        let show = try await ShowController.start(
+            setlist: setlist,
+            kind: .gig,
+            environment: harness.environment(),
+        )
+        let id = await show.state.record.id
+
+        #expect(lib.fileSystem.fileExists(at: lib.state.indexDatabase))
+        #expect(lib.fileSystem.fileExists(at: lib.state.showLockURL(id.ulid)))
+        #expect(await harness.shows.isClaimedElsewhere(id))
+        let names = try FileManager.default
+            .contentsOfDirectory(atPath: lib.root.appDirectory.path(percentEncoded: false))
+        #expect(names == ["upgrades.json"])
+        let shows = try FileManager.default
+            .contentsOfDirectory(atPath: lib.root.showsDirectory.path(percentEncoded: false))
+        #expect(shows.allSatisfy { $0.hasSuffix(LibraryRoot.showSuffix) })
+        withExtendedLifetime(show) {}
+    }
+
+    @Test
+    func `the upgrade deletes the old index and free locks but leaves a held one`() async throws {
+        let lib = try TestLibrary()
+        for name in ["index.sqlite", "index.sqlite-wal", "index.sqlite-shm", "library.lock"] {
+            try lib.write("old", to: ".segue/\(name)")
+        }
+        try lib.write("", to: "shows/01JBZ6S0X5Q4M3N2P1R0S9T8V7.show.lock")
+        let held = "shows/01JBZ6S0X5Q4M3N2P1R0S9T8V8.show.lock"
+        try lib.write("", to: held)
+        let fd = Darwin.open(lib.url(held).path(percentEncoded: false), O_RDWR)
+        #expect(flock(fd, LOCK_EX | LOCK_NB) == 0)
+
+        _ = try await lib.openStore()
+
+        // The index and the free locks are gone; nothing is recorded while one is held.
+        #expect(try FileManager.default
+            .contentsOfDirectory(atPath: lib.root.appDirectory.path(percentEncoded: false))
+            .isEmpty)
+        #expect(try FileManager.default
+            .contentsOfDirectory(atPath: lib.root.showsDirectory.path(percentEncoded: false))
+            == ["01JBZ6S0X5Q4M3N2P1R0S9T8V8.show.lock"])
+        #expect(!LibraryUpgrade.state(root: lib.root, fileSystem: lib.fileSystem).stateMoved)
+
+        // The older build lets go: the next open finishes the move and records it.
+        close(fd)
+        _ = try await lib.openStore()
+        #expect(!lib.exists(held))
+        #expect(LibraryUpgrade.state(root: lib.root, fileSystem: lib.fileSystem).stateMoved)
     }
 }
