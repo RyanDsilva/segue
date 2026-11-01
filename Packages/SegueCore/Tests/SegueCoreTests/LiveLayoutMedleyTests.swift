@@ -3,6 +3,7 @@ import Editing
 import Foundation
 import Library
 import LiveLayout
+import MusicTheory
 import Setlists
 import Support
 import Testing
@@ -219,5 +220,80 @@ struct MedleyFollowTests {
         #expect(dwell.observe(shown: 1, committed: 0, at: start + 1.7) == nil)
         #expect(dwell.observe(shown: 1, committed: 0, at: start + 1.8) == 1)
         #expect(dwell.candidate == nil)
+    }
+}
+
+/// The walk-up at a member boundary (P9-3 9.1, R178): from the member's last chord into the
+/// next member's first, planned in the next member's key (R169), drawn like any walk-up.
+struct MedleyWalkUpTests {
+    private let metrics = FixedAdvanceMetrics()
+
+    static func segment(_ source: String, walkUps: WalkUpDensity = .everyChange) -> LayoutSegment {
+        let (document, _) = ChordProParser.parse(source)
+        let options = DisplayOptions()
+            .withBass(InstrumentProfile(bassNotes: true, walkUps: walkUps))
+        let model = RenderModel(document: document, options: options)
+        return LayoutSegment(
+            model: model,
+            walkUps: BassLine.context(for: model, document: document, prefs: BassPrefs()),
+        )
+    }
+
+    /// Member 1 in C ends on C; member 2 in E starts on E.
+    static let first = "{key: C}\n{start_of_verse}\n[F]Hold on [C]tight\n{end_of_verse}\n"
+    static let second = "{key: E}\n{start_of_chorus}\n[E]Sing it [A]loud\n{end_of_chorus}\n"
+
+    private func runs(_ segments: [LayoutSegment]) -> [String] {
+        let plan = LayoutEngine.plan(
+            LayoutRequest(
+                segments: segments,
+                viewport: LayoutSize(width: 900, height: 600),
+                minLyricSize: 30,
+                columns: 1,
+            ),
+            metrics: metrics,
+        )
+        return plan.blocks.flatMap(\.allRows).flatMap(\.chords).filter { $0.role == .approach }
+            .map(\.text)
+    }
+
+    @Test
+    func `the last chord walks into the next member, spelled in the next key`() throws {
+        let one = Self.segment(Self.first)
+        let two = Self.segment(Self.second)
+        let alone = runs([one])
+        let medley = runs([one, two])
+        // One more run than the members alone: C into E, through D# (E major), not D.
+        #expect(medley.count == alone.count + runs([two]).count + 1)
+        let oneContext = try #require(one.walkUps)
+        let twoContext = try #require(two.walkUps)
+        let change = try #require(BassLine.boundary(
+            from: MemberPasses(
+                sections: one.model.sections,
+                origins: Array(one.model.sections.indices),
+                context: oneContext,
+            ),
+            into: MemberPasses(
+                sections: two.model.sections,
+                origins: Array(two.model.sections.indices),
+                context: twoContext,
+            ),
+        ))
+        #expect(change.fromName == "C")
+        #expect(change.toName == "E")
+        #expect(change.intoSection)
+        let shown = try #require(change.shown)
+        #expect(shown.notes.map(\.chartName).contains("D#"))
+        #expect(!shown.notes.map(\.chartName).contains("D"))
+    }
+
+    @Test
+    func `no boundary run with walk-ups off or into a member without them`() {
+        let off = Self.segment(Self.first, walkUps: .off)
+        #expect(runs([off, Self.segment(Self.second, walkUps: .off)]).isEmpty)
+        var bare = Self.segment(Self.second)
+        bare.walkUps = nil
+        let one = Self.segment(Self.first)
+        #expect(runs([one, bare]).count == runs([one]).count + runs([bare]).count)
     }
 }

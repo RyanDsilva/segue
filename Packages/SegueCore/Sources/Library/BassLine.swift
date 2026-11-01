@@ -167,7 +167,7 @@ public enum BassLine {
 // MARK: - The walk
 
 /// The chords of `sections` in played order, with chain breaks.
-private struct Walk {
+struct Walk {
     struct Chord {
         /// Index into the annotated sections (the target section for a repeat stub).
         var section: Int

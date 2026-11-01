@@ -22,7 +22,10 @@ struct SongPreparation {
         }
         var result = MeasuredSong(notes: [], sections: [], lineCount: 0)
         for (index, segment) in segments.enumerated() {
-            var song = measure(segment)
+            var song = measure(
+                segment,
+                next: index + 1 < segments.count ? segments[index + 1] : nil,
+            )
             let offset = result.sections.count
             for position in song.sections.indices {
                 song.sections[position].id += offset
@@ -45,7 +48,9 @@ struct SongPreparation {
         return result
     }
 
-    private func measure(_ segment: LayoutSegment) -> MeasuredSong {
+    /// One song or member; `next` is the member after it in a medley, whose first chord the
+    /// last chord walks up into (P9-3 9.1).
+    private func measure(_ segment: LayoutSegment, next: LayoutSegment? = nil) -> MeasuredSong {
         let original = segment.model.sections
         let units = SongSections.units(of: original)
         // Cues pin to the song's own sections (song-relative label + occurrence) before the
@@ -72,6 +77,7 @@ struct SongPreparation {
             for index in arranged.indices {
                 arranged[index].section = annotated[index]
             }
+            boundaryWalkUp(&arranged, context: walkUps, into: next)
         }
         let titles = arranged.map { pass in
             units.first { $0.index == pass.source }?.title ?? ""
@@ -98,6 +104,36 @@ struct SongPreparation {
             sections: measured,
             lineCount: lineCount,
         )
+    }
+
+    /// The walk-up from the member's last chord into the next member's first, planned in
+    /// the next member's key (R178, R169); none without the next member's walk-ups.
+    private func boundaryWalkUp(
+        _ arranged: inout [ArrangedSection],
+        context: BassLineContext,
+        into next: LayoutSegment?,
+    ) {
+        guard let next, let nextContext = next.walkUps else { return }
+        let units = SongSections.units(of: next.model.sections)
+        let following = ArrangedSections.build(
+            next.model.sections,
+            order: next.passes ?? ArrangementResolver.fullSong(units),
+        )
+        let drawn = BassLine.annotateBoundary(
+            MemberPasses(
+                sections: arranged.map(\.section),
+                origins: arranged.map(\.source),
+                context: context,
+            ),
+            into: MemberPasses(
+                sections: following.map(\.section),
+                origins: following.map(\.source),
+                context: nextContext,
+            ),
+        )
+        for index in arranged.indices {
+            arranged[index].section = drawn[index]
+        }
     }
 
     private func section(
