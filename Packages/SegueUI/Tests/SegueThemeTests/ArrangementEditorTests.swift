@@ -143,7 +143,7 @@ struct ArrangementEditorTests { // swiftlint:disable:this type_body_length
         #expect(try lane(fix) == "Custom · V1 C V2 C -B C C V1")
         #expect(try saved.knownParts == KnownPart.all(units(fix)))
         let json = try fix.env.read("setlists/friday.setlist.json")
-        #expect(json.contains("\"schemaVersion\" : 6"))
+        #expect(json.contains("\"schemaVersion\" : 7"))
         #expect(json.contains("\"arrangement\""))
         // The song file is never changed.
         #expect(try fix.env.read("songs/soundcheck.cho") == cho)

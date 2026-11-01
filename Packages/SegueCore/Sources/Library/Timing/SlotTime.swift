@@ -12,6 +12,9 @@ public enum UnknownTime: String, Sendable, Hashable, CaseIterable {
     case noTempo
     /// Nothing to time: no chords in the played passes.
     case noChords
+    /// A medley member whose song is missing from the library (P9-3 7): "no chords" or "no
+    /// tempo" would be false.
+    case missingSong
 }
 
 /// How long a song or slot plays.
@@ -65,6 +68,18 @@ public enum SlotTimes {
             return time(of: timeline(record, sections: sections, units: units, order: nil))
         }
         return time(of: timeline(record, sections: sections, units: units, order: order))
+    }
+
+    /// A medley slot (P9-3 7): each member's `slot(_:arrangement:)` in order; a member whose
+    /// song is missing (nil record) is unknown with `.missingSong`. No changeover and no
+    /// transition time between members.
+    public static func medley(
+        _ members: [(record: SongRecord?, arrangement: SlotArrangement?)],
+    ) -> MedleyTime {
+        MedleyTime(members: members.map { member in
+            member.record.map { slot($0, arrangement: member.arrangement) }
+                ?? .unknown(.missingSong)
+        })
     }
 
     /// The rule for any timeline (also the stage's).
@@ -144,6 +159,8 @@ public extension SlotTime {
             "No tempo"
         case .unknown(.noChords):
             "No chords to time"
+        case .unknown(.missingSong):
+            "Song missing"
         }
     }
 
@@ -157,6 +174,8 @@ public extension SlotTime {
             return "Unknown, no tempo"
         case .unknown(.noChords):
             return "Unknown, no chords to time"
+        case .unknown(.missingSong):
+            return "Unknown, song missing"
         }
     }
 
@@ -179,5 +198,81 @@ public extension SlotTime {
             parts.append("\(rest) \(rest == 1 ? "second" : "seconds")")
         }
         return parts.joined(separator: " ")
+    }
+}
+
+/// A medley slot's time (P9-3 7, R172, R173): the sum of its members' known times, with no
+/// changeover and no transition time between them. A member with an unknown time adds
+/// nothing and makes the medley's time a lower bound; "~" when any known member is
+/// estimated.
+public struct MedleyTime: Sendable, Hashable {
+    /// Each member's time, in member order.
+    public var members: [SlotTime]
+
+    public init(members: [SlotTime]) {
+        self.members = members
+    }
+
+    /// The known members' seconds summed.
+    public var known: TimeInterval {
+        members.reduce(0) { $0 + ($1.seconds ?? 0) }
+    }
+
+    /// The indexes of members whose time is unknown.
+    public var unknownMembers: [Int] {
+        members.indices.filter { members[$0].seconds == nil }
+    }
+
+    /// Whether any known member rests on default chord lengths.
+    public var estimated: Bool {
+        members.contains(where: \.isEstimated)
+    }
+
+    /// Whether at least one member is known.
+    public var hasKnown: Bool {
+        members.contains { $0.seconds != nil }
+    }
+
+    /// The row's Time cell: "7:40", "≥5:30" with an unknown member, "~7:40" when estimated
+    /// ("~≥5:30" when both), `--:--` when no member is known.
+    public var clock: String {
+        guard hasKnown else { return "--:--" }
+        return (estimated ? "~" : "") + (unknownMembers.isEmpty ? "" : "≥")
+            + SlotTime.clock(known)
+    }
+
+    /// The row's help: "Kesariya 2:40, Tum Hi Ho 2:10" when all are known, else "1 of 3
+    /// songs has no time: no tempo".
+    public func help(titles: [String]) -> String {
+        let unknown = unknownMembers
+        guard !unknown.isEmpty else {
+            return zip(titles, members).map { "\($0) \($1.clock)" }.joined(separator: ", ")
+        }
+        let reasons = Set(unknown.compactMap { members[$0].unknown })
+        let reason = reasons.count == 1 ? reasons.first.map(Self.reasonText) ?? "no time"
+            : "no time"
+        let verb = unknown.count == 1 ? "has" : "have"
+        return "\(unknown.count) of \(members.count) songs \(verb) no time: \(reason)"
+    }
+
+    /// VoiceOver: "7 minutes 40 seconds, medley of 3 songs", "at least 5 minutes 30
+    /// seconds, incomplete: 1 song has no time".
+    public var spoken: String {
+        let unknown = unknownMembers.count
+        guard unknown > 0 else {
+            let words = SlotTime.spoken(known)
+            return (estimated ? "About " + words : words) + ", medley of \(members.count) songs"
+        }
+        let songs = unknown == 1 ? "1 song has no time" : "\(unknown) songs have no time"
+        guard hasKnown else { return "Unknown, incomplete: \(songs)" }
+        return "at least \(SlotTime.spoken(known)), incomplete: \(songs)"
+    }
+
+    static func reasonText(_ reason: UnknownTime) -> String {
+        switch reason {
+        case .noTempo: "no tempo"
+        case .noChords: "no chords"
+        case .missingSong: "song missing"
+        }
     }
 }

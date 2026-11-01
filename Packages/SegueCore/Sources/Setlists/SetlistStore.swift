@@ -12,9 +12,10 @@ public enum SetlistError: Error, Equatable {
     case readOnly(SetlistID, ReadOnlyReason)
     /// A move/remove offset is outside the setlist's entries.
     case invalidOffsets(SetlistID)
-    /// A new entry would repeat a song the setlist already holds (a song appears at most
-    /// once per setlist).
+    /// A new entry would repeat a song the setlist already holds as a slot.
     case duplicateSong(SetlistID, SongID)
+    /// A medley edit was refused (P9-3 5.6); nothing changed.
+    case medley(SetlistID, MedleyRefusal)
 }
 
 /// A setlist file that could not be loaded (e.g. corrupted JSON). Reported, never deleted.
@@ -32,11 +33,11 @@ public struct SetlistLoadIssue: Sendable, Equatable {
 /// Setlists stored as `setlists/<slug>.setlist.json`. Every mutation is written to disk
 /// atomically before it returns. Implementers may add methods (rename, delete, ...).
 ///
-/// A song appears at most once per setlist: `addSong` and `insertSongs` skip songs already
-/// in it (writing nothing when none is left), `replaceEntries` refuses a new entry that
-/// repeats a song, and `duplicate` keeps the first of any repeats. A setlist saved with
-/// repeats before this rule loads as saved (it is not rewritten until edited) and is marked
-/// by `Setlist.repeatedEntries`.
+/// A song is at most one plain slot, plus at most one medley member (the reprise, P9-3
+/// decision 8, `Setlist.canAdd(_:as:)`). `addSong` and `insertSongs` skip songs already a
+/// slot (writing nothing when none is left), `replaceEntries` refuses a new entry repeating
+/// a slot's song, and `duplicate` keeps the first of any repeats. A setlist saved with
+/// repeats loads as saved (not rewritten until edited), marked by `repeatedEntries`.
 ///
 /// Versioning follows the sidecar rules: a file without `schemaVersion` (version 0) or at an
 /// older version migrates forward in memory and is written at the current version on its
@@ -214,7 +215,7 @@ public actor SetlistStore {
                 .map { entry in
                     var entry = entry
                     entry.itemId = SetlistItemID(ids.next())
-                    return entry
+                    return copiedMembers(of: entry, dropping: original.repeatedEntries)
                 },
             createdAt: now,
             updatedAt: now,
@@ -230,7 +231,8 @@ public actor SetlistStore {
     }
 
     /// Inserts `songIDs` (new item IDs each) at `offset` (nil = append) and saves. Songs
-    /// already in the setlist, and repeats within `songIDs`, are skipped; when none is left
+    /// already a slot, and repeats within `songIDs`, are skipped (a medley member's song is
+    /// added as its reprise); when none is left
     /// nothing is written and the setlist is returned as it is. Throws `invalidOffsets` when
     /// `offset` is outside `0 ... entries.count`.
     @discardableResult
@@ -491,6 +493,8 @@ private extension SetlistStore {
             2: { _ in }, 3: { _ in }, 4: { _ in },
             // v5 -> v6: arrangement `steps` become `passes` (R149, `migrateV5`).
             5: { SlotArrangement.migrateV5(arrangementsIn: &$0, key: "entries") },
+            // v6 -> v7: medley slots (P9-3), a new optional shape (old builds open v7 read-only).
+            6: { _ in },
         ],
     )
 }

@@ -56,13 +56,23 @@ public actor ShowController {
     }
 
     /// The setlist entries whose song is not in the library (the pre-show warning). Pass
-    /// their item IDs as `omitting` to perform without them.
+    /// their item IDs as `omitting` to perform without them. A medley member whose song is
+    /// missing is returned as a song entry with the member's item ID (P9-3 8.1; the
+    /// checklist names its medley through `Setlist.member(_:)`).
     public static func missingEntries(
         in setlist: Setlist,
         songs: any ShowSongSource,
     ) async -> [SetlistEntry] {
         var missing: [SetlistEntry] = []
         for entry in setlist.entries {
+            if let medley = entry.medley {
+                for member in medley.members
+                    where await songs.cachedSong(id: member.songId) == nil
+                {
+                    missing.append(member.asSlot)
+                }
+                continue
+            }
             guard let song = entry.songId else { continue }
             if await songs.cachedSong(id: song) == nil {
                 missing.append(entry)
@@ -83,22 +93,7 @@ public actor ShowController {
         environment: ShowEnvironment,
     ) async throws -> ShowController {
         let now = SegueJSON.stamp(environment.clock.now())
-        var items: [ShowItem] = []
-        // Break rows are not stage items yet (R104's interstitial comes with the live
-        // step); the record keeps them in `planned` so the show-end save keeps them.
-        for entry in setlist.entries where !omitting.contains(entry.itemId) {
-            guard let songId = entry.songId else { continue }
-            let song = await environment.songs.cachedSong(id: songId)
-            items.append(ShowItem(
-                itemId: entry.itemId,
-                songId: songId,
-                title: displayTitle(song),
-                origin: .setlist,
-                overrides: entry.overrides,
-                note: entry.note,
-                arrangement: entry.arrangement,
-            ))
-        }
+        var items = await showItems(setlist, omitting: omitting, songs: environment.songs)
         guard let first = items.first?.itemId else { throw ShowError.emptySetlist }
         items[0].state = .current
         let record = ShowRecord(
@@ -129,6 +124,46 @@ public actor ShowController {
             throw error
         }
         return controller
+    }
+
+    /// The planned items of `setlist`. Break rows are not stage items yet (R104's
+    /// interstitial comes with the live step); the record keeps them in `planned` so the
+    /// show-end save keeps them. A medley plays one item per member (P9-3 8.1): missing
+    /// members are omitted and `index` and `count` run over the members that remain; an
+    /// empty medley plays nothing.
+    private static func showItems(
+        _ setlist: Setlist,
+        omitting: Set<SetlistItemID>,
+        songs: any ShowSongSource,
+    ) async -> [ShowItem] {
+        var items: [ShowItem] = []
+        for entry in setlist.entries where !omitting.contains(entry.itemId) {
+            if let medley = entry.medley {
+                let playing = medley.members.filter { !omitting.contains($0.itemId) }
+                for (index, member) in playing.enumerated() {
+                    var item = await ShowItem(
+                        slot: member.asSlot,
+                        songId: member.songId,
+                        title: displayTitle(songs.cachedSong(id: member.songId)),
+                    )
+                    item.medley = ShowMedleyRef(
+                        slot: entry.itemId,
+                        title: medley.title,
+                        index: index,
+                        count: playing.count,
+                        transition: index == 0 ? nil : member.transition,
+                    )
+                    items.append(item)
+                }
+            } else if let songId = entry.songId {
+                await items.append(ShowItem(
+                    slot: entry,
+                    songId: songId,
+                    title: displayTitle(songs.cachedSong(id: songId)),
+                ))
+            }
+        }
+        return items
     }
 
     /// Resumes an unfinished show (from `ShowStore.launchCheck()`), at the same item and

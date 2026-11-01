@@ -115,6 +115,8 @@ public struct ShowItem: Sendable, Hashable, Codable, Identifiable {
     /// What the stage did with `arrangement` (v3); nil until the item is shown, and for items
     /// without one.
     public var arrangementState: ArrangementState?
+    /// The medley this item is a member of (v5, P9-3); nil for a plain item.
+    public var medley: ShowMedleyRef?
 
     public var id: ShowItemID {
         itemId
@@ -130,6 +132,7 @@ public struct ShowItem: Sendable, Hashable, Codable, Identifiable {
         note: String? = nil,
         state: ItemState = .pending,
         arrangement: SlotArrangement? = nil,
+        medley: ShowMedleyRef? = nil,
     ) {
         self.itemId = itemId
         self.songId = songId
@@ -140,6 +143,21 @@ public struct ShowItem: Sendable, Hashable, Codable, Identifiable {
         self.note = note
         self.state = state
         self.arrangement = arrangement
+        self.medley = medley
+    }
+
+    /// A planned item for the song slot `entry` playing `songId` (its item ID, overrides,
+    /// note and arrangement).
+    init(slot entry: SetlistEntry, songId: SongID, title: String) {
+        self.init(
+            itemId: entry.itemId,
+            songId: songId,
+            title: title,
+            origin: .setlist,
+            overrides: entry.overrides,
+            note: entry.note,
+            arrangement: entry.arrangement,
+        )
     }
 }
 
@@ -296,9 +314,10 @@ public enum ShowClosure: String, Sendable, Hashable, Codable {
 public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
     /// History: 1 = phase 2; 2 = phase 3 (`planned` may hold break rows, `breakId`, the
     /// `breakStarted` / `breakEnded` events); 3 = per-slot arrangements (`ShowItem.arrangement`,
-    /// `arrangementState`, R122); 4 = arrangement passes with show modes (R149). An older
-    /// build opens a newer file read-only.
-    public static let currentSchemaVersion = 4
+    /// `arrangementState`, R122); 4 = arrangement passes with show modes (R149); 5 = medleys
+    /// (`ShowItem.medley`, medley slots in `planned`, P9-3). An older build opens a newer
+    /// file read-only.
+    public static let currentSchemaVersion = 5
 
     public var id: ShowID
     public var schemaVersion: Int
@@ -428,6 +447,31 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
     /// rows are never items yet).
     public var omittedEntries: [SetlistEntry] {
         let present = Set(items.map(\.itemId))
-        return planned.filter { !$0.isBreak && !present.contains($0.itemId) }
+        return planned.filter { entry in
+            if let medley = entry.medley {
+                return !medley.members.contains { present.contains($0.itemId) }
+            }
+            return !entry.isBreak && !present.contains(entry.itemId)
+        }
+    }
+
+    /// Members left out of a medley that still plays because their song was missing
+    /// ("Love medley: Tum Hi Ho is missing", P9-3 8.1).
+    public var omittedMembers: [(medley: SetlistEntry, member: MedleyMember)] {
+        let present = Set(items.map(\.itemId))
+        return planned.flatMap { entry -> [(medley: SetlistEntry, member: MedleyMember)] in
+            guard let medley = entry.medley,
+                  medley.members.contains(where: { present.contains($0.itemId) })
+            else {
+                return []
+            }
+            return medley.members.filter { !present.contains($0.itemId) }
+                .map { (medley: entry, member: $0) }
+        }
+    }
+
+    /// The items of the medley `slot`, in performed order (consecutive in a show).
+    public func medleyItems(_ slot: SetlistItemID) -> [ShowItem] {
+        items.filter { $0.medley?.slot == slot }
     }
 }

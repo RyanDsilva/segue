@@ -62,6 +62,8 @@ public actor ShowStore {
         // v1 -> v2: break rows, `breakId` and the break events are new, optional shapes.
         // v2 -> v3: items gain an optional `arrangement` and `arrangementState` (R122).
         // v3 -> v4: arrangements' `steps` become `passes` (R149, `SlotArrangement.migrateV5`).
+        // v4 -> v5: items gain an optional `medley` and `planned` may hold medley slots
+        // (P9-3): new, optional shapes. An older build opens a v5 record read-only.
         steps: [
             1: { _ in },
             2: { _ in },
@@ -69,6 +71,7 @@ public actor ShowStore {
                 SlotArrangement.migrateV5(arrangementsIn: &object, key: "items")
                 SlotArrangement.migrateV5(arrangementsIn: &object, key: "planned")
             },
+            4: { _ in },
         ],
     )
 

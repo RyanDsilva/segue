@@ -45,6 +45,8 @@
                         }
                 case .unknown(.noChords):
                     Text("No chords to time")
+                case .unknown(.missingSong):
+                    Text("Song missing")
                 }
             }
             .lineLimit(1)

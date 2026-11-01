@@ -179,7 +179,7 @@ struct SlotArrangementTests {
         setlist = try await store.updateEntry(entry, in: setlist.id)
 
         let json = try lib.read("setlists/friday.setlist.json")
-        #expect(json.contains("\"schemaVersion\" : 6"))
+        #expect(json.contains("\"schemaVersion\" : 7"))
         #expect(json.contains("\"mode\" : \"chords\""))
         #expect(json.contains("\"knownParts\""))
         #expect(json.contains("\"section\" : \"Intro\""))
@@ -197,7 +197,7 @@ struct SlotArrangementTests {
     }
 
     @Test
-    func `a v4 setlist reads unchanged and a v7 one opens read-only`() async throws {
+    func `a v4 setlist reads unchanged and a v8 one opens read-only`() async throws {
         let lib = try TestLibrary()
         let song = SongID(ULID(milliseconds: 5, randomness: Array(repeating: 7, count: 10)))
         let item = SetlistItemID(ULID(milliseconds: 6, randomness: Array(repeating: 8, count: 10)))
@@ -208,12 +208,12 @@ struct SlotArrangementTests {
         """
         try lib.write(v4, to: "setlists/old.setlist.json")
         let otherID = SetlistID(ULID(milliseconds: 4, randomness: Array(repeating: 3, count: 10)))
-        let v7 = """
-        {"schemaVersion": 7, "id": "\(otherID)", "name": "Future",
+        let v8 = """
+        {"schemaVersion": 8, "id": "\(otherID)", "name": "Future",
          "entries": [{"itemId": "\(item)", "songId": "\(song)",
            "arrangement": {"passes": [{"section": "Verse", "occurrence": 1}]}}]}
         """
-        try lib.write(v7, to: "setlists/future.setlist.json")
+        try lib.write(v8, to: "setlists/future.setlist.json")
 
         let (store, issues) = try await lib.loadSetlists()
 
@@ -222,9 +222,9 @@ struct SlotArrangementTests {
         #expect(old.readOnly == nil)
         #expect(old.entries == [SetlistEntry(itemId: item, songId: song, locked: true)])
         let future = try #require(await store.setlist(id: otherID))
-        #expect(future.readOnly == .newerSchema(found: 7, supported: 6))
+        #expect(future.readOnly == .newerSchema(found: 8, supported: 7))
         #expect(future.entries[0].arrangement?.passes.count == 1)
-        #expect(try lib.read("setlists/future.setlist.json") == v7)
+        #expect(try lib.read("setlists/future.setlist.json") == v8)
     }
 
     @Test
@@ -259,7 +259,7 @@ struct SlotArrangementTests {
         try await show.recordArrangementState(.applied, for: showItem)
         _ = try await show.perform(.next)
         let reloaded = try #require(try await harness.reloadedShow(record.id))
-        #expect(reloaded.schemaVersion == 4)
+        #expect(reloaded.schemaVersion == ShowRecord.currentSchemaVersion)
         #expect(reloaded.items[0].arrangementState == .outOfDate)
         #expect(reloaded.items[0].arrangement == arrangement)
     }

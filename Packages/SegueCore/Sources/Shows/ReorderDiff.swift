@@ -57,15 +57,22 @@ public struct ReorderDiff: Sendable, Hashable {
     /// The diff for `record`; nil when its items are the planned entries in planned order
     /// with nothing inserted.
     public static func compute(_ record: ShowRecord) -> Self? {
+        // A medley's members are one slot keyed by the medley's ID (P9-3 8.2): they share
+        // its planned position and its verdict, so a medley played in its place reads
+        // "unchanged".
         let plannedIndex = Dictionary(
             record.planned.enumerated().map { ($0.element.itemId, $0.offset) },
             uniquingKeysWith: { first, _ in first },
         )
-        // Planned items in performed order, as (row, planned position).
+        func plannedPosition(_ item: ShowItem) -> Int? {
+            guard item.origin == .setlist else { return nil }
+            return plannedIndex[item.medley?.slot ?? item.itemId]
+        }
+        // Planned slots in performed order, as (row, planned position): a medley by its first
+        // member's row.
+        let slotRow = slotRows(record.items)
         let kept = record.items.enumerated().compactMap { row, item -> (row: Int, planned: Int)? in
-            guard item.origin == .setlist, let planned = plannedIndex[item.itemId] else {
-                return nil
-            }
+            guard slotRow[row] == row, let planned = plannedPosition(item) else { return nil }
             return (row, planned)
         }
         // Items the performer moved (drawer drags, "Next"): when several runs are equally
@@ -80,11 +87,11 @@ public struct ReorderDiff: Sendable, Hashable {
         })
         var changed = false
         let performed = record.items.enumerated().map { row, item -> Row in
-            guard item.origin == .setlist, let planned = plannedIndex[item.itemId] else {
+            guard let planned = plannedPosition(item) else {
                 changed = true
                 return Row(item: item, change: .inserted(item.origin))
             }
-            if unchangedRows.contains(row) {
+            if unchangedRows.contains(slotRow[row]) {
                 return Row(item: item, change: .unchanged)
             }
             changed = true
@@ -99,6 +106,19 @@ public struct ReorderDiff: Sendable, Hashable {
             planned: record.planned,
             performed: performed,
         )
+    }
+
+    /// Each item's slot row: its own row, or for a medley member its medley's first row.
+    private static func slotRows(_ items: [ShowItem]) -> [Int] {
+        var first: [SetlistItemID: Int] = [:]
+        return items.enumerated().map { row, item in
+            guard let slot = item.medley?.slot else { return row }
+            if let start = first[slot] {
+                return start
+            }
+            first[slot] = row
+            return row
+        }
     }
 
     /// The entries "Save to setlist" writes when the setlist still holds the planned
@@ -130,23 +150,7 @@ public struct ReorderDiff: Sendable, Hashable {
             current.map { ($0.itemId, $0) },
             uniquingKeysWith: { first, _ in first },
         )
-        var songs = Set(current.compactMap(\.songId))
-        var written: [SetlistEntry] = performed.compactMap { row in
-            if case .inserted = row.change {
-                guard inserted.contains(row.item.itemId),
-                      currentByID[row.item.itemId] == nil,
-                      songs.insert(row.item.songId).inserted
-                else { return nil }
-                return SetlistEntry(
-                    itemId: row.item.itemId,
-                    songId: row.item.songId,
-                    overrides: row.item.overrides,
-                    note: row.item.note,
-                    arrangement: row.item.arrangement,
-                )
-            }
-            return currentByID[row.item.itemId]
-        }
+        var written = performedEntries(currentByID: currentByID, including: inserted)
         let performedIDs = Set(written.map(\.itemId))
         var present = performedIDs
         for (position, entry) in current.enumerated() where !present.contains(entry.itemId) {
@@ -175,6 +179,37 @@ public struct ReorderDiff: Sendable, Hashable {
             present.insert(entry.itemId)
         }
         return written
+    }
+
+    /// The entries the show performed, in performed order: a medley once (its entry as it
+    /// is now), inserted rows in `including` as new slots. Only plain slots block an
+    /// inserted row: a medley member's song may come back as its reprise (P9-3 decision 8).
+    private func performedEntries(
+        currentByID: [SetlistItemID: SetlistEntry],
+        including inserted: Set<ShowItemID>,
+    ) -> [SetlistEntry] {
+        var songs = Set(currentByID.values.compactMap(\.songId))
+        var writtenMedleys: Set<SetlistItemID> = []
+        return performed.compactMap { row in
+            if let slot = row.item.medley?.slot, row.item.origin == .setlist {
+                guard writtenMedleys.insert(slot).inserted else { return nil }
+                return currentByID[slot]
+            }
+            if case .inserted = row.change {
+                guard inserted.contains(row.item.itemId),
+                      currentByID[row.item.itemId] == nil,
+                      songs.insert(row.item.songId).inserted
+                else { return nil }
+                return SetlistEntry(
+                    itemId: row.item.itemId,
+                    songId: row.item.songId,
+                    overrides: row.item.overrides,
+                    note: row.item.note,
+                    arrangement: row.item.arrangement,
+                )
+            }
+            return currentByID[row.item.itemId]
+        }
     }
 
     /// Whether `current` (the setlist's entries now) differs from the entries at show start,

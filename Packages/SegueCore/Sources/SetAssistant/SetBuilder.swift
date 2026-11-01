@@ -31,20 +31,30 @@ public struct SetDraft: Sendable, Equatable {
     public var matchingCount: Int
     /// The tolerance used, in seconds.
     public var tolerance: TimeInterval
+    /// Unlocked reprises of a medley member that Rebuild left out ("Kesariya's reprise was
+    /// left out: lock it to keep it", R181), in set order.
+    public var leftOutReprises: [SongID] = []
+    /// Medley members without a time ("1 song in a medley has no time", P9-3 11): the
+    /// medley is kept and counts what is known.
+    public var medleyUnknownCount: Int {
+        timing.items.reduce(0) { $0 + ($1.medley?.unknownMembers.count ?? 0) }
+    }
 
     /// Whether the set meets the request: the total is within target +/- tolerance (with no
-    /// unknown time), and a requested count is met.
+    /// unknown time outside a medley), and a requested count is met (a medley counts its
+    /// members).
     public var isWithinTolerance: Bool {
-        if let songCount, entries.count(where: { !$0.isBreak }) < songCount {
+        if let songCount, entries.reduce(0, { $0 + $1.songIds.count }) < songCount {
             return false
         }
         guard let target else { return true }
-        return timing.unknownCount == 0 && abs(timing.total - target) <= tolerance
+        return timing.unknownCount == medleyUnknownCount && abs(timing.total - target)
+            <= tolerance
     }
 
-    /// The song IDs in set order.
+    /// The song IDs in set order (a medley's members in place).
     public var songIDs: [SongID] {
-        entries.compactMap(\.songId)
+        entries.flatMap(\.songIds)
     }
 }
 
@@ -154,11 +164,11 @@ public struct SetBuilder: Sendable {
             now: library.now,
             variety: variety(for: library.songs, seed: seed),
         )
-        let skeleton = Skeleton(layout: layout, songs: songsByID)
+        let medleyTimes = Self.medleyTimes(layout, library: library, songs: songsByID)
+        let skeleton = Skeleton(layout: layout, songs: songsByID, medleyTimes: medleyTimes)
         let target = request.targetLength
             ?? (request.songCount == nil ? fallbackTarget.flatMap { $0 > 0 ? $0 : nil } : nil)
         let count = request.songCount ?? (target == nil ? config.fallbackSongCount : nil)
-
         let pool = candidates(
             request,
             library: library,
@@ -179,24 +189,56 @@ public struct SetBuilder: Sendable {
             .order(picked, passes: config.swapPasses)
         let entries = skeleton.entries(filling: ordered, newItemID: newItemID)
 
-        var times: [SetlistItemID: SlotTime] = [:]
-        for entry in entries {
-            if let id = entry.songId, let song = songsByID[id] {
-                times[entry.itemId] = song.slotTime
-            }
-        }
         return SetDraft(
             entries: entries,
             breakdowns: breakdowns(entries, songs: songsByID, scorer: scorer),
             timing: SetlistTiming(
-                entries: entries, times: times, target: target, changeover: changeover,
+                entries: entries,
+                times: Self.slotTimes(entries, songs: songsByID),
+                medleyTimes: medleyTimes,
+                target: target,
+                changeover: changeover,
             ),
             target: target,
             songCount: request.songCount,
             leftOutNoTime: pool.leftOut,
             matchingCount: pool.matching,
             tolerance: config.toleranceSeconds,
+            leftOutReprises: skeleton.droppedReprises,
         )
+    }
+
+    /// Each song slot's time, from its song.
+    private static func slotTimes(_ entries: [SetlistEntry], songs: [SongID: AssistantSong])
+        -> [SetlistItemID: SlotTime]
+    {
+        var times: [SetlistItemID: SlotTime] = [:]
+        for entry in entries {
+            if let id = entry.songId, let song = songs[id] {
+                times[entry.itemId] = song.slotTime
+            }
+        }
+        return times
+    }
+
+    /// Each medley's time in `layout`: its members' slot times (their arrangements), from
+    /// the records when the library has them, else each song's own time.
+    static func medleyTimes(
+        _ layout: RebuildLayout,
+        library: AssistantLibrary,
+        songs: [SongID: AssistantSong],
+    ) -> [SetlistItemID: MedleyTime] {
+        var result: [SetlistItemID: MedleyTime] = [:]
+        for entry in layout.entries {
+            guard let medley = entry.medley else { continue }
+            result[entry.itemId] = MedleyTime(members: medley.members.map { member in
+                if let record = library.records[member.songId] {
+                    return library.times(record, member.arrangement)
+                }
+                return songs[member.songId]?.slotTime ?? .unknown(.missingSong)
+            })
+        }
+        return result
     }
 
     /// The library with each song's time (`SlotTimes`) for the songs `request` admits and
@@ -307,6 +349,11 @@ public struct SetBuilder: Sendable {
         var result: [SetlistItemID: ScoreBreakdown] = [:]
         var previous: AssistantSong?
         for (index, entry) in entries.enumerated() {
+            // A medley is not scored; the slot after it flows from its last member.
+            if let medley = entry.medley {
+                previous = medley.members.last.flatMap { songs[$0.songId] }
+                continue
+            }
             guard let id = entry.songId, let song = songs[id] else {
                 previous = nil
                 continue

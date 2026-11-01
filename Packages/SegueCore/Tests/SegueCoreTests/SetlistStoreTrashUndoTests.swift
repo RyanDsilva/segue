@@ -91,11 +91,11 @@ struct SetlistStoreTrashUndoTests {
     func `replace refuses a read-only setlist`() async throws {
         let lib = try TestLibrary()
         let id = SetlistID(lib.ids.next())
-        let future = #"{"schemaVersion": 7, "id": "\#(id)", "name": "Future", "entries": []}"#
+        let future = #"{"schemaVersion": 8, "id": "\#(id)", "name": "Future", "entries": []}"#
         try lib.write(future, to: "setlists/future.setlist.json")
         let (store, _) = try await lib.loadSetlists()
         let setlist = try #require(await store.setlist(id: id))
-        let reason = ReadOnlyReason.newerSchema(found: 7, supported: Setlist.currentSchemaVersion)
+        let reason = ReadOnlyReason.newerSchema(found: 8, supported: Setlist.currentSchemaVersion)
 
         await #expect(throws: SetlistError.readOnly(id, reason)) {
             try await store.replace(setlist)

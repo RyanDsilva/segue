@@ -53,8 +53,9 @@
         public let id = UUID()
         public let setlistName: String
         public let kind: ShowKind
-        /// 1-based setlist positions of entries whose song is gone; they are left out.
-        public let missingPositions: [Int]
+        /// Setlist numbers ("2", a medley member "4b") of songs that are gone; they are left
+        /// out.
+        public let missingPositions: [String]
         /// Song slots whose arrangement no longer matches the song (R122, R123): "#3 Title".
         /// The stage shows them as the full song.
         public internal(set) var staleArrangements: [String] = []
@@ -87,7 +88,7 @@
         init(
             setlistName: String,
             kind: ShowKind,
-            missingPositions: [Int],
+            missingPositions: [String],
             performableCount: Int,
             focus: FocusStatus,
             settings: LiveSettingsStore,

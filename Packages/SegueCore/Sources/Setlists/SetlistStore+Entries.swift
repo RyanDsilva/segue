@@ -45,7 +45,8 @@ public extension SetlistStore {
 
     /// Inserts `songID` with `overrides` at `offset` (nil = append) and saves: one write, so
     /// the set composer's "kesariya in A" is one undo step. A song already in the setlist is
-    /// skipped and nothing is written (the `insertSongs` rule). Throws `invalidOffsets` when
+    /// skipped and nothing is written (the `insertSongs` rule; a song that is only a medley
+    /// member is added as its reprise, decision 8). Throws `invalidOffsets` when
     /// `offset` is outside `0 ... entries.count`.
     @discardableResult
     func insertSong(
@@ -59,7 +60,7 @@ public extension SetlistStore {
             guard (0 ... setlist.entries.count).contains(position) else {
                 throw SetlistError.invalidOffsets(id)
             }
-            guard !setlist.contains(songID) else { return }
+            guard setlist.canAdd(songID, as: .slot).isAllowed else { return }
             let entry = SetlistEntry(
                 itemId: SetlistItemID(ids.next()),
                 songId: songID,

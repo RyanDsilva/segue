@@ -58,6 +58,28 @@ enum UserMessage {
             "Those setlist entries have changed. Try again."
         case .duplicateSong:
             "That song is already in the setlist. A song can be in a setlist only once."
+        case let .medley(_, refusal):
+            medleyText(refusal)
+        }
+    }
+
+    /// Why a medley edit was refused (P9-3 5.6).
+    static func medleyText(_ refusal: MedleyRefusal) -> String {
+        switch refusal {
+        case .tooFewSongs:
+            "A medley needs two or more songs."
+        case .tooManyMembers:
+            "A medley holds at most \(SetlistMedley.maxMembers) songs."
+        case .notASongSlot:
+            "Only songs can go in a medley: breaks and medleys stay outside."
+        case .notFound:
+            "That medley has changed. Try again."
+        case let .duplicate(_, occurrence):
+            occurrence.isMember
+                ? "That song is already \(occurrence.label), in a medley. A song can be in "
+                + "one medley only, once."
+                : "That song is already \(occurrence.label) in the set, and would be there "
+                + "twice."
         }
     }
 

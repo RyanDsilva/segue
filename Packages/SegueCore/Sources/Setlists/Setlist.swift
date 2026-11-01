@@ -147,10 +147,11 @@ public struct SetlistBreak: Sendable, Hashable, Codable {
     }
 }
 
-/// What a setlist slot holds: a song, or a break between parts.
+/// What a setlist slot holds: a song, a break between parts, or a medley (P9-3).
 public enum SetlistEntryKind: Sendable, Hashable {
     case song(SongID)
     case `break`(SetlistBreak)
+    case medley(SetlistMedley)
 }
 
 /// One slot in a setlist: a song (with per-setlist overrides and a note) or a break row.
@@ -162,7 +163,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
     /// A short performance note for this slot ("start soft"), shown in live mode. Song slots
     /// only.
     public var note: String?
-    /// Kept in place by the set assistant's Rebuild (R115). Song slots only; saved as
+    /// Kept in place by the set assistant's Rebuild (R115). Song and medley slots; saved as
     /// `"locked": true` (v4), absent when false.
     public var locked: Bool
     /// Which sections this slot plays for this gig (R122, v5); nil = the full song. Song
@@ -174,7 +175,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
     }
 
     /// The song's stable ID from its sidecar (renames never break the setlist); nil for a
-    /// break.
+    /// break or a medley (`songIds` lists what a row plays).
     public var songId: SongID? {
         if case let .song(id) = kind {
             return id
@@ -222,12 +223,24 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
         arrangement = nil
     }
 
+    /// A medley slot (P9-3): it has no overrides, note or arrangement of its own.
+    public init(itemId: SetlistItemID, medley: SetlistMedley, locked: Bool = false) {
+        self.itemId = itemId
+        kind = .medley(medley.normalized())
+        overrides = SetlistOverrides()
+        note = nil
+        self.locked = locked
+        arrangement = nil
+    }
+
     /// A song slot: `{itemId, songId, overrides?, note?, locked?, arrangement?}` (`locked`
-    /// since v4, `arrangement` since v5); a break row (v3): `{itemId, break: {label, length?}}`.
+    /// since v4, `arrangement` since v5); a break row (v3): `{itemId, break: {label, length?}}`;
+    /// a medley slot (v7): `{itemId, medley: {title?, members}, locked?}`.
     private enum CodingKeys: String, CodingKey {
         case itemId
         case songId
         case `break`
+        case medley
         case overrides
         case note
         case locked
@@ -242,6 +255,14 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
             overrides = SetlistOverrides()
             note = nil
             locked = false
+            arrangement = nil
+            return
+        }
+        if let medley = try container.decodeIfPresent(SetlistMedley.self, forKey: .medley) {
+            kind = .medley(medley)
+            overrides = SetlistOverrides()
+            note = nil
+            locked = try container.decodeIfPresent(Bool.self, forKey: .locked) ?? false
             arrangement = nil
             return
         }
@@ -269,6 +290,11 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
             try container.encodeIfPresent(arrangement, forKey: .arrangement)
         case let .break(info):
             try container.encode(info, forKey: .break)
+        case let .medley(medley):
+            try container.encode(medley, forKey: .medley)
+            if locked {
+                try container.encode(true, forKey: .locked)
+            }
         }
     }
 }
@@ -280,11 +306,11 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
 /// History: 0 = pre-versioned; 1 = phase 0 (`entries: [{songId}]`); 2 = phase 2 (entries gain
 /// `itemId`, `overrides`, `note`; the setlist gains timestamps, venue, date, target length);
 /// 3 = phase 3 (break rows, `changeoverSeconds`); 4 = locked song slots (R115); 5 = per-slot
-/// arrangements (R122); 6 = arrangement passes with show modes (R149). An older build opens
-/// a newer file read-only.
+/// arrangements (R122); 6 = arrangement passes with show modes (R149); 7 = medley slots
+/// (P9-3). An older build opens a newer file read-only.
 public struct Setlist: Sendable, Equatable, Identifiable, Codable {
     /// The schema version this build reads and writes.
-    public static let currentSchemaVersion = 6
+    public static let currentSchemaVersion = 7
 
     public var id: SetlistID
     public var schemaVersion: Int
@@ -347,22 +373,30 @@ public struct Setlist: Sendable, Equatable, Identifiable, Codable {
         entries.first { $0.itemId == itemId }
     }
 
-    /// Whether the setlist already holds `songID`. A song appears at most once in a
-    /// setlist: every `SetlistStore` path that adds songs skips one already in it. Break
+    /// Whether the setlist holds `songID` anywhere: as a slot or a medley member. Whether
+    /// it may be added again is `canAdd(_:as:)` (decision 8: the medley reprise). Break
     /// rows hold no song and never count.
     public func contains(_ songID: SongID) -> Bool {
-        entries.contains { $0.songId == songID }
+        entries.contains { $0.songIds.contains(songID) }
     }
 
-    /// The song slots, in order (break rows left out).
+    /// The song and medley slots, in order (break rows left out).
     public var songEntries: [SetlistEntry] {
         entries.filter { !$0.isBreak }
     }
 
     /// How many songs the setlist holds: every "N songs" count (the sidebar, the builder)
-    /// reads this, never `entries.count`, since break rows are not songs.
+    /// reads this, never `entries.count`, since break rows are not songs. A medley counts
+    /// its members (a three-song medley is three songs; a reprised song counts twice, as
+    /// two plays).
     public var songCount: Int {
-        entries.count { !$0.isBreak }
+        entries.reduce(0) { $0 + $1.songIds.count }
+    }
+
+    /// The distinct songs the set contains, in first-occurrence order ("which songs").
+    public var songIds: [SongID] {
+        var seen: Set<SongID> = []
+        return entries.flatMap(\.songIds).filter { seen.insert($0).inserted }
     }
 
     /// The automatic label of a break row at `position`: "Set N" for the part it opens
@@ -392,13 +426,29 @@ public struct Setlist: Sendable, Equatable, Identifiable, Codable {
         return !number.isEmpty && number.allSatisfy(\.isASCII) && number.allSatisfy(\.isNumber)
     }
 
-    /// Entries whose song already appears earlier in the setlist. Only setlists saved before
-    /// the one-song-once rule (or edited in another app) have any: they load as saved, and
-    /// the builder marks these so they can be removed.
+    /// Slots and members that break decision 8 against an earlier row: a second slot of a
+    /// song, or a second member of a song (in another medley or the same one). A member
+    /// plus one slot of the same song is the medley reprise and is not repeated. Only
+    /// setlists saved before the rule (or edited in another app) have any: they load as
+    /// saved, and the builder marks these so they can be removed.
     public var repeatedEntries: Set<SetlistItemID> {
-        var seen: Set<SongID> = []
-        return Set(entries.filter { entry in
-            entry.songId.map { !seen.insert($0).inserted } ?? false
-        }.map(\.itemId))
+        var slots: Set<SongID> = []
+        var members: Set<SongID> = []
+        var repeated: Set<SetlistItemID> = []
+        for entry in entries {
+            switch entry.kind {
+            case let .song(song):
+                if !slots.insert(song).inserted {
+                    repeated.insert(entry.itemId)
+                }
+            case let .medley(medley):
+                for member in medley.members where !members.insert(member.songId).inserted {
+                    repeated.insert(member.itemId)
+                }
+            case .break:
+                break
+            }
+        }
+        return repeated
     }
 }

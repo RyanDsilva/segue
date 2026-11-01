@@ -71,15 +71,15 @@
             in setlist: Setlist,
             library: LibraryViewModel,
         ) -> [(item: SetlistItemID, label: String)] {
-            setlist.songEntries.enumerated().compactMap { offset, entry in
-                guard let arrangement = entry.arrangement,
-                      let record = entry.songId.flatMap(library.song(id:)),
+            setlist.songSlotLabels.compactMap { slot, label in
+                guard let arrangement = slot.arrangement,
+                      let record = slot.songId.flatMap(library.song(id:)),
                       ArrangementResolver.resolve(
                           arrangement,
                           units: SongSections.units(of: record.document),
                       ).isOutOfDate
                 else { return nil }
-                return (entry.itemId, "#\(offset + 1) \(SongSummary.title(record))")
+                return (slot.itemId, "#\(label) \(SongSummary.title(record))")
             }
         }
 
@@ -98,12 +98,13 @@
             // show still starts with the last saved version; the editor keeps its bar.
             await session.library.flushEditor()
             await session.library.refresh()
-            // Break rows hold no song: only song slots can be missing.
-            let missing = setlist.songEntries.enumerated().filter { _, entry in
-                entry.songId.flatMap(session.library.song(id:)) == nil
+            // Break rows hold no song: only song slots and medley members can be missing.
+            let slots = setlist.songSlotLabels
+            let missing = slots.filter { slot, _ in
+                slot.songId.flatMap(session.library.song(id:)) == nil
             }
-            guard missing.count < setlist.songEntries.count else {
-                startFailure = setlist.songEntries.isEmpty
+            guard missing.count < slots.count else {
+                startFailure = slots.isEmpty
                     ? "“\(setlist.name)” has no songs yet."
                     : "None of the songs in “\(setlist.name)” can be found in the library folder."
                 return false
@@ -111,8 +112,8 @@
             let checklist = await PreShowChecklist(
                 setlistName: setlist.name,
                 kind: kind,
-                missingPositions: missing.map { $0.offset + 1 },
-                performableCount: setlist.songEntries.count - missing.count,
+                missingPositions: missing.map(\.label),
+                performableCount: slots.count - missing.count,
                 focus: runStartShortcut(kind: kind),
                 settings: liveSettings,
                 power: dependencies.live.power,
@@ -124,7 +125,7 @@
                 let controller = try await ShowController.start(
                     setlist: setlist,
                     kind: kind,
-                    omitting: Set(missing.map(\.element.itemId)),
+                    omitting: Set(missing.map(\.slot.itemId)),
                     environment: showEnvironment(
                         session,
                         kind: kind,
@@ -292,8 +293,8 @@
             let reason = switch blocker {
             case .readOnly:
                 "“\(name)” is read-only now (it was saved by a newer version of Segue)"
-            // `saveBlocker` never reports `duplicateSong` (Save skips repeats itself).
-            case .duplicateSong, .invalidOffsets, .notLoaded, .setlistNotFound:
+            // `saveBlocker` never reports `duplicateSong` or `medley` (Save skips repeats).
+            case .duplicateSong, .invalidOffsets, .medley, .notLoaded, .setlistNotFound:
                 "“\(name)” was deleted during the show"
             }
             return reason + ", so the played order cannot be saved to it. The show is in the "

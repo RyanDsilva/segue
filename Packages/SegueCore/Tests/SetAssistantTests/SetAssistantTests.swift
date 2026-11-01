@@ -270,3 +270,77 @@ struct SetAssistantTests {
         #expect(config.recentHalfLifeDays == AssistantConfig.standard.recentHalfLifeDays)
     }
 }
+
+/// Medleys and the reprise in the set assistant (P9-3 11, R178, R181).
+struct SetAssistantMedleyTests {
+    /// A first build with slots 1 ... 3 made into a medley (unlocked) and the medley's first
+    /// song added again at the end as an unlocked reprise, plus a locked reprise of its
+    /// last song.
+    private struct Layout {
+        var layout: RebuildLayout
+        var medley: SetlistEntry
+        var members: [SongID]
+    }
+
+    private static func layout(seed: UInt64) -> Layout {
+        let (_, first) = SetAssistantTests.build("an hour, songs I know well", seed: seed)
+        var entries = first.entries
+        let ids = AssistantFixture.itemIDs(seed: seed + 500)
+        let members = entries[1 ... 3].compactMap { MedleyMember(slot: $0) }
+        let medley = SetlistEntry(itemId: ids(), medley: SetlistMedley(members: members))
+        entries.replaceSubrange(1 ... 3, with: [medley])
+        let unlocked = SetlistEntry(itemId: ids(), songId: members[0].songId)
+        var locked = SetlistEntry(itemId: ids(), songId: members[2].songId)
+        locked.locked = true
+        entries += [unlocked, locked]
+        return Layout(
+            layout: RebuildLayout(entries: entries),
+            medley: medley,
+            members: members.map(\.songId),
+        )
+    }
+
+    @Test(arguments: [UInt64(3), 8, 13])
+    func `rebuild keeps the medley in place and drops only the unlocked reprise`(seed: UInt64)
+        throws
+    {
+        let fixture = Self.layout(seed: seed)
+        let (layout, medley, members) = (fixture.layout, fixture.medley, fixture.members)
+        let (_, rebuilt) = SetAssistantTests.build(
+            "an hour, songs I know well",
+            seed: seed + 1,
+            layout: layout,
+        )
+        #expect(rebuilt.entries[1] == medley)
+        // Member songs are never candidates for another slot; the locked reprise stays.
+        let slotSongs = rebuilt.entries.compactMap(\.songId)
+        #expect(!slotSongs.contains(members[0]))
+        #expect(!slotSongs.contains(members[1]))
+        #expect(slotSongs.filter { $0 == members[2] }.count == 1)
+        #expect(rebuilt.leftOutReprises == [members[0]])
+        // Time counts the medley's members, one changeover after it.
+        let item = try #require(rebuilt.timing.items.first { $0.itemId == medley.itemId })
+        let sum = members.compactMap { SetAssistantTests.fixture.song($0)?.seconds }.reduce(0, +)
+        #expect(item.time.map { abs($0.seconds - sum) < 1e-6 } ?? (sum == 0))
+        #expect(rebuilt.songIDs.filter { $0 == members[2] }.count == 2)
+    }
+
+    @Test
+    func `flow runs into the medley's first member and on from its last`() throws {
+        let fixture = Self.layout(seed: 21)
+        let (layout, medley, members) = (fixture.layout, fixture.medley, fixture.members)
+        let (_, rebuilt) = SetAssistantTests.build("an hour", seed: 22, layout: layout)
+        let index = try #require(rebuilt.entries.firstIndex(of: medley))
+        let after = try #require(rebuilt.entries[(index + 1)...].first { $0.songId != nil })
+        let breakdown = try #require(rebuilt.breakdowns[after.itemId])
+        let songs = Dictionary(
+            SetAssistantTests.fixture.library.songs.map { ($0.id, $0) },
+        ) { first, _ in first }
+        let last = try #require(songs[members[2]])
+        let next = try #require(after.songId.flatMap { songs[$0] })
+        let scorer = Scorer(config: .standard, request: SetRequest(), now: Date(), variety: [:])
+        let flow = scorer.flow(from: last, to: next).1
+        #expect(flow.isEmpty || breakdown.contributions.contains { $0.reason == flow })
+        #expect(rebuilt.breakdowns[medley.itemId] == nil)
+    }
+}

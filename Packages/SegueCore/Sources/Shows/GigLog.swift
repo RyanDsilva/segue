@@ -21,6 +21,21 @@ public struct PlayedSong: Sendable, Hashable {
     }
 }
 
+/// One slot as played (P9-3 8.3): a song, or a medley with its members nested.
+public enum PlayedSlot: Sendable, Hashable {
+    case song(PlayedSong)
+    /// Consecutive played members of one medley; `skipped` are its members skipped.
+    case medley(slot: SetlistItemID, title: String?, members: [PlayedSong], skipped: [ShowItem])
+
+    /// When the slot started: its (first) song's start.
+    public var startedAt: Date? {
+        switch self {
+        case let .song(song): song.startedAt
+        case let .medley(_, _, members, _): members.first?.startedAt
+        }
+    }
+}
+
 /// A finished gig show as the gig log shows it.
 public struct GigLogEntry: Sendable, Hashable, Identifiable {
     public var id: ShowID
@@ -76,6 +91,34 @@ public struct GigLogEntry: Sendable, Hashable, Identifiable {
     /// Played songs that came from the request queue.
     public var requestCount: Int {
         played.count { $0.fromRequest }
+    }
+
+    /// The played list as slots: consecutive played members of one medley grouped under it,
+    /// with that medley's skipped members (P9-3 8.3, the parent/child rule).
+    public var slots: [PlayedSlot] {
+        var slots: [PlayedSlot] = []
+        for song in played {
+            guard let ref = song.item.medley else {
+                slots.append(.song(song))
+                continue
+            }
+            if case let .medley(slot, title, members, skipped) = slots.last, slot == ref.slot {
+                slots[slots.count - 1] = .medley(
+                    slot: slot,
+                    title: title,
+                    members: members + [song],
+                    skipped: skipped,
+                )
+                continue
+            }
+            slots.append(.medley(
+                slot: ref.slot,
+                title: ref.title,
+                members: [song],
+                skipped: skipped.filter { $0.medley?.slot == ref.slot },
+            ))
+        }
+        return slots
     }
 }
 

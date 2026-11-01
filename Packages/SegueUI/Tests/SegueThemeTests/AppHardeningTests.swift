@@ -124,7 +124,7 @@ extension StageWindowSuites {
             // Cancel at the checklist: nothing starts and Gig Mode is undone.
             let cancelled = Task { await app.startShow(saved, kind: .gig) }
             let checklist = try await env.waitFor { app.preShow }
-            #expect(checklist.missingPositions == [2])
+            #expect(checklist.missingPositions == ["2"])
             #expect(checklist.focus == .ran(LiveSettings.suggestedStartShortcut))
             checklist.answer(false)
             #expect(await cancelled.value == false)

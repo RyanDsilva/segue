@@ -25,6 +25,8 @@ public enum ItemTimeSource: Sendable, Hashable {
     case arrangement
     /// A break row's intermission (R105).
     case intermission
+    /// A medley slot: its members' known times summed (P9-3 7).
+    case medley
 }
 
 /// A known row time.
@@ -77,6 +79,17 @@ public struct PartTiming: Sendable, Hashable {
         unknownItemIds.count
     }
 
+    /// A medley joins the part: its known time counts and each member without a time is
+    /// unknown (P9-3 7: the unknown counts count songs, not slots).
+    mutating func add(medley item: SetlistItemID, time: ItemTime?, unknown: [SetlistItemID]) {
+        songItemIds.append(item)
+        if let time {
+            total += time.seconds
+            isEstimated = isEstimated || time.estimated
+        }
+        unknownItemIds.append(contentsOf: unknown)
+    }
+
     /// A song slot joins the part: its known time counts, else it is unknown.
     mutating func add(_ item: SetlistItemID, time: ItemTime?) {
         songItemIds.append(item)
@@ -105,8 +118,10 @@ public struct ItemTiming: Sendable, Hashable {
     /// Nil when the slot's time is unknown (shown as `--:--`). For a break row: its
     /// intermission (source `.intermission`), nil when it has none.
     public var time: ItemTime?
-    /// A song slot's time as computed (its help text); nil for a break row.
+    /// A song slot's time as computed (its help text); nil for a break row or a medley.
     public var slot: SlotTime?
+    /// A medley slot's time as computed, with each member's start (P9-3 7); nil otherwise.
+    public var medley: MedleyTiming?
 
     public init(
         itemId: SetlistItemID,
@@ -114,12 +129,14 @@ public struct ItemTiming: Sendable, Hashable {
         startIsApproximate: Bool = false,
         time: ItemTime?,
         slot: SlotTime? = nil,
+        medley: MedleyTiming? = nil,
     ) {
         self.itemId = itemId
         self.start = start
         self.startIsApproximate = startIsApproximate
         self.time = time
         self.slot = slot
+        self.medley = medley
     }
 
     /// Why a song slot has no time; nil when known or a break row.
@@ -127,8 +144,12 @@ public struct ItemTiming: Sendable, Hashable {
         slot?.unknown
     }
 
-    /// The row's Time cell: "3:40", "~3:40" when estimated, `--:--` when unknown.
+    /// The row's Time cell: "3:40", "~3:40" when estimated, `--:--` when unknown; a medley
+    /// "≥5:30" when a member has no time ("~≥5:30" when also estimated).
     public var timeText: String {
+        if let medley {
+            return medley.time.clock
+        }
         guard let time else { return SetlistTiming.unknownText }
         return (time.estimated ? SetlistTiming.estimatedPrefix : "") + SetlistTiming
             .format(time.seconds)
@@ -143,6 +164,32 @@ public struct ItemTiming: Sendable, Hashable {
     }
 }
 
+/// A medley row's timing (P9-3 7): the medley's time and each member's start and time, for
+/// the nested member rows.
+public struct MedleyTiming: Sendable, Hashable {
+    /// The medley's member times.
+    public var time: MedleyTime
+    /// One per member, in order: the member's item ID, start and time.
+    public var members: [ItemTiming]
+
+    public init(time: MedleyTime, members: [ItemTiming]) {
+        self.time = time
+        self.members = members
+    }
+
+    /// The members without a time (item IDs, in order).
+    public var unknownMembers: [SetlistItemID] {
+        time.unknownMembers.compactMap { index in
+            members.indices.contains(index) ? members[index].itemId : nil
+        }
+    }
+
+    /// Whether any known member rests on default chord lengths.
+    public var estimated: Bool {
+        time.estimated
+    }
+}
+
 /// Start times and totals for a setlist. Pure; recomputed on every change.
 public struct SetlistTiming: Sendable, Hashable {
     /// One per entry (songs and break rows), in setlist order.
@@ -152,9 +199,11 @@ public struct SetlistTiming: Sendable, Hashable {
     public var parts: [PartTiming]
     /// The whole set: every part's total plus every break's intermission.
     public var total: TimeInterval
-    /// How many song slots have an unknown time (not counted in `total`).
+    /// How many songs have an unknown time (not counted in `total`): song slots and
+    /// medley members (P9-3 7).
     public var unknownCount: Int
-    /// The song slots with an unknown time, in set order (the no-time list, P8-8 5.5).
+    /// The song slots and medley members with an unknown time, in set order (the no-time
+    /// list, P8-8 5.5).
     public var unknownItemIds: [SetlistItemID]
     /// Some known slot time rests on default chord lengths ("~", R173).
     public var isEstimated: Bool
@@ -166,64 +215,177 @@ public struct SetlistTiming: Sendable, Hashable {
     /// Computes timings for `entries`.
     /// - Parameters:
     ///   - times: each song slot's time (`SlotTimes.slot`); slots absent here are unknown.
-    ///   - changeover: seconds between songs, added after every song but the last of each
-    ///     part (R86).
+    ///   - medleyTimes: each medley slot's time (`SlotTimes.medley`); a medley absent here
+    ///     has every member unknown.
+    ///   - changeover: seconds between slots, added after every slot but the last of each
+    ///     part (R86); never between a medley's members.
     public init(
         entries: [SetlistEntry],
         times: [SetlistItemID: SlotTime],
+        medleyTimes: [SetlistItemID: MedleyTime] = [:],
         target: TimeInterval?,
         changeover: TimeInterval = 0,
     ) {
         let changeover = max(changeover, 0)
-        var start: TimeInterval = 0
-        var items: [ItemTiming] = []
-        items.reserveCapacity(entries.count)
-        var parts: [PartTiming] = []
-        var part = PartTiming()
-        var unknown: [SetlistItemID] = []
+        var tally = Tally(changeover: changeover)
         for entry in entries {
             switch entry.kind {
             case let .break(info):
-                let pause = (info.length ?? 0) > 0 ? info.length : nil
-                items.append(ItemTiming(
-                    itemId: entry.itemId,
-                    start: start,
-                    startIsApproximate: !unknown.isEmpty,
-                    time: pause.map { ItemTime(seconds: $0, source: .intermission) },
-                ))
-                start += pause ?? 0
-                parts.append(part)
-                part = PartTiming(breakItemId: entry.itemId, label: info.label)
+                tally.addBreak(entry.itemId, info)
             case .song:
-                if !part.songItemIds.isEmpty {
-                    start += changeover
-                    part.total += changeover
-                }
-                let slot = times[entry.itemId] ?? .unknown(.noTempo)
-                let time = Self.time(of: entry, slot: slot)
-                items.append(ItemTiming(
-                    itemId: entry.itemId,
-                    start: start,
-                    startIsApproximate: !unknown.isEmpty,
-                    time: time,
-                    slot: slot,
-                ))
-                part.add(entry.itemId, time: time)
-                start += time?.seconds ?? 0
-                if time == nil {
-                    unknown.append(entry.itemId)
-                }
+                tally.addSong(entry, slot: times[entry.itemId] ?? .unknown(.noTempo))
+            case let .medley(medley):
+                tally.addMedley(entry.itemId, medley, time: medleyTimes[entry.itemId])
             }
         }
-        parts.append(part)
-        self.items = items
-        self.parts = parts
-        total = start
-        unknownCount = unknown.count
-        unknownItemIds = unknown
+        tally.parts.append(tally.part)
+        items = tally.items
+        parts = tally.parts
+        total = tally.start
+        unknownCount = tally.unknown.count
+        unknownItemIds = tally.unknown
         isEstimated = parts.contains(where: \.isEstimated)
         self.target = target
         self.changeover = changeover
+    }
+
+    /// The running state while timing the entries in order.
+    private struct Tally {
+        let changeover: TimeInterval
+        var start: TimeInterval = 0
+        var items: [ItemTiming] = []
+        var parts: [PartTiming] = []
+        var part = PartTiming()
+        var unknown: [SetlistItemID] = []
+
+        init(changeover: TimeInterval) {
+            self.changeover = changeover
+        }
+
+        mutating func addBreak(_ itemId: SetlistItemID, _ info: SetlistBreak) {
+            let pause = (info.length ?? 0) > 0 ? info.length : nil
+            items.append(ItemTiming(
+                itemId: itemId,
+                start: start,
+                startIsApproximate: !unknown.isEmpty,
+                time: pause.map { ItemTime(seconds: $0, source: .intermission) },
+            ))
+            start += pause ?? 0
+            parts.append(part)
+            part = PartTiming(breakItemId: itemId, label: info.label)
+        }
+
+        /// A changeover before every slot but the first of its part.
+        private mutating func changeoverBefore() {
+            if !part.songItemIds.isEmpty {
+                start += changeover
+                part.total += changeover
+            }
+        }
+
+        mutating func addSong(_ entry: SetlistEntry, slot: SlotTime) {
+            changeoverBefore()
+            let time = SetlistTiming.time(of: entry, slot: slot)
+            items.append(ItemTiming(
+                itemId: entry.itemId,
+                start: start,
+                startIsApproximate: !unknown.isEmpty,
+                time: time,
+                slot: slot,
+            ))
+            part.add(entry.itemId, time: time)
+            start += time?.seconds ?? 0
+            if time == nil {
+                unknown.append(entry.itemId)
+            }
+        }
+
+        /// A medley: one changeover before it, none between its members; each member
+        /// without a time is unknown. An empty medley is left out (P9-3 5.3).
+        mutating func addMedley(
+            _ itemId: SetlistItemID,
+            _ medley: SetlistMedley,
+            time medleyTime: MedleyTime?,
+        ) {
+            guard !medley.members.isEmpty else {
+                items.append(ItemTiming(
+                    itemId: itemId,
+                    start: start,
+                    startIsApproximate: !unknown.isEmpty,
+                    time: nil,
+                ))
+                return
+            }
+            changeoverBefore()
+            let medleyTime = medleyTime
+                ?? MedleyTime(members: medley.members.map { _ in .unknown(.noTempo) })
+            let timing = SetlistTiming.medleyTiming(
+                medley,
+                time: medleyTime,
+                start: start,
+                approximate: !unknown.isEmpty,
+            )
+            let time: ItemTime? = medleyTime.hasKnown
+                ? ItemTime(
+                    seconds: medleyTime.known,
+                    source: .medley,
+                    estimated: medleyTime.estimated,
+                )
+                : nil
+            items.append(ItemTiming(
+                itemId: itemId,
+                start: start,
+                startIsApproximate: !unknown.isEmpty,
+                time: time,
+                medley: timing,
+            ))
+            part.add(medley: itemId, time: time, unknown: timing.unknownMembers)
+            start += time?.seconds ?? 0
+            unknown.append(contentsOf: timing.unknownMembers)
+        }
+    }
+
+    /// Each member's start (the known times before it in the medley) and time.
+    static func medleyTiming(
+        _ medley: SetlistMedley,
+        time: MedleyTime,
+        start: TimeInterval,
+        approximate: Bool,
+    ) -> MedleyTiming {
+        var offset = start
+        var lowerBound = approximate
+        var members: [ItemTiming] = []
+        for (index, member) in medley.members.enumerated() {
+            let slot = time.members.indices.contains(index) ? time.members[index]
+                : .unknown(.noTempo)
+            let known = slot.seconds.flatMap { $0 > 0 ? $0 : nil }
+            members.append(ItemTiming(
+                itemId: member.itemId,
+                start: offset,
+                startIsApproximate: lowerBound,
+                time: known.map {
+                    ItemTime(
+                        seconds: $0,
+                        source: member.arrangement == nil ? .song : .arrangement,
+                        estimated: slot.isEstimated,
+                    )
+                },
+                slot: slot,
+            ))
+            offset += known ?? 0
+            lowerBound = lowerBound || known == nil
+        }
+        return MedleyTiming(time: time, members: members)
+    }
+
+    /// The timing of a medley member, if `itemId` is one.
+    public func member(_ itemId: SetlistItemID) -> ItemTiming? {
+        for item in items {
+            if let member = item.medley?.members.first(where: { $0.itemId == itemId }) {
+                return member
+            }
+        }
+        return nil
     }
 
     /// A song slot's known time, nil when unknown.

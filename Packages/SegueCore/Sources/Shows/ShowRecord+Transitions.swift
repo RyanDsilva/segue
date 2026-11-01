@@ -235,7 +235,7 @@ extension ShowRecord {
 
     /// With nothing current (the end was reached): the item that was current last, from the
     /// most recent event that left it.
-    private var cursorIndex: Int? {
+    var cursorIndex: Int? {
         guard currentItemId == nil else { return currentIndex }
         // Only `next` / `skipCurrent` leave nothing current, and both name the item left.
         for event in events.reversed() where event.kind == .advanced || event.kind == .skipped {
@@ -268,9 +268,13 @@ extension ShowRecord {
 
     /// Where a song added during the show goes: before current (play now, requests) or right
     /// after it (insert next). Without a current item, right after the last one that was
-    /// current, so `next` reaches it.
+    /// current, so `next` reaches it. While the current item is a medley member, always
+    /// right after the medley's last member: nothing lands between members (P9-3 8.2).
     func insertionIndex(afterCurrent: Bool) -> Int {
         if let current = currentIndex {
+            if let end = medleyEnd(of: current) {
+                return end + 1
+            }
             return afterCurrent ? current + 1 : current
         }
         return cursorIndex.map { $0 + 1 } ?? 0
@@ -345,12 +349,22 @@ extension ShowRecord {
     /// question 16); a queued request for it is played; a skipped item of it goes back to
     /// pending and is jumped to (R112); otherwise a new inserted item goes before current
     /// and becomes current. A played song never gets here (R102, `checkNoRepeat`).
+    ///
+    /// While a medley plays (P9-3 8.2) the medley is never interrupted: a pending member of
+    /// the same medley is jumped to, anything else is placed right after the medley's last
+    /// member (an existing item moved there, a new item inserted there) and stays pending.
     private mutating func playNow(_ songId: SongID, _ context: TransitionContext) throws {
         if currentItem?.songId == songId {
             return
         }
-        if let pending = items.first(where: { $0.songId == songId && $0.state == .pending }) {
-            jump(to: pending.itemId, at: context.now)
+        let medley = currentMedleySlot
+        if let pending = firstPendingIndex(of: songId) {
+            let item = items[pending]
+            if let medley, item.medley?.slot != medley {
+                try moveToNext(item.itemId, at: context.now)
+                return
+            }
+            jump(to: item.itemId, at: context.now)
             return
         }
         if let request = queuedRequests.first(where: { $0.songId == songId }) {
@@ -364,6 +378,10 @@ extension ShowRecord {
                 kind: .unskipped,
                 itemId: items[skipped].itemId,
             ))
+            if let medley, items[skipped].medley?.slot != medley {
+                try moveToNext(items[skipped].itemId, at: context.now)
+                return
+            }
             jump(to: items[skipped].itemId, at: context.now)
             return
         }
@@ -376,7 +394,9 @@ extension ShowRecord {
         )
         items.insert(item, at: insertionIndex(afterCurrent: false))
         events.append(ShowEvent(at: context.now, kind: .inserted, itemId: item.itemId))
-        jump(to: item.itemId, at: context.now)
+        if medley == nil {
+            jump(to: item.itemId, at: context.now)
+        }
     }
 
     /// A queued request becomes an item before current and is made current; current goes
@@ -400,6 +420,17 @@ extension ShowRecord {
             note: request.note,
         )
         items.insert(item, at: insertionIndex(afterCurrent: false))
+        // During a medley the request plays right after it (P9-3 8.2): it waits as the next
+        // item and the medley is not interrupted.
+        if currentMedleySlot != nil {
+            events.append(ShowEvent(
+                at: context.now,
+                kind: .inserted,
+                itemId: item.itemId,
+                requestId: requestId,
+            ))
+            return
+        }
         let leaving = interruptCurrent()
         makeCurrent(item.itemId)
         events.append(ShowEvent(
@@ -424,6 +455,9 @@ extension ShowRecord {
         else {
             throw ShowError.invalidOffsets
         }
+        // A medley moves as one block (P9-3 8.2): any member moves all of them, and a drop
+        // between two members of another medley lands after that medley.
+        let (offsets, destination) = medleyBlockMove(offsets, destination)
         let moving = offsets.map { items[$0] }
         var remaining = items.enumerated().filter { !offsets.contains($0.offset) }.map(\.element)
         let target = destination - offsets.count(in: 0 ..< destination)

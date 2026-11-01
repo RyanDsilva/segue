@@ -54,7 +54,7 @@ struct SetlistBreakTests {
         #expect(removed.entries.compactMap(\.breakInfo?.label) == ["Set 2", "Encore"])
         setlist = removed
         let json = try lib.read(fix.path)
-        #expect(json.contains("\"schemaVersion\" : 6"))
+        #expect(json.contains("\"schemaVersion\" : 7"))
         #expect(json.contains("\"break\" : {"))
         #expect(json.contains("\"changeoverSeconds\" : 30"))
         let (reloaded, issues) = try await lib.loadSetlists()
@@ -117,7 +117,7 @@ struct SetlistBreakTests {
         let pause = SetlistItemID(ULID(milliseconds: 6, randomness: Array(repeating: 9, count: 10)))
         let setlistID = SetlistID(ULID(milliseconds: 4, randomness: Array(repeating: 9, count: 10)))
         let newer = """
-        {"schemaVersion": 7, "id": "\(setlistID)",
+        {"schemaVersion": 8, "id": "\(setlistID)",
          "name": "Future", "entries": [
            {"itemId": "\(item)", "songId": "\(song)"},
            {"itemId": "\(pause)", "break": {"label": "Set 2"}},
@@ -128,7 +128,7 @@ struct SetlistBreakTests {
         let (store, _) = try await lib.loadSetlists()
 
         let loaded = try #require(await store.all().first)
-        #expect(loaded.readOnly == .newerSchema(found: 7, supported: Setlist.currentSchemaVersion))
+        #expect(loaded.readOnly == .newerSchema(found: 8, supported: Setlist.currentSchemaVersion))
         #expect(loaded.entries.map(\.kind) == [.song(song), .break(SetlistBreak(label: "Set 2"))])
         let reason = try #require(loaded.readOnly)
         await #expect(throws: SetlistError.readOnly(loaded.id, reason)) {

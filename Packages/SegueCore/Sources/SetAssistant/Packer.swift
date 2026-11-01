@@ -2,132 +2,6 @@ import Foundation
 import Library
 import Setlists
 
-// MARK: - Skeleton
-
-/// The shape a set is packed into: Rebuild's locked songs and break rows stay put, the other
-/// song slots are free. A new set is all free slots.
-struct Skeleton {
-    enum Position: Equatable {
-        case fixed(SetlistEntry, AssistantSong?)
-        case breakRow(SetlistEntry)
-        case free
-
-        static func == (lhs: Self, rhs: Self) -> Bool {
-            switch (lhs, rhs) {
-            case let (.fixed(left, _), .fixed(right, _)): left == right
-            case let (.breakRow(left), .breakRow(right)): left == right
-            case (.free, .free): true
-            default: false
-            }
-        }
-    }
-
-    private let positions: [Position]
-    /// Songs in locked slots (never picked again: one song once per setlist).
-    let lockedSongs: Set<SongID>
-    /// Unlocked entries by song: a song picked again keeps its item ID, overrides and note.
-    private let reusable: [SongID: SetlistEntry]
-    /// Locked songs' known times plus break intermissions.
-    let fixedTime: TimeInterval
-    let lockedCount: Int
-    let partCount: Int
-
-    init(layout: RebuildLayout, songs: [SongID: AssistantSong]) {
-        var positions: [Position] = []
-        var locked: Set<SongID> = []
-        var reusable: [SongID: SetlistEntry] = [:]
-        var fixed: TimeInterval = 0
-        for entry in layout.entries {
-            if let info = entry.breakInfo {
-                positions.append(.breakRow(entry))
-                fixed += max(info.length ?? 0, 0)
-            } else if let id = entry.songId, layout.locked.contains(entry.itemId),
-                      !locked.contains(id)
-            {
-                locked.insert(id)
-                positions.append(.fixed(entry, songs[id]))
-                fixed += songs[id]?.time ?? 0
-            } else {
-                if let id = entry.songId, reusable[id] == nil {
-                    reusable[id] = entry
-                }
-                positions.append(.free)
-            }
-        }
-        self.positions = positions
-        lockedSongs = locked
-        self.reusable = reusable.filter { !locked.contains($0.key) }
-        fixedTime = fixed
-        lockedCount = locked.count
-        partCount = layout.entries.count(where: \.isBreak) + 1
-    }
-
-    /// The positions for `count` new songs: the existing free slots, the last ones dropped
-    /// when fewer songs are picked, extra ones appended at the end of the set when more are.
-    func positions(for count: Int) -> [Position] {
-        let free = positions.count(where: { $0 == .free })
-        if count >= free {
-            return positions + Array(repeating: .free, count: count - free)
-        }
-        var drop = free - count
-        var result = positions
-        for index in result.indices.reversed() where drop > 0 && result[index] == .free {
-            result.remove(at: index)
-            drop -= 1
-        }
-        return result
-    }
-
-    /// How many free song slots the layout has.
-    var freeCount: Int {
-        positions.count(where: { $0 == .free })
-    }
-
-    /// Whether the set's first song slot is free (with at least one new song).
-    var opensFree: Bool {
-        positions(for: max(freeCount, 1)).first { !$0.isBreak } == .free
-    }
-
-    /// Whether the set's last song slot is free (with at least one new song).
-    var closesFree: Bool {
-        positions(for: max(freeCount, 1)).last { !$0.isBreak } == .free
-    }
-
-    /// The setlist entries with `songs` in the free positions, in order.
-    func entries(
-        filling songs: [AssistantSong],
-        newItemID: () -> SetlistItemID,
-    ) -> [SetlistEntry] {
-        var queue = songs[...]
-        return positions(for: songs.count).compactMap { position in
-            switch position {
-            case let .breakRow(entry), let .fixed(entry, _):
-                return entry
-            case .free:
-                guard let song = queue.popFirst() else { return nil }
-                return reusable[song.id] ?? SetlistEntry(itemId: newItemID(), songId: song.id)
-            }
-        }
-    }
-
-    /// Estimated set total with `picked` new songs: times, intermissions and a changeover
-    /// between songs of a part (each part assumed to hold a song).
-    func total(times: TimeInterval, songs: Int, changeover: TimeInterval) -> TimeInterval {
-        let all = songs + lockedCount
-        let gaps = max(all - min(partCount, all), 0)
-        return fixedTime + times + changeover * TimeInterval(gaps)
-    }
-}
-
-extension Skeleton.Position {
-    var isBreak: Bool {
-        if case .breakRow = self {
-            return true
-        }
-        return false
-    }
-}
-
 // MARK: - Packer
 
 /// Picks the songs: slot songs first when asked (R92), then by score down the list until the
@@ -184,7 +58,7 @@ struct Packer {
     }
 
     mutating func pick(target: TimeInterval?, count: Int?) -> [AssistantSong] {
-        let wanted = count.map { max($0 - skeleton.lockedCount, 0) }
+        let wanted = count.map { max($0 - skeleton.lockedSongCount, 0) }
         let tolerance = max(config.toleranceSeconds, 0)
         pickSlotSongs(wanted: wanted, target: target, tolerance: tolerance)
         for song in candidates where !pickedIDs.contains(song.id) {
@@ -354,6 +228,15 @@ struct Orderer {
         var total = 0.0
         var previous: AssistantSong?
         for (index, song) in sequence.enumerated() {
+            // A medley: the flow into its first member counts; it scores no slot fit and
+            // the next slot flows from its last member.
+            if case let .medley(_, first, last) = positions[index] {
+                if let first {
+                    total += weights.keyFlow * scorer.flow(from: previous, to: first).0
+                }
+                previous = last
+                continue
+            }
             guard let song else {
                 previous = nil
                 continue
@@ -379,6 +262,7 @@ struct Orderer {
         return positions.map { position in
             switch position {
             case let .fixed(_, song): song
+            case let .medley(_, first, _): first
             case .breakRow: nil
             case .free: queue.popFirst()
             }
@@ -415,6 +299,8 @@ struct Orderer {
                 previous = nil
             case let .fixed(_, song):
                 previous = song
+            case let .medley(_, _, last):
+                previous = last
             case .free:
                 freeSeen += 1
                 let song: AssistantSong

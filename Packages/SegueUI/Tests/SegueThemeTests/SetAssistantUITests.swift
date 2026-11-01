@@ -158,7 +158,7 @@ struct SetAssistantUITests {
             encoding: .utf8,
         )
         #expect(file.contains("\"locked\" : true"))
-        #expect(file.contains("\"schemaVersion\" : 6"))
+        #expect(file.contains("\"schemaVersion\" : 7"))
 
         await build(fix, rebuild: true)
         let rebuilt = try #require(fix.session.setlists.setlist(fix.setlist))

@@ -97,11 +97,11 @@ struct ArrangementMigrationTests {
         #expect(arrangement.passes.map(\.mode) == [.full, .skip, .full, .full, .full])
         #expect(arrangement.knownParts.count == 4)
 
-        // The next save writes schema 6.
+        // The next save writes the current schema.
         _ = try await store.updateEntry(setlist.entries[0], in: setlistID)
         _ = try await store.rename(setlistID, to: "Five again")
         let json = try lib.read("setlists/five.setlist.json")
-        #expect(json.contains("\"schemaVersion\" : 6"))
+        #expect(json.contains("\"schemaVersion\" : 7"))
         #expect(json.contains("\"passes\""))
         #expect(!json.contains("\"steps\""))
         #expect(!json.contains("\"plays\""))

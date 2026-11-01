@@ -64,7 +64,7 @@ struct SetlistStoreTests {
           ],
           "id" : "\(setlist.id)",
           "name" : "Sangeet Night",
-          "schemaVersion" : 6,
+          "schemaVersion" : 7,
           "updatedAt" : "\(stamp)"
         }
 
@@ -141,7 +141,7 @@ struct SetlistStoreTests {
         let id = SetlistID(lib.ids.next())
         let song = SongID(lib.ids.next())
         let future = """
-        {"schemaVersion": 7, "id": "\(id)", "name": "Future Set",
+        {"schemaVersion": 8, "id": "\(id)", "name": "Future Set",
          "entries": [{"songId": "\(song)", "cue": "lights"}, {"segue": true}]}
         """
         try lib.write(future, to: "setlists/future.setlist.json")
@@ -150,7 +150,7 @@ struct SetlistStoreTests {
         let setlist = try #require(await store.setlist(id: id))
 
         #expect(issues.isEmpty)
-        let reason = ReadOnlyReason.newerSchema(found: 7, supported: Setlist.currentSchemaVersion)
+        let reason = ReadOnlyReason.newerSchema(found: 8, supported: Setlist.currentSchemaVersion)
         #expect(setlist.readOnly == reason)
         #expect(setlist.name == "Future Set")
         #expect(setlist.entries.map(\.songId) == [song])
@@ -180,7 +180,7 @@ struct SetlistStoreTests {
         #expect(try lib.read("setlists/old-set.setlist.json") == legacy)
 
         try await store.addSong(SongID(lib.ids.next()), to: id)
-        #expect(try lib.read("setlists/old-set.setlist.json").contains("\"schemaVersion\" : 6"))
+        #expect(try lib.read("setlists/old-set.setlist.json").contains("\"schemaVersion\" : 7"))
     }
 
     @Test

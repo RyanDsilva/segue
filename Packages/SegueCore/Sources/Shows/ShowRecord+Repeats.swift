@@ -112,14 +112,23 @@ public extension ShowRecord {
         let mine = items.indices.filter { index in
             items[index].songId == songId && items[index].itemId != excluded
         }
-        if mine.contains(where: { items[$0].state == .played }) {
+        // A planned medley reprise (P9-3 decision 8) plays the song twice: while one of its
+        // occurrences is still to come, it stands as current or upcoming, not played.
+        let reprise = isPlannedReprise(songId)
+        if !reprise, mine.contains(where: { items[$0].state == .played }) {
             return .played
         }
         if mine.contains(where: { items[$0].state == .current }) {
             return .current
         }
-        if let index = mine.first(where: { items[$0].state == .pending }) {
+        let pending = reprise ? firstPendingIndex(of: songId).flatMap { index in
+            mine.contains(index) ? index : nil
+        } : mine.first(where: { items[$0].state == .pending })
+        if let index = pending {
             return .upcoming(items[index].itemId, isNext: index == nextPendingIndex)
+        }
+        if reprise, mine.contains(where: { items[$0].state == .played }) {
+            return .played
         }
         let queued = queuedRequests
         if let request = queued.first(where: { $0.songId == songId }) {
@@ -129,6 +138,14 @@ public extension ShowRecord {
             return .skipped(items[index].itemId)
         }
         return .free
+    }
+}
+
+extension ShowRecord {
+    /// Whether the plan holds `songId` as a medley member and as a plain slot.
+    func isPlannedReprise(_ songId: SongID) -> Bool {
+        planned.contains { $0.songId == songId }
+            && planned.contains { $0.medley?.songIds.contains(songId) ?? false }
     }
 }
 
@@ -164,6 +181,14 @@ extension ShowRecord {
             throw ShowError.itemNotFound(itemId)
         }
         guard items[index].state == .pending || items[index].state == .skipped else { return }
+        // A medley member never leaves its medley (P9-3 8.2): it is only brought back.
+        if items[index].medley != nil {
+            if items[index].state == .skipped {
+                items[index].state = .pending
+                events.append(ShowEvent(at: now, kind: .unskipped, itemId: itemId))
+            }
+            return
+        }
         if items[index].state == .skipped {
             items[index].state = .pending
             events.append(ShowEvent(at: now, kind: .unskipped, itemId: itemId))
