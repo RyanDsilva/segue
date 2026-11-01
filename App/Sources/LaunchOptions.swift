@@ -67,6 +67,8 @@ import VendorServices
     /// - `-SegueStatePath <dir>`: keep the libraries' index, locks and `state.json` under
     ///   `<dir>` instead of the shared app group (P9-6 5.2), so every E2E run starts from a
     ///   clean state. Must be under `/private/tmp/segue-e2e/` (the sandbox exception).
+    /// - `-SegueLibraryFolderKind <local|iCloudDrive|name>`: treat every library folder as
+    ///   local, in iCloud Drive or in the named CloudStorage service (the file-sync warning).
     /// (Capture flags: LaunchOptions+Capture.swift.)
     struct LaunchOptions: Sendable, Equatable {
         static let libraryPathFlag = "-SegueLibraryPath"
@@ -99,6 +101,7 @@ import VendorServices
         static let exportPathFlag = "-SegueExportPath"
         static let completedGigsFlag = "-SegueCompletedGigs"
         static let statePathFlag = "-SegueStatePath"
+        static let folderKindFlag = "-SegueLibraryFolderKind"
 
         /// Where `-SegueSeedWelcome` puts the library when no library path is given: inside
         /// the app's own container, so no sandbox exception is needed and the user's real
@@ -151,6 +154,7 @@ import VendorServices
         var exportPath: URL?
         var completedGigs: Int?
         var statePath: URL?
+        var folderKind: LibraryFolderKind?
         var screenshotLibrary = false
         /// `-SegueWindowFrame`, top-left origin on the main screen.
         var windowFrame: CGRect?
@@ -249,6 +253,7 @@ import VendorServices
                 count >= 0 ? count : nil
             }
             statePath = Self.path(values[Self.statePathFlag], directoryHint: .isDirectory)
+            folderKind = values[Self.folderKindFlag].flatMap(Self.folderKind)
             parseCapture(values)
         }
 
@@ -260,10 +265,20 @@ import VendorServices
             servicesLiveFlag, consentFlag, appearanceFlag, mailLogFlag,
             onboardingFlag, seedWelcomeFlag, changelogPathFlag, lastSeenVersionFlag,
             appVersionFlag, reviewLogFlag, tipsFlag, exportPathFlag, completedGigsFlag,
-            statePathFlag,
+            statePathFlag, folderKindFlag,
             screenshotLibraryFlag, windowFrameFlag, stageWindowedFlag, fixedClockFlag,
             scriptedAIFlag, guideFixturesFlag, clockRateFlag,
         ]
+
+        /// `-SegueLibraryFolderKind` values.
+        private static func folderKind(_ value: String) -> LibraryFolderKind? {
+            switch value {
+            case "": nil
+            case "local": .local
+            case "iCloudDrive": .iCloudDrive
+            default: .fileProvider(value)
+            }
+        }
 
         /// A Shortcut name with surrounding blanks removed; nil when blank.
         private static func name(_ value: String?) -> String? {
@@ -289,6 +304,7 @@ import VendorServices
                 || onboarding != nil || seedWelcome || changelogPath != nil
                 || lastSeenVersion != nil || appVersion != nil || reviewLog != nil
                 || tips != nil || exportPath != nil || completedGigs != nil || statePath != nil
+                || folderKind != nil
                 || screenshotLibrary || windowFrame != nil || stageWindowed
                 || fixedClock != nil || scriptedAI != nil || guideFixtures || clockRate != nil
         }
@@ -336,7 +352,7 @@ import VendorServices
             }
             let services = servicesWiring(defaults: defaults, bundleID: bundleID)
             let polish = polishDependencies(defaults: defaults)
-            return AppDependencies(
+            var dependencies = AppDependencies(
                 fileSystem: fileSystem,
                 clock: clock,
                 ids: ids,
@@ -359,6 +375,10 @@ import VendorServices
                 mail: mailLog.map(RecordingMailComposer.init),
                 polish: polish,
             )
+            if let folderKind {
+                dependencies.folderKind = { _ in folderKind }
+            }
+            return dependencies
         }
 
         /// WS2b's stores and switches for this launch. A test run never asks the system for

@@ -182,6 +182,9 @@ public enum LibraryLocation: String, Sendable, CaseIterable {
     case suggestedMusicFolder
     case otherFolder
     case existingLibrary
+    /// The folder is in iCloud Drive or a CloudStorage service (P9-6 5.4); which service is
+    /// never sent.
+    case fileSyncFolder
 }
 
 public enum SongSource: String, Sendable, CaseIterable {

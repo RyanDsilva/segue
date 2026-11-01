@@ -110,6 +110,7 @@
 
         var body: some View {
             VStack(spacing: 0) {
+                FileSyncWarningBanner(session: session)
                 header
                 Rule()
                 SelectableList(

@@ -73,9 +73,12 @@
             )))
         }
 
-        /// Row 4: the user picked or created a library folder.
+        /// Row 4: the user picked or created a library folder. A folder in a file-sync service
+        /// reports as `fileSyncFolder` whether new or existing (P9-6 5.4).
         func recordLibraryChosen(_ url: URL, created: Bool) {
-            let location: Services.LibraryLocation = if !created {
+            let location: Services.LibraryLocation = if session?.folderKind.isFileSynced == true {
+                .fileSyncFolder
+            } else if !created {
                 .existingLibrary
             } else if url.standardizedFileURL.path(percentEncoded: false)
                 == LibraryLocation.suggestedFolder.standardizedFileURL.path(percentEncoded: false)

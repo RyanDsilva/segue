@@ -24,6 +24,8 @@ final class TestEnvironment {
     /// The real library lock by default; `.unlocked` for tests that run several in-process
     /// app instances on this library on purpose.
     var libraryLock: LibraryLockPolicy = .exclusive
+    /// A fixed answer for the file-sync folder check; nil detects the temp folder (local).
+    var folderKind: LibraryFolderKind?
 
     init() throws {
         scratch = FileManager.default.temporaryDirectory
@@ -91,6 +93,9 @@ final class TestEnvironment {
             libraryLock: libraryLock,
             libraryState: stateLocation,
         )
+        if let folderKind {
+            dependencies.folderKind = { _ in folderKind }
+        }
         // In-process tests never make a sound: an engine of their own that is never built,
         // and a recorder as the output (P8-6).
         dependencies.audio = AudioEngineHost(bank: nil, systemBank: nil)

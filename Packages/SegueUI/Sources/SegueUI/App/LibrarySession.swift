@@ -81,6 +81,10 @@
         /// The `{duration}` cleanup offer: how many songs hold a `{duration}` line, shown
         /// once per library (P8-8 5.7); nil when not offered.
         public var durationOffer: Int?
+        /// Whether the folder sits in a file-sync service (P9-6 5.4), set after each open.
+        public internal(set) var folderKind: LibraryFolderKind = .local
+        /// "Don't Show Again" on the file-sync warning, remembered per library ID.
+        public internal(set) var fileSyncWarningDismissed = false
         /// A song waiting on "Move to Trash?" because setlists use it (A23).
         public internal(set) var songTrashConfirmation: SongTrashConfirmation?
 

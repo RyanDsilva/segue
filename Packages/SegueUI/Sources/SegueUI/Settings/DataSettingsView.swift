@@ -40,6 +40,7 @@
                     }
                     SettingsNote(text: "Rebuilds Segue's search index from the song files. "
                         + "Your songs are not changed.")
+                    libraryLocationNotes
                 }
                 Section("Welcome songs") {
                     HStack {
@@ -110,6 +111,22 @@
                 Text(Self.resetMessage)
             }
         }
+
+        /// The file-sync warning while it applies (P9-6 5.4, whether or not the banner was
+        /// dismissed), and the lost cross-flavor lock when the shared state is unreachable.
+        @ViewBuilder private var libraryLocationNotes: some View {
+            if let warning = app.session?.folderKind.warning {
+                SettingsNote(text: warning)
+                    .accessibilityIdentifier(AccessibilityID.settingsFileSyncNote)
+            }
+            if !app.dependencies.libraryState.isShared {
+                SettingsNote(text: Self.unsharedStateNote)
+            }
+        }
+
+        static let unsharedStateNote = "Segue could not reach the storage both Segue apps "
+            + "share, so another copy of Segue on this Mac could open this library at the same "
+            + "time."
 
         static let resetMessage = "Resets: Live settings, Appearance, Instrument, Audio, the AI "
             + "setting, the last Settings pane and the tips.\nKeeps: your Privacy choices, the "

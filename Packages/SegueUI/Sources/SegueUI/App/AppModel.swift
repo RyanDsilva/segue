@@ -35,6 +35,12 @@
         /// app group in the app, a per-run folder for E2E (`-SegueStatePath`), a temp folder
         /// in tests.
         public var libraryState: LibraryStateLocation
+        /// Whether a library folder sits in a file-sync service (P9-6 5.4); a fixed answer
+        /// for tests (`-SegueLibraryFolderKind`).
+        public var folderKind: @MainActor (URL) -> LibraryFolderKind = { url in
+            LibraryFolderKind.detect(url)
+        }
+
         /// Menu slots later workstreams fill (Welcome, What's New, export, feedback).
         public var hooks: AppHooks
         /// Opens links and reveals files (Help links, Show in Finder).
@@ -389,6 +395,7 @@
                     old.undoManager?.removeAllActions()
                     session.undoManager = old.undoManager
                 }
+                session.checkFolderKind(dependencies.folderKind(url))
                 state = .ready(session)
                 session.restoreState()
                 await runShowLaunchCheck()
