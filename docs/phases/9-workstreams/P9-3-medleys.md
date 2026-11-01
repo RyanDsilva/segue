@@ -1,6 +1,6 @@
 # P9-3 - Medleys: several songs in one setlist slot, with written transitions
 
-Phase 9 workstream (new, 2026-10-31). Rulings: `docs/release/decisions.md` **R176** (the first App Store release is v1.0 and builds Medleys before submission, specced with its open questions closed first), **R138** / **R140** (Medleys are in the release; the one store media pass comes after it), and `docs/00-vision.md:91` ("Medleys - several songs joined into one set slot with a written transition"). Built on Phase 8 and earlier: **R122** / **R149** (per-slot arrangements, pass show modes), **R147** / **R148** (every pass written out, section map, jump and loop), **R150** / **R156** (single-song sessions, Rehearse this), **R153** / **R157** (set composer, `RomanNormalizer`), **R154** (pedal safety, serialized undo), **R167** / **R168** Q3 (one `SongTimeline`; the metronome switches tempo and meter at pass boundaries), **R169** (a walk-up into a key change is planned in the new key), **R172** / **R173** (slot time = tempo x played bars, unknown never invented, "~" when estimated), **R85** / **R86** / **R105** (breaks, changeover, intermission), **R115** (locked slots), **R16** (builder undo), **R113** (test budget), **R39** (design directions before new UI), **R79** (accessibility walk), the walkthrough rule "a song appears at most once per setlist", and the owner's romanized Hindi rule (spell-check and autocorrect off in typed text; nothing "corrects" romanized Hindi).
+Phase 9 workstream (new, 2026-10-31). Rulings: `docs/release/decisions.md` **R176** (the first App Store release is v1.0 and builds Medleys before submission, specced with its open questions closed first), **R178** (this spec's questions closed, section 21), **R138** / **R140** (Medleys are in the release; the one store media pass comes after it), and `docs/00-vision.md:91` ("Medleys - several songs joined into one set slot with a written transition"). Built on Phase 8 and earlier: **R122** / **R149** (per-slot arrangements, pass show modes), **R147** / **R148** (every pass written out, section map, jump and loop), **R150** / **R156** (single-song sessions, Rehearse this), **R153** / **R157** (set composer, `RomanNormalizer`), **R154** (pedal safety, serialized undo), **R167** / **R168** Q3 (one `SongTimeline`; the metronome switches tempo and meter at pass boundaries), **R169** (a walk-up into a key change is planned in the new key), **R172** / **R173** (slot time = tempo x played bars, unknown never invented, "~" when estimated), **R85** / **R86** / **R105** (breaks, changeover, intermission), **R115** (locked slots), **R16** (builder undo), **R113** (test budget), **R39** (design directions before new UI), **R79** (accessibility walk), the walkthrough rule "a song appears at most once per setlist" (with R178's one exception, the medley reprise, decision 8), and the owner's romanized Hindi rule (spell-check and autocorrect off in typed text; nothing "corrects" romanized Hindi).
 
 **Sibling specs in this folder, written in parallel:** **P9-1** (PDF export) prints medleys in the songbook through section 13's interface; **P9-2** (singer view) adds `LayoutRequest.view`, which applies to every medley member (P9-2 section 6.12).
 
@@ -14,7 +14,7 @@ Phase 9 workstream (new, 2026-10-31). Rulings: `docs/release/decisions.md` **R17
 - Test budget (R113): per step only targeted in-process suites (`swift test --filter <Suite>`). The model, migrations, timing, the composer grammar and the stage layout are pure and get in-process tests; builder and stage behaviour gets in-process SegueUI tests. Exactly **one** new XCUITest class for the workstream (section 17.5, in P9-3d). At the end of each session ONE `make quick`, plus ONE `make e2e-one` per existing UI test class the session changed (section 17.6). No `make gate`, no `make check`, no E2E retry loops (a failure is investigated, not re-run), no scratch-worktree builds. Every build or test runs under `lockf -k .build/make.lock`. Write this budget into any subagent's prompt.
 - Before using any Apple API not already in the codebase, run the `apple-api-check` skill.
 - Ryan's real library is never opened by a test or a session (section 8.4 proves the migration on a copy).
-- Stop and ask the orchestrator at any decision fork or spec-vs-code inconsistency, including any section 21 question still open when a step reaches it.
+- Stop and ask the orchestrator at any decision fork or spec-vs-code inconsistency, including any case section 21's closed questions do not cover.
 
 ## 1. Goal
 
@@ -78,11 +78,11 @@ Composer and assistant:
 1. **A medley is a setlist entry kind**, `SetlistEntryKind.medley(SetlistMedley)`, holding its members inline. Rejected: a "joins the previous row" flag on ordinary song entries (every move, the assistant's Rebuild, the composer, show reorders and the reorder review would each have to keep members contiguous; one forgotten path splits a medley silently). The entry kind makes a split medley unrepresentable.
 2. **Members keep everything a song slot has**: a stable `itemId` (unique in the setlist, also the show item id), `songId`, `overrides`, `note`, `arrangement`. The medley entry itself has an `itemId`, a `locked` flag and an optional `title`; it has no overrides, note or arrangement of its own.
 3. **Transitions live on the later member** (`transition`, "into this member"). A medley of three songs has two transitions; the first member's is ignored and never written.
-4. **In a show, members are items.** `ShowController.start` expands a medley into one `ShowItem` per member, in order, each carrying a `ShowMedleyRef` (slot id, title, index, count, transition). So the Gig Log, plays, per-song stats, requests, skip and "played" all stay per song, and the stage groups consecutive items with the same slot id into one plan (open question 1).
+4. **In a show, members are items.** `ShowController.start` expands a medley into one `ShowItem` per member, in order, each carrying a `ShowMedleyRef` (slot id, title, index, count, transition). So the Gig Log, plays, per-song stats, requests, skip and "played" all stay per song, and the stage groups consecutive items with the same slot id into one plan (R178).
 5. **One stage plan per medley.** The stage lays every member's passes into one plan, one segment per member, each with its own key, capo, arrangement, cues, notes, walk-ups and tempo; the map strip spans all of them; a member header opens each segment. Moving from member to member is scrolling, not a song change.
-6. **The current member follows the reading line** and is committed to the show record (as `.next` / `.previous`) once the reading line has stayed in the new member for 1 s, or at once on a key (open question 2).
+6. **The current member follows the reading line** and is committed to the show record (as `.next` / `.previous`) once the reading line has stayed in the new member for 1 s, or at once on a key (R178).
 7. **Slot time is the sum of the members' slot times** (R172: each member's tempo x the bars of its played passes); no changeover between members; a member with an unknown time adds nothing and makes the medley's time a lower bound; "~" when any member is estimated (R173). Transitions add no time (none is ever invented).
-8. **One song once per setlist, members included.** A song cannot be a medley member and also a slot, or a member of two medleys (open question 8).
+8. **One song once per setlist, with one exception: the medley reprise** (R178). A song that is a medley member may also appear once elsewhere in the set as an ordinary song slot (a reprise), before or after the medley. Everything else stays refused: a song twice as a slot, a song in two medleys, a song twice in one medley. So a song appears at most twice in a set, and only as one member plus one slot. Every duplicate check asks `Setlist.canAdd(_:as:)` (5.1) instead of "is it in the set".
 9. **Two to twelve members.** The editor refuses an edit that leaves a medley with more than 12 members, and a medley left with one member becomes that song's slot (auto-ungroup) in the same undo step.
 
 ## 5. Data model and schema
@@ -121,7 +121,7 @@ public enum SetlistEntryKind: Sendable, Hashable {
 }
 ```
 
-On `SetlistEntry`: `medley: SetlistMedley?` (accessor), `isMedley`, and **`songIds: [SongID]`** (a song slot: its song; a medley: its members in order; a break: none), which replaces `songId` at every call site that means "the songs this row plays" (5.5). `songId` stays and is nil for a medley. On `Setlist`: `songCount` counts members (a three-song medley is three songs; "12 songs"), new `slotCount`; `member(_ itemId:) -> (entry: SetlistEntry, index: Int)?`; `songSlot(_ itemId:) -> SongSlotRef?` (`.entry(SetlistEntry)` or `.member(entryId:, MedleyMember)`), used by the arrangement editor and the slot popover so a member is edited exactly like a song slot; `repeatedEntries` checks members too.
+On `SetlistEntry`: `medley: SetlistMedley?` (accessor), `isMedley`, and **`songIds: [SongID]`** (a song slot: its song; a medley: its members in order; a break: none), which replaces `songId` at every call site that means "the songs this row plays" (5.5). `songId` stays and is nil for a medley. On `Setlist`: `songCount` counts members (a three-song medley is three songs; "12 songs"), new `slotCount`; `member(_ itemId:) -> (entry: SetlistEntry, index: Int)?`; `songSlot(_ itemId:) -> SongSlotRef?` (`.entry(SetlistEntry)` or `.member(entryId:, MedleyMember)`), used by the arrangement editor and the slot popover so a member is edited exactly like a song slot; `repeatedEntries` checks members too, under decision 8's rule (a member plus one slot of the same song is not repeated). New: `occurrences(of song: SongID) -> [SongOccurrence]` (`.slot(itemId, number)` / `.member(entryId, itemId, label)` in set order) and `canAdd(_ song: SongID, as: AddRole) -> AddVerdict` (`AddRole` `.slot` or `.member(of: entryId)`; `AddVerdict` `.ok`, `.reprise(of: SongOccurrence)` or `.refused(SongOccurrence)`), pure, the one place decision 8 is written.
 
 ### 5.2 JSON (setlist schema 7)
 
@@ -151,7 +151,7 @@ On `SetlistEntry`: `medley: SetlistMedley?` (accessor), `isMedley`, and **`songI
 
 - An unknown key in a medley or member is ignored. A member without a decodable `songId` or `itemId` is dropped (counted in the load report as one unreadable row, as other bad entries are).
 - A medley with **one** member loads as a medley of one: it plays and times like that song, and the builder shows it with a quiet "Add a song or Ungroup" hint. A medley with **zero** members loads, is shown in the builder as "Empty medley" (removable, nothing else), and is left out of shows, timing and the assistant.
-- A member whose song is also elsewhere in the set (a hand-edited file) loads as saved and is marked by `repeatedEntries`, as old duplicates are today.
+- A member whose song is also a slot elsewhere in the set is a reprise and loads normally (decision 8). A file that breaks decision 8 (the song in two medleys, twice in one medley, or twice as a slot; a hand-edited file) loads as saved and the extra rows are marked by `repeatedEntries`, as old duplicates are today.
 - An empty or whitespace `title` or `transition` reads as nil.
 
 ### 5.4 Migrations
@@ -166,7 +166,8 @@ Every consumer found by the grep in section 3 is classified and changed in one s
 
 | Kind of use | Change |
 | --- | --- |
-| "Which songs does this set contain" (duplicate checks, "In set" ticks, the composer's already-in-set, `repeatedEntries`, smart filter "in setlist", Welcome seeding, analytics song counts) | `songIds` |
+| "Which songs does this set contain" (smart filter "in setlist", Welcome seeding, analytics song counts) | `songIds` (a reprised song is counted once where the question is "which songs"; `songCount` counts it twice, as two plays) |
+| "May this song be added here" (duplicate checks, "In set" ticks, the composer's already-in-set, `repeatedEntries`, drag in, the assistant's candidates) | `canAdd(_:as:)` / `occurrences(of:)` (decision 8) |
 | "Build show items" (`ShowController.start`, `missingEntries`) | expand members (section 9.1) |
 | "Time a row" (`SetlistTiming`, `SetlistEntryDisplay`, `MissingTimesList`, `SetBuilder.withSlotTimes`, `Packer`) | section 7 |
 | "Edit one song slot" (slot popover, arrangement editor, "Rehearse this", key and capo commands) | `songSlot(_:)`, so a member edits like a slot |
@@ -176,7 +177,7 @@ A consumer that does not fit a row stops the step and goes to the orchestrator.
 
 ### 5.6 Store operations (SegueCore `Setlists/SetlistStore+Medleys.swift`, new; each one write)
 
-`makeMedley(from items: [SetlistItemID], in:)` (two or more song slots or medleys, breaks refused; members in set order, a selected medley's members spliced in place; the medley sits where the first selected row was; the other rows are removed), `ungroup(_ medley:, in:)` (members become slots in place, transitions dropped), `addToMedley(_ songID: SongID, overrides:, medley:, at:, in:)`, `moveIntoMedley(_ item:, medley:, at:, in:)` (an existing slot joins), `removeFromMedley(_ member:, in:)` (the member becomes a slot right after the medley; one member left -> auto-ungroup), `moveMember(_ member:, to offset:, in:)`, `renameMedley`, `setTransition(_ text: String?, member:, in:)`, and `setMemberOverrides` / `setMemberNote` / `setMemberArrangement` behind `songSlot`. Each refuses (throws `SetlistError.medley(...)`) a song already in the set, a 13th member, or a break. `renumberBreaks()` is unaffected (a medley is not a break).
+`makeMedley(from items: [SetlistItemID], in:)` (two or more song slots or medleys, breaks refused; members in set order, a selected medley's members spliced in place; the medley sits where the first selected row was; the other rows are removed), `ungroup(_ medley:, in:)` (members become slots in place, transitions dropped), `addToMedley(_ songID: SongID, overrides:, medley:, at:, in:)`, `moveIntoMedley(_ item:, medley:, at:, in:)` (an existing slot joins), `removeFromMedley(_ member:, in:)` (the member becomes a slot right after the medley; one member left -> auto-ungroup), `moveMember(_ member:, to offset:, in:)`, `renameMedley`, `setTransition(_ text: String?, member:, in:)`, and `setMemberOverrides` / `setMemberNote` / `setMemberArrangement` behind `songSlot`. Each refuses (throws `SetlistError.medley(...)`) an add `canAdd` refuses (decision 8: a song already in another medley or in this one becomes a member; a song already a slot becomes a slot), a 13th member, or a break. Adding a member whose song is a slot elsewhere, or a slot whose song is a member, is allowed (a reprise). `makeMedley` refuses a selection holding the same song twice. `renumberBreaks()` is unaffected (a medley is not a break).
 
 ## 6. Builder UI
 
@@ -184,15 +185,16 @@ A consumer that does not fit a row stops the step and goes to the orchestrator.
 
 - In **Arrange** (or Pick's set column), select two or more song rows (click, ⇧-click, ⇧↑/⇧↓) and choose **Setlist > Make Medley** ⇧⌘M, or right-click > "Make Medley from 3 Songs". Disabled with fewer than two song slots selected, with a break selected, or read-only. Undo "Make Medley".
 - The new medley row is selected; its title is empty (shows "Medley" in muted text); the title field takes focus only on double-click or Return on the selected row.
-- Dragging a library song (Pick) or a set row onto a medley's member area adds it as a member at the drop point (a set row moves in; a library song already in the set is refused with the composer's "already number N" text as the help line). Undo "Add to Medley".
+- Dragging a library song (Pick) or a set row onto a medley's member area adds it as a member at the drop point (a set row moves in; a library song already in a medley is refused with the composer's "already 4b" text as the help line; a library song that is a slot elsewhere joins as a member, and the help line reads "Also number 9: a reprise"). Undo "Add to Medley".
 
 ### 6.2 The medley row (direction picked in step 0, section 16)
 
 Baseline anatomy, which every direction keeps:
 
 - **Header line**, aligned with `SetEntryRow`'s columns: the slot number; a "MEDLEY" eyebrow (11 pt bold, 0.08 em tracking, `muted`); the title (double-click to rename; autocorrect and spell-check off; placeholder "Medley"); "3 songs"; the key path "G -> A -> D" (each member's displayed key, `SetlistEntryDisplay`); the medley's time (section 7); the lock (R115); a disclosure chevron (expanded by default; remembered per medley in memory only).
-- **Member rows**, indented 24 pt, numbered "4a", "4b", "4c" (open question 9): each is a full `SetEntryRow` (title, key, capo, time, arrangement mark, quiet essentials dot) with the slot popover (key, capo, note, Sections...) exactly as a song slot.
+- **Member rows**, indented 24 pt, numbered "4a", "4b", "4c" (R178): each is a full `SetEntryRow` (title, key, capo, time, arrangement mark, quiet essentials dot) with the slot popover (key, capo, note, Sections...) exactly as a song slot.
 - **Transition rows** between members: a "↳" glyph, a one-line text field (wraps to two lines when not editing), placeholder "Add a transition" (`muted`), autocorrect, spell-check and text completion off, at most 280 characters (refused beyond, with a beep), committed on Return or focus loss as one undo step "Edit Transition"; to its right the **derived change line**, muted 12 pt, only for what changes: "G -> A", "capo 2 -> no capo", "96 -> 120 BPM", "4/4 -> 6/8". A capo change gets the essentials-dot colour so a mid-medley capo move is never missed.
+- **Reprises** (decision 8): a member whose song is also a slot, and that slot, each carry a quiet muted mark naming the other occurrence ("also 9" on the member, "reprise of 4a" on the slot), with help "This song is also in the set at 9"; VoiceOver reads it in the row label.
 - Breaks cannot go inside a medley; a medley cannot go inside a medley.
 
 ### 6.3 Keyboard and menus
@@ -214,7 +216,7 @@ Baseline anatomy, which every direction keeps:
 
 ### 6.4 Pick mode
 
-The library column ticks songs that are members ("In set"); unticking a member removes it from its medley (auto-ungroup when one is left). Ticking a song appends a slot as today (never a member).
+The library column's tick reflects the song's plain slot, as today. A song that is only a medley member shows unticked with a quiet "In Love medley" mark; ticking it appends a reprise slot (the tick then shows on), and unticking removes that slot only, never the member (members are removed in the builder). Ticking a song appends a slot as today (never a member).
 
 ### 6.5 Accessibility
 
@@ -238,14 +240,14 @@ The medley header is a container "Love medley, medley of 3 songs, 7 minutes 40 s
 ### 8.2 Transitions inside a running show (`ShowRecord+Transitions.swift`)
 
 - `next` / `previous` / `jump` / `skipCurrent` work per member as on any item (the stage drives them as in section 9.6).
-- **Insert Next, Play Now and Play Request while the current item is a medley member** place the new item **right after the medley's last member** (never between members) and do not interrupt the medley; the stage flashes "Plays after the medley" (open question 3). With the current item outside a medley they behave as today. `insertionIndex(afterCurrent:)` gains this rule.
-- `playNow` of a song that is a pending member jumps to that member (today's "jump to a pending item of the song"), and the stage opens the medley plan scrolled to it.
+- **Insert Next, Play Now and Play Request while the current item is a medley member** place the new item **right after the medley's last member** (never between members) and do not interrupt the medley; the stage flashes "Plays after the medley" (R178). With the current item outside a medley they behave as today. `insertionIndex(afterCurrent:)` gains this rule.
+- `playNow` of a song that is a pending member jumps to that member (today's "jump to a pending item of the song"), and the stage opens the medley plan scrolled to it. With a reprise both occurrences may be pending: Play Now, a request and search's jump take the **first pending occurrence after the current item** (else the first pending one); search lists both rows ("Kesariya, 4a in Love medley" and "Kesariya, 9") so the performer can pick the other.
 - **`move`** (the drawer's reorder) moves a medley's members as one block: the drawer lists the medley as a group (header plus nested members, members not draggable during a show), and a drop is translated to a block move.
 - The end-of-show **reorder review** (`ReorderDiff`) compares slots: consecutive items with the same `medley.slot` are one slot keyed by that id, so a medley that played in its planned place reads "unchanged" and saving a new order writes the medley entry back whole.
 
 ### 8.3 Gig Log
 
-- `PlayedSong` is unchanged (one per member, so plays, "last played" and per-song stats count every member song). `GigLogEntry` gains `slots: [PlayedSlot]` (`.song(PlayedSong)` or `.medley(title:, members: [PlayedSong], skipped: [ShowItem])`), built from consecutive played items with the same `medley.slot`.
+- `PlayedSong` is unchanged (one per member, so plays, "last played" and per-song stats count every member song). A reprised song played twice in one gig has two `PlayedSong`s: play counts count both, "last played" is the later one, and any figure that counts gigs a song was played in counts that gig once (P9-3a step 3 audits the `playRecords` consumers for this). `GigLogEntry` gains `slots: [PlayedSlot]` (`.song(PlayedSong)` or `.medley(title:, members: [PlayedSong], skipped: [ShowItem])`), built from consecutive played items with the same `medley.slot`.
 - **The Played list nests members under the medley** (the owner's parent/child rule): "4  Love medley" (header row, start time of its first member, a "Medley · 3 songs" detail), then "4a Kesariya", "4b Tum Hi Ho", "4c Channa Mereya" indented, each with its own arrangement line (`GigPlayedListLines.arrangementLine`). A skipped member shows under its medley as "skipped" in `muted`, and in the Skipped list as "Tum Hi Ho (in Love medley)".
 - Gig Log text export and copy (if present) use the same nesting with indentation. No played-length column (R173 / R174).
 
@@ -281,7 +283,7 @@ public struct MemberHeader: Sendable, Equatable {
 - `SongPreparation` measures each segment as it measures a song today (cues pinned per member's own sections, passes, walk-ups, pass naming) and concatenates the measured sections, inserting a **member header block** (new `LayoutBlock.Content.memberHeader`, new text roles `.memberTitle`, `.memberKey`, `.transition`, `.memberChanges`) before each segment. The notes block: the first member's notes at the top as today; a later member's notes inside its header block, under the transition.
 - **Pass naming across members**: passes are numbered within their member ("Chorus 2/3" counts that member's choruses only); `PlanPass` gains `segment: Int`. Keys 1-9 and chip clicks address the medley's shown passes in played order (the first nine).
 - **One lyric size** for the whole plan (`FitSearch` over all segments), so the chart does not jump in size between songs. Columns as the first member's `LivePrefs` choice, else the Settings default.
-- **Walk-ups** (bass view): each member's walk-ups as today, plus, at a member boundary, the walk-up from the member's last chord into the next member's first chord, planned in the next member's key (the R169 rule) and drawn like any walk-up (open question 5). Fills stay within a member (they are saved per song).
+- **Walk-ups** (bass view): each member's walk-ups as today, plus, at a member boundary, the walk-up from the member's last chord into the next member's first chord, planned in the next member's key (the R169 rule) and drawn like any walk-up (R178). Fills stay within a member (they are saved per song).
 
 ### 9.2 Member header block (stage)
 
@@ -301,7 +303,7 @@ The map strip lists every shown pass of every member in played order. A member b
 
 - **Page Down / pedal (`pageForward`)**: one screenful at a time through the whole medley, across member boundaries, with no stop; at the bottom of the medley, the next slot (as at the bottom of a song). **Page Up / `pageBack`** mirrors it. P8-1's guards apply (held or repeating keys never advance, a page-forward during an in-flight change is ignored, the last slot stays put).
 - **→ / Space (`next`)**: the next member's header (seek to its top minus 14 pt, the jump offset); on the last member, the next slot. **← (`previous`)**: the current member's header if the reading line is past it, else the previous member's; on the first member, today's previous slot.
-- **`x` (Skip Song)**: skips the current member (marked skipped) and seeks to the next member (open question 12).
+- **`x` (Skip Song)**: skips the current member only (marked skipped) and seeks to the next member (R178).
 - **1-9, chip clicks, `L` loop**: as P8-2, across members; a loop stays inside one pass.
 - **Home**: the medley's top. **Search, requests, drawer**: as 8.2.
 
@@ -313,7 +315,7 @@ The map strip lists every shown pass of every member in played order. A member b
 
 ### 9.7 Auto-scroll
 
-Piecewise: `AutoScroller` gains `segments: [ScrollSegment { fromOffset, speed }]`. Each member's speed = its segment height / its slot time (`SlotTimes.slot` of the member's played passes, P8-8 5.6), so a slow song into a fast one scrolls at the right speed in each (open question 7). A member with no time scrolls at the medley's average known speed, or, with no member known, at the default speed with P8-8's add-a-tempo hint. `[` and `]` scale every segment. `instant(reaching:)` (the loop wrap) integrates over the segments.
+Piecewise: `AutoScroller` gains `segments: [ScrollSegment { fromOffset, speed }]`. Each member's speed = its segment height / its slot time (`SlotTimes.slot` of the member's played passes, P8-8 5.6), so a slow song into a fast one scrolls at the right speed in each (R178). A member with no time scrolls at the medley's average known speed, or, with no member known, at the default speed with P8-8's add-a-tempo hint. `[` and `]` scale every segment. `instant(reaching:)` (the loop wrap) integrates over the segments.
 
 ### 9.8 Play-along (Rehearsal, P8-6b, P8-7)
 
@@ -323,26 +325,34 @@ Piecewise: `AutoScroller` gains `segments: [ScrollSegment { fromOffset, speed }]
 
 `LayoutRequest.view` applies to every segment; member headers keep their title, transition and the singer key line, and drop the capo from the change line.
 
+### 9.10 Reprises on stage (decision 8)
+
+- A reprise is an ordinary show item with its own item id: it has its own progress dot, its own played / skipped state and its own place in up-next. The member and the reprise slot each use their own overrides, note and arrangement, so a reprise can be a different key or just the last chorus.
+- Per-song stage memory (`LivePrefs`: zoom, columns) is per song, so the two occurrences share it.
+- Up-next and the pre-show checklist name the occurrence ("Kesariya (reprise)") when the song has already been played or is pending in a medley, so the band is never surprised by a repeated title.
+- Requests, Play Now and search follow 8.2's first-pending-occurrence rule.
+
 ## 10. Set composer (R153)
 
 - Grammar (`SetComposerLine`): a line containing **" + "** (space, plus, space) is a medley: `case medley([SongPart])` where each part is parsed as today's song query with its own optional key token ("kesariya in A + tum hi ho + channa mereya (Am)"). Titles containing "+" without spaces ("C++ Blues") stay one song; a title that really contains " + " is found by typing it without the spaces around "+" (the matcher's word rules ignore the "+"). The typed text is never rewritten (P8-5 rule).
-- Resolution: each part resolves with `SetComposer.resolve`; the ghost shows a medley preview: "Medley · Kesariya (A) + Tum Hi Ho (G) + Channa Mereya (Am) · 7:40". ↑/↓ and Tab cycle the alternatives of the part the caret is in. Return appends one medley slot (one write, one undo step "Add Medley"), only when every part resolves, no part is already in the set and no two parts name the same song; otherwise the status line names the first failing part ("No song matches 'chana' (song 3)", "Tum Hi Ho is already number 4") and nothing is added.
+- Resolution: each part resolves with `SetComposer.resolve`; the ghost shows a medley preview: "Medley · Kesariya (A) + Tum Hi Ho (G) + Channa Mereya (Am) · 7:40". ↑/↓ and Tab cycle the alternatives of the part the caret is in. Return appends one medley slot (one write, one undo step "Add Medley"), only when every part resolves, `canAdd(_:as: .member)` passes for every part (no part already in another medley) and no two parts name the same song; otherwise the status line names the first failing part ("No song matches 'chana' (song 3)", "Tum Hi Ho is already 4b") and nothing is added. A part that is a slot elsewhere is allowed, and the ghost marks it "(reprise of 9)".
+- A plain song line whose song is only a medley member is allowed as a reprise (decision 8): the ghost reads "Kesariya · also 4a in Love medley: adds a reprise"; a song already a slot is refused as today.
 - A single " + " part list of one song is just a song.
 - Analytics: row 24's `segue.action` gains `medley`; new `segue.members` (SmallBucket) on that action only.
 
 ## 11. Set assistant
 
-- **Rebuild keeps every medley in place**, locked or not, and never changes its members (the assistant cannot compose medleys); its lock control shows on and disabled with the help "Medleys stay in place on Rebuild" (open question 4).
-- Member songs are never candidates for other slots (one song once).
+- **Rebuild keeps every medley in place**, locked or not, and never changes its members (the assistant cannot compose medleys); its lock control shows on and disabled with the help "Medleys stay in place on Rebuild" (R178).
+- The assistant never makes a reprise: member songs are never candidates for other slots. A reprise slot the user made is kept when locked (R115) and otherwise left out like any unpicked slot, with the draft's note "Kesariya's reprise was left out: lock it to keep it".
 - **Time**: a medley counts its `MedleyTime.known` toward the target; with unknown members it counts what is known and the draft's note says "1 song in a medley has no time" (the left-out list does not apply: the medley is kept, not left out).
 - **Flow** (`Scorer.flow`): the slot before a medley flows into its **first** member; the slot after it flows from its **last** member; `SlotContext` for a medley's neighbours uses those members' keys and tempos.
-- New sets from a request never contain medleys. Requests can name a medley member like any song (it is still in the library); it is excluded if already in the set.
+- New sets from a request never contain medleys. Requests can name a medley member like any song (it is still in the library); the request rules of decision 8 apply (a member song may be requested as a reprise slot; a song already a slot is excluded).
 
 ## 12. Rehearse Medley and single-song sessions
 
 - `AppModel.startSongSession` generalises to `startSlotSession(_ entry: SetlistEntry, kind: ShowKind, onEnd:)`, which builds the in-memory one-entry setlist from a song entry or a medley entry (unsaved environment, no checklist, nothing logged, R150 / R158 P8-2 Q8). `startSongSession` becomes a wrapper (library songs, the full song as written).
 - **Rehearse Medley** (the header's context menu and VoiceOver action; no shortcut, so ⌥⌘↩ keeps meaning Setlist > Rehearse and the P8-2 clash-test exception is unchanged) rehearses the whole medley as arranged. When it ends, the builder reselects the medley.
-- **Rehearse this** in a member's Arrange Sections sheet (P8-3) rehearses that member alone, as arranged (open question 13).
+- **Rehearse this** in a member's Arrange Sections sheet (P8-3) rehearses that member alone, as arranged (R178).
 
 ## 13. PDF songbook: interface for P9-1
 
@@ -352,11 +362,11 @@ P9-3 provides, P9-1 consumes:
 2. `MemberHeader.make(member:previous:record:previousRecord:)` (pure, SegueCore): the title, key line, transition and change line exactly as the stage draws them (9.2), so print and stage say the same thing.
 3. `MedleyTime` for the setlist page's time column.
 
-Expected print behaviour (P9-1 confirms or overrides in its own open questions):
+Print behaviour (closed by R178 with P9-1 section 18):
 
-- **Setlist page**: the medley is one numbered row ("4  Love medley") with its members indented under it, each with its key, capo, time and page link (P9-1 section 9 prints them unnumbered; with open question 9 at (a) they read "4a", "4b").
+- **Setlist page**: the medley is one numbered row ("4  Love medley") with its members indented under it, each with its key, capo, time and page link numbered "4a", "4b" (R178).
 - **Table of contents and PDF outline**: the medley is a parent entry with the members as children, each pointing at its member header's page.
-- **Body**: P9-1 (its section 9 and section 18 Q11) recommends that each member starts a new page with a transition block after each member but the last; this spec recommends the opposite, members **flowing on without page breaks** after the medley's first page (open question 10, which must be closed together with P9-1's Q11). Either way each member opens with its member header block and transition; each member uses its own overrides and, if P9-1 prints arrangements, its own arrangement; P9-1's keep-together rules apply to the member header (never orphaned at a page bottom: it needs at least two line pairs of its member with it).
+- **Body**: members **flow on without page breaks** after the medley's first page, with the transition between them (R178; P9-1 section 9). Each member opens with its member header block and transition; each member uses its own overrides and, if P9-1 prints arrangements, its own arrangement; P9-1's keep-together rules apply to the member header (never orphaned at a page bottom: it needs at least two line pairs of its member with it).
 - **Single chart export of a medley** (row context menu "Export Medley PDF...", if P9-1 offers per-slot export): the same body alone.
 - Singer view printing (P9-2 section 8) applies member by member.
 
@@ -392,11 +402,11 @@ Recommendation: builder **A** (one block reads as one slot, matching the decisio
 ### 17.1 SegueCore model and store (`SetlistMedleyTests`, `SetlistStoreMedleyTests`, new; extend `SetlistTests`, `ShowRecordTests`)
 
 - v7 codec round trip; omitted empty keys; member order; `transition` ignored on the first member; unknown keys ignored; a member without `songId` dropped; one-member and zero-member medleys load as 5.3; a v6 file reads and writes at 7 unchanged otherwise; an older reader sees `newerSchema`.
-- `songIds`, `songCount` (members counted), `slotCount`, `songSlot`, `member`, `repeatedEntries` with members.
-- Store: make from slots (ids kept, position, splicing a selected medley), refuse breaks and duplicates and a 13th member, ungroup in place, remove leaving one auto-ungroups, move within, move into, add from library, rename, transitions trimmed and capped; each one write.
+- `songIds`, `songCount` (members counted), `slotCount`, `songSlot`, `member`, `repeatedEntries` with members; `canAdd` and `occurrences` table-driven over decision 8 (member plus slot allowed either way round; two slots, two medleys, twice in one medley refused).
+- Store: make from slots (ids kept, position, splicing a selected medley), refuse breaks, decision 8 duplicates and a 13th member, allow a reprise either way round, ungroup in place, remove leaving one auto-ungroups, move within, move into, add from library, rename, transitions trimmed and capped; each one write.
 - Show record 4 -> 5; `ShowController.start` expands members with refs, omits missing members, omits an all-missing medley.
-- Transitions: insert next, play now and play request inside a medley land after its last member and do not interrupt; play now of a pending member jumps; drawer move moves the block; `ReorderDiff` treats a medley as one slot.
-- Gig Log: `slots` grouping, skipped members, plays per member.
+- Transitions: insert next, play now and play request inside a medley land after its last member and do not interrupt; play now of a pending member jumps; with a reprise pending twice, play now and requests take the first pending occurrence after the current item; drawer move moves the block; `ReorderDiff` treats a medley as one slot.
+- Gig Log: `slots` grouping, skipped members, plays per member, a reprise played twice (two plays, one gig).
 
 ### 17.2 Time (`MedleyTimeTests`, new, table-driven)
 
@@ -404,7 +414,7 @@ All known (sum, no changeover inside, one changeover after); one unknown (lower 
 
 ### 17.3 Composer and assistant (`SetComposerLineTests`, `SetComposerResolveTests`, `SetBuilderTests`, extend)
 
-" + " parsing with per-part keys, "C++ Blues" stays one song, failing part reported with its number, duplicate parts refused; Rebuild keeps medleys and excludes members from candidates; flow uses first and last members; target counts known time.
+" + " parsing with per-part keys, "C++ Blues" stays one song, failing part reported with its number, duplicate parts refused, a part that is a slot elsewhere allowed as a reprise, a plain line for a member-only song adds a reprise; Rebuild keeps medleys, excludes members from candidates, and keeps a locked reprise; flow uses first and last members; target counts known time.
 
 ### 17.4 Stage layout and session (`LiveLayoutMedleyTests`, `MedleyFollowTests`, new; `StageMedleyTests`, new SegueUI)
 
@@ -412,7 +422,7 @@ All known (sum, no changeover inside, one changeover after); one unknown (lower 
 - `MedleyFollow`: member at reading line; 1 s dwell commit with a scripted scroll clock; immediate commit on keys; no relayout on a member change (the scroller's offset is kept).
 - Pedal: Page Down crosses members without a song change and leaves at the bottom; → / ← / `x` per 9.5; P8-1 guards still hold.
 - Piecewise auto-scroll speeds and `instant(reaching:)` over segments.
-- Header chip, footer "Next in medley" and the next-slot-is-a-medley text, metronome tempo switch at the boundary.
+- Header chip, footer "Next in medley" and the next-slot-is-a-medley text, metronome tempo switch at the boundary; a reprise slot after its medley gets its own dot and the "(reprise)" up-next label.
 - Play-along timeline concatenation; stop at a member without tempo.
 
 ### 17.5 XCUITest (one new class, P9-3d)
@@ -456,26 +466,26 @@ All known (sum, no changeover inside, one changeover after); one unknown (lower 
 
 ## 20. Done criteria
 
-- A medley is made from selected rows in one action, shows as one slot with nested members and transitions, and every member keeps its own key, capo, note and arrangement; reorder, add, remove, ungroup and rename are one undo step each.
+- A medley is made from selected rows (adjacent or not) in one action, shows as one slot with nested members and transitions, and every member keeps its own key, capo, note and arrangement; reorder, add, remove, ungroup and rename are one undo step each.
 - Setlist schema 7 and show record 5 load leniently; old files are unchanged on open; an older build opens new files read-only; the migration is proved on a copy of Ryan's library.
 - On stage a medley is one chart: member headers with transitions and change lines, the map across members, Page Down through it without a song change, → / ← per member, the up-next "Next in medley", the metronome and auto-scroll per member; the Gig Log records each member played or skipped and nests them under the medley.
-- Slot time is the members' sum, lower-bounded and flagged when a member has no time, "~" when estimated; the composer's " + " adds a medley; Rebuild keeps medleys and flows through their first and last members; Rehearse Medley plays it unlogged; play-along runs across members.
+- Slot time is the members' sum, lower-bounded and flagged when a member has no time, "~" when estimated; the composer's " + " adds a medley; a medley member may also appear once as a reprise slot, and every duplicate check follows decision 8; Rebuild keeps medleys and flows through their first and last members; Rehearse Medley plays it unlogged; play-along runs across members.
 - P9-1 has `printSlots`, `MemberHeader.make` and `MedleyTime` to print medleys.
 - Analytics, accessibility, guide pages and `keyboard.json` updated; targeted suites green per step; one `make quick` per session; `make e2e-one` green for `SegueMedleyE2ETests` and any changed class.
 
-## 21. Open questions
+## 21. Closed questions (R178, 2026-11-01)
 
-1. **How a medley exists in a running show.** (a) One `ShowItem` per member with a medley ref, the stage grouping them into one plan (the body); (b) one `ShowItem` for the whole medley with a `members` list (simpler stage, but the Gig Log, plays, requests and skip would all need medley-aware code and per-song "played" would be inferred). **Recommendation: (a)**: every per-song feature keeps working unchanged, and only the stage and the drawer learn about grouping.
-2. **When the current member changes.** (a) Following the reading line, committed after 1 s in the new member, at once on a key (the body); (b) only on → / ← / jump (the pedal pages through the medley but the record keeps the first member current until a key or the medley ends, then marks all members played). **Recommendation: (a)**: the header, up-next, metronome and Gig Log stay truthful with a pedal-only performer, which is how the owner plays.
-3. **Requests and Play Now during a medley.** (a) Queue after the medley's last member, no interruption, with a "Plays after the medley" flash (the body); (b) interrupt as today, splitting the medley on stage into "before" and "after" runs. **Recommendation: (a)**: a medley is rehearsed as one block and breaking into it mid-flow is almost never wanted; the performer can still jump with search if he really means it.
-4. **The assistant's Rebuild and medleys.** (a) Always kept in place, locked or not (the body); (b) respect the lock: an unlocked medley may be replaced by single songs. **Recommendation: (a)**: a medley holds hand-written transitions and per-member arrangements the assistant cannot recreate, so replacing one is destructive.
-5. **Walk-up into the next member.** (a) Yes, from the last chord into the next member's first chord, planned in the new key (R169) (the body); (b) no walk-up across members. **Recommendation: (a)**: crossing into the next song is exactly where a bassist leads the band, and the rule already exists for key changes.
-6. **Composer syntax for medleys.** (a) " + " between songs (the body); (b) a prefix ("medley: a, b, c"); (c) no composer support (make medleys only in the builder). **Recommendation: (a)**: one character, no keyword to remember (the owner's "no syntax to memorise" rule); P9-3d checks the 2,000-song generated library and the Welcome songs for titles containing " + " and records the count in its commit (any hit is reachable by typing it without the spaces).
-7. **Auto-scroll speed across members.** (a) Piecewise per member from its own time (the body); (b) one uniform speed over the whole medley, as P8-2 accepted within a song. **Recommendation: (a)**: tempos inside a medley often differ by 30 BPM or more, where a uniform speed is wrong for every member.
-8. **A song in a medley and again in the set.** (a) Not allowed: one song once per setlist, members included (the body); (b) allowed only as a medley member (a reprise of a song elsewhere in the set). **Recommendation: (a)** for v1.0, keeping the existing rule and its duplicate checks; a reprise can be ruled separately if Ryan needs one.
-9. **Member numbering.** (a) "4a, 4b, 4c" under slot 4 (the body); (b) members unnumbered; (c) every song numbered (members take 4, 5, 6 and later slots shift). **Recommendation: (a)**: slot numbers stay stable (the composer's "already number 4", the stage's progress), and members are still addressable in speech ("4b").
-10. **Medleys in the printed songbook** (close together with P9-1 section 18 Q11, which recommends the other option). (a) The members flow without page breaks after the medley's first page; (b) each member starts on a new page like a song, with a transition block after it (P9-1's recommendation). **Recommendation: (a)**: it matches the stage's one chart and keeps a two-chorus member from wasting most of a page; P9-1's argument for (b), predictable page links, still holds under (a) because the outline links point at member headers, not page tops.
-11. **Gig Log presentation.** (a) Nested members under a medley row (8.3, the body); (b) a flat list with "(in Love medley)" after each member. **Recommendation: (a)**, per the owner's rule that child items nest under their parent.
-12. **`x` (Skip Song) on a member.** (a) Skips the current member only (the body); (b) skips the rest of the medley. **Recommendation: (a)**: per-song like every other item; skipping the rest is `x` again or a Page Down past it, and the Gig Log stays exact.
-13. **Rehearse this from a member's Arrange Sections sheet.** (a) That member alone, as arranged (the body); (b) the whole medley, starting at that member. **Recommendation: (a)**: the sheet is about that song's sections, and Rehearse Medley on the header covers the whole block.
-14. **Making a medley from rows that are not adjacent.** (a) Allowed: the medley takes the first selected row's place and the others move into it (the body); (b) only adjacent rows. **Recommendation: (a)**: it saves a drag per member and is undoable in one step.
+1. **How a medley exists in a running show:** one show item per member, grouped into one plan (R178; decision 4).
+2. **When the current member changes:** it follows the reading line, after a 1 s settle, at once on a key (R178; 9.6).
+3. **Requests and Play Now during a medley:** queued after the medley (R178; 8.2).
+4. **Rebuild and medleys:** Rebuild always keeps medleys (R178; section 11).
+5. **Walk-up into the next member:** yes, in the next member's key (R178; 9.1).
+6. **Composer syntax:** songs joined with " + " (R178; section 10).
+7. **Auto-scroll across members:** per member (R178; 9.7).
+8. **A song in a medley and again in the set:** allowed as a reprise; the once-per-set rule and its duplicate checks make that one exception (R178, differing from the spec's recommendation; decision 8, 5.1, 5.3, 5.5, 5.6, 6.1, 6.4, 8.2, 8.3, sections 10 and 11).
+9. **Member numbering:** 4a, 4b, 4c (R178; 6.2).
+10. **Medleys in the printed songbook:** members flow on without page breaks, with the transition note between them (R178; section 13, P9-1 section 9).
+11. **Gig Log presentation:** members nested under the medley (R178; 8.3).
+12. **`x` on a member:** skips the current member only (R178; 9.5).
+13. **Rehearse this from a member's Arrange sheet:** plays that member (R178; section 12).
+14. **Non-adjacent rows:** a medley may be made from non-adjacent rows (R178; 5.6, 6.1).
