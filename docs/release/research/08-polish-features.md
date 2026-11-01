@@ -47,12 +47,9 @@ Legend: **UNVERIFIED** = not confirmed against a primary source in this session 
 | 13 | **Data portability / export** | Bear (many formats, readable backup), NetNewsWire (OPML), OnSong (ChordPro) | Open formats are a trust signal. |
 | 14 | **Accessibility** | All Apple apps; App Store Accessibility Nutrition Labels | https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels |
 | 15 | **Localisation** | Things, Bear, NetNewsWire (many languages) | String Catalogs make it cheap to start. |
-| 17 | **Menu bar extra** | CleanShot, Tot, Ice | A small ambient surface beside the main window. |
-| 18 | **Services menu** | NetNewsWire (standard app menu) | System-provided; apps can vend services. |
 | 19 | **Drag and drop** | Universal | In and out of the app, to and from Finder. |
 | 20 | **Quick Look preview / thumbnail extensions** | Apps with custom file types | https://developer.apple.com/documentation/quicklook ; none found for ChordPro on Mac (Chord Provider's repo has no QL target at HEAD). |
 | 22 | **Document icons + UTType registration** | Any app owning a file type | https://developer.apple.com/documentation/uniformtypeidentifiers/defining-file-and-data-types-for-your-app |
-| 23 | **Handoff** | Things, Bear | Continue an activity on another of the user's Macs. |
 | 24 | **Window and state restoration** | HIG "restore the previous state" | https://developer.apple.com/design/human-interface-guidelines/launching |
 | 25 | **Full keyboard navigation** | Things, Linear, MainStage | HIG: every command in the menu bar so Full Keyboard Access reaches it. |
 | 26 | **Undo everywhere** | NetNewsWire (mark read), Things, Bear | https://developer.apple.com/design/human-interface-guidelines/undo-and-redo |
@@ -99,7 +96,7 @@ Fetched from Apple's documentation JSON on 2026-10-17.
 - **5.1.1(i)**: a privacy policy link is required "in the App Store Connect metadata field **and within the app in an easily accessible manner**." -> a Help menu item is the natural home.
 - **5.1.1(ii)**: "Apps that collect user or usage data must secure user consent for the collection, even if such data is considered to be anonymous." -> if the sibling doc picks analytics, the in-app UX needs consent (opt-in toggle or first-run ask), not a silent default-on.
 - **1.5**: app and Support URL must include an easy way to contact the developer -> a Contact / Send Feedback item.
-- **2.4.5**: Mac apps sandboxed, self-contained, no auto-launch at login without consent (relevant if a menu bar extra or login item is ever added).
+- **2.4.5**: Mac apps sandboxed, self-contained, no auto-launch at login without consent (relevant if a login item is ever added).
 - **4.2**: minimum functionality - reviewers judge what they can reach. An empty library with no import path is a weak first impression for a reviewer (see sample content below).
 
 **Accessibility Nutrition Labels** (https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels , https://support.apple.com/123073): per-app declarations for VoiceOver, Voice Control, Larger Text, Dark Interface, Differentiate Without Color Alone, Sufficient Contrast, Reduced Motion, Captions, Audio Descriptions. Claim a label only when all common tasks work with that feature. Whether declaring is mandatory for new submissions as of Oct 2026: UNVERIFIED (the sibling technical-submission doc should confirm).
@@ -149,12 +146,9 @@ Columns: Status (exists / partial / missing), Value for gigging musicians (H/M/L
 | 13 | Data portability / export | **partial** - data is already open files (.cho + JSON); no in-app export | M | S (archive) / L (PDF, phase 4) | **v1.0 nice**: "Export Library Archive…" (zip). PDF stays phase 4 | Open files already beat OnSong/forScore here; say so in the UI and listing. |
 | 14 | Accessibility | **partial** - 38 labels, Reduce Motion, AA contrast | M | M | **v1.0 must** (audit) | Run a VoiceOver + Full Keyboard Access pass on library, editor, builder, stage; then declare honest Nutrition Labels (Dark Interface, Sufficient Contrast, Reduced Motion likely; VoiceOver only if the visual editor canvas is usable). |
 | 15 | Localisation | **missing** (English only by decision) | L | S (catalog) / L (translate) | post-launch | Add an empty String Catalog later; no translations for 1.0. |
-| 17 | Menu bar extra | **missing** | L | M | post-launch | Must stay out of the way while performing: the stage owns the screen. |
-| 18 | Services menu | system default only | L | S | post-launch | "New Segue Song from Selection" is a cute fit with phase 3 paste cleanup. |
 | 19 | Drag and drop | **partial** - builder only (`BuilderLibraryColumn.swift:61`) | **H** | M | **v1.0 must** (drop-in import) | Drag `.cho`/`.txt` from Finder onto the library to copy them in, and drag a song out to Finder/Mail as its `.cho`. This is also the minimum in-app import path (see decisions). |
 | 20 | Quick Look preview / thumbnail for .cho | **missing** | M | M-L | post-launch | Needs a QL extension target (separate process, sandbox); nice differentiator; no Mac ChordPro app ships one that was found. |
 | 22 | Document icons + UTType | **missing** (`Project.swift:109-115`) | M | S-M | **v1.0 nice** | Import `.cho`/`.chordpro`/`.chopro` as UTTypes conforming to `public.plain-text`, role Viewer; "Open With Segue" imports into the library. Keep `.cho` editable by other apps (do not claim Owner). |
-| 23 | Handoff | **missing** | L | M | post-launch | Pick up the open song or setlist on another Mac. |
 | 24 | Window / state restoration | **partial** - system window restoration; no `@SceneStorage`; strong show crash-resume (`AppModel+Shows.swift:13-28`) | M | S | **v1.0 nice** | Restore sidebar section and selected song/setlist. |
 | 25 | Full keyboard navigation | **partial** - stage yes; main window lacks menu commands for Start Show / Rehearse / New Setlist | H | S | **v1.0 must** | HIG: commands belong in the menu bar. Add a **Setlist** menu: New Setlist Shift-Cmd-N, Start Show Cmd-Return, Rehearse Opt-Cmd-Return, Add Song to Setlist. |
 | 26 | Undo everywhere | **partial** - editor only; setlist edits, metadata, deletes not undoable | M | M | **v1.0 nice** (setlist builder undo) | Rehearsal-time reorders are fiddly; Cmd-Z expected. |
@@ -258,7 +252,7 @@ Never on launch, never from a button, never on stage. Plus the persistent "Rate 
 
 **v1.0 nice**: TipKit tips (S-M), What's New mechanism (S), UTType/document icon + Open With (S-M), Export Library Archive (S), state restoration via SceneStorage (S), setlist builder undo (M), "Report…" on error banner (S), Show in Finder (S), launch-time metric (S).
 
-**Post-launch**: Quick Look extension, Services, localisation, Handoff, autosave, menu bar extra, bundled Help Book.
+**Post-launch**: Quick Look extension, localisation, autosave, bundled Help Book.
 
 ---
 

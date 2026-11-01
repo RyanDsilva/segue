@@ -92,7 +92,7 @@ Canonical sequence; rulings in [release/decisions.md](release/decisions.md).
 2. **App Store release:** the store media pass (screenshots, preview, guide captures), TestFlight, submission and the site go-live (`docs/release/README.md`).
 3. **Phase 6:** MIDI input and mapping with MIDI learn and key learn.
 4. **Phase 5:** LRCLIB lyrics search, URL import (Personal).
-5. **Later:** fills for other instruments; the Mac polish list (Services menu, localisation, Handoff, menu bar extra, Help Book); the macOS 27 on-device model path; running the E2E tests in a VM.
+5. **Later:** fills for other instruments; the Mac polish list (localisation, Help Book); the macOS 27 on-device model path; running the E2E tests in a VM.
 
 ## 5. Out of scope (unless asked)
 
