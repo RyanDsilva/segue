@@ -17,3 +17,9 @@ yq = "4.54.1"
 ffmpeg = "9.0.2"
 # dSYM upload to Sentry in `make upload` / `make upload-dsyms` (WS3 6.5).
 "aqua:getsentry/sentry-cli" = "3.8.0"
+# Off-screen E2E (R180, docs/research/e2e-off-screen.md): the Tart VM runner behind
+# `make e2e-vm` / E2E_RUNNER=vm. FSL-1.1-ALv2 (internal use allowed).
+"aqua:cirruslabs/tart" = "2.41.1"
+# Lume (MIT): the licence escape hatch behind the same runner switch (E2E_RUNNER=lume).
+# Run `lume config telemetry disable` once after installing.
+"github:trycua/cua" = { version = "lume-v0.6.1", asset_pattern = "lume-0.6.1-darwin-arm64.tar.gz", bin = "lume" }
