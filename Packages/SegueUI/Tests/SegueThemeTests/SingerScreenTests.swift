@@ -10,7 +10,7 @@ import Testing
 /// plan and follows the stage, and that it closes when its display goes or the show ends.
 extension StageWindowSuites {
     @MainActor
-    @Suite(.serialized)
+    @Suite(.serialized, .timeLimit(.minutes(1)))
     struct SingerScreenTests {
         @MainActor
         final class FakeDisplays: SingerDisplayList {
@@ -76,8 +76,10 @@ extension StageWindowSuites {
             let run = try await Self.run()
             let displays = FakeDisplays(["Built-in", "Left", "Right"])
             let screen = SingerScreenController(testing: displays)
-            run.app.liveSettings.settings.singerScreenDisplay = "Right"
+            // Set once the stage is up: a remembered display before the start puts up the
+            // checklist's Singer Screen warning (R188), which would wait for an answer.
             let live = try await run.start(.rehearsal)
+            run.app.liveSettings.settings.singerScreenDisplay = "Right"
             #expect(screen.choices.map(\.name) == ["Left", "Right"])
             screen.open(run.app)
             #expect(screen.display?.name == "Right")
@@ -156,8 +158,8 @@ extension StageWindowSuites {
     }
 }
 
-extension LayoutPlan {
-    fileprivate var blocks: [LayoutBlock] {
+private extension LayoutPlan {
+    var blocks: [LayoutBlock] {
         columns.flatMap(\.blocks)
     }
 }

@@ -26,6 +26,9 @@
                 if !checklist.staleArrangements.isEmpty {
                     staleArrangementsWarning
                 }
+                if let display = checklist.singerScreenDisplay {
+                    singerScreenWarning(display)
+                }
                 if !checklist.visibleRows.isEmpty {
                     VStack(spacing: 0) {
                         ForEach(checklist.visibleRows, id: \.self) { item in
@@ -123,6 +126,32 @@
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .accessibilityIdentifier(id)
+        }
+
+        /// R188: the Singer Screen is in use but its display is not connected.
+        private func singerScreenWarning(_ display: String) -> some View {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Theme.color.cueText)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Singer Screen: no second display")
+                        .font(SchibstedGrotesk.semiBold.font(size: 15))
+                        .foregroundStyle(Theme.color.ink)
+                    Text("Connect \(display) to show the lyrics to the singer "
+                        + "(Window > Singer Screen once the stage is up).")
+                        .font(Theme.font.label)
+                        .foregroundStyle(Theme.color.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.color.surfaceAlt),
+            )
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier(AccessibilityID.checklistSingerScreen)
         }
 
         /// R123: arrangements that no longer match their song play as the full song.

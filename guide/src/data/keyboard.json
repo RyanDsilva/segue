@@ -179,9 +179,26 @@
             "⌥⌘F"
           ],
           "title" : "Create Bass Fill…"
+        },
+        {
+          "keys" : [
+            "⇧⌘Y"
+          ],
+          "title" : "Singer Preview"
         }
       ],
       "menu" : "Song"
+    },
+    {
+      "items" : [
+        {
+          "keys" : [
+            "⌥⌘V"
+          ],
+          "title" : "Singer View"
+        }
+      ],
+      "menu" : "Live"
     },
     {
       "items" : [
@@ -232,6 +249,18 @@
             "⇧⌘A"
           ],
           "title" : "Arrange Sections…"
+        },
+        {
+          "keys" : [
+            "⇧⌘M"
+          ],
+          "title" : "Make Medley"
+        },
+        {
+          "keys" : [
+            "⌥⇧⌘M"
+          ],
+          "title" : "Ungroup Medley"
         },
         {
           "keys" : [
@@ -411,6 +440,12 @@
             "C"
           ],
           "title" : "Columns"
+        },
+        {
+          "keys" : [
+            "V"
+          ],
+          "title" : "Singer View"
         }
       ]
     },

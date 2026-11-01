@@ -130,6 +130,22 @@
         /// Whether there is anything to show (rows or the missing-songs warning).
         var hasContent: Bool {
             !visibleRows.isEmpty || !missingPositions.isEmpty || !staleArrangements.isEmpty
+                || singerScreenDisplay != nil
+        }
+
+        /// The Singer Screen's remembered display when it is the only one missing (R188): the
+        /// Singer Screen is in use on this Mac but no second display is connected, a warning.
+        /// Nil otherwise (no line).
+        var singerScreenDisplay: String? {
+            guard let name = settings.settings.singerScreenDisplay,
+                  displayCount() < 2
+            else { return nil }
+            return name
+        }
+
+        /// The connected displays (the Singer Screen's list; a fake one in tests).
+        @ObservationIgnored var displayCount: @MainActor () -> Int = {
+            SingerScreenController.shared.displays.displays.count
         }
 
         public func isDone(_ item: ChecklistItem) -> Bool {

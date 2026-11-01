@@ -18,6 +18,9 @@ public enum LayoutFit: Sendable, Hashable {
     case scrollsAtMinimum
     /// The zoom pushed the content past the viewport: scrolled.
     case scrollsZoomed
+    /// Singer view (R188): every layout that fits wraps a lyric line, so one column at the
+    /// largest size that wraps none (up to the comfortable size) scrolls instead.
+    case scrollsUnwrapped
 }
 
 /// The background tint family of a section (low-luminance tints by type; colours in UI).

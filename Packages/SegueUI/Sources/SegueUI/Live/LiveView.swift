@@ -392,6 +392,7 @@
             case .fits: "fits"
             case .scrollsAtMinimum: "scrolls at minimum"
             case .scrollsZoomed: "scrolls zoomed"
+            case .scrollsUnwrapped: "scrolls unwrapped"
             }
             let size = plan.lyricSize.formatted(.number.precision(.fractionLength(0 ... 1)))
             let position = fraction.formatted(.number.precision(.fractionLength(2)))

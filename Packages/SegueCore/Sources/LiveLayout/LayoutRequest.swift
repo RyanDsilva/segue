@@ -255,6 +255,9 @@ public struct LayoutStyle: Sendable, Hashable {
     /// a phrase broken across two rows is harder to sing from than slightly smaller type).
     /// nil (the stage and print) keeps the comfortable-size rule alone.
     public var wrapPenalty: Double?
+    /// When every layout that fits wraps a lyric line, lay out one column at the largest size
+    /// that wraps none, and scroll it (singer view, R188). Off for the stage and print.
+    public var scrollsRatherThanWrap: Bool
 
     public init(
         gutterWidth: Double = 64,
@@ -296,6 +299,7 @@ public struct LayoutStyle: Sendable, Hashable {
         cuePadding: LayoutSize = LayoutSize(width: 8, height: 4),
         calloutSpacing: Double = 6,
         wrapPenalty: Double? = nil,
+        scrollsRatherThanWrap: Bool = false,
     ) {
         self.gutterWidth = gutterWidth
         self.maxGutterWidth = maxGutterWidth
@@ -336,6 +340,7 @@ public struct LayoutStyle: Sendable, Hashable {
         self.cuePadding = cuePadding
         self.calloutSpacing = calloutSpacing
         self.wrapPenalty = wrapPenalty
+        self.scrollsRatherThanWrap = scrollsRatherThanWrap
     }
 
     /// The stage defaults. Unit B tunes the values; keep them in one place.

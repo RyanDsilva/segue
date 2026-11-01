@@ -68,8 +68,13 @@ struct FitSearch {
     }
 
     func plan() -> LayoutPlan {
-        let base = fitted()
+        let (base, anyUnwrapped) = fitted()
         let zoom = min(max(request.zoom.isFinite ? request.zoom : 1, 0.25), 4)
+        if style.scrollsRatherThanWrap, let base, base.wraps, !anyUnwrapped,
+           let column = unwrappedColumn(zoom: zoom)
+        {
+            return assemble(column, fit: .scrollsUnwrapped)
+        }
         guard let base else {
             let size = max(minSize, minSize * zoom)
             let fit: LayoutFit = size > minSize ? .scrollsZoomed : .scrollsAtMinimum
@@ -115,7 +120,7 @@ struct FitSearch {
     /// below that the larger of it and the chosen layout with wrapping allowed wins.
     /// Within each, sections stay whole when any layout allows it; only then are they split
     /// between columns.
-    private func fitted() -> Candidate? {
+    private func fitted() -> (best: Candidate?, anyUnwrapped: Bool) {
         let steps = Int(((maxSize - minSize) / style.sizeStep).rounded(.down))
         var unwrapped: Candidate?
         var wrapping: Candidate?
@@ -140,10 +145,43 @@ struct FitSearch {
             unwrapped = unwrapped ?? choose(plain)
             wrapping = wrapping ?? choose(wrapped)
         }
-        guard let unwrapped else { return wrapping }
-        guard let wrapping, unwrapped.size < comfortableSize - 1e-9 else { return unwrapped }
+        guard let unwrapped else { return (wrapping, false) }
+        guard let wrapping, unwrapped.size < comfortableSize - 1e-9 else {
+            return (unwrapped, true)
+        }
         let needed = unwrapped.size * (1 + (style.wrapPenalty ?? 0))
-        return wrapping.size > needed ? wrapping : unwrapped
+        return (wrapping.size > needed ? wrapping : unwrapped, true)
+    }
+
+    /// One column at the largest stepped size (from the minimum, capped at the comfortable
+    /// size) at which no lyric line wraps, times `zoom`, for scrolling (R188); nil when
+    /// columns are forced or a line wraps even at the minimum.
+    private func unwrappedColumn(zoom: Double) -> Candidate? {
+        guard request.columns == nil else { return nil }
+        func wraps(_ size: Double) -> Bool {
+            let sections = laid(size: size, columns: 1)
+            return sections.indices.contains { sections[$0].wrapped }
+        }
+        let steps = Int(((maxSize - minSize) / style.sizeStep).rounded(.down))
+        func size(_ step: Int) -> Double {
+            step == steps ? maxSize : minSize + Double(step) * style.sizeStep
+        }
+        guard !wraps(minSize) else { return nil }
+        var low = 0
+        var high = steps + 1
+        // Invariant: `low` does not wrap; `high` wraps or is past the largest size.
+        while high - low > 1 {
+            let mid = (low + high) / 2
+            if wraps(size(mid)) {
+                high = mid
+            } else {
+                low = mid
+            }
+        }
+        // Large, but no larger than the comfortable size: past it every extra point is
+        // only more scrolling.
+        let largest = min(size(low), max(comfortableSize, minSize))
+        return scrolled(size: max(minSize, largest * zoom))
     }
 
     /// The size step index of `size`.

@@ -8,6 +8,8 @@ public extension AccessibilityID {
     static let settingsSingerView = "segue.settings.singerView"
     /// The pre-show checklist's "Show Chords" button on the singer view row.
     static let checklistShowChords = "segue.checklist.showChords"
+    /// The pre-show checklist's "Singer Screen: no second display" warning (R188).
+    static let checklistSingerScreen = "segue.checklist.singerScreen"
     /// The library detail pane's "Chords / Singer" control.
     static let librarySingerPreview = "segue.library.singerPreview"
     /// The editor's "Chords / Singer" control in the display group.

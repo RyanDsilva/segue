@@ -13,7 +13,7 @@ import Testing
 /// light. PNGs go to `.build/screenshots/p9-2/`; asserts the 28 pt floor and no chord.
 extension StageWindowSuites {
     @MainActor
-    @Suite(.serialized)
+    @Suite(.serialized, .timeLimit(.minutes(1)))
     struct SingerViewSnapshotTests {
         /// The R187 fixture: an instrumental intro, a Chords only chorus, the Welcome song's
         /// romanized Hindi.

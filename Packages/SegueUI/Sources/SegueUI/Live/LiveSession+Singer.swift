@@ -48,15 +48,24 @@
                 ).map { (plan: plan, pass: $0.pass, progress: $0.progress) }
             }
             relayout()
-            // A plan that did not follow the scroll (it fit, or used columns) has no pass at
-            // the reading line: the re-layout kept the scroll fraction and any pinned pass.
-            guard let before, StagePasses.followsScroll(before.plan), let plan, var scroller
-            else { return }
-            let offset = SingerScreenFollow.offset(
-                pass: before.pass,
-                progress: before.progress,
-                in: plan,
-            )
+            guard let before, let plan, var scroller else { return }
+            let offset: Double
+            if StagePasses.followsScroll(before.plan) {
+                offset = SingerScreenFollow.offset(
+                    pass: before.pass,
+                    progress: before.progress,
+                    in: plan,
+                )
+            } else if let pinned = pinnedPass,
+                      let jump = StagePasses.jumpOffset(to: pinned, in: plan)
+            {
+                // From a plan that fit (or used columns) onto one that scrolls: the jumped-to
+                // pass in view.
+                offset = jump
+            } else {
+                // Nothing at a reading line: the re-layout kept the scroll fraction.
+                return
+            }
             scroller.seek(to: offset, at: now)
             self.scroller = scroller
             rescheduleLoopWrap()

@@ -135,6 +135,10 @@
             "f",
             [.command, .option],
         )
+        /// P9-2 (R188): singer view on stage. ⌥⌘V is also File > New Song from Clipboard,
+        /// which is disabled during a show while this one needs one, so the two are never
+        /// enabled together (`sharedChords`).
+        static let singerView = MenuShortcut("Live", "Singer View", "v", [.command, .option])
         /// P9-2 section 7: the library and editor previews show lyrics only.
         static let singerPreview = MenuShortcut("Song", "Singer Preview", "y", [.command, .shift])
         // Setlist
@@ -173,6 +177,7 @@
         /// Items that share a chord and are never enabled together.
         static let sharedChords: [(MenuShortcut, MenuShortcut)] = [
             (rehearseSong, rehearse),
+            (newSongFromClipboard, singerView),
         ]
 
         /// All of them, in menu order.
@@ -180,7 +185,7 @@
             settings, newSong, newSongFromClipboard, importSongs, showInFinder, moveToTrash, close,
             save, exportPDF, print, undo, redo,
             refresh, rehearseSong, playSongLive, playAlong, createBassFill, singerPreview,
-            startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak,
+            singerView, startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak,
             addSongByName,
             arrangeSections, makeMedley, ungroupMedley, moveUp, moveDown, mainWindow, help,
             keyboardShortcuts,

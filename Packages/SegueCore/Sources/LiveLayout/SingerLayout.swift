@@ -18,7 +18,8 @@ public extension LayoutStyle {
     /// the stage's 18 pt, which the loop bracket sits in, R163). A
     /// layout without wrapped lines wins from the 28 pt floor unless wrapping makes the
     /// lyrics more than 15% larger: a phrase broken across two rows is harder to sing from
-    /// than slightly smaller type. Chord fields are unused.
+    /// than slightly smaller type; when every layout that fits would wrap, one large column
+    /// scrolls instead (R188). Chord fields are unused.
     static let singer: Self = {
         var style = Self.stage
         style.maxLyricSize = 60
@@ -28,6 +29,7 @@ public extension LayoutStyle {
         style.sectionSpacing = 0.7
         style.columnGap = 32
         style.wrapPenalty = 0.15
+        style.scrollsRatherThanWrap = true
         return style
     }()
 

@@ -240,4 +240,41 @@ struct LiveLayoutSingerTests {
         #expect(LayoutStyle.stage.wrapPenalty == nil)
         #expect(LayoutStyle.stage == LayoutStyle())
     }
+
+    /// R188: when every layout that fits would wrap a lyric line, one large column scrolls.
+    @Test
+    func `when every fitting layout wraps, one unwrapped column scrolls`() {
+        var source = "{title: Long lines}\n"
+        // Half the lines wrap in two columns; one column of them all is too tall to fit.
+        for verse in 1 ... 6 {
+            source += "{start_of_verse: Verse \(verse)}\n"
+            for line in 1 ... 2 {
+                source += "[G]Chai ka cup thanda \(line)\n"
+                source += "[G]Purani si gali mein kitaabon ki dukaan aur panne palat\n"
+            }
+            source += "{end_of_verse}\n"
+        }
+        let model = Support.model(source: source)
+        func plan(_ style: LayoutStyle, view: StageView) -> LayoutPlan {
+            LayoutEngine.plan(LayoutRequest(
+                model: model,
+                viewport: Support.macBook13,
+                minLyricSize: 28,
+                style: style,
+                view: view,
+            ), metrics: metrics)
+        }
+        let singer = plan(.singer, view: .singer)
+        #expect(singer.fit == .scrollsUnwrapped)
+        #expect(singer.columns.count == 1)
+        #expect(singer.lyricSize >= 28)
+        #expect(singer.lyricSize <= LayoutStyle.singer.comfortableLyricSize)
+        let rows = singer.blocks.flatMap(\.allRows).filter { $0.kind == .lyric }
+        #expect(rows.count == 24, "a lyric line wrapped")
+        // Never for other styles: the same song on the stage style fits by wrapping.
+        var stage = LayoutStyle.singer
+        stage.scrollsRatherThanWrap = false
+        #expect(plan(stage, view: .singer).fit != .scrollsUnwrapped)
+        #expect(!LayoutStyle.stage.scrollsRatherThanWrap)
+    }
 }

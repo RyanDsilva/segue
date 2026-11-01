@@ -12,7 +12,7 @@ import Testing
 /// and nothing ever sounds.
 extension StageWindowSuites {
     @MainActor
-    @Suite(.serialized)
+    @Suite(.serialized, .timeLimit(.minutes(1)))
     struct StageSingerViewTests {
         /// G with a capo on 2 sounds in A; an instrumental intro; chords inside romanized
         /// Hindi words; long enough to have many passes.
@@ -178,6 +178,32 @@ extension StageWindowSuites {
                 (entry["name"] as? String) == "Segue.Show.ended"
             })
             #expect((ended["params"] as? [String: String])?["segue.singer"] == "true")
+        }
+
+        @Test
+        func `the checklist warns when the Singer Screen's display is not connected`(
+        ) async throws {
+            let run = try await Self.run()
+            run.app.liveSettings.settings.hiddenChecklistItems = []
+            let started = Task { await run.app.startShow(run.setlist, kind: .gig) }
+            let checklist = try await run.env.waitFor { run.app.preShow }
+            checklist.displayCount = { 1 }
+            // Never used on this Mac: no line.
+            #expect(checklist.singerScreenDisplay == nil)
+            run.app.liveSettings.settings.singerScreenDisplay = "LG UltraFine"
+            #expect(checklist.singerScreenDisplay == "LG UltraFine")
+            checklist.displayCount = { 2 }
+            #expect(checklist.singerScreenDisplay == nil)
+            checklist.answer(false)
+            #expect(await !started.value)
+        }
+
+        @Test
+        func `live singer view is option-command-v, shared with paste only off stage`() {
+            #expect(MenuShortcuts.singerView.displayText == "⌥⌘V")
+            #expect(MenuShortcuts.sharedChords.contains { pair in
+                pair.0 == MenuShortcuts.newSongFromClipboard && pair.1 == MenuShortcuts.singerView
+            })
         }
     }
 }

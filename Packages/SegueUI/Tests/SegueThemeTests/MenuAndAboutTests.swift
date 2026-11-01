@@ -55,7 +55,7 @@ struct MenuShortcutsTests {
             "close",
             "save", "exportPDF", "print",
             "refresh", "rehearseSong", "playSongLive", "playAlong", "createBassFill",
-            "singerPreview",
+            "singerPreview", "singerView",
             "startShow", "rehearse", "newSetlist", "pickSongs", "arrangeSet", "insertBreak",
             "addSongByName",
             "arrangeSections", "makeMedley", "ungroupMedley",

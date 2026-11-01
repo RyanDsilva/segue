@@ -10,6 +10,7 @@ import Testing
 /// toggle shared by both, separate from the stage's, the same transform as the stage, the
 /// Song menu item where a song is shown or edited.
 @MainActor
+@Suite(.timeLimit(.minutes(1)))
 struct SingerPreviewTests {
     static let song = """
     {title: Kitaabon}
