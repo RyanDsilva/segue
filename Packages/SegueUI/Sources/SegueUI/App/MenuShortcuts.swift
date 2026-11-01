@@ -148,6 +148,15 @@
             "a",
             [.command, .shift],
         )
+        /// P9-3 6.3: joins Arrange's selected song rows into one medley slot.
+        static let makeMedley = MenuShortcut("Setlist", "Make Medley", "m", [.command, .shift])
+        /// P9-3 6.3: the selected medley's members become slots in place.
+        static let ungroupMedley = MenuShortcut(
+            "Setlist",
+            "Ungroup Medley",
+            "m",
+            [.command, .option, .shift],
+        )
         static let moveUp = MenuShortcut("Setlist", "Move Up", .upArrow, .option)
         static let moveDown = MenuShortcut("Setlist", "Move Down", .downArrow, .option)
         // Window
@@ -168,7 +177,8 @@
             refresh, rehearseSong, playSongLive, playAlong, createBassFill,
             startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak,
             addSongByName,
-            arrangeSections, moveUp, moveDown, mainWindow, help, keyboardShortcuts,
+            arrangeSections, makeMedley, ungroupMedley, moveUp, moveDown, mainWindow, help,
+            keyboardShortcuts,
         ]
     }
 

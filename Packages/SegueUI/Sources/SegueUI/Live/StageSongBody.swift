@@ -8,6 +8,9 @@
     struct StagePlanView: View, Equatable {
         let plan: LayoutPlan
         var style: LayoutStyle = .stage
+        /// How far a section's tint reaches past the column's right edge: 4 pt on stage; 0 on
+        /// a printed page, where the tint ends at the body's edge, square with the rules.
+        var tintOverhang: CGFloat = 4
 
         /// How far left of the lyrics a section's tint starts.
         static let tintLead: CGFloat = 8
@@ -19,8 +22,14 @@
                 ForEach(plan.columns.indices, id: \.self) { index in
                     let column = plan.columns[index]
                     ForEach(column.blocks) { block in
-                        StageBlockView(block: block, column: column, plan: plan, style: style)
-                            .offset(x: column.x, y: block.y)
+                        StageBlockView(
+                            block: block,
+                            column: column,
+                            plan: plan,
+                            style: style,
+                            tintOverhang: tintOverhang,
+                        )
+                        .offset(x: column.x, y: block.y)
                     }
                 }
             }
@@ -39,9 +48,15 @@
         let column: LayoutColumn
         let plan: LayoutPlan
         let style: LayoutStyle
+        let tintOverhang: CGFloat
 
         private var lyricOrigin: Double {
             plan.gutterWidth + style.gutterGap
+        }
+
+        /// The tint's width past the lyric area: its lead plus the overhang.
+        private var tintTrail: Double {
+            StagePlanView.tintLead + tintOverhang
         }
 
         var body: some View {
@@ -66,7 +81,7 @@
                     // 8pt of padding left of the lyrics, so the tint never meets a label
                     // that fills the gutter.
                     .frame(
-                        width: max(0, column.width - lyricOrigin + 12),
+                        width: max(0, column.width - lyricOrigin + tintTrail),
                         height: block.height + 12,
                     )
                     .offset(x: lyricOrigin - StagePlanView.tintLead, y: -6)

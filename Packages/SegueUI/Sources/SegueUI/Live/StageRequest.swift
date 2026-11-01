@@ -1,4 +1,5 @@
 #if os(macOS)
+    import Diagrams
     import Editing
     import Foundation
     import Library
@@ -56,9 +57,7 @@
             if case let .applied(order, _) = resolution {
                 passes = order
             }
-            let notes = [song.sidecar.notes, slot.note]
-                .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
+            let notes = notes(song, slot: slot)
             let model = renderModel(song, overrides: slot.overrides, bass: bass)
             let request = LayoutRequest(
                 model: model,
@@ -72,6 +71,13 @@
                 walkUps: walkUps(model, song: song, passes: passes),
             )
             return (request, resolution)
+        }
+
+        /// The sidecar song notes and the slot's note, trimmed, empty ones dropped.
+        static func notes(_ song: SongRecord, slot: StageSlot) -> [String] {
+            [song.sidecar.notes, slot.note]
+                .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
         }
 
         /// Walk-ups and fills on stage, only in the bass-note view. Walk-ups (P8-4b) while
@@ -100,20 +106,29 @@
 
         /// The song in a slot as it renders there: sidecar view options with the setlist
         /// overrides applied, no diagrams. The user's bass view (P8-4) is set before the
-        /// overrides, so the slot's capo and transpose still feed the sounding pitch.
+        /// overrides, so the slot's capo and transpose still feed the sounding pitch. Print
+        /// asks for `diagrams` (with the user's shapes) when its Chord diagrams option says
+        /// so (P9-1 spec 5.8); the stage never does.
         static func renderModel(
             _ song: SongRecord,
             overrides: SetlistOverrides,
             bass: BassView? = nil,
+            diagrams: Bool = false,
+            userShapes: UserShapeLibrary = .empty,
         ) -> RenderModel {
             var options = song.sidecar.displayPrefs.displayOptions
-            options.showDiagrams = false
+            options.showDiagrams = diagrams
             options.bass = bass
             let (applied, capo) = overrides.applied(
                 to: options,
                 songCapo: song.document.metadata.capo,
             )
-            return RenderModel(document: song.document, options: applied, capo: capo)
+            return RenderModel(
+                document: song.document,
+                options: applied,
+                userShapes: userShapes,
+                capo: capo,
+            )
         }
 
         /// A slot's arrangement checked against its song as loaded (R122); nil for a slot
