@@ -182,9 +182,9 @@
                     diagramStrip(model.diagrams)
                 }
             }
-                .background(Theme.color.ground)
-                .accessibilityElement(children: .contain)
-                .accessibilityIdentifier(AccessibilityID.editorPreview)
+            .background(Theme.color.ground)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(AccessibilityID.editorPreview)
         }
 
         private func diagramStrip(_ diagrams: [RenderDiagram]) -> some View {
