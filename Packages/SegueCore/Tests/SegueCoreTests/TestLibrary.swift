@@ -13,6 +13,9 @@ final class TestLibrary: Sendable {
     let fileSystem: LiveFileSystem
     /// The stand-in Trash folder, next to the library folder.
     let trash: URL
+    /// The library state location (index, locks, `state.json`), next to the library folder
+    /// as the app group's Application Support would be (P9-6 5.2).
+    let stateLocation: LibraryStateLocation
 
     init(seed: UInt64 = 1) throws {
         let url = FileManager.default.temporaryDirectory
@@ -22,6 +25,10 @@ final class TestLibrary: Sendable {
         trash = url.deletingLastPathComponent()
             .appending(path: url.lastPathComponent + "-trash", directoryHint: .isDirectory)
         fileSystem = LiveFileSystem(trash: .directory(trash))
+        stateLocation = LibraryStateLocation(base: url.deletingLastPathComponent().appending(
+            path: url.lastPathComponent + "-state",
+            directoryHint: .isDirectory,
+        ))
         clock = ManualClock()
         ids = ULIDGenerator(clock: clock, seed: seed)
     }
@@ -29,6 +36,7 @@ final class TestLibrary: Sendable {
     deinit {
         try? FileManager.default.removeItem(at: root.url)
         try? FileManager.default.removeItem(at: trash)
+        try? FileManager.default.removeItem(at: stateLocation.base)
     }
 
     /// File names in the stand-in Trash, sorted.
