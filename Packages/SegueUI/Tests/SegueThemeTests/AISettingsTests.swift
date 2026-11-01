@@ -283,7 +283,7 @@ struct AISettingsTests {
         let after = least()
         #expect(before == 460, "an empty pane keeps the minimum")
         #expect(after > before + 150, "the pane did not grow with the card (\(after))")
-        #expect(after <= 640)
+        #expect(after <= SettingsPaneHeight.maximumHeight)
     }
 
     struct RenderCase {

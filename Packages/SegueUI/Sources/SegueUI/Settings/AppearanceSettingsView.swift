@@ -19,7 +19,7 @@
                 }
             }
             .formStyle(.grouped)
-            .frame(minHeight: 220)
+            .settingsPaneHeight(minimum: 220)
         }
     }
 #endif

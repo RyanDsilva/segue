@@ -52,7 +52,7 @@
             }
             .formStyle(.grouped)
             .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .privacySettings) }
-            .frame(minHeight: 520)
+            .settingsPaneHeight(minimum: 520)
         }
 
         private func toggleSection(

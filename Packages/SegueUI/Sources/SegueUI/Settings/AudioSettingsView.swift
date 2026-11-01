@@ -81,6 +81,7 @@
                 }
             }
             .formStyle(.grouped)
+            .settingsPaneHeight()
         }
 
         private var outputBinding: Binding<String?> {

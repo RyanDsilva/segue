@@ -82,10 +82,15 @@
     /// `maximum` (past that the form scrolls). The window follows the pane's size, so
     /// content that arrives after the window opened (Settings > AI's model card) grows the
     /// window instead of scrolling under the pane's Help button, where a control can sit
-    /// half hidden and take no clicks. `maximum` keeps the window on a 1280 x 800 screen.
+    /// half hidden and take no clicks. `maximum` keeps the window on the screen.
     struct SettingsPaneHeight: Layout {
-        var minimum: CGFloat
-        var maximum: CGFloat = 640
+        var minimum: CGFloat = 0
+        var maximum: CGFloat = Self.maximumHeight
+
+        /// The tallest pane: a Settings window opens where AppKit puts it and grows downwards,
+        /// so a screen-tall pane ran under the Dock and off the screen (seen in the E2E VM).
+        /// 640 pt keeps the window on a 1280 x 800 screen; longer panes scroll.
+        static let maximumHeight: CGFloat = 640
 
         func sizeThatFits(
             proposal: ProposedViewSize,
@@ -106,6 +111,16 @@
             cache _: inout (),
         ) {
             subviews.first?.place(at: bounds.origin, proposal: ProposedViewSize(bounds.size))
+        }
+    }
+
+    extension View {
+        /// This pane exactly as tall as its grouped form's content (`SettingsPaneHeight`).
+        func settingsPaneHeight(
+            minimum: CGFloat = 0,
+            maximum: CGFloat = SettingsPaneHeight.maximumHeight,
+        ) -> some View {
+            SettingsPaneHeight(minimum: minimum, maximum: maximum) { self }
         }
     }
 

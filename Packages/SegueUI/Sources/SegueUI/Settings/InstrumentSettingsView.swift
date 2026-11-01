@@ -73,6 +73,7 @@
                 walkUpsSection
             }
             .formStyle(.grouped)
+            .settingsPaneHeight()
             .onAppear {
                 customDraft = isPreset ? "" : profile.tuning.name
             }

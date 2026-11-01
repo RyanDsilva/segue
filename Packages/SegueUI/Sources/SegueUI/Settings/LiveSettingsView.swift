@@ -92,7 +92,7 @@
             }
             .formStyle(.grouped)
             .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .minimumSize) }
-            .frame(minHeight: 520)
+            .settingsPaneHeight(minimum: 520)
         }
 
         static let columnsHelp = "Auto fits each song at the largest size, preferring two "

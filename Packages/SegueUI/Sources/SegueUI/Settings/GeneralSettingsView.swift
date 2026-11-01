@@ -63,7 +63,7 @@
                 }
             }
             .formStyle(.grouped)
-            .frame(minHeight: 340)
+            .settingsPaneHeight(minimum: 340)
         }
 
         /// `~/Music/Segue`, with the real home folder (not the sandbox container) as `~`.
