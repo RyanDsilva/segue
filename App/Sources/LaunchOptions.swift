@@ -69,6 +69,8 @@ import VendorServices
     ///   clean state. Must be under `/private/tmp/segue-e2e/` (the sandbox exception).
     /// - `-SegueLibraryFolderKind <local|iCloudDrive|name>`: treat every library folder as
     ///   local, in iCloud Drive or in the named CloudStorage service (the file-sync warning).
+    /// - `-SegueDefaultWindowFrame YES`: forget saved window frames (default size, 1120 x 720);
+    ///   every fresh E2E launch passes it, the frame-restore relaunch does not.
     /// (Capture flags: LaunchOptions+Capture.swift.)
     struct LaunchOptions: Sendable, Equatable {
         static let libraryPathFlag = "-SegueLibraryPath"
@@ -102,6 +104,7 @@ import VendorServices
         static let completedGigsFlag = "-SegueCompletedGigs"
         static let statePathFlag = "-SegueStatePath"
         static let folderKindFlag = "-SegueLibraryFolderKind"
+        static let defaultWindowFrameFlag = "-SegueDefaultWindowFrame"
 
         /// Where `-SegueSeedWelcome` puts the library when no library path is given: inside
         /// the app's own container, so no sandbox exception is needed and the user's real
@@ -155,6 +158,7 @@ import VendorServices
         var completedGigs: Int?
         var statePath: URL?
         var folderKind: LibraryFolderKind?
+        var defaultWindowFrame = false
         var screenshotLibrary = false
         /// `-SegueWindowFrame`, top-left origin on the main screen.
         var windowFrame: CGRect?
@@ -254,6 +258,7 @@ import VendorServices
             }
             statePath = Self.path(values[Self.statePathFlag], directoryHint: .isDirectory)
             folderKind = values[Self.folderKindFlag].flatMap(Self.folderKind)
+            defaultWindowFrame = values[Self.defaultWindowFrameFlag].map(Self.isTruthy) ?? false
             parseCapture(values)
         }
 
@@ -265,7 +270,7 @@ import VendorServices
             servicesLiveFlag, consentFlag, appearanceFlag, mailLogFlag,
             onboardingFlag, seedWelcomeFlag, changelogPathFlag, lastSeenVersionFlag,
             appVersionFlag, reviewLogFlag, tipsFlag, exportPathFlag, completedGigsFlag,
-            statePathFlag, folderKindFlag,
+            statePathFlag, folderKindFlag, defaultWindowFrameFlag,
             screenshotLibraryFlag, windowFrameFlag, stageWindowedFlag, fixedClockFlag,
             scriptedAIFlag, guideFixturesFlag, clockRateFlag,
         ]
@@ -304,7 +309,7 @@ import VendorServices
                 || onboarding != nil || seedWelcome || changelogPath != nil
                 || lastSeenVersion != nil || appVersion != nil || reviewLog != nil
                 || tips != nil || exportPath != nil || completedGigs != nil || statePath != nil
-                || folderKind != nil
+                || folderKind != nil || defaultWindowFrame
                 || screenshotLibrary || windowFrame != nil || stageWindowed
                 || fixedClock != nil || scriptedAI != nil || guideFixtures || clockRate != nil
         }
@@ -341,6 +346,8 @@ import VendorServices
             let defaults = AppStateReset.defaults(for: self, bundleID: bundleID)
             if resetState {
                 AppStateReset.wipeTestState(defaults, bundleID: bundleID)
+            }
+            if resetState || defaultWindowFrame {
                 AppStateReset.forgetWindowFrames()
             }
             // The container outlives runs: a reset or a capture empties it, so no old songs leak.

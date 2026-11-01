@@ -63,6 +63,9 @@ enum E2E {
     static let freshInstanceArguments = [
         "-ApplePersistenceIgnoreState", "YES",
         "-SegueUITesting", "YES",
+        // The scene's default size (1120 x 720), as a new user sees it, on every Mac: not
+        // whatever frame a real session or an earlier run saved for this bundle ID.
+        "-SegueDefaultWindowFrame", "YES",
     ]
 
     /// The libraries' state folder for this test run (`-SegueStatePath`, P9-6 5.2): one per
