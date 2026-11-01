@@ -43,6 +43,11 @@ E2E_SMOKE   := LaunchSmokeTests SegueE2ETests/testSongToSetlistToLiveView \
 E2E_RUNNER  ?= vm
 E2E_ONE_RUNNER := $(if $(filter environment command line,$(origin E2E_RUNNER)),$(E2E_RUNNER),host)
 E2E_RUN     := E2E_RUNNER=$(E2E_RUNNER) scripts/e2e-run.sh
+# The selection for e2e-one and e2e-vm: ONLY=Class[/test],Class[/test] (comma-separated;
+# TEST= is the older single-item spelling and still works).
+comma       := ,
+E2E_ONLY    := $(subst $(comma), ,$(or $(ONLY),$(TEST)))
+E2E_ONLY_ARGS := $(addprefix -only-testing:SegueUITests/,$(E2E_ONLY))
 
 # Website tooling (dev-only, fetched at run time at exact versions; nothing ships).
 HTMLVALIDATE := pnpm dlx html-validate@11.16.4
@@ -155,15 +160,15 @@ test-perf: ## The timing-budget package tests, one package at a time with nothin
 e2e: ## XCUITest suite against the Personal flavor (all classes; in the VM, E2E_RUNNER=host for this screen)
 	$(E2E_RUN)
 
-e2e-one: ## Run selected UI tests on this screen: make e2e-one TEST=SegueLiveE2ETests[/testName] (E2E_RUNNER=vm for the VM)
-	@test -n "$(TEST)" || (echo "usage: make e2e-one TEST=Class[/test]" >&2; exit 2)
-	E2E_RUNNER=$(E2E_ONE_RUNNER) scripts/e2e-run.sh -only-testing:SegueUITests/$(TEST)
+e2e-one: ## Run selected UI tests on this screen: make e2e-one ONLY=SegueLiveE2ETests[/testName][,...] (E2E_RUNNER=vm for the VM)
+	@test -n "$(E2E_ONLY)" || (echo "usage: make e2e-one ONLY=Class[/test][,Class[/test]...]" >&2; exit 2)
+	E2E_RUNNER=$(E2E_ONE_RUNNER) scripts/e2e-run.sh $(E2E_ONLY_ARGS)
 
 e2e-smoke: ## The E2E smoke set: library to editor to setlist to live (E2E_SMOKE; in the VM)
 	$(E2E_RUN) $(addprefix -only-testing:SegueUITests/,$(E2E_SMOKE))
 
-e2e-vm: ## UI tests in a throwaway VM clone, off the screen: make e2e-vm [TEST=Class[/test]] [E2E_VM_SHARDS=2] [VM_VNC=1]
-	E2E_RUNNER=$(if $(filter lume,$(E2E_RUNNER)),lume,vm) scripts/e2e-run.sh $(if $(TEST),-only-testing:SegueUITests/$(TEST))
+e2e-vm: ## UI tests in a throwaway VM clone, off the screen: make e2e-vm [ONLY=Class[/test][,...]] [E2E_VM_SHARDS=2] [VM_VNC=1]
+	E2E_RUNNER=$(if $(filter lume,$(E2E_RUNNER)),lume,vm) scripts/e2e-run.sh $(E2E_ONLY_ARGS)
 
 e2e-vm-golden: ## Create or refresh the golden E2E VM for this Mac's Xcode (pulls about 69 GB the first time)
 	E2E_RUNNER=$(if $(filter lume,$(E2E_RUNNER)),lume,vm) scripts/e2e-vm-golden.sh

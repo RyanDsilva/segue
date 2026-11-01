@@ -99,7 +99,7 @@ Prior art for exactly this job (V): [chrisbanes/portico PR #96](https://github.c
 ### 5.1 Primary: Tart golden VM, build on host, `test-without-building` per clone
 
 ```
-make e2e-vm [TEST=Class[/test]]            # or E2E_RUNNER=vm make gate / e2e-smoke
+make e2e-vm [ONLY=Class[/test],...]       # or E2E_RUNNER=vm make gate / e2e-smoke
   1. host: scripts/xcodebuild.sh ... build-for-testing        (same warning check)
   2. host: stage .xctestrun + Debug-Personal into ~/Library/Caches/segue-e2e-vm/<run>/products
   3. host: tart clone segue-e2e-golden segue-e2e-run-<run>

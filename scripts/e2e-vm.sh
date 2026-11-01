@@ -17,7 +17,8 @@
 #   6. host: stop and delete the clones and the staging, even on failure or Ctrl-C
 #
 # Environment:
-#   E2E_VM_SHARDS=2      split the selection over two VMs at once (about 12 GB of guests;
+#   E2E_VM_SHARDS=2      split the selection over two VMs at once (about 12 GB of guests,
+#                        both guest slots;
 #                        opt-in for when the Mac is otherwise idle, never the default)
 #   E2E_VM_GOLDEN        golden VM name (default segue-e2e-golden)
 #   E2E_VM_TIMEOUT       minutes before a shard's run is killed (default 90)
@@ -122,18 +123,40 @@ for dir in "$cache"/runs/*; do
     fi
 done
 
-# One VM run at a time per Mac (the golden is shared, and macOS caps guests at two).
-lock="$cache/lock"
-if ! mkdir "$lock" 2>/dev/null; then
-    holder=$(command cat "$lock/pid" 2>/dev/null || echo "")
-    if [[ -n "$holder" ]] && kill -0 "$holder" 2>/dev/null; then
-        echo "e2e-vm: another VM run (pid $holder) is in progress" >&2
-        exit 1
+# Guest slots: macOS runs at most two guests per Mac, so there are two slots and a shard
+# takes one each (a run with E2E_VM_SHARDS=2 needs both). Two separate runs can go side
+# by side, e.g. a `make gate` and a one-class `make e2e-vm`. A slot whose holder is gone
+# is reclaimed.
+slots=()
+take_slot() {
+    local dir holder
+    dir="$cache/slot-$1"
+    if ! mkdir "$dir" 2>/dev/null; then
+        holder=$(command cat "$dir/pid" 2>/dev/null || echo "")
+        if [[ -n "$holder" ]] && kill -0 "$holder" 2>/dev/null; then
+            return 1
+        fi
+        wipe "$dir"
+        mkdir "$dir" 2>/dev/null || return 1
     fi
-    wipe "$lock"
-    mkdir "$lock"
+    echo $$ >"$dir/pid"
+    slots+=("$1")
+}
+for slot in 0 1; do
+    ((${#slots[@]} < shards)) || break
+    take_slot "$slot" || true
+done
+if ((${#slots[@]} < shards)); then
+    for slot in ${slots[@]+"${slots[@]}"}; do wipe "$cache/slot-$slot"; done
+    echo "e2e-vm: no free guest slot ($shards needed, two per Mac); other VM runs:" >&2
+    command cat "$cache"/slot-*/pid 2>/dev/null | sed 's/^/e2e-vm:   pid /' >&2 || true
+    exit 1
 fi
-echo $$ >"$lock/pid"
+# A run in slot 1 builds into its own DerivedData so it never races a slot-0 build.
+if [[ -z "${SEGUE_DERIVED_DATA:-}" && "${slots[0]}" == 1 ]]; then
+    derived=".build/DerivedData-e2e1"
+    products_dir="$derived/Build/Products"
+fi
 
 run_id="$now-$$"
 stage="$cache/runs/$run_id"
@@ -149,7 +172,10 @@ cleanup() {
     for pid in "${vm_pids[@]}"; do
         kill "$pid" 2>/dev/null || true
     done
-    wipe "$stage" "$lock"
+    wipe "$stage"
+    for name in "${slots[@]}"; do
+        wipe "$cache/slot-$name"
+    done
     exit "$status"
 }
 trap cleanup EXIT
