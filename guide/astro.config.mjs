@@ -43,6 +43,7 @@ const sidebar = [
     label: 'Play the show',
     items: [
       page('go-on-stage', 'Go on stage'),
+      page('singer-view', 'Singer view'),
       page('requests', 'Requests'),
       page('metronome', 'Metronome'),
       page('rehearse', 'Rehearse'),
