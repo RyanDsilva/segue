@@ -37,6 +37,15 @@
         var isLast = false
         /// The set assistant's score and Rebuild lock (P3-7, R115).
         var assistant = EntryAssistant()
+        /// A medley member's place (P9-3 6.2): its label ("4b"), medley and actions; nil for
+        /// a plain slot.
+        var member: MedleyMemberPlace?
+        /// The quiet reprise mark (decision 8): "also 9" on a member, "reprise of 4a" on a
+        /// slot; nil when the song is in the set once.
+        var reprise: RepriseMark?
+        /// "Make Medley from 3 Songs" when this row is part of a selection that can become a
+        /// medley (P9-3 6.1); nil otherwise.
+        var makeMedley: MakeMedleyItem?
         @State private var isHovered = false
         @State private var isEditing = false
         @Environment(\.exportPDF) private var exportPDF
@@ -106,8 +115,12 @@
                     .disabled(isReadOnly)
                 Button("Arrange Sections…") { onArrange?() }
                     .disabled(onArrange == nil)
-                Button("Insert Break After") { onInsertBreak?() }
-                    .disabled(onInsertBreak == nil)
+                if let member {
+                    MedleyMemberMenuItems(place: member, isReadOnly: isReadOnly)
+                } else {
+                    Button("Insert Break After") { onInsertBreak?() }
+                        .disabled(onInsertBreak == nil)
+                }
                 if let exportPDF, let setlistID = pdfSetlist {
                     Button("Export Slot as PDF\u{2026}") {
                         exportPDF.open(.slot(setlistID, entry.itemId), false)

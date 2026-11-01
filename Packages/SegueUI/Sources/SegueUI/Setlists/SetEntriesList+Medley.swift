@@ -99,13 +99,10 @@
             case .return where header && !isReadOnly:
                 model.renamingMedley = focus
             case .delete where !isReadOnly:
-                if setlist.member(focus) != nil {
-                    Task { await model.removeMember(focus, in: setlist.id) }
-                } else if let index = setlist.entries.firstIndex(where: { $0.itemId == focus }) {
-                    Task { await model.remove(in: setlist.id, atOffsets: IndexSet(integer: index)) }
-                } else {
-                    return .ignored
-                }
+                // Delete asks first (R188): a slot or member removed by one key is easy to miss.
+                guard let removal = PendingRemoval(focus, in: setlist, library: library)
+                else { return .ignored }
+                model.pendingRemoval = removal
             default:
                 return .ignored
             }
@@ -116,14 +113,68 @@
 
 #if os(macOS)
     extension SetEntriesList {
+        /// Removes the confirmed row: a member leaves its medley and the set, a slot the set.
+        func confirmRemoval(_ removal: PendingRemoval) {
+            model.pendingRemoval = nil
+            if removal.isMember {
+                Task { await model.removeMember(removal.item, in: setlist.id) }
+            } else if let index = setlist.entries.firstIndex(where: { $0.itemId == removal.item }) {
+                Task { await model.remove(in: setlist.id, atOffsets: IndexSet(integer: index)) }
+            }
+        }
+
         /// "Make Medley from 3 Songs" on a selected row whose selection can become a medley.
         func makeMedleyItem(for item: SetlistItemID) -> MakeMedleyItem? {
             guard model.arrangeSelection.contains(item),
                   model.medleyCandidates(in: setlist.id) != nil
             else { return nil }
             return MakeMedleyItem(songs: model.medleyCandidateSongCount(in: setlist.id)) {
-                Task { await model.makeMedley(in: setlist.id) }
+                Task { await model.makeMedley(in: setlist.id, entry: .contextMenu) }
             }
+        }
+    }
+#endif
+
+#if os(macOS)
+    /// A row Delete asked to remove (R188): the confirmation names it.
+    struct PendingRemoval: Equatable {
+        var item: SetlistItemID
+        var title: String
+        var isMember: Bool
+        var isBreak: Bool
+
+        @MainActor
+        init?(_ item: SetlistItemID, in setlist: Setlist, library: LibraryViewModel) {
+            self.item = item
+            if let (entry, _) = setlist.member(item), let medley = entry.medley,
+               let member = medley.members.first(where: { $0.itemId == item })
+            {
+                title = (library.song(id: member.songId).map(SongSummary.title) ?? "this song")
+                    + " from \(medley.displayTitle)"
+                isMember = true
+                isBreak = false
+                return
+            }
+            guard let entry = setlist.entry(item) else { return nil }
+            isMember = false
+            isBreak = entry.isBreak
+            if let medley = entry.medley {
+                title = medley.displayTitle
+            } else if let info = entry.breakInfo {
+                title = info.label
+            } else {
+                title = entry.songId.flatMap(library.song(id:)).map(SongSummary.title)
+                    ?? "this song"
+            }
+        }
+
+        /// "Remove Tum Hi Ho from Love medley?"
+        var question: String {
+            "Remove \(title)?"
+        }
+
+        var buttonTitle: String {
+            isBreak ? "Remove Break" : isMember ? "Remove Song" : "Remove from Setlist"
         }
     }
 #endif

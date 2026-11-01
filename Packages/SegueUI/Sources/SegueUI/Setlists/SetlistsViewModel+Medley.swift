@@ -1,5 +1,6 @@
 import Foundation
 import Library
+import Services
 import Setlists
 
 /// Medleys in the builder (P9-3 6.1-6.4): make, ungroup, add and move members, remove,
@@ -39,7 +40,7 @@ public extension SetlistsViewModel {
 
     /// Setlist > Make Medley (⇧⌘M): joins the selected rows into one medley where the
     /// first of them was, and selects it.
-    func makeMedley(in id: SetlistID) async {
+    func makeMedley(in id: SetlistID, entry: MedleyEntryPoint = .menu) async {
         guard let rows = medleyCandidates(in: id) else { return }
         let made = ResultBox<SetlistItemID>()
         let updated = await mutate(undo: (id, "Make Medley")) { store in
@@ -50,7 +51,7 @@ public extension SetlistsViewModel {
         if updated != nil, let medley = made.value {
             collapsedMedleys.remove(medley)
             arrangeSelection.select(medley)
-            services.record(.featureUsed(.setlistEdit, .builder))
+            recordMedley(.created, medley: medley, in: id, entry: entry)
         }
     }
 
@@ -66,7 +67,12 @@ public extension SetlistsViewModel {
     }
 
     /// Setlist > Ungroup Medley (⌥⇧⌘M): its members become slots in place.
-    func ungroup(_ medley: SetlistItemID, in id: SetlistID) async {
+    func ungroup(
+        _ medley: SetlistItemID,
+        in id: SetlistID,
+        entry: MedleyEntryPoint = .menu,
+    ) async {
+        let count = setlist(id)?.entry(medley)?.songIds.count ?? 0
         let first = setlist(id)?.entry(medley)?.medley?.members.first?.itemId
         let updated = await mutate(undo: (id, "Ungroup Medley")) { store in
             try await store.ungroup(medley, in: id)
@@ -75,34 +81,49 @@ public extension SetlistsViewModel {
             collapsedMedleys.remove(medley)
             // The members keep their item IDs as slots: select the first of them.
             arrangeSelection.select(first)
-            services.record(.featureUsed(.setlistEdit, .builder))
+            record(.ungrouped, members: count, entry: entry)
         }
     }
 
     /// Context menu "Remove from Medley" (or dragging a member out): it becomes a slot
     /// right after the medley.
-    func removeFromMedley(_ member: SetlistItemID, in id: SetlistID) async {
+    func removeFromMedley(
+        _ member: SetlistItemID,
+        in id: SetlistID,
+        entry: MedleyEntryPoint = .contextMenu,
+    ) async {
+        let medley = setlist(id)?.member(member)?.entry.itemId
         let updated = await mutate(undo: (id, "Remove from Medley")) { store in
             try await store.removeFromMedley(member, in: id)
         }
         if updated != nil {
             arrangeSelection.select(member)
-            services.record(.featureUsed(.setlistEdit, .builder))
+            recordMedley(.memberRemoved, medley: medley, in: id, entry: entry)
         }
     }
 
     /// ⌫ or the row's remove button on a member: it leaves the set.
-    func removeMember(_ member: SetlistItemID, in id: SetlistID) async {
+    func removeMember(
+        _ member: SetlistItemID,
+        in id: SetlistID,
+        entry: MedleyEntryPoint = .key,
+    ) async {
+        let medley = setlist(id)?.member(member)?.entry.itemId
         await mutate(undo: (id, "Remove Song")) { store in
             try await store.removeMember(member, in: id)
         }
-        services.record(.featureUsed(.setlistEdit, .builder))
+        recordMedley(.memberRemoved, medley: medley, in: id, entry: entry)
     }
 
     /// ⌥↑ / ⌥↓ on a member: one place within its medley. Returns false at the medley's
     /// edge (the caller beeps): a member never leaves its medley this way.
     @discardableResult
-    func moveMember(_ member: SetlistItemID, by delta: Int, in id: SetlistID) async -> Bool {
+    func moveMember(
+        _ member: SetlistItemID,
+        by delta: Int,
+        in id: SetlistID,
+        entry: MedleyEntryPoint = .key,
+    ) async -> Bool {
         guard let setlist = setlist(id), let (_, index) = setlist.member(member),
               let count = setlist.member(member)?.entry.medley?.members.count,
               (0 ..< count).contains(index + delta)
@@ -110,7 +131,12 @@ public extension SetlistsViewModel {
         await mutate(undo: (id, "Move Song in Medley")) { store in
             try await store.moveMember(member, to: index + delta, in: id)
         }
-        services.record(.featureUsed(.setlistEdit, .builder))
+        recordMedley(
+            .memberMoved,
+            medley: setlist.member(member)?.entry.itemId,
+            in: id,
+            entry: entry,
+        )
         return true
     }
 
@@ -137,6 +163,7 @@ public extension SetlistsViewModel {
         await mutate(undo: (id, "Rename Medley")) { store in
             try await store.renameMedley(medley, to: title, in: id)
         }
+        recordMedley(.renamed, medley: medley, in: id, entry: .key)
     }
 
     /// Commits a transition row (Return or focus loss): one undo step.
@@ -144,6 +171,12 @@ public extension SetlistsViewModel {
         await mutate(undo: (id, "Edit Transition")) { store in
             try await store.setTransition(text, member: member, in: id)
         }
+        recordMedley(
+            .transitionEdited,
+            medley: setlist(id)?.member(member)?.entry.itemId,
+            in: id,
+            entry: .key,
+        )
     }
 
     /// A member's slot popover (key, capo, note): saved like a song slot's.
@@ -181,7 +214,7 @@ public extension SetlistsViewModel {
             guard let updated else { throw SetlistError.setlistNotFound(id) }
             return updated
         }
-        services.record(.featureUsed(.setlistEdit, .builder))
+        recordMedley(.memberAdded, medley: medley, in: id, entry: .drag)
     }
 
     /// Dragging a set row onto a medley's member area: the slot joins at `offset`.
@@ -194,6 +227,27 @@ public extension SetlistsViewModel {
         await mutate(undo: (id, "Add to Medley")) { store in
             try await store.moveIntoMedley(item, medley: medley, at: offset, in: id)
         }
+        recordMedley(.memberAdded, medley: medley, in: id, entry: .drag)
+    }
+
+    /// Row 32 (P9-3 14): the action, the medley's size after it, and where it came from;
+    /// plus the generic builder edit.
+    private func recordMedley(
+        _ action: MedleyAction,
+        medley: SetlistItemID?,
+        in id: SetlistID,
+        entry: MedleyEntryPoint,
+    ) {
+        let count = medley.flatMap { setlist(id)?.entry($0)?.songIds.count } ?? 1
+        record(action, members: count, entry: entry)
+    }
+
+    private func record(_ action: MedleyAction, members: Int, entry: MedleyEntryPoint) {
+        services.record(.setlistMedley(
+            action: action,
+            members: SmallBucket(members),
+            entry: entry,
+        ))
         services.record(.featureUsed(.setlistEdit, .builder))
     }
 

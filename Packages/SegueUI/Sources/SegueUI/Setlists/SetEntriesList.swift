@@ -76,6 +76,22 @@
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.setlistEntries)
+            .confirmationDialog(
+                model.pendingRemoval?.question ?? "",
+                isPresented: Binding(
+                    get: { model.pendingRemoval != nil },
+                    set: {
+                        if !$0 {
+                            model.pendingRemoval = nil
+                        }
+                    },
+                ),
+                titleVisibility: .visible,
+                presenting: model.pendingRemoval,
+            ) { removal in
+                Button(removal.buttonTitle, role: .destructive) { confirmRemoval(removal) }
+                Button("Cancel", role: .cancel) {}
+            }
         }
 
         /// The rows in order, an expanded medley's members after its header (P9-3 6.3).
@@ -293,7 +309,7 @@
             else { return false }
             // A member dragged out of its medley becomes a slot right after it (P9-3 6.3).
             if setlist.member(moved) != nil {
-                Task { await model.removeFromMedley(moved, in: setlist.id) }
+                Task { await model.removeFromMedley(moved, in: setlist.id, entry: .drag) }
                 return true
             }
             guard let from = setlist.entries.firstIndex(where: { $0.itemId == moved })

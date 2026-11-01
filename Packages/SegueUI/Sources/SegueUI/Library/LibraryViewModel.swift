@@ -235,6 +235,9 @@ public final class LibraryViewModel {
     /// Bumped per scheduled search, so only the newest one clears `isSearching`.
     private var searchGeneration = 0
     var catalogIndex: [SongID: SongRecord] = [:]
+    /// The `.cho` file name of every song seen this run, kept after its file goes, so a
+    /// missing medley member can be named ("tum-hi-ho.cho is missing", R188).
+    @ObservationIgnored var knownFileNames: [SongID: String] = [:]
 
     public init(
         store: LibraryStore,
@@ -264,6 +267,9 @@ public final class LibraryViewModel {
             SegueTips.librarySongCount = songs.count
             SegueTips.isLibraryLoaded = true
             catalogIndex = Dictionary(songs.map { ($0.id, $0) }) { first, _ in first }
+            for song in songs {
+                knownFileNames[song.id] = URL(filePath: song.relativePath).lastPathComponent
+            }
             loadIssues = await store.loadIssues
             tags = try await store.allTags()
             playStats = try await store.playStats()

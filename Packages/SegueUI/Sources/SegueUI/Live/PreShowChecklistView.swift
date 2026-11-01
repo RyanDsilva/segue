@@ -125,34 +125,6 @@
             .accessibilityIdentifier(id)
         }
 
-        private var missingWarning: some View {
-            let positions = checklist.missingPositions.map { "#\($0)" }.formatted(.list(type: .and))
-            let count = checklist.missingPositions.count
-            let lead = count == 1 ? "1 song is missing" : "\(count) songs are missing"
-            return HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(Theme.color.cueText)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(lead) and will be left out")
-                        .font(SchibstedGrotesk.semiBold.font(size: 15))
-                        .foregroundStyle(Theme.color.ink)
-                    Text("Setlist \(count == 1 ? "entry" : "entries") \(positions) "
-                        + "\(count == 1 ? "is" : "are") no longer in the library folder.")
-                        .font(Theme.font.label)
-                        .foregroundStyle(Theme.color.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.color.surfaceAlt),
-            )
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier(AccessibilityID.checklistMissing)
-        }
-
         /// R123: arrangements that no longer match their song play as the full song.
         private var staleArrangementsWarning: some View {
             let count = checklist.staleArrangements.count
@@ -320,6 +292,44 @@
                 "Asked Shortcuts to run “\(name)”; couldn’t confirm it finished."
             case let .failed(name, message): "“\(name)” failed: \(message)."
             }
+        }
+    }
+
+    // MARK: - Missing songs
+
+    extension PreShowChecklistView {
+        var missingWarning: some View {
+            let positions = checklist.missingPositions.map { "#\($0)" }.formatted(.list(type: .and))
+            let count = checklist.missingPositions.count
+            let lead = count == 1 ? "1 song is missing" : "\(count) songs are missing"
+            return HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Theme.color.cueText)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(lead) and will be left out")
+                        .font(SchibstedGrotesk.semiBold.font(size: 15))
+                        .foregroundStyle(Theme.color.ink)
+                    Text("Setlist \(count == 1 ? "entry" : "entries") \(positions) "
+                        + "\(count == 1 ? "is" : "are") no longer in the library folder.")
+                        .font(Theme.font.label)
+                        .foregroundStyle(Theme.color.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    ForEach(checklist.missingMembers, id: \.self) { line in
+                        Text(line)
+                            .font(Theme.font.label)
+                            .foregroundStyle(Theme.color.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.color.surfaceAlt),
+            )
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier(AccessibilityID.checklistMissing)
         }
     }
 #endif

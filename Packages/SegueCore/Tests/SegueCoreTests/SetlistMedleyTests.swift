@@ -262,7 +262,7 @@ struct MedleyTimeTests {
         Row(
             name: "one unknown",
             members: [known(160), .unknown(.noTempo), known(170)],
-            clock: "≥5:30",
+            clock: "5:30",
             unknown: [1],
         ),
         Row(
@@ -277,7 +277,7 @@ struct MedleyTimeTests {
                 known(330, estimated: true),
                 .unknown(.missingSong),
             ],
-            clock: "~≥5:30",
+            clock: "~5:30",
             unknown: [1],
         ),
         Row(
@@ -303,7 +303,7 @@ struct MedleyTimeTests {
         #expect(all.spoken == "7 minutes 40 seconds, medley of 3 songs")
         let some = MedleyTime(members: [Self.known(160), .unknown(.noTempo), Self.known(170)])
         #expect(some.help(titles: []) == "1 of 3 songs has no time: no tempo")
-        #expect(some.spoken == "at least 5 minutes 30 seconds, incomplete: 1 song has no time")
+        #expect(some.spoken == "5 minutes 30 seconds so far, incomplete: 1 song has no time")
     }
 
     @Test
@@ -340,7 +340,7 @@ struct MedleyTimeTests {
             target: nil,
             changeover: 30,
         )
-        #expect(timing.items.map(\.timeText) == ["1:40", "~≥1:40", "3:20", "--:--", "2:00"])
+        #expect(timing.items.map(\.timeText) == ["1:40", "~1:40", "3:20", "--:--", "2:00"])
         // 100 + 30 + (60 + 40) + 30 + 200 = 460; part 2: 120.
         #expect(timing.parts.map(\.total) == [460, 120])
         #expect(timing.total == 580)

@@ -120,6 +120,7 @@
                 clock: dependencies.live.scrollClock,
             )
             wire(checklist, kind: kind, setlist: setlist, session: session)
+            checklist.missingMembers = Self.missingMembers(missing, in: setlist, session.library)
             guard await confirm(checklist) else { return false }
             do {
                 let controller = try await ShowController.start(

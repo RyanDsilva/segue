@@ -232,7 +232,7 @@
             Button("Rename Medley") { model.renamingMedley = entry.itemId }
                 .disabled(isReadOnly)
             Button("Ungroup Medley") {
-                Task { await model.ungroup(entry.itemId, in: setlist.id) }
+                Task { await model.ungroup(entry.itemId, in: setlist.id, entry: .contextMenu) }
             }
             .disabled(isReadOnly)
             Button("Rehearse Medley") { rehearseMedley() }
@@ -250,7 +250,7 @@
 
         @ViewBuilder private var headerActions: some View {
             if !isReadOnly {
-                Button("Ungroup") { Task { await model.ungroup(entry.itemId, in: setlist.id) } }
+                Button("Ungroup") { ungroup() }
                 Button("Rename") { model.renamingMedley = entry.itemId }
             }
             if canRehearse {
@@ -264,6 +264,10 @@
         private var canRehearse: Bool {
             stage?.canRehearse == true && medley.members
                 .contains { library.song(id: $0.songId) != nil }
+        }
+
+        private func ungroup() {
+            Task { await model.ungroup(entry.itemId, in: setlist.id, entry: .contextMenu) }
         }
 
         /// Rehearse Medley (P9-3 12): the whole medley as arranged, unlogged; the builder

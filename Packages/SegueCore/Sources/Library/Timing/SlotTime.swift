@@ -233,12 +233,12 @@ public struct MedleyTime: Sendable, Hashable {
         members.contains { $0.seconds != nil }
     }
 
-    /// The row's Time cell: "7:40", "≥5:30" with an unknown member, "~7:40" when estimated
-    /// ("~≥5:30" when both), `--:--` when no member is known.
+    /// The row's Time cell: "7:40"; with an unknown member the known members' sum, "5:30"
+    /// (a total: no "≥", R189; the member row shows `--:--`); "~7:40" when estimated;
+    /// `--:--` when no member is known.
     public var clock: String {
         guard hasKnown else { return "--:--" }
-        return (estimated ? "~" : "") + (unknownMembers.isEmpty ? "" : "≥")
-            + SlotTime.clock(known)
+        return (estimated ? "~" : "") + SlotTime.clock(known)
     }
 
     /// The row's help: "Kesariya 2:40, Tum Hi Ho 2:10" when all are known, else "1 of 3
@@ -255,8 +255,8 @@ public struct MedleyTime: Sendable, Hashable {
         return "\(unknown.count) of \(members.count) songs \(verb) no time: \(reason)"
     }
 
-    /// VoiceOver: "7 minutes 40 seconds, medley of 3 songs", "at least 5 minutes 30
-    /// seconds, incomplete: 1 song has no time".
+    /// VoiceOver: "7 minutes 40 seconds, medley of 3 songs", "5 minutes 30
+    /// seconds so far, incomplete: 1 song has no time".
     public var spoken: String {
         let unknown = unknownMembers.count
         guard unknown > 0 else {
@@ -265,7 +265,7 @@ public struct MedleyTime: Sendable, Hashable {
         }
         let songs = unknown == 1 ? "1 song has no time" : "\(unknown) songs have no time"
         guard hasKnown else { return "Unknown, incomplete: \(songs)" }
-        return "at least \(SlotTime.spoken(known)), incomplete: \(songs)"
+        return "\(SlotTime.spoken(known)) so far, incomplete: \(songs)"
     }
 
     static func reasonText(_ reason: UnknownTime) -> String {

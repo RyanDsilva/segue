@@ -30,6 +30,8 @@ public final class SetlistsViewModel {
     var collapsedMedleys: Set<SetlistItemID> = []
     /// The medley whose title field is being edited (double-click, Return on its header).
     var renamingMedley: SetlistItemID?
+    /// The row Delete asked to remove, waiting for confirmation (R188).
+    var pendingRemoval: PendingRemoval?
     /// The slot whose Arrange Sections sheet is open (P3-16).
     public var arranging: ArrangingSlot?
     /// The set composer at the end of the shown builder's set list (P8-5); ⌘L focuses it.

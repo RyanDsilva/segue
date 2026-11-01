@@ -156,7 +156,7 @@ struct MedleyBuilderTests {
             library: fix.session.library,
             defaultChangeover: 0,
         )
-        #expect(timing.items[2].timeText.contains("≥"))
+        #expect(!timing.items[2].timeText.contains("≥"))
         #expect(timing.unknownCount == 1)
         let missing = try MissingTimesList.rows(
             #require(fix.setlist),
@@ -340,5 +340,48 @@ struct MedleyBuilderTests {
             try await Task.sleep(for: .milliseconds(10))
         }
         #expect(condition())
+    }
+}
+
+/// R188 (beside the main suite, at its length limit).
+extension MedleyBuilderTests {
+    @Test
+    func `delete asks first and names the row; a missing member names its file (R188)`()
+        async throws
+    {
+        let fix = try await Self.open()
+        let medley = try await makeLoveMedley(fix)
+        await step(fix.manager) {
+            await fix.setlists.renameMedley(medley, to: "Love medley", in: fix.friday)
+        }
+        let setlist = try #require(fix.setlist)
+        let members = try #require(setlist.entry(medley)?.medley?.members.map(\.itemId))
+        let member = try #require(PendingRemoval(
+            members[1],
+            in: setlist,
+            library: fix.session.library,
+        ))
+        #expect(member.question == "Remove Tum Hi Ho from Love medley?")
+        #expect(member.buttonTitle == "Remove Song")
+        let slot = try #require(PendingRemoval(
+            setlist.entries[0].itemId,
+            in: setlist,
+            library: fix.session.library,
+        ))
+        #expect(slot.question == "Remove Kettle On, Lights Low?")
+        #expect(slot.buttonTitle == "Remove from Setlist")
+
+        // The song's file goes while Segue runs: the checklist names medley, slot and file.
+        try FileManager.default.removeItem(
+            at: fix.env.libraryURL.appending(path: "songs/tum-hi-ho.cho"),
+        )
+        await fix.session.library.reload()
+        let slots = setlist.songSlotLabels.filter { $0.slot.songId == Self.id(4) }
+        #expect(AppModel.missingMembers(
+            slots.map(\.slot),
+            labels: slots.map(\.label),
+            in: setlist,
+            library: fix.session.library,
+        ) == ["Love medley, 3b: tum-hi-ho.cho is missing"])
     }
 }
