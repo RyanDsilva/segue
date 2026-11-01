@@ -70,6 +70,8 @@ struct ArtistChipFieldTests {
     final class Box {
         var artists: [String]
         var changes: [ArtistChipChange] = []
+        /// Bumped to focus the input, as the strip's Artists popover does when it opens.
+        var focusRequest = 0
 
         init(_ artists: [String]) {
             self.artists = artists
@@ -81,7 +83,11 @@ struct ArtistChipFieldTests {
         let known: [String]
 
         var body: some View {
-            ArtistChipField(artists: box.artists, suggestions: known) { change in
+            ArtistChipField(
+                artists: box.artists,
+                suggestions: known,
+                focusRequest: box.focusRequest,
+            ) { change in
                 box.changes.append(change)
                 box.artists = change.artists
             }
@@ -169,6 +175,27 @@ struct ArtistChipFieldTests {
         editor.doCommand(by: #selector(NSResponder.insertTab(_:)))
         settle(window)
         #expect(box.artists == ["Shreya Ghoshal", "Shaan"])
+    }
+
+    /// The strip's Artists popover asks for focus when it opens. When the field is already in
+    /// its window, that focus is taken inside SwiftUI's view update, and the field must still
+    /// learn it is focused, or typing "shre" offers nothing (seen in the E2E VM).
+    @Test
+    func `a field focused by request lists suggestions as you type`() async throws {
+        let box = Box([])
+        let (window, field) = try open(box, known: ["Shreya Ghoshal"])
+        defer { window.close() }
+        box.focusRequest += 1
+        settle(window)
+        // Suspends so the main queue runs what the update deferred (the focus itself).
+        try await Task.sleep(for: .milliseconds(50))
+        settle(window)
+        let editor = try #require(field.currentEditor() as? NSTextView, "not focused on open")
+        let closed = try #require(window.contentView).fittingSize.height
+        editor.insertText("shre", replacementRange: editor.selectedRange())
+        settle(window)
+        let open = try #require(window.contentView).fittingSize.height
+        #expect(open > closed + 10, "no suggestion list under the field (\(closed) -> \(open))")
     }
 
     @Test

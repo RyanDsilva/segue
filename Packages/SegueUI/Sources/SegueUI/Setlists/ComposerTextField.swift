@@ -93,7 +93,11 @@
             field.setAccessibilityValueDescription(accessibilityValue)
             if coordinator.focusRequest != focusRequest {
                 coordinator.focusRequest = focusRequest
-                field.focus()
+                // After this update, never inside it: taking focus reports it through
+                // `onFocusChange`, a state write SwiftUI drops during an update. A field
+                // already in its window (a popover's, on a slower Mac) then took the caret
+                // but never showed its suggestions.
+                DispatchQueue.main.async { [weak field] in field?.focus() }
             }
             if coordinator.selectAllRequest != selectAllRequest {
                 coordinator.selectAllRequest = selectAllRequest
