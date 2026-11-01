@@ -111,7 +111,7 @@
                 .contentShape(Rectangle())
                 .onHover { isShown = $0 }
                 .onTapGesture { isShown.toggle() }
-                .popover(isPresented: $isShown, arrowEdge: .trailing) {
+                .popover(isPresented: $isShown, arrowEdge: .leading) {
                     ScoreBreakdownView(title: title, breakdown: breakdown)
                 }
                 .help("Why this song: hover, or press Space on the selected row")

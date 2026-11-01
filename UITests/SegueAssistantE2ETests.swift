@@ -66,6 +66,9 @@ final class SegueAssistantE2ETests: SetlistE2ETestCase {
         XCTAssertTrue(breakdown.appears(timeout: 5), "Space opened no breakdown")
         screenshot(app, "assistant-breakdown-dark")
         app.typeKey(.escape, modifierFlags: [])
+        // The popover overlaps the row's lock button until it has gone: a click meanwhile
+        // lands on the popover (and a closing one swallows it).
+        XCTAssertTrue(breakdown.disappears(timeout: 5), "Escape left the breakdown open")
 
         // Lock the first song (VoiceOver's action path), Rebuild: it stays first, in the file.
         let lockedTitle = SetlistE2E.text(firstTitle)
