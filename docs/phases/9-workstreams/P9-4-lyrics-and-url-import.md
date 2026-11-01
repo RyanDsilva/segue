@@ -1,10 +1,10 @@
 # P9-4 - Lyrics search and URL import (Personal build only)
 
-Phase 9 workstream (written 2026-10-31). Ruling: `docs/release/decisions.md` **R176** (v1.0 builds "LRCLIB lyrics search and URL import (Personal build only, so absent from the App Store build) ... each specced with its open questions closed first"). Built on: **R133** / **R138** / **R170** (the feature itself: LRCLIB search plus URL import in `SeguePersonalModules`), the Phase 5 rulings in `docs/decisions.md` (package is a folder in this repo; sites are Ultimate Guitar, E-Chords, Chordie plus a generic page reader; enforcement is mechanical, not repo separation), the Language rulings in `docs/decisions.md` (English plus romanized Hindi only, no Devanagari display, no auto-transliteration of pasted text, app-generated Hindi in casual Bollywood romanization, the lyric preservation guard, autocorrect off in lyric text), **R62** / **R97** (the package already holds Settings > AI > Advanced), **R74** / **R98** (paste analytics, `romanHindi`), **R101** / **R121** / **R124** (code wins over the model; the strict lyric guard), **R117** (review sheet design D1), **R109** (nothing about paste or import may disturb a running show), **R154** / **R158** P8-1 Q8 / **R163** (the near-duplicate check and its `nearDuplicate` flag), **R157** / **R163** / **R164** (`RomanNormalizer`), **R172** / **R173** (several artists split from credit lines; Movie / Album as `{album}`; no song length), **R174** (artists come from code only), **R113** (test budget), **R39** (design directions before new UI), **R11** / **R139** (two bundle IDs; App Store only distribution, so the Personal build never ships).
+Phase 9 workstream (written 2026-10-31). Rulings: `docs/release/decisions.md` **R176** (v1.0 builds "LRCLIB lyrics search and URL import (Personal build only, so absent from the App Store build) ... each specced with its open questions closed first") and **R179** (this spec's questions closed, section 21: Ultimate Guitar search, one search across four sources, the hidden WebKit loader, components picked by a bake-off). Built on: **R133** / **R138** / **R170** (the feature itself: LRCLIB search plus URL import in `SeguePersonalModules`), the Phase 5 rulings in `docs/decisions.md` (package is a folder in this repo; sites are Ultimate Guitar, E-Chords, Chordie plus a generic page reader; enforcement is mechanical, not repo separation), the Language rulings in `docs/decisions.md` (English plus romanized Hindi only, no Devanagari display, no auto-transliteration of pasted text, app-generated Hindi in casual Bollywood romanization, the lyric preservation guard, autocorrect off in lyric text), **R62** / **R97** (the package already holds Settings > AI > Advanced), **R74** / **R98** (paste analytics, `romanHindi`), **R101** / **R121** / **R124** (code wins over the model; the strict lyric guard), **R117** (review sheet design D1), **R109** (nothing about paste or import may disturb a running show), **R154** / **R158** P8-1 Q8 / **R163** (the near-duplicate check and its `nearDuplicate` flag), **R157** / **R163** / **R164** (`RomanNormalizer`), **R172** / **R173** (several artists split from credit lines; Movie / Album as `{album}`; no song length), **R174** (artists come from code only), **R113** (test budget), **R39** (design directions before new UI), **R11** / **R139** (two bundle IDs; App Store only distribution, so the Personal build never ships).
 
 This doc **replaces `docs/phases/5-personal-modules.md`**, which is now a pointer here. Everything in it that still holds has moved into this spec; its section 4.1 (Devanagari romanization research) is re-verified and updated in section 7 below.
 
-**Build order:** three sessions (section 19). **P9-4a** (corpus, plugin contract, fetcher, page parsers, eval) starts first and touches SegueCore only at `Plugins/` and one `Ingest` entry point. **P9-4b** (LRCLIB, Hindi romanizer) may run beside P9-4a once P9-4a's contract step (step a2) has landed. **P9-4c** (UI, analytics, absence checks, guide, E2E) follows both. The open questions in section 21 are closed before P9-4a starts (R176).
+**Build order:** three sessions (section 19). **P9-4a** (corpus, plugin contract, fetcher, page parsers, eval) starts first and touches SegueCore only at `Plugins/` and one `Ingest` entry point. **P9-4b** (LRCLIB, Hindi romanizer) may run beside P9-4a once P9-4a's contract step (step a2) has landed. **P9-4c** (UI, analytics, absence checks, guide, E2E) follows both. Section 21's questions are closed by R179. **The bake-off (`docs/research/phase9-import-bakeoff.md`) lands before P9-4a step a1**: it picks the components listed in section 4.4, and no step that uses one starts before its row there is filled.
 
 ## Session rules (apply to every session)
 
@@ -13,24 +13,24 @@ This doc **replaces `docs/phases/5-personal-modules.md`**, which is now a pointe
 - Commits: local only, signed (`git commit -S`), conventional messages, no co-author lines, one commit per resolved step. If signing fails with "failed to fill whole buffer", 1Password is locked: leave the staging intact, tell the orchestrator, never commit unsigned. Never push.
 - Test budget (R113): per step only targeted in-process suites (`swift test --filter <Suite>`); tricky pure logic (each parser, the generic reader, the romanizer, query variants, the pacer) gets table-driven in-process tests; UI behaviour gets in-process SegueUI tests. Exactly **one** new XCUITest class (section 15.4) plus one new method in the existing App Store UI target (section 15.5). At the end of each session ONE `make quick`, plus ONE `make e2e-one` per UI test class the session added or changed. No `make gate`, no `make check`, no E2E retry loops (a failure is investigated, not re-run), no scratch-worktree builds. Every build or test runs under `lockf -k .build/make.lock`. Write this budget into any subagent's prompt.
 - **No live network in any test.** Every test reaches the network only through an injected transport fed from saved fixtures (section 15). The only code allowed to touch the real network is the shipping `URLSessionTransport` and the manual tools in section 16.4, which are never part of `make quick`, `gate` or `check`.
-- Corpus collection (section 16.1) fetches public pages politely: robots.txt honoured, one request per 5 s per host, a cap per site, and **never any attempt to get past a bot check or challenge page** (none in the app either, section 8.6). A blocked site's pages are saved by Ryan from Safari instead.
+- Corpus collection (section 16.1) fetches public pages politely: robots.txt honoured, one request per 5 s per host, a cap per site, and **never any captcha-solving** (none in the app either, section 8.6). A page blocked to plain requests may be loaded through the app's hidden WebKit loader (8.6); if that is blocked too, Ryan saves it from Safari.
 - Copyrighted lyrics are never committed (the `research/phase3-eval/pastes` precedent in `.gitignore`). Full fetched pages live in a gitignored folder; committed fixtures are redacted (section 16.2).
-- Before using any Apple API not already in the codebase (for example `XMLDocument`, `URLSessionConfiguration.ephemeral` details, `NSItemProvider` URL drops), run the `apple-api-check` skill.
+- Before using any Apple API not already in the codebase (for example `WKWebView`, `WKWebsiteDataStore.nonPersistent()`, `XMLDocument`, `URLSessionConfiguration.ephemeral` details, `NSItemProvider` URL drops), run the `apple-api-check` skill.
 - Read the `macos-app-architecture` skill before adding the test target, the dependency or any file to `Packages/SeguePersonalModules`.
-- Stop and ask the orchestrator at any decision fork or spec-vs-code inconsistency, including any section 21 question still open when a step reaches it.
+- Stop and ask the orchestrator at any decision fork or spec-vs-code inconsistency, including any case section 21's closed questions do not cover and any component section 4.4 has not yet filled from the bake-off.
 
 ## 1. Goal
 
 Ryan finds a song he wants to play. Today he opens the chord site in Safari, selects the page, copies, and pastes it into Segue, which converts it. After P9-4, in the Personal build only, he can:
 
-1. **Paste or type a page address** (or drop a link from Safari) and Segue fetches that one page, reads the chart with a parser made for that site (Ultimate Guitar, E-Chords, Chordie) or a generic reader for any other page, and opens the usual review sheet.
-2. **Search LRCLIB for lyrics** by title and artist ("tum hi ho arijit"), pick a result, and get the plain lyrics as a starting point in the same review sheet, already split into sections where the repeats show, with title, artists and Movie / Album filled from the record. Hindi lyrics that LRCLIB holds in Devanagari arrive in casual Latin romanization ("tum hi ho", "pyaar"), never in Devanagari.
+1. **Search once across Ultimate Guitar, Chordie, E-Chords and LRCLIB** ("tum hi ho arijit"), with the results grouped by source (R179). Ultimate Guitar is a first-class source: its versions of a song are ranked by rating and votes, each has a preview, and he picks one, reviews it and imports it. Chordie and E-Chords results work the same way; an LRCLIB result gives the plain lyrics as a starting point, already split into sections where the repeats show, with title, artists and Movie / Album filled from the record. Hindi text a source holds in Devanagari arrives in casual Latin romanization ("tum hi ho", "pyaar"), never in Devanagari.
+2. **Paste or type a page address** (or drop a link from Safari, or import a saved page file) and Segue reads that one page with a parser made for that site (Ultimate Guitar, E-Chords, Chordie) or a generic reader for any other page, and opens the usual review sheet. A page blocked to plain requests loads through a hidden in-app WebKit view (no captcha-solving), with Open in Safari or a saved page as the fallback (R179).
 
 Nothing is saved without the review sheet's Accept, exactly as for a paste. The App Store build contains none of this: no code, no menu item, no strings naming the services, checked by `make verify-appstore`.
 
-**In scope:** the plugin contract in SegueCore `Plugins`; one `Ingest` entry point that accepts fields a source already knows; the page fetcher in the sandbox; the three site parsers and the generic reader; LRCLIB search and fetch with romanized-Hindi query variants and local re-ranking; the deterministic Devanagari romanizer; pacing, retries and in-memory caching; the UI entry points (File menu, the empty library, the New Song sheet, a lone pasted URL, a dropped link, a saved web page file); the review sheet's source line and attribution; analytics (Personal only, closed vocabulary); the `verify-appstore` extension; a fixture corpus of real pages and an offline parse-accuracy eval with targets; a manual parser canary; the in-product help and a draft guide page.
+**In scope:** the plugin contract in SegueCore `Plugins`; one `Ingest` entry point that accepts fields a source already knows; the one search across four sources with Ultimate Guitar's ranked versions and previews (section 6.9-6.11); the page fetcher in the sandbox and the hidden WebKit loader (8.6); the three site parsers and the generic reader; LRCLIB search and fetch with romanized-Hindi query variants and local re-ranking; the deterministic Devanagari romanizer; pacing, retries and in-memory caching; the UI entry points (File menu, the empty library, the New Song sheet, a lone pasted URL, a dropped link, a saved web page file); the review sheet's source line and attribution; analytics (Personal only, closed vocabulary); the `verify-appstore` extension; a fixture corpus of real pages and an offline parse-accuracy eval with targets; a manual parser canary; the in-product help and a draft guide page.
 
-**Out of scope:** a Share extension (open question 9); search-as-you-type; publishing or flagging lyrics to LRCLIB; synced-lyrics timing in the song (R172 removed song length; LRC timestamps are only a sectioning hint, section 6.6); any change to the App Store build's behaviour; Devanagari handling of pasted text (stays exactly as pasted, per the Language rulings); batch import of many URLs.
+**Out of scope:** a Share extension (R179); search-as-you-type (R179: search runs on Return); a public guide page (R179); storing the source URL (R179); captcha-solving or showing a challenge for the user to solve (R179); publishing or flagging lyrics to LRCLIB; synced-lyrics timing in the song (R172 removed song length; LRC timestamps are only a sectioning hint, section 6.6); any change to the App Store build's behaviour; Devanagari handling of pasted text (stays exactly as pasted, per the Language rulings); batch import of many URLs.
 
 **Unchanged:** the paste flow, the review sheet's design (R117) and its Accept / Cancel / Start blank semantics; the deterministic `IngestPipeline` stages and `JunkRules`; the lyric guard; artists from code only (R174); the near-duplicate score and threshold; `RomanNormalizer` (no version bump, so no index rebuild); the entitlements of both flavours.
 
@@ -39,6 +39,7 @@ Nothing is saved without the review sheet's Accept, exactly as for a paste. The 
 | Ruling | What it fixes here |
 |---|---|
 | R176 | In v1.0, Personal build only, absent from the App Store build. |
+| R179 | Ultimate Guitar search with ranked versions and previews; one search across UG, Chordie, E-Chords and LRCLIB grouped by source; a hidden WebKit loader for blocked pages (no captcha-solving), Open in Safari or a saved page as the fallback; licence no object for the Personal build, components picked on quality by the bake-off (4.4); the remaining choices in section 21. |
 | Phase 5 (`docs/decisions.md`) | Package location `Packages/SeguePersonalModules`; sites UG, E-Chords, Chordie, generic; absence enforced mechanically. |
 | Language (`docs/decisions.md`) | No Devanagari display; app-generated Hindi in casual romanization; no auto-transliteration of pasted text; lyric guard; autocorrect off in lyric text. |
 | R74 / R98 | Paste analytics row 19 and its `romanHindi` flag; the closed vocabulary rules. |
@@ -104,6 +105,7 @@ Nothing is saved without the review sheet's Accept, exactly as for a paste. The 
 - **Chordie** song page (`chordie.com/chord.pere/<source host>/<path>`, HTTP 200): an aggregator that re-renders other sites' charts as `<div class="chordline">` lines with inline chords in `<span class="bracket">[</span><span class="relc|inlc"><span class="absc Gm">Gm</span></span><span class="bracket">]</span>` and `<div class="textline">` for plain lines; the page title is "<Title> <Artist> Chords and Lyrics for Guitar". **V**.
 - **E-Chords**: every request from this Mac got Cloudflare's "Just a moment..." challenge page (HTTP 403). Its chart markup is therefore **not verified** here (historically a `<pre id="core">` block with chords in inline tags: **U**). This is also what the app will often see: section 8.6.
 - **LRCLIB** `GET /api/search` returned HTTP 502 from Cloudflare three times in a row (01:50 UTC on 2026-11-01, the evening of 2026-10-31 locally): a real outage case the UI must handle (section 6.8). The API contract below is from its published docs.
+- **Search pages are not yet probed** (**U**): UG's search results page (expected: the same `js-store` JSON with a results list carrying type, version, rating and votes), Chordie's results page and E-Chords' search (behind the same challenge, and disallowed for crawlers by its robots.txt, below). P9-4a step a3 saves and verifies each before its search reader is built (6.10, 6.11).
 - robots.txt: UG disallows `/tab/print?`, `/tab/download` and similar but not `/tab/`; Chordie allows everything but one source path; E-Chords disallows `/search`, `/api/`, `/*/printversion` and similar. The app fetches only the single page the user chose; corpus collection honours these files.
 
 ## 4. Architecture
@@ -112,25 +114,27 @@ Nothing is saved without the review sheet's Accept, exactly as for a paste. The 
 
 ```
 SegueCore (both flavours)
-  Plugins/            contract: SongImporter, LyricsSource, value types, PluginRegistry (no implementations,
+  Plugins/            contract: SongImporter, SongSearchSource, value types, PluginRegistry (no implementations,
                       no site or service names in any string literal)
   Ingest/             IngestPipeline.ingest(_:origin:source:) - one new entry point (section 5.1)
 SegueUI (both flavours)
   Paste/              generic hosting: PluginEntry list in AppDependencies, a source line in the review header,
                       new PasteSource cases routed like a paste
 SeguePersonalModules (Personal only)
-  Web/                HTTPTransport port, URLSessionTransport, RequestPacer, PageCache, PageFetcher
+  Web/                HTTPTransport port, URLSessionTransport, PageLoader port (PlainPageLoader, WebKitPageLoader),
+                      RequestPacer, PageCache, PageFetcher
+  Web/Search/         UGSearchReader, ChordieSearchReader, EChordsSearchReader, VersionRanker
   Web/Parsers/        TabJSONParser (UG), ChordPreParser (E-Chords), ChordSpansParser (Chordie), GenericPageReader,
                       PageParserRegistry (host -> parser, then generic)
   Lyrics/             LRCLIBClient, LyricsQueryVariants, LyricsRanker, LRCSections
   Romanization/       HindiRomanizer + its table and override list (section 7)
-  UI/                 WebImportField, LyricsSearchSheet, the help popovers (SwiftUI, uses SegueUI theme)
-  PersonalModules.swift   registers WebPageImporter and LRCLIBLyricsSource; returns the UI entries
+  UI/                 WebImportField, SongSearchSheet (grouped results, preview pane), the help popovers (SwiftUI, uses SegueUI theme)
+  PersonalModules.swift   registers WebPageImporter and the four SongSearchSources; returns the UI entries
 Tests/SeguePersonalModulesTests   new target: fixtures, parser tables, eval scorer (offline)
 ```
 
 - SegueUI never imports `SeguePersonalModules` (it cannot: the dependency points the other way, `Package.swift:24-27`). The personal package's views use SegueUI's theme and components.
-- The only third-party dependency added is the HTML parser (open question 2, recommended SwiftSoup, MIT, pinned exactly), declared in `Packages/SeguePersonalModules/Package.swift` only and imported only in `Web/Parsers/`. A SwiftLint `custom_rules` entry fails `import SwiftSoup` anywhere else (the vendor isolation rule).
+- Third-party components are picked by the bake-off (section 4.4; R179: licence is no object in the Personal build, quality decides). Each one adopted is declared in `Packages/SeguePersonalModules/Package.swift` only, pinned exactly, and imported only in the folder that uses it; a SwiftLint `custom_rules` entry per dependency fails its import anywhere else (the vendor isolation rule).
 - Every file with a service or site name in a string literal lives in `SeguePersonalModules`. Core and SegueUI use neutral words ("web page", "lyrics search") in identifiers and copy that ship in the App Store build, and none of them is user-visible there.
 
 ### 4.2 The plugin contract (SegueCore `Plugins/PluginRegistry.swift` plus `Plugins/PluginTypes.swift`)
@@ -154,10 +158,11 @@ public struct ImportedSong: Sendable, Hashable {
 }
 
 public struct Provenance: Sendable, Hashable {
-    public var sourceURL: URL             // shown in the review header, never written to the .cho (Q7)
+    public var sourceURL: URL             // shown in the review header, never stored (R179)
     public var reader: ReaderKind         // analytics token, section 12
     public var fellBack: Bool             // a site parser failed its checks and the generic reader answered
     public var romanized: Bool            // Devanagari was romanized (section 7)
+    public var loadPath: LoadPath         // .plain, .webKit or .savedFile (8.6)
     public var attribution: String?       // e.g. "Lyrics from LRCLIB" - set by the plugin, shown in the header
 }
 
@@ -170,17 +175,29 @@ public protocol SongImporter: Plugin {
 }
 public enum ImportInput: Sendable, Hashable { case url(URL), webPageFile(URL) }
 
-public protocol LyricsSource: Plugin {
-    func search(_ query: LyricsQuery) async throws(ImportFailure) -> [LyricsCandidate]
-    func song(for candidate: LyricsCandidate) async throws(ImportFailure) -> ImportedSong
+public enum LoadPath: String, Sendable, CaseIterable { case plain, webKit, savedFile }
+
+/// One searchable source (R179: Ultimate Guitar, Chordie, E-Chords, LRCLIB). Replaces the
+/// old empty `LyricsSource` marker.
+public protocol SongSearchSource: Plugin {
+    var group: SearchGroup { get }        // heading order in the results (6.9)
+    func search(_ query: SongQuery) async throws(ImportFailure) -> [SearchCandidate]
+    /// The chart or lyrics for one candidate, for the preview pane and then the review.
+    func song(for candidate: SearchCandidate) async throws(ImportFailure) -> ImportedSong
 }
-public struct LyricsQuery: Sendable, Hashable { public var text: String; public var title: String?; public var artist: String? }
-public struct LyricsCandidate: Sendable, Hashable, Identifiable {
-    public var id: String                 // the source's stable record id, as text
+public enum SearchGroup: Int, Sendable, CaseIterable { case tabJSON, chordSpans, chordPre, lyricsRecord }
+public struct SongQuery: Sendable, Hashable { public var text: String; public var title: String?; public var artist: String? }
+public struct SearchCandidate: Sendable, Hashable, Identifiable {
+    public var id: String                 // the source's stable record or tab id, as text
     public var title: String; public var artist: String?; public var album: String?
-    public var firstLines: String         // first 2 lines, romanized when needed, for the result row
+    public var kind: CandidateKind        // .chords, .lyrics, .tabOnly, .pro (the last two refused, 8.4)
+    public var version: Int?              // a site's version number of this song ("ver 3")
+    public var rating: Double?            // 0-5, as the site shows it
+    public var votes: Int?
+    public var firstLines: String?        // first 2 lines, romanized when needed, when the search returned them
     public var isInstrumental: Bool
-    public var lyrics: String?            // full plain lyrics when the search already returned them
+    public var lyrics: String?            // full plain lyrics when the search already returned them (LRCLIB)
+    public var pageURL: URL?              // the chart page, for Open in Safari
 }
 
 public enum ImportFailure: Error, Sendable, Hashable {
@@ -195,9 +212,23 @@ public enum ImportFailure: Error, Sendable, Hashable {
 
 ### 4.3 UI hosting (the `advancedSection` pattern)
 
-- SegueUI gains `PluginEntries` in `AppDependencies`: `webImport: WebImportEntry?` and `lyricsSearch: LyricsSearchEntry?`. Each holds the plugin (as `any SongImporter` / `any LyricsSource` from the registry) plus `@MainActor` view builders that return `AnyView` for the personal package's sheet content, and its menu title and shortcut.
+- SegueUI gains `PluginEntries` in `AppDependencies`: `webImport: WebImportEntry?` and `songSearch: SongSearchEntry?`. Each holds the plugin (as `any SongImporter` / `[any SongSearchSource]` from the registry) plus `@MainActor` view builders that return `AnyView` for the personal package's sheet content, and its menu title and shortcut.
 - `SegueApp.init` passes `plugins` through: under `#if SEGUE_PERSONAL` it calls `PersonalModules.entries(registry: plugins, ...)`; otherwise both entries are nil. UI code asks "is the entry non-nil?", never checks a build flag.
 - With both nil (App Store) every entry point in section 11 is absent: no menu item, no button, no lone-URL banner, no drop target for links, no extra file types in the import panel.
+
+### 4.4 Components (per the bake-off) - TO BE FILLED when `docs/research/phase9-import-bakeoff.md` lands
+
+> **Pending.** R179: for the Personal build licence is no object and components are picked on quality after a bake-off. The bake-off doc is being written; this section is filled from it in P9-4a step a0, and no step that uses a component starts before its row is filled. Until then every choice below reads "per the bake-off".
+
+| Component | Used by | Candidates named in this spec so far | Choice |
+|---|---|---|---|
+| HTML parser / DOM | `GenericPageReader`, the site and search readers (8.4, 6.10, 6.11) | SwiftSoup (MIT); Foundation `XMLDocument` with `.documentTidyHTML`; a hand-written tokenizer | per the bake-off |
+| Devanagari romanizer | section 7 | the hand-written `HindiRomanizer` (7.3); Aksharamukha (AGPL); libindic `indic-trans` (AGPL); `indic_transliteration` / `common_maps` tables (MIT); Dakshina lexicon as overrides (CC BY-SA) | per the bake-off |
+| Blocked-page loader | 8.6 | the hidden `WKWebView` loader (R179 fixes the technique; the bake-off may compare wait strategies) | per the bake-off |
+| Site and search readers | 8.4, 6.10, 6.11 | the in-house readers specced here; any open-source chord-site scraper the bake-off finds (as a dependency, a fork, or a reference) | per the bake-off |
+| Lyrics source client | 6.2 | the in-house `LRCLIBClient`; any existing Swift client | per the bake-off |
+
+Bake-off results to copy here when it lands: the scoring on the 16.1 corpus, the pick per row with its licence and pin, and anything it rules that changes sections 6-8.
 
 ## 5. The shared pipeline
 
@@ -216,7 +247,7 @@ Already-ChordPro text (a page that serves ChordPro) is passed through untouched,
 
 ### 5.2 Into the review sheet
 
-- `LibraryViewModel.beginSourceReview(_ song: ImportedSong, source: PasteSource)` opens the same `PasteReviewModel` with one `PasteReviewItem` built from `ingest(_:origin:source:)`. `PasteSource` gains `webPage` and `lyricsSearch` (row 19).
+- `LibraryViewModel.beginSourceReview(_ song: ImportedSong, source: PasteSource)` opens the same `PasteReviewModel` with one `PasteReviewItem` built from `ingest(_:origin:source:)`. `PasteSource` gains `webPage` and `songSearch` (row 19).
 - Guards are the paste guards: `canPaste` (R109: never during a show, never over an open review).
 - Everything after that is the paste flow: original text on the left (for a web page, the extracted text, not the HTML), result on the right, sparkle marks for AI decisions, the draft card, Accept writes one undoable song, Cancel writes nothing.
 - The header gains one quiet source line under the title (section 11.6).
@@ -224,7 +255,7 @@ Already-ChordPro text (a page that serves ChordPro) is passed through untouched,
 ### 5.3 Near-duplicate check (P8-1)
 
 - The item's existing `nearDuplicates` / `refreshNearDuplicate()` runs on the reviewed text, as for any paste: warning beside the card, never blocking Accept, re-checked on edits, `nearDuplicate` flag on `songCreated` at Accept (R163).
-- **Before fetching**, the LRCLIB result list marks a result "In your library" when `NearDuplicateIndex.match(title:artists:lyrics:contentHash:)` over the candidate's title, split artist credit and, when the search returned them, its plain lyrics scores at or above the threshold. Without lyrics the row compares title and artist only through the same index (title similarity gate, then the artist score); the mark is a hint, the full check runs again in the review.
+- **Before fetching**, every search result row marks a result "In your library" when `NearDuplicateIndex.match(title:artists:lyrics:contentHash:)` over the candidate's title, split artist credit and, when the search returned them, its plain lyrics scores at or above the threshold. Without lyrics the row compares title and artist only through the same index (title similarity gate, then the artist score); the mark is a hint, the full check runs again in the review.
 - The URL field does no pre-fetch check (the title is unknown until the page is read).
 
 ### 5.4 Several artists and Movie / Album (R172 / R173)
@@ -240,7 +271,7 @@ Already-ChordPro text (a page that serves ChordPro) is passed through untouched,
 - For LRCLIB lyrics (bare lyrics, no chords) the model's only job is section labels for blocks the repeat labelling left unlabelled. A source title always exists, so the model never fills one.
 - The romanizer's output is not a "correction": it runs before the review, deterministically, and the lyric guard then protects that text from the model like any pasted lyric.
 
-## 6. LRCLIB lyrics search
+## 6. Search: LRCLIB lyrics and the chord sites (R179)
 
 ### 6.1 The API (from `https://lrclib.net/docs.md`, fetched 2026-10-31) **V**
 
@@ -254,7 +285,7 @@ Already-ChordPro text (a page that serves ChordPro) is passed through untouched,
 
 ### 6.2 The client (`Lyrics/LRCLIBClient.swift`)
 
-- `User-Agent: Segue/<CFBundleShortVersionString> (+https://segue.ryandsilva.dev)`, plus `Lrclib-Client` with the same value. No App-Id (open question 4).
+- `User-Agent: Segue/<CFBundleShortVersionString> (+https://segue.ryandsilva.dev)`, plus `Lrclib-Client` with the same value (R179: API calls identify as Segue). No App-Id (R179: LRCLIB unregistered).
 - Search: `GET /api/search?q=<query>` only (the free-text form handles "tum hi ho arijit"; the structured form is used for a variant only when the user filled the optional Artist field, section 6.4).
 - Fetch: the search response already holds full records, so picking a result normally needs **no second request**; `GET /api/get/{id}` only when the search record had `plainLyrics == nil` but `instrumental == false` (a truncated or changed response).
 - Decoding is tolerant: unknown fields ignored, missing optional fields nil, a non-JSON or non-array body is `.server(status:)`.
@@ -272,11 +303,12 @@ LRCLIB's search is a server-side keyword match, so "tuj mai rab" may find nothin
 
 ### 6.4 Search UI (exact behaviour; visual design from step c0)
 
-- Sheet "Find Lyrics", 640 x 480 like the New Song sheet. One search field (placeholder "Song title, artist or a line", focused, `autocorrectionDisabled()`, spell-check off, no smart substitutions) and an optional "Artist" field behind a disclosure, also with autocorrect off.
-- Search runs on **Return** or the Search button only (open question 11). While running: a small spinner in the field, previous results stay greyed. Cancel (Esc) cancels the request.
-- Results: up to 20 rows: title (bold), "artist - Movie / Album" (muted), first two lyric lines (muted, small), and quiet marks "In your library" (5.3), "Instrumental" (disabled row), "Converted from Devanagari" (when the lyrics needed romanizing, section 7). Up/Down moves the selection; Return or double-click opens the review. Under the list, when variants ran: "Also searched: <variant>, <variant>".
-- Attribution line at the bottom left: "Lyrics from LRCLIB, a free community database. Check them against the recording." with the LRCLIB link (opens in the browser).
-- Picking a result builds `ImportedSong` (text = the plain lyrics after romanization and `LRCSections`; fields from the record; provenance `lyricsRecord`) and replaces the sheet with the review sheet (one sheet at a time, like New Song's input state moving to review).
+- Sheet "Find Lyrics" (the menu name R179 fixes; it finds chord charts too), 960 x 600 with the results list on the left and the preview pane on the right (step c0 sets the layout). One search field (placeholder "Song title, artist or a line", focused, `autocorrectionDisabled()`, spell-check off, no smart substitutions) and an optional "Artist" field behind a disclosure, also with autocorrect off.
+- Search runs on **Return** or the Search button only (R179). One Return queries all four sources (6.9); while running, a small spinner per group heading, previous results stay greyed. Cancel (Esc) cancels every request in flight.
+- Results are **grouped by source** (R179), in the order Ultimate Guitar, Chordie, E-Chords, LRCLIB, each under a heading with its count ("Ultimate Guitar · 6 songs") and its own status line when it failed (6.8), so one source down never hides the others. Chord-site groups list songs, each with its versions nested under it (6.10); the LRCLIB group lists lyric records.
+- A row: title (bold), "artist - Movie / Album" (muted), and quiet marks "In your library" (5.3), "Instrumental" (disabled row), "Converted from Devanagari" (when the text needed romanizing, section 7); an LRCLIB row also shows its first two lyric lines (muted, small). Up/Down moves the selection; selecting a version or a lyrics row loads its **preview** in the right pane (the chart as it will import, after the reader and romanization, read-only, with its source line); Return or double-click, or the preview's Review button, opens the review. Under the LRCLIB group, when variants ran: "Also searched: <variant>, <variant>".
+- Attribution at the foot of each group: Ultimate Guitar, Chordie and E-Chords "Chords from <site>. Check them against the recording."; LRCLIB "Lyrics from LRCLIB, a free community database. Check them against the recording.", each with the site link (opens in the browser).
+- Picking a result builds `ImportedSong` (for LRCLIB: text = the plain lyrics after romanization and `LRCSections`, fields from the record, provenance `lyricsRecord`; for a chord site: the page through its reader, 8.3) and replaces the sheet with the review sheet (one sheet at a time, like New Song's input state moving to review).
 
 ### 6.5 Devanagari results
 
@@ -302,13 +334,34 @@ The `.cho` gets `{title}`, one `{artist}` per chip, `{album}` when present, and 
 | `server` (5xx, 502 as probed) / `timedOut` (15 s) | "LRCLIB isn't answering right now." | Try Again |
 | `unsupportedScript` | row disabled, as 6.5 | none |
 
+Each message shows in its own group (6.4), naming that source ("Chordie isn't answering right now."); the other groups are unaffected. A chord-site group whose search page is `blocked` even through the WebKit loader (8.6) reads "<site> doesn't let apps search it right now." with **Search in Safari** (opens the site's own search for the query).
+
+### 6.9 One search across four sources (R179)
+
+- `SongSearchSource` (4.2) has four implementations: `UGSearchReader` (6.10), `ChordieSearchReader` and `EChordsSearchReader` (6.11) and the LRCLIB client (6.2-6.3). Return runs all four **concurrently** (different hosts), each through the shared `RequestPacer` (section 9), and each group fills as its source answers.
+- The romanized-Hindi variants of 6.3 apply to LRCLIB only (its server match is strict); the chord sites receive the query as typed. Nothing the user typed is changed anywhere.
+- Per group at most 20 songs; within a group, songs keep the site's own order, then `LyricsRanker`'s title and artist similarity re-sorts them (the same scorer, without the lyric-start term for chord sites).
+- Duplicates across groups are not merged: the same song from two sites is two charts, and the grouping is the point (R179).
+
+### 6.10 Ultimate Guitar search (R179, `Web/Search/UGSearchReader.swift`)
+
+- One request: UG's search results page for the query (title search), read from the page's `js-store` JSON (the same technique as `TabJSONParser`, 8.4; the exact key path is verified in step a3, 3.6). Only result types "Chords" and "Ukulele Chords" are listed as pickable; "Tab", "Bass Tab", "Pro", "Power" and "Video" results are listed under their song as disabled rows with the 8.4 refusal text in their help, so the user sees why a version is missing (R179: refused with a clear message).
+- **Versions** of one song (same song name and artist on UG) nest under one song row (the owner's parent/child rule): "Chords · ver 3 · ★4.8 · 1,204 votes". `VersionRanker` (pure, with a score breakdown) orders versions by rating, then votes, using a vote-weighted rating so a 5.0 from 3 votes does not outrank a 4.8 from 1,200 (Bayesian average toward the site mean with a prior of 50 votes; the prior is a tunable constant with a table test). Songs order by their best version's ranked score after the similarity re-sort of 6.9.
+- The preview fetches the chosen version's page (one request, paced and cached, 9) and runs `TabJSONParser`. The review's source line reads "From Ultimate Guitar · ver 3 · ★4.8".
+
+### 6.11 Chordie and E-Chords search (R179)
+
+- `ChordieSearchReader` reads Chordie's results page; `EChordsSearchReader` reads E-Chords' search page (plain request first, then the WebKit loader, 8.6). Each result is a song row with one version (these sites rank by their own order; when a rating or vote count is on the page it is shown and used by `VersionRanker`).
+- E-Chords' robots.txt disallows `/search` for crawlers (3.6). Segue requests it only on the user's Return, one request per search; see section 21's still-open item.
+- Previews run `ChordSpansParser` / `ChordPreParser` on the chosen page.
+
 ## 7. Romanization (replaces phase 5 sections 4 and 4.1)
 
 ### 7.1 Rule
 
 LRCLIB, and some web pages, hold Hindi lyrics in Devanagari. The app may not display Devanagari, and the Language rulings require text **the app itself generates** to be in casual Bollywood romanization without diacritics ("tum hi ho", "pyaar", "dil", "hai"). A deterministic `HindiRomanizer` converts it: no language model in the loop, so the output is reproducible and testable.
 
-- It runs only on text Segue fetched (LRCLIB records; web pages, open question 5). **Pasted text is never transliterated** (Language rulings), and a pasted Devanagari song keeps flowing through the paste path unchanged.
+- It runs only on text Segue fetched (LRCLIB records and web pages, R179). **Pasted text is never transliterated** (Language rulings), and a pasted Devanagari song keeps flowing through the paste path unchanged.
 - It touches only Devanagari runs. Latin text, including romanized Hindi and English in mixed lines, passes through byte-identical; digits, punctuation and spacing are kept.
 - It never respells Latin words, never "corrects" a romanized Hindi word, and its override list only chooses how a Devanagari word is first written in Latin.
 - The review shows "Converted from Devanagari" in the source line (11.6) so the user knows the spelling was generated, and can edit any word before Accept.
@@ -317,12 +370,12 @@ LRCLIB, and some web pages, hold Hindi lyrics in Devanagari. The app may not dis
 
 - **Apple ICU `.toLatin`** (local probe re-run today, `String.applyingTransform(.toLatin, reverse: false)`) is ISO-15919-like, exactly as the 2026-10-17 probe found: `तुम ही हो` -> "tuma hī hō", `चलते` -> "calatē", `आँखें` -> "ām̐khēṁ", `क्यों` -> "kyōṁ", `दीवाना` -> "dīvānā", `प्यार` -> "pyāra", `दिल` -> "dila". With `.stripDiacritics`: "tuma hi ho / calate / amkhem / kyom / divana / pyara / dila". It has no schwa deletion ("tuma", "pyara", "dila"), writes च as "c", writes anusvara and chandrabindu as "m", and loses vowel length. **V**. Verdict unchanged: not a usable base.
 - **`indic_transliteration` (sanscript) and `common_maps`**: both **MIT** (GitHub licence metadata, both active in October 2026). **V**. A full-text grep of the sanscript source finds no schwa or inherent-vowel deletion; its `to_lay_indian` (OPTITRANS -> lay Indian, e.g. "kRShNa" -> "krishna") only rewrites a few clusters and lowercases, so it also keeps every final "a" and drops vowel length. **V**. Usable only as a reference for the consonant and matra table.
-- **Aksharamukha**: README states GNU AGPL 3.0. **libindic `indic-trans`**: AGPL-3.0 (GitHub metadata). **V**. Avoid both.
+- **Aksharamukha**: README states GNU AGPL 3.0. **libindic `indic-trans`**: AGPL-3.0 (GitHub metadata). **V**. Licence is no object in the Personal build (R179), so both are bake-off candidates (4.4).
 - **IndicXlit** (AI4Bharat): MIT, but an ML model; excluded by the no-model rule. **V**.
-- **Google Dakshina** (romanization lexicons with attested casual spellings): **CC BY-SA 4.0** (README); the repository is archived (2020). **V**. Share-alike would attach to a derived word list, so it is used **only as a local eval oracle** (gitignored download), never shipped and never committed.
+- **Google Dakshina** (romanization lexicons with attested casual spellings): **CC BY-SA 4.0** (README); the repository is archived (2020). **V**. Licence is no object in the Personal build (R179): whether its lexicon ships as an override list is a bake-off question (4.4); it is the local eval oracle either way (16.5).
 - Schwa deletion rule family: Narasimhan, Sproat and Kiraz, "Schwa-deletion in Hindi text-to-speech synthesis", *International Journal of Speech Technology* 7, 2004 (published-venue citation; **U**: not re-read for this spec).
 
-### 7.3 Algorithm (`Romanization/HindiRomanizer.swift`, about 300 lines plus `HindiRomanizer+Table.swift`)
+### 7.3 Algorithm (`Romanization/HindiRomanizer.swift`, about 300 lines plus `HindiRomanizer+Table.swift`; the hand-written candidate, which the bake-off may replace or combine with a library, 4.4)
 
 1. **Segment** the text into Devanagari runs and everything else (Unicode scalar ranges U+0900-U+097F and U+A8E0-U+A8FF); only runs are converted, word by word (a word is a maximal run of Devanagari letters and marks).
 2. **Override list first**: a hand-curated dictionary of frequent lyric words whose casual spelling the rules would not produce (for example `है` "hai", `हैं` "hain", `में` "mein", `मैं` "main", `क्यों` "kyun", `नहीं` "nahin", `प्यार` "pyaar", `दिल` "dil", `तुम` "tum", `ज़िंदगी` "zindagi", `आँखें` "aankhen", `दीवाना` "deewana", `हूँ` "hoon", `वो` "woh"). Seeded with about 300 words from Bollywood lyrics by hand; every entry has a test row.
@@ -335,14 +388,14 @@ Tests: a table of a few hundred Devanagari words and 30 full lyric lines with ex
 
 ### 7.4 Where it lives
 
-`SeguePersonalModules/Romanization/` (open question 6). It has no caller in the App Store build in v1.0, and keeping it in the personal package means the App Store binary is unchanged by this workstream. It is pure Foundation code with no UI, so moving it down to SegueCore later is one file move.
+`SeguePersonalModules/Romanization/` (still open, section 21; the bake-off's romanizer choice, 4.4, is made with it). It has no caller in the App Store build in v1.0, and keeping it in the personal package means the App Store binary is unchanged by this workstream. It is pure Foundation code with no UI, so moving it down to SegueCore later is one file move.
 
 ## 8. URL import
 
 ### 8.1 Inputs
 
 - An `http` or `https` URL typed or pasted in the web field (11.3), pasted alone into the New Song text area (11.4), dropped from Safari onto the library (11.5), or chosen with File > Import from Web Page...
-- A saved page file (`.html`, `.htm`, `.webarchive`) through Import Songs... or a drop (open question 15): the same parsers, no network.
+- A saved page file (`.html`, `.htm`, `.webarchive`) through Import Songs... or a drop (R179): the same parsers, no network, `loadPath = .savedFile`.
 - Anything else (`file:`, `ftp:`, `javascript:`, a host without a dot, an IP literal in a private range, `localhost`) is refused before any request with "Segue imports web pages only (https://...)." Private-range refusal keeps the feature from probing the local network.
 
 ### 8.2 The fetcher (`Web/PageFetcher.swift`, `Web/URLSessionTransport.swift`)
@@ -350,7 +403,7 @@ Tests: a table of a few hundred Devanagari words and 30 full lyric lines with ex
 - **Sandbox**: outgoing connections are already allowed by `com.apple.security.network.client` and `ENABLE_OUTGOING_NETWORK_CONNECTIONS` in both flavours (3.1). Nothing new is entitled; the App Store build simply contains no fetcher.
 - `HTTPTransport` is a port (`func send(_ request: HTTPRequest) async throws(ImportFailure) -> HTTPResponse`), with `URLSessionTransport` (shipping) and `FixtureTransport` (tests, E2E): the injectable IO the deterministic tests need.
 - `URLSessionConfiguration.ephemeral` with `httpCookieStorage = nil`, `httpShouldSetCookies = false`, `urlCache = nil`, `httpMaximumConnectionsPerHost = 1`, `waitsForConnectivity = false`, request timeout 15 s, resource timeout 30 s. No cookies, credentials or cache ever touch disk, and the user's Safari session is never used.
-- `GET` only, `Accept: text/html,application/xhtml+xml`, `Accept-Language: en`, the identifying User-Agent of 6.2 (open question 3). No JavaScript runs: the page is never loaded in a web view.
+- `GET` only, `Accept: text/html,application/xhtml+xml`, `Accept-Language: en`, the identifying User-Agent of 6.2 (R179: API calls identify as Segue). A plain request runs no JavaScript; a page blocked to it goes to the hidden WebKit loader (8.6).
 - Redirects: at most 5, `http` -> `https` allowed, `https` -> `http` refused, every hop re-checked against 8.1's scheme and host rules.
 - Body cap **5 MB** (streamed; over the cap is `.tooLarge`). `Content-Type` must be `text/html`, `application/xhtml+xml` or `text/plain` (else `.notAPage`). Charset from the header, then `<meta charset>`, then UTF-8 with Windows-1252 fallback (the converter already handles CP1252 quotes).
 - HTTP 404/410 -> `.notFound`; 401/403 -> `.blocked`; 429/503 -> `.busy(retryAfter:)`; other 4xx/5xx -> `.server(status:)`.
@@ -369,7 +422,7 @@ Each parser is a pure function `(HTML string, URL) -> ImportedSong?` with no net
 **`TabJSONParser` (Ultimate Guitar, verified 3.6).**
 - Find `<div class="js-store" data-content="...">` (by attribute, not position), HTML-unescape, decode as JSON with `JSONSerialization` (tolerant: navigate by key path, never a strict `Codable` model, so added fields cannot break it).
 - Chart: `store.page.data.tab_view.wiki_tab.content`. Convert UG markup to text: `[tab]` / `[/tab]` removed (the pair marks a chord line plus its lyric line, kept as two lines), `[ch]X[/ch]` -> `X` keeping column positions (the chord line is monospace-aligned in UG's text), `[Verse 1]`-style headers kept (the converter reads them), `\r\n` normalised.
-- Fields: `tab.song_name`, `tab.artist_name` (with the `Misc ...` rule of 5.4), `tab.tonality_name` -> key, `tab.capo` -> capo. `tab.type` must be "Chords" or "Ukulele Chords" (or absent); "Tab", "Bass Tab", "Pro", "Power" and "Video" pages are refused with "This page is a tab, not a chord chart" (`.noChart`), because the chart is notation Segue does not read (Pro/Power content is not in the page at all).
+- Fields: `tab.song_name`, `tab.artist_name` (with the `Misc ...` rule of 5.4), `tab.tonality_name` -> key, `tab.capo` -> capo. `tab.type` must be "Chords" or "Ukulele Chords" (or absent); "Tab", "Bass Tab", "Pro", "Power" and "Video" pages are refused (R179) with "This page is a tab, not a chord chart" (or "Pro pages have no chord chart Segue can read" for Pro and Power) (`.noChart`), because the chart is notation Segue does not read (Pro/Power content is not in the page at all).
 - Fallback path if `js-store` is missing: the generic reader (UG has served server-rendered `<pre>` pages in the past).
 
 **`ChordSpansParser` (Chordie, verified 3.6).**
@@ -377,11 +430,11 @@ Each parser is a pure function `(HTML string, URL) -> ImportedSong?` with no net
 - Fields: from `<title>` "<Title> <Artist> Chords and Lyrics for Guitar" only when the page's breadcrumb or heading gives the split; else title only, artist from the chart's own credit line if the converter finds one. Chordie re-hosts other sites, so the first lines often carry "By <names>" credits: the converter's credit-line rule already reads those.
 
 **`ChordPreParser` (E-Chords, unverified 3.6).**
-- Built in P9-4a step a4 from pages Ryan saves in Safari (File > Save As, Page Source) because plain requests meet a challenge page. Expected shape (to verify): one `<pre>` holding chords over lyrics with chords wrapped in inline tags; the parser keeps the `<pre>` text with tags stripped and column positions intact. Fields from the page heading.
+- Built in P9-4a step a5 from pages loaded through the WebKit loader (8.6), or saved by Ryan in Safari (File > Save As, Page Source) if that is blocked too, because plain requests meet a challenge page. Expected shape (to verify): one `<pre>` holding chords over lyrics with chords wrapped in inline tags; the parser keeps the `<pre>` text with tags stripped and column positions intact. Fields from the page heading.
 - If the saved pages show a different shape, the step implements that shape and records it here.
 
 **`GenericPageReader` (any page).**
-1. Parse the HTML with the chosen parser (open question 2); drop `script`, `style`, `noscript`, `template`, `svg`, `iframe`, `form`, `nav`, `header`, `footer`, `aside` and elements whose `class`/`id` say ad, comment, share, related, menu, cookie, banner, sidebar.
+1. Parse the HTML with the bake-off's HTML parser (4.4); drop `script`, `style`, `noscript`, `template`, `svg`, `iframe`, `form`, `nav`, `header`, `footer`, `aside` and elements whose `class`/`id` say ad, comment, share, related, menu, cookie, banner, sidebar.
 2. Candidate blocks: every `<pre>`, every element whose `class`/`id` contains chord, lyric, tab, song, sheet, chart, and every element with at least 4 `<br>` children.
 3. Render each candidate to text: `<br>` and block ends -> newline, whitespace kept inside `<pre>` and elements styled monospace, inline elements whose whole text is a chord token (`ChordLines.kind(of:) != .unknown`) inside a lyric line -> `[X]` at that position (pages that mark chords up inline), entities decoded.
 4. Score each candidate with core's line classifier (`FormatDetector.classify`): +3 per chord line followed by a lyric line, +1 per lyric line, +2 per section header, -2 per junk line (`JunkRules`), -1 per line over 200 characters; ignore candidates under 4 lines. Pick the highest; when two overlap (a parent and its child) prefer the smaller with at least 90% of the score.
@@ -397,8 +450,11 @@ Each parser is a pure function `(HTML string, URL) -> ImportedSong?` with no net
 
 ### 8.6 Bot checks and blocked sites
 
-- A response that is a challenge page (HTTP 403/503 with `cf-mitigated: challenge`, or a body containing the Cloudflare "Just a moment..." title, or a CAPTCHA form) is `.blocked`. The app never retries it, never waits it out, never imitates a browser to get past it, and never asks the user to solve it inside Segue.
-- The message offers the two honest paths that already work: **Open in Safari** (the page, in the user's browser) and **Paste the page instead** (select the page in Safari, copy, then New Song from Clipboard, the existing paste flow), plus, for a saved page, "Or save the page in Safari and drop the file here" when open question 15 lands.
+- A plain response that is a challenge page (HTTP 403/503 with `cf-mitigated: challenge`, or a body containing the Cloudflare "Just a moment..." title, or a CAPTCHA form) is not yet a failure: the same URL loads **once** through the **hidden WebKit loader** (R179).
+- **`WebKitPageLoader`** (`Web/WebKitPageLoader.swift`, `@MainActor`, behind the `PageLoader` port so tests use a fake): an offscreen `WKWebView` that is never shown, with `WKWebsiteDataStore.nonPersistent()` (no cookies, cache or storage survive the load, and the user's Safari session is never used), JavaScript on (a real browser engine is the point), no custom user agent (WebKit's own; Segue never imitates a specific browser), media and pop-ups off, downloads refused, navigation limited to the same scheme and host rules as 8.1. It waits for the page to finish loading and for a chart marker the site's reader names (the UG `js-store` element, a Chordie `chordline`, the E-Chords `<pre>`, or for the generic reader document ready plus 1 s), at most **20 s**, then reads `document.documentElement.outerHTML` and hands it to 8.3. One web view at a time; it is torn down after each load.
+- **No captcha-solving** (R179): if, when the wait ends, the page is still a challenge (the markers above, a CAPTCHA or Turnstile widget, an interactive "verify you are human" element), the load stops and the result is `.blocked`. The challenge is never shown for the user to solve, never clicked, never retried, never waited out beyond the 20 s.
+- **Fallback** for `.blocked` (R179): **Open in Safari** (the page, in the user's browser), **Import a Saved Page...** ("Save the page in Safari with File > Save As, then choose or drop the file here": the saved-file path of 8.1), and **Paste the Page Instead** (select the page in Safari, copy, then New Song from Clipboard, the existing paste flow).
+- `loadPath` in `Provenance` records which path read the page (analytics, 12; the review shows nothing extra).
 
 ### 8.7 Failure messages (inline in the web field area; the field keeps the URL)
 
@@ -406,7 +462,7 @@ Each parser is a pure function `(HTML string, URL) -> ImportedSong?` with no net
 |---|---|---|
 | `offline` | "You're offline. Importing a web page needs the internet." | Try Again |
 | `timedOut` / `server` | "<host> isn't answering right now." | Try Again, Open in Safari |
-| `blocked` | "<host> doesn't let apps read this page." | Open in Safari, Paste the Page Instead |
+| `blocked` (after the WebKit loader, 8.6) | "<host> doesn't let apps read this page." | Open in Safari, Import a Saved Page..., Paste the Page Instead |
 | `notFound` | "That page doesn't exist anymore." | Open in Safari |
 | `notAPage` / `tooLarge` | "That address isn't a web page Segue can read." | none |
 | `noChart` | "Segue couldn't find a chord chart on this page." (or the tab-not-chords text of 8.4) | Open in Safari, Paste the Page Instead |
@@ -417,16 +473,17 @@ Never an alert, never a crash, never a saved song. The diagnostic log records on
 ## 9. Rate limiting and caching
 
 - **`RequestPacer`** (an actor with an injected `Clock`, so tests are deterministic): one in-flight request per host; minimum gap 300 ms for `lrclib.net`, 2 s for any other host; `Retry-After` honoured with up to 30% jitter (randomness injected); after a 429 the host is held for the full `Retry-After` and the UI shows the countdown; after a 503 one automatic retry once `Retry-After` (default 1 s) has passed, then the failure. No other automatic retries.
-- **User actions bound traffic**: one page fetch per Import action; at most 3 LRCLIB requests per Search (6.3); no prefetching, no background requests, no polling, no request at launch.
+- **User actions bound traffic**: one page fetch per Import action (plus at most one WebKit load of the same page, 8.6); per Search, one results request per chord site and at most 3 LRCLIB requests (6.3, 6.9); one page request per preview, only for the version the user selects (Up/Down through rows waits 300 ms on a row before fetching, so arrowing past rows sends nothing); no prefetching, no background requests, no polling, no request at launch. A WebKit load counts as one request to its host in the pacer.
 - **`PageCache`** (in memory only, per launch): the last 20 fetched pages keyed by final URL for 10 minutes, so Cancel then re-import, or a second look, costs nothing; LRCLIB searches keyed by exact query text for 10 minutes, records by id for the launch. Nothing fetched is written to disk outside the song the user accepts, so no copyrighted page or lyric is kept by Segue unless the user saved it into their library.
 - Memory: the cache drops entries on `memoryPressure` warnings and is cleared when the library closes.
 
 ## 10. Legal and terms (personal use)
 
+- **Licence is no object for the Personal build** (R179): components are picked on quality by the bake-off (4.4), whatever their licence, because the Personal build is never distributed. The App Store build contains none of them.
 - **Why Personal only**: LRCLIB publishes no content licence (6.1); the lyrics belong to their rights holders. Ultimate Guitar's terms (`ultimate-guitar.com/about/tos.htm`, read 2026-10-31) say content "may be accessed for your personal, non-commercial use only" (6.3), "you will not duplicate or otherwise reproduce the Content" (6.2) except printing tabs and lyrics for personal, non-commercial use, and that UG's lyric licences cover display "solely on or through the Service" (7.7). **V**. E-Chords and Chordie terms were not read (**U**); Chordie re-hosts other sites' charts. A store build that fetched and stored these would breach those terms; a personal tool that fetches one page Ryan chose, for his own non-commercial use, is the use the owner accepts (`docs/research.md`: "ToS forbids scraping -> URL import is personal-only").
 - The Personal build is never distributed (R139: App Store only, no DMG, no Developer ID), so these features never reach anyone but Ryan.
-- Behaviour that keeps it a personal tool: one user-chosen page per action, honest identification, no circumvention of bot checks (8.6), no crawling or following links, no bulk or scheduled fetching, nothing cached to disk, no redistribution (Segue has no sharing of fetched content; the user's own library export is their own copy).
-- No acknowledgement of LRCLIB or the sites goes into `THIRD_PARTY_NOTICES.md` or the website (both ship with or describe the App Store build, which has none of this). The attribution lives in the Personal build's own sheet (6.4) and source line (11.6). SwiftSoup (if adopted) **does** get a `THIRD_PARTY_NOTICES.md` row, because `scripts/check-docs.sh` check 3 fails without one for any pin in `Tuist/Package.resolved`; the row says "Personal build only". That names a parser library, not a service or site, so it reveals nothing about these features.
+- Behaviour that keeps it a personal tool: one user-chosen search or page per action, honest identification on every API call and plain request, no captcha-solving (a blocked page gets one load in a real browser engine and then the fallbacks, 8.6), no crawling or following links (a search reads one results page per site, a preview reads the one chart selected), no bulk or scheduled fetching, nothing cached to disk, no redistribution (Segue has no sharing of fetched content; the user's own library export is their own copy).
+- No acknowledgement of LRCLIB or the sites goes into `THIRD_PARTY_NOTICES.md` or the website (both ship with or describe the App Store build, which has none of this). The attribution lives in the Personal build's own sheet (6.4) and source line (11.6). Every third-party component the bake-off adopts (4.4) **does** get a `THIRD_PARTY_NOTICES.md` row, because `scripts/check-docs.sh` check 3 fails without one for any pin in `Tuist/Package.resolved`; the row says "Personal build only". That names a library, not a service or site, so it reveals nothing about these features.
 
 ## 11. UI entry points and exact behaviour
 
@@ -435,8 +492,8 @@ All entry points exist only when the matching `PluginEntries` value is non-nil (
 ### 11.1 File menu (`FileCommands.swift`)
 
 After "Import Songs...":
-- **"Import from Web Page..."** Shift-Cmd-U (new `MenuShortcuts.importWebPage`). Opens the New Song sheet with the web field focused (11.3).
-- **"Find Lyrics..."** Shift-Cmd-L (new `MenuShortcuts.findLyrics`). Opens the Find Lyrics sheet (6.4).
+- **"Import from Web Page..."** Shift-Cmd-U (R179; new `MenuShortcuts.importWebPage`). Opens the New Song sheet with the web field focused (11.3).
+- **"Find Lyrics..."** Shift-Cmd-L (R179; new `MenuShortcuts.findLyrics`). Opens the Find Lyrics sheet (6.4), which searches all four sources.
 
 Both rows are added to the shortcut table only in the Personal build's Keyboard Shortcuts list (the table's rows carry an availability closure checked against the entries), and the shortcut-conflict test covers them.
 
@@ -458,20 +515,20 @@ Dropping a link (an `NSItemProvider` with a URL type that is `http(s)`, as Safar
 
 ### 11.6 The review sheet's source line (R117 design kept)
 
-Under the header title, one muted line, 12.5 pt: for a web page "From <host>" (the host as a link that opens the page in the browser), plus " - read with the general page reader" when `fellBack`; for LRCLIB "Lyrics from LRCLIB" (link to the record's LRCLIB page). Plus " - converted from Devanagari" when `romanized`. Nothing else in the review changes.
+Under the header title, one muted line, 12.5 pt: for a web page "From <host>" (the host as a link that opens the page in the browser), plus " - read with the general page reader" when `fellBack`; for an Ultimate Guitar version "From Ultimate Guitar · ver 3 · ★4.8" (6.10); for LRCLIB "Lyrics from LRCLIB" (link to the record's LRCLIB page). Plus " - converted from Devanagari" when `romanized`. Nothing else in the review changes.
 
 ### 11.7 In-product help
 
-A "?" button in the Find Lyrics sheet and beside the web field opens a popover (the owner's in-product guide rule): what the feature does, that results are a starting point to check, that blocked sites can be pasted instead, that nothing is kept unless accepted, and that it exists only in the Personal build.
+A "?" button in the Find Lyrics sheet and beside the web field opens a popover (the owner's in-product guide rule): what the feature does, that results are a starting point to check, how the groups and versions work, that a blocked page can be opened in Safari, saved and imported, or pasted, that nothing is kept unless accepted, and that it exists only in the Personal build.
 
 ## 12. Analytics (Personal build only, closed vocabulary, WS3 rules)
 
-Only the personal package emits these, so only the Personal TelemetryDeck app receives them. The cases are core vocabulary (3.5) and ship in both binaries, so **no raw value names a site or service** (open question 8): readers are named by technique.
+Only the personal package emits these, so only the Personal TelemetryDeck app receives them. The cases are core vocabulary (3.5) and ship in both binaries, so **no raw value names a site or service** (R179: analytics name techniques, not sites): readers and search groups are named by technique.
 
-- `PasteSource` (row 19) gains `webPage` and `lyricsSearch`. `SongSource` (row 5) gains `web` (a song accepted from a web page or a lyrics result); `nearDuplicate` works as today.
-- **Row 31 `Segue.Import.pageRead`** (one per Import action): `reader: ReaderKind` (`tabJSON`, `chordPre`, `chordSpans`, `genericPage`), `fellBack: Bool`, `outcome: WebImportOutcome` (`reviewed`, `noChart`, `blocked`, `notFound`, `offline`, `busy`, `failed`, `cancelled`), `latency: LatencyBucket`, `entry: WebImportEntryPoint` (`menu`, `emptyState`, `sheetField`, `pastedURL`, `droppedLink`, `savedFile`).
-- **Row 32 `Segue.Import.lyricsSearched`** (one per Search): `results: SmallBucket`, `variants: SmallBucket` (0-2), `outcome: LyricsSearchOutcome` (`results`, `none`, `busy`, `offline`, `failed`, `cancelled`), `romanHindiQuery: Bool`, `latency: LatencyBucket`.
-- **Row 33 `Segue.Import.lyricsPicked`** (daily per rank bucket): `rank: SmallBucket`, `fromVariant: Bool`, `romanized: Bool`, `inLibrary: Bool`.
+- `PasteSource` (row 19) gains `webPage` and `songSearch`. `SongSource` (row 5) gains `web` (a song accepted from a web page or a lyrics result); `nearDuplicate` works as today.
+- **Row 31 `Segue.Import.pageRead`** (one per Import action): `reader: ReaderKind` (`tabJSON`, `chordPre`, `chordSpans`, `genericPage`), `fellBack: Bool`, `outcome: WebImportOutcome` (`reviewed`, `noChart`, `blocked`, `notFound`, `offline`, `busy`, `failed`, `cancelled`), `latency: LatencyBucket`, `entry: WebImportEntryPoint` (`menu`, `emptyState`, `sheetField`, `pastedURL`, `droppedLink`, `savedFile`), `loadPath: LoadPath` (`plain`, `webKit`, `savedFile`), `webKitBlocked: Bool` (the WebKit load still met a challenge).
+- **Row 32 `Segue.Import.searched`** (one per Search): `results: SmallBucket`, `groupsWithResults: SmallBucket` (0-4), `groupsFailed: SmallBucket`, `variants: SmallBucket` (0-2), `outcome: SongSearchOutcome` (`results`, `none`, `busy`, `offline`, `failed`, `cancelled`), `romanHindiQuery: Bool`, `latency: LatencyBucket` (to the first group's answer).
+- **Row 33 `Segue.Import.searchPicked`** (daily per group and rank bucket): `group: SearchGroup` (`tabJSON`, `chordSpans`, `chordPre`, `lyricsRecord`), `rank: SmallBucket` (song rank in its group), `versionRank: SmallBucket` (0 for single-version groups), `previews: SmallBucket` (previews opened before the pick), `fromVariant: Bool`, `romanized: Bool`, `inLibrary: Bool`.
 - Row 19's existing fields then tell how the AI refinement and the guard did on these sources, and row 29 (artist split) covers their credits.
 - Never recorded: the URL, host, query, title, artist, lyrics, record id, HTTP status code (only the outcome case). Breadcrumbs: none added.
 - Throttling follows `AnalyticsEvent+Throttle.swift` (rows 31-32 per occurrence, row 33 daily per rank). The WS3 spec's row table (`docs/release/specs/WS3-services.md` section 5) gains rows 31-33 in step c5; the privacy page needs no change (the App Store build sends none of them).
@@ -481,15 +538,15 @@ Metrics this enables: fetch success rate per reader, fallback rate per reader (l
 ## 13. Absence from the App Store build (`make verify-appstore`)
 
 - The code is absent by construction: only the Personal target links `SeguePersonalModules` (`Project.swift:203-206`), and every site and service name lives in that package.
-- Step c4 extends `forbidden` in `scripts/lib/verify-common.sh:11` with patterns that cannot collide with core text (3.2): `lrclib|LRCLIB|ultimate-guitar\.com|e-chords\.com|chordie\.com|TabJSONParser|ChordPreParser|ChordSpansParser|GenericPageReader|HindiRomanizer|URLSessionTransport`. `SwiftSoup` is deliberately **not** in the list: `scripts/check-docs.sh` check 3 requires every pin in `Tuist/Package.resolved` (which resolves the personal package too) to have a row in `THIRD_PARTY_NOTICES.md`, and that file ships in the App Store bundle, so the name would be a false hit. Its symbols are still covered: the link map and `nm` checks match the package's own type names above, and SwiftSoup is reachable only through them. The bundle-wide byte grep, the link map and `nm` then fail the build if any of them leaks into Release-AppStore or Debug-AppStore.
+- Step c4 extends `forbidden` in `scripts/lib/verify-common.sh:11` with patterns that cannot collide with core text (3.2): `lrclib|LRCLIB|ultimate-guitar\.com|e-chords\.com|chordie\.com|TabJSONParser|ChordPreParser|ChordSpansParser|GenericPageReader|HindiRomanizer|URLSessionTransport|WebKitPageLoader|UGSearchReader|ChordieSearchReader|EChordsSearchReader|VersionRanker`. The names of the bake-off's third-party components (4.4) are deliberately **not** in the list: `scripts/check-docs.sh` check 3 requires every pin in `Tuist/Package.resolved` (which resolves the personal package too) to have a row in `THIRD_PARTY_NOTICES.md`, and that file ships in the App Store bundle, so their names would be false hits. Their symbols are still covered: the link map and `nm` checks match the package's own type names above, and each component is reachable only through them. The bundle-wide byte grep, the link map and `nm` then fail the build if any of them leaks into Release-AppStore or Debug-AppStore.
 - Before the change, run the extended pattern over today's App Store products to prove zero hits (no false positives), and record the run in the commit message.
 - The App Store UI test (15.5) proves no entry point is visible. `verify-archive.sh` check 4's exact entitlement set needs no change.
 
 ## 14. Accessibility
 
-- Every new control has a label and an identifier in `AccessibilityID+Paste.swift` (`pasteWebField`, `pasteWebImport`, `pasteWebMessage`, `findLyricsField`, `findLyricsArtist`, `findLyricsResults`, `findLyricsResult(<n>)`, `findLyricsAttribution`, `reviewSourceLine`, `emptyLibraryWebImport`, `emptyLibraryFindLyrics`).
-- Result rows read as "<title>, <artist>, <album>. In your library." with the first lines as the hint. Failure messages are announced (`AccessibilityNotification.Announcement`).
-- Full keyboard use: Tab order field -> Artist -> results; Up/Down in results; Return picks; Esc cancels a running request first, then closes.
+- Every new control has a label and an identifier in `AccessibilityID+Paste.swift` (`pasteWebField`, `pasteWebImport`, `pasteWebMessage`, `findLyricsField`, `findLyricsArtist`, `findLyricsResults`, `findLyricsGroup(<group>)`, `findLyricsResult(<n>)`, `findLyricsVersion(<n>)`, `findLyricsPreview`, `findLyricsAttribution`, `reviewSourceLine`, `emptyLibraryWebImport`, `emptyLibraryFindLyrics`).
+- Group headings are headers ("Ultimate Guitar, 6 songs"); song rows read as "<title>, <artist>, <album>. 3 versions. In your library."; version rows as "Chords, version 3, rated 4.8 from 1,204 votes"; LRCLIB rows have the first lines as the hint. The preview pane is a labelled read-only region. Failure messages are announced (`AccessibilityNotification.Announcement`).
+- Full keyboard use: Tab order field -> Artist -> results -> preview; Up/Down in results (through groups, songs and versions; Left/Right collapse and expand a song's versions); Return picks; Esc cancels a running request first, then closes.
 
 ## 15. Tests (R113 budget)
 
@@ -498,6 +555,8 @@ Metrics this enables: fetch success rate per reader, fallback rate per reader (l
 - Add the target to `Packages/SeguePersonalModules/Package.swift` with `Tests/Fixtures` as a resource, and add the package to `make test-packages` (Makefile `test-packages`, step a1). A test helper fails any test that constructs `URLSessionTransport` (the only real-network type), so a test cannot reach the network by accident.
 - **Parsers, table-driven over the committed redacted fixtures** (16.2): each fixture page -> expected `ImportedSong` (text and fields) for `TabJSONParser`, `ChordSpansParser`, `ChordPreParser`, `GenericPageReader`; plus malformed variants made from them in code (the `js-store` attribute removed, JSON truncated, class names renamed, an empty `<pre>`) that must fall back or fail cleanly, never crash or return a half chart.
 - **Sanity checks and fallback**: a parser result failing each check routes to the generic reader with `fellBack`.
+- **Search readers** over committed redacted search pages (16.2): `UGSearchReader` (types, versions, ratings, votes, refused types listed disabled), `ChordieSearchReader`, `EChordsSearchReader`; `VersionRanker` table (vote-weighted ordering, the breakdown sums to the score, ties); the four-group merge with one group failing.
+- **Load path** with a fake `PageLoader`: a plain challenge page routes once to the WebKit loader; a WebKit result still a challenge is `.blocked` with the three fallbacks; no second WebKit load; `loadPath` recorded. The real `WKWebView` path is exercised only by the manual canary (16.4) and the hands-on walk, never by an automated test (no live network).
 - **Fetcher with `FixtureTransport`**: redirects (limit, https->http refused), size cap, content types, charset detection, each status mapping, challenge-page detection, private-host refusal.
 - **`RequestPacer`** with an injected clock and seeded randomness: per-host gaps, `Retry-After` plus jitter bounds, the single 503 retry, cancellation.
 - **LRCLIB client** over recorded JSON responses (real response shapes, redacted lyrics): decode, tolerant fields, instrumental, null lyrics -> `/api/get/{id}`, non-JSON 502 body.
@@ -519,7 +578,7 @@ Metrics this enables: fetch success rate per reader, fallback rate per reader (l
 
 ### 15.4 E2E: `SegueWebImportE2ETests` (new, one class, one test, P9-4c)
 
-On the Personal flavour with a Debug-only launch option (`-SegueImportFixtures <dir>`, compiled only under `#if DEBUG && SEGUE_PERSONAL`, so `check_no_test_hooks` keeps Release clean) that swaps in `FixtureTransport` serving the redacted UG and LRCLIB fixtures: clean library -> File > Import from Web Page... -> paste the fixture URL -> review shows title "Tum Hi Ho", Movie / Album "Aashiqui 2", the source line, sections -> Accept -> the song is in the library; then File > Find Lyrics... -> "tum hi ho" -> pick the first result -> review shows the attribution line and labelled sections -> Cancel writes nothing. The library is reset to the known clean baseline before the run.
+On the Personal flavour with a Debug-only launch option (`-SegueImportFixtures <dir>`, compiled only under `#if DEBUG && SEGUE_PERSONAL`, so `check_no_test_hooks` keeps Release clean) that swaps in `FixtureTransport` serving the redacted UG and LRCLIB fixtures: clean library -> File > Import from Web Page... -> paste the fixture URL -> review shows title "Tum Hi Ho", Movie / Album "Aashiqui 2", the source line, sections -> Accept -> the song is in the library; then File > Find Lyrics... -> "tum hi ho" -> the Ultimate Guitar and LRCLIB groups show results (fixture search pages; the Chordie and E-Chords fixtures serve one result and one `blocked` group) -> select the top UG version -> the preview shows the chart -> Return -> review shows the "ver 3" source line -> Cancel; then pick the first LRCLIB result -> review shows the attribution line and labelled sections -> Cancel writes nothing. The library is reset to the known clean baseline before the run.
 
 ### 15.5 App Store UI test (one method in the existing `SegueAppStoreUITests` target)
 
@@ -534,13 +593,14 @@ One `make quick` at the end of each session; one `make e2e-one TEST=SegueWebImpo
 ### 16.1 Collecting real pages (owner's rule: grow the corpus by fetching)
 
 - `scripts/collect-import-corpus.sh` (P9-4a step a3, manual): reads `research/phase9-import/urls.tsv` (site, URL, language tag), fetches each page with the shipping User-Agent, honours robots.txt, waits 5 s between requests to a host, saves to `research/phase9-import/pages/<site>/<slug>.html` (**gitignored**, like `research/phase3-eval/pastes`), and logs challenge pages as skipped (no retry, no workaround).
-- Target size: **60 pages**: 15 UG, 15 Chordie, 15 E-Chords (saved by Ryan from Safari, because plain requests are challenged: the step hands Ryan the list of URLs and the exact Safari steps), 15 generic from at least 8 other sites (Hindi chord blogs, other chord sites). At least half are Bollywood / Hindi film songs (romanized Hindi lyrics, "Misc Soundtrack" credits, several singers), the rest English; include a page with a capo, one with a key change, one tab-only UG page, one Pro page, one page with inline chord markup.
+- Target size: **60 pages**: 15 UG, 15 Chordie, 15 E-Chords (loaded through the WebKit loader, 8.6, because plain requests are challenged; any it cannot load are saved by Ryan from Safari, and the step hands Ryan the list of URLs and the exact Safari steps), 15 generic from at least 8 other sites (Hindi chord blogs, other chord sites). At least half are Bollywood / Hindi film songs (romanized Hindi lyrics, "Misc Soundtrack" credits, several singers), the rest English; include a page with a capo, one with a key change, one tab-only UG page, one Pro page, one page with inline chord markup.
+- Search pages: 10 saved results pages per chord site (UG, Chordie, E-Chords; half Hindi queries), with the expected results list written by hand, for the search readers (6.10, 6.11).
 - LRCLIB: 30 recorded search responses (`research/phase9-import/lrclib/<query>.json`, gitignored): 15 Hindi queries typed in casual spellings, including 5 deliberately "wrong" spellings to test variants, and 15 English; at least 5 records in Devanagari.
 - Gold files: for each page, the expected `.cho` (title, artists, album, key, capo, sections, chords, lyrics) written by hand in step a3 and checked by Ryan for a sample of 10 (gitignored with the pages: they contain lyrics).
 
 ### 16.2 Committed fixtures (redacted)
 
-`scripts/redact-import-fixture.swift` turns a page and its gold into a committed fixture under `Packages/SeguePersonalModules/Tests/Fixtures/web/`: markup, attributes, JSON structure, chords, section headers, whitespace and line lengths kept; every lyric word replaced by a deterministic placeholder of the same length and case pattern (with a fixed seed, so romanized-Hindi shape like "Hum tere bin" becomes "Lor ipsu met"), titles and names replaced by placeholders. Hindi romanizer fixtures use public domain or self-written Devanagari lines. About 20 redacted pages (at least 4 per reader) are committed; the parser tests (15.1) run on these. Open question 1 asks whether this redaction rule stands.
+`scripts/redact-import-fixture.swift` turns a page and its gold into a committed fixture under `Packages/SeguePersonalModules/Tests/Fixtures/web/`: markup, attributes, JSON structure, chords, section headers, whitespace and line lengths kept; every lyric word replaced by a deterministic placeholder of the same length and case pattern (with a fixed seed, so romanized-Hindi shape like "Hum tere bin" becomes "Lor ipsu met"), titles and names replaced by placeholders. Hindi romanizer fixtures use public domain or self-written Devanagari lines. About 20 redacted pages (at least 4 per reader) and 3 redacted search pages per chord site are committed; the parser and search reader tests (15.1) run on these. R179 confirms the rule: lyric-redacted committed fixtures, full pages kept locally only.
 
 ### 16.3 The eval (`make eval-import`, manual, offline)
 
@@ -549,7 +609,7 @@ One `make quick` at the end of each session; one `make e2e-one TEST=SegueWebImpo
 - **A page passes** when title is right, artists right, lyric word accuracy >= 99%, chord F1 >= 98% with placement >= 95%, and no junk line remains.
 - Output: a table per reader, the failing pages with the first failing field, and code-only versus with-model accuracy per field (the model run uses `make eval-ai`'s provider setup when the model is present), so the AI step is measured, not assumed.
 
-**Targets (gate for P9-4a done):** site readers (UG, Chordie, E-Chords) **>= 95%** of their pages pass; generic reader **>= 80%** of generic pages pass; **zero** silent wrong charts: every failing page either falls back or reports `.noChart` / a review that differs from gold only in fields the user sees highlighted (no page produces an unflagged wrong title or artist). LRCLIB: the correct record is in the top 3 for >= 90% of the 30 queries and top 1 for >= 75%; variants rescue at least 4 of the 5 misspelled queries. Romanizer: >= 90% word agreement with the hand-written gold lines.
+**Targets (gate for P9-4a done; R179: they stand as written):** site readers (UG, Chordie, E-Chords) **>= 95%** of their pages pass; generic reader **>= 80%** of generic pages pass; **zero** silent wrong charts: every failing page either falls back or reports `.noChart` / a review that differs from gold only in fields the user sees highlighted (no page produces an unflagged wrong title or artist). LRCLIB: the correct record is in the top 3 for >= 90% of the 30 queries and top 1 for >= 75%; variants rescue at least 4 of the 5 misspelled queries. Romanizer: >= 90% word agreement with the hand-written gold lines.
 
 ### 16.4 Canary
 
@@ -557,31 +617,33 @@ One `make quick` at the end of each session; one `make e2e-one TEST=SegueWebImpo
 
 ### 16.5 Romanizer oracle (local only)
 
-`scripts/eval-romanizer.sh` downloads Dakshina's Hindi romanization lexicon into `.build/` (CC BY-SA, never committed) and reports how often the romanizer's output is one of the attested casual spellings for the 2,000 most frequent words. Reported in the P9-4b commit; target >= 75% (casual spelling is genuinely varied).
+`scripts/eval-romanizer.sh` downloads Dakshina's Hindi romanization lexicon into `.build/` (CC BY-SA, never committed) and reports how often the romanizer's output (whichever the bake-off picks, 4.4) is one of the attested casual spellings for the 2,000 most frequent words. Reported in the P9-4b commit; target >= 75% (casual spelling is genuinely varied).
 
 ## 17. Guide pages
 
-- The public guide (`segue.ryandsilva.dev/guide`) documents the App Store build, which has none of this, and publishing how-to pages for scraping chord sites would advertise a ToS breach: **no public page** (open question 10).
+- The public guide (`segue.ryandsilva.dev/guide`) documents the App Store build, which has none of this, and publishing how-to pages for scraping chord sites would advertise a ToS breach: **no public page** (R179).
 - In-product help (11.7) is the guide for the owner.
 - A draft page `guide/src/content/docs/web-import.mdx` with `draft: true` frontmatter (Starlight excludes draft pages from production builds; step c6 verifies that on Starlight 0.42.6 with `bun run build` and confirms the page is absent from `dist/`) documents both features with screenshots for local reading (`bun run dev`). If draft pages are not excluded, the page goes to `docs/personal/web-import.md` instead and the step says so.
 - `paste-a-song.mdx` gains nothing.
 
 ## 18. Files owned
 
-- New: `docs/phases/9-workstreams/P9-4-lyrics-and-url-import.md` (this spec); everything under `Packages/SeguePersonalModules/Sources/SeguePersonalModules/{Web,Lyrics,Romanization,UI}/`; `Packages/SeguePersonalModules/Tests/`; `research/phase9-import/` (README, `urls.tsv`; pages and gold gitignored); `scripts/collect-import-corpus.sh`, `scripts/redact-import-fixture.swift`, `scripts/eval-romanizer.sh`; `Packages/SegueCore/Sources/Plugins/PluginTypes.swift`; `Packages/SegueCore/Sources/Ingest/IngestPipeline+Source.swift`; `Packages/SegueCore/Sources/Services/AnalyticsEvent+Import.swift`; `UITests/SegueWebImportE2ETests.swift`; the draft guide page.
-- Changed (own hunks only): `Plugins/PluginRegistry.swift`, `Ingest/IngestTypes.swift` (origins), `Services/AnalyticsEvent.swift` (rows 31-33, `SongSource.web`), `AnalyticsEvent+AI.swift` (`PasteSource`), `AnalyticsEvent+Throttle.swift`; SegueUI `Paste/*` (source review, the web field host, source line), `App/AppDependencies` (entries), `App/Commands/FileCommands.swift`, `App/MenuShortcuts.swift`, `Library/LibraryViews.swift`, `AccessibilityID+Paste.swift`; `App/Sources/SegueApp.swift` (entries wiring, the Debug fixture option); `Packages/SeguePersonalModules/Package.swift`; `Makefile` (`test-packages`, `eval-import`, `import-canary`); `scripts/lib/verify-common.sh` (`forbidden`); `.gitignore` (corpus folders); `.swiftlint.yml` (the SwiftSoup import rule); `THIRD_PARTY_NOTICES.md` (the SwiftSoup row, section 10); `UITests/AppStore/` (one method); `docs/release/specs/WS3-services.md` (rows 31-33).
+- New: `docs/phases/9-workstreams/P9-4-lyrics-and-url-import.md` (this spec); everything under `Packages/SeguePersonalModules/Sources/SeguePersonalModules/{Web,Web/Search,Lyrics,Romanization,UI}/`; `Packages/SeguePersonalModules/Tests/`; `research/phase9-import/` (README, `urls.tsv`; pages and gold gitignored); `scripts/collect-import-corpus.sh`, `scripts/redact-import-fixture.swift`, `scripts/eval-romanizer.sh`; `Packages/SegueCore/Sources/Plugins/PluginTypes.swift`; `Packages/SegueCore/Sources/Ingest/IngestPipeline+Source.swift`; `Packages/SegueCore/Sources/Services/AnalyticsEvent+Import.swift`; `UITests/SegueWebImportE2ETests.swift`; the draft guide page.
+- Changed (own hunks only): `Plugins/PluginRegistry.swift`, `Ingest/IngestTypes.swift` (origins), `Services/AnalyticsEvent.swift` (rows 31-33, `SongSource.web`), `AnalyticsEvent+AI.swift` (`PasteSource`), `AnalyticsEvent+Throttle.swift`; SegueUI `Paste/*` (source review, the web field host, source line), `App/AppDependencies` (entries), `App/Commands/FileCommands.swift`, `App/MenuShortcuts.swift`, `Library/LibraryViews.swift`, `AccessibilityID+Paste.swift`; `App/Sources/SegueApp.swift` (entries wiring, the Debug fixture option); `Packages/SeguePersonalModules/Package.swift`; `Makefile` (`test-packages`, `eval-import`, `import-canary`); `scripts/lib/verify-common.sh` (`forbidden`); `.gitignore` (corpus folders); `.swiftlint.yml` (one import rule per bake-off component); `THIRD_PARTY_NOTICES.md` (one row per bake-off component, section 10); `UITests/AppStore/` (one method); `docs/release/specs/WS3-services.md` (rows 31-33).
 - Pointer: `docs/phases/5-personal-modules.md` (replaced by a pointer to this spec).
 
 ## 19. Sessions and steps
 
 ### P9-4a - corpus, contract, fetcher, page readers, eval
 
-- **a1** Package setup: test target, `make test-packages` entry, the HTML parser dependency (open question 2) pinned exactly with its isolation lint rule, its `THIRD_PARTY_NOTICES.md` row (10). `make quick`-level compile only.
+- **a0** Read the landed bake-off (`docs/research/phase9-import-bakeoff.md`) and fill section 4.4 from it; stop and ask if it leaves a row undecided.
+- **a1** Package setup: test target, `make test-packages` entry, the bake-off's dependencies (4.4) pinned exactly with their isolation lint rules and `THIRD_PARTY_NOTICES.md` rows (10). `make quick`-level compile only.
 - **a2** Contract: `PluginTypes.swift`, the protocol requirements, `IngestOrigin.web` / `.lyrics`, `IngestPipeline.ingest(_:origin:source:)` with its tests (15.2). Lands early so P9-4b can start.
-- **a3** Corpus: `urls.tsv` (agents pick representative public pages per 16.1), the collector run, the E-Chords list handed to Ryan with Safari steps (a manual action for Ryan: say so clearly and keep building), gold files, the redactor and the committed fixtures.
-- **a4** `HTTPTransport`, `URLSessionTransport`, `FixtureTransport`, `PageFetcher`, `RequestPacer`, `PageCache` with tests.
+- **a3** Corpus: `urls.tsv` (agents pick representative public pages per 16.1), the collector run, the search pages of 16.1 (verifying 3.6's unprobed search shapes), the E-Chords list handed to Ryan with Safari steps (a manual action for Ryan: say so clearly and keep building), gold files, the redactor and the committed fixtures.
+- **a4** `HTTPTransport`, `URLSessionTransport`, `FixtureTransport`, `PageLoader` with `PlainPageLoader` and `WebKitPageLoader` (8.6), `PageFetcher`, `RequestPacer`, `PageCache` with tests.
 - **a5** `TabJSONParser`, `ChordSpansParser`, `ChordPreParser` (from Ryan's saved pages; if they have not arrived, build the other steps first and leave this one last), sanity checks, fallback, with tests.
 - **a6** `GenericPageReader` with tests.
+- **a6b** `UGSearchReader`, `ChordieSearchReader`, `EChordsSearchReader`, `VersionRanker` with tests (6.10, 6.11).
 - **a7** `segue-import-eval` and `make eval-import`; iterate the readers until the 16.3 page targets pass; record the table in `research/phase9-import/README.md`.
 - **a8** `make import-canary`. End: one `make quick`.
 
@@ -590,13 +652,13 @@ One `make quick` at the end of each session; one `make e2e-one TEST=SegueWebImpo
 - **b1** `HindiRomanizer`, its table and override list, tests; `eval-romanizer.sh` run reported.
 - **b2** `LRCLIBClient` on the pacer, recorded responses (16.1), decode tests; the live API shape re-checked once with a single manual request (LRCLIB was returning 502 on 2026-10-31).
 - **b3** `LyricsQueryVariants`, `LyricsRanker`, `LRCSections`, script checks, with tests; the LRCLIB eval targets in `make eval-import`.
-- **b4** `LRCLIBLyricsSource` and `WebPageImporter` registered in `PersonalModules.register(into:)`. End: one `make quick`.
+- **b4** The four `SongSearchSource`s (LRCLIB plus the three chord-site search readers) and `WebPageImporter` registered in `PersonalModules.register(into:)`. End: one `make quick`.
 
 ### P9-4c - UI, analytics, absence checks, guide, E2E
 
-- **c0** Design directions (R39): 2-3 mockups of the Find Lyrics sheet and of the New Song sheet with the web field (Apple-native, dark-first, Linear/Things references), Ryan picks before c2.
+- **c0** Design directions (R39): 2-3 mockups of the Find Lyrics sheet (grouped results, nested versions, the preview pane) and of the New Song sheet with the web field (Apple-native, dark-first, Linear/Things references), Ryan picks before c2.
 - **c1** `PluginEntries` in `AppDependencies`, wiring in `SegueApp.swift`, `beginSourceReview`, the source line, `PasteSource` / `SongSource` cases; SegueUI tests (15.3).
-- **c2** The sheets in the personal package per the picked direction; File menu items and shortcuts; the empty-library buttons; the lone-URL paste; link drops; saved-file import if open question 15 is yes; help popovers; accessibility.
+- **c2** The sheets in the personal package per the picked direction; File menu items and shortcuts; the empty-library buttons; the lone-URL paste; link drops; saved-file import (R179); the blocked fallbacks; help popovers; accessibility.
 - **c3** Analytics rows 31-33 with their vocabulary tests; WS3 row table.
 - **c4** `forbidden` extended (13), proven with zero false positives, then one `make verify-appstore`.
 - **c5** E2E class (15.4) and the App Store method (15.5), one `make e2e-one` each.
@@ -605,29 +667,35 @@ One `make quick` at the end of each session; one `make e2e-one TEST=SegueWebImpo
 
 ## 20. Done criteria
 
-- In the Personal build: a UG, Chordie, E-Chords (saved page or reachable) and generic page each import into the review sheet with the right fields; LRCLIB search finds and opens lyrics, Hindi in casual romanization; everything lands only through Accept; R109 holds during a show.
-- Every failure in 6.8 and 8.7 shows its message and actions; no alert, crash or saved song from a failure; no bot-check circumvention anywhere.
+- In the Personal build: one search returns Ultimate Guitar, Chordie, E-Chords and LRCLIB results grouped by source, UG versions ranked by rating and votes with a preview each; a UG, Chordie, E-Chords (plain, WebKit-loaded or saved page) and generic page each import into the review sheet with the right fields; LRCLIB results open lyrics, Hindi in casual romanization; everything lands only through Accept; R109 holds during a show.
+- Every failure in 6.8 and 8.7 shows its message and actions; no alert, crash or saved song from a failure; no captcha-solving anywhere, and a page still challenged after its one WebKit load offers Open in Safari, a saved page and paste.
 - No live network in any test; parser, fetcher, pacer, ranker, variants and romanizer suites green; `make quick` green.
 - `make eval-import` meets every 16.3 target; the romanizer meets 16.5.
 - `make verify-appstore` passes with the extended `forbidden`; the App Store UI method passes; the App Store build's behaviour is unchanged.
 - Analytics rows 31-33 in the vocabulary, emitted only by the personal package, no site or service name in any raw value.
-- `docs/phases/5-personal-modules.md` is a pointer to this spec; the open questions below are closed in `docs/release/decisions.md` before P9-4a starts.
+- `docs/phases/5-personal-modules.md` is a pointer to this spec; section 4.4 is filled from the bake-off.
 
-## 21. Open questions (close before P9-4a, each with a recommendation)
+## 21. Closed questions (R179, 2026-11-01)
 
-1. **Committed fixtures: full pages or redacted?** The repo's rule (`.gitignore`, "copyrighted lyrics ... must never be committed") conflicts with committing real pages. (a) full pages gitignored locally, redacted structure-preserving copies committed (16.2); (b) commit full pages (the repo is private today); (c) commit nothing, tests need the local corpus. **Recommend (a)**: real markup and chord placement stay under test on every machine, and no lyric is ever committed.
-2. **HTML parser.** (a) SwiftSoup (MIT, pure Swift jsoup port, 2.14.3 released 2026-10-16, pinned exactly to the newest release at least two weeks old at build time), Personal package only (it still needs a "Personal build only" row in `THIRD_PARTY_NOTICES.md`, section 10); (b) Foundation `XMLDocument` with `.documentTidyHTML` (no dependency, libxml2's HTML parser, weaker on broken HTML5); (c) a hand-written tolerant tokenizer. **Recommend (a)** for the generic reader's DOM walking; the App Store build is untouched.
-3. **User-Agent for page fetches.** (a) honest `Segue/<version> (+https://segue.ryandsilva.dev)` everywhere, and a site that refuses gets the paste fallback; (b) a Safari-like UA for pages. **Recommend (a)**: LRCLIB requires identification, and imitating a browser edges toward the circumvention 8.6 rules out. UG answered a plain request on 2026-10-31.
-4. **Register an LRCLIB App-Id?** (a) no, the identified anonymous limit (~90/min per IP) is far above a person's use; (b) register for ~180/min and an authorisation document. **Recommend (a)**.
-5. **Romanize Devanagari found on web pages too?** (a) yes, the app fetched it, same as LRCLIB; (b) LRCLIB only, pages keep Devanagari (which the app may not display). **Recommend (a)**; pasted text stays untouched either way.
-6. **Where the romanizer lives.** (a) `SeguePersonalModules` (only caller in v1.0, App Store binary unchanged); (b) SegueCore, as the old phase 5 plan said. **Recommend (a)**; it moves down in one step if an App Store use appears.
-7. **Record where a song came from?** (a) nothing stored: the source line shows in the review only; (b) a sidecar `source` field (schema bump); (c) a `{meta: source <url>}` line in the `.cho`. **Recommend (a)**: no schema bump, no URL in the user's files, and a chart is edited into the owner's own version anyway.
-8. **Analytics tokens.** (a) technique names (`tabJSON`, `chordPre`, `chordSpans`, `genericPage`, `lyricsRecord`) so the App Store binary carries no site or service names and `forbidden` can include them; (b) site names (`ultimateGuitar`, ...) for readable dashboards. **Recommend (a)**; the mapping is one comment in `ReaderKind`.
-9. **Share extension.** (a) not in v1.0: the lone-URL paste and link drop cover "send this page to Segue"; (b) build a Personal-only Share extension now (a second appex, the Quick Look-only `PlugIns` check stays App Store only). **Recommend (a)**.
-10. **Guide pages.** (a) no public page; in-product help plus a Starlight draft page; (b) a public page marked "Personal build". **Recommend (a)**.
-11. **Search trigger.** (a) Return / Search button only; (b) as-you-type with a 600 ms debounce. **Recommend (a)**: fewer requests, no partial-word queries, nothing to rate-limit.
-12. **Eval targets.** Confirm 16.3 (site readers 95% pass, generic 80%, zero silent wrong charts, LRCLIB top-3 90% / top-1 75%, variants 4 of 5) and 16.5 (romanizer 90% on gold lines, 75% Dakshina agreement), or name others. **Recommend as written**.
-13. **Synced-lyrics gaps.** (a) split stanzas at gaps of 5 s or more when the plain lyrics have no blank lines, timestamps then discarded; (b) never use synced lyrics. **Recommend (a)**.
-14. **UG tab-only and Pro pages.** (a) refuse with "This page is a tab, not a chord chart"; (b) import the text of tab pages as an Instrumental block. **Recommend (a)**: Segue's tab handling is for tab lines inside a chord chart, and Pro pages carry no chart in the HTML.
-15. **Saved web page files.** (a) in Personal, Import Songs... and drops also accept `.html`, `.htm`, `.webarchive` and read them with the same parsers (the honest path for challenge-protected sites such as E-Chords); (b) URLs only. **Recommend (a)**.
-16. **Shortcuts.** Shift-Cmd-U for Import from Web Page... and Shift-Cmd-L for Find Lyrics... (both free in `MenuShortcuts.swift`), or none. **Recommend as proposed**.
+1. **Committed fixtures:** lyric-redacted committed fixtures, full pages kept locally (R179; 16.2).
+2. **HTML parser:** picked on quality by the bake-off; licence is no object for the Personal build (R179; 4.4).
+3. **User-Agent:** API calls identify as Segue (R179; 6.2, 8.2). The hidden WebKit loader keeps WebKit's own user agent and imitates no browser (8.6).
+4. **LRCLIB App-Id:** LRCLIB unregistered (R179; 6.2).
+5. **Romanize Devanagari from web pages:** yes, fetched text is romanized, pasted text never (R179; 7.1).
+7. **Record the source:** the source URL is not stored (R179; 4.2).
+8. **Analytics tokens:** technique names, not sites (R179; section 12).
+9. **Share extension:** none (R179; section 1).
+10. **Guide pages:** no public guide page (R179; section 17).
+11. **Search trigger:** Return (R179; 6.4).
+12. **Eval targets:** the spec's accuracy targets stand (R179; 16.3, 16.5).
+13. **Synced-lyrics gaps:** stanzas split at gaps of 5 s or more (R179; 6.6).
+14. **UG tab-only and Pro pages:** refused with a clear message (R179; 8.4, 6.10).
+15. **Saved web page files:** `.html`, `.htm` and `.webarchive` import (R179; 8.1).
+16. **Shortcuts:** Shift-Cmd-U Import from Web Page, Shift-Cmd-L Find Lyrics (R179; 11.1).
+
+New in R179, differing from or beyond the spec as first written: Ultimate Guitar search with versions ranked by rating and votes, a preview each (6.10); one search across UG, Chordie, E-Chords and LRCLIB grouped by source (6.4, 6.9, 6.11); blocked pages load through a hidden in-app WebKit view with no captcha-solving, Open in Safari or a saved page as the fallback (8.6, replacing "the page is never loaded in a web view"); components picked by the bake-off (4.4).
+
+Still open (no ruling in R176-R180):
+
+- **6. Where the romanizer lives** (`SeguePersonalModules`, recommended, or SegueCore). Close with the bake-off's romanizer row (4.4): a licence-encumbered pick can only live in the Personal package.
+- **E-Chords search and robots.txt.** E-Chords' robots.txt disallows `/search` (3.6); R179 puts E-Chords in the one search. (a) Request it on the user's Return as specced (6.11; robots.txt addresses crawlers, and this is one user-initiated request); (b) leave E-Chords out of search and keep it for URL import only. Recommend (a). Close before step a6b.
