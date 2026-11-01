@@ -75,25 +75,7 @@
             Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 14, verticalSpacing: 8) {
                 GridRow {
                     label("Title")
-                    TextField("Title", text: $draftTitle, prompt: Text("Song title"))
-                        .textFieldStyle(.plain)
-                        .font(Font(ArtistChipField.inputFont))
-                        // The same box as the Artists and Movie / Album fields: 18 + 5 + 5.
-                        .frame(height: 18)
-                        .padding(.vertical, 5)
-                        .padding(.horizontal, 8)
-                        .background(Theme.color.ground, in: RoundedRectangle(cornerRadius: 7))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .strokeBorder(
-                                    focus == .title ? Theme.color.cue : Theme.color.controlBorder,
-                                    lineWidth: 1,
-                                )
-                        }
-                        .frame(maxWidth: 320)
-                        .focused($focus, equals: .title)
-                        .onSubmit { commitTitle(values) }
-                        .accessibilityIdentifier(AccessibilityID.songCardTitle)
+                    titleField(values)
                 }
                 GridRow {
                     label("Artists")
@@ -126,6 +108,29 @@
                     commitTitle(values)
                 }
             }
+        }
+
+        /// The title, in the same box as the Artists and Movie / Album fields.
+        private func titleField(_ values: SongCardValues) -> some View {
+            TextField("Title", text: $draftTitle, prompt: Text("Song title"))
+                .textFieldStyle(.plain)
+                .font(Font(ArtistChipField.inputFont))
+                // The same box as the Artists and Movie / Album fields: 18 + 5 + 5.
+                .frame(height: 18)
+                .padding(.vertical, 5)
+                .padding(.horizontal, 8)
+                .background(Theme.color.ground, in: RoundedRectangle(cornerRadius: 7))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .strokeBorder(
+                            focus == .title ? Theme.color.cue : Theme.color.controlBorder,
+                            lineWidth: 1,
+                        )
+                }
+                .frame(maxWidth: 320)
+                .focused($focus, equals: .title)
+                .onSubmit { commitTitle(values) }
+                .accessibilityIdentifier(AccessibilityID.songCardTitle)
         }
 
         private func commitTitle(_ values: SongCardValues) {
