@@ -16,51 +16,54 @@
 
         var body: some View {
             @Bindable var preferences = ai.preferences
-            Form {
-                Section {
-                    Toggle("Use AI to refine pastes and set requests", isOn: $preferences.useAI)
-                        .accessibilityIdentifier(AccessibilityID.settingsAIUseAI)
-                    SettingsNote(text: Self.toggleNote)
-                }
-                Section("Apple Intelligence") {
-                    appleIntelligence
-                }
-                .disabled(!preferences.useAI)
-                Section {
-                    ForEach(ai.models.snapshot.models) { model in
-                        ModelCard(
-                            model: model,
-                            state: ai.models.snapshot.state(of: model.id),
-                            freeDisk: ai.models.snapshot.freeDiskBytes,
-                            isLowMemory: ai.models.isLowMemory,
-                            workspace: workspace,
-                            download: { ai.models.download(model.id) },
-                            cancel: { ai.models.cancel(model.id) },
-                            delete: { confirmingDelete = model },
-                        )
+            // As tall as its form: the model card loads after the window has opened, and
+            // with a fixed height its notes pushed Download under the Help button.
+            SettingsPaneHeight(minimum: 460) {
+                Form {
+                    Section {
+                        Toggle("Use AI to refine pastes and set requests", isOn: $preferences.useAI)
+                            .accessibilityIdentifier(AccessibilityID.settingsAIUseAI)
+                        SettingsNote(text: Self.toggleNote)
                     }
-                    if ai.models.installer == nil {
-                        SettingsNote(text: "Local models are not available in this build.")
+                    Section("Apple Intelligence") {
+                        appleIntelligence
                     }
-                    if let error = ai.models.deleteError {
-                        Text(Self.deleteErrorText(error))
-                            .font(.callout)
-                            .foregroundStyle(.red)
+                    .disabled(!preferences.useAI)
+                    Section {
+                        ForEach(ai.models.snapshot.models) { model in
+                            ModelCard(
+                                model: model,
+                                state: ai.models.snapshot.state(of: model.id),
+                                freeDisk: ai.models.snapshot.freeDiskBytes,
+                                isLowMemory: ai.models.isLowMemory,
+                                workspace: workspace,
+                                download: { ai.models.download(model.id) },
+                                cancel: { ai.models.cancel(model.id) },
+                                delete: { confirmingDelete = model },
+                            )
+                        }
+                        if ai.models.installer == nil {
+                            SettingsNote(text: "Local models are not available in this build.")
+                        }
+                        if let error = ai.models.deleteError {
+                            Text(Self.deleteErrorText(error))
+                                .font(.callout)
+                                .foregroundStyle(.red)
+                        }
+                        SettingsNote(text: Self.modelNote)
+                    } header: {
+                        Text("Local model")
                     }
-                    SettingsNote(text: Self.modelNote)
-                } header: {
-                    Text("Local model")
+                    if let advanced = ai.advancedSection {
+                        Section("Advanced") {
+                            advanced()
+                        }
+                        .accessibilityIdentifier(AccessibilityID.settingsAIAdvanced)
+                    }
                 }
-                if let advanced = ai.advancedSection {
-                    Section("Advanced") {
-                        advanced()
-                    }
-                    .accessibilityIdentifier(AccessibilityID.settingsAIAdvanced)
-                }
+                .formStyle(.grouped)
+                .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .ai) }
             }
-            .formStyle(.grouped)
-            .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .ai) }
-            .frame(minHeight: 460)
             .task {
                 ai.models.onDownloadFinished = { services.record(.aiModelDownload($0)) }
                 ai.models.start()

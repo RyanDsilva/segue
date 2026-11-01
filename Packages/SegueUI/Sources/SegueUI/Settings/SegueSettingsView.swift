@@ -78,6 +78,37 @@
         }
     }
 
+    /// A Settings pane exactly as tall as its grouped form's content, between `minimum` and
+    /// `maximum` (past that the form scrolls). The window follows the pane's size, so
+    /// content that arrives after the window opened (Settings > AI's model card) grows the
+    /// window instead of scrolling under the pane's Help button, where a control can sit
+    /// half hidden and take no clicks. `maximum` keeps the window on a 1280 x 800 screen.
+    struct SettingsPaneHeight: Layout {
+        var minimum: CGFloat
+        var maximum: CGFloat = 640
+
+        func sizeThatFits(
+            proposal: ProposedViewSize,
+            subviews: Subviews,
+            cache _: inout (),
+        ) -> CGSize {
+            guard let form = subviews.first else { return .zero }
+            let width = proposal.width ?? form.sizeThatFits(.unspecified).width
+            // Proposed no height, a grouped form answers with its content's height.
+            let content = form.sizeThatFits(ProposedViewSize(width: width, height: nil)).height
+            return CGSize(width: width, height: min(max(content, minimum), maximum))
+        }
+
+        func placeSubviews(
+            in bounds: CGRect,
+            proposal _: ProposedViewSize,
+            subviews: Subviews,
+            cache _: inout (),
+        ) {
+            subviews.first?.place(at: bounds.origin, proposal: ProposedViewSize(bounds.size))
+        }
+    }
+
     /// A pane's explanatory line under its controls.
     struct SettingsNote: View {
         let text: String

@@ -265,6 +265,33 @@ struct AISettingsTests {
         }
     }
 
+    /// The pane is as tall as its form, so the window grows when the model card arrives
+    /// after it opened (the card's notes pushed Download under the Help button at a fixed
+    /// 460 pt on a Mac without Apple Intelligence and under 16 GB, as the E2E VM is).
+    @Test
+    func `the pane grows with the model card that loads after it opens`() async throws {
+        let env = try TestEnvironment()
+        let (ai, _) = Self.services(
+            env,
+            fm: .unavailable(.appleIntelligenceNotEnabled),
+            memory: 8 << 30,
+        )
+        let host = NSHostingController(rootView: AISettingsView(
+            ai: ai,
+            workspace: NSWorkspaceActions(),
+            services: .inert(),
+        ).frame(width: 560))
+        // The least height the pane accepts: the window cannot be shorter than this.
+        let least = { host.sizeThatFits(in: CGSize(width: 560, height: 0)).height }
+        let before = least()
+        await ai.models.refresh()
+        await ai.refreshAvailability()
+        let after = least()
+        #expect(before == 460, "an empty pane keeps the minimum")
+        #expect(after > before + 150, "the pane did not grow with the card (\(after))")
+        #expect(after <= 640)
+    }
+
     /// `<repo>/.build/screenshots/ai-settings`.
     static var directory: URL {
         DiagramSnapshotTests.screenshotDirectory
