@@ -32,6 +32,8 @@ Tests are integration-first: real parser, real file-system library, real index, 
 | Before pushing | `make repo-check` (exactly what CI runs: lint, token and HTML checks, docs-check, ShellCheck, actionlint) |
 | Release (before `make archive`/`validate`) and the end of each phase | `make check` (everything, once: the release gate) |
 
+E2E runs off the screen: `make e2e`, `e2e-smoke`, `gate` and `check` build on the host and run the UI tests in a throwaway clone of a local Tart VM (`E2E_RUNNER=vm`, R180), so the Mac stays usable; `make e2e-one` stays on the screen for the debug loop (`E2E_RUNNER=vm make e2e-one ...` sends it to the VM, `E2E_RUNNER=host` brings any target back). `make e2e-vm [TEST=Class[/test]]` is the VM directly (`VM_VNC=1` to watch, `E2E_VM_SHARDS=2` for two guests when the Mac is idle). Once per machine and after each Xcode update: `make e2e-vm-golden` (pulls the matching `ghcr.io/cirruslabs/macos-tahoe-xcode` image, about 69 GB the first time); a run refuses a golden whose Xcode differs from the host's. Results land in `.build/results` as before.
+
 `make e2e-smoke` runs just the smoke set (library to editor to setlist to live). Do not run the full `make check` after every small fix; it is the release gate, not the inner loop. A new source folder needs a line in `UITests/e2e-map.tsv` (an unmapped path makes `make gate` run the full suite). Logic belongs in in-process SegueUI tests (real stores, files and parser); XCUITest is for real user flows. See [docs/test-performance.md](docs/test-performance.md). Flaky tests, lint warnings and build warnings get fixed when seen, even when unrelated to the change at hand.
 
 ## Tools

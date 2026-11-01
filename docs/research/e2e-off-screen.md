@@ -1,6 +1,6 @@
 # Research - running the XCUITest E2E suite off the owner's screen (2026-10-31)
 
-Research ticket for `docs/test-performance.md` item C4: run the macOS XCUITest suite (`make gate`, `make e2e`, `make e2e-one`, `make e2e-smoke`) somewhere that does not take the pointer, keyboard focus and screen of Ryan's working Mac for about 30 minutes. **V** = VERIFIED (source given, or checked on this machine), **U** = UNVERIFIED (needs the spike in section 7, or no primary source was found). No tool was installed and no code was changed for this doc.
+Research ticket for `docs/test-performance.md` item C4: run the macOS XCUITest suite (`make gate`, `make e2e`, `make e2e-one`, `make e2e-smoke`) somewhere that does not take the pointer, keyboard focus and screen of Ryan's working Mac for about 30 minutes. **V** = VERIFIED (source given, or checked on this machine), **U** = UNVERIFIED (needs the spike in section 7, or no primary source was found). No tool was installed and no code was changed for this doc; section 7.1 records the spike that followed (R180) and `make e2e-vm` is the result.
 
 **Recommendation in one line:** primary path **Tart** (now FSL-1.1-ALv2, internal use allowed) with Cirrus's prebuilt `macos-tahoe-xcode:27.1` image as a golden VM: build on the host as today, then `test-without-building` inside a throwaway APFS clone per run, driven by a new `make e2e-vm`. Fallback **the MacBook Neo as an SSH remote runner** (a different failure domain from any VM). **Lume (MIT)** stays the licence escape hatch behind the same runner interface.
 
@@ -177,6 +177,31 @@ If Tart's FSL terms or its new owner become a problem: `lume create --ipsw lates
 7. Check the metronome tests pass with the guest muted, and with `--no-audio` (does the engine cope with no device? a real-world case worth knowing).
 8. Check Services, Finder and Quick Look classes (`SegueServicesE2ETests`, `SegueFinderE2ETests`) with the app run from `~/run`.
 9. Fix any VM-only wait failures as real flakiness fixes (they will also bite on a loaded host).
+
+### 7.1 Results (2026-11-01, Tart 2.41.1, image `macos-tahoe-xcode:27.1`)
+
+| Step | Result |
+|---|---|
+| Install | `"aqua:cirruslabs/tart" = "2.41.1"` in `.mise.toml` installs the signed `tart.app` bundle and runs the binary inside it (V). Lume 0.6.1 installs through mise's `github:` backend (`trycua/cua`, tag `lume-v0.6.1`, asset `lume-0.6.1-darwin-arm64.tar.gz`, attestation verified) (V). |
+| Pull | 69.1 GB in about 21 min; 81 GB on disk in `~/.tart` (OCI cache) and the golden is an APFS clone of it (V). |
+| S1.1 boot | Clone in under a second; `tart run --no-graphics` to a working `tart exec` in 22-36 s (V). |
+| S1.2 automation mode | "DOES NOT REQUIRE user authentication"; Developer mode enabled; SIP disabled in the guest (V). |
+| S1.3 Xcode | `/Applications/Xcode_27.1.app`, 27.1 / 27A9275, equal to the host (V). |
+| S1.4 session | `tart exec <vm> launchctl managername` prints `Aqua`: no LaunchAgent wrapper is needed for Tart (V). Auto-login as `admin`, `sysadminctl -screenLock` off, sleep and display sleep 0 (V). |
+| Display | `tart set --display 1920x1200` (default unit points) left the guest at 1024x768 pt at 2x; `1920x1200px` gives a 1920x1200 1x screen (V, `screencapture` in the guest). The app's main window opens 1120 pt wide there. |
+| Audio | `set volume output muted true` works but does **not** survive a reboot, so the guest script mutes at the start of every run (V). `--no-audio` was not tried (S1.7 open). |
+| Login state | The image restores a Terminal window at login; the golden turns window restore off and the run closes Terminal (V). A "Quick Look Previewer Extension Added" banner appears on first launch of the app; it did not interfere (V). |
+| Signing | The host's Apple Development build (no embedded profile) launches and is driven in the guest; no keys in the guest (V). |
+| Share caveat | Replacing files in a VirtioFS share while it is mounted leaves stale entries in the guest (link count 0, `ditto` skips them). The runner stages once per fresh boot, so this only bites by hand (V). |
+| S1.5 Live + CoreUX (25 tests) | First run: 23/25. Both failures were VM-only and deterministic: the narrower window put a library row's centre on its hover Rehearse button, so "click the row" started a rehearsal. Fixed in the tests (`selectRow` clicks the title end; a real fragility, it would bite any narrow window). After the fix: 25/25, tests 5m32s, whole run 6m28s (build 8 s incremental, staging 3 s, boot 22 s) (V). |
+| Fixed overhead per run | About 45 s: boot 22-36 s plus xcodebuild start-up; a one-test run took 50 s end to end (V). |
+| S1.6 host impact (Live + CoreUX) | Host free memory 43-45% throughout (16 GB, owner's apps open); the VM process at 2.2-2.9 GB resident with a 6 GB guest; 1-3.5 host cores busy, about 2 on average; load average 5-6.5 on 10 cores. The host screen, pointer and keyboard were never touched (V). |
+| S1.5 full suite (85 tests) | 48m19s end to end, but about 26 min of that was a cascade: Fill's row click started a rehearsal (the same hover race, suite-wide) and 24 later tests each timed out after 66 s with "does not have a process ID" until xcodebuild restarted the runner. Fixed in `E2ESupport.click(in:)` (library rows clicked at the title end, their hover buttons hovered into view). Without the cascade the suite is about 22-25 min in the VM, in line with the host (V for the per-class times). |
+| VM-only failures left | Three tests fail deterministically in a fresh clone and are not runner problems: `SegueAISettingsE2ETests/testModelCardDownloadsOnlyOnAClick` (Apple Intelligence is "Not available" in the guest; the extra text pushes the Download button to the clipped bottom edge of Settings > AI, so the click does nothing: likely a real layout bug on any Mac without Apple Intelligence), `SegueBassE2ETests/testBassProfileShowsSoundingRoots` (the preview never lists "A, C#, D: Hello there friend"; it shows the bass diagrams), `SegueSongMetadataE2ETests/testArtistsMovieAndSlotTimes` (no artist suggestion for "shre"). `SegueTipsE2ETests` failed once and passed once (U). Screen recordings of each are in the result bundle. |
+| S1.7 / S1.8 | Metronome passes with the guest muted (V); `--no-audio` not tried (U). `SegueServicesE2ETests` and `SegueFinderE2ETests` pass with the app run from the guest's own disk (V). |
+| S1.6 host impact (full suite) | Host free memory 50-76%, VM process 5.1 GB resident on average (6 GB guest), about 1 core on average; no swap growth (V). |
+| Shards | `E2E_VM_SHARDS=2`: two clones boot side by side (35-36 s), results merged with `xcresulttool merge` into one bundle (V). |
+| Failure paths | Xcode mismatch fails closed before booting and names `make e2e-vm-golden`; Ctrl-C deletes the clone and staging; a `kill -9` leaves an orphan that the next run deletes (owner pid gone) (V). |
 
 ---
 

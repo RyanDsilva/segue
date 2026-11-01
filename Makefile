@@ -36,12 +36,20 @@ E2E_SMOKE   := LaunchSmokeTests SegueE2ETests/testSongToSetlistToLiveView \
 	SegueSetlistBuilderE2ETests/testBuildSetlistFromTheLibrary \
 	SegueCoreUXE2ETests/testAutosaveWritesWithoutSave
 
+# Where XCUITest runs (R180, scripts/e2e-run.sh): vm (a throwaway Tart VM clone, off the
+# screen), host (this Mac's screen) or lume (the MIT escape hatch). e2e, e2e-smoke, gate and
+# check use the VM; e2e-one stays on the host unless E2E_RUNNER is given explicitly.
+# E2E_VM_SHARDS=2 splits a VM run over two guests (opt-in, for when the Mac is idle).
+E2E_RUNNER  ?= vm
+E2E_ONE_RUNNER := $(if $(filter environment command line,$(origin E2E_RUNNER)),$(E2E_RUNNER),host)
+E2E_RUN     := E2E_RUNNER=$(E2E_RUNNER) scripts/e2e-run.sh
+
 # Website tooling (dev-only, fetched at run time at exact versions; nothing ships).
 HTMLVALIDATE := pnpm dlx html-validate@11.16.4
 WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: sentry-pull bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
-	test-perf e2e e2e-one e2e-smoke gate quick eval-ai lint format verify-appstore check bump \
+	test-perf e2e e2e-one e2e-smoke e2e-vm e2e-vm-golden gate quick eval-ai lint format verify-appstore check bump \
 	site-fonts site-html guide guide-dev guide-check guide-keys docs-shots docs-clips screenshots screenshots-compose preview preview-edit docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
@@ -144,23 +152,28 @@ test-perf: ## The timing-budget package tests, one package at a time with nothin
 	cd $(CORE_DIR) && $(SWIFT_TEST) --filter '$(PERF_RUN)'
 	cd $(UI_DIR) && $(UI_TEST) --filter '$(PERF_RUN)'
 
-e2e: ## XCUITest suite against the Personal flavor (all classes)
-	$(XCODEBUILD) -scheme Segue-Personal -configuration Debug-Personal test
+e2e: ## XCUITest suite against the Personal flavor (all classes; in the VM, E2E_RUNNER=host for this screen)
+	$(E2E_RUN)
 
-e2e-one: ## Run selected UI tests only: make e2e-one TEST=SegueLiveE2ETests[/testName]
+e2e-one: ## Run selected UI tests on this screen: make e2e-one TEST=SegueLiveE2ETests[/testName] (E2E_RUNNER=vm for the VM)
 	@test -n "$(TEST)" || (echo "usage: make e2e-one TEST=Class[/test]" >&2; exit 2)
-	$(XCODEBUILD) -scheme Segue-Personal -configuration Debug-Personal test -only-testing:SegueUITests/$(TEST)
+	E2E_RUNNER=$(E2E_ONE_RUNNER) scripts/e2e-run.sh -only-testing:SegueUITests/$(TEST)
 
-e2e-smoke: ## The E2E smoke set: library to editor to setlist to live (E2E_SMOKE)
-	$(XCODEBUILD) -scheme Segue-Personal -configuration Debug-Personal test \
-		$(addprefix -only-testing:SegueUITests/,$(E2E_SMOKE))
+e2e-smoke: ## The E2E smoke set: library to editor to setlist to live (E2E_SMOKE; in the VM)
+	$(E2E_RUN) $(addprefix -only-testing:SegueUITests/,$(E2E_SMOKE))
+
+e2e-vm: ## UI tests in a throwaway VM clone, off the screen: make e2e-vm [TEST=Class[/test]] [E2E_VM_SHARDS=2] [VM_VNC=1]
+	E2E_RUNNER=$(if $(filter lume,$(E2E_RUNNER)),lume,vm) scripts/e2e-run.sh $(if $(TEST),-only-testing:SegueUITests/$(TEST))
+
+e2e-vm-golden: ## Create or refresh the golden E2E VM for this Mac's Xcode (pulls about 69 GB the first time)
+	E2E_RUNNER=$(if $(filter lume,$(E2E_RUNNER)),lume,vm) scripts/e2e-vm-golden.sh
 
 quick: PKG_SKIP := $(PERF_TESTS)|$(SLOW_TESTS)
 quick: PERF_RUN := PerformanceTests
 quick: lint build test-packages test-perf ## Inner loop: lint, build, package tests (no UI tests, no long property tests)
 
 gate: generate lint repo-check tokens-check icon-check site-check build ## Workstream gate: package tests, App Store build or verify, E2E smoke + classes mapped from changes since GATE_BASE (default origin/main)
-	E2E_SMOKE="$(E2E_SMOKE)" scripts/gate.sh
+	E2E_SMOKE="$(E2E_SMOKE)" E2E_RUNNER=$(E2E_RUNNER) scripts/gate.sh
 
 lint: ## Lint + format check (no changes)
 	$(MISE) swiftlint lint --strict --quiet
@@ -208,7 +221,7 @@ check: generate lint repo-check tokens-check icon-check site-check build ## Rele
 	scripts/parallel.sh tests "make --no-print-directory test-packages" \
 		verify "make --no-print-directory verify-appstore"
 	$(MAKE) --no-print-directory test-perf
-	$(MAKE) --no-print-directory e2e
+	$(MAKE) --no-print-directory e2e E2E_RUNNER=$(E2E_RUNNER)
 
 # Repo hygiene. repo-check is exactly what the Linux CI runs (.github/workflows), offline apart
 # from the first fetch of pinned tools, so run it before pushing. gen-site.swift needs AppKit,

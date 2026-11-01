@@ -13,6 +13,7 @@
 # gate and always runs everything.
 #
 # Environment: GATE_BASE (base ref), E2E_SMOKE (space-separated test IDs, from the Makefile),
+# E2E_RUNNER (where E2E runs, scripts/e2e-run.sh; the Makefile defaults it to the VM),
 # GATE_DRY_RUN=1 (print the plan, run nothing).
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -84,6 +85,7 @@ else
     done
     echo "gate: E2E: ${only[*]}"
 fi
+echo "gate: E2E runner: ${E2E_RUNNER:-host}"
 
 if [[ "${GATE_DRY_RUN:-}" == 1 ]]; then
     exit 0
@@ -94,12 +96,11 @@ $needs_verify && appstore="make --no-print-directory verify-appstore"
 scripts/parallel.sh tests "make --no-print-directory test-packages" appstore "$appstore"
 make --no-print-directory test-perf
 
-if $all; then
-    make --no-print-directory e2e
-else
-    args=()
+# E2E through the runner port (E2E_RUNNER from the Makefile: the VM by default).
+args=()
+if ! $all; then
     for id in "${only[@]}"; do
         args+=("-only-testing:SegueUITests/$id")
     done
-    scripts/xcodebuild.sh -scheme Segue-Personal -configuration Debug-Personal test "${args[@]}"
 fi
+scripts/e2e-run.sh "${args[@]}"
