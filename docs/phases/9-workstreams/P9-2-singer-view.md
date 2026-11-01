@@ -1,10 +1,10 @@
 # P9-2 - Singer view: lyrics only, chords hidden
 
-Phase 9 workstream (new, 2026-10-31). Rulings: `docs/release/decisions.md` **R176** (the first App Store release is v1.0 and builds Singer view before submission, specced with its open questions closed first), **R138** / **R140** (Singer view is in the release; the one store media pass comes after it), and `docs/00-vision.md:90` ("Singer view - lyrics only, chords hidden"). Built on Phase 8: **R147** (every pass written out, the section map), **R148** (jump and loop), **R149** (pass show modes), **R150** (single-song sessions), **R152** / **R158** P8-4 Q3 / **R161** (the bass-note view, user-level, `B`), **R166** / **R168** Q8 / **R175** (fills, `T`, saved fills always show in the bass view), **R144** / **R145** (section notes and stage cues), **R113** (test budget), **R39** (design directions before new UI), **R79** (accessibility walk), and the owner's romanized Hindi rule (no step may "correct" romanized Hindi words; spell-check and autocorrect off in lyric fields). Reference specs for the code this extends: `docs/phases/8-workstreams/P8-2-stage-map-and-passes.md` (pass model, map, `StageRequest`), `P8-3-arrangement-sequence-strip.md` (show modes in the editor), `P8-4-bass.md` and `P8-7-time-model-and-fills.md` (what the stage draws over chords).
+Phase 9 workstream (new, 2026-10-31). Rulings: `docs/release/decisions.md` **R176** (the first App Store release is v1.0 and builds Singer view before submission, specced with its open questions closed first), **R178** (this spec's questions closed, section 20), **R138** / **R140** (Singer view is in the release; the one store media pass comes after it), and `docs/00-vision.md:90` ("Singer view - lyrics only, chords hidden"). Built on Phase 8: **R147** (every pass written out, the section map), **R148** (jump and loop), **R149** (pass show modes), **R150** (single-song sessions), **R152** / **R158** P8-4 Q3 / **R161** (the bass-note view, user-level, `B`), **R166** / **R168** Q8 / **R175** (fills, `T`, saved fills always show in the bass view), **R144** / **R145** (section notes and stage cues), **R113** (test budget), **R39** (design directions before new UI), **R79** (accessibility walk), and the owner's romanized Hindi rule (no step may "correct" romanized Hindi words; spell-check and autocorrect off in lyric fields). Reference specs for the code this extends: `docs/phases/8-workstreams/P8-2-stage-map-and-passes.md` (pass model, map, `StageRequest`), `P8-3-arrangement-sequence-strip.md` (show modes in the editor), `P8-4-bass.md` and `P8-7-time-model-and-fills.md` (what the stage draws over chords).
 
 **Sibling specs in this folder, written in parallel:** **P9-1** (`P9-1-pdf-export.md`: single chart, songbook, print, preview, Bass chart and fills) prints singer view as its "Lyrics" part through this spec's layout switch (section 8 here answers P9-1 section 8); **P9-3** (medleys) lays several songs into one stage plan, and singer view applies to each member the same way (section 6.12).
 
-**Build order:** after Phase 8 has landed (it edits `SongPreparation`, `StageRequest`, `LiveSession`, the editor top bar and the library pane, all Phase 8 files). P9-2a (core and stage) may run beside P9-1's core; P9-2b (previews, guide, E2E) follows P9-2a; P9-2c (the second-display Singer Screen) only if open question 6 says so. All before the R140 store media pass.
+**Build order:** after Phase 8 has landed (it edits `SongPreparation`, `StageRequest`, `LiveSession`, the editor top bar and the library pane, all Phase 8 files). P9-2a (core and stage) may run beside P9-1's core; P9-2b (previews, guide, E2E) follows P9-2a; P9-2c (the second-display Singer Screen, in v1.0 per R178) follows P9-2a. All before the R140 store media pass.
 
 ## Session rules (apply to every session)
 
@@ -13,13 +13,13 @@ Phase 9 workstream (new, 2026-10-31). Rulings: `docs/release/decisions.md` **R17
 - Commits: local only, signed (`git commit -S`), conventional messages, no co-author lines, one commit per resolved step. If signing fails with "failed to fill whole buffer", 1Password is locked: leave the staging intact, tell the orchestrator, never commit unsigned. Never push.
 - Test budget (R113): per step only targeted in-process suites (`swift test --filter <Suite>`). The transform is tricky pure logic and gets table-driven tests; the layout engine is pure and proves stage behaviour in-process. Exactly **one** new XCUITest class for the workstream (section 16.4). At the end of each session ONE `make quick`, plus ONE `make e2e-one` per UI test class added or changed. No `make gate`, no `make check`, no E2E retry loops (a failure is investigated, not re-run), no scratch-worktree builds. Every build or test runs under `lockf -k .build/make.lock`. Write this budget into any subagent's prompt.
 - Before using any Apple API not already in the codebase, run the `apple-api-check` skill.
-- Stop and ask the orchestrator at any decision fork or spec-vs-code inconsistency, including any section 20 question still open when a step reaches it.
+- Stop and ask the orchestrator at any decision fork or spec-vs-code inconsistency, including any case section 20's closed questions do not cover.
 
 ## 1. Goal
 
-A singer reads the set from a Segue screen with no chord in the way: big lyrics, the section names and the map so they know where the band is, the cues and notes that matter to a performer, and nothing a player needs (chords, walk-ups, fills, tab, the bass neck, capo shapes). The owner can flip his own stage to singer view with one key and hand the screen over, preview a song as the singer will see it from the library or the editor, and print lyric sheets through P9-1.
+A singer reads the set from a Segue screen with no chord in the way: big lyrics, the section names and the map so they know where the band is, the chart notes and stage cues placed in the song, and nothing a player needs (chords, walk-ups, fills, tab, the bass neck, capo shapes, the song and slot notes). The owner can flip his own stage to singer view with one key and hand the screen over, put a Singer Screen on a second display facing the singer while he keeps his chords, preview a song as the singer will see it from the library or the editor, and print lyric sheets through P9-1.
 
-**In scope:** one pure singer transform used by every surface; the stage toggle (`V`) in Live and Rehearsal, remembered; how each Phase 8 feature behaves under it (pass modes, section map, jump and loop, cues and notes, walk-ups, fills, the bass view and mini neck, play-along, transposition, metronome, auto-scroll); bigger lyrics; the library and editor previews; the print interface for P9-1; romanized Hindi kept byte for byte; analytics; accessibility; guide pages; one E2E.
+**In scope:** one pure singer transform used by every surface; the stage toggle (`V`) in Live and Rehearsal, remembered; how each Phase 8 feature behaves under it (pass modes, section map, jump and loop, cues and notes, walk-ups, fills, the bass view and mini neck, play-along, transposition, metronome, auto-scroll); bigger lyrics; the Singer Screen on a second display (section 6.13); the library and editor previews; the print interface for P9-1; romanized Hindi kept byte for byte; analytics; accessibility; guide pages; one E2E.
 
 **Not in scope:** editing lyrics in singer view (the editor's Text and Visual modes stay the editing surfaces); a per-singer part model (harmonies, who sings which line); lyric translation or transliteration; any change to `.cho` files, sidecars or setlists. The PDF option's toolbar control, pagination and file naming are P9-1's.
 
@@ -63,9 +63,9 @@ Print: not built (`docs/phases/4-export.md`, now P9-1).
 1. **One transform, every surface.** A pure `SingerView` in SegueCore Editing turns `[RenderSection]` into singer sections. The stage (LiveLayout), the library and editor previews (`SongSheetView`) and P9-1's PDF all call it, so a song reads the same everywhere. No surface strips chords on its own.
 2. **A view, not a song setting.** Nothing is written to the `.cho`, the sidecar or a setlist. Two remembered settings only: the stage's (Settings-level, `LiveSettings.singerView`) and the previews' (`PreviewPrefs.singer`, section 11).
 3. **Stage: a toggle in Live and Rehearsal, `V`.** Not a separate mode or a separate start command: the owner flips it mid-set when he hands the screen over, and the same session (keys, map, pedal, requests) keeps working. It is remembered across shows like `B`, and the pre-show checklist warns when it is on (6.10).
-4. **Chords only passes become First line** in singer view (section 6.3, open question 1).
+4. **Chords only passes become First line** in singer view, keeping the CHORDS tag (section 6.3, R178).
 5. **Bigger lyrics** come from two things: chord rows are gone (the fit search gets the space back on its own), and singer view lays out with `LayoutStyle.singer` (a higher maximum and comfortable size, section 6.5).
-6. **Everything a player reads goes; everything a performer reads stays.** Goes: chords, chord rows, Nashville, capo shapes, walk-ups, fills, tab and grid blocks, chord diagrams, the bass mini neck. Stays: section names, the map, pass badges and mode tags, `{comment}` lines, stage cues, song and slot notes, the metronome, the up-next line (6.7).
+6. **Everything a player reads goes; everything a performer reads stays.** Goes: chords, chord rows, Nashville, capo shapes, walk-ups, fills, tab and grid blocks, chord diagrams, the bass mini neck. Song and slot notes go too (R178: they are often player reminders). Stays: section names, the map, pass badges and mode tags, `{comment}` lines, stage cues, the metronome, the up-next line (6.7).
 7. **Transposition only reaches the key line.** Lyrics never change with transpose or capo; the header shows the sounding (concert) key after the slot's overrides, never a capo or shape key (6.8).
 8. **Romanized Hindi is untouched.** The transform copies lyric text byte for byte, joins words a chord split ("Tu[G]jh" reads "Tujh"), never changes case, spelling, punctuation or spacing inside a word, never hyphenates (section 10).
 
@@ -130,7 +130,7 @@ It never reorders, merges or renames sections, never edits a label, never change
 - builds the render model as today (overrides applied, so the concert key is right), with `bass: nil` (the bass view never applies, 6.6);
 - passes `walkUps: nil` (no walk-ups, no fills, whatever `B` and the density say);
 - passes `style: .singer` (6.5);
-- keeps `cues`, `notes` and `passes` unchanged.
+- passes `notes: []` (song and slot notes are hidden in singer view, R178) and keeps `cues` and `passes` unchanged.
 
 `SongPreparation.measure()` with `view == .singer`: after `ArrangedSections.build`, each pass's mode is mapped through `PassMode.singer` and its section through `SingerView.section`, then measured with the existing `items(_:mode:)` (Full or First line; Chords only never reaches it). `firstLine` on a singer section picks the first lyric line with words (its existing rule) and counts "+ N more lines" over the singer items. An instrumental part in First line mode shows its "Instrumental" row and no "+ N" line.
 
@@ -143,7 +143,7 @@ It never reorders, merges or renames sections, never edits a label, never change
 | First line | the first line with chords, "+ N more lines" | the first line without chords, "+ N more lines" |
 | Skip | absent | absent |
 
-Rationale (open question 1): a Chords only pass is played, so the singer must see that it happens and which part it is, but the leader chose not to read its words; the first line names it without asserting a full vocal.
+Rationale (R178): a Chords only pass is played, so the singer must see that it happens and which part it is, but the leader chose not to read its words; the first line names it without asserting a full vocal.
 
 ### 6.4 Section map, badges, jump and loop (R147, R148)
 
@@ -151,7 +151,7 @@ Unchanged: singer view keeps the same shown passes in the same order, so the map
 
 ### 6.5 Font sizing: bigger lyrics
 
-- `LayoutStyle.singer` = `.stage` with `maxLyricSize` **60** (stage 44), `comfortableLyricSize` **36** (28), `lineHeight` **1.3** (1.25), `sectionSpacing` 0.8 (0.6), `chordRatio` and the chord fields unused. These numbers are the starting point for step 0's directions (section 15) and are fixed by the direction Ryan picks.
+- `LayoutStyle.singer` = `.stage` with `maxLyricSize` **60** (stage 44), `comfortableLyricSize` **36** (28), `lineHeight` **1.3** (1.25), `sectionSpacing` 0.8 (0.6), `chordRatio` and the chord fields unused. R178 fixes the 60 pt maximum and the 28 pt floor; the other numbers are the starting point for step 0's directions (section 15) and are fixed by the direction Ryan picks.
 - The minimum lyric size in singer view is `max(settings.minLyricSize, 28)`: the fit never shrinks a singer's lyrics below 28 pt; a long song scrolls or takes columns instead (the existing fit rules).
 - Zoom: ⌘+ / ⌘- / ⌘0 in singer view change a separate `LiveSettings.singerZoom` (default 1.0, range `LiveSession.zoomRange`), not the song's `LivePrefs.zoom`, so a singer's zoom never changes the owner's chart zoom for that song and applies to every song while singer view is on. Columns (`C`) stay per song as today.
 - The 58 pt map band and the header and footer heights are unchanged.
@@ -164,7 +164,7 @@ Unchanged: singer view keeps the same shown passes in the same order, so the map
 
 ### 6.7 Cues, notes, comments, header, footer
 
-- **Stage cues** (sidecar cues, P3-17) draw as callouts on their part's first shown pass, as today. **Song notes and the slot note** show in the notes block at the top, as today (open question 3).
+- **Stage cues** (sidecar cues, P3-17) draw as callouts on their part's first shown pass, as today. **Song notes and the slot note** are hidden: singer view lays out no notes block (R178). Chart notes (`{comment}` lines) stay, per 5.2 rule 3.
 - **Header**: title, then the key line `SingerKeyLine`: "Key A" (the concert key after the slot's overrides, `model.transform.concertKey`), no capo, no "Shapes"; the tempo stays ("Key A, 96"). Arranged / Full song, the Singer chip, the Rehearsal chip, the loop pill, progress dots and elapsed time as today.
 - **Footer up-next**: the next song's title and the same singer key line; its lyric line is `StageFooter.firstLine` of the next song's **singer** model (the first line with words), so an up-next never shows a chord-only line.
 - **Metronome**: unchanged (pips, BPM, `M`, count-ins); a singer often wants the pulse.
@@ -190,11 +190,20 @@ Paging, pedals and P8-1's guards, requests, search, the drawer, Gig Mode, the gi
 
 P9-3 lays a medley's members into one plan as segments; `view` applies to every segment and the transition blocks keep their text. The member header in singer view shows the member's title and its singer key line. P9-3 owns that header; this spec only requires that it reads `StageView` the same way.
 
+### 6.13 Singer Screen on a second display (P9-2c, R178)
+
+- **What:** a second stage window, always in singer view, on another display facing the singer, while the owner's main stage keeps whatever view he has (usually chords). It has no keys of its own, no audio, no pedals and no chrome beyond the stage header (title, singer key line) and the map strip.
+- **Open:** Window > "Singer Screen" (identifier `segue.menu.singerScreen`, no default shortcut), enabled while a Live or Rehearsal session is up and more than one display is connected; help when disabled: "Connect a second display to show a Singer Screen". It opens borderless and full screen on the first display other than the main stage's; when there are three or more, a submenu lists them by `NSScreen.localizedName`. The chosen display is remembered per machine (`LiveSettings.singerScreenDisplay`, the display's name, lenient like the 11 fields) and re-used when it is connected. The pre-show checklist gains no row; it shows "Singer Screen: on <display>" as a passive line when the window is open.
+- **Follow model (`SingerScreenFollow`, SegueCore `Shows`, pure):** the screen lays out its own singer plan for the current song (`StageRequest.make(..., singer: true)` at the second display's viewport and `LayoutStyle.singer`, notes hidden) and maps the performer's position onto it pass by pass: input is the main plan's current pass index and progress (`StagePasses.progress`), output is the scroll offset of the same pass at the same progress in the singer plan. Song changes, jumps (1-9, chip clicks), loops and requests follow at once; continuous scroll follows with the stage's existing smoothing. Medleys follow member by member (6.12).
+- **Between songs and at show end:** the changeover shows the next song's title and singer key line; ending the show closes the window. Unplugging its display closes it quietly (no error); reconnecting does not reopen it.
+- **Singer view on the main stage too:** if the owner presses `V` as well, both show lyrics; the Singer Screen ignores `V`, `B`, `T` and zoom on the main stage (its size is the fit at its own display, with `LiveSettings.singerZoom`).
+- **Accessibility:** the window is not key and takes no focus; VoiceOver users drive the main stage.
+
 ## 7. Editor and library preview
 
-- **Library detail pane**: a "Singer" segmented toggle at the right of the row that holds the Play Along toggle (`SongDetailPane.chart`, `:255-265`), identifier `segue.library.singerPreview`, help "Preview lyrics only, as a singer sees them". On: the pane draws `SongSheetView(sections: SingerView.sections(render.sections), style: .preview)`, the diagrams strip is hidden, and the chord interactions (walk-up picking, hearing a chord, the fill span) are absent because there are no chords. The header's key reads as the singer key line. Play-along still works (it reads the timeline, not the drawing) and its cue highlight follows lines by path, which the transform keeps.
+- **Library detail pane**: a "Singer" segmented toggle at the right of the row that holds the Play Along toggle (`SongDetailPane.chart`, `:255-265`), identifier `segue.library.singerPreview`, help "Preview lyrics only, as a singer sees them". On: the pane draws `SongSheetView(sections: SingerView.sections(render.sections), style: .preview)`, the song notes are hidden as on stage, the diagrams strip is hidden, and the chord interactions (walk-up picking, hearing a chord, the fill span) are absent because there are no chords. The header's key reads as the singer key line. Play-along still works (it reads the timeline, not the drawing) and its cue highlight follows lines by path, which the transform keeps.
 - **Editor**: a "Singer" button in the display group after "Bass" (`EditorTopBar.displayGroup`, `:104-137`), identifier `segue.editor.display.singer`. In **Text mode** the live preview (`EditorPreview`) draws `SingerView.model(renderModel)`; the source pane stays editable, so lyric edits show in singer view as you type. In **Visual mode** the canvas is replaced by a read-only singer page with a slim bar above it: "Singer preview: chords are hidden. Turn off Singer to edit chords." with a "Turn Off" button; typing is not possible in it. Switching Visual / Text keeps the toggle.
-- Both previews share one remembered setting, `PreviewPrefs.singer` (open question 2), separate from the stage's: previewing a song for a singer never turns the owner's stage into singer view.
+- Both previews share one remembered setting, `PreviewPrefs.singer` (R178: the preview has its own singer toggle), separate from the stage's: previewing a song for a singer never turns the owner's stage into singer view.
 - Song menu: "Singer Preview" with ⇧⌘Y (free today: check `MenuAndAboutTests` at build time; if taken, pick a free chord and record it), enabled when a song is shown in the library or open in the editor.
 
 ## 8. Print: interface for P9-1
@@ -204,7 +213,7 @@ P9-1 owns the export UI, pagination and files; it prints singer view as its **Ly
 1. The layout-request switch P9-1 section 8 item 1 asks for: `StageRequest.make(..., singer: true)` -> `LayoutRequest.view = .singer` (section 6.2), so `SongPreparation` produces no chord rows, chord runs, walk-up or fill runs and no fill tabs; print never strips chords itself. For anything drawn outside the layout engine (headers, the set list page), `SingerView.model(_ model: RenderModel) -> RenderModel` (section 5): diagrams empty, the header's capo nil and its key the concert key.
 2. `PassMode.singer` for P9-1's repeats and arrangement handling, if the songbook honours slot arrangements (P9-1's decision): a Chords only pass prints as First line, as on stage.
 3. `SingerView.instrumentalText` and the placeholder rule, so a printed instrumental part reads "Intro / Instrumental" like the stage.
-4. The answers P9-1 section 8 item 2 leaves to this spec: Chords only passes print as First line with the "CHORDS" tag, First line passes as their first line without chords, tab and grid blocks are dropped, `{comment}` lines are kept (5.2), instrumental parts print "Instrumental", and the header and the set list page's key column show the sounding key and no capo ("Key A"). P9-1's own choices (the Chart picker value "Lyrics", its Large default text size, the " (Lyrics)" file name, diagrams and fill tab disabled) stand; a lyric line is the unit print never splits; romanized Hindi prints byte for byte (section 10).
+4. The answers P9-1 section 8 item 2 leaves to this spec: Chords only passes print as First line with the "CHORDS" tag, First line passes as their first line without chords, tab and grid blocks are dropped, `{comment}` lines are kept (5.2), instrumental parts print "Instrumental", song and slot notes never print in the Lyrics part (R178; P9-1's "Stage notes and cues" option prints cues only), and the header and the set list page's key column show the sounding key and no capo ("Key A", R178). P9-1's own choices (the Chart picker value "Lyrics", its Large default text size, the " (Lyrics)" file name, diagrams and fill tab disabled) stand; a lyric line is the unit print never splits; romanized Hindi prints byte for byte (section 10).
 5. Analytics: P9-1's export signal carries the part (`lyrics`); this spec adds nothing to the export row.
 
 If P9-1 needs anything else from the transform (for example, a per-line marker for "+ N more lines"), it is added here, in `SingerView`, never re-implemented in the paginator.
@@ -222,7 +231,8 @@ If P9-1 needs anything else from the transform (for example, a per-line marker f
 | Walk-ups (P8-4b), fills and fill tab (P8-7, R175) | hidden; `T` flashes |
 | Play-along (P8-6b) | sounds as in chart view, follows the singer plan |
 | Mid-song `{key}` (R168 Q2) | the header key line follows the key at the reading line, concert pitch |
-| Section notes and cues (R144, R145) | shown |
+| Chart notes and stage cues (R144, R145) | shown |
+| Song notes and slot notes | hidden (R178) |
 | Slot time and totals (R172) | unchanged |
 | Movie / Album (R173) | not shown on stage, as in chart view |
 
@@ -250,7 +260,7 @@ If P9-1 needs anything else from the transform (for example, a per-line marker f
 
 ## 13. Analytics (non-PII, closed vocabulary, WS3)
 
-- `FeatureKey.singerView` (WS3 row 8): recorded with `featureUsed` when singer view is switched **on**, context `stage` (the `V` key, the menu or Settings), `library` or `editor` (the preview toggles). Once per show for `stage`; daily for the previews (existing throttle rules).
+- `FeatureKey.singerView` (WS3 row 8): recorded with `featureUsed` when singer view is switched **on**, context `stage` (the `V` key, the menu or Settings), `screen` (the Singer Screen opened, P9-2c), `library` or `editor` (the preview toggles). Once per show for `stage`; daily for the previews (existing throttle rules).
 - The show-ended signal gains `segue.singer` (Bool: singer view was on at any time during the run), so it is visible whether singer view is used at gigs or only in rehearsals. Update `AnalyticsEvent` params, the throttle case if needed, `ServicesVocabularyTests`, and the WS3 table in the same change.
 - Never lyric text, titles or ids.
 
@@ -289,7 +299,7 @@ Also rendered for each: the instrumental row, a Chords only pass as First line, 
 - A singer plan has no `.chord`, `.chordSeparator`, `.approach` or fill text anywhere; the chart plan of the same request has them.
 - Same `plan.passes` count, order, names, badges and mode tags as the chart plan, for a full song and an arranged slot with Chords only, First line and Skip passes; a Chords only pass lays out as First line with tag "CHORDS".
 - For a fixed viewport, the singer plan's lyric size is >= the chart plan's and >= 28; `LayoutStyle.singer` caps at 60.
-- Cues on the first shown pass; notes block present; walk-ups ignored even when `walkUps` is passed (defensive).
+- Cues on the first shown pass; no notes block (song and slot notes passed in are not laid out); walk-ups ignored even when `walkUps` is passed (defensive).
 - `lineCount` and therefore auto-scroll speed inputs unchanged between views for the same song.
 
 ### 16.3 SegueUI, in-process (`StageSingerViewTests`, `SingerPreviewTests`, new; extend `KeyHelpTests`, `LiveModeTests`, `PreShowChecklistTests`, `MenuAndAboutTests`)
@@ -305,6 +315,11 @@ Also rendered for each: the instrumental row, a Chords only pass as First line, 
 ### 16.4 XCUITest (one new class)
 
 **`SegueSingerViewE2ETests.testSingerViewOnStage`**: fresh library; seed one song with a tempo, an instrumental intro, a chorus with chords inside romanized Hindi words, and a slot arrangement with a Chords only pass (as `SegueArrangementE2ETests` seeds); select it -> Rehearse (⌥⌘↩) -> chords visible -> press `v` -> no chord text is found in the stage (the chord accessibility labels are gone), "Tujh mein rab" is, the Intro reads "Instrumental", the Singer chip shows, the map still lists the same chips -> press `b` -> the "Singer view hides chords" flash -> `v` -> chords back -> `⌘.` and Return. Screenshots for the review. One `make e2e-one` for it.
+
+### 16.5 Singer Screen (P9-2c, in-process)
+
+- `SingerScreenFollowTests` (pure, table-driven): the same pass at the same progress across plans of different heights; a pass that is First line in both plans; jumps and loops; medley members; the last pass at progress 1.
+- `SingerScreenTests` (SegueUI, in-process with a fake screen list): the menu item's enabled state by display count and session; the remembered display chosen when connected, else the first other display; the window closes when its display disappears and when the show ends; notes hidden and no chord text in its plan.
 
 ## 17. Build sessions and steps
 
@@ -322,11 +337,14 @@ Also rendered for each: the instrumental row, a Chords only pass as First line, 
 6. Analytics (`FeatureKey.singerView`, `segue.singer` on show ended, WS3 table, vocabulary test).
 7. Guide pages and `SegueLinks`; the E2E (16.4); one `make quick`; one `make e2e-one SegueSingerViewE2ETests`; the screenshot command for Ryan if the session cannot run it.
 
-**P9-2c - Singer Screen on a second display** (only if open question 6 is answered yes; after P9-2a): the window, its follow model, its tests; spec text added to this file before the session starts.
+**P9-2c - Singer Screen on a second display** (in v1.0, R178; after P9-2a): section 6.13.
+
+8. `SingerScreenFollow` (pure) and its tests (16.5).
+9. `SingerScreenController`, the window, Window menu item, display choice and remembered screen, the checklist line, analytics context `screen`, the guide paragraph; `SingerScreenTests`. One `make quick`; no new XCUITest class (the second display cannot be driven in the E2E VM).
 
 ## 18. Files
 
-- **New**: `SegueCore/Sources/Editing/SingerView.swift`; `SegueUI/Sources/SegueUI/Live/StageSingerChip.swift` (if the chip is not a one-line addition to `StageChrome`), `SegueUI/Sources/SegueUI/Rendering/PreviewPrefs.swift`, `AccessibilityID+Singer.swift`; tests in section 16; `UITests/SegueSingerViewE2ETests.swift`; `guide/src/content/docs/singer-view.mdx`.
+- **New**: `SegueCore/Sources/Editing/SingerView.swift`; `SegueCore/Sources/Shows/SingerScreenFollow.swift`, `SegueUI/Sources/SegueUI/Live/SingerScreenController.swift`, `SingerScreenView.swift` (P9-2c); `SegueUI/Sources/SegueUI/Live/StageSingerChip.swift` (if the chip is not a one-line addition to `StageChrome`), `SegueUI/Sources/SegueUI/Rendering/PreviewPrefs.swift`, `AccessibilityID+Singer.swift`; tests in section 16; `UITests/SegueSingerViewE2ETests.swift`; `guide/src/content/docs/singer-view.mdx`.
 - **Changed**: `Library/SlotArrangement.swift` (`PassMode.singer`); `LiveLayout/LayoutRequest.swift`, `SongPreparation.swift`; `Shows/LiveCommand.swift`, `InputBindings.swift`, `KeyHelp.swift`, `LiveSettings.swift`; `Services/FeatureKey.swift`, `AnalyticsEvent.swift`; `SegueUI/Live/StageRequest.swift`, `LiveSession+Viewport.swift`, `LiveSession+Bass.swift`, `LiveSession+Commands.swift`, `StageChrome.swift`, `PreShowChecklist.swift`, `PreShowChecklistView.swift`; `Settings/LiveSettingsView.swift`, `LiveSettingsStore.swift`; `App/Commands/LiveCommands.swift`, `SongCommands.swift`, `App/MenuShortcuts.swift`, `App/SegueLinks.swift`; `Library/SongDetailPane.swift`; `Editor/EditorTopBar.swift`, `SongEditorView.swift`; `docs/release/specs/WS3-services.md`; `UITests/e2e-map.tsv` (route `Editing/SingerView.swift` and the stage files to the new class); guide pages in section 14.
 
 ## 19. Done criteria
@@ -338,14 +356,15 @@ Also rendered for each: the instrumental row, a Chords only pass as First line, 
 - The header shows the sounding key and no capo; `B` and `T` explain themselves and change nothing.
 - The library pane and the editor preview a song in singer view through the same transform; editing stays in the editor's normal modes.
 - P9-1 has `LayoutRequest.view = .singer` (through `StageRequest`), `SingerView.model` and `PassMode.singer` to print its Lyrics part.
+- The Singer Screen opens on a second display, follows the performer's song, pass and progress in singer view, and closes cleanly when its display goes away (6.13).
 - Analytics, accessibility labels, guide pages and `keyboard.json` updated; targeted suites green per step; one `make quick` per session; `make e2e-one` green for `SegueSingerViewE2ETests`.
 
-## 20. Open questions
+## 20. Closed questions (R178, 2026-11-01)
 
-1. **What a Chords only pass becomes in singer view.** (a) First line, keeping the "CHORDS" tag (the body above); (b) an "Instrumental" placeholder row only (treat every Chords only pass as unsung); (c) the full lyrics (Chords only is a display choice for the player, the singer still sings). **Recommendation: (a)**: it shows that the pass happens and which part it is without asserting a full vocal or none; if passes need to say "instrumental" explicitly, that is a fifth show mode in P8-3's editor, a separate ruling.
-2. **One preview setting or two.** (a) The library pane and the editor share `PreviewPrefs.singer`, separate from the stage's `LiveSettings.singerView` (the body); (b) one setting everywhere, like the bass view (R161: "so the editor and the stage always agree"); (c) per window, not remembered. **Recommendation: (a)**: previewing for a singer should never turn the owner's next gig into lyrics only, and the bass view's reason (the bassist always wants the same view) does not hold for a view that is usually for someone else.
-3. **Song notes and slot notes in singer view.** (a) Show them, as in chart view (the body); (b) hide the notes block (notes are often player reminders: "capo 2, use Am7 shapes"); (c) show the slot note only. **Recommendation: (a)**, because cues and notes are the owner's words to the performer and hiding them silently loses information; a per-note "players only" flag would be a later, separate feature.
-4. **Stage key.** (a) `V` (the body; free today); (b) `O` (freed by R147); (c) no default key, menu only. **Recommendation: (a)**: mnemonic ("view", "vocals"), adjacent to `B`, and `O` stays unassigned so an older `bindings.json` habit never meets a new meaning.
-5. **Singer lyric sizes.** (a) `maxLyricSize` 60, comfortable 36, floor 28 (the body), fixed by the picked design direction; (b) keep the stage's 44 / 28 and let the removed chord rows give the only gain; (c) a Settings > Live "Singer lyric size" slider. **Recommendation: (a)**, confirmed visually in step 0; a slider is unnecessary while ⌘+ / ⌘- set the singer zoom for every song.
-6. **A Singer Screen on a second display.** "Hand a screen to a singer" may mean a second display facing the singer rather than handing over the Mac. (a) Build it (P9-2c): Window > "Singer Screen" opens a second, borderless stage window on another display, always in singer view, following the performer's current song, pass and progress (mapped pass by pass, since the two layouts differ), with no keys of its own and no audio; (b) not now: the toggle covers handing over one screen, and a second display can mirror the whole stage with macOS display mirroring; (c) make it a research ticket (multi-window stage, `NSScreen` handling, follow precision). **Recommendation: (a)**: it is the setup where a singer actually benefits during a gig (the owner keeps his chords, the singer gets lyrics), and the follow model reuses `plan.passes` and `StagePasses.progress`; it is its own session so the core does not wait on it.
-7. **Print: the header key.** (a) The Lyrics part shows the sounding key and no capo, as the singer view's stage header (section 8 item 4); (b) no key at all on lyric sheets (a singer reading paper may not care); (c) key and capo as the chord chart. **Recommendation: (a)**: a singer pitches to the sounding key, and capo means nothing without chords. Everything else about printing is P9-1's (its Chart picker "Lyrics" value, section 6).
+1. **What a Chords only pass becomes in singer view:** First line, with the CHORDS tag (R178; 6.3).
+2. **One preview setting or two:** the library and editor preview has its own singer toggle, separate from the stage's (R178; section 7).
+3. **Song notes and slot notes in singer view:** hidden (R178, differing from the spec's recommendation; decision 6, 6.2, 6.7). Chart notes (`{comment}`) and stage cues still show.
+4. **Stage key:** `V` (R178; 6.1).
+5. **Singer lyric sizes:** up to 60 pt with a 28 pt floor (R178; 6.5).
+6. **A Singer Screen on a second display:** ships in v1.0 as P9-2c (R178; 6.13).
+7. **Print: the header key:** printed lyric sheets show the sounding key and no capo (R178; section 8 item 4).
