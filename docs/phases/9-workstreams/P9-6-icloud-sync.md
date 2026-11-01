@@ -1,6 +1,6 @@
 # P9-6 - iCloud sync between the owner's Macs
 
-Phase 9 workstream (new, 2026-10-31). Ruling: `docs/release/decisions.md` **R177** (optional iCloud sync ships in v1.0: CKSyncEngine over the CloudKit private database, one zone per library, one record per item keyed by its ULID, the local folder canonical, opt-in, macOS only; per-field newest-wins by a hybrid logical clock; losers to `<library>/history/`; deletes mirror; Live releases the engine; first join merges by ULID; an older Mac stops syncing; both builds share `iCloud.dev.ryandsilva.segue`, Personal on Production; S1 starts with two spikes; the index and locks leave the library folder). Design basis: `docs/research/phase9-icloud-sync.md` (cited below as "research N"). Built on: **R176** (v1.0 and its pre-release scope), **R132** / **R134** (superseded for Mac-to-Mac by R177), **R1** (paid team `V6BM673U35`), **R11** / **R12** (bundle IDs, manual App Store signing), **R59** (Apple-events entitlements), **R67** / **R100** (the shared app group), **R113** (test budget), **R39** (design directions before new UI), **R158** P8-1 Q8 (`NearDuplicateIndex`), and the owner's rules on deterministic simulation testing, rebuildable projections, ULID identity, idempotent replay, graceful degradation and no automation-driven folder under file sync.
+Phase 9 workstream (new, 2026-10-31). Ruling: `docs/release/decisions.md` **R177** (optional iCloud sync ships in v1.0: CKSyncEngine over the CloudKit private database, one zone per library, one record per item keyed by its ULID, the local folder canonical, opt-in, macOS only; per-field newest-wins by a hybrid logical clock; losers to `<library>/history/`; deletes mirror; Live releases the engine; first join merges by ULID; an older Mac stops syncing; both builds share `iCloud.dev.ryandsilva.segue`, Personal on Production; S1 starts with two spikes; the index and locks leave the library folder) and **R179** (this spec's questions closed, section 24). Design basis: `docs/research/phase9-icloud-sync.md` (cited below as "research N"). Built on: **R176** (v1.0 and its pre-release scope), **R132** / **R134** (superseded for Mac-to-Mac by R177), **R1** (paid team `V6BM673U35`), **R11** / **R12** (bundle IDs, manual App Store signing), **R59** (Apple-events entitlements), **R67** / **R100** (the shared app group), **R113** (test budget), **R39** (design directions before new UI), **R158** P8-1 Q8 (`NearDuplicateIndex`), and the owner's rules on deterministic simulation testing, rebuildable projections, ULID identity, idempotent replay, graceful degradation and no automation-driven folder under file sync.
 
 **Sibling specs in this folder, written in parallel:** P9-1 (PDF export), P9-2 (Singer view), P9-3 (medleys), P9-4 (lyrics and URL import), P9-5 (Mac polish). None of them owns sync, but P9-3 (medleys) and any sibling that adds a sidecar or setlist field must add that field to the record field lists in section 7.3 in the same change (section 7.5 makes this a test failure, not a convention).
 
@@ -15,7 +15,7 @@ Phase 9 workstream (new, 2026-10-31). Ruling: `docs/release/decisions.md` **R177
 - Before using any Apple API not already in the codebase (all of CloudKit, `UserNotifications`, `URLResourceValues.isUbiquitousItem`, `getpwuid`), run the `apple-api-check` skill.
 - Ryan's real library is never opened by a test or a session, and no session signs in to, writes to or deletes from Ryan's Production iCloud data. Spikes and cloud tests use throwaway zones named `spike-<ulid>` / `test-<ulid>` and delete them afterwards.
 - The 1Password CLI does not work from the agent shell: anything that needs a credential is handed to Ryan as an exact command for Terminal.app.
-- Stop and ask the orchestrator at any decision fork or spec-vs-code inconsistency, including any section 24 question still open when a step reaches it.
+- Stop and ask the orchestrator at any decision fork or spec-vs-code inconsistency, including any case section 24's closed questions do not cover.
 
 ## 1. Goal
 
@@ -157,7 +157,7 @@ On the first open by an S0 build (recorded in `upgrades.json` as `stateMoved`):
 1. Build the new index in the state directory (a full scan, as after `rebuildIndex`).
 2. Delete `<root>/.segue/index.sqlite`, `-wal`, `-shm` with `SongIndex.deleteFiles` (a projection, not user data).
 3. Try `flock(LOCK_EX | LOCK_NB)` on `<root>/.segue/library.lock` and each `shows/*.show.lock`: if it succeeds (no older build holds it), unlink it; if not, leave it and retry next open.
-4. An older Segue build that still uses the in-folder lock is no longer excluded by the new one. Both flavours are built from one tree, so this is accepted (open question 2).
+4. An older Segue build that still uses the in-folder lock is no longer excluded by the new one. Both flavours are built from one tree, so this is accepted (R179: pre-S0 builds are not covered by the moved lock).
 
 ### 5.4 The file-sync folder warning
 
@@ -239,7 +239,7 @@ public enum SyncEvent: Sendable {
 
 ### 7.1 Zones and record names
 
-- **Zones:** `library-<libraryULID>` per joined library, plus one `settings` zone for the musical settings (they are app-wide, not per library; one engine still covers both zones, as CKSyncEngine is per database). Open question 3.
+- **Zones:** `library-<libraryULID>` per joined library, plus one `settings` zone for the musical settings (they are app-wide, not per library; one engine still covers both zones, as CKSyncEngine is per database). R179: settings sync in their own zone.
 - **Record types (CloudKit schema, fixed for good):** `Library` and `Item`. Because production fields can never be deleted (research 3), item contents are **not** CloudKit fields: they travel in one encrypted payload, so adding a sidecar key later never touches the CloudKit schema.
 
 | Type | Fields (CloudKit) | Notes |
@@ -281,12 +281,12 @@ Canonical JSON (sorted keys, no whitespace), so equal content has an equal hash:
 | `show` | every top-level `ShowRecord` key; in practice only `gig` and `reorderReview` change after a show ends | `readOnly`; **unfinished shows never sync** (section 7.4) |
 | `settings-<group>` | each top-level property of the group's stored value (section 14.1) | the per-Mac keys (section 14.2) |
 
-`entries` merges whole (R177 "per top-level field"): a reorder on one Mac and a slot note on the other is a clash on `entries`, and the older one goes to history. Open question 4.
+`entries` merges whole (R177 "per top-level field"): a reorder on one Mac and a slot note on the other is a clash on `entries`, and the older one goes to history. R179: setlist entries merge as one field.
 
 ### 7.4 Shows
 
 - A show record is enqueued only once it is finished (`endedAt != nil` and `closure` set). An unfinished show, including a running Rehearsal or a crash-resumable Live show, never leaves its Mac: otherwise the other Mac's `launchCheck` would offer to resume or auto-close a show that is running elsewhere.
-- Finished **gig** shows sync (the Gig Log, play stats on both Macs through `playHistory`). Finished **rehearsal** records stay local by default (they are crash-resume records, never in the Gig Log). Open question 5.
+- Finished **gig** shows sync (the Gig Log, play stats on both Macs through `playHistory`). Finished **rehearsal** records stay local by default (they are crash-resume records, never in the Gig Log). R179: finished rehearsal records do not sync.
 
 ### 7.5 Field lists are checked, not remembered
 
@@ -323,7 +323,7 @@ The ledger keeps, per item and field, the stamp and the hash of the value last w
 - Alive or dead: an item is alive when `max(field stamps) > deleted` (or `deleted` is nil). So an edit made after the delete (on a Mac that had not yet heard of it) brings the item back on both Macs, and a delete after the last edit wins on both. Both orders converge.
 - Applying a winning tombstone: the item's current files go to history first (reason `deleted elsewhere`), then the store's ordinary delete removes it (section 9.5).
 - Restoring from history (section 10.3) writes the item again with fresh stamps newer than the tombstone, so it comes back on the other Mac too.
-- Tombstone lifetime: kept 180 days, then the Mac that wrote the delete strips its payload to the key and `deleted` stamp (one record per deleted item stays). Open question 6.
+- Tombstone lifetime: kept 180 days, then the Mac that wrote the delete strips its payload to the key and `deleted` stamp (one record per deleted item stays). R179.
 
 ### 8.5 Worked examples
 
@@ -526,7 +526,7 @@ Turn On / Turn Off; the account and this library's iCloud name; last sync time; 
 ### 15.3 The 24-hour notification
 
 - When the oldest `pending` entry is older than 24 hours (checked at activation and hourly), one local notification: "Segue hasn't synced for a day. 5 changes on this Mac are waiting." Clicking opens Settings > Sync. Never while a show runs (deferred to its end), at most one per 24 hours, cleared when pending reaches zero.
-- `UserNotifications` is new to the app: permission is requested when the user turns sync on, with a one-line reason; declined means the footer and pane carry the status alone. Open question 9.
+- `UserNotifications` is new to the app: permission is requested when the user turns sync on, with a one-line reason; declined means the footer and pane carry the status alone. R179.
 
 ### 15.4 Menus
 
@@ -715,16 +715,18 @@ Prerequisite: Ryan has done section 21 A-C (ask and wait).
 - **S3:** the conformance suite and the two-engine cases pass on CloudKit Development; the adapter maps every `CKError` the engine surfaces to a named failure or problem; check 4 matches a real archive.
 - **S4:** every R177 behaviour is reachable from the UI (no CLI-only control); the footer and pane never claim "Synced" with pending changes or while released; Previous Versions restores songs, setlists, filters, shows and settings, including deleted items; the E2E class passes; the two-Mac checklist passes on Ryan's Macs within the Neo budget; analytics rows, guide pages, privacy policy and review notes are in; the Production schema is deployed.
 
-## 24. Open questions (each with a recommendation)
+## 24. Closed questions (R179, 2026-11-01)
 
-1. **Remote delete: also move to the Finder Trash?** R177 makes history the recovery path. The store's ordinary delete also trashes the files (repo invariant). **Rec: keep the Trash copy** (it costs nothing and protects against a history bug); the UI only ever points at Recently Deleted. Alternative: skip the Trash for remote deletes so the Trash does not fill with the other Mac's deletions.
-2. **Older builds and the moved lock.** An S0 build no longer takes the in-folder lock, so an older Segue (built before S0) could open the same library at the same moment on the same Mac. **Rec: accept** (both flavours are built from one tree and updated together); alternative: the S0 build also holds the old in-folder lock for one release when the folder is not a file-sync folder.
-3. **Settings zone.** The musical settings are app-wide, so this spec puts them in one `settings` zone rather than inside each library's zone. **Rec: a separate `settings` zone** (settings follow the account, not the library); alternative: inside the library zone, so a second library carries its own settings.
-4. **`entries` merges whole.** A reorder on one Mac and a slot note on the other clash, and the older one goes to history. **Rec: keep whole for v1.0** (R177 says top-level fields; history makes it recoverable; a per-slot merge needs an ordered-list CRDT); measure `segue.clashes` and revisit.
-5. **Finished rehearsal records.** **Rec: do not sync them** (they are crash-resume records, never in the Gig Log); alternative: sync them so a rehearsal history appears on both Macs if a later feature reads it.
-6. **Tombstone lifetime.** **Rec: keep tombstones 180 days with their fields, then strip to key and stamp** (a Mac offline longer than that can resurrect a deleted item, which errs on the side of keeping data); alternative: keep full tombstones forever (iCloud storage grows with every deletion).
-7. **History in the archive.** R177: "not in the archive export by default". **Rec: no option at all in v1.0** (simpler, and the Settings > Data copy says history stays in the library folder); alternative: an "Include previous versions" checkbox in the export sheet.
-8. **Look-alike Merge and tags.** **Rec: Merge adds the removed song's tags to the kept one** and keeps nothing else (notes, cues, parts of the removed song stay recoverable in history); alternative: no field carry-over.
-9. **When to ask for notification permission.** **Rec: when sync is turned on**, with the reason in one line; alternative: only when the 24-hour condition first occurs (better context, but the first warning then becomes a permission prompt).
-10. **Live settings Shortcut names.** `live.settings` holds the start and end Shortcut names, which R177's "stage/live settings" includes. Shortcuts themselves sync through iCloud, so the names usually exist on both Macs. **Rec: sync them as part of `settings-live`**; alternative: make `startShortcut` / `endShortcut` per Mac (a Mac without that Shortcut shows "Shortcut not found" in the checklist today either way).
-11. **Library ID file location.** **Rec: `.segue/library.json`** (hidden, next to `upgrades.json`); alternative: the research's visible `<root>/segue-library.json`, which survives a user deleting `.segue/` but adds clutter at the library root.
+All closed as the spec recommended.
+
+1. **Remote delete and the Finder Trash:** remote deletes also keep a Finder Trash copy; the UI points at Recently Deleted (R179; 9.5).
+2. **Older builds and the moved lock:** accepted; pre-S0 builds are not covered by the moved lock (R179; 5.3).
+3. **Settings zone:** settings sync in their own `settings` zone (R179; 7.1, 14.1).
+4. **`entries` merges whole:** setlist entries merge as one field; `segue.clashes` is measured (R179; 7.3).
+5. **Finished rehearsal records:** do not sync (R179; 7.4).
+6. **Tombstone lifetime:** tombstones keep their fields 180 days, then key and stamp only (R179; 8.4).
+7. **History in the archive:** no history option in the archive export (R179; 10.1).
+8. **Look-alike Merge and tags:** a look-alike merge carries the removed song's tags to the kept one, nothing else (R179; 12.3).
+9. **Notification permission:** asked when sync is turned on (R179; 15.3).
+10. **Live settings Shortcut names:** sync as part of `settings-live` (R179; 14.1).
+11. **Library ID file location:** `.segue/library.json` (R179; 5.1).
