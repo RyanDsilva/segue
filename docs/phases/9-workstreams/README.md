@@ -1,6 +1,6 @@
 # Phase 9 workstreams
 
-Phase 9 builds what the v1.0 App Store release adds before submission (R176). Every spec's questions are closed: R177 (iCloud sync in v1.0), R178 (P9-1, P9-2, P9-3), R179 (P9-4, P9-5, P9-6), R180 (E2E in a local Tart VM, which every session's E2E runs use), R181 (the P9-1 and P9-3 spec-fold choices), R182 and R183 (the P9-4 import bake-off and prior-art questions). The rulings are in [`docs/release/decisions.md`](../../release/decisions.md), R176-R183. One P9-4 question remains open: how the corpus's search pages are collected (P9-4 section 21), to close before P9-4a step a3.
+Phase 9 builds what the v1.0 App Store release adds before submission (R176). Every spec's questions are closed: R177 (iCloud sync in v1.0), R178 (P9-1, P9-2, P9-3), R179 (P9-4, P9-5, P9-6), R180 (E2E in a local Tart VM, which every session's E2E runs use), R181 (the P9-1 and P9-3 spec-fold choices), R182 and R183 (the P9-4 import bake-off and prior-art questions), R184 (P9-4's last question). The rulings are in [`docs/release/decisions.md`](../../release/decisions.md), R176-R184. R184 closes P9-4's last question (the corpus collector's search pages). No questions remain open.
 
 ## Specs
 
