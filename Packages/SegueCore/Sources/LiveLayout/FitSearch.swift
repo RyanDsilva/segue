@@ -142,7 +142,8 @@ struct FitSearch {
         }
         guard let unwrapped else { return wrapping }
         guard let wrapping, unwrapped.size < comfortableSize - 1e-9 else { return unwrapped }
-        return wrapping.size > unwrapped.size ? wrapping : unwrapped
+        let needed = unwrapped.size * (1 + (style.wrapPenalty ?? 0))
+        return wrapping.size > needed ? wrapping : unwrapped
     }
 
     /// The size step index of `size`.

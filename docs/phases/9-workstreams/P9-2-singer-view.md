@@ -151,7 +151,8 @@ Unchanged: singer view keeps the same shown passes in the same order, so the map
 
 ### 6.5 Font sizing: bigger lyrics
 
-- `LayoutStyle.singer` = `.stage` with `maxLyricSize` **60** (stage 44), `comfortableLyricSize` **36** (28), `lineHeight` **1.3** (1.25), `sectionSpacing` 0.8 (0.6), `chordRatio` and the chord fields unused. R178 fixes the 60 pt maximum and the 28 pt floor; the other numbers are the starting point for step 0's directions (section 15) and are fixed by the direction Ryan picks.
+- `LayoutStyle.singer` = `.stage` with `maxLyricSize` **60** (stage 44), `comfortableLyricSize` **36** (28) with `comfortableMinimumFactor` **1** (1.25), `lineHeight` 1.25 (as the stage), `sectionSpacing` **0.7** (0.6), `columnGap` **32** (48), `gutterGap` **12** (18), `wrapPenalty` **0.15** (stage nil), `wrapTolerance` 0.15 (as the stage); `chordRatio` and the chord fields unused. R178 fixes the 60 pt maximum and the 28 pt floor; the rest are step 0's tuning (R187 picked direction A).
+- Step 0 tuning (2026-11-01). The starting numbers (36, 1.3, 0.8) reached 29 pt for the R187 fixture at 1440 x 900 with Verse 1 wrapped, and no comfortable size or `wrapTolerance` changes that: `comfortableMinimumFactor` 1.25 x the 28 pt floor already set the comfortable size to 35, and the wrap is width-bound (a 46-character romanized line does not fit a 2-column measure above about 28 pt), not a column choice. So singer view gains `wrapPenalty` (a `LayoutStyle` field, nil for every other style): below the comfortable size an unwrapped layout wins unless wrapping makes lyrics more than 15% larger. With the narrower gaps that gives the fixture 28 pt with no line wrapped (a phrase is never broken), the Hindi fixtures 45 pt (stage 31), basic-verse-chorus 35.5 pt (wrapping wins there: 27% larger than unwrapped 28) and 1920 x 1080 39.5 pt (stage 26.5). The trade is deliberate: "larger" and "unwrapped" pull against each other on a 2-column 1440 x 900 stage, and an unbroken phrase wins up to 15%.
 - The minimum lyric size in singer view is `max(settings.minLyricSize, 28)`: the fit never shrinks a singer's lyrics below 28 pt; a long song scrolls or takes columns instead (the existing fit rules).
 - Zoom: ⌘+ / ⌘- / ⌘0 in singer view change a separate `LiveSettings.singerZoom` (default 1.0, range `LiveSession.zoomRange`), not the song's `LivePrefs.zoom`, so a singer's zoom never changes the owner's chart zoom for that song and applies to every song while singer view is on. Columns (`C`) stay per song as today.
 - The 58 pt map band and the header and footer heights are unchanged.
@@ -279,6 +280,8 @@ Three directions, rendered in the session scratchpad `p9-2/` with real material 
 - **C - Prompter:** one column always, very large lyrics (up to 72 pt), the line at the reading line drawn in `ink` and the others in `muted`, the map strip kept; auto-scroll and pedals as today.
 
 Also rendered for each: the instrumental row, a Chords only pass as First line, the header with the Singer chip and "Key A", and the library pane's Singer toggle. Recommendation: **A** (the map, badges and jump already teach the singer where the band is, and nothing about the stage behaves differently, so the owner can flip back and forth mid-song without relearning the screen).
+
+**Picked (R187, 2026-11-01):** the stage as the chart without chords (A); a segmented "Chords / Singer" control in the library and editor preview (A); the Singer Screen mirrors the stage's header and map (A). Mockups in `.build/design-p9/` (not committed). The final `LayoutStyle.singer` numbers are in 6.5.
 
 ## 16. Test plan (R113)
 

@@ -249,6 +249,11 @@ public struct LayoutStyle: Sendable, Hashable {
     public var cuePadding: LayoutSize
     /// Space below each cue callout and between note paragraphs (points).
     public var calloutSpacing: Double
+    /// When set, a layout without wrapped lyric lines also wins below `comfortableLyricSize`
+    /// unless the wrapping layout is more than this fraction larger (singer view, P9-2 6.5:
+    /// a phrase broken across two rows is harder to sing from than slightly smaller type).
+    /// nil (the stage and print) keeps the comfortable-size rule alone.
+    public var wrapPenalty: Double?
 
     public init(
         gutterWidth: Double = 64,
@@ -289,6 +294,7 @@ public struct LayoutStyle: Sendable, Hashable {
         preferredColumns: Int = 2,
         cuePadding: LayoutSize = LayoutSize(width: 8, height: 4),
         calloutSpacing: Double = 6,
+        wrapPenalty: Double? = nil,
     ) {
         self.gutterWidth = gutterWidth
         self.maxGutterWidth = maxGutterWidth
@@ -328,17 +334,11 @@ public struct LayoutStyle: Sendable, Hashable {
         self.preferredColumns = preferredColumns
         self.cuePadding = cuePadding
         self.calloutSpacing = calloutSpacing
+        self.wrapPenalty = wrapPenalty
     }
 
     /// The stage defaults. Unit B tunes the values; keep them in one place.
     public static let stage = Self()
-}
-
-/// Everything auto-fit needs for one song on one viewport.
-public struct LayoutRequest: Sendable {
-    /// The song as rendered with its display options (and setlist overrides).
-    public var model: RenderModel
-    /// The body area between header and footer.
 
     /// The printed page at a fixed lyric size (P9-1 spec 5.1): a narrower gutter and gaps,
     /// gutter and callout roles at paper sizes, two columns at most. `sectionSpacing` is
@@ -369,6 +369,13 @@ public struct LayoutRequest: Sendable {
             calloutSpacing: 4,
         )
     }
+}
+
+/// Everything auto-fit needs for one song on one viewport.
+public struct LayoutRequest: Sendable {
+    /// The song as rendered with its display options (and setlist overrides).
+    public var model: RenderModel
+    /// The body area between header and footer.
     public var viewport: LayoutSize
     /// The user's `live.minLyricFont`; the plan's lyric size is never below it.
     public var minLyricSize: Double
@@ -390,6 +397,8 @@ public struct LayoutRequest: Sendable {
     /// Walk-ups and saved fills for the played passes (P8-4b section 8.6, P8-7 14): the
     /// bass-note view with walk-ups on or a fill that applies (R175); nil otherwise.
     public var walkUps: BassLineContext?
+    /// The chart (chords over lyrics) or singer view (lyrics only, P9-2 section 6.2).
+    public var view: StageView
 
     public init(
         model: RenderModel,
@@ -402,6 +411,7 @@ public struct LayoutRequest: Sendable {
         passes: [PlayedPass]? = nil,
         style: LayoutStyle = .stage,
         walkUps: BassLineContext? = nil,
+        view: StageView = .chart,
     ) {
         self.model = model
         self.viewport = viewport
@@ -413,5 +423,6 @@ public struct LayoutRequest: Sendable {
         self.passes = passes
         self.style = style
         self.walkUps = walkUps
+        self.view = view
     }
 }

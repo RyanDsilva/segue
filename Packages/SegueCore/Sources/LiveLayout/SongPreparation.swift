@@ -20,7 +20,15 @@ struct SongPreparation {
         let (pinned, unmatched) = pinCues(original)
         let order = request.passes ?? ArrangementResolver.fullSong(units)
         var arranged = ArrangedSections.build(original, order: order)
-        if let walkUps = request.walkUps {
+        // Counted before singer view drops anything, so both views scroll at one speed.
+        let lineCount = arranged.reduce(0) { $0 + Self.lyricLines($1.section.items) }
+        let singer = request.view == .singer
+        if singer {
+            // Lyrics only (P9-2 6.2): each pass through the singer transform, never walk-ups.
+            for index in arranged.indices {
+                arranged[index].section = SingerView.section(arranged[index].section)
+            }
+        } else if let walkUps = request.walkUps {
             // Each pass gets the walk-up into what actually follows it (P8-4b section 8.6).
             let annotated = BassLine.annotate(
                 arranged.map(\.section),
@@ -45,7 +53,8 @@ struct SongPreparation {
                 cues: arranged[index].isFirstShown ? pinned[arranged[index].source] : [],
             )
         }
-        var notes = request.notes
+        // Singer view lays out no notes block: song and slot notes are player reminders (R178).
+        var notes = (singer ? [] : request.notes)
             .flatMap { $0.components(separatedBy: .newlines) }
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
@@ -53,7 +62,7 @@ struct SongPreparation {
         return MeasuredSong(
             notes: notes.map { measurer.paragraph($0, role: .note) },
             sections: measured,
-            lineCount: arranged.reduce(0) { $0 + Self.lyricLines($1.section.items) },
+            lineCount: lineCount,
         )
     }
 
@@ -63,6 +72,8 @@ struct SongPreparation {
         cues: [SongCue],
     ) -> MeasuredSection {
         let section = pass.section
+        // A Chords only pass reads as First line in singer view, its tag kept (R178).
+        let shownMode = request.view == .singer ? pass.mode.singer : pass.mode
         let name = SectionNotes.label(of: section)
         let tag: String? = switch pass.mode {
         case .chordsOnly: "CHORDS"
@@ -87,10 +98,11 @@ struct SongPreparation {
             kind: section.kind,
             mode: pass.mode,
             passName: passName,
-            items: items(section.items, mode: pass.mode),
+            items: items(section.items, mode: shownMode),
             cues: cues.map { cue in
                 MeasuredCue(text: cue.text, paragraph: measurer.paragraph(cue.text, role: .cue))
             },
+            renderItems: section.items,
         )
     }
 
@@ -101,7 +113,6 @@ struct SongPreparation {
         case .chordsOnly: chordsOnly(items)
         case .firstLine: firstLine(items)
         }
-            renderItems: section.items,
     }
 
     /// Each chorded lyric line as a chord row; chordless lyric lines dropped (and the breaks
