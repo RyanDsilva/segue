@@ -18,7 +18,7 @@ This is the brief for one focused build session (or two, see section 11). It mus
 - Never `rm -rf`: use `trash`. No em dashes anywhere (copy, code, comments): use "-".
 - Commits: local, signed (`git commit -S`), conventional messages, no co-author lines, one commit per step in section 11. If signing fails with "failed to fill whole buffer", 1Password is locked: leave the staging, tell the orchestrator, wait. Never push, never touch Cloudflare (those are [RYAN] steps, section 12).
 - Tools only through mise (`mise exec --`); nothing global. `ASTRO_TELEMETRY_DISABLED=1` on every Astro run (Astro collects telemetry by default).
-- Write every page from the **built App Store flavour** (`Debug-AppStore`), opening each feature as you document it. Every menu name, button title and key must match the build exactly. Never document Personal-only features (custom MLX models in Settings > AI > Advanced, URL import, audio, LRCLIB).
+- Write every page from the **built App Store flavour** (`Debug-AppStore`), opening each feature as you document it. Every menu name, button title and key must match the build exactly. Never document Personal-only features (custom MLX models in Settings > AI > Advanced, URL import, LRCLIB). Sound (hearing chords, walk-ups and fills, play-along, Settings > Audio; P8-6) is in both flavours and is documented.
 
 ---
 

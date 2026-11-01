@@ -135,4 +135,4 @@ Final list for App Store Connect as of WS2b step 12 (WS5 fills it in):
 | VoiceOver | **Not yet** | Claim only after Ryan's VoiceOver walk (section 5) passes end to end, including chord moves and set reordering without a drag |
 | Voice Control | **Not yet** | Claim only after Ryan's Voice Control walk (walkthrough.md) passes on every screen |
 | Larger Text | Not claimed | B-19 |
-| Captions, Audio Descriptions | Not applicable | No in-app video or audio |
+| Captions, Audio Descriptions | Not applicable | No video and no spoken or sung audio. Segue plays instrument sounds (chords, bass walk-ups, fills and play-along since P8-6, plus the rehearsal click) in the editor, library previews and Rehearsal, never in a Live show; they carry no dialogue to caption or describe, and each has a visual counterpart (the chart, the play-along playhead, the visual metronome) |

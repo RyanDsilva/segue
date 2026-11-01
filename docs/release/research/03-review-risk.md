@@ -149,7 +149,7 @@ Expected result: **4+**. Note user-imported lyrics can contain anything, but App
 
 What: per-feature claims shown on the product page; voluntary for now, "over time" required for new apps and updates, no date given (https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels). A claim means the feature works across all **common tasks**: the app's primary functionality plus first launch, login, purchase, settings.
 
-Mac-applicable labels: VoiceOver, Voice Control, Dark Interface, Differentiate Without Color Alone, Sufficient Contrast, Reduced Motion, Captions, Audio Descriptions. **Larger Text is not supported on Mac** ("This label isn't supported on Mac"). Captions and Audio Descriptions are n/a (no media).
+Mac-applicable labels: VoiceOver, Voice Control, Dark Interface, Differentiate Without Color Alone, Sufficient Contrast, Reduced Motion, Captions, Audio Descriptions. **Larger Text is not supported on Mac** ("This label isn't supported on Mac"). Captions and Audio Descriptions are n/a (no video and no spoken audio; the instrument sounds added in P8-6 carry no dialogue).
 
 | Label | Candidate? | Evidence / gap | Verification steps |
 |---|---|---|---|

@@ -397,7 +397,7 @@ Full Keyboard Access: with FKA on, Tab reaches every control on every screen abo
 | VoiceOver | Claim only if 4.9.2 passes end to end, including chord moves and set reordering without drag | Ryan's VoiceOver walk of every row in 4.9.2 plus the automated audits green. |
 | Voice Control | Claim only if every control can be addressed by its visible name | Voice Control on, "Show names" and "Show numbers" on each screen; perform: create library, add Welcome songs, answer both consent rows, open a song, transpose, add to setlist, start and end a show. |
 | Larger Text | Not claimed (B-19) | Re-check in App Store Connect. |
-| Captions, Audio Descriptions | Not applicable (no in-app video or audio content) | - |
+| Captions, Audio Descriptions | Not applicable (no video and no spoken or sung audio: the instrument sounds Segue plays since P8-6, in the editor, library and Rehearsal and never in Live, carry no dialogue) | Check every sound has a visual counterpart: the chart, the play-along playhead, the visual metronome. |
 
 The outcome (claimed / not claimed with the failing step) is recorded in `docs/release/accessibility-audit.md`, which WS5 uses to fill App Store Connect.
 

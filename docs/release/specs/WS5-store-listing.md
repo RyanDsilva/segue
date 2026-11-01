@@ -270,7 +270,7 @@ chordpro,songbook,transpose,prompter,worship,hindi,guitar,piano,capo,nashville,s
 | Contact first/last name | `Ryan` / `Dsilva` (R30 legal name) |
 | Contact email | `segue@ryandsilva.dev` |
 | Contact phone | Ryan's phone. **Not committed to git.** Enter by hand, or pass it to `deliver` through an environment variable. |
-| Notes | below (3,585 / 4,000 bytes as drafted by P3-9: the paste try-it, the ON-DEVICE AI paragraph and the model download in NETWORK USE, with the Welcome, stage and Apple-events paragraphs tightened; recount after the 14.2 pass) |
+| Notes | below (3,585 / 4,000 bytes as drafted by P3-9: the paste try-it, the ON-DEVICE AI paragraph and the model download in NETWORK USE, with the Welcome, stage and Apple-events paragraphs tightened; plus the SOUND paragraph (P8-6): 3,846 / 4,000 bytes on 2026-10-31; recount after the 14.2 pass) |
 | Attachment | the 60-90 s walkthrough video from section 9.5 (B-31) |
 
 Notes. The names below follow the resolved specs (WS2a, WS2b, WS3). Before pasting, check each against the built App Store flavor and correct the notes, never the other way round:
@@ -302,6 +302,9 @@ THINGS TO TRY
 
 ON-DEVICE AI (optional)
 Segue converts pastes with its own rules first. A model only re-checks section labels and the title, and reads set requests; it runs entirely on the Mac and nothing pasted or typed is sent anywhere. Apple Intelligence (Foundation Models framework) is used when the Mac has it turned on; Settings > AI shows its status. A free local model (Qwen3 4B, Apache-2.0, 2.27 GB) is offered in Settings > AI and downloads only when the user clicks Download, with its size shown first. The download is model weights (data files) checked against SHA-256 hashes built into the app; it is run by the MLX framework bundled in the app and adds no code. Delete removes it. Everything works without either model, and Settings > AI has one switch to turn AI off.
+
+SOUND (output only)
+In the editor, library previews and Rehearsal, clicking a chord plays it, and walk-ups, bass fills and Play Along (Shift-Command-P) can be heard, from a sound bank inside the app. A live show never plays a sound. The microphone is never used.
 
 NETWORK USE
 Writing and performing work fully offline. Segue goes online only for: (a) usage statistics, after the user chooses Share; (b) crash and hang reports, after the user chooses Send; (c) Help > Report a Problem..., sent only after a preview of exactly what is sent; (d) the optional model download above, directly from huggingface.co, only on click. Help, the privacy policy and the feature board open in the default browser.
@@ -389,6 +392,16 @@ Rules:
 - **Reconcile vendor SDK manifests.** If the Sentry SDK ships its own `PrivacyInfo.xcprivacy` in the bundle, its declared types must appear here too.
 - **Re-check on any vendor change.** The label is editable at any time without a new build; a vendor swap behind the WS3 ports means re-running this section.
 
+### 6.1 Sound is output only (P8-6, checked 2026-10-31)
+
+Since P8-6 Segue plays sound: chords and bass notes when a chord is clicked, walk-up and fill auditions, the play-along loop (bass, chords and click) and the rehearsal click, in the editor, the library preview and Rehearsal, from the bundled sound bank through `AVAudioEngine` (`SegueUI/Audio/AudioEngineHost.swift`). It never plays in a Live show (R161, R168 Q4). What this means for the listing:
+
+- **No microphone, no permission prompt.** Output only: no code reads `AVAudioEngine.inputNode` or records, the App Store entitlements have no `com.apple.security.device.audio-input` (the set is asserted exactly by `scripts/verify-archive.sh` check 4), and there is no `NSMicrophoneUsageDescription`. Sandboxed audio output needs no entitlement. If a later feature listens (tap capture by sound, tuning), it adds the entitlement, the usage string, a consent moment and this section in one change.
+- **App Privacy label unchanged.** "Audio Data" is a collected type only when audio leaves the device; Segue records none and sends none. The Settings audio output choice is counted only as the `audioOutput` feature key, never the device's name (WS3 section 5), so it is covered by Product Interaction above.
+- **Privacy manifest unchanged.** Playing sound uses no required-reason API.
+- **Review notes** say what makes a sound and that Live is silent (4.6), so a reviewer who hears a chord on a click is not surprised and one who expects sound on stage is not either.
+- **Store art:** the preview uses a silent track (9.1) because its storyboard is all Live mode; the screenshots are unaffected.
+
 ## 7. Accessibility Nutrition Labels (conditional on the WS2b audit)
 
 Click path: App Store Connect > Apps > Segue > App Accessibility (sidebar, under General) > Add Accessibility Support > macOS. Tick the features, then Publish. This path is from Apple's help as read in `03`; verify it on the day.
@@ -404,7 +417,7 @@ A label is claimed **only** if the WS2b audit (`docs/release/accessibility-audit
 | VoiceOver | full VoiceOver pass of every common task, including a non-drag way to move a chord in the visual editor and to add a song to a set | audit decides; do not claim on partial coverage |
 | Voice Control | full Voice Control pass ("show names/numbers") | audit decides |
 | Larger Text | no claim (B-19; not offered on Mac, re-check in App Store Connect) | - |
-| Captions, Audio Descriptions | n/a (no media in the app) | do not claim |
+| Captions, Audio Descriptions | n/a: no video and no spoken or sung audio. The instrument sounds Segue plays (chords, walk-ups, fills and play-along since P8-6, plus the rehearsal click) carry no dialogue, and each has a visual counterpart | do not claim |
 
 Accessibility URL: leave empty for 0.5 (B-32; there is no `/help/accessibility` page in R29).
 
@@ -643,7 +656,7 @@ Open the contact sheet and every final PNG at 100%. Fix each of these at the sou
 | Codec | H.264 High Profile 4.0, progressive, 10-12 Mbps, .mov/.m4v/.mp4. ProRes 422 HQ is allowed, but about 220 Mbps for 26 s is about 715 MB, over the cap, so don't use it. |
 | Frame rate | at most 30 fps (use exactly 30) |
 | Size | at most 500 MB |
-| Audio | stereo AAC 256 kbps, 44.1/48 kHz. Use a **silent track**: Segue makes no sound, and the preview autoplays muted. |
+| Audio | stereo AAC 256 kbps, 44.1/48 kHz. Use a **silent track**: the storyboard is all Live mode, where Segue never plays a sound (it plays chords, walk-ups, fills and play-along only in the editor, library and Rehearsal, P8-6), and the preview autoplays muted. |
 | Count | up to 3 per localization; ship 1 |
 | Content | screen capture of the app only (2.3.4). Text overlays are allowed. No device frames or non-app end cards (an end card is not app footage; review risk). |
 | Processing | up to 24 h after upload |
