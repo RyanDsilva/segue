@@ -44,8 +44,9 @@
             if session.showsFileSyncWarning, let title = session.folderKind.warningTitle {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        // An info note, not an error (R185): muted, like the bar's notes.
                         Image(systemName: "exclamationmark.icloud")
-                            .foregroundStyle(Theme.color.cue)
+                            .foregroundStyle(Theme.color.muted)
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(title)
