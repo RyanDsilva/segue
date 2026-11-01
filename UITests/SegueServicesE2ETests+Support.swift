@@ -137,6 +137,19 @@ extension ServicesE2E {
             ))
             .firstMatch
         XCTAssertTrue(row.appears(timeout: 10), "no library row for \(title)")
+        // The default 720 pt window shows about nine of the fixture's twelve rows: the rest
+        // exist in the tree but sit below the window's edge, where a click lands on the
+        // desktop (isHittable only checks the screen, so compare against the window).
+        let window = app.windows.firstMatch
+        let top = app.descendants(matching: .any)
+            .matching(identifier: LiveAXID.songRow).firstMatch
+        for _ in 0 ..< 5 where !window.frame.contains(row.frame) {
+            top.scroll(byDeltaX: 0, deltaY: -200)
+        }
+        XCTAssertTrue(
+            window.frame.contains(row.frame),
+            "library row for \(title) never scrolled into view",
+        )
         row.click(in: app)
     }
 
