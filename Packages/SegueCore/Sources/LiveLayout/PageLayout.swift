@@ -45,6 +45,18 @@ public struct PagedSong: Sendable {
     /// Compact repeats' reference rows whose target starts on another page.
     var references: [PageReference]
 
+    /// A song already on its pages (Fit on one page's single plan).
+    public init(pages: [LayoutPlan], extras: [PlacedExtra], columns: Int) {
+        self.init(pages: pages, extras: extras, columns: columns, references: [])
+    }
+
+    init(pages: [LayoutPlan], extras: [PlacedExtra], columns: Int, references: [PageReference]) {
+        self.pages = pages
+        self.extras = extras
+        self.columns = columns
+        self.references = references
+    }
+
     /// Every shown pass once, in played order (the section map line, spec 5.5).
     public var passes: [PlanPass] {
         pages.flatMap(\.passes)

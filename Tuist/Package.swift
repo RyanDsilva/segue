@@ -50,6 +50,8 @@ import PackageDescription
         "ModelStore", "MLXAdapter", "MLXEngine", "AIEval",
         // Phase 3 (P3-7): the set assistant. Phase 8 (P8-6): the playback core.
         "SetAssistant", "Playback",
+        // Phase 9 (P9-1): the print document.
+        "Printing",
     ]
 
     let packageSettings = PackageSettings(
@@ -79,7 +81,7 @@ import PackageDescription
                 "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
                 "SegueUI", "SeguePersonalModules", "VendorServices",
                 "GenerableTasks", "FoundationModelsAdapter", "segue-eval", "AIEval",
-                "ModelStore", "MLXAdapter", "MLXEngine", "SetAssistant", "Playback",
+                "ModelStore", "MLXAdapter", "MLXEngine", "SetAssistant", "Playback", "Printing",
             ].map { ($0, firstPartyStrict) } + (sentryStaticTargets + ["_NumericsShims"]).map {
                 // swift-numerics' shim target compiles to no symbols, like sentry's iOS files.
                 ($0, quietLibtool)

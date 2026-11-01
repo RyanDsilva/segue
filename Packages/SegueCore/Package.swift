@@ -23,7 +23,7 @@ let package = Package(
             targets: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
                 "Shows", "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
-                "SetAssistant", "Playback",
+                "SetAssistant", "Playback", "Printing",
             ],
         ),
     ],
@@ -139,12 +139,19 @@ let package = Package(
             dependencies: ["Diagrams", "Editing", "Library", "MusicTheory", "Shows", "Support"],
             swiftSettings: strictSettings,
         ),
+        // P9-1: the print document (options, set list rows, page numbers, outline, links,
+        // metadata, file names). Pure; SegueUI draws it.
+        .target(
+            name: "Printing",
+            dependencies: ["Editing", "Library", "LiveLayout", "Setlists"],
+            swiftSettings: strictSettings,
+        ),
         .testTarget(
             name: "SegueCoreTests",
             dependencies: [
                 "ChordPro", "MusicTheory", "Diagrams", "Editing", "Library", "Setlists",
                 "Shows", "LiveLayout", "Plugins", "Support", "Services", "Ingest", "ModelPort",
-                "SetAssistant", "Playback",
+                "SetAssistant", "Playback", "Printing",
                 .product(name: "Tonic", package: "Tonic"),
             ],
             path: "Tests",
