@@ -124,8 +124,14 @@ public struct LibraryStateDirectory: Sendable, Hashable {
 
 /// `state.json` in a library's state directory.
 public struct LibraryStateRecord: Sendable, Equatable, Codable {
-    /// The library folder's path at its last open (copy-versus-move detection, 5.2).
+    /// The library folder's path at its last open (for diagnosis; detection uses the two
+    /// fields below).
     public var lastRoot: String?
+    /// The folder's file identifier (its inode) at its last open (R185, 5.2).
+    public var rootIdentifier: UInt64?
+    /// A security-scoped bookmark to the folder at its last open: it follows a move and
+    /// finds the original when this folder turns out to be a copy (R185, 5.2).
+    public var rootBookmark: Data?
     /// When the library was last opened (the TTL backstop).
     public var lastOpened: Date?
     /// "Don't Show Again" on the file-sync folder warning (5.4).
@@ -144,6 +150,8 @@ public struct LibraryStateRecord: Sendable, Equatable, Codable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         lastRoot = try container.decodeIfPresent(String.self, forKey: .lastRoot)
+        rootIdentifier = try container.decodeIfPresent(UInt64.self, forKey: .rootIdentifier)
+        rootBookmark = try container.decodeIfPresent(Data.self, forKey: .rootBookmark)
         lastOpened = try container.decodeIfPresent(Date.self, forKey: .lastOpened)
         fileSyncWarningDismissed = try container
             .decodeIfPresent(Bool.self, forKey: .fileSyncWarningDismissed) ?? false

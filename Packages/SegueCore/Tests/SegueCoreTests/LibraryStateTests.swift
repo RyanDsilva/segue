@@ -81,6 +81,49 @@ struct LibraryStateTests {
     }
 
     @Test
+    func `a renamed folder keeps its ID`() throws {
+        let lib = try TestLibrary()
+        let (first, _) = try open(lib.root, lib)
+        let renamed = sibling(lib, "Renamed Library")
+        defer { try? FileManager.default.removeItem(at: renamed) }
+        try FileManager.default.moveItem(at: lib.root.url, to: renamed)
+
+        let (afterRename, _) = try open(LibraryRoot(url: renamed), lib)
+
+        #expect(afterRename.identity == first.identity)
+        #expect(!afterRename.isCopy)
+        #expect(lib.trashedNames().isEmpty)
+    }
+
+    /// A move to another volume: the folder arrives with a new file identifier and the
+    /// original is gone (here a copy, then the original deleted, as Finder does across
+    /// volumes). It keeps its ID.
+    @Test
+    func `a folder with a new identifier whose original is gone keeps its ID`() throws {
+        let lib = try TestLibrary()
+        let (first, _) = try open(lib.root, lib)
+        let elsewhere = sibling(lib, "other-volume")
+        defer { try? FileManager.default.removeItem(at: elsewhere) }
+        try FileManager.default.copyItem(at: lib.root.url, to: elsewhere)
+        try FileManager.default.removeItem(at: lib.root.url)
+        let record = try #require(LibraryStateRecord.read(
+            first.directory,
+            fileSystem: lib.fileSystem,
+        ))
+        #expect(record.rootIdentifier != LibraryFolderReference.identifier(of: elsewhere))
+
+        let (moved, _) = try open(LibraryRoot(url: elsewhere), lib)
+
+        #expect(moved.identity == first.identity)
+        #expect(!moved.isCopy)
+        let after = try #require(LibraryStateRecord.read(
+            moved.directory,
+            fileSystem: lib.fileSystem,
+        ))
+        #expect(after.rootIdentifier == LibraryFolderReference.identifier(of: elsewhere))
+    }
+
+    @Test
     func `two locks on one state directory exclude each other`() throws {
         let lib = try TestLibrary()
         let (resolved, held) = try open(lib.root, lib)

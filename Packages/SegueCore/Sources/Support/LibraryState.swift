@@ -24,10 +24,12 @@ public enum LibraryState {
 
     /// Resolves `root`'s identity (minting it on first open) and its state directory.
     ///
-    /// Copy versus move: when the state's `lastRoot` is another folder that still exists
-    /// and still holds the same library ID, `root` is a Finder copy, so it gets a new ID
-    /// (the old `library.json` goes to the Trash). Otherwise the folder moved, and the next
-    /// `recordOpen` updates `lastRoot`.
+    /// Copy versus move (R185): `state.json` holds the folder's file identifier and a
+    /// security-scoped bookmark from its last open. When this folder's identifier differs
+    /// and the bookmark still resolves to another existing folder holding the same library
+    /// ID, `root` is a Finder copy, so it gets a new ID (the old `library.json` goes to the
+    /// Trash). A changed identifier with the original gone is a move (across volumes too);
+    /// an unchanged one is the same folder, moved or renamed on its volume.
     public static func resolve(
         root: LibraryRoot,
         location: LibraryStateLocation,
@@ -44,9 +46,7 @@ public enum LibraryState {
         let directory = location.directory(for: identity.id)
         let record = LibraryStateRecord.read(directory, fileSystem: fileSystem)
             ?? LibraryStateRecord()
-        guard let lastRoot = record.lastRoot, lastRoot != path(of: root),
-              isLibrary(LibraryRoot(url: URL(filePath: lastRoot)), identity.id, fileSystem)
-        else {
+        guard isCopy(root, of: identity.id, record: record, fileSystem: fileSystem) else {
             return Resolved(identity: identity, directory: directory, record: record, isCopy: false)
         }
         let fresh = try LibraryIdentity.rekey(
@@ -108,6 +108,8 @@ public enum LibraryState {
     ) throws {
         var record = resolved.record
         record.lastRoot = path(of: root)
+        record.rootIdentifier = LibraryFolderReference.identifier(of: root.url)
+        record.rootBookmark = LibraryFolderReference.bookmark(of: root.url)
         record.lastOpened = SegueJSON.stamp(clock.now())
         try record.write(to: resolved.directory, fileSystem: fileSystem)
     }
@@ -146,6 +148,25 @@ public enum LibraryState {
 
     private static func path(of root: LibraryRoot) -> String {
         root.url.standardizedFileURL.path(percentEncoded: false)
+    }
+
+    /// Whether `root` is a copy of the folder `record` last saw (see `resolve`).
+    private static func isCopy(
+        _ root: LibraryRoot,
+        of id: ULID,
+        record: LibraryStateRecord,
+        fileSystem: any FileSystem,
+    ) -> Bool {
+        guard let stored = record.rootIdentifier,
+              let current = LibraryFolderReference.identifier(of: root.url),
+              stored != current,
+              let bookmark = record.rootBookmark
+        else { return false }
+        return LibraryFolderReference.withResolved(bookmark) { original in
+            original.resolvingSymlinksInPath().path(percentEncoded: false)
+                != root.url.resolvingSymlinksInPath().path(percentEncoded: false)
+                && isLibrary(LibraryRoot(url: original), id, fileSystem)
+        } ?? false
     }
 
     private static func isLibrary(_ root: LibraryRoot, _ id: ULID, _ fileSystem: any FileSystem)
