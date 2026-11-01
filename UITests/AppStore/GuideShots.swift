@@ -18,23 +18,8 @@ final class GuideShots: GuideShotCase {
         shoot("card", window, callouts: [
             "key": element(app, GuideAXID.cardToken("key")),
             "tempo": element(app, GuideAXID.cardToken("tempo")),
-            "length": element(app, GuideAXID.cardToken("length")),
+            "artists": element(app, GuideAXID.songCardArtists),
         ])
-
-        element(app, GuideAXID.cardToken("length")).click(in: app)
-        let timeIt = element(app, GuideAXID.songCardTimeIt)
-        timeIt.click(in: app)
-        // Off the button at once, so its help tag never shows.
-        window.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: -12, dy: -12))
-            .hover()
-        XCTAssertTrue(
-            E2E.waitUntil(timeout: 10) { (timeIt.label + timeIt.title).contains("Stop") },
-            "Time It did not start",
-        )
-        hold(2.2)
-        shoot("card-time-it", window, callouts: ["stop": timeIt])
-        app.typeKey(.escape, modifierFlags: [], in: app)
-        app.typeKey(.escape, modifierFlags: [], in: app)
 
         let search = element(app, GuideAXID.librarySearch)
         search.click(in: app)
@@ -221,18 +206,18 @@ final class GuideShots: GuideShotCase {
         shoot("builder-composer", window)
     }
 
-    /// Running time and breaks: timeline, missing-lengths, stage-break; Arrange Sections:
+    /// Running time and breaks: timeline, missing-times, stage-break; Arrange Sections:
     /// arrange-sheet.
     @MainActor
     func testRunningTime() {
         let app = launch()
         let window = mainWindow(app)
-        // Ferry Lights loses its length, so the set has one unknown.
+        // Ferry Lights loses its tempo, so the set has one song with no time.
         song(app, titled: "Ferry Lights Over Calder Bay").click(in: app)
-        element(app, GuideAXID.cardToken("length")).click(in: app)
-        let length = app.textFields[GuideAXID.songCardLength]
-        XCTAssertTrue(length.appears(timeout: 10))
-        length.click(in: app)
+        element(app, GuideAXID.cardToken("tempo")).click(in: app)
+        let tempo = app.textFields[GuideAXID.songCardTempo]
+        XCTAssertTrue(tempo.appears(timeout: 10))
+        tempo.click(in: app)
         app.typeKey("a", modifierFlags: .command, in: app)
         app.typeKey(.delete, modifierFlags: [], in: app)
         app.typeKey(.return, modifierFlags: [], in: app)
@@ -253,9 +238,9 @@ final class GuideShots: GuideShotCase {
         shoot("timeline", window, callouts: ["timeline": element(app, GuideAXID.setlistTimeline)])
 
         element(app, GuideAXID.setlistUnknown).click(in: app)
-        let missing = element(app, GuideAXID.missingLengths)
-        shoot("missing-lengths", window, callouts: ["list": missing])
-        // The popover's length field holds focus (Esc only leaves the field): close it from
+        let missing = element(app, GuideAXID.missingTimes)
+        shoot("missing-times", window, callouts: ["list": missing])
+        // The popover's tempo field may hold focus (Esc only leaves the field): close it from
         // its button.
         app.typeKey(.escape, modifierFlags: [], in: app)
         if !missing.disappears(timeout: 2) {

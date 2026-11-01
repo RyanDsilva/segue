@@ -3,7 +3,8 @@ import XCTest
 /// The set assistant E2E (P3-7, R114-R116) on a fresh library: a one-line request in
 /// Arrange's command bar shows its chips, Build fills the open setlist within the target,
 /// a row's score breakdown opens from the keyboard, a lock survives Rebuild and reaches the
-/// file, and the song with no length is named (R107). No model is installed: the lexicon
+/// file, and the song with no tempo (so no time) is named (P8-8 5.4). No model is installed: the
+/// lexicon
 /// alone reads the request.
 final class SegueAssistantE2ETests: SetlistE2ETestCase {
     /// Every seeded song is Ready or Pro except Northbound (Learning).
@@ -46,14 +47,13 @@ final class SegueAssistantE2ETests: SetlistE2ETestCase {
         }
         let titles = SetlistE2E.texts(app, SetlistAXID.entryTitle)
         XCTAssertFalse(titles.contains("Northbound"))
-        XCTAssertFalse(titles.contains("Saawan Ki Shaam"), "A song with no length was packed")
-        let minutes = titles.compactMap { SetlistFixture.song($0).duration }
-            .map(Self.seconds).reduce(0, +)
-        XCTAssertLessThanOrEqual(abs(minutes - 1200), 180, "\(titles)")
-        // R107: Saawan Ki Shaam has no length and is named.
+        XCTAssertFalse(titles.contains("Saawan Ki Shaam"), "A song with no time was packed")
+        let seconds = titles.compactMap { SetlistFixture.song($0).seconds }.reduce(0, +)
+        XCTAssertLessThanOrEqual(abs(seconds - 1200), 180, "\(titles)")
+        // Saawan Ki Shaam has no tempo, so no time, and is named.
         let leftOut = SetlistE2E.element(app, AssistantAXID.leftOut)
         XCTAssertTrue(leftOut.appears(timeout: 5))
-        XCTAssertTrue(SetlistE2E.text(leftOut).contains("1 song left out: no length"))
+        XCTAssertTrue(SetlistE2E.text(leftOut).contains("1 song left out: no tempo"))
         screenshot(app, "assistant-built-dark")
 
         // The first row's breakdown: select it, Space.
@@ -105,12 +105,6 @@ final class SegueAssistantE2ETests: SetlistE2ETestCase {
             title.exists && SetlistE2E.text(title) == name
         }
         app.typeKey("2", modifierFlags: .command)
-    }
-
-    /// "3:40" -> 220.
-    private static func seconds(_ text: String) -> Int {
-        let parts = text.split(separator: ":").compactMap { Int($0) }
-        return parts.count == 2 ? parts[0] * 60 + parts[1] : 0
     }
 }
 

@@ -23,15 +23,20 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
             addWithPlus(app, title)
         }
         waitForEntries(app, planned)
-        // Start times accumulate; the unknown length shows --:-- and the total says so.
+        // Start times accumulate from tempo x bars; the song with no tempo shows --:-- and
+        // the total says so (P8-8).
         XCTAssertEqual(
             SetlistE2E.texts(app, SetlistAXID.entryStart),
-            ["0:00", "3:33", "6:45", "10:10", "13:50"],
+            SetlistFixture.starts(planned),
         )
-        XCTAssertEqual(SetlistE2E.texts(app, SetlistAXID.entryLength).last, "--:--")
         XCTAssertEqual(
-            SetlistE2E.text(SetlistE2E.element(app, SetlistAXID.setlistTotal)),
-            "≥13:50 + 1 unknown",
+            SetlistE2E.labels(app, SetlistAXID.entryTime).first,
+            SetlistFixture.song(planned[0]).time,
+        )
+        XCTAssertEqual(SetlistE2E.labels(app, SetlistAXID.entryTime).last, "--:--")
+        XCTAssertEqual(
+            SetlistE2E.element(app, SetlistAXID.setlistTotal).label,
+            SetlistFixture.total(planned),
         )
         // Songs already in the set are marked in the library column.
         let library = SetlistE2E.texts(app, SetlistAXID.builderLibraryRow)
@@ -139,7 +144,7 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
         SetlistE2E.search(app, SetlistAXID.builderSearch, "")
     }
 
-    /// Drags the last entry ("Saawan Ki Shaam", unknown length) to the top of the set.
+    /// Drags the last entry ("Saawan Ki Shaam", no tempo) to the top of the set.
     @MainActor
     private func reorder(_ app: XCUIApplication) throws {
         let entries = SetlistE2E.all(app, SetlistAXID.setlistEntry)
@@ -151,11 +156,11 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
             to: first.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.15)),
         )
         waitForEntries(app, reordered)
-        // Every start after the unknown length is a lower bound ("≥"); right after it,
+        // Every start after the unknown time is a lower bound ("≥"); right after it,
         // with nothing known yet, the start is unknown too.
         XCTAssertEqual(
             SetlistE2E.texts(app, SetlistAXID.entryStart),
-            ["0:00", "--:--", "≥3:33", "≥6:45", "≥10:10"],
+            SetlistFixture.starts(reordered),
         )
     }
 
@@ -291,8 +296,8 @@ final class SegueSetlistBuilderE2ETests: SetlistE2ETestCase {
         row.buttons[SetlistAXID.entryRemove].click(in: app)
         waitForEntries(app, Array(reordered.dropFirst()) + ["Dil Ki Raah"])
         XCTAssertEqual(
-            SetlistE2E.text(SetlistE2E.element(app, SetlistAXID.setlistTotal)),
-            "17:55",
+            SetlistE2E.element(app, SetlistAXID.setlistTotal).label,
+            SetlistFixture.total(Array(reordered.dropFirst()) + ["Dil Ki Raah"]),
         )
         SetlistE2E.waitForDisk("The removal never reached the file") {
             let file = try XCTUnwrap(SetlistFixture.setlistFiles(root).first)

@@ -2,17 +2,17 @@ import XCTest
 
 /// Phase 3 set building E2E (P3-12, R84-R88) on a fresh library: Pick with the keyboard
 /// (filter, Return, Space, ⌘A), Arrange (⌘-click, ⌥↑, Insert Break, part totals), the
-/// missing-lengths list filled in place, and Library multi-select's Add to Setlist. Every
+/// no-time list's tempo typed in place (P8-8), and Library multi-select's Add to Setlist. Every
 /// change is checked in the files.
 final class SegueSetBuilderE2ETests: SetlistE2ETestCase {
     @MainActor
-    func testPickArrangeBreaksAndMissingLengths() throws {
+    func testPickArrangeBreaksAndMissingTimes() throws {
         let root = try XCTUnwrap(libraryRoot)
         let app = try launchBuilder(appearance: "dark")
         createSetlist(app, "Friday")
         let picked = pickWithTheKeyboard(app)
         try arrange(app, root, picked: picked)
-        try fillMissingLength(app, root)
+        try fillMissingTempo(app, root, arranged: picked)
     }
 
     /// Pick: filter, Return, Space, ↓, ⌘A. Returns the set's titles.
@@ -71,11 +71,12 @@ final class SegueSetBuilderE2ETests: SetlistE2ETestCase {
         waitForEntries(app, arranged)
         app.typeKey("b", modifierFlags: [.command, .shift])
         SetlistE2E.waitUntil("Insert Break added no break row") {
-            SetlistE2E.texts(app, SetlistAXID.setlistBreakTotal) == ["3:12"]
+            SetlistE2E.labels(app, SetlistAXID.setlistBreakTotal)
+                == [SetlistFixture.total(["Paper Boats"])]
         }
         XCTAssertEqual(
-            SetlistE2E.text(SetlistE2E.element(app, SetlistAXID.setlistTotal)),
-            "≥25:05 + 1 unknown",
+            SetlistE2E.element(app, SetlistAXID.setlistTotal).label,
+            SetlistFixture.total(arranged),
         )
         screenshot(app, "arrange-dark")
         SetlistE2E.waitForDisk("The break never reached the setlist file") {
@@ -86,29 +87,33 @@ final class SegueSetBuilderE2ETests: SetlistE2ETestCase {
         }
     }
 
-    /// The missing-lengths list: exactly Saawan Ki Shaam; 4:05 typed in place.
+    /// The no-time list: exactly Saawan Ki Shaam (no tempo); 76 typed in place.
     @MainActor
-    private func fillMissingLength(_ app: XCUIApplication, _ root: URL) throws {
-        // The "1 unknown" button lists Saawan Ki Shaam; typing 4:05 fills it in place.
+    private func fillMissingTempo(_ app: XCUIApplication, _ root: URL, arranged: [String]) throws {
+        // The "1 unknown" button lists Saawan Ki Shaam; typing 76 BPM times it in place.
         click(app, SetlistAXID.setlistUnknownButton)
-        let row = SetlistE2E.row(app, SetlistAXID.missingLengthsRow, "Saawan Ki Shaam")
+        let row = SetlistE2E.row(app, SetlistAXID.missingTimesRow, "Saawan Ki Shaam")
         XCTAssertTrue(row.appears(timeout: 5))
-        XCTAssertEqual(SetlistE2E.all(app, SetlistAXID.missingLengthsRow).count, 1)
-        screenshot(app, "missing-lengths-dark")
-        let field = row.textFields[SetlistAXID.songCardLength]
+        XCTAssertEqual(SetlistE2E.all(app, SetlistAXID.missingTimesRow).count, 1)
+        screenshot(app, "missing-times-dark")
+        let field = row.textFields[SetlistAXID.missingTimesTempo]
         XCTAssertTrue(field.appears(timeout: 5))
         field.click(in: app)
-        field.typeText("4:05\r", in: app)
+        field.typeText("76\r", in: app)
+        // 81 bars at 76 BPM join the known total; nothing is unknown any more.
+        let saawan = Double(SetlistFixture.song("Saawan Ki Shaam").bars + 1) * 240 / 76
+        let known = arranged.compactMap { SetlistFixture.song($0).seconds }.reduce(0, +)
+        let expected = "~" + SetlistFixture.clock(known + saawan)
         SetlistE2E.waitUntil("The total never lost its unknown") {
-            SetlistE2E.text(SetlistE2E.element(app, SetlistAXID.setlistTotal)) == "29:10"
+            SetlistE2E.element(app, SetlistAXID.setlistTotal).label == expected
         }
         XCTAssertFalse(SetlistE2E.element(app, SetlistAXID.setlistUnknownButton).exists)
-        SetlistE2E.waitForDisk("The length never reached the song file") {
+        SetlistE2E.waitForDisk("The tempo never reached the song file") {
             let text = try String(
                 contentsOf: root.appending(path: "songs/saawan-ki-shaam.cho"),
                 encoding: .utf8,
             )
-            return text.contains("{duration: 4:05}")
+            return text.contains("{tempo: 76}")
         }
     }
 
@@ -152,7 +157,8 @@ final class SegueSetBuilderE2ETests: SetlistE2ETestCase {
         }
         app.typeKey("b", modifierFlags: [.command, .shift])
         SetlistE2E.waitUntil("Insert Break added no break row") {
-            SetlistE2E.texts(app, SetlistAXID.setlistBreakTotal) == ["2:58"]
+            SetlistE2E.labels(app, SetlistAXID.setlistBreakTotal)
+                == [SetlistFixture.total(["Northbound"])]
         }
         screenshot(app, "arrange-light")
     }
@@ -213,8 +219,8 @@ final class SegueSetBuilderE2ETests: SetlistE2ETestCase {
 extension SetlistAXID {
     static let setlistBreakTotal = "segue.setlist.break.total"
     static let setlistUnknownButton = "segue.setlist.unknown"
-    static let missingLengthsRow = "segue.setlist.missingLengths.row"
-    static let songCardLength = "segue.songCard.length"
+    static let missingTimesRow = "segue.setlist.missingTimes.row"
+    static let missingTimesTempo = "segue.setlist.missingTimes.tempo"
     static let multiSelection = "segue.library.multiSelection"
     static let addToSetlistMenu = "segue.song.addToSetlist"
 }

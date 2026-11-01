@@ -6,7 +6,7 @@ public extension AccessibilityID {
 
     /// The card (its token strip, plus Title and Artist when expanded).
     static let songCard = "segue.songCard"
-    /// A token: `segue.songCard.token.key`, `.tempo`, `.length`, `.capo`, `.time`.
+    /// A token: `segue.songCard.token.key`, `.tempo`, `.capo`, `.time`, `.artist`, `.album`.
     static func songCardToken(_ field: SongCardField) -> String {
         "segue.songCard.token.\(field.rawValue)"
     }

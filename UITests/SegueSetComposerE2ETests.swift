@@ -6,7 +6,7 @@ import XCTest
 /// non-typing key goes through one counting helper: ⌘L + 13 Returns, no Tab or ↓ needed
 /// (section 3's "after" number).
 final class SegueSetComposerE2ETests: SetlistE2ETestCase {
-    /// The composer corpus (P8-5 section 13.1), with keys and lengths.
+    /// The composer corpus (P8-5 section 13.1), with keys and (as tempo and chords) times.
     private struct Song {
         var stem: String
         var title: String
@@ -228,10 +228,18 @@ final class SegueSetComposerE2ETests: SetlistE2ETestCase {
             if let key = song.key {
                 lines.append("{key: \(key)}")
             }
-            if let length = song.length {
-                lines.append("{duration: \(length)}")
+            // A song with a corpus time gets a tempo and chords, so the ghost's Time cell has a
+            // time (P8-8); the others have none and show "-".
+            let timed = song.length != nil
+            if timed {
+                lines.append("{tempo: 96}")
             }
-            lines += ["", "La la la, the first line", "Second line of the song", ""]
+            lines += [
+                "",
+                (timed ? "[C]" : "") + "La la la, the first line",
+                "Second line of the song",
+                "",
+            ]
             try SetlistFixture.write(
                 lines.joined(separator: "\n"),
                 to: root.appending(path: "songs/\(song.stem).cho"),

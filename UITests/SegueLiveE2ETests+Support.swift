@@ -156,10 +156,9 @@ struct LiveLibrary {
         default: 2
         }
         var text = "{title: \(title)}\n{artist: The Fixtures}\n{key: \(key)}\n"
-        text += "{tempo: \(84 + index * 4)}\n"
-        if title == "Long Way Home" {
-            text += "{duration: 3:00}\n"
-        }
+        // Long Way Home's 564 one-bar chords play in about 3 minutes at 750 BPM: auto-scroll
+        // reads tempo x played bars (P8-8 5.6).
+        text += "{tempo: \(title == "Long Way Home" ? 750 : 84 + index * 4)}\n"
         if index == 1 {
             text += "{capo: 2}\n"
         }

@@ -13,7 +13,6 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
     {artist: The Lanterns}
     {key: G}
     {tempo: 96}
-    {duration: 3:40}
 
     {start_of_verse: Verse 1}
     [G]Lanterns on the water, boats come drifting in
@@ -108,20 +107,25 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
             try Self.modes(root) == ["full", "full", "full", "full", "skip", "full", "first"]
         }
         XCTAssertTrue(sheet.exists, "Return in the roadmap closed the sheet")
-        setSlotLength(app, root)
+        // The footer times the passes played: six one-bar passes at 96 BPM (Skip adds
+        // nothing), the default bar per chord, so "~0:15".
+        XCTAssertTrue(SetlistE2E.element(app, ArrangementAXID.time).appears(timeout: 5))
+        SetlistE2E.waitUntil("The footer never showed the slot's time") {
+            app.staticTexts.matching(NSPredicate(
+                format: "label CONTAINS %@ OR value CONTAINS %@", "15 seconds", "15 seconds",
+            ))
+            .firstMatch.exists
+        }
         screenshot(app, "arrangement-sheet-arranged")
         click(app, ArrangementAXID.done)
         XCTAssertTrue(sheet.disappears(timeout: 5))
 
-        // The row shows the mark and the slot's own length (the song keeps its 3:40); the
-        // song file never changed.
+        // The row shows the mark and the slot's own time from its passes (the full song is
+        // 8 bars, ~0:20); the song file never changed.
         let mark = SetlistE2E.element(app, ArrangementAXID.mark)
         XCTAssertTrue(mark.appears(timeout: 5))
         XCTAssertEqual(mark.label, "Custom arrangement, 7 passes, 1 skipped")
-        XCTAssertEqual(
-            SetlistE2E.text(app.staticTexts[SetlistAXID.entryLength].firstMatch),
-            "2:40",
-        )
+        XCTAssertEqual(SetlistE2E.labels(app, SetlistAXID.entryTime).first, "~0:15")
         screenshot(app, "arrangement-row")
         let after = try String(
             contentsOf: root.appending(path: "songs/harbor-lights.cho"),
@@ -194,18 +198,6 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
         screenshot(app, "arrangement-gig-log")
     }
 
-    /// A 2:40 length for this slot, from the sheet's footer.
-    @MainActor
-    private func setSlotLength(_ app: XCUIApplication, _ root: URL) {
-        let field = app.textFields[SetlistAXID.songCardLength].firstMatch
-        XCTAssertTrue(field.appears(timeout: 5))
-        field.click(in: app)
-        field.typeText("2:40\r", in: app)
-        SetlistE2E.waitForDisk("The slot length never reached the setlist file") {
-            try Self.arrangement(root)?["length"] as? Double == 160
-        }
-    }
-
     @MainActor
     private func openSheet(_ app: XCUIApplication) -> XCUIElement {
         app.staticTexts[SetlistAXID.entryTitle].firstMatch.click(in: app)
@@ -271,6 +263,7 @@ enum ArrangementAXID {
     static let sidebarSetlists = "segue.sidebar.setlists"
     static let open = "segue.setlist.arrangement.open"
     static let mark = "segue.setlist.arrangement.mark"
+    static let time = "segue.arrangement.time"
     static let sheet = "segue.setlist.arrangement.sheet"
     static let done = "segue.setlist.arrangement.done"
     static let update = "segue.setlist.arrangement.update"

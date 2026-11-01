@@ -4,16 +4,32 @@ import XCTest
 /// a fresh temp library seeded with songs (with sidecars, so IDs are known), plus helpers
 /// to seed setlists and shows, query the UI and read the files back.
 enum SetlistFixture {
-    /// A seeded song: file stem, title, key, capo, tempo and `{duration}` (nil = unknown).
+    /// A seeded song: file stem, title, key, capo, tempo (nil = no tempo, so no time) and
+    /// its bars (one bar per chord in 4/4): its time is `bars` + 1 bars of 4 beats at its tempo
+    /// (P8-8; the chordless second lyric line holds the chord before it one more bar).
     struct Song {
         let stem: String
         let title: String
         let artist: String
         let key: String
         let capo: Int?
-        let tempo: Int
-        let duration: String?
+        let tempo: Int?
+        var bars = 80
         let index: Int
+
+        /// The slot time the builder shows: "m:ss" ("~" since the bars are the default one per
+        /// chord), nil without a tempo.
+        var time: String? {
+            tempo.map { tempo in
+                let seconds = Int((Double(bars + 1) * 240 / Double(tempo)).rounded())
+                return String(format: "~%d:%02d", seconds / 60, seconds % 60)
+            }
+        }
+
+        /// The time in seconds, nil without a tempo.
+        var seconds: Double? {
+            tempo.map { Double(bars + 1) * 240 / Double($0) }
+        }
 
         /// A fixed, valid ULID per song.
         var id: String {
@@ -25,14 +41,14 @@ enum SetlistFixture {
             if let capo {
                 lines.append("{capo: \(capo)}")
             }
-            lines.append("{tempo: \(tempo)}")
-            if let duration {
-                lines.append("{duration: \(duration)}")
+            if let tempo {
+                lines.append("{tempo: \(tempo)}")
             }
             lines += [
                 "",
                 "{start_of_verse}",
                 "[\(key)]Lanterns on the water, boats come drifting in",
+                String(repeating: "[\(key)] ", count: max(0, bars - 2)),
                 "Salt upon my collar and the tide is turning thin",
                 "{end_of_verse}",
                 "",
@@ -54,7 +70,7 @@ enum SetlistFixture {
             key: "G",
             capo: 2,
             tempo: 96,
-            duration: "3:40",
+            bars: 88,
             index: 1,
         ),
         Song(
@@ -64,7 +80,7 @@ enum SetlistFixture {
             key: "D",
             capo: nil,
             tempo: 120,
-            duration: "3:12",
+            bars: 96,
             index: 2,
         ),
         Song(
@@ -74,7 +90,7 @@ enum SetlistFixture {
             key: "Am",
             capo: nil,
             tempo: 88,
-            duration: "4:05",
+            bars: 90,
             index: 3,
         ),
         Song(
@@ -83,8 +99,8 @@ enum SetlistFixture {
             artist: "Mira Sen",
             key: "C",
             capo: nil,
-            tempo: 76,
-            duration: nil,
+            tempo: nil,
+            bars: 80,
             index: 4,
         ),
         Song(
@@ -94,7 +110,7 @@ enum SetlistFixture {
             key: "E",
             capo: nil,
             tempo: 132,
-            duration: "2:58",
+            bars: 98,
             index: 5,
         ),
         Song(
@@ -104,7 +120,7 @@ enum SetlistFixture {
             key: "A",
             capo: nil,
             tempo: 104,
-            duration: "3:25",
+            bars: 89,
             index: 6,
         ),
         Song(
@@ -114,7 +130,7 @@ enum SetlistFixture {
             key: "F",
             capo: nil,
             tempo: 70,
-            duration: "4:12",
+            bars: 74,
             index: 7,
         ),
         Song(
@@ -124,7 +140,7 @@ enum SetlistFixture {
             key: "Bb",
             capo: nil,
             tempo: 92,
-            duration: "3:33",
+            bars: 82,
             index: 8,
         ),
     ]
@@ -340,7 +356,7 @@ enum SetlistAXID {
     static let entryTitle = "segue.setlist.entry.title"
     static let entryKey = "segue.setlist.entry.key"
     static let entryCapo = "segue.setlist.entry.capo"
-    static let entryLength = "segue.setlist.entry.length"
+    static let entryTime = "segue.setlist.entry.time"
     static let entryStart = "segue.setlist.entry.start"
     static let entryNote = "segue.setlist.entry.note"
     static let entryRemove = "segue.setlist.entry.remove"

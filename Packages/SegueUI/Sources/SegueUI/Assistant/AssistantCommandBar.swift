@@ -7,7 +7,7 @@
     /// The set assistant's command bar above the set in Arrange (R114, design A): one request
     /// line with Build and Rebuild, the chips under it (lexicon chips at once; the local
     /// model's suggestions dashed, naming nothing until clicked), and a status line with the
-    /// last build's fit and R107's "N songs left out: no length" button.
+    /// last build's fit and the "N songs left out: no tempo" button (P8-8 5.4).
     struct AssistantCommandBar: View {
         let setlist: Setlist
         let model: SetAssistantModel
@@ -182,7 +182,7 @@
         }
     }
 
-    /// "● 34:28 of 35:00 · 8 songs · 41 matched", R107's left-out button, the locked count.
+    /// "● 34:28 of 35:00 · 8 songs · 41 matched", the left-out button, the locked count.
     struct AssistantStatusLine: View {
         let setlist: Setlist
         let result: SetAssistantModel.Result

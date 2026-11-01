@@ -80,7 +80,7 @@ extension SongID {
 }
 
 /// Asks a song card to focus one of its fields: Start blank (`.title`, P3-4) and the
-/// missing-lengths list's Open Song (`.length`, P3-12). The card showing `songID` (or any
+/// no-time list's Open Song (`.tempo`, P8-8). The card showing `songID` (or any
 /// card, for nil) takes the request when it appears or when the request arrives.
 @MainActor
 @Observable

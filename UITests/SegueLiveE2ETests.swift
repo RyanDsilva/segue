@@ -208,12 +208,11 @@ final class SegueLiveE2ETests: XCTestCase {
         XCTAssertTrue(waitForValue(title, "Copper Sky"))
         endShow(app)
 
-        // No gig log entry and no review; the timings file exists.
+        // No gig log entry, no review, and no timings folder (P8-8 5.8).
         XCTAssertFalse(element(app, LiveAXID.reorderSheet).appears(timeout: 2))
         XCTAssertTrue(try library.shows().allSatisfy { $0["kind"] as? String != "gig" })
         let timings = library.root.appending(path: "timings", directoryHint: .isDirectory)
-        let files = try FileManager.default.contentsOfDirectory(atPath: timings.path)
-        XCTAssertTrue(files.contains { $0.hasSuffix(".rehearsal.json") }, "\(files)")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: timings.path))
     }
 
     // MARK: E2E 4, 7: zoom and the minimum lyric size

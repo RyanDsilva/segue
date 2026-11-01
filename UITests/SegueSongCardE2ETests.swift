@@ -1,7 +1,8 @@
 import XCTest
 
 /// The song card and Text mode's slash menu through the real UI (P3-10, R80, R81), on a
-/// fresh Welcome library: set key, tempo and length on a song from the card's tokens, see
+/// fresh Welcome library: set key and tempo on a song from the card's tokens (no Length
+/// token: a song's time comes from its tempo and bars, P8-8), see
 /// the directives in Text mode, then wrap two typed lines in a Chorus with `/cho` + Return.
 final class SegueSongCardE2ETests: XCTestCase {
     private var app: XCUIApplication?
@@ -63,14 +64,8 @@ final class SegueSongCardE2ETests: XCTestCase {
         tempo.typeText("100\n", in: app)
         XCTAssertTrue(waitForFile(library, contains: "{tempo: 100}"))
 
-        // Length: type 4:10 and Return.
-        element(app, SongCardAXID.token("length")).click(in: app)
-        let length = element(app, SongCardAXID.length)
-        XCTAssertTrue(length.appears(timeout: 5), "no length field")
-        length.typeKey("a", modifierFlags: .command, in: app)
-        length.typeText("4:10\n", in: app)
-        XCTAssertTrue(waitForFile(library, contains: "{duration: 4:10}"))
         app.typeKey(.escape, modifierFlags: [], in: app)
+        XCTAssertFalse(element(app, SongCardAXID.token("length")).exists, "a Length token")
 
         // Text mode shows the directives.
         element(app, SongCardAXID.editSong).click(in: app)
@@ -78,7 +73,7 @@ final class SegueSongCardE2ETests: XCTestCase {
         let editor = app.textViews[SongCardAXID.editorText]
         XCTAssertTrue(editor.appears(timeout: 5))
         let text = editor.value as? String ?? ""
-        for directive in ["{key: Em}", "{tempo: 100}", "{duration: 4:10}"] {
+        for directive in ["{key: Em}", "{tempo: 100}"] {
             XCTAssertTrue(text.contains(directive), "\(directive) missing from:\n\(text)")
         }
 
@@ -126,7 +121,6 @@ enum SongCardAXID {
     static let songRow = "segue.library.row"
     static let keyOption = "segue.songCard.keyOption"
     static let tempo = "segue.songCard.tempo"
-    static let length = "segue.songCard.length"
     static let editSong = "segue.song.edit"
     static let editorModeText = "segue.editor.mode.text"
     static let editorText = "segue.editor.text"

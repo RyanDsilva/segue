@@ -72,7 +72,8 @@ public extension AccessibilityID {
     static let builderMode = "segue.setlist.mode"
     static let setlistTimeline = "segue.setlist.timeline"
     static let setlistUnknownButton = "segue.setlist.unknown"
-    /// The missing-lengths popover (R88), its rows and their Open Song buttons.
+    /// The no-time popover (P8-8 5.5), its rows, their Open Song buttons and Tempo fields;
+    /// Arrange Sections' footer time and its Set Tempo... button.
     static let missingTimes = "segue.setlist.missingTimes"
     static let arrangementTime = "segue.arrangement.time"
     static let arrangementSetTempo = "segue.arrangement.setTempo"

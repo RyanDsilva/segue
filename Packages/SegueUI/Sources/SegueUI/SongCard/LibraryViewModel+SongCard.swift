@@ -6,8 +6,8 @@ import Library
 /// file per committed field, saved at once and undoable from Edit > Undo, plus the route
 /// that selects a song and focuses a card field.
 public extension LibraryViewModel {
-    /// Selects song `id` in the library and asks its card to focus `field` (P3-12's
-    /// missing-lengths list "Open Song" uses `.length`). Pending editor changes are saved
+    /// Selects song `id` in the library and asks its card to focus `field` (the no-time
+    /// list's "Open Song" uses `.tempo`). Pending editor changes are saved
     /// first, as for any navigation; an editor already open on the song keeps it, and its
     /// token strip takes the focus. Callers outside the Library section switch the sidebar
     /// to it first.

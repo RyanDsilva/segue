@@ -84,8 +84,8 @@ Packages/SegueUI/Sources/SegueUI/Diagrams/*	SegueEditorE2ETests
 Packages/SegueUI/Sources/SegueUI/Rendering/*	SegueEditorE2ETests SegueLiveE2ETests
 Packages/SegueUI/Sources/SegueUI/Library/*	SegueCoreUXE2ETests SegueSetlistLibraryE2ETests SegueSongCardE2ETests
 Packages/SegueUI/Sources/SegueUI/Library/*SectionNotes*	SegueSectionNotesE2ETests
-Packages/SegueUI/Sources/SegueUI/SongCard/*	SegueSongCardE2ETests SegueCoreUXE2ETests SegueEditorE2ETests
-Packages/SegueUI/Sources/SegueUI/Setlists/*	SegueSetlistBuilderE2ETests SegueSetBuilderE2ETests SegueCoreUXE2ETests SegueAssistantE2ETests SegueSetComposerE2ETests
+Packages/SegueUI/Sources/SegueUI/SongCard/*	SegueSongCardE2ETests SegueCoreUXE2ETests SegueEditorE2ETests SegueSongMetadataE2ETests
+Packages/SegueUI/Sources/SegueUI/Setlists/*	SegueSetlistBuilderE2ETests SegueSetBuilderE2ETests SegueCoreUXE2ETests SegueAssistantE2ETests SegueSetComposerE2ETests SegueSongMetadataE2ETests
 Packages/SegueUI/Sources/SegueUI/GigLog/*	SegueSetlistGigLogE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/*	SegueLiveE2ETests SegueGigModeE2ETests
 Packages/SegueUI/Sources/SegueUI/Settings/*	SegueLiveE2ETests SegueGigModeE2ETests SegueServicesE2ETests SegueSettingsE2ETests SegueAISettingsE2ETests
@@ -136,7 +136,7 @@ UITests/AccessibilityAuditE2ETests.swift	AccessibilityAuditE2ETests
 UITests/AccessibilityAuditE2ETests+Phase3.swift	AccessibilityAuditE2ETests
 UITests/SeguePasteE2ETests.swift	SeguePasteE2ETests
 UITests/SegueAISettingsE2ETests.swift	SegueAISettingsE2ETests
-Packages/SegueUI/Sources/SegueUI/Paste/*	SeguePasteE2ETests SegueCoreUXE2ETests
+Packages/SegueUI/Sources/SegueUI/Paste/*	SeguePasteE2ETests SegueCoreUXE2ETests SegueSongMetadataE2ETests
 Packages/SegueCore/Sources/Ingest/*	SeguePasteE2ETests
 UITests/SegueBassE2ETests.swift	SegueBassE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/*Bass*	SegueBassE2ETests
@@ -144,3 +144,5 @@ Packages/SegueUI/Sources/SegueUI/Settings/Instrument*	SegueBassE2ETests
 Packages/SegueUI/Sources/SegueUI/Editor/*Bass*	SegueBassE2ETests
 Packages/SegueCore/Sources/Editing/InstrumentProfile.swift	SegueBassE2ETests
 Packages/SegueCore/Sources/Library/Timing/*	SegueBassE2ETests
+Packages/SegueCore/Sources/Library/Timing/SlotTime.swift	SegueSongMetadataE2ETests SegueSetlistBuilderE2ETests
+UITests/SegueSongMetadataE2ETests.swift	SegueSongMetadataE2ETests

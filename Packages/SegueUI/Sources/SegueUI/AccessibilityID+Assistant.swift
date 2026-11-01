@@ -12,7 +12,7 @@ public extension AccessibilityID {
     /// A dashed suggestion from the local model.
     static let assistantSuggestedChip = "segue.assistant.suggested"
     static let assistantStatus = "segue.assistant.status"
-    /// R107: "N songs left out: no length".
+    /// "N songs left out: no tempo" (P8-8 5.4).
     static let assistantLeftOut = "segue.assistant.leftOut"
     static let assistantLeftOutList = "segue.assistant.leftOut.list"
     /// A row's score (hover, Space or VoiceOver opens the breakdown).
