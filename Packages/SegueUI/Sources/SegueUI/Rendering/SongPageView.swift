@@ -16,6 +16,9 @@ struct SongPageView: View {
     var onCustomize: ((RenderDiagram) -> Void)?
     /// The editor's "Looks like a key change" chips (P8-7 section 6.2).
     var keyChanges: [KeyChangeSuggestion] = []
+    /// False when the host pins the strip itself (the editor's preview, where the strip would
+    /// otherwise sit below the fold of a short pane).
+    var showsDiagrams = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -41,7 +44,7 @@ struct SongPageView: View {
             } else {
                 SongSheetView(sections: model.sections, style: .preview, keyChanges: keyChanges)
             }
-            if !model.diagrams.isEmpty {
+            if showsDiagrams, !model.diagrams.isEmpty {
                 StripSnapshot(
                     diagrams: model.diagrams,
                     instrument: model.transform.options.instrument,

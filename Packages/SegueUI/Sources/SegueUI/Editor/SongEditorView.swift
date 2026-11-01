@@ -171,10 +171,17 @@
 
         private var preview: some View {
             // Its own view, so only the preview depends on `renderModel`.
-            EditorPreview(model: model, onCustomize: customize)
-                .environment(\.walkUpPicking, model.walkUpPicking)
-                .environment(\.walkUpAudition, model.walkUpAudition)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // The strip is pinned under the scrolling page, so it stays in view whatever
+            // the pane's height (the controls above leave a short one at the default size).
+            VStack(spacing: 0) {
+                EditorPreview(model: model, onCustomize: customize)
+                    .environment(\.walkUpPicking, model.walkUpPicking)
+                    .environment(\.walkUpAudition, model.walkUpAudition)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if !model.diagrams.isEmpty {
+                    diagramStrip(model.diagrams)
+                }
+            }
                 .background(Theme.color.ground)
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier(AccessibilityID.editorPreview)
@@ -226,6 +233,7 @@
                             selectable: false,
                             onCustomize: onCustomize,
                             keyChanges: model.keyChangeSuggestions(renderModel),
+                            showsDiagrams: false,
                         )
                         .environment(\.chordHearing, model.chordHearing)
                         .environment(\.chordSpan, model.chordSpanActions)
