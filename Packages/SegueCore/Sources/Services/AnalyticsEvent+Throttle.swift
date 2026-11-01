@@ -19,7 +19,7 @@ public extension AnalyticsEvent {
         switch self {
         case .aiAssistantUsed, .aiModelDownload, .aiPasteFinished, .analyticsEnabled,
              .feedbackSent, .libraryCreated, .setlistComposerSession, .showEnded, .showStarted,
-             .songImported, .timingTapCaptured:
+             .songImported, .timingTapCaptured, .pdfExported:
             return .perOccurrence
         case .appLaunched, .librarySnapshot, .songDeleted:
             return .daily(key: name)

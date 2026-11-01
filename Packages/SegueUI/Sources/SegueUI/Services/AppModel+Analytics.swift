@@ -180,6 +180,7 @@
             case .bindingsUnreadable: "bindingsUnreadable"
             case .sectionNoteGone: "sectionNoteGone"
             case .soundBankLoad: "soundBankLoad"
+            case .pdfExport: "pdfExport"
             case .other: "other"
             }
         }

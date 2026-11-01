@@ -33,15 +33,16 @@ struct ServicesVocabularyTests {
         // Rows 1-18 of section 5, the phase 3 AI rows 19-22, the section notes row 23
         // (P3-17), one signal name each, the set composer row 24 (P8-5), two signals, the
         // walk-up row 25 (P8-4b), the fill row 26, the timing rows 27 and 28 (P8-7), the
-        // artist split row 29 and the setlist time row 30 (P8-8), the medley row 32 (P9-3;
-        // row 31 is P9-1's).
-        #expect(names.count == 32)
+        // artist split row 29 and the setlist time row 30 (P8-8), the PDF export row 31
+        // (P9-1), the medley row 32 (P9-3).
+        #expect(names.count == 33)
         #expect(names.isSuperset(of: [
             "Segue.AI.pasteFinished", "Segue.AI.modelDownload", "Segue.AI.assistantUsed",
             "Segue.AI.smartFilterUsed", "Segue.Notes.edited", "Segue.Setlist.composed",
             "Segue.Setlist.composerSession", "Segue.Bass.walkUpPicked",
             "Segue.Bass.fillSaved", "Segue.Timing.tapCaptured", "Segue.Timing.keyChange",
-            "Segue.Song.artistSplit", "Segue.Setlist.timed", "Segue.Setlist.medley",
+            "Segue.Song.artistSplit", "Segue.Setlist.timed", "Segue.Export.pdf",
+            "Segue.Setlist.medley",
         ]))
     }
 
@@ -234,5 +235,43 @@ struct ServicesVocabularyTests {
         #expect([0, 59, 60, 299, 300, 899, 900, 3599, 3600].map {
             DownloadDurationBucket(seconds: TimeInterval($0)).rawValue
         } == ["<1m", "<1m", "1-5m", "1-5m", "5-15m", "5-15m", "15-60m", "15-60m", "60m+"])
+    }
+
+    /// Row 31 (P9-1 spec 11, R181): the PDF export summary's keys and the render time
+    /// buckets; Help's PDF item and the export error code.
+    @Test
+    func `the PDF export summary renders its closed values`() {
+        let signal = AnalyticsEvent.pdfExported(PDFExportSummary(
+            target: .selection,
+            part: .bass,
+            paper: .letter,
+            size: .large,
+            columns: .two,
+            repeats: .compact,
+            fitOnePage: false,
+            sectionMap: true,
+            stageNotes: false,
+            diagrams: .noDiagrams,
+            fills: .tab,
+            saved: true,
+            printed: false,
+            shared: true,
+            songs: SmallBucket(12),
+            pages: SmallBucket(30),
+            medleys: SmallBucket(0),
+            optionChanges: SmallBucket(2),
+            renderTime: RenderTimeBucket(.milliseconds(700)),
+        )).render()
+        #expect(signal.name == "Segue.Export.pdf")
+        #expect(signal.params["segue.target"] == "selection")
+        #expect(signal.params["segue.diagrams"] == "none")
+        #expect(signal.params["segue.fills"] == "tab")
+        #expect(signal.params["segue.renderTime"] == "under1s")
+        #expect(signal.params.count == 19)
+        #expect(RenderTimeBucket(.milliseconds(120)) == .under250ms)
+        #expect(RenderTimeBucket(.seconds(3)) == .over2s)
+        #expect(AnalyticsEvent.helpOpened(.pdf).render().params["segue.item"] == "pdf")
+        #expect(AnalyticsEvent.errorOccurred(.pdfExport).render()
+            .params["segue.code"] == "pdfExport")
     }
 }

@@ -177,6 +177,7 @@ enum VocabularySample {
         events += fillEvents
         events += artistSplitEvents
         events += setlistTimedEvents
+        events += pdfExportEvents
         events += medleyEvents
         return events
     }
@@ -418,5 +419,43 @@ enum AISample {
 
     private static func pick<T>(_ values: [T], _ row: Int) -> T {
         values[row % values.count]
+    }
+}
+
+extension VocabularySample {
+    /// Row 31 (P9-1): every value of every closed enum at least once.
+    static var pdfExportEvents: [AnalyticsEvent] {
+        let targets = PDFExportTarget.allCases, parts = PDFExportPart.allCases
+        let papers = PDFExportPaper.allCases, sizes = PDFExportSize.allCases
+        let columns = PDFExportColumns.allCases, repeats = PDFExportRepeats.allCases
+        let diagrams = PDFExportDiagrams.allCases, fills = PDFExportFills.allCases
+        let times = RenderTimeBucket.allCases
+        let rows = [
+            targets.count, parts.count, papers.count, sizes.count, columns.count,
+            repeats.count, diagrams.count, fills.count, times.count,
+        ].max() ?? 0
+        return (0 ..< rows).map { row in
+            .pdfExported(PDFExportSummary(
+                target: targets[row % targets.count],
+                part: parts[row % parts.count],
+                paper: papers[row % papers.count],
+                size: sizes[row % sizes.count],
+                columns: columns[row % columns.count],
+                repeats: repeats[row % repeats.count],
+                fitOnePage: row.isMultiple(of: 2),
+                sectionMap: !row.isMultiple(of: 2),
+                stageNotes: row.isMultiple(of: 3),
+                diagrams: diagrams[row % diagrams.count],
+                fills: fills[row % fills.count],
+                saved: row.isMultiple(of: 2),
+                printed: row.isMultiple(of: 3),
+                shared: row.isMultiple(of: 4),
+                songs: SmallBucket(row + 1),
+                pages: SmallBucket(row * 3),
+                medleys: SmallBucket(0),
+                optionChanges: SmallBucket(row),
+                renderTime: times[row % times.count],
+            ))
+        }
     }
 }

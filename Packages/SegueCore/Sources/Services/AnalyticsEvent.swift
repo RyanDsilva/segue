@@ -95,6 +95,8 @@ public enum AnalyticsEvent: Sendable, Hashable {
     /// Row 32 (P9-3 14): a builder medley action, daily per (action, entry);
     /// `members` is the medley's size after the action.
     case setlistMedley(action: MedleyAction, members: SmallBucket, entry: MedleyEntryPoint)
+    /// Row 31 (P9-1 spec 11): one per PDF preview sheet closed.
+    case pdfExported(PDFExportSummary)
 }
 
 // MARK: - Grouped parameters (cases with more than four values)
@@ -256,6 +258,8 @@ public enum HelpItem: String, Sendable, CaseIterable {
     case requestFeature
     case privacyPolicy
     case terms
+    /// The PDF preview sheet's Help button (P9-1, R181).
+    case pdf
 }
 
 public enum FeedbackTransport: String, Sendable, CaseIterable {
@@ -282,6 +286,8 @@ public enum ErrorCode: String, Sendable, CaseIterable {
     /// The bundled sound bank failed to load and a fallback played instead (P8-6 8.1;
     /// once per launch).
     case soundBankLoad
+    /// A PDF export's render or save failed (P9-1 spec 6.2).
+    case pdfExport
     case other
 }
 
@@ -340,6 +346,7 @@ extension AnalyticsEvent {
         case .notesEdited: "Notes"
         case .fillSaved, .walkUpPicked: "Bass"
         case .timingKeyChange, .timingTapCaptured: "Timing"
+        case .pdfExported: "Export"
         }
     }
 
@@ -374,6 +381,7 @@ extension AnalyticsEvent {
         case .songArtistSplit: "artistSplit"
         case .setlistTimed: "timed"
         case .setlistMedley: "medley"
+        case .pdfExported: "pdf"
         }
     }
 
@@ -486,6 +494,7 @@ extension AnalyticsEvent {
         case let .songArtistSplit(summary): summary.params
         case let .setlistTimed(summary): summary.params
         case .setlistMedley: medleyParams
+        case let .pdfExported(summary): summary.params
         }
     }
 }
