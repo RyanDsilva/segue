@@ -22,7 +22,7 @@
                 if !model.flaggedDefines.isEmpty {
                     FlaggedDefinesBanner(model: model)
                 }
-                if model.editorMode == .visual {
+                if model.editorMode == .visual, !model.showsSingerPreview {
                     ChordPaletteBar(model: model)
                     TipView(MoveChordTip()) { action in
                         GuideTipAction.handle(
@@ -138,6 +138,9 @@
                         }
                     }
                 }
+            case .visual where model.showsSingerPreview:
+                // Read-only (P9-2 section 7): editing chords needs the chords.
+                SingerPreviewPage(model: model)
             case .visual:
                 VStack(spacing: 0) {
                     VisualEditorRepresentable(controller: model.visualEditor)
@@ -179,7 +182,7 @@
                     .environment(\.walkUpPicking, model.walkUpPicking)
                     .environment(\.walkUpAudition, model.walkUpAudition)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                if !model.diagrams.isEmpty {
+                if !model.diagrams.isEmpty, !model.showsSingerPreview {
                     diagramStrip(model.diagrams)
                 }
             }
@@ -228,13 +231,16 @@
         var body: some View {
             ScrollViewReader { proxy in
                 ScrollView {
-                    if let renderModel = model.renderModel {
+                    if let chart = model.renderModel {
+                        // Singer preview: lyrics only as you type (P9-2 section 7).
+                        let renderModel = model.showsSingerPreview ? SingerView.model(chart) : chart
                         SongPageView(
                             model: renderModel,
                             selectable: false,
                             onCustomize: onCustomize,
                             keyChanges: model.keyChangeSuggestions(renderModel),
                             showsDiagrams: false,
+                            singer: model.showsSingerPreview,
                         )
                         .environment(\.chordHearing, model.chordHearing)
                         .environment(\.chordSpan, model.chordSpanActions)

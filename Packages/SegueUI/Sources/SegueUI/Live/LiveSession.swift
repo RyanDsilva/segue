@@ -172,6 +172,12 @@
         @ObservationIgnored var bassNeckRecorded = false
         /// Auto-scroll was switched on during this run (`Segue.Show.ended`).
         @ObservationIgnored var autoScrollUsed = false
+        /// Singer view was on at some point in this run (P9-2: `Segue.Show.ended`'s
+        /// `segue.singer`).
+        @ObservationIgnored var singerViewUsed = false
+        /// The drawing the current plan was laid out in (P9-2): the stage draws it with the
+        /// matching style, and a settings change from elsewhere re-lays out once.
+        var planView: StageView = .chart
         @ObservationIgnored private var queue: Task<Void, Never>?
         @ObservationIgnored private var flushTask: Task<Void, Never>?
         @ObservationIgnored private var keepAwake: DisplaySleepAssertion?

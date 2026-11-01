@@ -51,7 +51,10 @@
             minLyricSize: Double,
             viewport: LayoutSize,
             bass: BassView? = nil,
+            singer: Bool = false,
         ) -> (request: LayoutRequest, resolution: ArrangementResolution?) {
+            // Singer view never draws the bass view (P9-2 6.6), so no walk-ups either.
+            let bass = singer ? nil : bass
             let resolution = resolution(slot.arrangement, song: song)
             var passes: [PlayedPass]?
             if case let .applied(order, _) = resolution {
@@ -70,7 +73,7 @@
                 passes: passes,
                 walkUps: walkUps(model, song: song, passes: passes),
             )
-            return (request, resolution)
+            return (singer ? singerRequest(request, settings: settings) : request, resolution)
         }
 
         /// The sidecar song notes and the slot's note, trimmed, empty ones dropped.

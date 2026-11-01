@@ -42,18 +42,8 @@
 
         /// Recomputes the plan (and, for a new item, the scroller) from the current state.
         func relayout() {
-            upNextModel = upNextSlot.flatMap { slot in
-                slot.song.map { song in
-                    Self.arranged(
-                        StageRequest.renderModel(
-                            song,
-                            overrides: slot.item.overrides,
-                            bass: bassView,
-                        ),
-                        StageRequest.resolution(slot.item.arrangement, song: song),
-                    )
-                }
-            }
+            let singer = singerView
+            upNextModel = upNextRenderModel(singer: singer)
             guard let slot = state.current, let song = slot.song else {
                 currentModel = nil
                 currentTimeline = nil
@@ -74,7 +64,12 @@
                 minLyricSize: minLyricSize,
                 viewport: viewport,
                 bass: bassView,
+                singer: singer,
             )
+            planView = request.view
+            if request.view == .singer {
+                singerViewUsed = true
+            }
             currentModel = request.model
             currentTimeline = SongTimeline.build(
                 document: song.document,
@@ -343,8 +338,12 @@
             }
         }
 
-        /// Cmd +, Cmd -, Cmd 0: zoom saved per song.
+        /// Cmd +, Cmd -, Cmd 0: zoom saved per song; in singer view the one singer zoom.
         func zoom(_ direction: Int) {
+            if singerView {
+                zoomSinger(direction)
+                return
+            }
             updatePrefs { prefs in
                 let zoom = switch direction {
                 case 0: 1.0

@@ -16,7 +16,9 @@
         /// `B`: the bass-note view on or off, re-laid out at once, with a brief "Bass notes" /
         /// "Chords" indicator.
         func toggleBassNotes() {
-            guard let instrument = context.instrument else { return }
+            guard !refusesBassKeyInSingerView(), let instrument = context.instrument else {
+                return
+            }
             instrument.toggleBassNotes(from: .stage)
             relayout()
             flash(instrument.profile.bassNotes ? "Bass notes" : "Chords")
@@ -26,7 +28,9 @@
         /// editor's Bass menu and Settings; display only, so it works in Live and Rehearsal
         /// alike and never makes a sound. A song with no saved fill only flashes.
         func toggleFillTab() {
-            guard let instrument = context.instrument else { return }
+            guard !refusesBassKeyInSingerView(), let instrument = context.instrument else {
+                return
+            }
             guard currentSongHasFills else {
                 flash("No fills in this song")
                 return
@@ -43,9 +47,12 @@
 
         /// Whether the mini neck is up: the bass view with its neck on, a laid-out song with
         /// at least one chord, not in a break (past the end and an unavailable song have no
-        /// plan). Hidden otherwise, with no placeholder.
+        /// plan), not in singer view. Hidden otherwise, with no placeholder.
         var showsBassNeck: Bool {
-            guard bassView?.neck == true, state.record.currentBreak == nil, let plan else {
+            // Singer view hides the neck with the chords (P9-2 6.6).
+            guard bassView?.neck == true, planView != .singer, state.record.currentBreak == nil,
+                  let plan
+            else {
                 return false
             }
             return !StagePasses.placedChords(in: plan).isEmpty

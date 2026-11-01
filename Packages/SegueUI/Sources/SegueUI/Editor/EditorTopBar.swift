@@ -41,7 +41,8 @@
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                if model.editorMode == .visual {
+                // No canvas hint over the read-only singer page (its bar explains it).
+                if model.editorMode == .visual, !model.showsSingerPreview {
                     // The canvas keeps chart chords in the bass-note view (P8-4 decision 5).
                     Text(model.showsBassNotes
                         ? "Bass notes show in the preview and on stage"
@@ -134,6 +135,16 @@
                     }
                     .accessibilityIdentifier(AccessibilityID.editorBass)
                     .help("Show the note to play at sounding pitch (all songs)")
+                }
+                if let preview = model.preview {
+                    // The previews' own singer toggle (P9-2 section 7), shared with the
+                    // library pane; never the stage's.
+                    SingerPreviewPicker(
+                        prefs: preview,
+                        context: .editor,
+                        identifier: AccessibilityID.editorDisplaySinger,
+                    )
+                    .controlSize(.small)
                 }
             }
         }

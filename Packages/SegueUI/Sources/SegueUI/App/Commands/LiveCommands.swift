@@ -9,6 +9,20 @@
     struct LiveCommands: Commands {
         let app: AppModel
 
+        /// Through the stage when it is up (flash, same pass), else the setting itself.
+        private var singerView: Binding<Bool> {
+            Binding(
+                get: { app.liveSettings.settings.singerView },
+                set: { on in
+                    if let live = app.live {
+                        live.setSingerView(on)
+                    } else {
+                        app.liveSettings.settings.singerView = on
+                    }
+                },
+            )
+        }
+
         var body: some Commands {
             CommandMenu("Live") {
                 Button("Metronome") {
@@ -16,6 +30,9 @@
                 }
                 .disabled(app.live == nil)
                 .help("Pulse the song's tempo on stage (M on the stage)")
+                // A remembered setting, so it works before a show too (P9-2 6.1).
+                Toggle("Singer View", isOn: singerView)
+                    .help("Show lyrics only on stage, chords hidden (V on the stage)")
             }
         }
     }

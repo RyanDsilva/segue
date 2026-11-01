@@ -54,6 +54,7 @@
             session.library.aiRouter = ai.router
             liveSettings.services = services
             instrumentProfile.services = services
+            previewPrefs.services = services
             sound.settings.services = services
             session.library.sound = sound
             let songs = session.library.catalog
@@ -118,6 +119,7 @@
             _ record: ShowRecord,
             autoScrollUsed: Bool,
             endedBy: ShowEndReason,
+            singerView: Bool = false,
         ) {
             let played = record.items.count { $0.state == .played }
             let skipped = record.items.count { $0.state == .skipped }
@@ -131,6 +133,7 @@
                 autoScrollUsed: autoScrollUsed,
                 reordered: record.events.contains { $0.kind == .reordered },
                 endedBy: endedBy,
+                singerView: singerView,
             )))
             if record.kind == .gig, endedBy == .endShow {
                 services.record(.milestoneReached(

@@ -54,6 +54,7 @@ struct MenuShortcutsTests {
             "newSong", "newSongFromClipboard", "importSongs", "showInFinder", "moveToTrash",
             "close",
             "save", "refresh", "rehearseSong", "playSongLive", "playAlong", "createBassFill",
+            "singerPreview",
             "startShow", "rehearse", "newSetlist", "pickSongs", "arrangeSet", "insertBreak",
             "addSongByName",
             "arrangeSections",

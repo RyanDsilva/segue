@@ -195,6 +195,10 @@
                 // No sound in a gig (R161, P8-6 section 9): before the stage is presented.
                 sound.stageChanged(kind: live?.kind)
                 live?.attachSound(sound)
+                // The Singer Screen ends with the show (P9-2c 6.13).
+                if live == nil {
+                    SingerScreenController.shared.close()
+                }
             }
         }
 
@@ -469,6 +473,11 @@
         /// Settings > Instrument (P8-4).
         public var instrumentProfile: InstrumentProfileStore {
             dependencies.live.instrument
+        }
+
+        /// The previews' singer toggle (P9-2 section 7).
+        public var previewPrefs: PreviewPrefs {
+            dependencies.live.preview
         }
     }
 #endif

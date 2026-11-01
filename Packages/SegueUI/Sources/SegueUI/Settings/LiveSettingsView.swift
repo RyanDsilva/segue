@@ -38,6 +38,19 @@
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                    Toggle(
+                        "Show lyrics only on stage (Singer view)",
+                        isOn: $store.settings.singerView,
+                    )
+                    .accessibilityIdentifier(AccessibilityID.settingsSingerView)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(Self.singerHelp)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 8)
+                        GuideHelpButton(.singerView)
+                    }
                 }
                 Section("Gig Mode Shortcuts") {
                     shortcutRow(
@@ -98,6 +111,10 @@
         static let columnsHelp = "Auto fits each song at the largest size, preferring two "
             + "columns. A song's own choice (C on stage, or Stage in the song editor) wins over "
             + "this default."
+
+        static let singerHelp = "Hides every chord, walk-up, fill and tab for a singer, with "
+            + "larger lyrics. Section names, the map, chart notes and stage cues stay. V switches "
+            + "it on stage, mid-song."
 
         static let metronomeHelp = "A quiet pulse in the corner of the stage at each song's "
             + "tempo, beat 1 accented. Songs without a tempo show none. M turns it on and off "
@@ -185,6 +202,7 @@
             case .focus: "Focus on"
             case .charger: "Charger connected"
             case .brightness: "Screen brightness up"
+            case .singerView: "Singer view is on"
             }
         }
     }

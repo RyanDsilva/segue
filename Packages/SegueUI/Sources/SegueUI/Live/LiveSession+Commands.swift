@@ -89,6 +89,7 @@
             case .resetZoom: zoom(0)
             case .cycleColumns: cycleColumns()
             case .toggleFillTab: toggleFillTab()
+            case .toggleSingerView: toggleSingerView()
             default: break
             }
         }

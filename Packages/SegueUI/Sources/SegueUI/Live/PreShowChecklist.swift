@@ -117,6 +117,10 @@
                 if item == .focus, focus == .notConfigured {
                     return false
                 }
+                // A warning, only while singer view is on (P9-2 6.10).
+                if item == .singerView, !settings.settings.singerView {
+                    return false
+                }
                 return !hidden.contains(item) && !dismissed.contains(item)
             }
         }
@@ -137,7 +141,16 @@
                 return charger == true
             case .brightness:
                 return brightnessConfirmed
+            case .singerView:
+                // A warning, never ticked: Show Chords turns singer view off (and the row
+                // goes).
+                return false
             }
+        }
+
+        /// The singer view row's Show Chords: the stage shows chords again.
+        public func showChords() {
+            settings.settings.singerView = false
         }
 
         // MARK: Focus row

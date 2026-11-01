@@ -3,6 +3,7 @@ import Diagrams
 import Editing
 import Foundation
 import Library
+import MusicTheory
 
 /// Display strings derived from a song's metadata.
 enum SongSummary {
@@ -70,6 +71,28 @@ enum SongSummary {
     /// Credits and performance line for a rendered song: "A, B · Kalank  ·  G, capo 2, 96".
     /// The key is the displayed key (transposed, Nashville header in Nashville view), marked
     /// when it was inferred; the capo only shows in Shapes mode, where the chords are shapes.
+    /// Credits and the singer key line, "Key A, 96" (P9-2 6.7): a singer view model's
+    /// subtitle.
+    static func singerSubtitle(_ model: RenderModel) -> String {
+        [
+            credits(artists: model.header.artists, album: model.header.album),
+            singerKeyLine(key: model.transform.concertKey, tempo: model.header.tempo),
+        ].compactMap(\.self).joined(separator: "  ·  ")
+    }
+
+    /// The singer key line (P9-2 6.7): "Key A, 96", "Key A" or "96"; the sounding key, never
+    /// a capo or shape key.
+    static func singerKeyLine(key: SongKey?, tempo: Double?) -> String? {
+        var parts: [String] = []
+        if let key {
+            parts.append("Key \(key.name)")
+        }
+        if let tempo, tempo > 0 {
+            parts.append(tempo.rounded() == tempo ? String(Int(tempo)) : String(tempo))
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+    }
+
     static func subtitle(_ model: RenderModel) -> String {
         [
             credits(artists: model.header.artists, album: model.header.album),

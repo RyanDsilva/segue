@@ -85,6 +85,10 @@
                     revealStatus()
                 }
             }
+            // Singer view switched from Settings while the stage is up (P9-2 6.1).
+            .onChange(of: session.context.settings.settings.singerView) {
+                session.followSingerSetting()
+            }
         }
 
         // MARK: Section map
@@ -150,13 +154,14 @@
                 TimelineView(.animation(paused: !session.isAutoScrolling)) { _ in
                     let now = session.context.scrollClock.now()
                     let fraction = session.scrollFraction(at: now)
-                    StagePlanView(plan: plan)
+                    StagePlanView(plan: plan, style: session.planStyle)
                         .equatable()
                         .overlay(alignment: .topLeading) {
                             StagePassOverlay(
                                 plan: plan,
                                 current: session.currentPass(at: now),
                                 loop: session.loopPass,
+                                style: session.planStyle,
                             )
                         }
                         .offset(y: -session.scrollOffset(at: now))

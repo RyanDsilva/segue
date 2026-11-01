@@ -250,7 +250,7 @@ extension StageWindowSuites {
             let env = try TestEnvironment()
             let url = env.scratch.appending(path: "bindings.json")
             try Data("""
-            {"schemaVersion": 2, "bindings": [
+            {"schemaVersion": 3, "bindings": [
               {"trigger": {"key": "pageDown"}, "command": "next"},
               {"trigger": {"pedal": 1}, "command": "next"}
             ]}

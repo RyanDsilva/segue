@@ -227,6 +227,7 @@
             ))
             let library = LibraryViewModel(store: libraryStore, autosave: autosave)
             library.instrument = dependencies.live.instrument
+            library.preview = dependencies.live.preview
             loadShapeLibrary(into: library, dependencies: dependencies)
             await library.reload()
             let setlists = SetlistsViewModel(store: setlistStore, loadIssues: issues)

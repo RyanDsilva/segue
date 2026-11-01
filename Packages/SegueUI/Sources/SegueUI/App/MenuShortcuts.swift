@@ -132,6 +132,8 @@
             "f",
             [.command, .option],
         )
+        /// P9-2 section 7: the library and editor previews show lyrics only.
+        static let singerPreview = MenuShortcut("Song", "Singer Preview", "y", [.command, .shift])
         // Setlist
         static let startShow = MenuShortcut("Setlist", "Start Show", .return)
         static let rehearse = MenuShortcut("Setlist", "Rehearse", .return, [.command, .option])
@@ -174,7 +176,7 @@
         public static let all: [MenuShortcut] = [
             settings, newSong, newSongFromClipboard, importSongs, showInFinder, moveToTrash, close,
             save, undo, redo,
-            refresh, rehearseSong, playSongLive, playAlong, createBassFill,
+            refresh, rehearseSong, playSongLive, playAlong, createBassFill, singerPreview,
             startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak,
             addSongByName,
             arrangeSections, makeMedley, ungroupMedley, moveUp, moveDown, mainWindow, help,

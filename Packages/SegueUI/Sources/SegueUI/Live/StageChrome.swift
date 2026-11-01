@@ -22,7 +22,7 @@
                     .lineLimit(1)
                     .accessibilityIdentifier(AccessibilityID.liveTitle)
                     .layoutPriority(1)
-                if let line = session.currentModel.flatMap(SongSummary.performanceLine) {
+                if let line = performanceLine {
                     Text(line)
                         .font(SchibstedGrotesk.medium.font(size: 16))
                         .foregroundStyle(Theme.color.muted)
@@ -51,6 +51,12 @@
                 if let pass = session.loopedPass {
                     StageLoopPill(name: pass.name, stopKey: session.loopKey)
                 }
+                if session.planView == .singer {
+                    // Why there are no chords, at a glance (P9-2 6.1).
+                    StageChip(text: "Singer")
+                        .accessibilityLabel("Singer view, lyrics only")
+                        .accessibilityIdentifier(AccessibilityID.liveSinger)
+                }
                 if session.kind == .rehearsal {
                     StageChip(text: "Rehearsal")
                         .accessibilityIdentifier(AccessibilityID.liveRehearsal)
@@ -62,6 +68,13 @@
                     .padding(.leading, 6)
             }
             .padding(.horizontal, LiveView.horizontalPadding)
+        }
+
+        /// "G, capo 2, 96"; in singer view the sounding key only, "Key A, 96" (P9-2 6.7).
+        private var performanceLine: String? {
+            session.planView == .singer
+                ? session.singerKeyLine
+                : session.currentModel.flatMap(SongSummary.performanceLine)
         }
 
         private var title: String {
@@ -249,7 +262,10 @@
             case let .item(slot):
                 label("Up next", color: Theme.color.muted)
                 titleText(slot.song.map(SongSummary.title) ?? slot.item.title)
-                if let line = Self.keyLine(session.upNextModel) {
+                if let line = session.planView == .singer
+                    ? session.upNextSingerKeyLine
+                    : Self.keyLine(session.upNextModel)
+                {
                     detail(line)
                 }
                 if let first = session.upNextModel.flatMap(Self.firstLine) {

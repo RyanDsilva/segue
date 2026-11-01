@@ -19,6 +19,9 @@ struct SongPageView: View {
     /// False when the host pins the strip itself (the editor's preview, where the strip would
     /// otherwise sit below the fold of a short pane).
     var showsDiagrams = true
+    /// A singer view model (`SingerView.model`, P9-2 section 7): the subtitle names the
+    /// sounding key, "Key A, 96".
+    var singer = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -29,7 +32,8 @@ struct SongPageView: View {
                     .foregroundStyle(Theme.color.ink)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier(AccessibilityID.songTitle)
-                let subtitle = SongSummary.subtitle(model)
+                let subtitle = singer ? SongSummary.singerSubtitle(model)
+                    : SongSummary.subtitle(model)
                 if !subtitle.isEmpty {
                     Text(subtitle)
                         .font(Theme.font.body)

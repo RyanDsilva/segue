@@ -11,6 +11,8 @@
         public var settings: LiveSettingsStore
         /// Settings > Instrument (P8-4): the bass-note view and the stage mini neck.
         public var instrument: InstrumentProfileStore
+        /// The library and editor previews' singer toggle (P9-2 section 7).
+        public var preview: PreviewPrefs
         public var shortcuts: any ShortcutRunner
         public var power: any PowerSourceReading
         /// Drives auto-scroll. A monotonic clock (`MonotonicClock`: NTP corrections and
@@ -35,6 +37,7 @@
         ) {
             self.settings = settings
             self.instrument = instrument ?? InstrumentProfileStore(defaults: settings.defaults)
+            preview = PreviewPrefs(defaults: settings.defaults)
             self.shortcuts = shortcuts
             self.power = power
             self.scrollClock = scrollClock

@@ -263,6 +263,10 @@
                 focusButtons
             case .charger:
                 EmptyView()
+            case .singerView:
+                Button("Show Chords") { checklist.showChords() }
+                    .buttonStyle(.segueSecondary)
+                    .accessibilityIdentifier(AccessibilityID.checklistShowChords)
             }
         }
 
@@ -288,6 +292,7 @@
             case .focus: "Focus on"
             case .charger: "Charger connected"
             case .brightness: "Screen brightness up"
+            case .singerView: "Singer view is on"
             }
         }
 
@@ -301,6 +306,7 @@
                 case nil: "The power source could not be read."
                 }
             case .brightness: "Turn the screen up so the chart reads from a distance."
+            case .singerView: "The stage shows lyrics only. V on stage brings the chords back."
             }
         }
 

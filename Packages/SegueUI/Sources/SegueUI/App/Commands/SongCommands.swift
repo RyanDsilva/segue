@@ -1,11 +1,25 @@
 #if os(macOS)
+    import Services
     import SwiftUI
 
     /// Song (P8-6 10.3): Play Along opens or closes the Play along bar of the editor, or of
     /// the library's song pane. Never on stage (Rehearsal play-along is `P`). Insert puts a
-    /// key, time or tempo change at the editor's cursor line or selected band (P8-7 6.1).
+    /// key, time or tempo change at the editor's cursor line or selected band (P8-7 6.1). Singer
+    /// Preview shows the previews lyrics only (P9-2 section 7).
     struct SongCommands: Commands {
         let app: AppModel
+
+        /// Song > Singer Preview (P9-2 section 7): the previews' own toggle, never the
+        /// stage's.
+        private var singerPreview: Binding<Bool> {
+            Binding(
+                get: { app.previewPrefs.singer },
+                set: { on in
+                    guard let context = app.singerPreviewContext else { return }
+                    app.previewPrefs.setSinger(on, from: context)
+                },
+            )
+        }
 
         var body: some Commands {
             CommandMenu("Song") {
@@ -18,6 +32,9 @@
                 Button(MenuShortcuts.createBassFill.title) { app.createBassFill() }
                     .keyboardShortcut(MenuShortcuts.createBassFill)
                     .disabled(!app.canCreateBassFill)
+                Toggle(MenuShortcuts.singerPreview.title, isOn: singerPreview)
+                    .keyboardShortcut(MenuShortcuts.singerPreview)
+                    .disabled(app.singerPreviewContext == nil)
                 Menu("Insert") {
                     ForEach(ChartDirective.allCases) { directive in
                         Button(directive.insertTitle) {
@@ -55,6 +72,20 @@
             } else {
                 session.library.createFillFromMenu()
             }
+        }
+
+        /// Where Song > Singer Preview acts: the open editor, else the library pane when it
+        /// shows a song; nil on stage.
+        var singerPreviewContext: FeatureContext? {
+            guard let session, !isPerforming else { return nil }
+            let library = session.library
+            if library.editor != nil {
+                return .editor
+            }
+            guard session.section == .library || session.section == nil,
+                  case .song = library.detail
+            else { return nil }
+            return .library
         }
 
         /// The Play along bar a menu command acts on: the open editor's, else the library

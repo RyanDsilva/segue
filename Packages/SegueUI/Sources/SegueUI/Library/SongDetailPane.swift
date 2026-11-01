@@ -252,14 +252,29 @@
             .accessibilityIdentifier(AccessibilityID.songMoreMenu)
         }
 
-        private func chart(_ render: RenderModel) -> some View {
-            VStack(alignment: .leading, spacing: 20) {
-                if let playAlong = model.playAlong, !render.sections.isEmpty {
-                    // Play along with this chart (P8-6 10.3); the bar opens at the bottom.
-                    PlayAlongToggle(model: playAlong)
-                        .controlSize(.small)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                        .padding(.bottom, -12)
+        private func chart(_ chart: RenderModel) -> some View {
+            // Singer preview (P9-2 section 7): the same transform as the stage, no chords,
+            // no diagrams; play-along keeps the chart's timeline and follows lines by path.
+            let render = model.preview?.singer == true ? SingerView.model(chart) : chart
+            return VStack(alignment: .leading, spacing: 20) {
+                if !render.sections.isEmpty {
+                    HStack(spacing: 8) {
+                        if let playAlong = model.playAlong {
+                            // Play along with this chart (P8-6 10.3); the bar opens at the
+                            // bottom.
+                            PlayAlongToggle(model: playAlong)
+                        }
+                        if let preview = model.preview {
+                            SingerPreviewPicker(
+                                prefs: preview,
+                                context: .library,
+                                identifier: AccessibilityID.librarySingerPreview,
+                            )
+                        }
+                    }
+                    .controlSize(.small)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.bottom, -12)
                 }
                 if render.sections.isEmpty {
                     Text("No lyrics yet.")

@@ -14,7 +14,8 @@ public extension LayoutStyle {
     /// Singer view's sizes (P9-2 section 6.5, R178; tuned in step 0 over the Welcome songs,
     /// the Hindi fixtures and a 40-line song at 1280 x 800, 1440 x 900 and 1920 x 1080):
     /// lyrics up to 60 pt; the stage's line rhythm with a little more air between parts; a
-    /// narrower column gap and gutter gap, so a long romanized line keeps more width. A
+    /// narrower column gap, so a long romanized line keeps more width (the gutter gap stays
+    /// the stage's 18 pt, which the loop bracket sits in, R163). A
     /// layout without wrapped lines wins from the 28 pt floor unless wrapping makes the
     /// lyrics more than 15% larger: a phrase broken across two rows is harder to sing from
     /// than slightly smaller type. Chord fields are unused.
@@ -26,7 +27,6 @@ public extension LayoutStyle {
         style.lineHeight = 1.25
         style.sectionSpacing = 0.7
         style.columnGap = 32
-        style.gutterGap = 12
         style.wrapPenalty = 0.15
         return style
     }()

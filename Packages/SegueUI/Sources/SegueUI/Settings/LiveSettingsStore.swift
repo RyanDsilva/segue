@@ -18,9 +18,27 @@ public final class LiveSettingsStore {
             if settings != oldValue {
                 save()
                 updateGigModeTip()
-                services.record(.featureUsed(.liveSettings, .settings))
+                if !changingFromStage {
+                    services.record(.featureUsed(.liveSettings, .settings))
+                }
+                if settings.singerView, !oldValue.singerView {
+                    // `V`, the Live menu or Settings (P9-2 section 13).
+                    services.record(.featureUsed(.singerView, .stage))
+                }
             }
         }
+    }
+
+    /// Set while the stage changes a setting it owns (singer view, singer zoom), which is
+    /// not a use of Settings > Live.
+    @ObservationIgnored private var changingFromStage = false
+
+    /// A change made on stage (P9-2: `V`, the singer zoom): saved like any other, but not
+    /// counted as a Settings > Live use.
+    public func updateFromStage(_ change: (inout LiveSettings) -> Void) {
+        changingFromStage = true
+        defer { changingFromStage = false }
+        change(&settings)
     }
 
     /// Records analytics events (WS3 spec 5); the app hands over its hub.

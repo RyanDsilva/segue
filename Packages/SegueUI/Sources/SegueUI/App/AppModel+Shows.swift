@@ -395,6 +395,7 @@
                     ending.record,
                     autoScrollUsed: live.autoScrollUsed,
                     endedBy: live.quitsAfterEnding ? .quit : .endShow,
+                    singerView: live.singerViewUsed || live.singerView,
                 )
                 countCompletedShow(kind: live.kind, quitsAfterEnding: live.quitsAfterEnding)
             } catch {

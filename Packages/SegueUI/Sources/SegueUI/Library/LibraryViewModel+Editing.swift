@@ -221,6 +221,7 @@ extension LibraryViewModel {
         )
         editor.librarySectionKinds = librarySectionKinds
         editor.sound = sound
+        editor.preview = preview
         editor.attachBassPrefs(
             record.sidecar.bass,
             parts: record.sidecar.parts,
@@ -259,6 +260,7 @@ extension LibraryViewModel {
         )
         editor.librarySectionKinds = librarySectionKinds
         editor.sound = sound
+        editor.preview = preview
         closeEditor()
         selection = nil
         detail = .newSong

@@ -20,7 +20,7 @@
             SongCommands(app: app)
             SetlistCommands(app: app)
             LiveCommands(app: app)
-            WindowCommands()
+            WindowCommands(app: app)
             HelpCommands(app: app)
         }
     }

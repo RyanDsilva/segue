@@ -127,6 +127,9 @@ public final class SongEditorViewModel {
     /// Settings > Instrument (P8-4): the preview renders with its bass view; the visual
     /// canvas never does (decision 5). Observed, so a flip anywhere re-renders the preview.
     @ObservationIgnored let instrument: InstrumentProfileStore?
+    /// The previews' singer toggle (P9-2 section 7), shared with the library pane: the Text
+    /// preview draws lyrics only, and the Visual canvas gives way to a read-only singer page.
+    @ObservationIgnored var preview: PreviewPrefs?
     /// Heard chords and walk-up auditions (P8-6); the library hands it over.
     @ObservationIgnored var sound: SoundSession?
     /// The Play along bar's model (P8-6 10.3), made on first use.
