@@ -110,6 +110,18 @@
             "⌘S"
           ],
           "title" : "Save"
+        },
+        {
+          "keys" : [
+            "⇧⌘E"
+          ],
+          "title" : "Export PDF…"
+        },
+        {
+          "keys" : [
+            "⌘P"
+          ],
+          "title" : "Print…"
         }
       ],
       "menu" : "File"

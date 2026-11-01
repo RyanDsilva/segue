@@ -60,8 +60,8 @@
         }
 
         /// Data > Reset All Settings… (A17): Live settings, Appearance, the instrument profile
-        /// (P8-4), Settings > Audio (P8-6), the default changeover, the AI toggle (R73), the last
-        /// Settings pane and the
+        /// (P8-4), Settings > Audio (P8-6), the default changeover, the PDF export options
+        /// (P9-1), the AI toggle (R73), the last Settings pane and the
         /// tips. Never consent,
         /// the library, onboarding, What's New or the review counters, the shape library, the
         /// key bindings or downloaded AI models (R73).
@@ -71,6 +71,7 @@
             sound.settings.resetToDefaults()
             polish.appearance.reset()
             ChangeoverSetting.reset()
+            PDFExportSettings.reset()
             ai.preferences.reset()
             polish.preferences.selectedPane = nil
             polish.preferences.requestTipsReset()

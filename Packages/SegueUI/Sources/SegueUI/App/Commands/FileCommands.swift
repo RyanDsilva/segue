@@ -5,8 +5,9 @@
 
     /// File (WS2a 3.5.2, P3-4): New Song, New Song from Clipboard, Import Songs…, Export Library
     /// Archive… (hidden until
-    /// WS2b fills its hook), Show in Finder, Move to Trash, Close, Save. There is no New
-    /// Window: the main window is a single `Window` reopened from the Window menu.
+    /// WS2b fills its hook), Show in Finder, Move to Trash, Close, Save, Export PDF… and Print…
+    /// (P9-1). There is no New Window: the main window is a single `Window` reopened from the
+    /// Window menu.
     struct FileCommands: Commands {
         let app: AppModel
         /// The song selected in the focused song list (Move to Trash needs list focus).
@@ -55,6 +56,25 @@
                 }
                 .keyboardShortcut(MenuShortcuts.save)
                 .disabled(app.session == nil || app.isPerforming)
+            }
+            // P9-1 (R178): Export PDF... and Print... both open the preview; no system Page
+            // Setup or Print item survives.
+            CommandGroup(replacing: .printItem) {
+                let target = app.pdfMenuTarget(focused: focusedSongID)
+                Button(MenuShortcuts.exportPDF.title) {
+                    if let target {
+                        app.openPDF(target)
+                    }
+                }
+                .keyboardShortcut(MenuShortcuts.exportPDF)
+                .disabled(target == nil || app.pdfPreview != nil)
+                Button(MenuShortcuts.print.title) {
+                    if let target {
+                        app.openPDF(target, forPrint: true)
+                    }
+                }
+                .keyboardShortcut(MenuShortcuts.print)
+                .disabled(target == nil || app.pdfPreview != nil)
             }
         }
 

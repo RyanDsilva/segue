@@ -39,6 +39,8 @@
         var assistant = EntryAssistant()
         @State private var isHovered = false
         @State private var isEditing = false
+        @Environment(\.exportPDF) private var exportPDF
+        @Environment(\.pdfSetlist) private var pdfSetlist
 
         var body: some View {
             let display = SetlistEntryDisplay(entry: entry, record: record)
@@ -106,6 +108,13 @@
                     .disabled(onArrange == nil)
                 Button("Insert Break After") { onInsertBreak?() }
                     .disabled(onInsertBreak == nil)
+                if let exportPDF, let setlistID = pdfSetlist {
+                    Button("Export Slot as PDF\u{2026}") {
+                        exportPDF.open(.slot(setlistID, entry.itemId), false)
+                    }
+                    .disabled(!exportPDF.isEnabled || record == nil)
+                    .accessibilityIdentifier(AccessibilityID.pdfExportSlot)
+                }
                 Button("Remove from Setlist", role: .destructive, action: onRemove)
                     .disabled(isReadOnly)
             }

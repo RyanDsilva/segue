@@ -13,6 +13,9 @@
 	<!-- Outgoing connections for the hosted services (docs/release/decisions.md R23, A61). -->
 	<key>com.apple.security.network.client</key>
 	<true/>
+	<!-- Print... from the PDF preview (P9-1 spec 10): the sandbox's printing access. -->
+	<key>com.apple.security.print</key>
+	<true/>
 	<!-- Gig Mode Shortcuts run through Shortcuts Events (docs/release/decisions.md R59):
 	     Apple events to the one Apple-published access group, no temporary exception. -->
 	<key>com.apple.security.automation.apple-events</key>

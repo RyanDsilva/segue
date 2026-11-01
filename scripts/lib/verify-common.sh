@@ -35,13 +35,14 @@ test_hook_strings() {
 # (docs/release/decisions.md R59): Gig Mode Shortcuts run through Shortcuts Events, limited
 # to its one Apple-published access group. The app group is the downloaded-model store shared
 # by both flavors (docs/release/decisions.md R67, R100): team-prefixed, so macOS needs no portal
-# registration and no profile entry for it.
+# registration and no profile entry for it. Printing is the PDF preview's Print... (P9-1 spec 10).
 app_entitlements() {
     jq -n -S '{
         "com.apple.security.app-sandbox": true,
         "com.apple.security.files.user-selected.read-write": true,
         "com.apple.security.files.bookmarks.app-scope": true,
         "com.apple.security.network.client": true,
+        "com.apple.security.print": true,
         "com.apple.security.automation.apple-events": true,
         "com.apple.security.scripting-targets": {
             "com.apple.shortcuts.events": ["com.apple.shortcuts.run"]

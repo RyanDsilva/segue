@@ -103,6 +103,9 @@
         static let moveToTrash = MenuShortcut("File", "Move to Trash", .delete)
         static let close = MenuShortcut("File", "Close", "w")
         static let save = MenuShortcut("File", "Save", "s")
+        /// P9-1 (R178): both open the in-app PDF preview; ⌘P inside it prints.
+        static let exportPDF = MenuShortcut("File", "Export PDF\u{2026}", "e", [.command, .shift])
+        static let print = MenuShortcut("File", "Print\u{2026}", "p")
         // Edit (system)
         static let undo = MenuShortcut("Edit", "Undo", "z", system: true)
         static let redo = MenuShortcut("Edit", "Redo", "z", [.command, .shift], system: true)
@@ -175,7 +178,7 @@
         /// All of them, in menu order.
         public static let all: [MenuShortcut] = [
             settings, newSong, newSongFromClipboard, importSongs, showInFinder, moveToTrash, close,
-            save, undo, redo,
+            save, exportPDF, print, undo, redo,
             refresh, rehearseSong, playSongLive, playAlong, createBassFill, singerPreview,
             startShow, rehearse, newSetlist, pickSongs, arrangeSet, insertBreak,
             addSongByName,

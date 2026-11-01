@@ -44,6 +44,8 @@
             .servicesPresentations(app)
             // The Welcome sheet (WS2b 4.1).
             .polishPresentations(app)
+            // The PDF preview (P9-1 spec 6).
+            .pdfPresentations(app)
             // A Dock click with no window open brings this window back (review risk F2).
             .onAppear {
                 let openWindow = openWindow
@@ -165,6 +167,11 @@
                     .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
             } detail: {
                 detail
+                    // Export PDF... on song, selection and slot rows (P9-1 spec 4).
+                    .environment(\.exportPDF, ExportPDFAction(
+                        isEnabled: app.canExportPDF,
+                        open: { target, forPrint in app.openPDF(target, forPrint: forPrint) },
+                    ))
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 VStack(spacing: 0) {

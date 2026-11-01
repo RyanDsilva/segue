@@ -182,6 +182,8 @@ func appTarget(name: String, personal: Bool) -> Target {
         // Agrees with `com.apple.security.network.client` in every entitlements file (A61), so
         // the sandbox build setting and the entitlements never disagree.
         "ENABLE_OUTGOING_NETWORK_CONNECTIONS": "YES",
+        // Agrees with `com.apple.security.print` in every entitlements file (P9-1 spec 10).
+        "ENABLE_RESOURCE_ACCESS_PRINTING": "YES",
         // Matches the `.icon` document name (design/icon/Segue.icon).
         "ASSETCATALOG_COMPILER_APPICON_NAME": "Segue",
         // Every icon size from the .icon document, so the App Store build's icon checks

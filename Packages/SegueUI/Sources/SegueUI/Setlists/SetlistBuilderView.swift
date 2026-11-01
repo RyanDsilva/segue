@@ -29,8 +29,15 @@
         /// The window's content size: Arrange Sections fits itself to it.
         @State private var windowSize: CGSize?
         @Environment(\.smartFilterList) private var smartFilters
+        @Environment(\.exportPDF) private var exportPDF
 
         var body: some View {
+            content
+                // The slot rows' Export Slot as PDF... (P9-1 spec 4).
+                .environment(\.pdfSetlist, setlist.id)
+        }
+
+        private var content: some View {
             GeometryReader { proxy in
                 HStack(spacing: 0) {
                     if model.builderMode == .pick {
@@ -244,6 +251,7 @@
                         onRename: { naming = .rename(setlist.name) },
                         onDetails: { isEditingDetails = true },
                         onReveal: onReveal,
+                        exportPDF: exportPDF,
                     )
                 }
                 .help("Rename, duplicate, show in Finder or move this setlist to the Trash")
@@ -276,6 +284,8 @@
         let onRename: () -> Void
         var onDetails: (() -> Void)?
         let onReveal: () -> Void
+        /// The builder's Export PDF... and Print... (P9-1 spec 4); none in the sidebar.
+        var exportPDF: ExportPDFAction?
 
         var body: some View {
             Button("Rename…", action: onRename)
@@ -292,6 +302,18 @@
             .accessibilityIdentifier(AccessibilityID.setlistDuplicateAction)
             Button("Show in Finder", action: onReveal)
                 .accessibilityIdentifier(AccessibilityID.setlistRevealAction)
+            if let exportPDF {
+                Divider()
+                let empty = setlist.songCount == 0
+                Button("Export PDF\u{2026}") { exportPDF.open(.setlist(setlist.id), false) }
+                    .disabled(!exportPDF.isEnabled || empty)
+                    .help(empty ? "Add a song to export this setlist" : "")
+                    .accessibilityIdentifier(AccessibilityID.pdfExportSetlist)
+                Button("Print\u{2026}") { exportPDF.open(.setlist(setlist.id), true) }
+                    .disabled(!exportPDF.isEnabled || empty)
+                    .help(empty ? "Add a song to export this setlist" : "")
+                    .accessibilityIdentifier(AccessibilityID.pdfPrintSetlist)
+            }
             Divider()
             // No confirmation: the file goes to the Trash and Edit > Undo brings it back (A23).
             Button("Move to Trash", role: .destructive) {

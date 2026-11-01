@@ -128,10 +128,11 @@
             + "share, so another copy of Segue on this Mac could open this library at the same "
             + "time."
 
-        static let resetMessage = "Resets: Live settings, Appearance, Instrument, Audio, the AI "
-            + "setting, the last Settings pane and the tips.\nKeeps: your Privacy choices, the "
-            + "library folder and its songs, the Welcome songs, What's New and review history, "
-            + "your chord shapes and key bindings, and downloaded AI models."
+        static let resetMessage = "Resets: Live settings, Appearance, Instrument, Audio, "
+            + "Export, the AI setting, the last Settings pane and the tips.\nKeeps: your "
+            + "Privacy choices, the library folder and its songs, the Welcome songs, What's "
+            + "New and review history, your chord shapes and key bindings, and downloaded AI "
+            + "models."
 
         private func addWelcomeSongs() {
             working = true

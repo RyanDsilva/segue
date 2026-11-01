@@ -449,6 +449,9 @@
         /// an alert until dismissed.
         public var startFailure: String?
 
+        /// The PDF preview sheet while it is open (P9-1 spec 6).
+        var pdfPreview: PDFPreviewModel?
+
         /// True while a start or resume is being prepared (blocks a second one).
         var isStartingShow = false {
             didSet {

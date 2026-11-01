@@ -318,6 +318,7 @@
             }
             Button("Show in Finder") { session.revealSong(songID) }
                 .accessibilityIdentifier(AccessibilityID.songShowInFinder)
+            SongPDFExportItems(songID: songID, selection: selection)
             Divider()
             Button("Move to Trash", role: .destructive) {
                 session.requestMoveSongToTrash(songID)
