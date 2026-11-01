@@ -237,8 +237,9 @@
         }
     }
 
-    /// Played songs in play order (requests and added songs marked) and skipped ones.
-    private struct GigPlayedList: View {
+    /// Played slots in play order (requests and added songs marked), a medley's members
+    /// nested under it (P9-3 8.3), and skipped ones.
+    struct GigPlayedList: View {
         let entry: GigLogEntry
 
         var body: some View {
@@ -247,15 +248,8 @@
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
                     .padding(.bottom, 8)
-                ForEach(Array(entry.played.enumerated()), id: \.offset) { offset, played in
-                    row(
-                        number: "\(offset + 1)",
-                        title: played.item.title,
-                        marker: marker(played),
-                        time: GigText.time(played.startedAt),
-                        detail: GigPlayedListLines.arrangementLine(played.item),
-                    )
-                    .accessibilityIdentifier(AccessibilityID.gigPlayedRow)
+                ForEach(Array(entry.slots.enumerated()), id: \.offset) { offset, slot in
+                    GigPlayedSlotRows(slot: slot, number: offset + 1)
                 }
                 if entry.played.isEmpty {
                     Text("Nothing was played to the end.")
@@ -269,56 +263,17 @@
                         .padding(.top, 24)
                         .padding(.bottom, 8)
                     ForEach(entry.skipped) { item in
-                        row(number: "-", title: item.title, marker: nil, time: "")
-                            .opacity(0.6)
-                            .accessibilityIdentifier(AccessibilityID.gigSkippedRow)
+                        GigPlayedRow(
+                            number: "-",
+                            title: GigMedleyText.skippedTitle(item),
+                            marker: nil,
+                            time: "",
+                        )
+                        .opacity(0.6)
+                        .accessibilityIdentifier(AccessibilityID.gigSkippedRow)
                     }
                 }
             }
-        }
-
-        private func marker(_ played: PlayedSong) -> String? {
-            if played.fromRequest {
-                return "Request"
-            }
-            return played.item.origin == .inserted ? "Added" : nil
-        }
-
-        private func row(
-            number: String,
-            title: String,
-            marker: String?,
-            time: String,
-            detail: String? = nil,
-        ) -> some View {
-            HStack(spacing: 8) {
-                Text(number)
-                    .foregroundStyle(Theme.color.muted)
-                    .frame(width: 32, alignment: .leading)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(SchibstedGrotesk.semiBold.font(size: 15))
-                        .foregroundStyle(Theme.color.ink)
-                        .lineLimit(1)
-                    if let detail {
-                        Text(detail)
-                            .font(SchibstedGrotesk.medium.font(size: 13))
-                            .foregroundStyle(Theme.color.muted)
-                            .lineLimit(2)
-                    }
-                }
-                if let marker {
-                    KeyChip(key: marker)
-                }
-                Spacer(minLength: 8)
-                Text(time)
-                    .foregroundStyle(Theme.color.muted)
-                    .frame(width: 64, alignment: .trailing)
-            }
-            .font(SchibstedGrotesk.medium.font(size: 14))
-            .padding(.vertical, 9)
-            .overlay(alignment: .bottom) { Rule() }
-            .accessibilityElement(children: .combine)
         }
     }
 #endif

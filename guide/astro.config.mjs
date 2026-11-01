@@ -33,6 +33,7 @@ const sidebar = [
     label: 'Build the set',
     items: [
       page('build-a-set', 'Build a set'),
+      page('medleys', 'Medleys'),
       page('set-assistant', 'Set assistant'),
       page('running-time', 'Running time'),
       page('arrange-sections', 'Arrange sections'),

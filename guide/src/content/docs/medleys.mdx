@@ -1,0 +1,56 @@
+---
+title: Medleys
+description: Join several songs into one slot of the set, each in its own key and capo, with a written transition between them. On stage it plays as one chart.
+---
+import Shot from '../../components/Shot.astro';
+import Steps from '../../components/Steps.astro';
+
+A medley is one row of the set made of two to twelve songs: "Kesariya into Tum Hi Ho into Channa Mereya". Each song keeps its own key, capo, note and [arrangement](/guide/arrange-sections), and you can write what happens between two songs ("hold the D, drums fill, straight into the chorus").
+
+## Make a medley {#make}
+
+<Steps>
+1. In **Arrange** (<kbd>⌘2</kbd>), select two or more song rows. They don't have to be next to each other: <kbd>⇧</kbd>-click or <kbd>⌘</kbd>-click them.
+2. Choose **Setlist > Make Medley** (<kbd>⇧⌘M</kbd>), or right-click and choose **Make Medley from 3 Songs**.
+3. Double-click the "Medley" title to name it.
+</Steps>
+
+<Shot id="medley-builder" alt="A medley in the set builder: one card holding three songs, each with its key and time, and a transition between the first two" />
+
+The medley takes the place of the first row you selected and is numbered like any row; its songs are numbered 4a, 4b, 4c. The header shows how many songs it has, the key path ("G → A → D") and the medley's time. Click the chevron to fold it into one row of song chips.
+
+- **Keys and capo.** Click a song in the medley to set its key, capo and note, or press <kbd>⇧⌘A</kbd> to arrange its sections, exactly as for any row.
+- **Transitions.** Click **Add a transition** under a song and type what leads into the next one. On the right, Segue shows what changes between the two songs: "G → A", "capo 2 → no capo", "96 → 120 BPM". A capo change is shown in red so it's never missed.
+- **Reorder.** <kbd>⌥↑</kbd> and <kbd>⌥↓</kbd> move a song within its medley; on the header they move the whole medley.
+- **Add and remove.** Drag a song from the library or a row of the set onto the medley to add it. Right-click a song and choose **Remove from Medley** to make it its own row again. A medley left with one song becomes that song's row.
+- **Ungroup.** **Setlist > Ungroup Medley** (<kbd>⌥⇧⌘M</kbd>) turns the medley back into rows.
+
+Every change is one step for **Edit > Undo**.
+
+## Type a medley {#type}
+
+In the text row at the end of the set, join songs with a plus between spaces: `kesariya in A + tum hi ho + channa mereya (Am)`. Each song can have its own key. The suggestion completes the song you are typing, and the line under it spells out the medley before you press <kbd>Return</kbd>. If a song isn't found or can't go in, that line says which one and nothing is added. A title with a plus in it, like "C++ Blues", is still one song.
+
+## A song twice: the reprise {#reprise}
+
+A song can be in a set at most twice: once in a medley and once as its own row, before or after the medley. Both rows show a small "also 9" or "reprise of 4a" so it's never a surprise, and each one has its own key and arrangement, so the reprise can be just the last chorus. A song can't be in two medleys, or twice in one.
+
+## On stage {#stage}
+
+<Shot id="medley-stage" alt="The stage inside a medley: the section map grouped by song with the current song lit, and the next song's header with its transition" />
+
+A medley is one chart. The section map groups each song's sections with the current song lit, the header shows "Medley 2 of 3", and each song opens with its title, key and the transition you wrote.
+
+- <kbd>Page Down</kbd> or the pedal pages through the whole medley without stopping, then on to the next row of the set.
+- <kbd>→</kbd> and <kbd>Space</kbd> go to the next song of the medley, <kbd>←</kbd> back. <kbd>X</kbd> skips only the current song.
+- The footer shows **Next in medley** until the last song, then the next row as usual.
+- The metronome and auto-scroll follow each song's own tempo.
+- A request or **Play Now** during a medley plays right after it.
+
+## Rehearse a medley {#rehearse}
+
+Right-click the medley's header and choose **Rehearse Medley** to play it through on its own, with [play along](/guide/rehearse#play-along) running from song to song. Nothing is logged.
+
+## Time and the gig log {#time}
+
+A medley's time is its songs' times added together, with no changeover between them ([running time](/guide/running-time)). In the [gig log](/guide/gig-log), the medley is one row with its songs listed under it, and each song counts as played on its own.
