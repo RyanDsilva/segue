@@ -24,16 +24,14 @@ final class SegueFillE2ETests: SetlistE2ETestCase {
     [G]home
     {end_of_chorus}
     """
+    /// A song ID is a ULID (a UUID here made the sidecar unreadable, so the song opened
+    /// read-only and had no Edit).
     private static let sidecar = """
     {
       "schemaVersion" : 3,
-      "id" : "8F0F3C1E-6A51-4E0B-9C1D-7B2A2F1E0A01",
-      "tags" : [],
-      "cues" : [],
-      "displayPrefs" : {},
-      "live" : {},
-      "createdAt" : "2026-10-01T10:00:00.000Z",
-      "updatedAt" : "2026-10-01T10:00:00.000Z"
+      "id" : "01JC0000000000000000000F11",
+      "createdAt" : "2026-10-01T10:00:00Z",
+      "updatedAt" : "2026-10-01T10:00:00Z"
     }
     """
 
@@ -219,7 +217,8 @@ final class SegueFillE2ETests: SetlistE2ETestCase {
     @MainActor
     private func chordAtLineStart(_ app: XCUIApplication, lyric: String) -> XCUICoordinate {
         let line = SetlistE2E.all(app, FillAXID.sheetLine)
-            .matching(NSPredicate(format: "label ENDSWITH %@", lyric))
+            // The line's lyric is its label or its value (chords may lead the label).
+            .matching(NSPredicate(format: "label ENDSWITH %@ OR value ENDSWITH %@", lyric, lyric))
             .firstMatch
         XCTAssertTrue(line.appears(timeout: 5), "no preview line ending in \(lyric)")
         return line.coordinate(withNormalizedOffset: .zero)
