@@ -71,11 +71,13 @@ struct ComposerSlotPreview: Equatable {
 /// step, always at the end of the set.
 public extension SetlistsViewModel {
     /// Applies `resolution` to setlist `id`: the candidate at `choice` (a song, with the
-    /// typed gig key) or a break. A song already in the set is flagged, never added again.
-    /// Records `Segue.Setlist.composed` for every outcome but `.ignored`.
+    /// typed gig key) or a break. A medley adds each part at its `partChoices` entry (a part
+    /// with none takes its best match). A song already in the set is flagged, never added
+    /// again. Records `Segue.Setlist.composed` for every outcome but `.ignored`.
     func compose(
         _ resolution: SetComposerResolution,
         choice: Int,
+        partChoices: [Int] = [],
         in id: SetlistID,
         songs: (SongID) -> SongRecord?,
         entry: ComposerEntry = .click,
@@ -89,7 +91,7 @@ public extension SetlistsViewModel {
         case .medley:
             return await composeMedley(
                 resolution,
-                choice: choice,
+                choices: partChoices,
                 in: setlist,
                 songs: songs,
                 entry: entry,
@@ -144,13 +146,15 @@ public extension SetlistsViewModel {
     /// song and none is already a medley member; otherwise nothing is written.
     private func composeMedley(
         _ resolution: SetComposerResolution,
-        choice: Int,
+        choices: [Int],
         in setlist: Setlist,
         songs: (SongID) -> SongRecord?,
         entry: ComposerEntry,
     ) async -> ComposeOutcome {
-        let picks = SetComposer.medleyPicks(resolution, choice: choice)
+        let picks = SetComposer.medleyPicks(resolution, choices: choices)
         let last = picks.last.flatMap(\.self)
+        // Analytics: whether any part was cycled to an alternative.
+        let choice = choices.contains { $0 > 0 } ? 1 : 0
         let check = SetComposer.checkMedley(
             picks.map { $0?.id },
             queries: resolution.parts.map(\.query),

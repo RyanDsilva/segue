@@ -133,7 +133,7 @@ struct SetComposerMedleyResolveTests {
     private static func check(_ typed: String, in setlist: Setlist) -> SetComposer.MedleyCheck {
         let resolution = resolve(typed)
         return SetComposer.checkMedley(
-            SetComposer.medleyPicks(resolution, choice: 0).map { $0?.id },
+            SetComposer.medleyPicks(resolution, choices: []).map { $0?.id },
             queries: resolution.parts.map(\.query),
             in: setlist,
         )

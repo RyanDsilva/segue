@@ -135,6 +135,7 @@
                         onChange: { composer.setText($0, library: library) },
                         onFocusChange: focusChanged,
                         onCommand: handle,
+                        onSelectionChange: { composer.setCaret($0) },
                     )
                     .frame(height: 22)
                 }
@@ -205,7 +206,7 @@
             }
         }
 
-        private func statusLine(_ status: ComposerRowState.Status, state _: ComposerRowState)
+        private func statusLine(_ status: ComposerRowState.Status, state: ComposerRowState)
             -> some View
         {
             Group {
@@ -234,7 +235,7 @@
                     .buttonStyle(.plain)
                     .help("Show it in the set")
                 case let .medley(parts):
-                    medleyLine(parts)
+                    medleyLine(parts, active: state.activePart)
                 }
             }
             .font(SchibstedGrotesk.medium.font(size: 13))
@@ -245,8 +246,9 @@
         }
 
         /// "Medley · Kesariya (A) + Tum Hi Ho (G, reprise of 2)": the parts in the title's
-        /// colour, the joins muted (R187 composer A).
-        private func medleyLine(_ parts: [ComposerRowState.MedleyPart]) -> Text {
+        /// colour, the joins muted (R187 composer A); the part under the caret, whose
+        /// alternatives ↑ / ↓ and Tab cycle, underlined.
+        private func medleyLine(_ parts: [ComposerRowState.MedleyPart], active: Int?) -> Text {
             var line = Text(verbatim: "Medley · ").foregroundStyle(Theme.color.muted)
             for (index, part) in parts.enumerated() {
                 if index > 0 {
@@ -254,7 +256,9 @@
                     line = Text("\(line)\(join)")
                 }
                 let detail = part.detail.map { " (\($0))" } ?? ""
-                let text = Text(verbatim: part.title + detail).foregroundStyle(Theme.color.ink)
+                let text = Text(verbatim: part.title + detail)
+                    .foregroundStyle(Theme.color.ink)
+                    .underline(index == active && parts.count > 1)
                 line = Text("\(line)\(text)")
             }
             return line
@@ -357,11 +361,13 @@
             guard resolution.kind != .empty else { return }
             let typed = composer.text
             let choice = composer.choice
+            let partChoices = composer.partChoices
             let setlistID = setlist.id
             composer.track(accept: Task {
                 let outcome = await model.compose(
                     resolution,
                     choice: choice,
+                    partChoices: partChoices,
                     in: setlistID,
                     songs: library.song(id:),
                     entry: composer.entry,

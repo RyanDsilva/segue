@@ -50,9 +50,7 @@ public enum SetComposerLine: Sendable, Equatable {
         if isBreak(line) {
             return .breakRow
         }
-        // "kesariya in A +" while typing the join: the plus is the next part's, still empty.
-        let joined = line.hasSuffix(" +") ? line + " " : line
-        let parts = joined.components(separatedBy: medleySeparator)
+        let parts = joinedLine(line).components(separatedBy: medleySeparator)
             .map { $0.trimmingCharacters(in: .whitespaces) }
         if parts.count >= 2 {
             let typed = parts.filter { !$0.isEmpty }
@@ -63,6 +61,37 @@ public enum SetComposerLine: Sendable, Equatable {
             return .medley(parts.map(part))
         }
         return song(line)
+    }
+
+    /// "kesariya in A +" while typing the join: the plus is the next part's, still empty.
+    private static func joinedLine(_ line: String) -> String {
+        line.hasSuffix(" +") ? line + " " : line
+    }
+
+    /// The index of the medley part of `text` (as typed, untrimmed) that a caret at
+    /// `offset` (UTF-16, as `NSRange` counts) sits in, numbered as `parse` numbers the
+    /// parts of a `.medley` line. On a " + " join, a caret up to the "+" (before the join or
+    /// after its first space) is in the part on its left; one after the "+" is in the part
+    /// on its right, the one about to be typed. An offset outside the text is clamped; a
+    /// line with no join is part 0.
+    public static func partIndex(atUTF16Offset offset: Int, in text: String) -> Int {
+        let leading = text.prefix { $0.isWhitespace || $0.isNewline }.utf16.count
+        let line = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let joined = joinedLine(line) as NSString
+        let caret = min(max(offset - leading, 0), joined.length)
+        let plusOffset = 1
+        var part = 0
+        var searchFrom = 0
+        while searchFrom < joined.length {
+            let join = joined.range(
+                of: medleySeparator,
+                range: NSRange(location: searchFrom, length: joined.length - searchFrom),
+            )
+            guard join.location != NSNotFound, caret > join.location + plusOffset else { break }
+            part += 1
+            searchFrom = join.location + join.length
+        }
+        return part
     }
 
     /// A song line (already trimmed): the key token split off when one parses.

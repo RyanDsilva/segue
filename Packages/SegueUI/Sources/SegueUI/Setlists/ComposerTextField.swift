@@ -43,6 +43,9 @@
         /// The undo stack Edit > Undo reaches while editing, when it is not the window's (a
         /// popover's window has none; the song editor keeps its own).
         var undoManager: (() -> UndoManager?)?
+        /// The caret moved (typing, a click, ← / →): its UTF-16 offset, the end of the
+        /// selection when there is one (the set composer's medley part under the caret).
+        var onSelectionChange: ((Int) -> Void)?
 
         func makeCoordinator() -> Coordinator {
             Coordinator(self)
@@ -68,6 +71,9 @@
             field.stringValue = text
             field.delegate = context.coordinator
             field.onFocusChange = { focused in context.coordinator.parent.onFocusChange(focused) }
+            field.onSelectionChange = { offset in
+                context.coordinator.parent.onSelectionChange?(offset)
+            }
             field.hostUndoManager = undoManager
             field.setAccessibilityIdentifier(identifier)
             field.setAccessibilityLabel(accessibilityLabel)
@@ -84,7 +90,11 @@
             let coordinator = context.coordinator
             coordinator.parent = self
             if field.stringValue != text {
+                // The field editor's caret moves with the new text; reporting it from inside
+                // SwiftUI's update would be a state write it drops.
+                field.reportsSelection = false
                 field.stringValue = text
+                field.reportsSelection = true
             }
             field.font = font
             field.hostUndoManager = undoManager
@@ -118,6 +128,11 @@
             func controlTextDidChange(_ notification: Notification) {
                 guard let field = notification.object as? NSTextField else { return }
                 parent.onChange(field.stringValue)
+                // The editor may move the caret before the text change is reported: report
+                // it again against the new text.
+                if let editor = field.currentEditor() {
+                    parent.onSelectionChange?(NSMaxRange(editor.selectedRange))
+                }
             }
 
             func controlTextDidBeginEditing(_ notification: Notification) {
@@ -158,6 +173,16 @@
     /// Reports focus in and out (the field editor stands in for the field while editing).
     final class ComposerNSTextField: NSTextField {
         var onFocusChange: ((Bool) -> Void)?
+        /// The field editor's caret moved (UTF-16 offset of the selection's end).
+        var onSelectionChange: ((Int) -> Void)?
+        /// Off while the text is set from the model, so the move is not reported back.
+        var reportsSelection = true
+
+        /// Called by its cell's `ComposerFieldEditor` on every selection change.
+        func selectionDidChange(_ range: NSRange) {
+            guard reportsSelection else { return }
+            onSelectionChange?(NSMaxRange(range))
+        }
 
         override func becomeFirstResponder() -> Bool {
             let became = super.becomeFirstResponder()
@@ -242,9 +267,24 @@
 
     /// The composer's field editor. It takes no drops, so a library song dropped on the
     /// row while the field is focused is appended to the set, not typed into the line.
+    /// Every selection change (typing, a click, ← / →, select all) is reported through
+    /// `onSelectionChange`: `NSTextFieldDelegate` has no selection callback (the field is not
+    /// an `NSTextViewDelegate`), and this primitive is the one every selection change goes
+    /// through.
     final class ComposerFieldEditor: NSTextView {
+        var onSelectionChange: ((NSRange) -> Void)?
+
         override var acceptableDragTypes: [NSPasteboard.PasteboardType] {
             []
+        }
+
+        override func setSelectedRanges(
+            _ ranges: [NSValue],
+            affinity: NSSelectionAffinity,
+            stillSelecting stillSelectingFlag: Bool,
+        ) {
+            super.setSelectedRanges(ranges, affinity: affinity, stillSelecting: stillSelectingFlag)
+            onSelectionChange?(selectedRange())
         }
     }
 
@@ -255,6 +295,10 @@
             let editor = ComposerFieldEditor()
             editor.isFieldEditor = true
             Self.configure(editor)
+            // The field this cell draws is the one being edited.
+            editor.onSelectionChange = { [weak self] range in
+                (self?.controlView as? ComposerNSTextField)?.selectionDidChange(range)
+            }
             return editor
         }()
 

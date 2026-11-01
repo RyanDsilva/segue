@@ -123,6 +123,42 @@ struct SetComposerMedleyLineTests {
         #expect(parts.map(\.query) == ["kesariya", "", "tum hi ho"])
     }
 
+    /// "kesariya in A + tum hi ho + chan": the joins sit at 13 and 25 (their "+" at 14 and
+    /// 26). A caret up to a join's "+" is in the part on its left, after it on its right.
+    @Test(arguments: [
+        (0, 0), (8, 0), (13, 0), (14, 0), (15, 1), (16, 1), (20, 1),
+        (25, 1), (26, 1), (27, 2), (28, 2), (32, 2),
+    ])
+    func `the caret maps to the part it sits in, joins included`(offset: Int, part: Int) {
+        let typed = "kesariya in A + tum hi ho + chan"
+        #expect(SetComposerLine.partIndex(atUTF16Offset: offset, in: typed) == part)
+    }
+
+    @Test
+    func `caret mapping clamps, counts UTF-16, and follows the trimmed and empty parts`() {
+        let typed = "kesariya in A + tum hi ho + chan"
+        #expect(SetComposerLine.partIndex(atUTF16Offset: -4, in: typed) == 0)
+        #expect(SetComposerLine.partIndex(atUTF16Offset: 999, in: typed) == 2)
+        // No join: always the one song.
+        #expect(SetComposerLine.partIndex(atUTF16Offset: 2, in: "C++ Blues") == 0)
+        #expect(SetComposerLine.partIndex(atUTF16Offset: 0, in: "") == 0)
+        // Leading spaces are trimmed as parse trims them.
+        #expect(SetComposerLine.partIndex(atUTF16Offset: 4, in: "  a + b") == 0)
+        #expect(SetComposerLine.partIndex(atUTF16Offset: 5, in: "  a + b") == 1)
+        // Typing the join: after the "+" is the next part, still empty.
+        #expect(SetComposerLine.partIndex(atUTF16Offset: 11, in: "kesariya + ") == 1)
+        #expect(SetComposerLine.partIndex(atUTF16Offset: 10, in: "kesariya +") == 1)
+        #expect(SetComposerLine.partIndex(atUTF16Offset: 9, in: "kesariya +") == 0)
+        // An empty middle part is a part of its own, as parse keeps it.
+        let gap = "a +  + b"
+        #expect([2, 3, 5, 6].map { SetComposerLine.partIndex(atUTF16Offset: $0, in: gap) }
+            == [0, 1, 1, 2])
+        // A character outside the BMP counts two UTF-16 units (NSRange offsets).
+        let emoji = "kesariya \u{1F3B5} + tum"
+        #expect(SetComposerLine.partIndex(atUTF16Offset: 12, in: emoji) == 0)
+        #expect(SetComposerLine.partIndex(atUTF16Offset: 13, in: emoji) == 1)
+    }
+
     @Test
     func `romanized Hindi spellings stay as typed in every part`() {
         guard case let .medley(parts) = SetComposerLine.parse("Kesariyaa + tum hee ho") else {

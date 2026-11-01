@@ -42,6 +42,8 @@
         var status: Status?
         var duplicate: SetlistItemID?
         var matchCount = 0
+        /// A medley line's part under the caret (0-based): the status line marks it.
+        var activePart: Int?
         /// The field's accessibility value: the suggestion and the status.
         var spokenValue = ""
 
@@ -120,9 +122,10 @@
             )
         }
 
-        /// A " + " line (P9-3 section 10, R187 composer A): the ghost completes the last part
-        /// (the one being typed), the key cell shows the key path, the time cell the medley's
-        /// time, and the status line spells the medley out or names the first failing part.
+        /// A " + " line (P9-3 section 10, R187 composer A): the ghost shows the part under the
+        /// caret (completing the last part as it is typed, else "→ Title"), the key cell
+        /// shows the key path, the time cell the medley's time, and the status line spells
+        /// the medley out, the caret's part marked, or names the first failing part.
         private mutating func describeMedley(
             composer: SetComposerModel,
             setlist: Setlist,
@@ -130,7 +133,9 @@
         ) {
             isMedley = true
             let resolution = composer.resolution
-            let picks = SetComposer.medleyPicks(resolution, choice: composer.choice)
+            let picks = SetComposer.medleyPicks(resolution, choices: composer.partChoices)
+            let active = min(composer.activePart, max(picks.count - 1, 0))
+            activePart = active
             let records = picks.map { $0.flatMap { library.song(id: $0.id) } }
             let titles = records.map { $0.map(SongSummary.title) ?? "Missing song" }
             let keys = zip(records, resolution.parts).map { record, part in
@@ -141,11 +146,12 @@
                 record.map { library.times.song($0) } ?? .unknown(.missingSong)
             })
             self.time = time.hasKnown ? time.clock : "-"
-            if let record = records.last.flatMap(\.self) {
+            if records.indices.contains(active), let record = records[active] {
                 let lastText = composer.text
                     .components(separatedBy: SetComposerLine.medleySeparator).last ?? ""
                 let title = SongSummary.title(record)
-                if resolution.key == nil, composer.choice == 0,
+                // Only the last part's completion can follow the typed text.
+                if active == records.count - 1, resolution.key == nil, composer.choice == 0,
                    let suffix = SetComposer.ghostSuffix(typed: lastText, title: title)
                 {
                     ghost = Ghost(text: suffix)

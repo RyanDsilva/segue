@@ -129,6 +129,33 @@ struct ComposerKeyTests {
         #expect(hosted.window.firstResponder === hosted.field.currentEditor())
     }
 
+    /// The field reports its caret, so the arrows cycle the medley part under it (P9-3
+    /// section 10) and the typed text stays as it was.
+    @Test
+    func `the caret picks the medley part the arrows cycle`() async throws {
+        let hosted = try await Self.host()
+        defer { hosted.window.close() }
+        let composer = hosted.session.setlists.composer
+        hosted.window.makeFirstResponder(hosted.field)
+        let typed = "kesariya + tum hi + kesar"
+        try type(typed, into: hosted)
+        #expect(composer.activePart == 2)
+        let editor = try #require(hosted.field.currentEditor() as? NSTextView)
+        // A click inside "tum hi".
+        editor.setSelectedRange(NSRange(location: 13, length: 0))
+        #expect(composer.activePart == 1)
+        #expect(composer.resolution.matches.count == 2)
+        try press(#selector(NSResponder.moveDown(_:)), in: hosted)
+        #expect(composer.partChoices == [0, 1, 0])
+        try press(#selector(NSResponder.insertTab(_:)), in: hosted)
+        #expect(composer.partChoices == [0, 0, 0])
+        #expect(hosted.field.stringValue == typed)
+        #expect(composer.text == typed)
+        // → to the end: the last part again.
+        editor.moveToEndOfLine(nil)
+        #expect(composer.activePart == 2)
+    }
+
     @Test
     func `every substitution and the text undo are off in the field editor`() async throws {
         let hosted = try await Self.host()

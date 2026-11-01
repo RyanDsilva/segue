@@ -21,6 +21,7 @@ struct SetComposerMedleyTests {
         ("tum-hi-ho", "{title: Tum Hi Ho}\n{key: A}\n{tempo: 94}\n[A]Hum tere [E]bin\n"),
         ("channa", "{title: Channa Mereya}\n{key: D}\n{tempo: 100}\n[D]Achha [A]chalta\n"),
         ("harbour", "{title: Harbour Lights}\n{key: G}\n{tempo: 120}\n[G]Lights [D]low\n"),
+        ("tum-se-hi", "{title: Tum Se Hi}\n{key: E}\n{tempo: 90}\n[E]Na hai [A]yeh\n"),
     ]
 
     private static func id(_ index: Int) -> SongID {
@@ -89,6 +90,7 @@ struct SetComposerMedleyTests {
         let outcome = await fix.session.setlists.compose(
             composer.resolution,
             choice: composer.choice,
+            partChoices: composer.partChoices,
             in: fix.friday,
             songs: fix.session.library.song(id:),
         )
@@ -186,6 +188,69 @@ struct SetComposerMedleyTests {
         ]))
         #expect(state.time != "-")
         #expect(state.spokenValue.hasPrefix("Suggestion: medley of 3 songs, Kesariya"))
+    }
+
+    /// R187 composer A: ↑ / ↓ and Tab cycle the part under the caret, the ghost, list and
+    /// status line follow it, and Return adds every part at its own choice; the typed text
+    /// is never rewritten.
+    @Test
+    func `the arrows and Tab cycle the middle part under the caret`() async throws {
+        let fix = try await Self.open()
+        let composer = fix.session.setlists.composer
+        let library = fix.session.library
+        let setlist = try #require(fix.session.setlists.setlist(fix.friday))
+        let typed = "kesariya in A + tum + chan"
+        composer.setText(typed, library: library)
+        // The caret at the end: the last part, as before.
+        #expect(composer.activePart == 2)
+        // Into "tum" (offset 17, between "t" and "um").
+        composer.setCaret(17)
+        #expect(composer.activePart == 1)
+        let middle = composer.resolution.matches.map(\.id)
+        #expect(Set(middle.prefix(2)) == [Self.id(1), Self.id(4)])
+        var state = ComposerRowState(composer: composer, setlist: setlist, library: library)
+        #expect(state.activePart == 1)
+        #expect(state.matchCount == middle.count)
+        let first = try SongSummary.title(#require(library.song(id: middle[0])))
+        #expect(state.ghost?.text == "   → \(first)")
+
+        #expect(composer.cycle(by: 1))
+        #expect(composer.partChoices == [0, 1, 0])
+        #expect(composer.showsAlternatives)
+        state = ComposerRowState(composer: composer, setlist: setlist, library: library)
+        let second = try SongSummary.title(#require(library.song(id: middle[1])))
+        #expect(state.ghost?.text == "   → \(second)")
+        guard case let .medley(parts) = state.status else {
+            Issue.record("expected the medley line, got \(String(describing: state.status))")
+            return
+        }
+        #expect(parts.map(\.title) == ["Kesariya", second, "Channa Mereya"])
+        // The key path follows the cycled middle song.
+        let secondKey = middle[1] == Self.id(4) ? "E" : "A"
+        #expect(state.key == "A → \(secondKey) → D")
+
+        // Back to the end: the last part's own alternatives, the middle's pick kept, and
+        // typing on in the last part keeps it too.
+        composer.setCaret((typed as NSString).length)
+        #expect(composer.activePart == 2)
+        #expect(!composer.showsAlternatives)
+        #expect(composer.choice == 0)
+        composer.setText(typed + "na", library: library)
+        #expect(composer.partChoices == [0, 1, 0])
+        #expect(composer.text == typed + "na")
+
+        // Return adds the medley with the middle part's cycled song (the same text again
+        // keeps every part's choice).
+        let outcome = await compose(fix, typed + "na")
+        guard case .added = outcome else {
+            Issue.record("expected an add, got \(outcome)")
+            return
+        }
+        let medley = try #require(entries(fix).last?.medley)
+        #expect(medley.songIds == [Self.id(0), middle[1], Self.id(2)])
+        // Editing the middle part starts it again from its best match.
+        composer.setText("kesariya in A + tum hi + channa", library: library)
+        #expect(composer.partChoices == [0, 0, 0])
     }
 
     @Test

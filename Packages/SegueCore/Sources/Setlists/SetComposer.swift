@@ -14,8 +14,9 @@ public struct SetComposerResolution: Sendable, Equatable {
         /// A song query; `matches` may be empty ("No song matches").
         case song
         /// A " + " line (P9-3 section 10): `parts` holds each part's song resolution (an
-        /// empty part resolves `.empty`). `matches`, `key` and `query` are the last part's:
-        /// the part being typed, whose alternatives ↑ / ↓ and Tab cycle.
+        /// empty part resolves `.empty`). `matches`, `key` and `query` are one part's: the
+        /// last one as resolved, the one under the caret after `focused(on:)`; ↑ / ↓ and
+        /// Tab cycle that part's alternatives.
         case medley
     }
 
@@ -44,6 +45,18 @@ public struct SetComposerResolution: Sendable, Equatable {
     }
 
     public static let empty = Self(kind: .empty)
+
+    /// A medley line with `matches`, `key` and `query` taken from part `part` (clamped to
+    /// the parts there are): the part under the caret. Any other line is returned as is.
+    public func focused(on part: Int) -> Self {
+        guard kind == .medley, !parts.isEmpty else { return self }
+        let focus = parts[min(max(part, 0), parts.count - 1)]
+        var copy = self
+        copy.matches = focus.matches
+        copy.key = focus.key
+        copy.query = focus.query
+        return copy
+    }
 }
 
 /// The set composer's pure decisions: which songs a line names and how the ghost reads.
@@ -99,13 +112,15 @@ public enum SetComposer {
         }
     }
 
-    /// The song each medley part names: its best match, the last part's at `choice` (the
-    /// alternative shown); nil for a part that names no song.
-    public static func medleyPicks(_ resolution: SetComposerResolution, choice: Int)
+    /// The song each medley part names: part `i` at alternative `choices[i]` (a part with
+    /// no choice, or one out of range, takes its best match); nil for a part that names no
+    /// song.
+    public static func medleyPicks(_ resolution: SetComposerResolution, choices: [Int])
         -> [SongMatch?]
     {
         resolution.parts.enumerated().map { index, part in
-            let pick = index == resolution.parts.count - 1 ? choice : 0
+            let wanted = choices.indices.contains(index) ? choices[index] : 0
+            let pick = part.matches.indices.contains(wanted) ? wanted : 0
             return part.matches.indices.contains(pick) ? part.matches[pick] : nil
         }
     }
