@@ -111,6 +111,8 @@ public struct ShowSummary: Sendable, Hashable {
     public var autoScrollUsed: Bool
     public var reordered: Bool
     public var endedBy: ShowEndReason
+    /// Singer view was on at any time during the run (P9-2 section 13).
+    public var singerView: Bool
 
     public init(
         kind: AnalyticsShowKind,
@@ -121,6 +123,7 @@ public struct ShowSummary: Sendable, Hashable {
         autoScrollUsed: Bool,
         reordered: Bool,
         endedBy: ShowEndReason,
+        singerView: Bool = false,
     ) {
         self.kind = kind
         self.duration = duration
@@ -130,6 +133,7 @@ public struct ShowSummary: Sendable, Hashable {
         self.autoScrollUsed = autoScrollUsed
         self.reordered = reordered
         self.endedBy = endedBy
+        self.singerView = singerView
     }
 }
 
@@ -215,6 +219,7 @@ public enum FeatureContext: String, Sendable, CaseIterable {
     case stage
     case builder
     case settings
+    case screen
 }
 
 public enum EditorMode: String, Sendable, CaseIterable {
@@ -445,6 +450,7 @@ extension AnalyticsEvent {
                 "segue.autoScrollUsed": String(summary.autoScrollUsed),
                 "segue.reordered": String(summary.reordered),
                 "segue.endedBy": summary.endedBy.rawValue,
+                "segue.singer": String(summary.singerView),
             ]
         case let .milestoneReached(milestone, days):
             ["segue.milestone": milestone.rawValue, "segue.daysSinceFirstLaunch": days.rawValue]

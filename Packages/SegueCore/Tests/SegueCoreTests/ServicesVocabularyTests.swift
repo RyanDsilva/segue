@@ -237,6 +237,28 @@ struct ServicesVocabularyTests {
         } == ["<1m", "<1m", "1-5m", "1-5m", "5-15m", "5-15m", "15-60m", "15-60m", "60m+"])
     }
 
+    /// P9-2 section 13: singer view's feature key and contexts, and the show-ended Bool.
+    @Test
+    func `singer view is a feature with a screen context and a show-ended Bool`() {
+        let used = AnalyticsEvent.featureUsed(.singerView, .screen).render()
+        #expect(used.params["segue.feature"] == "singerView")
+        #expect(used.params["segue.context"] == "screen")
+        let ended = AnalyticsEvent.showEnded(ShowSummary(
+            kind: .rehearsal,
+            duration: .under15m,
+            played: .zero,
+            skipped: .zero,
+            requestsUsed: false,
+            autoScrollUsed: false,
+            reordered: false,
+            endedBy: .endShow,
+            singerView: true,
+        )).render()
+        #expect(ended.params["segue.singer"] == "true")
+        let stage = AnalyticsEvent.featureUsed(.singerView, .stage).throttle
+        #expect(stage != AnalyticsEvent.featureUsed(.singerView, .library).throttle)
+    }
+
     /// Row 31 (P9-1 spec 11, R181): the PDF export summary's keys and the render time
     /// buckets; Help's PDF item and the export error code.
     @Test
