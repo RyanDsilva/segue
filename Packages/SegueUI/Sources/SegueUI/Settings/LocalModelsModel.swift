@@ -43,17 +43,29 @@
             physicalMemory < Self.lowMemoryThreshold
         }
 
-        /// R120: whether the quiet download links (the Welcome card, the review sheet footer)
-        /// offer the curated model. Never on Macs under 16 GB, where Apple Intelligence is the
-        /// default and the download stays an opt-in in Settings > AI; never once the model is
-        /// installed or on its way.
-        public var suggestsDownload: Bool {
-            guard !isLowMemory else { return false }
+        /// R120, R186: whether the quiet download links (the Welcome card, the review sheet
+        /// footer) offer the curated model. Under 16 GB only when Apple Intelligence is
+        /// unavailable (`appleIntelligence` as last read), where the local model is the only
+        /// on-device AI; while it is available, or not read yet, the download stays an opt-in
+        /// in Settings > AI. 16 GB and up: always. Never once the model is installed or on
+        /// its way.
+        public func suggestsDownload(appleIntelligence: ProviderAvailability?) -> Bool {
+            guard offersModel(appleIntelligence: appleIntelligence) else { return false }
             guard let curated = snapshot.models.first(where: { $0.role == .standard }) else {
                 return installer != nil
             }
             let state = snapshot.state(of: curated.id)
             return !state.isInstalled && !state.isBusy
+        }
+
+        /// R186: whether the local model is offered at all on this Mac: always from 16 GB, and
+        /// under it only when Apple Intelligence is unavailable.
+        public func offersModel(appleIntelligence: ProviderAvailability?) -> Bool {
+            guard isLowMemory else { return true }
+            if case .unavailable = appleIntelligence {
+                return true
+            }
+            return false
         }
 
         /// Starts following the store (the pane calls it when it appears; idempotent).

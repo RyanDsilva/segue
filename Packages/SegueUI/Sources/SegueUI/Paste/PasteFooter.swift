@@ -16,6 +16,16 @@
         public var showsDownloadLink: Bool
 
         public static let downloadLinkTitle = "Get the Segue model for better results"
+
+        /// The link's help; under 16 GB (R186) with the model's memory and speed cost.
+        public static func downloadLinkHelp(caveat: Bool) -> String {
+            let base = "Settings > AI: download the local model (about 2.3 GB)"
+            return caveat
+                ? base + ". On this Mac it needs about 3 GB of memory while it works and takes "
+                + "roughly 20-30 seconds per song."
+                : base
+        }
+
         public static let aiOffLine = "Converted without AI (AI is off in Settings)"
         public static let codeOnlyLine = "Converted without AI"
 
@@ -24,7 +34,8 @@
         ///   - reports: how its tasks routed so far.
         ///   - aiEnabled: the AI toggle (R93).
         ///   - availability: each provider's last availability read.
-        ///   - suggestsDownload: false on Macs under 16 GB, where the model is opt-in (R120).
+        ///   - suggestsDownload: false under 16 GB while Apple Intelligence is available, where
+        ///     the model is opt-in (R120, R186).
         public static func make(
             status: PasteRefinementStatus,
             reports: [ModelTaskKind: RoutingReport],

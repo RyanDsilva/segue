@@ -142,14 +142,7 @@ struct AISettingsTests {
     }
 
     @Test
-    func `under 16 GB the model is an opt-in that the quiet links do not suggest`() async throws {
-        let env = try TestEnvironment()
-        let low = Self.services(env, memory: 8 << 30).0
-        let roomy = Self.services(env, memory: 16 << 30).0
-        await low.models.refresh()
-        await roomy.models.refresh()
-        #expect(low.models.isLowMemory && !low.models.suggestsDownload)
-        #expect(!roomy.models.isLowMemory && roomy.models.suggestsDownload)
+    func `under 16 GB the notes say what is true`() {
         // The note's cost holds in every state; its claim about Apple Intelligence holds
         // only where it is true.
         let unavailable = ProviderAvailability.unavailable(.deviceNotEligible)
@@ -180,10 +173,6 @@ struct AISettingsTests {
             )
             #expect(footer.showsDownloadLink == suggests)
         }
-        // Installed: nothing left to suggest.
-        let installed = Self.services(env, state: .installed).0
-        await installed.models.refresh()
-        #expect(!installed.models.suggestsDownload)
     }
 
     @Test(arguments: [
@@ -337,5 +326,37 @@ struct AISettingsTests {
             try await Task.sleep(for: .milliseconds(10))
         }
         #expect(condition())
+    }
+}
+
+/// R120, R186 (beside the main suite, which is at its length limit).
+extension AISettingsTests {
+    /// R120, R186: the quiet download links per memory and Apple Intelligence. Under 16 GB
+    /// only without Apple Intelligence (and then with the cost); 16 GB and up always; never
+    /// once installed.
+    @Test(arguments: [
+        (memory: UInt64(8 << 30), fm: ProviderAvailability?.some(.available), offers: false),
+        (memory: 8 << 30, fm: .some(.unavailable(.deviceNotEligible)), offers: true),
+        (memory: 8 << 30, fm: .some(.unavailable(.appleIntelligenceNotEnabled)), offers: true),
+        (memory: 8 << 30, fm: nil, offers: false),
+        (memory: 16 << 30, fm: .some(.available), offers: true),
+        (memory: 16 << 30, fm: .some(.unavailable(.deviceNotEligible)), offers: true),
+        (memory: 16 << 30, fm: nil, offers: true),
+    ])
+    func `the quiet download links follow memory and Apple Intelligence`(
+        memory: UInt64,
+        fm: ProviderAvailability?,
+        offers: Bool,
+    ) async throws {
+        let env = try TestEnvironment()
+        for state in [LocalModelState.notInstalled, .installed] {
+            let models = Self.services(env, state: state, memory: memory).0.models
+            await models.refresh()
+            #expect(models.offersModel(appleIntelligence: fm) == offers)
+            #expect(models.suggestsDownload(appleIntelligence: fm)
+                == (offers && !state.isInstalled))
+        }
+        let caveat = PasteFooter.downloadLinkHelp(caveat: memory < 16 << 30)
+        #expect(caveat.contains("3 GB of memory") == (memory < 16 << 30))
     }
 }

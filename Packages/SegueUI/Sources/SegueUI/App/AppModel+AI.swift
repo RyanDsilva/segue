@@ -96,6 +96,22 @@
             await models.refresh()
         }
 
+        /// R120, R186: the quiet download links, from the model store and Apple Intelligence's
+        /// last read availability.
+        public var suggestsDownload: Bool {
+            models.suggestsDownload(appleIntelligence: availability[.foundationModels])
+        }
+
+        /// R186: whether the Welcome card names the local model (it is offered on this Mac).
+        public var offersLocalModel: Bool {
+            models.offersModel(appleIntelligence: availability[.foundationModels])
+        }
+
+        /// R186: a link offered under 16 GB carries the model's memory and speed cost.
+        public var downloadNeedsCaveat: Bool {
+            models.isLowMemory
+        }
+
         /// The R69 note for Foundation Models, or nil when it is available (or not read yet).
         public var foundationModelsNote: AIAvailabilityCopy.Note? {
             guard case let .unavailable(cause) = availability[.foundationModels] else { return nil }

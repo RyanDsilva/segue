@@ -14,8 +14,11 @@
     struct PasteReviewContext {
         var aiEnabled: Bool
         var availability: [ProviderKind: ProviderAvailability]
-        /// R120: whether the quiet download link may show (never on Macs under 16 GB).
+        /// R120, R186: whether the quiet download link may show (under 16 GB only without
+        /// Apple Intelligence).
         var suggestsDownload = true
+        /// R186: under 16 GB the link's help states the model's memory and speed cost.
+        var downloadNeedsCaveat = false
         var knownArtists: [String]
         var knownAlbums: [String] = []
         var knownTags: [String]
@@ -196,7 +199,7 @@
                     .buttonStyle(.plain)
                     .pointerStyle(.link)
                     .foregroundStyle(Theme.color.ink)
-                    .help("Settings > AI: download the local model (about 2.3 GB)")
+                    .help(PasteFooter.downloadLinkHelp(caveat: context.downloadNeedsCaveat))
                     .accessibilityIdentifier(AccessibilityID.pasteDownloadLink)
                 }
             }

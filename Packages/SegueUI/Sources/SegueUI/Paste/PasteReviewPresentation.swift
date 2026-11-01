@@ -43,7 +43,8 @@
             PasteReviewContext(
                 aiEnabled: app.ai.gate.isEnabled,
                 availability: app.ai.availability,
-                suggestsDownload: app.ai.models.suggestsDownload,
+                suggestsDownload: app.ai.suggestsDownload,
+                downloadNeedsCaveat: app.ai.downloadNeedsCaveat,
                 knownArtists: library.knownArtists,
                 knownAlbums: library.knownAlbums,
                 knownTags: library.tags.map(\.tag),
