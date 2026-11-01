@@ -160,7 +160,7 @@
                 onDeleteBackward: deleteBackward,
                 undoManager: undoManager,
             )
-            .frame(minWidth: 64, idealWidth: 140, maxWidth: .infinity)
+            .frame(minWidth: 64, idealWidth: 64, maxWidth: .infinity)
             .frame(height: 18)
             .padding(.vertical, 2)
             .padding(.leading, 3)
