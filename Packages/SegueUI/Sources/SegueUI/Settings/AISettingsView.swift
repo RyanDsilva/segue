@@ -63,9 +63,9 @@
                         }
                         .accessibilityIdentifier(AccessibilityID.settingsAIAdvanced)
                     }
+                    SettingsGuideHelp(page: .ai)
                 }
                 .formStyle(.grouped)
-                .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .ai) }
             }
             .task {
                 ai.models.onDownloadFinished = { services.record(.aiModelDownload($0)) }

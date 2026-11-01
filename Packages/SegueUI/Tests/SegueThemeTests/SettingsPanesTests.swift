@@ -38,14 +38,19 @@ struct SettingsPanesTests {
             ("data", AnyView(DataSettingsView(app: app))),
         ]
         for (name, pane) in panes {
-            let controller = NSHostingController(rootView: pane.frame(width: 560))
+            let controller = NSHostingController(
+                rootView: pane.frame(width: 560).guideLinks(NSWorkspaceActions()),
+            )
             // The least height the pane accepts equals the height it asks for: the window
             // cannot be shorter than its content (up to the 640 pt cap).
             let least = controller.sizeThatFits(in: CGSize(width: 560, height: 0)).height
             let ideal = controller.sizeThatFits(in: CGSize(width: 560, height: 10000)).height
             #expect(least == ideal, "\(name): \(least) vs \(ideal)")
             #expect(least <= SettingsPaneHeight.maximumHeight, "\(name) is taller than the cap")
-            let host = NSHostingView(rootView: pane.frame(width: 560))
+            // With the guide action set, as in the app, so the Help buttons show.
+            let host = NSHostingView(
+                rootView: pane.frame(width: 560).guideLinks(NSWorkspaceActions()),
+            )
             host.appearance = NSAppearance(named: .darkAqua)
             host.frame = NSRect(origin: .zero, size: host.fittingSize)
             host.layoutSubtreeIfNeeded()

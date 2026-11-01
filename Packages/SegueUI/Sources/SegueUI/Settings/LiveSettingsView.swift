@@ -89,9 +89,9 @@
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                SettingsGuideHelp(page: .minimumSize)
             }
             .formStyle(.grouped)
-            .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .minimumSize) }
             .settingsPaneHeight(minimum: 520)
         }
 

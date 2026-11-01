@@ -49,9 +49,9 @@
                         )
                     }
                 }
+                SettingsGuideHelp(page: .privacySettings)
             }
             .formStyle(.grouped)
-            .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .privacySettings) }
             .settingsPaneHeight(minimum: 520)
         }
 

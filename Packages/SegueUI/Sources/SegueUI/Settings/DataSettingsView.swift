@@ -72,9 +72,9 @@
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier(AccessibilityID.settingsDataStatus)
                 }
+                SettingsGuideHelp(page: .backUp)
             }
             .formStyle(.grouped)
-            .safeAreaInset(edge: .bottom) { SettingsGuideHelp(page: .backUp) }
             .settingsPaneHeight(minimum: 420)
             .confirmationDialog(
                 removal?.headline ?? "",

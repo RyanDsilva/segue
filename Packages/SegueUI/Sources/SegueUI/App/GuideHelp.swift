@@ -51,17 +51,19 @@
         }
     }
 
-    /// A Settings pane's Help button, bottom right as in the system's own panes.
+    /// A Settings pane's Help button, the form's last item: bottom right after the last
+    /// group, scrolling with the content, as in System Settings' own panes. Pinned over a
+    /// scrolling form instead, it sat on top of whatever control scrolled under it.
     struct SettingsGuideHelp: View {
         let page: SegueLinks.Guide
 
         var body: some View {
-            HStack {
-                Spacer()
-                GuideHelpButton(page)
+            Section {} footer: {
+                HStack {
+                    Spacer()
+                    GuideHelpButton(page)
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 14)
         }
     }
 
