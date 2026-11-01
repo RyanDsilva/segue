@@ -63,6 +63,18 @@ enum MedleyStage {
         live.setViewport(LayoutSize(width: 700, height: 300))
         return live
     }
+
+    /// Waits until the stage window's own viewport report has landed (no change for
+    /// 150 ms, at most 2 s).
+    static func settleViewport(_ live: LiveSession) async throws {
+        var last = live.viewport
+        var stable = 0
+        for _ in 0 ..< 40 where stable < 3 {
+            try await Task.sleep(for: .milliseconds(50))
+            stable = live.viewport == last ? stable + 1 : 0
+            last = live.viewport
+        }
+    }
 }
 
 extension StageWindowSuites {
@@ -211,6 +223,11 @@ extension StageWindowSuites {
         func `the metronome switches at the member boundary, not on the commit`() async throws {
             let (run, setlist) = try await MedleyStage.run()
             let live = try await MedleyStage.start(run, setlist)
+            // The stage window reports its own size a moment later and relays the plan out:
+            // let that land, then set the test's single-column size again, so the seek below
+            // keeps the reading line in member 2.
+            try await MedleyStage.settleViewport(live)
+            live.setViewport(LayoutSize(width: 700, height: 300))
             let plan = try #require(live.plan)
             #expect(live.metronome.track?.bpm == 92)
             let target = try #require(MedleyFollow.seekOffset(to: 1, in: plan))
