@@ -132,10 +132,12 @@ public struct InputBinding: Sendable, Hashable, Codable {
 }
 
 /// The binding table: defaults in code, optionally overridden by `bindings.json` in
-/// Application Support (`{"schemaVersion": 1, "bindings": [...]}`). A file binding replaces
+/// Application Support (`{"schemaVersion": 2, "bindings": [...]}`). A file binding replaces
 /// the default binding of the same trigger; triggers it does not mention keep their default.
 public struct InputBindingTable: Sendable, Hashable {
-    public static let currentSchemaVersion = 1
+    /// 2 (P9-2): the same shape as 1, bumped when `toggleSingerView` arrived so a Segue that
+    /// predates it reads a file naming it best effort instead of rejecting the whole file.
+    public static let currentSchemaVersion = 2
     public static let fileName = "bindings.json"
 
     public private(set) var bindings: [InputBinding]
@@ -209,10 +211,10 @@ public struct InputBindingTable: Sendable, Hashable {
         }
     }
 
-    /// Version 0 (no `schemaVersion`) has the same shape as version 1.
+    /// Versions 0 (no `schemaVersion`) and 1 have the same shape as version 2.
     private static let migrator = SchemaMigrator(
         currentVersion: currentSchemaVersion,
-        steps: [0: { _ in }],
+        steps: [0: { _ in }, 1: { _ in }],
     )
 
     private struct File: Decodable {
@@ -297,6 +299,8 @@ public struct InputBindingTable: Sendable, Hashable {
             key("b", .toggleBassNotes),
             // Saved fills as mini tabs, for anyone (P8-7 section 14.2).
             key("t", .toggleFillTab),
+            // Lyrics only, chords hidden (P9-2 section 6.1).
+            key("v", .toggleSingerView),
         ],
     )
 

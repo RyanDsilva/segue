@@ -26,7 +26,7 @@ public enum KeyHelp {
             .scrollFaster, .scrollSlower, .restartScroll,
         ]),
         ("Sections", LiveCommand.jumps + [.toggleLoop, .togglePlayAlong]),
-        ("View", [.zoomIn, .zoomOut, .resetZoom, .cycleColumns]),
+        ("View", [.zoomIn, .zoomOut, .resetZoom, .cycleColumns, .toggleSingerView]),
         ("Metronome", [.toggleMetronome, .toggleMetronomeClick]),
         ("Bass", [.toggleBassNotes, .toggleFillTab]),
         ("Panels", [.openSearch, .toggleRequests, .toggleSidebar, .showKeys]),
