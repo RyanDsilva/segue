@@ -202,7 +202,7 @@ extension SegueCoreUXE2ETests {
         )
 
         // Edit > Undo Import moves both to the Trash.
-        row(app, "River Song").click(in: app)
+        selectRow(app, "River Song")
         app.typeKey("z", modifierFlags: .command, in: app)
         XCTAssertTrue(
             wait { self.names(in: paths.trash).count == trashedBefore + 4 },

@@ -166,13 +166,21 @@ extension SegueCoreUXE2ETests {
             .firstMatch
     }
 
+    /// Selects `title` in the library by clicking the row's title end. The centre of a row
+    /// can sit on its hover Rehearse and Live buttons when the window opens narrower (it
+    /// does on a 1920x1200 display, the E2E VM's), and a click there starts a rehearsal.
+    @MainActor
+    func selectRow(_ app: XCUIApplication, _ title: String) {
+        let row = row(app, title)
+        XCTAssertTrue(row.appears(timeout: 15), "No row \(title)")
+        row.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).click(in: app)
+    }
+
     /// Selects `title` in the library and opens its editor in text mode, caret at the end.
     @MainActor
     @discardableResult
     func openEditor(_ app: XCUIApplication, _ title: String) -> XCUIElement {
-        let row = row(app, title)
-        XCTAssertTrue(row.appears(timeout: 15), "No row \(title)")
-        row.click(in: app)
+        selectRow(app, title)
         return openSelectedEditor(app)
     }
 

@@ -65,7 +65,7 @@ final class SegueCoreUXE2ETests: XCTestCase {
         let editor = openEditor(app, "Harbour Lights")
 
         editor.typeText("\nFlushed on switch", in: app)
-        row(app, "River Song").click(in: app)
+        selectRow(app, "River Song")
 
         XCTAssertTrue(editor.disappears(timeout: 10))
         XCTAssertFalse(app.sheets.firstMatch.exists, "Switching songs must not ask")
