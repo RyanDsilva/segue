@@ -228,9 +228,28 @@ extension XCUIApplication {
 /// Synthesized input that first makes sure Segue is frontmost (see `E2E`).
 @MainActor
 extension XCUIElement {
+    /// A library row shows Rehearse and Live buttons under the pointer, and in a 1120 pt
+    /// window (the default size, as on the E2E VM's 1920x1200 screen) its centre sits on
+    /// Rehearse: once the hover lands before the click, "select the row" starts a rehearsal.
+    /// Rows are therefore clicked at their title end, and the buttons themselves (shown only
+    /// under the pointer) are hovered into view before the click.
+    private static let hoverButtonRows: Set = ["segue.library.row"]
+    private static let hoverButtons: Set = [
+        "segue.library.song.rehearse", "segue.library.song.live",
+    ]
+
     func click(in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         E2E.bringToFront(app, file: file, line: line)
-        click()
+        if Self.hoverButtonRows.contains(identifier) {
+            coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).click()
+        } else if Self.hoverButtons.contains(identifier) {
+            let centre = coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            centre.hover()
+            _ = E2E.waitUntil(timeout: 2) { self.isHittable }
+            centre.click()
+        } else {
+            click()
+        }
     }
 
     /// Types `text` a line at a time, re-asserting focus between lines, so a long text
