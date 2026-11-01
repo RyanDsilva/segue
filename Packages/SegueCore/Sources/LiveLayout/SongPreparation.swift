@@ -101,6 +101,7 @@ struct SongPreparation {
         case .chordsOnly: chordsOnly(items)
         case .firstLine: firstLine(items)
         }
+            renderItems: section.items,
     }
 
     /// Each chorded lyric line as a chord row; chordless lyric lines dropped (and the breaks

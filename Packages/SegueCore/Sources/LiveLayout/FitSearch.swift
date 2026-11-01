@@ -240,7 +240,7 @@ struct FitSearch {
         return Candidate(size: size, columns: columns, sections: sections, packing: packing)
     }
 
-    private func laid(size: Double, columns: Int) -> LaidSections {
+    func laid(size: Double, columns: Int) -> LaidSections {
         let context = SizeContext(style: style, lyricSize: size, metrics: measurer.metrics)
         let width = max(1, columnWidth(columns) - gutterWidth - style.gutterGap)
         let layout = SectionLayout(
@@ -259,7 +259,7 @@ struct FitSearch {
         }
     }
 
-    private func packer(_ sections: LaidSections, size: Double) -> ColumnPacker {
+    func packer(_ sections: LaidSections, size: Double) -> ColumnPacker {
         ColumnPacker(
             sections: sections,
             inset: size * style.blockInset,

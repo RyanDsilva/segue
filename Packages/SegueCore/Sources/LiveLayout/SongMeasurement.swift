@@ -155,6 +155,9 @@ struct MeasuredSection {
     var passName: PassName
     var items: [MeasuredItem]
     var cues: [MeasuredCue]
+    /// The pass's items as rendered and annotated (walk-ups, fills), before measuring: what
+    /// print's Compact repeats compares to find identical passes (P9-1 spec 5.6).
+    var renderItems: [RenderItem] = []
 }
 
 struct MeasuredCue {

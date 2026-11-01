@@ -339,6 +339,36 @@ public struct LayoutRequest: Sendable {
     /// The song as rendered with its display options (and setlist overrides).
     public var model: RenderModel
     /// The body area between header and footer.
+
+    /// The printed page at a fixed lyric size (P9-1 spec 5.1): a narrower gutter and gaps,
+    /// gutter and callout roles at paper sizes, two columns at most. `sectionSpacing` is
+    /// 1.25 (not the stage's 0.6) so a section's tint, which overhangs its block by a fixed
+    /// 6 pt above and below, never meets the next one's at print sizes (R187).
+    public static func print(lyricSize: Double) -> Self {
+        Self(
+            gutterWidth: 44,
+            maxGutterWidth: 72,
+            gutterGap: 10,
+            columnGap: 24,
+            minColumnWidth: 210,
+            maxColumns: 2,
+            maxLyricSize: lyricSize,
+            sectionSpacing: 1.25,
+            labelSize: 8.5,
+            cueSize: 9,
+            noteSize: 9.5,
+            minLabelSize: 8,
+            labelDetailSize: 7.5,
+            passBadgeSize: 7.5,
+            modeTagSize: 6.5,
+            gutterLineGap: 2.5,
+            passBadgePadding: LayoutSize(width: 3.5, height: 0.5),
+            moreLinesSpacing: 1,
+            comfortableLyricSize: lyricSize,
+            cuePadding: LayoutSize(width: 5, height: 2.5),
+            calloutSpacing: 4,
+        )
+    }
     public var viewport: LayoutSize
     /// The user's `live.minLyricFont`; the plan's lyric size is never below it.
     public var minLyricSize: Double
