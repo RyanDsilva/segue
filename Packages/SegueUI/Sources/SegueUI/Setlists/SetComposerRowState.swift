@@ -11,6 +11,18 @@
         enum Status: Equatable {
             case alreadyInSet(SetlistItemID, position: Int)
             case note(String)
+            /// A medley part's song is already a member ("Tum Hi Ho is already 4b"): the row
+            /// it points at and the text.
+            case blocked(SetlistItemID, String)
+            /// A " + " line that would add: "Medley · Kesariya (A) + Tum Hi Ho (G, reprise
+            /// of 2)" (R187 composer A).
+            case medley([MedleyPart])
+        }
+
+        /// One part of the medley status line: the title and its detail ("G, reprise of 2").
+        struct MedleyPart: Equatable {
+            var title: String
+            var detail: String?
         }
 
         struct Ghost: Equatable {
@@ -19,6 +31,8 @@
         }
 
         var isBreak = false
+        /// A " + " line: the key cell shows the key path and spans the capo column.
+        var isMedley = false
         /// The part a new row joins (its leading-edge colour).
         var part: Int
         var ghost: Ghost?
@@ -52,6 +66,8 @@
                     return
                 }
                 describe(match, composer: composer, setlist: setlist, library: library)
+            case .medley:
+                describeMedley(composer: composer, setlist: setlist, library: library)
             }
         }
 
@@ -81,6 +97,12 @@
             {
                 duplicate = existing.itemId
                 status = .alreadyInSet(existing.itemId, position: position)
+            } else if case let .reprise(occurrence) = setlist.canAdd(match.id, as: .slot),
+                      case let .member(entryId, _, label) = occurrence
+            {
+                // Decision 8: a member-only song comes back as its reprise slot.
+                let medley = setlist.entry(entryId)?.medley?.displayTitle ?? "a medley"
+                status = .note("\(title) · also \(label) in \(medley): adds a reprise")
             } else if preview?.keyIgnored == true, let typedKey = resolution.key {
                 status = .note("This song has no key, so 'in \(typedKey.name)' is ignored")
             } else if match.tier == .fuzzyTitle {
@@ -96,6 +118,105 @@
                 time: slotTime,
                 choice: composer.choice,
             )
+        }
+
+        /// A " + " line (P9-3 section 10, R187 composer A): the ghost completes the last part
+        /// (the one being typed), the key cell shows the key path, the time cell the medley's
+        /// time, and the status line spells the medley out or names the first failing part.
+        private mutating func describeMedley(
+            composer: SetComposerModel,
+            setlist: Setlist,
+            library: LibraryViewModel,
+        ) {
+            isMedley = true
+            let resolution = composer.resolution
+            let picks = SetComposer.medleyPicks(resolution, choice: composer.choice)
+            let records = picks.map { $0.flatMap { library.song(id: $0.id) } }
+            let titles = records.map { $0.map(SongSummary.title) ?? "Missing song" }
+            let keys = zip(records, resolution.parts).map { record, part in
+                record.flatMap { ComposerSlotPreview(record: $0, key: part.key).display.key }
+            }
+            key = keys.map { $0 ?? "?" }.joined(separator: " → ")
+            let time = MedleyTime(members: records.map { record in
+                record.map { library.times.song($0) } ?? .unknown(.missingSong)
+            })
+            self.time = time.hasKnown ? time.clock : "-"
+            if let record = records.last.flatMap(\.self) {
+                let lastText = composer.text
+                    .components(separatedBy: SetComposerLine.medleySeparator).last ?? ""
+                let title = SongSummary.title(record)
+                if resolution.key == nil, composer.choice == 0,
+                   let suffix = SetComposer.ghostSuffix(typed: lastText, title: title)
+                {
+                    ghost = Ghost(text: suffix)
+                } else {
+                    ghost = Ghost(text: "   → \(title)")
+                }
+            }
+            let check = SetComposer.checkMedley(
+                picks.map { $0?.id },
+                queries: resolution.parts.map(\.query),
+                in: setlist,
+            )
+            status = Self.medleyStatus(check, titles: titles, keys: keys, resolution: resolution)
+            if case let .blocked(item, _) = status {
+                duplicate = item
+            }
+            var spoken = "Suggestion: medley of \(titles.count) songs, "
+                + titles.joined(separator: ", ")
+            if time.hasKnown {
+                spoken += ", \(time.spoken)"
+            }
+            spoken += "."
+            if case let .note(text) = status {
+                spoken += " Not added: \(text)."
+            } else if case let .blocked(_, text) = status {
+                spoken += " Not added: \(text)."
+            }
+            spokenValue = spoken
+        }
+
+        /// The status line for a medley line's check.
+        private static func medleyStatus(
+            _ check: SetComposer.MedleyCheck,
+            titles: [String],
+            keys: [String?],
+            resolution: SetComposerResolution,
+        ) -> Status {
+            func title(_ part: Int) -> String {
+                titles.indices.contains(part - 1) ? titles[part - 1] : "Song \(part)"
+            }
+            switch check {
+            case let .ok(reprises):
+                return .medley(titles.indices.map { index in
+                    let details = [
+                        keys[index],
+                        reprises[index + 1].map { "reprise of \($0.label)" },
+                    ]
+                    .compactMap(\.self)
+                    return MedleyPart(
+                        title: titles[index],
+                        detail: details.isEmpty ? nil : details.joined(separator: ", "),
+                    )
+                })
+            case let .noMatch(part):
+                let query = resolution.parts.indices.contains(part - 1)
+                    ? resolution.parts[part - 1].query : ""
+                return .note("No song matches '\(query)' (song \(part))")
+            case let .emptyPart(part):
+                return .note("Song \(part) is empty")
+            case let .duplicate(part, earlier):
+                return .note(
+                    "\(title(part)) is in this medley twice (songs \(earlier) and \(part))",
+                )
+            case let .inSet(part, occurrence):
+                return .blocked(
+                    SetlistsViewModel.revealed(occurrence),
+                    "\(title(part)) is already \(occurrence.label)",
+                )
+            case .tooMany:
+                return .note("A medley holds at most \(SetlistMedley.maxMembers) songs")
+            }
         }
 
         /// The ghost's Time cell: "3:40", "~3:40", or "-" when unknown (never a guess).
@@ -117,9 +238,9 @@
             switch status {
             case let .alreadyInSet(_, position):
                 spoken += " Already in the set at number \(position)."
-            case let .note(text):
+            case let .blocked(_, text), let .note(text):
                 spoken += " \(text)."
-            case nil:
+            case .medley, nil:
                 break
             }
             return spoken
@@ -171,7 +292,11 @@
             let preview = record
                 .map { ComposerSlotPreview(record: $0, key: composer.resolution.key) }
             let isChosen = index == composer.choice
-            let inSet = setlist.contains(match.id)
+            // Refused where it would go (decision 8): a song line needs no plain slot of it,
+            // a medley part no member of it.
+            let role: AddRole = composer.resolution.kind == .medley
+                ? .member(of: SetComposer.newMedley) : .slot
+            let inSet = !setlist.canAdd(match.id, as: role).isAllowed
             let title = record.map(SongSummary.title) ?? "Missing song"
             return HStack(spacing: 8) {
                 Color.clear.frame(width: 32, height: 1)

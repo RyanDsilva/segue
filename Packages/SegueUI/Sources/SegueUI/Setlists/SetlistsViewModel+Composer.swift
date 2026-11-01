@@ -86,12 +86,21 @@ public extension SetlistsViewModel {
             return .ignored
         case .breakRow:
             return await composeBreak(in: id, entry: entry)
+        case .medley:
+            return await composeMedley(
+                resolution,
+                choice: choice,
+                in: setlist,
+                songs: songs,
+                entry: entry,
+            )
         case .song:
             guard resolution.matches.indices.contains(choice) else {
                 recordComposed(.noMatch, match: nil, choice: choice, key: false, entry: entry)
                 return .noMatch
             }
             let match = resolution.matches[choice]
+            // A song that is only a medley member is added as its reprise (decision 8).
             if let existing = setlist.entries.first(where: { $0.songId == match.id }) {
                 recordComposed(
                     .alreadyInSet,
@@ -130,6 +139,68 @@ public extension SetlistsViewModel {
         ))
     }
 
+    /// A " + " line (P9-3 section 10): one medley slot at the end, one write and one undo
+    /// step "Add Medley", only when every part names a song, no two parts name the same
+    /// song and none is already a medley member; otherwise nothing is written.
+    private func composeMedley(
+        _ resolution: SetComposerResolution,
+        choice: Int,
+        in setlist: Setlist,
+        songs: (SongID) -> SongRecord?,
+        entry: ComposerEntry,
+    ) async -> ComposeOutcome {
+        let picks = SetComposer.medleyPicks(resolution, choice: choice)
+        let last = picks.last.flatMap(\.self)
+        let check = SetComposer.checkMedley(
+            picks.map { $0?.id },
+            queries: resolution.parts.map(\.query),
+            in: setlist,
+        )
+        switch check {
+        case .ok:
+            break
+        case let .inSet(_, occurrence):
+            recordComposed(.alreadyInSet, match: last, choice: choice, key: false, entry: entry)
+            return .alreadyInSet(Self.revealed(occurrence))
+        case .duplicate, .emptyPart, .noMatch, .tooMany:
+            recordComposed(.noMatch, match: last, choice: choice, key: false, entry: entry)
+            return .noMatch
+        }
+        var members: [(song: SongID, overrides: SetlistOverrides)] = []
+        var keyed = false
+        for (pick, part) in zip(picks, resolution.parts) {
+            guard let pick, let record = songs(pick.id) else { return .ignored }
+            let preview = ComposerSlotPreview(record: record, key: part.key)
+            keyed = keyed || (part.key != nil && !preview.keyIgnored)
+            members.append((pick.id, preview.overrides))
+        }
+        let updated = await mutate(undo: (setlist.id, "Add Medley")) { store in
+            try await store.insertMedley(members, into: setlist.id).setlist
+        }
+        // The medley is appended: the last entry.
+        guard let medley = updated?.entries.last, medley.isMedley else { return .ignored }
+        let size = SmallBucket(members.count)
+        recordComposed(
+            .medley,
+            match: last,
+            choice: choice,
+            key: keyed,
+            entry: entry,
+            members: size,
+        )
+        services.record(.setlistMedley(action: .created, members: size, entry: .composer))
+        services.record(.featureUsed(.setlistEdit, .builder))
+        return .added(medley.itemId)
+    }
+
+    /// The row a refused song points at: a plain slot, or the medley holding a member.
+    static func revealed(_ occurrence: SongOccurrence) -> SetlistItemID {
+        switch occurrence {
+        case let .slot(item, _): item
+        case let .member(entryId, _, _): entryId
+        }
+    }
+
     /// "---": a break at the very end (never after Arrange's selection: the composer is
     /// the end of the set, R158 Q6).
     private func composeBreak(in id: SetlistID, entry: ComposerEntry) async -> ComposeOutcome {
@@ -148,6 +219,7 @@ public extension SetlistsViewModel {
         choice: Int,
         key: Bool,
         entry: ComposerEntry,
+        members: SmallBucket? = nil,
     ) {
         services.record(.setlistComposed(ComposerSummary(
             action: action,
@@ -158,6 +230,7 @@ public extension SetlistsViewModel {
             entry: entry,
             // Trailing words named one of the song's artists (P8-8 section 3.5.1).
             artistWords: match.map { $0.artist != nil && $0.tier != .artist } ?? false,
+            members: members,
         )))
     }
 }

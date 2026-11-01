@@ -51,6 +51,40 @@ public extension SetlistStore {
         return (setlist, medleyId)
     }
 
+    /// Appends one medley slot of `songs` (each with its key and capo overrides): the set
+    /// composer's " + " line, one write and one undo step (P9-3 section 10). Refuses fewer
+    /// than two or more than twelve songs, a song twice, and a song already a medley member
+    /// (decision 8); a song that is a plain slot joins as its reprise.
+    /// - Returns: the setlist and the new medley's item ID.
+    @discardableResult
+    func insertMedley(
+        _ songs: [(song: SongID, overrides: SetlistOverrides)],
+        title: String? = nil,
+        into id: SetlistID,
+    ) throws -> (setlist: Setlist, medley: SetlistItemID) {
+        let medleyId = SetlistItemID(ids.next())
+        let members = songs.map { song in
+            MedleyMember(
+                itemId: SetlistItemID(ids.next()),
+                songId: song.song,
+                overrides: song.overrides,
+            )
+        }
+        let setlist = try mutateSetlist(id) { setlist in
+            guard members.count >= 2 else { throw SetlistError.medley(id, .tooFewSongs) }
+            guard members.count <= SetlistMedley.maxMembers else {
+                throw SetlistError.medley(id, .tooManyMembers)
+            }
+            let entry = SetlistEntry(
+                itemId: medleyId,
+                medley: SetlistMedley(title: title, members: members),
+            )
+            try Self.checkNewMedley(entry, in: setlist, remaining: setlist, id)
+            setlist.entries.append(entry)
+        }
+        return (setlist, medleyId)
+    }
+
     /// Ungroups `medley`: its members become song slots in place, transitions dropped. A
     /// member whose song is also a plain slot elsewhere (its reprise) would make the song
     /// two slots, so that is refused.
@@ -273,10 +307,11 @@ public extension SetlistStore {
     ) throws {
         let members = entry.medley?.members ?? []
         for (index, member) in members.enumerated() {
-            if let twin = members[..<index].first(where: { $0.songId == member.songId }),
-               let occurrence = setlist.occurrences(of: twin.songId)
-                   .first(where: { $0.itemId == twin.itemId })
-            {
+            if let twin = members[..<index].first(where: { $0.songId == member.songId }) {
+                // The twin's place in the set; a song new to the set is the new medley's.
+                let occurrence = setlist.occurrences(of: twin.songId)
+                    .first { $0.itemId == twin.itemId }
+                    ?? .member(entryId: entry.itemId, itemId: twin.itemId, label: "")
                 throw SetlistError.medley(id, .duplicate(member.songId, occurrence))
             }
             let verdict = remaining.canAdd(member.songId, as: .member(of: entry.itemId))

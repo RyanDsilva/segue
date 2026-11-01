@@ -1,6 +1,7 @@
 import Library
 import MusicTheory
 import Setlists
+import Support
 import Testing
 
 /// `SetComposer.resolve` over the corpus (P8-5 section 13.2): key token or title words,
@@ -116,5 +117,81 @@ struct SetComposerResolveTests {
         title: String,
     ) {
         #expect(SetComposer.ghostSuffix(typed: typed, title: title) == nil)
+    }
+}
+
+/// Medley lines against the corpus and a set (P9-3 section 10, decision 8).
+struct SetComposerMedleyResolveTests {
+    private static func resolve(_ typed: String) -> SetComposerResolution {
+        SetComposer.resolve(
+            SetComposerLine.parse(typed),
+            rawText: typed,
+            matcher: ComposerCorpus.matcher,
+        )
+    }
+
+    private static func check(_ typed: String, in setlist: Setlist) -> SetComposer.MedleyCheck {
+        let resolution = resolve(typed)
+        return SetComposer.checkMedley(
+            SetComposer.medleyPicks(resolution, choice: 0).map { $0?.id },
+            queries: resolution.parts.map(\.query),
+            in: setlist,
+        )
+    }
+
+    private static let kesariya = ComposerCorpus.id(0)
+    private static let tumHiHo = ComposerCorpus.id(1)
+    private static let channa = ComposerCorpus.id(3)
+
+    private static func item(_ index: UInt8) -> SetlistItemID {
+        SetlistItemID(ULID(milliseconds: 7, randomness: Array(repeating: index, count: 10)))
+    }
+
+    /// Slot 1 Channa Mereya; slot 2 a medley of Tum Hi Ho and Pehla Nasha.
+    private static let setlist = Setlist(
+        id: SetlistID(ULID(milliseconds: 8, randomness: Array(repeating: 1, count: 10))),
+        name: "Friday",
+        entries: [
+            SetlistEntry(itemId: item(1), songId: channa),
+            SetlistEntry(itemId: item(2), medley: SetlistMedley(members: [
+                MedleyMember(itemId: item(21), songId: tumHiHo),
+                MedleyMember(itemId: item(22), songId: ComposerCorpus.id(4)),
+            ])),
+        ],
+    )
+
+    @Test
+    func `each part resolves with its own key; the last part's alternatives are cycled`() {
+        let resolution = Self.resolve("kesariya in A + tum hi ho + channa mereya (Am)")
+        #expect(resolution.kind == .medley)
+        #expect(resolution.parts.map { $0.matches.first?.id }
+            == [Self.kesariya, Self.tumHiHo, Self.channa])
+        #expect(resolution.parts.map(\.key)
+            == [SongKey(parsing: "A"), nil, SongKey(parsing: "Am")])
+        #expect(resolution.matches == resolution.parts[2].matches)
+        #expect(resolution.key == SongKey(parsing: "Am"))
+    }
+
+    @Test
+    func `a medley line is checked against decision 8 and reports the failing part`() {
+        let empty = Setlist(id: Self.setlist.id, name: "Empty")
+        #expect(Self.check("kesariya + tum hi ho", in: empty) == .ok(reprises: [:]))
+        #expect(Self.check("kesariya + zzqxv", in: empty) == .noMatch(2))
+        #expect(Self.check("kesariya +  + tum hi ho", in: empty) == .emptyPart(2))
+        #expect(Self.check("kesariya + tum hi ho + kesariya", in: empty) == .duplicate(3, of: 1))
+        // Tum Hi Ho is already a member (2a): refused.
+        #expect(Self.check("kesariya + tum hi ho", in: Self.setlist)
+            == .inSet(2, .member(entryId: Self.item(2), itemId: Self.item(21), label: "2a")))
+        // Channa Mereya is a plain slot: allowed as its reprise.
+        #expect(Self.check("kesariya + channa mereya", in: Self.setlist)
+            == .ok(reprises: [2: .slot(Self.item(1), number: 1)]))
+    }
+
+    @Test
+    func `a plain line for a song that is only a medley member is a reprise`() {
+        #expect(Self.setlist.canAdd(Self.tumHiHo, as: .slot)
+            == .reprise(of: .member(entryId: Self.item(2), itemId: Self.item(21), label: "2a")))
+        #expect(Self.setlist.canAdd(Self.channa, as: .slot)
+            == .refused(.slot(Self.item(1), number: 1)))
     }
 }

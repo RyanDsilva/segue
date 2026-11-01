@@ -72,7 +72,8 @@
         private var row: some View {
             let state = ComposerRowState(composer: composer, setlist: setlist, library: library)
             return HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(state.isBreak ? "" : "\(setlist.songCount + 1)")
+                // The next slot number (a medley is one slot).
+                Text(state.isBreak ? "" : "\(setlist.slotCount + 1)")
                     .font(SchibstedGrotesk.medium.font(size: 14))
                     .foregroundStyle(Theme.color.muted)
                     .frame(width: 32, alignment: .leading)
@@ -80,7 +81,9 @@
                 titleColumn(state)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 keyCell(state)
-                cell(state.capo, width: 64, identifier: AccessibilityID.setlistComposerCapo)
+                if !state.isMedley {
+                    cell(state.capo, width: 64, identifier: AccessibilityID.setlistComposerCapo)
+                }
                 cell(state.time, width: 56, identifier: AccessibilityID.setlistComposerTime)
                 // Start, lock, (score) and remove columns of the rows above stay empty.
                 Color.clear.frame(width: trailingWidth, height: 1)
@@ -221,6 +224,17 @@
                     .help("Show it in the set")
                 case let .note(text):
                     Text(text)
+                case let .blocked(item, text):
+                    Button {
+                        onReveal(item)
+                    } label: {
+                        Label(text, systemImage: "exclamationmark.triangle.fill")
+                            .symbolRenderingMode(.multicolor)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Show it in the set")
+                case let .medley(parts):
+                    medleyLine(parts)
                 }
             }
             .font(SchibstedGrotesk.medium.font(size: 13))
@@ -230,9 +244,33 @@
             .accessibilityIdentifier(AccessibilityID.setlistComposerStatus)
         }
 
+        /// "Medley · Kesariya (A) + Tum Hi Ho (G, reprise of 2)": the parts in the title's
+        /// colour, the joins muted (R187 composer A).
+        private func medleyLine(_ parts: [ComposerRowState.MedleyPart]) -> Text {
+            var line = Text(verbatim: "Medley · ").foregroundStyle(Theme.color.muted)
+            for (index, part) in parts.enumerated() {
+                if index > 0 {
+                    let join = Text(verbatim: "  +  ").foregroundStyle(Theme.color.muted)
+                    line = Text("\(line)\(join)")
+                }
+                let detail = part.detail.map { " (\($0))" } ?? ""
+                let text = Text(verbatim: part.title + detail).foregroundStyle(Theme.color.ink)
+                line = Text("\(line)\(text)")
+            }
+            return line
+        }
+
         @ViewBuilder
         private func keyCell(_ state: ComposerRowState) -> some View {
-            if state.duplicate != nil {
+            if state.isMedley {
+                // The key path ("E → G → G") spans the key and capo columns.
+                cell(
+                    state.key,
+                    width: 56 + 8 + 64,
+                    weight: .semiBold,
+                    identifier: AccessibilityID.setlistComposerKey,
+                )
+            } else if state.duplicate != nil {
                 Text("In set")
                     .font(SchibstedGrotesk.semiBold.font(size: 11))
                     .foregroundStyle(Theme.color.muted)
@@ -347,6 +385,17 @@
                 composer.requestSelectAll()
                 let match = composer.resolution.matches.indices.contains(choice)
                     ? composer.resolution.matches[choice] : nil
+                if composer.resolution.kind == .medley {
+                    let state = ComposerRowState(
+                        composer: composer,
+                        setlist: model.setlist(setlist.id) ?? setlist,
+                        library: library,
+                    )
+                    if case let .blocked(_, text) = state.status {
+                        announce(text)
+                    }
+                    return
+                }
                 let title = match.flatMap { library.song(id: $0.id) }.map(SongSummary.title)
                 if let title, let position = position(of: item) {
                     announce("\(title) is already number \(position)")
@@ -362,8 +411,12 @@
             if let info = entry.breakInfo {
                 return "Added break, \(info.label)"
             }
+            if let medley = entry.medley {
+                return "Added \(medley.displayTitle) of \(medley.members.count) songs, "
+                    + "number \(current.slotCount)"
+            }
             let title = entry.songId.flatMap(library.song(id:)).map(SongSummary.title) ?? "song"
-            return "Added \(title), number \(current.songCount)"
+            return "Added \(title), number \(current.slotCount)"
         }
 
         fileprivate func position(of item: SetlistItemID) -> Int? {

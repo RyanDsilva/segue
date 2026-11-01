@@ -1,6 +1,7 @@
 import Foundation
 import Library
 import MusicTheory
+import Support
 
 /// What a set composer line means against the library (P8-5 section 6.6): the view only
 /// renders this.
@@ -12,6 +13,10 @@ public struct SetComposerResolution: Sendable, Equatable {
         case breakRow
         /// A song query; `matches` may be empty ("No song matches").
         case song
+        /// A " + " line (P9-3 section 10): `parts` holds each part's song resolution (an
+        /// empty part resolves `.empty`). `matches`, `key` and `query` are the last part's:
+        /// the part being typed, whose alternatives ↑ / ↓ and Tab cycle.
+        case medley
     }
 
     public var kind: Kind
@@ -21,12 +26,21 @@ public struct SetComposerResolution: Sendable, Equatable {
     public var key: SongKey?
     /// The text that was matched: the query without the key token, or the whole line.
     public var query: String
+    /// A medley's parts, in order; empty otherwise.
+    public var parts: [Self]
 
-    public init(kind: Kind, matches: [SongMatch] = [], key: SongKey? = nil, query: String = "") {
+    public init(
+        kind: Kind,
+        matches: [SongMatch] = [],
+        key: SongKey? = nil,
+        query: String = "",
+        parts: [Self] = [],
+    ) {
         self.kind = kind
         self.matches = matches
         self.key = key
         self.query = query
+        self.parts = parts
     }
 
     public static let empty = Self(kind: .empty)
@@ -52,6 +66,22 @@ public enum SetComposer {
             return .empty
         case .breakRow:
             return SetComposerResolution(kind: .breakRow)
+        case let .medley(parts):
+            let resolved = parts.map { part in
+                resolve(
+                    .song(query: part.query, key: part.key, keyToken: part.keyToken),
+                    rawText: part.text,
+                    matcher: matcher,
+                )
+            }
+            let last = resolved.last ?? .empty
+            return SetComposerResolution(
+                kind: .medley,
+                matches: last.matches,
+                key: last.key,
+                query: last.query,
+                parts: resolved,
+            )
         case let .song(query, key, _):
             guard !RomanNormalizer.words(query).isEmpty else { return .empty }
             let stripped = matcher.bestMatches(for: query, limit: alternativeLimit)
@@ -68,6 +98,71 @@ public enum SetComposer {
             return SetComposerResolution(kind: .song, matches: stripped, key: key, query: query)
         }
     }
+
+    /// The song each medley part names: its best match, the last part's at `choice` (the
+    /// alternative shown); nil for a part that names no song.
+    public static func medleyPicks(_ resolution: SetComposerResolution, choice: Int)
+        -> [SongMatch?]
+    {
+        resolution.parts.enumerated().map { index, part in
+            let pick = index == resolution.parts.count - 1 ? choice : 0
+            return part.matches.indices.contains(pick) ? part.matches[pick] : nil
+        }
+    }
+
+    /// Whether a medley line may be added to `setlist` (decision 8; P9-3 section 10). Parts
+    /// are numbered from 1.
+    public enum MedleyCheck: Sendable, Equatable {
+        /// Every part resolves; `reprises` maps a part to the plain slot it reprises.
+        case ok(reprises: [Int: SongOccurrence])
+        /// The part is empty ("a +  + b").
+        case emptyPart(Int)
+        /// The part names no song.
+        case noMatch(Int)
+        /// The part names the same song as an earlier part.
+        case duplicate(Int, of: Int)
+        /// The part's song is already a medley member (refused by decision 8).
+        case inSet(Int, SongOccurrence)
+        /// More than `SetlistMedley.maxMembers` parts.
+        case tooMany
+    }
+
+    /// Checks the songs `picks` (one per part, nil = no match) against `setlist`.
+    public static func checkMedley(
+        _ picks: [SongID?],
+        queries: [String],
+        in setlist: Setlist,
+    ) -> MedleyCheck {
+        guard picks.count <= SetlistMedley.maxMembers else { return .tooMany }
+        var reprises: [Int: SongOccurrence] = [:]
+        for (index, pick) in picks.enumerated() {
+            let number = index + 1
+            guard let song = pick else {
+                let query = queries.indices.contains(index) ? queries[index] : ""
+                return RomanNormalizer.words(query).isEmpty ? .emptyPart(number)
+                    : .noMatch(number)
+            }
+            if let earlier = picks[..<index].firstIndex(of: song) {
+                return .duplicate(number, of: earlier + 1)
+            }
+            // Checked as a member of a medley not yet in the set.
+            switch setlist.canAdd(song, as: .member(of: Self.newMedley)) {
+            case .ok:
+                break
+            case let .reprise(occurrence):
+                reprises[number] = occurrence
+            case let .refused(occurrence):
+                return .inSet(number, occurrence)
+            }
+        }
+        return .ok(reprises: reprises)
+    }
+
+    /// The item ID a not-yet-added medley is checked as (never saved).
+    public static let newMedley = SetlistItemID(ULID(
+        milliseconds: 0,
+        randomness: Array(repeating: 0, count: 10),
+    ))
 
     /// The rest of `title` after `typed`, when `title` starts with what was typed (compared
     /// word by word after `RomanNormalizer.words` folding, so case, diacritics and

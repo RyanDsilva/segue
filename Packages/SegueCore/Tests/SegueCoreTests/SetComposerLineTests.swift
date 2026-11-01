@@ -89,3 +89,46 @@ struct SetComposerLineTests {
         ))
     }
 }
+
+/// The " + " medley grammar (P9-3 section 10): each part a song query with its own key; the
+/// typed text never rewritten.
+struct SetComposerMedleyLineTests {
+    @Test
+    func `parts split on a spaced plus, each with its own key`() {
+        let line = SetComposerLine.parse("kesariya in A + tum hi ho + channa mereya (Am)")
+        guard case let .medley(parts) = line else {
+            Issue.record("expected a medley, got \(line)")
+            return
+        }
+        #expect(parts.map(\.query) == ["kesariya", "tum hi ho", "channa mereya"])
+        #expect(parts.map(\.key) == [SongKey(parsing: "A"), nil, SongKey(parsing: "Am")])
+        #expect(parts.map(\.text) == ["kesariya in A", "tum hi ho", "channa mereya (Am)"])
+    }
+
+    @Test(arguments: ["C++ Blues", "rock+roll", "a +b", "a+ b"])
+    func `a plus without spaces around it stays one song`(typed: String) {
+        #expect(SetComposerLine.parse(typed) == .song(query: typed, key: nil, keyToken: nil))
+    }
+
+    @Test
+    func `a list of one song is just a song, and an empty middle part is kept`() {
+        for typed in ["kesariya in A + ", "kesariya in A +"] {
+            #expect(SetComposerLine.parse(typed)
+                == .song(query: "kesariya", key: SongKey(parsing: "A"), keyToken: "in A"))
+        }
+        guard case let .medley(parts) = SetComposerLine.parse("kesariya +  + tum hi ho") else {
+            Issue.record("expected a medley")
+            return
+        }
+        #expect(parts.map(\.query) == ["kesariya", "", "tum hi ho"])
+    }
+
+    @Test
+    func `romanized Hindi spellings stay as typed in every part`() {
+        guard case let .medley(parts) = SetComposerLine.parse("Kesariyaa + tum hee ho") else {
+            Issue.record("expected a medley")
+            return
+        }
+        #expect(parts.map(\.query) == ["Kesariyaa", "tum hee ho"])
+    }
+}
