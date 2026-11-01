@@ -182,13 +182,26 @@ struct PageLayoutTests {
     }
 
     @Test
-    func `auto picks two columns when no line wraps and one when a line would`() {
+    func `auto uses two columns only when they save a page and no line wraps`() {
+        // A short song fits one page in one column: two would only leave the right one empty.
         let short = Self.pages("{title: T}\n[G]Short line\n[C]Another", columns: nil)
-        #expect(short.columns == 2)
-        // About 70 characters (350 pt) is wider than a two-column lyric area (204 pt) but
-        // fits one column (486 pt).
+        #expect(short.columns == 1)
+        // Eight short verses (about 128 pt each) need two 600 pt pages in one column and
+        // one page in two.
+        let verses = (1 ... 8).map { verse in
+            "{start_of_verse: Verse \(verse)}\n"
+                + (1 ... 5).map { "[G]Short line \($0) [C]here" }.joined(separator: "\n")
+                + "\n{end_of_verse}"
+        }
+        let saving = Self.pages("{title: T}\n" + verses.joined(separator: "\n"), columns: nil)
+        #expect(saving.columns == 2)
+        #expect(saving.pages.count == 1)
+        #expect(Self.pages("{title: T}\n" + verses.joined(separator: "\n")).pages.count == 2)
+        // About 70 characters (350 pt) is wider than a two-column lyric area (204 pt): one
+        // column even when two would save a page.
         let long = Self.pages(
-            "{title: T}\n[G]" + String(repeating: "word ", count: 14) + "\n[C]Another",
+            "{title: T}\n" + (1 ... 40).map { _ in "[G]" + String(repeating: "word ", count: 14) }
+                .joined(separator: "\n"),
             columns: nil,
         )
         #expect(long.columns == 1)

@@ -125,11 +125,9 @@ public enum PageLayout {
         let search = FitSearch(request: request, song: song, measurer: measurer)
         let style = request.style
         let size = max(1, style.maxLyricSize)
-        let columns = columnCount(page.columns, search: search, size: size)
+        let columns = columnCount(page, search: search, size: size)
         let sections = search.laid(size: size, columns: columns)
-        var packer = search.packer(sections, size: size)
-        packer.moveWholeFirst = true
-        packer.minimumUnitsAtSplit = 2
+        let packer = printPacker(search, sections: sections, size: size)
         let pages = packer.paginate(
             columns: columns,
             first: page.firstBody.height,
@@ -188,16 +186,37 @@ public enum PageLayout {
         return plan
     }
 
-    /// Auto: 2 when two columns are allowed and wide enough and no lyric line wraps in them.
-    static func columnCount(_ forced: Int?, search: FitSearch, size: Double) -> Int {
+    /// The column packer with the print policy (spec 5.3 rules 2 and 3).
+    private static func printPacker(
+        _ search: FitSearch,
+        sections: LaidSections,
+        size: Double,
+    ) -> ColumnPacker {
+        var packer = search.packer(sections, size: size)
+        packer.moveWholeFirst = true
+        packer.minimumUnitsAtSplit = 2
+        return packer
+    }
+
+    /// Auto (spec 5.1, R188): two columns only when they are allowed and wide enough, no
+    /// lyric line wraps in them, and they fit the song on fewer pages than one column.
+    static func columnCount(_ page: PageGeometry, search: FitSearch, size: Double) -> Int {
         let style = search.request.style
         let most = max(1, min(style.maxColumns, 2))
-        if let forced {
+        if let forced = page.columns {
             return min(max(forced, 1), most)
         }
         guard most >= 2, search.columnWidth(2) >= style.minColumnWidth else { return 1 }
         let two = search.laid(size: size, columns: 2)
-        return two.indices.contains { two[$0].wrapped } ? 1 : 2
+        guard !two.indices.contains(where: { two[$0].wrapped }) else { return 1 }
+        func pages(_ columns: Int, _ sections: LaidSections) -> Int {
+            printPacker(search, sections: sections, size: size).paginate(
+                columns: columns,
+                first: page.firstBody.height,
+                later: page.laterBody.height,
+            ).count
+        }
+        return pages(2, two) < pages(1, search.laid(size: size, columns: 1)) ? 2 : 1
     }
 
     /// Each extra after the content of the last page, kept whole: on a new page when it does
