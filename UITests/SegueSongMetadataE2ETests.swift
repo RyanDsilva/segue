@@ -208,7 +208,7 @@ final class SegueSongMetadataE2ETests: SetlistE2ETestCase {
         )
         XCTAssertEqual(
             SetlistE2E.element(app, SetlistAXID.setlistTotal).label,
-            "~≥1:04 + 1 unknown",
+            "~1:04 + 1 unknown",
         )
         screenshot(app, "metadata-set-unknown")
 

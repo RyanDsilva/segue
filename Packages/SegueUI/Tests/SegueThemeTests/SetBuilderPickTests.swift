@@ -202,7 +202,7 @@ struct SetBuilderPickTests {
         // Eight one-bar chords: Ferry Lights at 96 BPM is 20 s, Kettle On at 120 is 16 s.
         var timing = SetlistTiming(setlist: setlist, library: library, defaultChangeover: 0)
         #expect(timing.items.map(\.timeText) == ["~0:20", "--:--", "~0:16", "--:--"])
-        #expect(timing.totalText == "~≥0:36 + 2 unknown")
+        #expect(timing.totalText == "~0:36 + 2 unknown")
 
         // Not a tempo: the field says so and nothing is written.
         #expect(MissingTimesList.writeTempo("fast", song: Self.id(1), library: library)
@@ -217,7 +217,7 @@ struct SetBuilderPickTests {
         #expect(MissingTimesList.rows(setlist, within: nil, library: library).map(\.title)
             == ["Pyaar Ki Raah"])
         timing = SetlistTiming(setlist: setlist, library: library, defaultChangeover: 0)
-        #expect(timing.totalText == "~≥0:56 + 1 unknown")
+        #expect(timing.totalText == "~0:56 + 1 unknown")
         #expect(try fix.env.read("songs/harbour-lights.cho").contains("{tempo: 96}"))
         #expect(fix.manager.undoActionName == "Set Tempo")
     }

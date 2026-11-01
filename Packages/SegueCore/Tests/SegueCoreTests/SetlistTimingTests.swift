@@ -56,7 +56,7 @@ struct SetlistTimingTests {
     }
 
     @Test
-    func `a total that includes an estimated time reads "~", before any "≥"`() {
+    func `a total that includes an estimated time reads "~" and no "≥"`() {
         let list = entries([0, 1, 2])
         let timing = SetlistTiming(
             entries: list,
@@ -65,7 +65,7 @@ struct SetlistTimingTests {
         )
         #expect(timing.items.map(\.timeText) == ["3:20", "~1:40", "--:--"])
         #expect(timing.isEstimated)
-        #expect(timing.totalText == "~≥5:00 + 1 unknown")
+        #expect(timing.totalText == "~5:00 + 1 unknown")
         #expect(SetlistTiming.spokenTotal(total: 300, unknown: 2, estimated: false)
             == "5 minutes so far, incomplete: 2 songs have no time")
         #expect(SetlistTiming.spokenTotal(total: 2300, unknown: 0)
@@ -112,7 +112,7 @@ struct SetlistTimingTests {
         #expect(timing.items[1].timeText == "1:40")
         #expect(timing.total == 200)
         #expect(timing.unknownCount == 2)
-        #expect(timing.totalText == "≥3:20 + 2 unknown")
+        #expect(timing.totalText == "3:20 + 2 unknown")
         #expect(timing.progress == nil)
         // A lower bound of zero says nothing: the second row reads --:--, not "≥0:00".
         #expect(timing.items.map(\.startText) == ["0:00", "--:--", "≥1:40", "≥1:40"])
@@ -127,7 +127,7 @@ struct SetlistTimingTests {
         let list = entries([0, 1, 2, 3])
         let timing = SetlistTiming(entries: list, times: times(list, lengths), target: nil)
         #expect(timing.items.map(\.startText) == ["0:00", "13:50", "≥13:50", "≥17:10"])
-        #expect(timing.totalText == "≥17:10 + 2 unknown")
+        #expect(timing.totalText == "17:10 + 2 unknown")
     }
 
     @Test
@@ -212,13 +212,13 @@ struct SetlistTimingTests {
             "0:00", "3:50", "8:25", "12:00", "≥12:00", "≥27:00", "≥30:42", "≥31:12",
         ])
         #expect(timing.items[4].time == ItemTime(seconds: 900, source: .intermission))
-        #expect(timing.parts.map(\.totalText) == ["≥12:00 + 1 unknown", "≥8:52 + 1 unknown"])
+        #expect(timing.parts.map(\.totalText) == ["12:00 + 1 unknown", "8:52 + 1 unknown"])
         #expect(timing.parts.map(\.label) == [nil, "Set 2"])
         #expect(timing.parts[1].breakItemId == pause.itemId)
         #expect(timing.part(openedBy: pause.itemId) == timing.parts[1])
         #expect(timing.parts.map(\.songItemIds.count) == [4, 3])
         // The whole: both parts plus the intermission, which is in neither part (R105).
-        #expect(timing.totalText == "≥35:52 + 2 unknown")
+        #expect(timing.totalText == "35:52 + 2 unknown")
         #expect(timing.unknownItemIds == [list[3].itemId, list[6].itemId])
         #expect(timing.changeoverNote == "Includes 30 s changeovers between songs.")
     }

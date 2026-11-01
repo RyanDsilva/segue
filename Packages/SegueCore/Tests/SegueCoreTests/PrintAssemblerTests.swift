@@ -118,7 +118,7 @@ struct PrintAssemblerTests {
             )),
             .breakHeading(
                 title: "Set 2",
-                total: "~\u{2265}4:05 + 2 unknown",
+                total: "~4:05 + 2 unknown",
                 interval: "Interval 20:00",
             ),
             .song(SetListSong(number: "2", title: "Soundcheck", key: "G", time: "--:--", song: 1)),

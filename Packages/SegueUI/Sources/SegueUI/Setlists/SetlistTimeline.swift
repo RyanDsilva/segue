@@ -134,7 +134,7 @@
                 : "target \(SetlistTiming.format(target))"
         }
 
-        /// "Set 1 12:00, break 15:00, Set 2 ≥8:52 + 1 unknown, target 45:00".
+        /// "Set 1 12:00, break 15:00, Set 2 8:52 + 1 unknown, target 45:00".
         private var stripSummary: String {
             var parts: [String] = []
             for (index, part) in timing.parts.enumerated() {
@@ -301,9 +301,9 @@
         }
     }
 
-    /// A total in the phase 2 notation, drawn as its known part ("≥38:20") with the
+    /// A total in the phase 2 notation, drawn as its known part ("38:20") with the
     /// "+ 2 unknown" part as the `MissingTimesButton` beside it; VoiceOver and the E2E
-    /// suite read the whole notation ("≥38:20 + 2 unknown").
+    /// suite read the whole notation ("38:20 + 2 unknown"; no "≥" on totals, R189).
     struct TotalText: View {
         let total: TimeInterval
         let unknown: Int
@@ -331,13 +331,13 @@
                 .accessibilityIdentifier(identifier)
         }
 
-        /// "38:20", "≥38:20", "~38:20" (a known time rests on default chord lengths), or
+        /// "38:20" or "~38:20" (a known time rests on default chord lengths), or
         /// nothing when only unknowns are left (the button says it).
         private var visible: String {
             let prefix = estimated && total > 0 ? SetlistTiming.estimatedPrefix : ""
             guard unknown > 0 else { return prefix + SetlistTiming.format(total) }
             guard total > 0 else { return "" }
-            return prefix + SetlistTiming.lowerBoundPrefix + SetlistTiming.format(total)
+            return prefix + SetlistTiming.format(total)
         }
     }
 
@@ -348,7 +348,7 @@
         let library: LibraryViewModel
         /// A part's song slots; nil for the whole set.
         var within: Set<SetlistItemID>?
-        /// Drawn after a known total ("≥38:20 + 2 unknown"): starts with "+ ".
+        /// Drawn after a known total ("38:20 + 2 unknown"): starts with "+ ".
         var followsTotal = true
         @State private var isOpen = false
 

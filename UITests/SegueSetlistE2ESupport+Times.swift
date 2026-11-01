@@ -31,12 +31,13 @@ extension SetlistFixture {
         return result
     }
 
-    /// The builder's total for `titles` in one part: "~12:00", "~≥12:00 + 1 unknown".
+    /// The builder's total for `titles` in one part: "~12:00", "~12:00 + 1 unknown" (R189:
+    /// no "≥" on totals).
     static func total(_ titles: [String], changeover: Double = 0) -> String {
         let known = titles.compactMap { song($0).seconds }.reduce(0, +)
             + changeover * Double(max(titles.count - 1, 0))
         let unknown = titles.count { song($0).seconds == nil }
-        return unknown == 0 ? "~" + clock(known) : "~≥\(clock(known)) + \(unknown) unknown"
+        return unknown == 0 ? "~" + clock(known) : "~\(clock(known)) + \(unknown) unknown"
     }
 }
 

@@ -4,9 +4,10 @@
 // row shows its start time; the header shows total vs target).
 //
 // Ruling (decisions.md, phase 2 build rulings, R172): an unknown time is never made up. The
-// row shows `--:--` and adds nothing to the total. Everything after it is a lower bound,
-// written with "≥" (start "≥13:50", total "≥38:20 + 2 unknown"); a lower bound of zero says
-// nothing, so it reads `--:--` (a start) or "2 unknown" (the total). A slot's time is its
+// row shows `--:--` and adds nothing to the total. A start after it is a lower bound, written
+// with "≥" ("≥13:50"); a total names its unknown songs instead ("38:20 + 2 unknown", R189:
+// no "≥" on totals); a lower bound of zero says nothing, so it reads `--:--` (a start) or
+// "2 unknown" (the total). A slot's time is its
 // song's tempo times the bars of the passes it plays (`SlotTimes`, P8-8 section 5.3); a total
 // that includes a time resting on default chord lengths reads "~" (R173).
 //
@@ -101,7 +102,7 @@ public struct PartTiming: Sendable, Hashable {
         }
     }
 
-    /// The part total in the phase 2 notation ("12:00", "≥12:00 + 1 unknown", "~12:00").
+    /// The part total in the phase 2 notation ("12:00", "12:00 + 1 unknown", "~12:00").
     public var totalText: String {
         SetlistTiming.totalText(total: total, unknown: unknownCount, estimated: isEstimated)
     }
@@ -414,22 +415,23 @@ public struct SetlistTiming: Sendable, Hashable {
         return total / target
     }
 
-    /// The running total as the builder header shows it: "38:20"; "≥38:20 + 2 unknown" when
+    /// The running total as the builder header shows it: "38:20"; "38:20 + 2 unknown" when
     /// some times are unknown; "2 unknown" when none is known; "~38:20" when a known time
     /// rests on default chord lengths.
     public var totalText: String {
         Self.totalText(total: total, unknown: unknownCount, estimated: isEstimated)
     }
 
-    /// A total in the phase 2 notation: "38:20"; "≥38:20 + 2 unknown"; "2 unknown" when
-    /// nothing is known; "~" first when `estimated` ("~≥38:20 + 2 unknown").
+    /// A total in the phase 2 notation: "38:20"; "38:20 + 2 unknown"; "2 unknown" when
+    /// nothing is known; "~" first when `estimated` ("~38:20 + 2 unknown"). The "+ N
+    /// unknown" already says the real total is longer, so no "≥" (R189).
     public static func totalText(total: TimeInterval, unknown: Int, estimated: Bool = false)
         -> String
     {
         let known = (estimated && total > 0 ? estimatedPrefix : "") + format(total)
         guard unknown > 0 else { return known }
         guard total > 0 else { return "\(unknown) unknown" }
-        let prefix = (estimated ? estimatedPrefix : "") + lowerBoundPrefix
+        let prefix = estimated ? estimatedPrefix : ""
         return "\(prefix)\(format(total)) + \(unknown) unknown"
     }
 
