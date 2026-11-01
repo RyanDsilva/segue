@@ -76,6 +76,11 @@ struct TelemetryDeckIngestTests {
         )
     }
 
+    // The session signal and the test's own signal share a batch only if the send reaches the
+    // queue within the 20 ms transmit interval, which a busy machine does not promise (the
+    // loop then sends the session signal alone first). So these two tests assert what is sent
+    // per signal, never how the signals were batched.
+
     @Test
     func `a server error is retried with backoff and sent once`() async throws {
         let harness = try IngestHarness()
@@ -84,10 +89,16 @@ struct TelemetryDeckIngestTests {
         let sink = harness.sink()
         sink.send(AnalyticsEvent.helpOpened(.help).render())
 
-        // Drained means the retry was accepted; nothing is pending to send a third time.
+        // Drained means every signal was accepted; nothing is pending to send again.
         await sink.drained()
-        #expect(route.captured.count == 2)
-        #expect(route.captured[0].body == route.captured[1].body)
+        let sent = route.captured
+        try #require(sent.count >= 2)
+        // The retry resends the refused batch first, unchanged (later signals may join it).
+        let refused = sent[0].signals.map { $0 as NSDictionary }
+        #expect(!refused.isEmpty)
+        #expect(Array(sent[1].signals.map { $0 as NSDictionary }.prefix(refused.count)) == refused)
+        // Accepted once each, in order.
+        #expect(Self.types(sent.dropFirst()) == [Self.session, Self.help])
         #expect(await sink.pendingSignals.isEmpty)
         #expect(!harness.queueFileExists)
         await sink.shutDown(discardingQueue: true)
@@ -97,15 +108,24 @@ struct TelemetryDeckIngestTests {
     func `a rejected batch is dropped, never retried`() async throws {
         let harness = try IngestHarness()
         defer { harness.cleanUp() }
-        let route = harness.route(replies: [.status(400)])
+        let route = harness.route(fallback: .status(400))
         let sink = harness.sink()
         sink.send(AnalyticsEvent.helpOpened(.help).render())
 
-        // Drained means the rejected batch was dropped; nothing is left to retry.
+        // Drained means every rejected batch was dropped; nothing is left to retry, so each
+        // signal went out exactly once.
         await sink.drained()
-        #expect(route.captured.count == 1)
+        #expect(Self.types(route.captured) == [Self.session, Self.help])
         #expect(!harness.queueFileExists)
         await sink.shutDown(discardingQueue: true)
+    }
+
+    private static let session = "TelemetryDeck.Session.started"
+    private static let help = AnalyticsEvent.helpOpened(.help).render().name
+
+    /// The signal types `requests` carried, in order.
+    private static func types(_ requests: some Sequence<StubURLProtocol.Captured>) -> [String] {
+        requests.flatMap(\.signals).compactMap { $0["type"] as? String }
     }
 
     @Test
