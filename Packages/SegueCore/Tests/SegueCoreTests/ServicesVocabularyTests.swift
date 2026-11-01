@@ -33,14 +33,15 @@ struct ServicesVocabularyTests {
         // Rows 1-18 of section 5, the phase 3 AI rows 19-22, the section notes row 23
         // (P3-17), one signal name each, the set composer row 24 (P8-5), two signals, the
         // walk-up row 25 (P8-4b), the fill row 26, the timing rows 27 and 28 (P8-7), the
-        // artist split row 29 and the setlist time row 30 (P8-8).
-        #expect(names.count == 31)
+        // artist split row 29 and the setlist time row 30 (P8-8), the medley row 32 (P9-3;
+        // row 31 is P9-1's).
+        #expect(names.count == 32)
         #expect(names.isSuperset(of: [
             "Segue.AI.pasteFinished", "Segue.AI.modelDownload", "Segue.AI.assistantUsed",
             "Segue.AI.smartFilterUsed", "Segue.Notes.edited", "Segue.Setlist.composed",
             "Segue.Setlist.composerSession", "Segue.Bass.walkUpPicked",
             "Segue.Bass.fillSaved", "Segue.Timing.tapCaptured", "Segue.Timing.keyChange",
-            "Segue.Song.artistSplit", "Segue.Setlist.timed",
+            "Segue.Song.artistSplit", "Segue.Setlist.timed", "Segue.Setlist.medley",
         ]))
     }
 
@@ -97,6 +98,55 @@ struct ServicesVocabularyTests {
         #expect(FeatureKey(rawValue: "songArtists") == .songArtists)
     }
 
+    /// Row 32 and the medley params of rows 24 and 30 (P9-3 section 14): enums and buckets,
+    /// daily per (action, entry).
+    @Test
+    func `the medley row and the medley params`() {
+        let event = AnalyticsEvent.setlistMedley(
+            action: .transitionEdited,
+            members: SmallBucket(3),
+            entry: .key,
+        )
+        #expect(event.render().name == "Segue.Setlist.medley")
+        #expect(event.render().params == [
+            "segue.action": "transitionEdited", "segue.members": "2-4", "segue.entry": "key",
+        ])
+        #expect(event.throttle == .daily(key: "Segue.Setlist.medley|transitionEdited|key"))
+        let composed = AnalyticsEvent.setlistComposed(ComposerSummary(
+            action: .medley,
+            tier: .exactTitle,
+            form: .original,
+            alternative: false,
+            key: true,
+            entry: .click,
+            members: SmallBucket(3),
+        )).render()
+        #expect(composed.params["segue.action"] == "medley")
+        #expect(composed.params["segue.members"] == "2-4")
+        let song = AnalyticsEvent.setlistComposed(ComposerSummary(
+            action: .song,
+            tier: .exactTitle,
+            form: .original,
+            alternative: false,
+            key: false,
+            entry: .click,
+        )).render()
+        #expect(song.params["segue.members"] == nil)
+        let timed = AnalyticsEvent.setlistTimed(SetlistTimedSummary(
+            songs: SmallBucket(5),
+            noTempo: SmallBucket(0),
+            noChords: SmallBucket(0),
+            arranged: SmallBucket(0),
+            estimatedOnly: false,
+            target: .noTarget,
+            medleys: SmallBucket(1),
+            medleyUnknown: true,
+        )).render()
+        #expect(timed.params["segue.medleys"] == "1")
+        #expect(timed.params["segue.medleyUnknown"] == "true")
+        #expect(FeatureKey(rawValue: "medley") == .medley)
+    }
+
     /// Row 30 and the P8-8 time params (section 8): buckets and Bools only; Time it is gone.
     @Test
     func `the setlist time row and the no-time params`() {
@@ -112,6 +162,7 @@ struct ServicesVocabularyTests {
         #expect(event.render().params == [
             "segue.songs": "10-19", "segue.noTempo": "2-4", "segue.noChords": "0",
             "segue.arranged": "1", "segue.estimatedOnly": "true", "segue.target": "within",
+            "segue.medleys": "0", "segue.medleyUnknown": "false",
         ])
         #expect(event.throttle == .daily(key: "Segue.Setlist.timed|within"))
         #expect(FeatureKey(rawValue: "timeIt") == nil)

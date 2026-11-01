@@ -79,6 +79,10 @@ public struct SetlistTimedSummary: Sendable, Hashable {
     /// Every known slot rests on default chord lengths.
     public var estimatedOnly: Bool
     public var target: SetlistTimedTarget
+    /// P9-3 section 14: how many medley slots the set holds.
+    public var medleys: SmallBucket
+    /// P9-3 section 14: a medley has a member without a time.
+    public var medleyUnknown: Bool
 
     public init(
         songs: SmallBucket,
@@ -87,6 +91,8 @@ public struct SetlistTimedSummary: Sendable, Hashable {
         arranged: SmallBucket,
         estimatedOnly: Bool,
         target: SetlistTimedTarget,
+        medleys: SmallBucket = SmallBucket(0),
+        medleyUnknown: Bool = false,
     ) {
         self.songs = songs
         self.noTempo = noTempo
@@ -94,6 +100,8 @@ public struct SetlistTimedSummary: Sendable, Hashable {
         self.arranged = arranged
         self.estimatedOnly = estimatedOnly
         self.target = target
+        self.medleys = medleys
+        self.medleyUnknown = medleyUnknown
     }
 
     var params: [String: String] {
@@ -104,6 +112,8 @@ public struct SetlistTimedSummary: Sendable, Hashable {
             "segue.arranged": arranged.rawValue,
             "segue.estimatedOnly": String(estimatedOnly),
             "segue.target": target.rawValue,
+            "segue.medleys": medleys.rawValue,
+            "segue.medleyUnknown": String(medleyUnknown),
         ]
     }
 }

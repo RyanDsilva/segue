@@ -92,6 +92,9 @@ public enum AnalyticsEvent: Sendable, Hashable {
     case songArtistSplit(ArtistSplitSummary)
     /// Row 30 (P8-8 8): the builder left a setlist with songs (daily per target).
     case setlistTimed(SetlistTimedSummary)
+    /// Row 32 (P9-3 14): a builder medley action, daily per (action, entry);
+    /// `members` is the medley's size after the action.
+    case setlistMedley(action: MedleyAction, members: SmallBucket, entry: MedleyEntryPoint)
 }
 
 // MARK: - Grouped parameters (cases with more than four values)
@@ -325,7 +328,8 @@ extension AnalyticsEvent {
         case .songArtistSplit, .songCreated, .songDeleted, .songImported: "Song"
         case .featureUsed: "Feature"
         case .editorChordPalette, .editorOpened: "Editor"
-        case .setlistComposed, .setlistComposerSession, .setlistCreated, .setlistTimed: "Setlist"
+        case .setlistComposed, .setlistComposerSession, .setlistCreated, .setlistMedley,
+             .setlistTimed: "Setlist"
         case .showEnded, .showStarted: "Show"
         case .milestoneReached: "Milestone"
         case .helpOpened: "Help"
@@ -369,6 +373,7 @@ extension AnalyticsEvent {
         case .timingKeyChange: "keyChange"
         case .songArtistSplit: "artistSplit"
         case .setlistTimed: "timed"
+        case .setlistMedley: "medley"
         }
     }
 
@@ -480,6 +485,7 @@ extension AnalyticsEvent {
             ["segue.action": action.rawValue, "segue.interval": interval.rawValue]
         case let .songArtistSplit(summary): summary.params
         case let .setlistTimed(summary): summary.params
+        case .setlistMedley: medleyParams
         }
     }
 }

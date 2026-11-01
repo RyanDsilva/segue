@@ -177,7 +177,20 @@ enum VocabularySample {
         events += fillEvents
         events += artistSplitEvents
         events += setlistTimedEvents
+        events += medleyEvents
         return events
+    }
+
+    /// Row 32 (P9-3): every medley action and entry point at least once.
+    private static var medleyEvents: [AnalyticsEvent] {
+        let actions = MedleyAction.allCases, entries = MedleyEntryPoint.allCases
+        return (0 ..< max(actions.count, entries.count)).map { row in
+            .setlistMedley(
+                action: actions[row % actions.count],
+                members: SmallBucket(row + 1),
+                entry: entries[row % entries.count],
+            )
+        }
     }
 
     /// Row 26 (P8-7): every family, rank, view, feel and "Shows on" at least once.
@@ -210,6 +223,8 @@ enum VocabularySample {
                 arranged: SmallBucket(index),
                 estimatedOnly: index.isMultiple(of: 2),
                 target: target,
+                medleys: SmallBucket(index),
+                medleyUnknown: index.isMultiple(of: 2),
             ))
         }
     }
@@ -263,6 +278,7 @@ enum VocabularySample {
                 key: row.isMultiple(of: 3),
                 entry: entries[row % entries.count],
                 artistWords: row.isMultiple(of: 4),
+                members: actions[row % actions.count] == .medley ? SmallBucket(row + 2) : nil,
             ))
         }
         events += SmallBucket.allCases.map { bucket in

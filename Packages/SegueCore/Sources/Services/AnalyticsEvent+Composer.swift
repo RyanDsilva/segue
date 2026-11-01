@@ -17,6 +17,8 @@ public struct ComposerSummary: Sendable, Hashable {
     /// P8-8 section 8: trailing words naming one of the song's artists qualified the title
     /// ("tum hi ho arijit").
     public var artistWords: Bool
+    /// P9-3 section 10: the medley's size, for a `medley` action only.
+    public var members: SmallBucket?
 
     public init(
         action: ComposerAction,
@@ -26,6 +28,7 @@ public struct ComposerSummary: Sendable, Hashable {
         key: Bool,
         entry: ComposerEntry,
         artistWords: Bool = false,
+        members: SmallBucket? = nil,
     ) {
         self.action = action
         self.tier = tier
@@ -34,6 +37,7 @@ public struct ComposerSummary: Sendable, Hashable {
         self.key = key
         self.entry = entry
         self.artistWords = artistWords
+        self.members = members
     }
 }
 
@@ -43,6 +47,8 @@ public enum ComposerAction: String, Sendable, CaseIterable {
     case `break`
     case alreadyInSet
     case noMatch
+    /// P9-3 section 10: a " + " line appended one medley slot.
+    case medley
 }
 
 /// The matcher tier of the accepted (or flagged) candidate; `none` for a break or no
@@ -87,7 +93,7 @@ extension AnalyticsEvent {
                 "segue.key": String(summary.key),
                 "segue.entry": summary.entry.rawValue,
                 "segue.artistWords": String(summary.artistWords),
-            ]
+            ].merging(summary.members.map { ["segue.members": $0.rawValue] } ?? [:]) { $1 }
         case let .setlistComposerSession(songs, cycles):
             ["segue.songs": songs.rawValue, "segue.cycles": cycles.rawValue]
         default:

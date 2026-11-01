@@ -85,4 +85,7 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     /// P8-7 section 15: "Fills as tab" turned on (stage `t`, the editor's Bass menu,
     /// Settings).
     case fillTab
+    /// P9-3 section 14: a stage run that shows a medley (once per run), Rehearse Medley
+    /// (builder).
+    case medley
 }
