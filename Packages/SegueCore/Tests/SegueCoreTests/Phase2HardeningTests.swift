@@ -133,7 +133,7 @@ struct Phase2HardeningTests {
             environment: harness.environment(),
         )
         let record = await show.state.record
-        let lock = harness.lib.url("shows/\(record.id).show.lock")
+        let lock = harness.lib.state.showLockURL(record.id.ulid)
         #expect(FileManager.default.fileExists(atPath: lock.path))
 
         // A second window or process: fresh stores on the same folder.
