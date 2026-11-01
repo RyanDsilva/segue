@@ -45,6 +45,7 @@ final class SegueFillE2ETests: SetlistE2ETestCase {
             to: root.appending(path: "songs/\(Self.stem).segue.json"),
         )
         let app = try launch(waitForSongs: false)
+        turnOnWalkUps(app)
         openEditorWithBassView(app)
         selectSpan(app)
         let run = createFill(app)
@@ -59,6 +60,39 @@ final class SegueFillE2ETests: SetlistE2ETestCase {
         }
         relaunchAndCheckLibrary(app, run: run)
         rehearseAndReadTab(app, run: run)
+    }
+
+    /// Settings > Instrument > Walk-ups on charts > Every change: fills follow the walk-up
+    /// density (R168 Q7), so with walk-ups Off (the default) a saved fill draws nowhere.
+    @MainActor
+    private func turnOnWalkUps(_ app: XCUIApplication) {
+        E2E.bringToFront(app)
+        app.typeKey(",", modifierFlags: .command, in: app)
+        let instrumentTab = app.toolbars.buttons["Instrument"].firstMatch
+        XCTAssertTrue(instrumentTab.appears(timeout: 10), "no Instrument pane")
+        instrumentTab.click(in: app)
+        let picker = app.popUpButtons[FillAXID.walkUpsPicker]
+        XCTAssertTrue(picker.appears(timeout: 5), "no walk-ups picker")
+        // The pane scrolls: bring the picker into the window before opening it.
+        let anchor = element(app, FillAXID.playsBass)
+        XCTAssertTrue(anchor.appears(timeout: 5))
+        // The picker is disabled until "I play bass" is on.
+        anchor.click(in: app)
+        SetlistE2E.waitUntil("the walk-ups picker never enabled") { picker.isEnabled }
+        anchor.hover()
+        for _ in 0 ..< 6 where !picker.isHittable {
+            anchor.scroll(byDeltaX: 0, deltaY: -300)
+        }
+        // Off, Into sections, Every change: two Downs from Off, then Return.
+        picker.click(in: app)
+        app.typeKey(.downArrow, modifierFlags: [], in: app)
+        app.typeKey(.downArrow, modifierFlags: [], in: app)
+        app.typeKey(.return, modifierFlags: [], in: app)
+        SetlistE2E.waitUntil("walk-ups never turned on") {
+            SetlistE2E.text(picker).contains("Every change")
+        }
+        app.typeKey("w", modifierFlags: .command, in: app)
+        XCTAssertTrue(instrumentTab.disappears(timeout: 5))
     }
 
     /// Library > Fill Harbour > Edit, text mode, and the Bass segment on (user-level).
@@ -77,7 +111,8 @@ final class SegueFillE2ETests: SetlistE2ETestCase {
         textMode.click(in: app)
         let bass = element(app, FillAXID.editorBass)
         XCTAssertTrue(bass.appears(timeout: 5))
-        bass.click(in: app)
+        // "I play bass" (turnOnWalkUps) already turned the bass-note view on; a click here
+        // would turn it off again.
         SetlistE2E.waitUntil("the preview never showed the chart") {
             SetlistE2E.texts(app, FillAXID.sheetLine).contains { $0.hasSuffix("there") }
         }
@@ -150,12 +185,20 @@ final class SegueFillE2ETests: SetlistE2ETestCase {
         XCTAssertTrue(sheet.disappears(timeout: 10), "Save never closed the sheet")
         var run = ""
         SetlistE2E.waitUntil("the preview never showed the fill over C") {
-            run = SetlistE2E.texts(app, FillAXID.sheetFillRun).first ?? ""
+            run = Self.previewFillLine(app) ?? ""
             return !run.isEmpty
         }
         screenshot(app, "fill-saved")
         element(app, FillAXID.editorDone).click(in: app)
         return run
+    }
+
+    /// The preview's line that carries a fill. A preview line is one accessibility element
+    /// (children ignored, WS2b 4.9.2), so the fill's notes are read from its spoken label
+    /// ("..., fill: E, F sharp into D, ...: lyric"), not from the drawn run inside it.
+    @MainActor
+    private static func previewFillLine(_ app: XCUIApplication) -> String? {
+        SetlistE2E.texts(app, FillAXID.sheetLine).first { $0.contains("fill: ") }
     }
 
     /// Quits, launches again on the same library (state kept, so the bass-note view is still
@@ -178,7 +221,7 @@ final class SegueFillE2ETests: SetlistE2ETestCase {
         XCTAssertTrue(row.appears(timeout: 10), "the song is not listed after a relaunch")
         row.click(in: app)
         SetlistE2E.waitUntil("the library never showed the fill after a relaunch") {
-            SetlistE2E.texts(app, FillAXID.sheetFillRun).contains(run)
+            Self.previewFillLine(app) == run
         }
         screenshot(app, "fill-relaunched")
     }
@@ -192,7 +235,9 @@ final class SegueFillE2ETests: SetlistE2ETestCase {
         rehearse.click(in: app)
         let title = app.staticTexts[FillAXID.liveTitle]
         XCTAssertTrue(title.appears(timeout: 10), "the stage never opened")
-        let first = run.split(separator: " ").first.map(String.init) ?? run
+        // The preview speaks the fill ("... fill: E, F sharp into D ..."); the stage draws
+        // it ("E F\u{266F} ..."), so the first note's letter is what they share.
+        let first = run.range(of: "fill: ").flatMap { run[$0.upperBound...].first.map(String.init) } ?? run
         SetlistE2E.waitUntil("the stage never showed the fill (\(run))") {
             SetlistE2E.texts(app, FillAXID.liveFillRun).contains { $0.hasPrefix(first) }
         }
@@ -233,6 +278,8 @@ final class SegueFillE2ETests: SetlistE2ETestCase {
 
 /// Mirrors `AccessibilityID+Fill` and the library and editor IDs this suite reads.
 enum FillAXID {
+    static let playsBass = "segue.settings.instrument.playsBass"
+    static let walkUpsPicker = "segue.settings.instrument.walkUps"
     static let sidebarLibrary = "segue.sidebar.library"
     static let songRow = "segue.library.row"
     static let editSong = "segue.song.edit"
