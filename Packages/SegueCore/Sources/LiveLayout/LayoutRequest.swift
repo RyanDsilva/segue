@@ -357,8 +357,8 @@ public struct LayoutRequest: Sendable {
     /// is laid out in full (no repeat is ever collapsed).
     public var passes: [PlayedPass]?
     public var style: LayoutStyle
-    /// Walk-ups for the played passes (P8-4b section 8.6): the bass-note view with
-    /// walk-ups on; nil otherwise.
+    /// Walk-ups and saved fills for the played passes (P8-4b section 8.6, P8-7 14): the
+    /// bass-note view with walk-ups on or a fill that applies (R175); nil otherwise.
     public var walkUps: BassLineContext?
 
     public init(

@@ -11,7 +11,8 @@ import Testing
 
 /// Saved fills on a real stage (P8-7 section 14, R167 Q12, R168 Q8): names by default, a tab
 /// fill as a block, `T` flips every fill to tab and back as a remembered user setting, in a
-/// gig with no sound, the neck numbers the fill's path, and the status line names `T`.
+/// gig with no sound, the neck numbers the fill's path, and the status line names `T`. All
+/// with walk-ups Off (the default): saved fills show whatever the density (R175).
 extension StageWindowSuites {
     @MainActor
     @Suite(.serialized)
@@ -60,8 +61,8 @@ extension StageWindowSuites {
             ]
         }
 
-        /// A run whose first song carries the two fills, with the bass-note view and
-        /// walk-ups on.
+        /// A run whose first song carries the two fills, with the bass-note view on and
+        /// walk-ups Off.
         static func run() async throws -> MetronomeRun {
             let run = try await MetronomeRun(
                 songs: [song, "{title: Two}\n[G]La [C]la\n"],
@@ -74,10 +75,8 @@ extension StageWindowSuites {
             }
             let record = try #require(try await session.library.store.song(id: id))
             _ = try await session.library.store.updateParts(id: id, parts(record))
-            run.app.instrumentProfile.update {
-                $0.bassNotes = true
-                $0.walkUps = .everyChange
-            }
+            run.app.instrumentProfile.update { $0.bassNotes = true }
+            #expect(run.app.instrumentProfile.profile.walkUps == .off)
             return run
         }
 
@@ -123,7 +122,8 @@ extension StageWindowSuites {
             #expect(!store.profile.fillsAsTab)
             #expect(live.indicator == "Fills as names")
             #expect(Self.fillRuns(live.plan) == ["G A", "D E \u{203A}"])
-            // Display only: nothing was ever made to sound.
+            // Display only: nothing was ever made to sound, and a gig has no play-along.
+            #expect(live.playAlong == nil)
             #expect(run.sounds.made == 0)
             #expect(run.app.dependencies.audio.isBlocked)
 
@@ -155,6 +155,32 @@ extension StageWindowSuites {
             #expect(Self.tabs(live.plan).count == 2)
             // As a tab the chord draws no names, but the neck still shows the fill's path.
             #expect(live.bassNeck(at: run.env.clock.now())?.walkUp.map(\.number) == [1, 2])
+            try await run.end(live)
+        }
+
+        @Test
+        func `rehearsal play-along plays the fills with walk-ups off`() async throws {
+            let run = try await Self.run()
+            let live = try await run.start(.rehearsal)
+            run.app.sound.settings.update {
+                $0.playAlongChords = false
+                $0.playAlongClick = false
+            }
+            let start = run.env.clock.now().timeIntervalSinceReferenceDate
+            live.dispatch(.togglePlayAlong)
+            #expect(live.isPlayingAlong)
+            for _ in 0 ..< 150 {
+                run.env.clock.advance(by: 0.1)
+                run.app.sound.player?.pump()
+                live.followPlayAlong()
+            }
+            let bass = (run.sounds.last?.played ?? [])
+                .filter { $0.event.voice == .bass && $0.at >= start }
+                .map { Int($0.event.note) % 12 }
+            // The roots are G, C and D; A (over G) and E (over C) come only from the verse
+            // fill, as walk-ups are Off.
+            #expect(bass.contains(9))
+            #expect(bass.contains(4))
             try await run.end(live)
         }
     }

@@ -46,8 +46,9 @@ public extension BassLine {
         return context
     }
 
-    /// `model` with walk-ups drawn: only in the bass-note view and while the density is not
-    /// Off (R162 Q4), in written order (editor, library, bass chart PDF).
+    /// `model` with walk-ups and saved fills drawn, only in the bass-note view (R162 Q4), in
+    /// written order (editor, library, bass chart PDF): walk-ups while the density is not
+    /// Off, the fills whatever it is (R175).
     static func annotated(
         _ model: RenderModel,
         document: SongDocument,
@@ -56,7 +57,7 @@ public extension BassLine {
     ) -> RenderModel {
         guard model.transform.options.bass?.notes == true,
               let context = context(for: model, document: document, prefs: prefs, parts: parts),
-              context.density != .off
+              context.draws
         else { return model }
         var model = model
         model.sections = annotate(
@@ -83,6 +84,12 @@ public extension BassLine {
 }
 
 public extension BassLineContext {
+    /// Whether `BassLine.annotate` draws anything: walk-ups while the density is not Off,
+    /// or a saved fill that applies (fills show whatever the density, R175).
+    var draws: Bool {
+        density != .off || !parts.applied.isEmpty
+    }
+
     /// The song's sidecar applied: its walk-up picks and its fills (`parts`) resolved against
     /// the written song (`units`, `sections`, this context's timeline), and its scale (R170,
     /// else the default from this context's feel and key).

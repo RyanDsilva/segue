@@ -107,13 +107,27 @@ public enum BassLine {
 
     /// `sections` with `RenderChord.approach` set on each departing chord that shows a
     /// walk-up, and the saved fills drawn where they play (P8-7 section 14: `FillRun`s, or
-    /// `.fillTab` blocks); nothing while the density is Off (fills follow it, R168 Q7).
+    /// `.fillTab` blocks). The density governs only the walk-ups: none while it is Off,
+    /// while the saved fills show whatever it is (R175, amending R168 Q7).
     public static func annotate(
         _ sections: [RenderSection],
         origins: [Int],
         context: BassLineContext,
     ) -> [RenderSection] {
-        guard context.density != .off else { return sections }
+        var result = sections
+        if context.density != .off {
+            result = drawWalkUps(sections, origins: origins, context: context)
+        }
+        return drawFills(result, timeline: context.played ?? context.timeline, context: context)
+    }
+
+    /// `sections` with `RenderChord.approach` set on each departing chord that shows a
+    /// walk-up (none on a change a fill covers).
+    private static func drawWalkUps(
+        _ sections: [RenderSection],
+        origins: [Int],
+        context: BassLineContext,
+    ) -> [RenderSection] {
         let walk = Walk(sections: sections, origins: origins, context: context)
         var result = sections
         for change in walk.changes() {
@@ -125,7 +139,7 @@ public enum BassLine {
             line.chords[place.chord].approach = run(shown, change: change, context: context)
             result[place.section].items[place.item] = .lyrics(line)
         }
-        return drawFills(result, timeline: context.played ?? context.timeline, context: context)
+        return result
     }
 
     /// The run drawn for `candidate` on `change`.
@@ -147,34 +161,6 @@ public enum BassLine {
             pitches: candidate.notes.map(\.pitchClass),
             ascending: candidate.direction == .neither ? nil : candidate.direction == .up,
         )
-    }
-
-    /// "walk up A, B into C"; a chromatic note adds "outside the key".
-    public static func spoken(
-        _ candidate: WalkUpCandidate,
-        names: [String],
-        into: String,
-    ) -> String {
-        let verb = switch candidate.direction {
-        case .up: "walk up"
-        case .down: "walk down"
-        case .neither: "walk"
-        }
-        let notes = zip(names, candidate.chromatic).map { name, chromatic in
-            spokenNote(name) + (chromatic ? " outside the key" : "")
-        }
-        return "\(verb) \(notes.joined(separator: ", ")) into \(spokenNote(into))"
-    }
-
-    /// "C sharp", "B flat".
-    public static func spokenNote(_ name: String) -> String {
-        guard name.count > 1 else { return name }
-        let letter = String(name.prefix(1))
-        return switch name.dropFirst() {
-        case "#": letter + " sharp"
-        case "b": letter + " flat"
-        default: name
-        }
     }
 }
 

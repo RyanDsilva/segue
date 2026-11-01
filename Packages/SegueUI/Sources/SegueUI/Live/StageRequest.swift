@@ -74,10 +74,11 @@
             return (request, resolution)
         }
 
-        /// Walk-ups on stage (P8-4b): only in the bass-note view with walk-ups on, the song's
-        /// pick else the top candidate, never alternates, none on a change a saved fill
-        /// covers in that pass (P8-7c). The saved fills draw where the played `passes` (nil =
-        /// the full song) play them (P8-7e), on a timeline in that order built once per plan.
+        /// Walk-ups and fills on stage, only in the bass-note view. Walk-ups (P8-4b) while
+        /// the density is not Off: the song's pick else the top candidate, never alternates,
+        /// none on a change a saved fill covers in that pass (P8-7c). The saved fills draw
+        /// whatever the density (R175) where the played `passes` (nil = the full song) play
+        /// them (P8-7e), on a timeline in that order built once per plan.
         static func walkUps(
             _ model: RenderModel,
             song: SongRecord,
@@ -92,7 +93,7 @@
                       order: passes
                           ?? ArrangementResolver.fullSong(SongSections.units(of: song.document)),
                   ),
-                  context.density != .off
+                  context.draws
             else { return nil }
             return context
         }

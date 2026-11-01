@@ -6,11 +6,11 @@ import LiveLayout
 import MusicTheory
 import Testing
 
-/// Saved fills on charts and on stage (P8-7 section 14, R167 Q12, R168 Q5, Q7, Q8): note names
-/// after the span's chord units by default, a mini tab block under the first chord's line per
-/// fill or for every fill with "Fills as tab", only in the passes a fill applies to, never
-/// beside a walk-up on a change it covers, and the same runs and blocks in a written-order
-/// render model (the bass chart PDF's seam).
+/// Saved fills on charts and on stage (P8-7 section 14, R167 Q12, R168 Q5, Q8, R175): note
+/// names after the span's chord units by default, whatever the walk-up density, a mini tab
+/// block under the first chord's line per fill or for every fill with "Fills as tab", only
+/// in the passes a fill applies to, never beside a walk-up on a change it covers, and the
+/// same runs and blocks in a written-order render model (the bass chart PDF's seam).
 struct StageFillLayoutTests {
     private let metrics = FixedAdvanceMetrics()
 
@@ -212,23 +212,26 @@ struct StageFillLayoutTests {
     }
 
     @Test
-    func `fills follow the walk-up density and show nothing while walk-ups are off`() throws {
-        let song = try Self.song(density: .off)
-        let annotated = BassLine.annotated(
-            song.model,
-            document: song.document,
-            prefs: BassPrefs(),
-            parts: song.parts,
-        )
-        #expect(Self.fillRuns(annotated).isEmpty)
-        let sections = try Self.song(density: .sections)
-        let shown = BassLine.annotated(
-            sections.model,
-            document: sections.document,
-            prefs: BassPrefs(),
-            parts: sections.parts,
-        )
-        #expect(Self.fillRuns(shown) == ["G: G A", "C: D E \u{203A}", "C: D \u{203A}"])
+    func `fills show whatever the walk-up density, in the editor and library render`() throws {
+        // R175: the density governs only the walk-ups; a saved fill is the user's own.
+        for density in WalkUpDensity.allCases {
+            let song = try Self.song(density: density)
+            let annotated = BassLine.annotated(
+                song.model,
+                document: song.document,
+                prefs: BassPrefs(),
+                parts: song.parts,
+            )
+            #expect(
+                Self.fillRuns(annotated) == ["G: G A", "C: D E \u{203A}", "C: D \u{203A}"],
+                "\(density)",
+            )
+            let walkUps = annotated.sections.flatMap(\.items).flatMap { item -> [ApproachRun] in
+                guard case let .lyrics(line) = item else { return [] }
+                return line.chords.compactMap(\.approach)
+            }
+            #expect(walkUps.isEmpty == (density == .off), "\(density)")
+        }
     }
 
     @Test
@@ -326,5 +329,32 @@ struct StageFillLayoutTests {
                 chord.fill?.drawn.map { "\(chord.original): \($0.text)" }
             }
         }
+    }
+}
+
+/// Walk-ups Off on stage (R175): the saved fills still draw, with no walk-up anywhere.
+extension StageFillLayoutTests {
+    @Test
+    func `walk-ups off, the stage still draws the fills and their neck path`() throws {
+        let song = try Self.song(density: .off)
+        let (plan, _) = try plan(song)
+        // Fills only: no walk-up run anywhere, the covered changes show the fill.
+        #expect(runs(plan) == ["F: G A", "F: D E \u{203A}", "F: D \u{203A}"])
+        let placed = StagePasses.placedChords(in: plan)
+        #expect(placed.contains { $0.fill != nil })
+        #expect(placed.allSatisfy { $0.walkUp == nil })
+    }
+
+    @Test
+    func `walk-ups off and no fills, nothing is drawn on stage`() throws {
+        var song = try Self.song(density: .off)
+        song.parts = []
+        let units = SongSections.units(of: song.document)
+        #expect(BassLine.context(
+            for: song.model,
+            document: song.document,
+            prefs: BassPrefs(),
+            order: ArrangementResolver.fullSong(units),
+        )?.draws == false)
     }
 }

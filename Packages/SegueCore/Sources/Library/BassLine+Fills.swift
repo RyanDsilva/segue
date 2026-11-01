@@ -1,7 +1,8 @@
 // P8-7e (docs/phases/8-workstreams/P8-7-time-model-and-fills.md section 14, R167 Q12, R168
-// Q5, Q7, Q8). Saved fills drawn on a chart in the bass-note view: note names after the chord
-// units of the span, or a mini tab block under the line holding the span's first chord, in
-// every pass the fill applies to. Pure; worked out once per render model or stage plan.
+// Q5, Q8, R175). Saved fills drawn on a chart in the bass-note view, whatever the walk-up
+// density: note names after the chord units of the span, or a mini tab block under the line
+// holding the span's first chord, in every pass the fill applies to. Pure; worked out once
+// per render model or stage plan.
 
 import ChordPro
 import Diagrams
