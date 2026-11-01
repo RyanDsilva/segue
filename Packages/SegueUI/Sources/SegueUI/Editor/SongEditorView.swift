@@ -131,7 +131,7 @@
                             preview
                         }
                     } else {
-                        VStack(spacing: 0) {
+                        EditorStackedLayout {
                             source
                             Hairline()
                             preview
@@ -172,7 +172,8 @@
         private var preview: some View {
             // Its own view, so only the preview depends on `renderModel`.
             // The strip is pinned under the scrolling page, so it stays in view whatever
-            // the pane's height (the controls above leave a short one at the default size).
+            // the pane's height (the controls above leave a short one at the default size);
+            // stacked, `EditorStackedLayout` keeps the page room for its first lines.
             VStack(spacing: 0) {
                 EditorPreview(model: model, onCustomize: customize)
                     .environment(\.walkUpPicking, model.walkUpPicking)
