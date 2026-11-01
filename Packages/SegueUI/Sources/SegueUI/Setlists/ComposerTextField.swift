@@ -163,9 +163,24 @@
             onFocusChange?(false)
         }
 
+        /// A focus asked for before the field was in a window (a field that appears and is
+        /// focused in the same update, as the heading's credit fields do).
+        private var pendingFocus = false
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if pendingFocus, window != nil {
+                pendingFocus = false
+                DispatchQueue.main.async { [weak self] in self?.focus() }
+            }
+        }
+
         /// Takes keyboard focus with the caret at the end (the typed text stays).
         func focus() {
-            guard let window else { return }
+            guard let window else {
+                pendingFocus = true
+                return
+            }
             if currentEditor() == nil {
                 window.makeFirstResponder(self)
             }

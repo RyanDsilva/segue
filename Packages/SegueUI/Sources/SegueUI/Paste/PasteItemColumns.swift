@@ -138,11 +138,11 @@
                     source: textBinding,
                     metadata: $item.metadata,
                     knownArtists: context.knownArtists,
+                    knownAlbums: context.knownAlbums,
                     knownTags: context.knownTags,
+                    artistSplits: item.standingSplits,
+                    keepAsOne: item.keepAsOne,
                 )
-                ForEach(item.standingSplits, id: \.original) { split in
-                    ArtistSplitLine(split: split) { item.keepAsOne(split) }
-                }
                 HStack(spacing: 10) {
                     Button("Swap Title and Artist", systemImage: "arrow.up.arrow.down") {
                         item.swapTitleAndArtist()

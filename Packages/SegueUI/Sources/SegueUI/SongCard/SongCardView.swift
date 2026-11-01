@@ -8,12 +8,12 @@
     /// The song card (R80, direction 2 "Tokens"): one line of value tokens (Key, Tempo,
     /// Capo, Time); each opens a small popover with its control. Missing set
     /// essentials are dashed tokens with a dot. `.expanded` (Start blank, draft mode) also
-    /// shows Title and Artist fields and every token, so nothing hides behind "+".
+    /// shows Title, Artists and Movie / Album and every token, so nothing hides behind "+".
     struct SongCardView: View {
         enum Layout: Equatable {
             /// The strip alone (library detail pane under the heading, editor under the top bar).
             case strip
-            /// Title and Artist fields plus every token (a new song or a draft).
+            /// Title, Artists and Movie / Album plus every token (a new song or a draft).
             case expanded
         }
 
@@ -25,11 +25,17 @@
         /// Artists and Movie / Album as the strip's first two tokens, each opening its field
         /// in a popover (P8-8 section 3.6: the editor's strip).
         var showsCreditTokens = false
+        /// Draft mode (the review sheet): the converter's splits under the Artists field,
+        /// each with Keep as one (P8-8 section 3.7).
+        var artistSplits: [ArtistSplit] = []
+        var keepAsOne: (ArtistSplit) -> Void = { _ in }
         var router: SongCardFocusRouter = .shared
 
         @State private var open: SongCardField?
         @State private var draftTitle = ""
-        @State private var draftArtist = ""
+        /// Bumped to put the caret in the expanded card's Artists or Movie / Album field.
+        @State private var artistsFocus = 0
+        @State private var albumFocus = 0
         @FocusState private var focus: SongCardField?
 
         var body: some View {
@@ -53,7 +59,6 @@
             .accessibilityIdentifier(AccessibilityID.songCard)
             .onAppear {
                 draftTitle = values.title
-                draftArtist = values.artists.first ?? ""
                 takeFocusRequest()
             }
             .onChange(of: router.pending) { _, _ in takeFocusRequest() }
@@ -62,14 +67,9 @@
                     draftTitle = new
                 }
             }
-            .onChange(of: values.artists) { _, new in
-                if focus != .artist {
-                    draftArtist = new.first ?? ""
-                }
-            }
         }
 
-        // MARK: Title and artist (expanded)
+        // MARK: Title, artists and Movie / Album (expanded; P8-8 direction A)
 
         private func textFields(_ values: SongCardValues) -> some View {
             Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 14, verticalSpacing: 8) {
@@ -83,47 +83,41 @@
                         .accessibilityIdentifier(AccessibilityID.songCardTitle)
                 }
                 GridRow {
-                    label("Artist")
-                    TextField("Artist", text: $draftArtist, prompt: Text("Artist"))
-                        .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: 320)
-                        .focused($focus, equals: .artist)
-                        .onSubmit { commitArtist(values) }
-                        .textInputSuggestions {
-                            ForEach(artistCompletions, id: \.self) { artist in
-                                Text(artist).textInputCompletion(artist)
-                            }
+                    label("Artists")
+                    VStack(alignment: .leading, spacing: 5) {
+                        ArtistChipField(
+                            artists: values.artists,
+                            suggestions: host.knownArtists,
+                            focusRequest: artistsFocus,
+                            onChange: host.writeArtists,
+                        )
+                        ForEach(artistSplits, id: \.original) { split in
+                            ArtistSplitLine(split: split) { keepAsOne(split) }
                         }
-                        .accessibilityIdentifier(AccessibilityID.songCardArtist)
+                    }
+                    .frame(maxWidth: 320, alignment: .leading)
+                }
+                GridRow {
+                    label("Movie / Album")
+                    AlbumField(
+                        album: values.album,
+                        suggestions: host.knownAlbums,
+                        focusRequest: albumFocus,
+                        onCommit: host.writeAlbum,
+                    )
+                    .frame(maxWidth: 320, alignment: .leading)
                 }
             }
             .onChange(of: focus) { old, _ in
                 if old == .title {
                     commitTitle(values)
                 }
-                if old == .artist {
-                    commitArtist(values)
-                }
             }
-        }
-
-        private var artistCompletions: [String] {
-            let typed = draftArtist.trimmingCharacters(in: .whitespaces).lowercased()
-            guard !typed.isEmpty else { return [] }
-            return Array(host.knownArtists.filter {
-                $0.lowercased().hasPrefix(typed) && $0.lowercased() != typed
-            }.prefix(6))
         }
 
         private func commitTitle(_ values: SongCardValues) {
             guard draftTitle.trimmingCharacters(in: .whitespaces) != values.title else { return }
             host.perform(SongCardWrite.title(draftTitle))
-        }
-
-        private func commitArtist(_ values: SongCardValues) {
-            let first = draftArtist.trimmingCharacters(in: .whitespaces)
-            guard first != (values.artists.first ?? "") else { return }
-            host.perform(SongCardWrite.artists([first] + values.artists.dropFirst()))
         }
 
         private func label(_ text: String) -> some View {
@@ -294,9 +288,17 @@
         private func takeFocusRequest() {
             guard let field = router.take(for: host.songID) else { return }
             switch field {
-            case .album, .artist, .title:
+            case .title:
                 if layout == .expanded {
                     focus = field
+                }
+            case .artist:
+                if layout == .expanded {
+                    artistsFocus += 1
+                }
+            case .album:
+                if layout == .expanded {
+                    albumFocus += 1
                 }
             default:
                 open = field

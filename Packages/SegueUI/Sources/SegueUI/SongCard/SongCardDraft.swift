@@ -1,4 +1,5 @@
 #if os(macOS)
+    import ChordPro
     import Library
     import SwiftUI
 
@@ -9,19 +10,29 @@
         @Binding var source: String
         @Binding var metadata: SongMetadata
         let knownArtists: [String]
+        let knownAlbums: [String]
         let knownTags: [String]
+        /// The converter's splits still standing, each with Keep as one under the artists.
+        let artistSplits: [ArtistSplit]
+        let keepAsOne: (ArtistSplit) -> Void
         @State private var standIn = SongID.standIn()
 
         public init(
             source: Binding<String>,
             metadata: Binding<SongMetadata>,
             knownArtists: [String] = [],
+            knownAlbums: [String] = [],
             knownTags: [String] = [],
+            artistSplits: [ArtistSplit] = [],
+            keepAsOne: @escaping (ArtistSplit) -> Void = { _ in },
         ) {
             _source = source
             _metadata = metadata
             self.knownArtists = knownArtists
+            self.knownAlbums = knownAlbums
             self.knownTags = knownTags
+            self.artistSplits = artistSplits
+            self.keepAsOne = keepAsOne
         }
 
         public var body: some View {
@@ -32,10 +43,13 @@
                         metadata: $metadata,
                         songID: standIn,
                         knownArtists: knownArtists,
+                        knownAlbums: knownAlbums,
                         knownTags: knownTags,
                     ),
                     layout: .expanded,
                     showsHelp: false,
+                    artistSplits: artistSplits,
+                    keepAsOne: keepAsOne,
                 )
                 Grid(
                     alignment: .leadingFirstTextBaseline,

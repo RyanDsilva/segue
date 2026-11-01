@@ -17,6 +17,7 @@
         /// R120: whether the quiet download link may show (never on Macs under 16 GB).
         var suggestsDownload = true
         var knownArtists: [String]
+        var knownAlbums: [String] = []
         var knownTags: [String]
         var accept: () -> Void
         var cancel: () -> Void

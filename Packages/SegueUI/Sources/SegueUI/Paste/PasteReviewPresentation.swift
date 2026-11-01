@@ -45,6 +45,7 @@
                 availability: app.ai.availability,
                 suggestsDownload: app.ai.models.suggestsDownload,
                 knownArtists: library.knownArtists,
+                knownAlbums: library.knownAlbums,
                 knownTags: library.tags.map(\.tag),
                 accept: { Task { await library.acceptPasteReview() } },
                 cancel: { Task { await library.cancelPasteReview() } },

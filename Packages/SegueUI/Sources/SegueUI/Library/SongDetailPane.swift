@@ -4,8 +4,9 @@
     import Setlists
     import SwiftUI
 
-    /// The library preview pane (layout a): title and artist (double-click to edit in
-    /// place) with Edit, the song card's token strip (R80), the song's metadata
+    /// The library preview pane (layout a): title, artists and Movie / Album (each
+    /// double-click to edit in place) with Edit, the song card's token strip (R80), the song's
+    /// metadata
     /// (proficiency, tags, play history, notes and cues), then the chart as its display
     /// toggles render it.
     struct SongDetailPane: View {
@@ -77,7 +78,7 @@
 
         /// Title and buttons on one line while the title keeps `titleMinWidth`: all four
         /// buttons, else "…" and Edit (Rehearse and Live are in "…", and on the selected
-        /// list row). Narrower still, the buttons go under the artist.
+        /// list row). Narrower still, the buttons go under the credits.
         private func header(_ render: RenderModel) -> some View {
             ViewThatFits(in: .horizontal) {
                 headerRow(render, sessionButtons: true)
@@ -85,7 +86,7 @@
                 VStack(alignment: .leading, spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
                         titleView(render)
-                        artistView
+                        credits
                     }
                     ViewThatFits(in: .horizontal) {
                         headerButtons(sessionButtons: true)
@@ -111,7 +112,7 @@
                     headerButtons(sessionButtons: sessionButtons)
                         .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 6 }
                 }
-                artistView
+                credits
             }
         }
 
@@ -131,7 +132,7 @@
             .fixedSize()
         }
 
-        // MARK: Title and artist, edited in place
+        // MARK: Title, edited in place
 
         @ViewBuilder private func titleView(_ render: RenderModel) -> some View {
             let font = SchibstedGrotesk.extraBold.font(size: 30)
@@ -156,41 +157,15 @@
             }
         }
 
-        @ViewBuilder private var artistView: some View {
-            let artist = record.document.metadata.artists.first ?? ""
-            if editingHeading == .artist {
-                headingField(
-                    "Artist",
-                    font: Theme.font.body,
-                    identifier: AccessibilityID.songCardArtist,
-                )
-                .textInputSuggestions {
-                    ForEach(artistCompletions, id: \.self) { name in
-                        Text(name).textInputCompletion(name)
-                    }
-                }
-            } else if artist.isEmpty {
-                Button("Add artist") { beginHeadingEdit(.artist, current: "") }
-                    .buttonStyle(.plain)
-                    .font(Theme.font.body)
-                    .foregroundStyle(Theme.color.muted)
-                    .disabled(record.isReadOnly)
-                    .accessibilityIdentifier(AccessibilityID.songCardArtist)
-            } else {
-                Text(artist)
-                    .font(Theme.font.body)
-                    .foregroundStyle(Theme.color.muted)
-                    .onTapGesture(count: 2) { beginHeadingEdit(.artist, current: artist) }
-                    .contextMenu {
-                        Button("Edit Artist") { beginHeadingEdit(.artist, current: artist) }
-                            .disabled(record.isReadOnly)
-                    }
-                    .help(record.isReadOnly ? "" : "Double-click to edit the artist")
-                    .accessibilityIdentifier(AccessibilityID.sheetKey)
-                    .accessibilityAction(named: "Edit Artist") {
-                        beginHeadingEdit(.artist, current: artist)
-                    }
-            }
+        /// Artists and Movie / Album under the title, each edited in place (P8-8, direction
+        /// A).
+        private var credits: some View {
+            SongHeadingCredits(
+                artists: record.document.metadata.artists,
+                album: record.document.metadata.album,
+                host: cardHost,
+            )
+            .id(record.id)
         }
 
         private func headingField(_ name: String, font: Font, identifier: String) -> some View {
@@ -208,14 +183,6 @@
                 }
                 .accessibilityLabel(name)
                 .accessibilityIdentifier(identifier)
-        }
-
-        private var artistCompletions: [String] {
-            let typed = headingDraft.trimmingCharacters(in: .whitespaces).lowercased()
-            guard !typed.isEmpty else { return [] }
-            return Array(model.knownArtists.filter {
-                $0.lowercased().hasPrefix(typed) && $0.lowercased() != typed
-            }.prefix(6))
         }
 
         private func beginHeadingEdit(_ field: SongCardField, render: RenderModel) {
@@ -237,9 +204,6 @@
             case .title
                 where headingDraft.trimmingCharacters(in: .whitespaces) != (metadata.title ?? ""):
                 SongCardWrite.title(headingDraft)
-            case .artist where headingDraft.trimmingCharacters(in: .whitespaces)
-                != (metadata.artists.first ?? ""):
-                SongCardWrite.artists([headingDraft] + metadata.artists.dropFirst())
             default:
                 nil
             }
