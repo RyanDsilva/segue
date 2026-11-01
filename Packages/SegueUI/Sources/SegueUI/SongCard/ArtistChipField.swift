@@ -47,7 +47,9 @@
                     inputField
                 }
                 .padding(.horizontal, 5)
-                .padding(.vertical, 4)
+                // 3 + the input's 22 + 3: one line is 28 pt, as the Title and Movie / Album
+                // fields beside it.
+                .padding(.vertical, 3)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Theme.color.ground, in: RoundedRectangle(cornerRadius: 7))
                 .overlay {
