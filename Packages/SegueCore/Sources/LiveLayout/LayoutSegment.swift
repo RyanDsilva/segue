@@ -112,31 +112,32 @@ public struct MemberHeader: Sendable, Hashable {
         title: String,
         singer: Bool = false,
     ) -> Self {
-        let facts = record.map { MemberFacts($0, overrides: member.overrides, singer: singer) }
+        let now = record.map { MemberFacts.info($0, overrides: member.overrides, singer: singer) }
         let before = previousRecord.flatMap { record in
-            previous.map { MemberFacts(record, overrides: $0.overrides, singer: singer) }
+            previous.map { MemberFacts.info(record, overrides: $0.overrides, singer: singer) }
         }
         return Self(
             title: title,
-            keyLine: facts?.keyLine(singer: singer) ?? "",
+            keyLine: now.map { MemberFacts.keyLine($0, singer: singer) } ?? "",
             index: index,
             count: count,
             transition: index == 0 ? nil : SetlistMedley.clean(member.transition),
-            changes: facts.flatMap { now in before.map { now.changes(from: $0, singer: singer) } }
-                ?? [],
+            changes: now.flatMap { now in
+                before.map { MemberFacts.changes(from: $0, to: now) }
+            } ?? [],
         )
     }
     // swiftlint:enable function_parameter_count
 }
 
-/// What a member's header compares: its displayed (or sounding) key, capo, tempo, meter.
-struct MemberFacts {
-    var key: String?
-    var capo: Int
-    var tempo: Double?
-    var meter: String?
-
-    init(_ record: SongRecord, overrides: SetlistOverrides, singer: Bool) {
+/// A member's key info as its header shows it: `MemberKeyInfo` (the builder's and print's
+/// rule, `MedleyChanges`), or in singer view the sounding key with no capo.
+enum MemberFacts {
+    static func info(_ record: SongRecord, overrides: SetlistOverrides, singer: Bool)
+        -> MemberKeyInfo
+    {
+        var info = MemberKeyInfo(record: record, overrides: overrides)
+        guard singer else { return info }
         let metadata = record.document.metadata
         let (options, capo) = overrides.applied(
             to: record.sidecar.displayPrefs.displayOptions,
@@ -147,52 +148,28 @@ struct MemberFacts {
             key: KeyContext(document: record.document),
             capo: capo,
         )
-        key = (singer ? transform.concertKey : transform.displayKey)?.name
-        self.capo = max(capo ?? 0, 0)
-        tempo = metadata.tempo
-        meter = metadata.time.flatMap { $0.isEmpty ? nil : $0 }
+        info.key = transform.concertKey?.name
+        info.capo = nil
+        return info
     }
 
-    func keyLine(singer: Bool) -> String {
-        var parts: [String] = []
-        if let key {
-            parts.append(singer ? "Key \(key)" : key)
-        }
-        if !singer, capo > 0 {
-            parts.append("capo \(capo)")
-        }
-        if let tempo {
-            parts.append(Self.bpm(tempo))
-        }
-        return parts.joined(separator: ", ")
+    static func keyLine(_ info: MemberKeyInfo, singer: Bool) -> String {
+        guard singer, let key = info.key else { return info.keyLine }
+        var line = info
+        line.key = "Key \(key)"
+        return line.keyLine
     }
 
-    func changes(from before: Self, singer: Bool) -> [MemberChange] {
-        var changes: [MemberChange] = []
-        if let old = before.key, let new = key, old != new {
-            changes.append(MemberChange(.key, "\(old) \u{2192} \(new)"))
+    static func changes(from before: MemberKeyInfo, to now: MemberKeyInfo) -> [MemberChange] {
+        MedleyChanges.between(before, now).map { change in
+            let kind: MemberChange.Kind = switch change {
+            case .key: .key
+            case .capo: .capo
+            case .tempo: .tempo
+            case .meter: .meter
+            }
+            return MemberChange(kind, change.text)
         }
-        if !singer, before.capo != capo {
-            changes.append(MemberChange(
-                .capo,
-                "\(Self.capoText(before.capo)) \u{2192} \(Self.capoText(capo))",
-            ))
-        }
-        if let old = before.tempo, let new = tempo, Self.bpm(old) != Self.bpm(new) {
-            changes.append(MemberChange(.tempo, "\(Self.bpm(old)) \u{2192} \(Self.bpm(new)) BPM"))
-        }
-        if let old = before.meter, let new = meter, old != new {
-            changes.append(MemberChange(.meter, "\(old) \u{2192} \(new)"))
-        }
-        return changes
-    }
-
-    static func capoText(_ capo: Int) -> String {
-        capo > 0 ? "capo \(capo)" : "no capo"
-    }
-
-    static func bpm(_ tempo: Double) -> String {
-        "\(Int(tempo.rounded()))"
     }
 }
 

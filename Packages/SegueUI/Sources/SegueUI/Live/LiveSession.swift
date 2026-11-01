@@ -140,6 +140,19 @@
         @ObservationIgnored var recordedJump = false
         /// The item the plan was laid out for; a change resets scrolling.
         @ObservationIgnored var laidOutItem: ShowItemID?
+        /// The medley slot the plan was laid out for (P9-3): a new current member of the same
+        /// medley keeps the plan's scroller.
+        @ObservationIgnored var laidOutMedley: ShowItemID?
+        /// The 1 s settle before the member under the reading line is committed (P9-3 9.6).
+        @ObservationIgnored var medleyDwell = MedleyFollow.Dwell()
+        /// The items laid out as the medley plan's segments, in order (see
+        /// LiveSession+Medley.swift).
+        var medleySegments: [ShowItemID] = []
+        /// Each segment's song timeline in written order: what a pass in that member has in
+        /// effect (the metronome switches at the member boundary, P9-3 9.4).
+        @ObservationIgnored var medleyTimelines: [SongTimeline] = []
+        /// `medley` was recorded for this run (once per run that shows a medley).
+        @ObservationIgnored var medleyRecorded = false
         /// Per-song live memory changed during this run (also saved to the sidecar).
         @ObservationIgnored var prefsCache: [SongID: LivePrefs] = [:]
         /// The scroll fraction last handed to the engine.
@@ -229,6 +242,7 @@
             flushTask = Task { [weak self] in
                 while !Task.isCancelled {
                     try? await Task.sleep(for: Self.flushTick)
+                    self?.followMedley()
                     self?.settleScroll()
                     await self?.flushScroll()
                 }
@@ -266,6 +280,7 @@
         /// in the engine: the stage follows it and a "not saving" problem stays up until a
         /// later write succeeds.
         public func perform(_ action: ShowAction) {
+            noteQueuedAfterMedley(action)
             let changesSong = action.changesSong
             if changesSong {
                 songChangesInFlight += 1
@@ -326,12 +341,15 @@
         func apply(_ newState: ShowState, previousItem: ShowItemID?) {
             let changed = newState.current?.item.itemId != previousItem
                 || newState.current?.song != state.current?.song
+            // Moving between members of one medley keeps its plan and scroll (P9-3 9.6).
+            let sameMedley = newState.current?.item.medley != nil
+                && newState.current?.item.medley?.slot == laidOutMedley
             state = newState
             metronome.follow(newState)
-            if changed || newState.record.currentBreak != nil {
+            if (changed && !sameMedley) || newState.record.currentBreak != nil {
                 stopPlayAlong()
             }
-            if changed {
+            if changed, !sameMedley {
                 laidOutItem = nil
             }
             relayout()

@@ -26,7 +26,9 @@
                     notice = "No requests queued."
                     return true
                 }
-                perform(action)
+                if !navigateMedley(action) {
+                    perform(action)
+                }
             case .viewport:
                 dispatchViewport(command)
             case .chrome:

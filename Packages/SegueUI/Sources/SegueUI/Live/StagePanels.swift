@@ -80,6 +80,8 @@
                         SetOrderRow(index: index, item: item, session: session)
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
+                            // A medley moves as one block, by its first member (P9-3 8.2).
+                            .moveDisabled((item.medley?.index ?? 0) > 0)
                     }
                     .onMove { offsets, destination in
                         session.perform(.move(fromOffsets: offsets, toOffset: destination))
@@ -99,6 +101,22 @@
         let session: LiveSession
 
         var body: some View {
+            VStack(alignment: .leading, spacing: 2) {
+                if let medley = item.medley, medley.index == 0 {
+                    // The medley as a group: its title over its members (P9-3 8.2).
+                    Text("MEDLEY \u{00B7} \(medley.displayTitle)")
+                        .font(SchibstedGrotesk.bold.font(size: 11))
+                        .tracking(0.08 * 11)
+                        .foregroundStyle(Theme.color.muted)
+                        .padding(.leading, 32)
+                        .padding(.top, 4)
+                }
+                row
+                    .padding(.leading, item.medley == nil ? 0 : 14)
+            }
+        }
+
+        private var row: some View {
             HStack(spacing: 10) {
                 Text("\(index + 1)")
                     .font(Theme.font.label)

@@ -70,6 +70,10 @@
                 ForEach(block.cues.indices, id: \.self) { index in
                     cue(block.cues[index])
                 }
+                if let header = block.memberHeader {
+                    StageMedleyHeader(placed: header, width: column.width, style: style)
+                        .offset(y: block.memberHeaderTop)
+                }
             }
             .frame(width: column.width, height: block.height, alignment: .topLeading)
         }
@@ -82,11 +86,16 @@
                     // that fills the gutter.
                     .frame(
                         width: max(0, column.width - lyricOrigin + tintTrail),
-                        height: block.height + 12,
+                        height: max(0, block.height - headerBottom) + 12,
                     )
-                    .offset(x: lyricOrigin - StagePlanView.tintLead, y: -6)
+                    .offset(x: lyricOrigin - StagePlanView.tintLead, y: headerBottom - 6)
                     .accessibilityHidden(true)
             }
+        }
+
+        /// Where the pass starts under a member header (P9-3 9.2); 0 without one.
+        private var headerBottom: CGFloat {
+            block.memberHeader.map { block.memberHeaderTop + $0.height } ?? 0
         }
 
         /// Low-luminance tints by section type (brand.md: distinct, never bright). They are

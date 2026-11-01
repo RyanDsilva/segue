@@ -73,6 +73,11 @@
         let loop: Int?
         var style: Style = .stage
         var onJump: ((Int) -> Void)?
+        /// A medley's member titles by segment (P9-3 9.3, R187 map B): each member's chips sit
+        /// in a labelled container; empty for a song.
+        var members: [String] = []
+        /// The member the stage shows (its container is lit).
+        var currentMember: Int?
 
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @State private var width: CGFloat = 0
@@ -83,7 +88,9 @@
             let widths = Self.widths(passes.map(\.weight), in: available, metrics: metrics)
             VStack(spacing: 0) {
                 Group {
-                    if let widths {
+                    if members.count > 1, let widths = groupedWidths(available) {
+                        groupedRow(widths)
+                    } else if let widths {
                         row(widths)
                     } else {
                         scrolling
@@ -132,7 +139,7 @@
             }
         }
 
-        private func chip(_ index: Int) -> some View {
+        func chip(_ index: Int) -> some View {
             StageMapChip(
                 pass: passes[index],
                 state: state(of: index),
@@ -140,10 +147,12 @@
                 progress: index == current ? progress : (state(of: index) == .played ? 1 : 0),
                 style: style,
                 onJump: onJump.map { jump in { jump(index) } },
+                member: members.indices.contains(passes[index].segment)
+                    ? members[passes[index].segment] : nil,
             )
         }
 
-        private func state(of index: Int) -> StageMapChip.State {
+        func state(of index: Int) -> StageMapChip.State {
             guard let current else { return .upcoming }
             if index == current {
                 return .current
@@ -198,6 +207,8 @@
         let progress: Double
         let style: StageMapStrip.Style
         let onJump: (() -> Void)?
+        /// The medley member the pass belongs to, read in its label (P9-3 9.3).
+        var member: String?
 
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @State private var isHovered = false
@@ -227,7 +238,7 @@
                 .onTapGesture { onJump?() }
                 .accessibilityElement(children: .ignore)
                 .accessibilityAddTraits(metrics.isInteractive ? .isButton : [])
-                .accessibilityLabel(Self.spokenLabel(pass))
+                .accessibilityLabel(Self.spokenLabel(pass) + (member.map { ", \($0)" } ?? ""))
                 .accessibilityValue(spokenValue)
                 .accessibilityHint(metrics.isInteractive ? "Jumps to this section" : "")
                 .accessibilityAction { onJump?() }

@@ -386,7 +386,13 @@ public actor ShowController {
             let song = snapshots[item.songId] ?? looked[item.songId]
             upNext = .item(ShowSlot(item: item, position: index, song: song))
         }
-        currentState = ShowState(record: record, current: current, upNext: upNext)
+        let snapshots = snapshots
+        currentState = ShowState(
+            record: record,
+            current: current,
+            upNext: upNext,
+            medley: record.medleySlots { snapshots[$0] ?? looked[$0] },
+        )
     }
 
     /// The songs the footer may show (first queued request, next pending item).
@@ -398,7 +404,7 @@ public actor ShowController {
         if let index = record.nextPendingIndex {
             ids.append(record.items[index].songId)
         }
-        return ids
+        return ids + record.medleySlots { _ in nil }.map(\.item.songId)
     }
 }
 

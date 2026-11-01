@@ -26,7 +26,13 @@
         }
 
         var currentPrefs: LivePrefs? {
-            state.current?.song.map(prefs(for:))
+            prefsSong.map(prefs(for:))
+        }
+
+        /// The song whose live memory the stage reads and `[` `]`, zoom and columns change:
+        /// the current song, or a medley's first member (its plan uses that one's, P9-3 9.1).
+        var prefsSong: SongRecord? {
+            medleyOpener ?? state.current?.song
         }
 
         /// `model` with its sections in the arranged order (the up-next line reads the first
@@ -53,6 +59,9 @@
                 plan = nil
                 scroller = nil
                 laidOutItem = nil
+                return
+            }
+            if relayoutMedleyIfNeeded(singer: singer) {
                 return
             }
             let prefs = prefs(for: song)
@@ -106,7 +115,7 @@
 
         /// Records once per item what the stage did with its arrangement (the gig log says
         /// what was played). A failed write is retried with the next action's write.
-        private func recordArrangement(_ state: ArrangementState?, for item: ShowItem) {
+        func recordArrangement(_ state: ArrangementState?, for item: ShowItem) {
             guard let state, item.arrangementState == nil,
                   recordedArrangements.insert(item.itemId).inserted
             else { return }
@@ -115,18 +124,23 @@
         }
 
         /// A new item gets a fresh scroller (restoring a resumed position, auto-starting when
-        /// the song asks); the same item keeps its position through a re-layout.
-        private func updateScroller(
+        /// the song asks); the same item keeps its position through a re-layout, and so does
+        /// a new member of the medley already laid out (P9-3 9.6; `speed` is the medley's).
+        func updateScroller(
             _ newPlan: LayoutPlan,
             item slot: ShowItem,
             song: SongRecord,
             prefs: LivePrefs,
+            speed medleySpeed: ScrollSpeed? = nil,
         ) {
             let item = slot.itemId
             let now = context.scrollClock.now()
-            let speed = scrollSpeed(newPlan, song: song, item: slot, prefs: prefs)
-            if laidOutItem != item || scroller == nil {
+            let speed = medleySpeed ?? scrollSpeed(newPlan, song: song, item: slot, prefs: prefs)
+            let continues = laidOutItem == item
+                || (laidOutMedley != nil && laidOutMedley == slot.medley?.slot)
+            if !continues || scroller == nil {
                 laidOutItem = item
+                laidOutMedley = slot.medley?.slot
                 // A new song: the current pass follows its scroll and any loop (and Rehearsal
                 // play-along) ends.
                 stopPlayAlong()
@@ -150,6 +164,7 @@
                 scroller = fresh
             } else if var scroller {
                 // No new item (Page Up on the first song): nothing to land on.
+                laidOutItem = item
                 landsAtBottom = false
                 scroller.setOverflow(newPlan.overflow, at: now)
                 if scroller.speed != speed {
@@ -262,7 +277,7 @@
                 flash("Last song")
                 return
             }
-            perform(.next)
+            advancePastMedley()
         }
 
         /// Page-turner Page Up (R45): pages up, and at the song's top moves to the previous
@@ -398,7 +413,7 @@
         /// Changes the current song's live memory, re-lays out and saves it to the sidecar.
         /// A read-only song keeps the change for this run only.
         private func updatePrefs(_ change: (inout LivePrefs) -> Void) {
-            guard let song = state.current?.song else { return }
+            guard let song = prefsSong else { return }
             var prefs = prefs(for: song)
             let before = prefs
             change(&prefs)

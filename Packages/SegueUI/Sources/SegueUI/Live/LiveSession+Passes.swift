@@ -12,7 +12,13 @@
         /// The current shown pass at `now`; nil without passes.
         func currentPass(at now: Date) -> Int? {
             guard let plan else { return nil }
-            return StagePasses.current(in: plan, offset: scrollOffset(at: now), pinned: pinnedPass)
+            // A medley plan that does not follow the scroll starts at the current member's
+            // first pass, not the medley's (P9-3 9.6).
+            let pinned = pinnedPass ?? (StagePasses.followsScroll(plan) ? nil
+                : currentSegment.flatMap { segment in
+                    plan.passes.firstIndex { $0.segment == segment }
+                })
+            return StagePasses.current(in: plan, offset: scrollOffset(at: now), pinned: pinned)
         }
 
         /// How far the reading line is through the current pass, 0 ... 1.

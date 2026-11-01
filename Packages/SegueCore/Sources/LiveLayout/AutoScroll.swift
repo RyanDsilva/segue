@@ -14,17 +14,92 @@ public enum ScrollSpeedSource: Sendable, Hashable {
     case fallback
 }
 
+/// One stretch of a piecewise scroll (P9-3 9.7): from `fromOffset` on (until the next
+/// segment's), the content moves at `speed` points per second.
+public struct ScrollSegment: Sendable, Hashable {
+    public var fromOffset: Double
+    public var speed: Double
+
+    public init(fromOffset: Double, speed: Double) {
+        self.fromOffset = fromOffset
+        self.speed = speed
+    }
+}
+
 /// A derived auto-scroll speed.
 public struct ScrollSpeed: Sendable, Hashable {
+    /// The speed (a piecewise speed's first segment's).
     public var pointsPerSecond: Double
     /// Seconds after start before the content moves (the song's intro).
     public var leadIn: TimeInterval
     public var source: ScrollSpeedSource
+    /// A medley's per-member speeds, in offset order (P9-3 9.7); empty: `pointsPerSecond`
+    /// all the way.
+    public var segments: [ScrollSegment]
 
-    public init(pointsPerSecond: Double, leadIn: TimeInterval, source: ScrollSpeedSource) {
+    public init(
+        pointsPerSecond: Double,
+        leadIn: TimeInterval,
+        source: ScrollSpeedSource,
+        segments: [ScrollSegment] = [],
+    ) {
         self.pointsPerSecond = pointsPerSecond
         self.leadIn = leadIn
         self.source = source
+        self.segments = segments
+    }
+
+    /// The segments the scroll moves through: one at `pointsPerSecond` from the top when
+    /// the speed is uniform.
+    var pieces: [ScrollSegment] {
+        segments.isEmpty ? [ScrollSegment(fromOffset: 0, speed: pointsPerSecond)] : segments
+    }
+
+    /// Where the scroll is after moving for `seconds` from `offset`.
+    func offset(from offset: Double, moving seconds: TimeInterval) -> Double {
+        let pieces = pieces
+        var position = offset
+        var remaining = max(0, seconds)
+        var index = pieces.lastIndex { $0.fromOffset <= position } ?? 0
+        while remaining > 0 {
+            let speed = max(0, pieces[index].speed)
+            guard index + 1 < pieces.count else {
+                return position + remaining * speed
+            }
+            let end = pieces[index + 1].fromOffset
+            if end > position {
+                guard speed > 0 else { return position }
+                let time = (end - position) / speed
+                if time >= remaining {
+                    return position + remaining * speed
+                }
+                remaining -= time
+                position = end
+            }
+            index += 1
+        }
+        return position
+    }
+
+    /// Seconds of movement from `start` to `target` (above it); nil when a segment on the
+    /// way never moves.
+    func seconds(from start: Double, to target: Double) -> TimeInterval? {
+        let pieces = pieces
+        var position = start
+        var total: TimeInterval = 0
+        var index = pieces.lastIndex { $0.fromOffset <= position } ?? 0
+        while position < target {
+            let end = index + 1 < pieces.count ? min(pieces[index + 1].fromOffset, target)
+                : target
+            if end > position {
+                let speed = pieces[index].speed
+                guard speed > 0 else { return nil }
+                total += (end - position) / speed
+                position = end
+            }
+            index += 1
+        }
+        return total
     }
 }
 
@@ -161,7 +236,7 @@ public struct AutoScroller: Sendable, Hashable {
             return min(base, overflow)
         }
         let moving = max(0, now.timeIntervalSince(anchor) - pendingLeadIn)
-        return min(overflow, max(0, base + moving * max(0, speed.pointsPerSecond)))
+        return min(overflow, max(0, speed.offset(from: base, moving: moving)))
     }
 
     /// The phase at `now`: `.finished` once a running scroll has reached the end.
@@ -232,16 +307,19 @@ public struct AutoScroller: Sendable, Hashable {
         }
     }
 
-    /// When a running scroll will reach `offset`: nil when it is not running, is already at
-    /// or past it, never moves, or stops at the end of the overflow first (P8-2, the loop
-    /// wrap).
+    /// A medley's per-member speeds (P9-3 9.7); empty for one speed throughout.
+    public var segments: [ScrollSegment] {
+        speed.segments
+    }
+
+    /// When a running scroll will reach `offset`, through every segment on the way: nil when
+    /// it is not running, is already at or past it, never moves, or stops at the end of the
+    /// overflow first (P8-2, the loop wrap).
     public func instant(reaching offset: Double) -> Date? {
-        guard phase == .running, let anchor, speed.pointsPerSecond > 0,
-              offset > base, offset <= overflow
+        guard phase == .running, let anchor, offset > base, offset <= overflow,
+              let seconds = speed.seconds(from: base, to: offset)
         else { return nil }
-        return anchor.addingTimeInterval(
-            pendingLeadIn + (offset - base) / speed.pointsPerSecond,
-        )
+        return anchor.addingTimeInterval(pendingLeadIn + seconds)
     }
 
     /// A new speed from `now` on (nudge), keeping the current offset.

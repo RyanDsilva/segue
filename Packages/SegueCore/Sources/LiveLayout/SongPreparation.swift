@@ -34,7 +34,10 @@ struct SongPreparation {
             if let header = segment.header, !song.sections.isEmpty {
                 song.sections[0].header = MeasuredHeader(
                     header: header,
-                    transition: header.transition.map { measurer.paragraph($0, role: .cue) },
+                    // Led by "↳", so the transition never relies on colour alone (9.2).
+                    transition: header.transition.map {
+                        measurer.paragraph("\u{21B3} " + $0, role: .cue)
+                    },
                     notes: index == 0 ? [] : song.notes,
                     rule: index > 0,
                 )

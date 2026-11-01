@@ -108,6 +108,8 @@
                             progress: session.passProgress(at: now),
                             loop: session.loopPass,
                             onJump: { session.jump(toPass: $0) },
+                            members: session.mapMembers,
+                            currentMember: session.shownMember(at: now),
                         )
                     }
                 }

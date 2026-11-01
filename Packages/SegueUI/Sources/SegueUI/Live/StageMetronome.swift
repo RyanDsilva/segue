@@ -92,7 +92,7 @@
         /// starting or ending) restarts the grid on beat 1 now.
         func follow(_ state: ShowState) {
             let metadata = state.current?.song?.document.metadata
-            let item = state.current?.item.itemId
+            let item = Self.gridItem(of: state)
             let song = PassTiming(
                 tempo: metadata?.tempo,
                 meter: MetronomeMeter(time: metadata?.time),
@@ -105,6 +105,13 @@
                 timing: passTiming?.timing ?? song,
                 inBreak: state.record.currentBreak != nil,
             ))
+        }
+
+        /// What one beat grid runs through: the current item, or the whole medley it is a
+        /// member of (P9-3 9.4), so committing the next member never restarts the grid; the
+        /// tempo and meter switch at the member boundary as at a pass boundary.
+        static func gridItem(of state: ShowState) -> ShowItemID? {
+            state.current.map { $0.item.medley?.slot ?? $0.item.itemId }
         }
 
         /// The current pass of item `item` is in `timing` (R168 Q3): at a pass boundary where

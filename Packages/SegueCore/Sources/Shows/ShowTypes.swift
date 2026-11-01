@@ -77,11 +77,20 @@ public struct ShowState: Sendable, Equatable {
     public var record: ShowRecord
     public var current: ShowSlot?
     public var upNext: UpNext?
+    /// Every member of the medley the current item plays in, in order, with its song (P9-3
+    /// 9.1: the stage lays them out as one plan); empty outside a medley.
+    public var medley: [ShowSlot]
 
-    public init(record: ShowRecord, current: ShowSlot?, upNext: UpNext?) {
+    public init(
+        record: ShowRecord,
+        current: ShowSlot?,
+        upNext: UpNext?,
+        medley: [ShowSlot] = [],
+    ) {
         self.record = record
         self.current = current
         self.upNext = upNext
+        self.medley = medley
     }
 }
 

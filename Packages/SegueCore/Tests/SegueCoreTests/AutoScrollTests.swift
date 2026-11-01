@@ -216,4 +216,85 @@ struct AutoScrollTests {
         #expect(scroller.phase == .finished)
         #expect(scroller.offset(at: at(100)) == 0)
     }
+
+    // MARK: - A medley's segments (P9-3 9.7)
+
+    @Test
+    func `each member scrolls its stretch over its own time`() {
+        // Member 1: 0-300 over 70 s (80 s minus the lead-in); member 2: 300-900 over 60 s.
+        let speed = ScrollSpeedModel.medley([
+            MedleyScrollMember(fromOffset: 0, seconds: 80),
+            MedleyScrollMember(fromOffset: 300, seconds: 60),
+        ], overflow: 900)
+        #expect(speed.source == .timeline)
+        #expect(speed.leadIn == ScrollSpeedModel.leadIn)
+        #expect(speed.segments.map(\.fromOffset) == [0, 300])
+        #expect(abs(speed.segments[0].speed - 300 / 70) < 1e-9)
+        #expect(abs(speed.segments[1].speed - 10) < 1e-9)
+        var scroller = AutoScroller(speed: speed, overflow: 900)
+        scroller.start(at: at(0))
+        // The lead-in, then 70 s to the boundary, then 10 pt/s.
+        #expect(abs(scroller.offset(at: at(45)) - 35 * 300 / 70) < 1e-6)
+        #expect(abs(scroller.offset(at: at(80)) - 300) < 1e-6)
+        #expect(abs(scroller.offset(at: at(90)) - 400) < 1e-6)
+        #expect(scroller.phase(at: at(140)) == .finished)
+    }
+
+    @Test
+    func `a member with no time moves at the average known speed`() {
+        let speed = ScrollSpeedModel.medley([
+            MedleyScrollMember(fromOffset: 0, seconds: 25),
+            MedleyScrollMember(fromOffset: 100, seconds: nil),
+            MedleyScrollMember(fromOffset: 400, seconds: 30),
+        ], overflow: 700)
+        // A 25 s opener has no lead-in: 100 pt in 25 s and 300 pt in 30 s, 400 / 55 average.
+        #expect(speed.leadIn == 0)
+        #expect(speed.segments.map(\.speed) == [4, 400.0 / 55, 10])
+    }
+
+    @Test
+    func `no member known scrolls at the default speed, and the factor scales every segment`() {
+        let unknown = ScrollSpeedModel.medley(
+            [
+                MedleyScrollMember(fromOffset: 0, seconds: nil),
+                MedleyScrollMember(fromOffset: 200, seconds: nil),
+            ],
+            overflow: 500,
+            factor: 2,
+        )
+        #expect(unknown.source == .fallback)
+        #expect(unknown.segments.isEmpty)
+        #expect(unknown.pointsPerSecond == ScrollSpeedModel.defaultSpeed * 2)
+        let members = [
+            MedleyScrollMember(fromOffset: 0, seconds: 20),
+            MedleyScrollMember(fromOffset: 100, seconds: 10),
+        ]
+        let plain = ScrollSpeedModel.medley(members, overflow: 300)
+        let nudged = ScrollSpeedModel.medley(members, overflow: 300, factor: 1.1)
+        #expect(zip(plain.segments, nudged.segments)
+            .allSatisfy { abs($1.speed - $0.speed * 1.1) < 1e-9 })
+    }
+
+    @Test
+    func `instant reaching integrates over the segments`() {
+        let speed = ScrollSpeed(
+            pointsPerSecond: 5,
+            leadIn: 0,
+            source: .timeline,
+            segments: [
+                ScrollSegment(fromOffset: 0, speed: 5),
+                ScrollSegment(fromOffset: 100, speed: 20),
+                ScrollSegment(fromOffset: 300, speed: 10),
+            ],
+        )
+        var scroller = AutoScroller(speed: speed, overflow: 500)
+        scroller.start(at: at(0))
+        // 20 s to 100, 10 s more to 300, 5 s more to 350.
+        #expect(scroller.instant(reaching: 350) == at(35))
+        #expect(scroller.instant(reaching: 50) == at(10))
+        // From a seek inside the second segment.
+        scroller.seek(to: 200, at: at(1))
+        #expect(scroller.instant(reaching: 400) == at(1 + 5 + 10))
+        #expect(abs(scroller.offset(at: at(8)) - 320) < 1e-9)
+    }
 }

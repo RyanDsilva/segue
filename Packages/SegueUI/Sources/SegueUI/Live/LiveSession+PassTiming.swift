@@ -20,14 +20,19 @@
                 tempo: pass.tempo,
                 meter: MetronomeMeter(pass.meter),
             )
-            metronome.follow(pass: timing, item: state.current?.item.itemId)
+            metronome.follow(pass: timing, item: StageMetronome.gridItem(of: state))
         }
 
-        /// What shown pass `index` has in effect: its part's written pass on the timeline.
+        /// What shown pass `index` has in effect: its part's written pass on the timeline (in a
+        /// medley, its own member's, so the metronome switches as the reading line crosses into
+        /// the next member, before the member is committed).
         func timedPass(_ index: Int?) -> TimedPass? {
-            guard let index, let plan, plan.passes.indices.contains(index),
-                  let passes = currentTimeline?.passes
-            else { return nil }
+            guard let index, let plan, plan.passes.indices.contains(index) else { return nil }
+            let segment = plan.passes[index].segment
+            let timeline = isInMedley
+                ? (medleyTimelines.indices.contains(segment) ? medleyTimelines[segment] : nil)
+                : currentTimeline
+            guard let passes = timeline?.passes else { return nil }
             let source = plan.passes[index].source
             return passes.indices.contains(source) ? passes[source] : nil
         }

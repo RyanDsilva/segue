@@ -29,6 +29,12 @@
                         .lineLimit(1)
                         .accessibilityIdentifier(AccessibilityID.liveMeta)
                 }
+                if let medley = session.medleyChipText {
+                    // "Medley 2 of 3" (P9-3 9.4).
+                    StageChip(text: medley)
+                        .accessibilityLabel(session.medleyChipLabel ?? medley)
+                        .accessibilityIdentifier(AccessibilityID.liveMedley)
+                }
                 if let arrangement = session.currentArrangement {
                     // Quiet: an arranged slot says so; one whose sections changed says the
                     // full song is shown (R122, R123).
@@ -93,14 +99,42 @@
 
         var body: some View {
             HStack(spacing: 6) {
-                ForEach(items) { item in
-                    dot(item.state)
+                ForEach(Self.groups(items), id: \.first?.itemId) { group in
+                    if group.count > 1 {
+                        // A medley: a short bar split into its members' ticks (P9-3 9.4).
+                        HStack(spacing: 2) {
+                            ForEach(group) { tick($0.state) }
+                        }
+                    } else if let item = group.first {
+                        dot(item.state)
+                    }
                 }
             }
             .accessibilityRepresentation {
                 Text(position)
                     .accessibilityIdentifier(AccessibilityID.livePosition)
             }
+        }
+
+        /// Consecutive items of one medley form one group; every other item is its own.
+        static func groups(_ items: [ShowItem]) -> [[ShowItem]] {
+            var groups: [[ShowItem]] = []
+            for item in items {
+                if let slot = item.medley?.slot, groups.last?.first?.medley?.slot == slot {
+                    groups[groups.count - 1].append(item)
+                } else {
+                    groups.append([item])
+                }
+            }
+            return groups
+        }
+
+        /// One member's tick in a medley's bar.
+        private func tick(_ state: ItemState) -> some View {
+            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                .fill(state == .current ? Theme.color.cue
+                    : state == .pending ? Theme.color.indicatorOff : Theme.color.played)
+                .frame(width: state == .current ? 10 : 6, height: 6)
         }
 
         @ViewBuilder
@@ -259,9 +293,30 @@
                 if let note = request.note, !note.isEmpty {
                     detail(note)
                 }
+            case let .item(slot) where session.nextInMedley != nil:
+                // Inside a medley before its last member (P9-3 9.4).
+                label("Next in medley", color: Theme.color.muted)
+                titleText(slot.song.map(SongSummary.title) ?? slot.item.title)
+                if let line = Self.keyLine(session.upNextModel) {
+                    detail(line)
+                }
+                if let transition = session.nextInMedley?.transition {
+                    detail("\u{21B3} " + transition)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(-1)
+                }
+            case .item where session.upNextMedley != nil:
+                label("Up next", color: Theme.color.muted)
+                titleText(session.upNextMedley?.title ?? "")
+                detail(session.upNextMedley?.members ?? "")
+                if let line = Self.keyLine(session.upNextModel) {
+                    detail(line)
+                }
             case let .item(slot):
                 label("Up next", color: Theme.color.muted)
-                titleText(slot.song.map(SongSummary.title) ?? slot.item.title)
+                titleText((slot.song.map(SongSummary.title) ?? slot.item.title)
+                    + (session.upNextIsReprise ? " (reprise)" : ""))
                 if let line = session.planView == .singer
                     ? session.upNextSingerKeyLine
                     : Self.keyLine(session.upNextModel)
