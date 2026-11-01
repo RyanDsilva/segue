@@ -15,6 +15,8 @@
         var focusRequest = 0
         /// Return, Escape or focus leaving: the field is done (the heading leaves edit mode).
         var onEndEditing: (() -> Void)?
+        /// Where Edit > Undo goes while typing here, when not the window's stack.
+        var undoManager: (() -> UndoManager?)?
         let onCommit: (String) -> Void
 
         @State private var draft: String?
@@ -41,6 +43,7 @@
                     },
                     onFocusChange: focusChanged,
                     onCommand: { command($0, offered: offered) },
+                    undoManager: undoManager,
                 )
                 .frame(height: 18)
                 .padding(.vertical, 5)

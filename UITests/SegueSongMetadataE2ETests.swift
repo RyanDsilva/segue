@@ -82,18 +82,12 @@ final class SegueSongMetadataE2ETests: SetlistE2ETestCase {
         }
         try pasteWithASplitArtist(app, root)
         searchByMovie(app)
+        try addAnArtistInTheEditor(app, root)
         timeASet(app, root)
         XCTAssertFalse(
             FileManager.default.fileExists(atPath: root.appending(path: "timings").path),
             "A timings folder was written",
         )
-    }
-
-    /// 3. The editor's Artists token: blocked until P8-8b finishes the chip field's focus in
-    /// the strip popover (typing there reaches no field yet); the steps are ready below.
-    @MainActor
-    func testEditorArtistSuggestionAndUndo() throws {
-        throw XCTSkip("Blocked on P8-8b: the Artists token popover's input does not take typing")
     }
 
     /// 1. The paste splits "DJ Saahil ft. Rhea"; Keep as one merges it; Split splits again.
@@ -150,7 +144,15 @@ final class SegueSongMetadataE2ETests: SetlistE2ETestCase {
     /// 3. In the editor: "shre" offers Shreya Ghoshal, ↓ Return picks it; Undo once removes it.
     @MainActor
     private func addAnArtistInTheEditor(_ app: XCUIApplication, _ root: URL) throws {
-        SetlistE2E.row(app, SetlistAXID.songRow, "Late Night Dilli").click(in: app)
+        // The cleared search lists every song again (the seeds and the paste) before the
+        // row is clicked: clicking while the one-row result is still laid out opened
+        // Harbor Lights, whose Shreya Ghoshal chip then refused the pick as a duplicate.
+        SetlistE2E.waitUntil("The full song list never came back") {
+            SetlistE2E.all(app, SetlistAXID.songRow).count == Self.songs.count + 1
+        }
+        let row = SetlistE2E.row(app, SetlistAXID.songRow, "Late Night Dilli")
+        XCTAssertTrue(row.settles(), "The Late Night Dilli row kept moving")
+        row.click(in: app)
         click(app, MetadataAXID.editSong)
         click(app, MetadataAXID.artistsToken)
         let input = SetlistE2E.element(app, MetadataAXID.artistInput)
@@ -158,28 +160,28 @@ final class SegueSongMetadataE2ETests: SetlistE2ETestCase {
         input.click(in: app)
         input.typeText("shre", in: app)
         let suggestion = SetlistE2E.all(app, MetadataAXID.artistSuggestion).firstMatch
-        if suggestion.waitForExistence(timeout: 5) {
-            app.typeKey(.downArrow, modifierFlags: [], in: app)
-            app.typeKey(.return, modifierFlags: [], in: app)
-        } else {
-            // Known P8-8b issue (reported): the popover can focus the input before the field
-            // hears it, so no list shows. Finish the name by hand so the rest still runs.
-            XCTContext
-                .runActivity(named: "No suggestion list for 'shre' (P8-8b focus issue)") { _ in }
-            input.typeText("ya Ghoshal\r", in: app)
-        }
+        XCTAssertTrue(suggestion.waitForExistence(timeout: 5), "No suggestion for 'shre'")
+        app.typeKey(.downArrow, modifierFlags: [], in: app)
+        app.typeKey(.return, modifierFlags: [], in: app)
         SetlistE2E.waitForDisk("The picked artist never reached the file") {
             try Self.read(root, "late-night-dilli").contains("{artist: Shreya Ghoshal}")
         }
         screenshot(app, "metadata-editor-artists")
-        // Edit > Undo names the chip edit: one undo step.
+        // One Edit > Undo removes the picked artist: one undo step.
         app.menuBars.menuBarItems["Edit"].click()
+        // Edit > Undo reaches the editor's stack from the popover (it reads "Undo Set
+        // Artists" on screen; XCUITest sees the item's base title, so match its prefix).
         let undo = app.menuBars.menuItems.matching(NSPredicate(format: "title BEGINSWITH 'Undo'"))
             .firstMatch
-        XCTAssertEqual(undo.title, "Undo Set Artists")
+        XCTAssertTrue(undo.isEnabled, "Edit > Undo is off in the Artists popover")
         undo.click()
         SetlistE2E.waitForDisk("Undo never removed the artist") {
             try !Self.read(root, "late-night-dilli").contains("Shreya")
+        }
+        // Back to the library for the set.
+        let done = app.buttons["Done"].firstMatch
+        if done.exists {
+            done.click(in: app)
         }
     }
 

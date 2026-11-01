@@ -24,6 +24,7 @@
                     knownAlbums: names.albums,
                     perform: { _ = model.perform($0) },
                     recordFeature: { model.recordFeature($0) },
+                    undoManager: { model.sourceEditor.undoManager },
                 ),
                 layout: model.startedAsNew ? .expanded : .strip,
                 showsCreditTokens: !model.startedAsNew,

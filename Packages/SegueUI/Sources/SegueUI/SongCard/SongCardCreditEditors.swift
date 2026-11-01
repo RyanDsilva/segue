@@ -34,6 +34,7 @@
                     artists: artists,
                     suggestions: host.knownArtists,
                     focusRequest: focus,
+                    undoManager: host.undoManager,
                     onChange: host.writeArtists,
                 )
                 Text("Return or comma adds an artist. Drag to reorder.")
@@ -63,6 +64,7 @@
                     suggestions: host.knownAlbums,
                     focusRequest: focus,
                     onEndEditing: onDone,
+                    undoManager: host.undoManager,
                     onCommit: host.writeAlbum,
                 )
             }

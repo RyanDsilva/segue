@@ -40,6 +40,9 @@
         /// Backspace, before the field editor deletes (the artist chip field selects and
         /// removes chips with it in an empty input); returns whether it was handled.
         var onDeleteBackward: (() -> Bool)?
+        /// The undo stack Edit > Undo reaches while editing, when it is not the window's (a
+        /// popover's window has none; the song editor keeps its own).
+        var undoManager: (() -> UndoManager?)?
 
         func makeCoordinator() -> Coordinator {
             Coordinator(self)
@@ -65,6 +68,7 @@
             field.stringValue = text
             field.delegate = context.coordinator
             field.onFocusChange = { focused in context.coordinator.parent.onFocusChange(focused) }
+            field.hostUndoManager = undoManager
             field.setAccessibilityIdentifier(identifier)
             field.setAccessibilityLabel(accessibilityLabel)
             field.placeholderString = placeholder
@@ -83,6 +87,7 @@
                 field.stringValue = text
             }
             field.font = font
+            field.hostUndoManager = undoManager
             field.isEnabled = context.environment.isEnabled
             field.setAccessibilityLabel(accessibilityLabel)
             field.setAccessibilityValueDescription(accessibilityValue)
@@ -161,6 +166,44 @@
         override func textDidEndEditing(_ notification: Notification) {
             super.textDidEndEditing(notification)
             onFocusChange?(false)
+        }
+
+        /// The undo stack Edit > Undo should reach while this field is edited, when it is
+        /// not the window's (the song editor's own stack, from a strip popover).
+        var hostUndoManager: (() -> UndoManager?)?
+
+        /// Edit > Undo and Redo while this field is edited go to `hostUndoManager`: the field
+        /// editor registers nothing (`allowsUndo` is off) and a popover's window has no
+        /// stack, so without this the menu item stays disabled.
+        override func responds(to selector: Selector?) -> Bool {
+            if selector == #selector(undo(_:)) || selector == #selector(redo(_:)) {
+                // AppKit asks on the main thread (menu validation, key equivalents).
+                return MainActor.assumeIsolated { hostUndoManager?() != nil }
+            }
+            return super.responds(to: selector)
+        }
+
+        @objc func undo(_: Any?) {
+            hostUndoManager?()?.undo()
+        }
+
+        @objc func redo(_: Any?) {
+            hostUndoManager?()?.redo()
+        }
+
+        /// Names the step ("Undo Set Artists") and enables it as the host stack allows.
+        @objc func validateMenuItem(_ item: NSMenuItem) -> Bool {
+            guard let manager = hostUndoManager?() else { return true }
+            switch item.action {
+            case #selector(undo(_:)):
+                item.title = manager.undoMenuItemTitle
+                return manager.canUndo
+            case #selector(redo(_:)):
+                item.title = manager.redoMenuItemTitle
+                return manager.canRedo
+            default:
+                return true
+            }
         }
 
         /// A focus asked for before the field was in a window (a field that appears and is

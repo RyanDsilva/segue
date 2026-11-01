@@ -24,6 +24,8 @@
         var focusRequest = 0
         /// Escape with nothing to dismiss, or focus leaving the field.
         var onEndEditing: (() -> Void)?
+        /// Where Edit > Undo goes while typing here, when not the window's stack.
+        var undoManager: (() -> UndoManager?)?
         let onChange: (ArtistChipChange) -> Void
 
         @Environment(\.isEnabled) private var isEnabled
@@ -156,6 +158,7 @@
                 onFocusChange: focusChanged,
                 onCommand: command,
                 onDeleteBackward: deleteBackward,
+                undoManager: undoManager,
             )
             .frame(minWidth: 64, idealWidth: 140, maxWidth: .infinity)
             .frame(height: 18)

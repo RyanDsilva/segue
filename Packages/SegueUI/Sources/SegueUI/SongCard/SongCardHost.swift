@@ -33,6 +33,9 @@ struct SongCardHost {
     /// Records a song card feature (artists, Movie / Album, Split) in the host's context;
     /// nil where nothing is recorded (a draft: the review sheet records its own).
     var recordFeature: ((FeatureKey) -> Void)?
+    /// The stack `perform` registers on, when it is not the window's (the song editor's own),
+    /// so Edit > Undo reaches it from the strip's popovers.
+    var undoManager: (() -> UndoManager?)?
 
     var values: SongCardValues {
         SongCardValues(document: document)
