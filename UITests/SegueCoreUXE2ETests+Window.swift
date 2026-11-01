@@ -61,6 +61,16 @@ extension SegueCoreUXE2ETests {
     private func quitAndRelaunchKeepingState(_ app: XCUIApplication) throws {
         app.typeKey("q", modifierFlags: .command, in: app)
         XCTAssertTrue(app.reaches(.notRunning, timeout: 15))
+        // XCUITest reports .notRunning before the process has exited and flushed its
+        // defaults; a relaunch in that gap reads the previous frame (seen on a fast gate run).
+        let bundleID = "dev.ryandsilva.segue.personal"
+        XCTAssertTrue(
+            E2E.waitUntil(timeout: 15) {
+                NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+                    .allSatisfy(\.isTerminated)
+            },
+            "the quit app is still running",
+        )
         let paths = try XCTUnwrap(paths)
         app.launchArguments = [
             "-SegueLibraryPath", paths.library.path(percentEncoded: false),

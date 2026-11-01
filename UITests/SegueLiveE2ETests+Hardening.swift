@@ -38,8 +38,12 @@ extension SegueLiveE2ETests {
         let app = launch(library)
         XCTAssertTrue(element(app, LiveAXID.sidebarSetlists).appears(timeout: 15))
         let bundleID = "dev.ryandsilva.segue.personal"
+        // The newest Segue is the one this test launched: the previous test's process can
+        // still be shutting down for a moment after its teardown returned.
         let first = try XCTUnwrap(
-            NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first,
+            NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+                .filter { !$0.isTerminated }
+                .max { ($0.launchDate ?? .distantPast) < ($1.launchDate ?? .distantPast) },
         )
         let bundleURL = try XCTUnwrap(first.bundleURL)
         let configuration = NSWorkspace.OpenConfiguration()
@@ -64,10 +68,16 @@ extension SegueLiveE2ETests {
         }
         XCTAssertNotEqual(kill(pid, 0), 0, "the second instance kept running")
         XCTAssertFalse(first.isTerminated)
-        XCTAssertEqual(
-            NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).count,
-            1,
-        )
+        // Counted once the previous test's process is gone too.
+        let settled = Date().addingTimeInterval(15)
+        func running() -> Int {
+            NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+                .filter { !$0.isTerminated }.count
+        }
+        while running() > 1, Date() < settled {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        }
+        XCTAssertEqual(running(), 1)
         XCTAssertNotEqual(app.state, .notRunning)
     }
 }
