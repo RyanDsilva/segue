@@ -150,8 +150,22 @@ struct AISettingsTests {
         await roomy.models.refresh()
         #expect(low.models.isLowMemory && !low.models.suggestsDownload)
         #expect(!roomy.models.isLowMemory && roomy.models.suggestsDownload)
-        #expect(ModelCard.lowMemoryNote(Self.model).contains("about 3 GB of memory"))
-        #expect(ModelCard.lowMemoryNote(Self.model).contains("20-30 seconds per song"))
+        // The note's cost holds in every state; its claim about Apple Intelligence holds
+        // only where it is true.
+        let unavailable = ProviderAvailability.unavailable(.deviceNotEligible)
+        for state in [LocalModelState.notInstalled, .installed, .failed(.network)] {
+            for fm in [ProviderAvailability.available, unavailable, nil] {
+                let note = ModelCard.lowMemoryNote(Self.model, state: state, appleIntelligence: fm)
+                #expect(note.contains("about 3 GB of memory"))
+                #expect(note.contains("20-30 seconds per song"))
+                let claimsDefault = note.contains("Segue uses Apple Intelligence")
+                #expect(claimsDefault == (fm == .available && !state.isInstalled), "\(note)")
+                let claimsOnly = note.contains("the only on-device AI")
+                #expect(claimsOnly == (fm == unavailable && !state.isInstalled), "\(note)")
+            }
+        }
+        #expect(!AISettingsView.modelNote(unavailable).contains("Apple Intelligence"))
+        #expect(AISettingsView.modelNote(.available).contains("Apple Intelligence otherwise"))
         // The review sheet footer's quiet link follows it.
         let missing: [ProviderKind: ProviderAvailability] = [
             .mlx: .unavailable(.notInstalled), .foundationModels: .available,
@@ -218,28 +232,7 @@ struct AISettingsTests {
     @Test
     func `the pane renders every model state in light and dark`() async throws {
         let env = try TestEnvironment()
-        struct Case {
-            var name: String
-            var state: LocalModelState
-            var fm: ProviderAvailability = .available
-            var memory: UInt64 = 32 << 30
-        }
-        let downloading = LocalModelState.downloading(
-            received: 912_000_000,
-            total: Self.model.downloadBytes,
-        )
-        let cases = [
-            Case(name: "no-model", state: .notInstalled),
-            Case(name: "downloading", state: downloading),
-            Case(name: "installed", state: .installed),
-            Case(name: "low-ram", state: .notInstalled, memory: 8 << 30),
-            Case(
-                name: "fm-off",
-                state: .failed(.network),
-                fm: .unavailable(.appleIntelligenceNotEnabled),
-            ),
-        ]
-        for item in cases {
+        for item in Self.renderCases {
             let (ai, _) = Self.services(env, state: item.state, fm: item.fm, memory: item.memory)
             await ai.models.refresh()
             await ai.refreshAvailability()
@@ -249,10 +242,11 @@ struct AISettingsTests {
                     workspace: NSWorkspaceActions(),
                     services: .inert(),
                 )
-                .frame(width: 560, height: 640)
+                .frame(width: 560)
                 let host = NSHostingView(rootView: view)
                 host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-                host.frame = NSRect(x: 0, y: 0, width: 560, height: 640)
+                // The pane at its own height, as the Settings window shows it.
+                host.frame = NSRect(origin: .zero, size: host.fittingSize)
                 host.layoutSubtreeIfNeeded()
                 let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
                 host.cacheDisplay(in: host.bounds, to: rep)
@@ -290,6 +284,40 @@ struct AISettingsTests {
         #expect(before == 460, "an empty pane keeps the minimum")
         #expect(after > before + 150, "the pane did not grow with the card (\(after))")
         #expect(after <= 640)
+    }
+
+    struct RenderCase {
+        var name: String
+        var state: LocalModelState
+        var fm: ProviderAvailability = .available
+        var memory: UInt64 = 32 << 30
+    }
+
+    /// The pane's states for the visual review, low memory with and without Apple
+    /// Intelligence among them.
+    static var renderCases: [RenderCase] {
+        let downloading = LocalModelState.downloading(
+            received: 912_000_000,
+            total: model.downloadBytes,
+        )
+        return [
+            RenderCase(name: "no-model", state: .notInstalled),
+            RenderCase(name: "downloading", state: downloading),
+            RenderCase(name: "installed", state: .installed),
+            RenderCase(name: "low-ram", state: .notInstalled, memory: 8 << 30),
+            RenderCase(
+                name: "low-ram-fm-off",
+                state: .notInstalled,
+                fm: .unavailable(.deviceNotEligible),
+                memory: 8 << 30,
+            ),
+            RenderCase(name: "low-ram-installed", state: .installed, memory: 8 << 30),
+            RenderCase(
+                name: "fm-off",
+                state: .failed(.network),
+                fm: .unavailable(.appleIntelligenceNotEnabled),
+            ),
+        ]
     }
 
     /// `<repo>/.build/screenshots/ai-settings`.

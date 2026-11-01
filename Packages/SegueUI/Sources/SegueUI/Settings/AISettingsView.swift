@@ -36,6 +36,7 @@
                                 state: ai.models.snapshot.state(of: model.id),
                                 freeDisk: ai.models.snapshot.freeDiskBytes,
                                 isLowMemory: ai.models.isLowMemory,
+                                appleIntelligence: ai.availability[.foundationModels],
                                 workspace: workspace,
                                 download: { ai.models.download(model.id) },
                                 cancel: { ai.models.cancel(model.id) },
@@ -50,7 +51,9 @@
                                 .font(.callout)
                                 .foregroundStyle(.red)
                         }
-                        SettingsNote(text: Self.modelNote)
+                        SettingsNote(
+                            text: Self.modelNote(ai.availability[.foundationModels]),
+                        )
                     } header: {
                         Text("Local model")
                     }
@@ -119,9 +122,18 @@
             + "requests on this Mac. Nothing you paste leaves it. Off: Segue uses its own rules "
             + "only."
 
-        static let modelNote = "When the local model is downloaded, Segue uses it first and "
-            + "Apple Intelligence otherwise. It loads only while it works on a paste or a set "
-            + "request, never during a show."
+        /// What the downloaded model is used for; Apple Intelligence is named as the
+        /// fallback only where it is not known to be unavailable.
+        static func modelNote(_ appleIntelligence: ProviderAvailability?) -> String {
+            let use = if case .unavailable = appleIntelligence {
+                "When the local model is downloaded, Segue uses it for pastes and set requests."
+            } else {
+                "When the local model is downloaded, Segue uses it first and Apple "
+                    + "Intelligence otherwise."
+            }
+            return use + " It loads only while it works on a paste or a set request, never "
+                + "during a show."
+        }
 
         /// The licence link read aloud: an SPDX id such as "Apache-2.0" is not human-readable
         /// to VoiceOver (Apple's audit), so it is spoken as "Apache 2.0 license"; Voice
@@ -149,6 +161,9 @@
         let state: LocalModelState
         let freeDisk: Int64?
         let isLowMemory: Bool
+        /// Apple Intelligence as last read (nil: not read yet); the low-memory note's claim
+        /// about it follows this.
+        var appleIntelligence: ProviderAvailability?
         let workspace: any WorkspaceActions
         let download: () -> Void
         let cancel: () -> Void
@@ -203,11 +218,18 @@
                 }
                 .font(.callout)
                 if isLowMemory {
-                    Label(Self.lowMemoryNote(model), systemImage: "memorychip")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier(AccessibilityID.settingsAILowMemory)
+                    Label(
+                        Self.lowMemoryNote(
+                            model,
+                            state: state,
+                            appleIntelligence: appleIntelligence,
+                        ),
+                        systemImage: "memorychip",
+                    )
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier(AccessibilityID.settingsAILowMemory)
                 }
                 actions
             }
@@ -305,12 +327,31 @@
             }
         }
 
-        /// R68, R120: on Macs under 16 GB the model is an opt-in (Apple Intelligence is the
-        /// default there); the note says what it costs and never blocks the download.
-        static func lowMemoryNote(_ model: LocalModelManifest) -> String {
-            "Optional on this Mac: Segue uses Apple Intelligence. The local model needs about "
-                + "\(ByteFormat.size(model.memoryBytes)) of memory while it works and takes "
-                + "roughly 20-30 seconds per song here, and other apps may slow down."
+        /// R68, R120: on Macs under 16 GB the note says what the model costs and never
+        /// blocks the download. What it says about Apple Intelligence is only what is true:
+        /// the default when it is available, the only other way when it is not, nothing
+        /// before it has been read or once the model is installed (Segue then uses it first).
+        static func lowMemoryNote(
+            _ model: LocalModelManifest,
+            state: LocalModelState,
+            appleIntelligence: ProviderAvailability?,
+        ) -> String {
+            let memory = ByteFormat.size(model.memoryBytes)
+            let cost = "about \(memory) of memory while it works and takes roughly 20-30 "
+                + "seconds per song here, and other apps may slow down."
+            if state.isInstalled {
+                return "On this Mac the local model needs \(cost)"
+            }
+            switch appleIntelligence {
+            case .available:
+                return "Optional on this Mac: Segue uses Apple Intelligence. The local model "
+                    + "needs \(cost)"
+            case .unavailable:
+                return "Apple Intelligence is not available, so the local model is the only "
+                    + "on-device AI here. It needs \(cost)"
+            case nil:
+                return "The local model needs \(cost)"
+            }
         }
     }
 
