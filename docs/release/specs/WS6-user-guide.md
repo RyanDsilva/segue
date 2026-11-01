@@ -69,7 +69,7 @@ Shot ids name files in `guide/public/shots/` (section 5.6); every shot exists in
 |---|---|---|---|
 | `/guide` | Getting started | What Segue is in two sentences; four workflow tiles (one per group, each opening its first page); "Your first show in five steps" (`#first-show`): pick a folder, the Welcome library, paste a song, build a set, go on stage; "Deleted something?" (`#trash`) one line, links back-up. | `start-library` (main window, Welcome library), tiles reuse `paste-review`, `card`, `builder-arrange`, `stage`; clip `go-on-stage` |
 | `welcome-library` | The Welcome library | The four original songs and the Welcome Set; try things on them; Settings > Data > Remove Welcome Songs keeps edited ones (`#remove`); Help > Welcome to Segue... reopens the cards (`#welcome-cards`). | `welcome-cards` |
-| `library-folder` | Your library folder | Where songs live: `.cho` files, the Segue details file, setlists, `shows/`, `filters/` (`#files`); change the folder (`#change`); Finder: Show in Finder, Open With, Quick Look (`#finder`); search by any line, romanized Hindi spellings (`#search`); Rebuild Index (`#rebuild`). | `library-search` (search `kitabon`) |
+| `library-folder` | Your library folder | Where songs live: `.cho` files, the Segue details file, setlists, `shows/`, `filters/` (`#files`); change the folder (`#change`); Finder: Show in Finder, Open With, Quick Look (`#finder`); search by any line, romanized Hindi spellings (`#search`); Rebuild Index (`#rebuild`); iCloud Drive and other synced folders, the warning banner (`#file-sync`, P9-6 5.4). | `library-search` (search `kitabon`) |
 
 **Bring songs in**
 
@@ -324,6 +324,7 @@ docs-shots: ## Guide screenshots from the App Store flavour (needs the screen; O
 | Settings > Privacy (exists: policy links) | `?` at the bottom of the pane | `/guide/privacy-settings` |
 | Settings > Data | `?` at the bottom of the pane | `/guide/back-up` |
 | Tips: Paste any chord sheet / Search by any line / Change the key / Move a chord / Start the show / Gig Mode | a "Learn More" tip action | `/guide/paste-a-song`, `/guide/library-folder#search`, `/guide/transpose#transpose`, `/guide/edit-a-song#chords`, `/guide/go-on-stage`, `/guide/gig-mode` |
+| File-sync folder banner (P9-6 5.4) | "Learn More" | `/guide/library-folder#file-sync` |
 | What's New highlights (exists) | "Learn More" | the highlight's `help` path, now `/guide/...` |
 
 - The `?` buttons are the macOS standard help button (SwiftUI `HelpLink` or the bordered circular `?`), with an accessibility label "Help: <page title>", opening through `WorkspaceActions` (recorded by `-SegueWorkspaceLog` in tests). No help buttons on stage (nothing distracting during a show; tips are already off there).

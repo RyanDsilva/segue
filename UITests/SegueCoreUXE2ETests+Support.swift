@@ -280,6 +280,8 @@ enum CoreFixture {
 enum CoreLinks {
     static let site = "https://segue.ryandsilva.dev"
     static let supportMail = "mailto:segue@ryandsilva.dev"
+    /// The file-sync banner's Learn More (P9-6 5.4).
+    static let fileSyncGuide = "https://segue.ryandsilva.dev/guide/library-folder#file-sync"
 
     /// The Help menu's visible items, in order (WS2a 3.5.6).
     static let helpMenuTitles = [
@@ -338,6 +340,9 @@ enum CoreAXID {
     static let renameField = "segue.setlistName.field"
     static let entryRemove = "segue.setlist.entry.remove"
     static let songTagField = "segue.song.tag.field"
+    static let fileSyncBanner = "segue.library.fileSync"
+    static let fileSyncLearnMore = "segue.library.fileSync.learnMore"
+    static let fileSyncDismiss = "segue.library.fileSync.dismiss"
     static func proficiency(_ level: String) -> String {
         "segue.song.proficiency.\(level)"
     }

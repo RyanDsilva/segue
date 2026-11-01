@@ -30,6 +30,26 @@ extension SegueCoreUXE2ETests {
         deleteShortcutNeverFiresInText(app, paths)
     }
 
+    /// A library in a file-sync folder (P9-6 5.4, forced with `-SegueLibraryFolderKind`):
+    /// the banner tops the list, Learn More opens the guide section, and Don't Show Again
+    /// takes it away.
+    func testFileSyncWarningBanner() throws {
+        try seedSong("harbour-lights", CoreFixture.harbour)
+        let app = try launch(extraArguments: ["-SegueLibraryFolderKind", "iCloudDrive"])
+        XCTAssertTrue(row(app, "Harbour Lights").appears(timeout: 15))
+        let banner = element(app, CoreAXID.fileSyncBanner)
+        XCTAssertTrue(banner.appears(timeout: 10))
+        XCTAssertTrue(app.staticTexts["This library is in iCloud Drive."].exists)
+
+        element(app, CoreAXID.fileSyncLearnMore).click(in: app)
+        XCTAssertTrue(
+            waitForWorkspace("open", [CoreLinks.fileSyncGuide]),
+            "\(workspaceCalls())",
+        )
+        element(app, CoreAXID.fileSyncDismiss).click(in: app)
+        XCTAssertTrue(banner.disappears(timeout: 10))
+    }
+
     // MARK: - Delete and Trash (3.3)
 
     private func deleteSongToTrashAndUndo(_ app: XCUIApplication, _ paths: Paths) throws {
