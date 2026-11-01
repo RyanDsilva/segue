@@ -120,8 +120,12 @@
         private var pickRows: [PickRow] {
             var numbers: [SongID: Int] = [:]
             let current = model.setlist(setlist.id) ?? setlist
-            for (offset, song) in current.entries.compactMap(\.songId).enumerated() {
-                numbers[song] = numbers[song] ?? offset + 1
+            // The slot's number as the set list shows it (a medley takes one number).
+            let slotNumbers = current.slotNumbers
+            for entry in current.entries {
+                if let song = entry.songId {
+                    numbers[song] = numbers[song] ?? slotNumbers[entry.itemId]
+                }
             }
             return songs.map { record in
                 PickRow(
@@ -264,9 +268,17 @@
         let model: SetlistsViewModel
         let setlist: Setlist
 
+        /// The number of the song's plain slot (a medley member alone is not ticked).
         func number(of song: SongID) -> Int? {
             let current = model.setlist(setlist.id) ?? setlist
-            return current.entries.lazy.compactMap(\.songId).firstIndex(of: song).map { $0 + 1 }
+            return current.entries.first { $0.songId == song }
+                .flatMap { current.slotNumbers[$0.itemId] }
+        }
+
+        /// The medley holding the song as a member ("In Love medley", P9-3 6.4).
+        func medleyTitle(of song: SongID) -> String? {
+            let current = model.setlist(setlist.id) ?? setlist
+            return current.medley(containing: song)?.medley?.displayTitle
         }
     }
 
@@ -304,6 +316,14 @@
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 stateLabel
+                if number == nil, let medley = tick.medleyTitle(of: record.id) {
+                    Text("In \(medley)")
+                        .font(SchibstedGrotesk.medium.font(size: 13))
+                        .foregroundStyle(Theme.color.muted)
+                        .lineLimit(1)
+                        .help("This song plays in \(medley). Tick it to add a reprise.")
+                        .accessibilityIdentifier(AccessibilityID.medleyReprise)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 10)

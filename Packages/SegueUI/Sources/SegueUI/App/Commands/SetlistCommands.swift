@@ -73,12 +73,37 @@
             .keyboardShortcut(MenuShortcuts.arrangeSections)
             .disabled(shownBuilder?.model.arrangeableSelection == nil
                 || shownBuilder?.model.builderMode != .arrange)
+            medleyItems
             Button(MenuShortcuts.moveUp.title) { move(-1) }
                 .keyboardShortcut(MenuShortcuts.moveUp)
                 .disabled(!canMove(-1))
             Button(MenuShortcuts.moveDown.title) { move(1) }
                 .keyboardShortcut(MenuShortcuts.moveDown)
                 .disabled(!canMove(1))
+        }
+
+        /// Make Medley / Ungroup Medley (P9-3 6.3) for Arrange's selection.
+        @ViewBuilder private var medleyItems: some View {
+            let builder = editableBuilder
+            let arranging = builder?.model.builderMode == .arrange
+            Button(MenuShortcuts.makeMedley.title) {
+                guard let builder else { return }
+                Task { await builder.model.makeMedley(in: builder.setlist.id) }
+            }
+            .keyboardShortcut(MenuShortcuts.makeMedley)
+            .disabled(!arranging || builder.flatMap {
+                $0.model.medleyCandidates(in: $0.setlist.id)
+            } == nil)
+            Button(MenuShortcuts.ungroupMedley.title) {
+                guard let builder,
+                      let medley = builder.model.selectedMedley(in: builder.setlist.id)
+                else { return }
+                Task { await builder.model.ungroup(medley, in: builder.setlist.id) }
+            }
+            .keyboardShortcut(MenuShortcuts.ungroupMedley)
+            .disabled(!arranging || builder.flatMap {
+                $0.model.selectedMedley(in: $0.setlist.id)
+            } == nil)
         }
 
         /// The shown builder's setlist and its model, when nothing covers the main window.
@@ -106,10 +131,16 @@
                   builder.model.builderMode == .arrange
             else { return false }
             return builder.model.canMoveSelection(in: builder.setlist.id, by: delta)
+                || builder.model.canMoveMember(by: delta, in: builder.setlist.id)
         }
 
         private func move(_ delta: Int) {
             guard canMove(delta), let builder = editableBuilder else { return }
+            // A selected medley member moves within its medley (P9-3 6.3).
+            if let member = builder.model.selectedMember(in: builder.setlist.id) {
+                Task { await builder.model.moveMember(member, by: delta, in: builder.setlist.id) }
+                return
+            }
             Task { await builder.model.moveSelection(in: builder.setlist.id, by: delta) }
         }
 
@@ -118,8 +149,8 @@
         private var startableSetlist: Setlist? {
             guard let session = app.session, let setlist = app.shownSetlist, !app.isPerforming,
                   !app.isStartingShow, !app.isMainWindowBusy,
-                  setlist.entries.contains(where: {
-                      $0.songId.flatMap(session.library.song(id:)) != nil
+                  setlist.entries.contains(where: { entry in
+                      entry.songIds.contains { session.library.song(id: $0) != nil }
                   })
             else { return nil }
             return setlist
@@ -162,8 +193,9 @@
                 }
                 ForEach(session.setlists.setlists) { setlist in
                     // A checkmark (state on), dimmed, when the setlist already holds the
-                    // song: VoiceOver reads it as checked and dimmed.
-                    let holdsSong = setlist.contains(songID)
+                    // song as a slot: VoiceOver reads it as checked and dimmed. A song that is
+                    // only a medley member can be added as its reprise (P9-3 decision 8).
+                    let holdsSong = setlist.hasSlot(for: songID)
                     Toggle(setlist.name, isOn: Binding(
                         get: { holdsSong },
                         set: { _ in session.addSong(songID, to: setlist.id) },

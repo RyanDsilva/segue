@@ -48,7 +48,7 @@ public struct SetlistMedley: Sendable, Hashable, Codable {
     }
 
     /// Nil for nil, empty or whitespace text; the text trimmed otherwise.
-    static func clean(_ text: String?) -> String? {
+    public static func clean(_ text: String?) -> String? {
         guard let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !trimmed.isEmpty
         else {

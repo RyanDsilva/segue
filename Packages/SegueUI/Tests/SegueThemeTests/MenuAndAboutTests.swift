@@ -57,7 +57,7 @@ struct MenuShortcutsTests {
             "singerPreview",
             "startShow", "rehearse", "newSetlist", "pickSongs", "arrangeSet", "insertBreak",
             "addSongByName",
-            "arrangeSections",
+            "arrangeSections", "makeMedley", "ungroupMedley",
             "moveUp", "moveDown", "mainWindow", "help", "keyboardShortcuts",
         ]
         for name in names {

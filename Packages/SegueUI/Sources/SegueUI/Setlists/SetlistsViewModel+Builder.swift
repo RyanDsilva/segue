@@ -50,7 +50,7 @@ public extension SetlistsViewModel {
         let unique = Set(songs).count
         guard !fresh.isEmpty else { return (0, unique) }
         await insert(fresh, into: id, at: nil)
-        let added = fresh.count(where: { self.setlist(id)?.contains($0) == true })
+        let added = fresh.count(where: { self.setlist(id)?.hasSlot(for: $0) == true })
         return (added, unique - fresh.count)
     }
 
@@ -114,9 +114,12 @@ public extension SetlistsViewModel {
         return setlist.entries[(index + 1)...].firstIndex(where: \.isBreak)
     }
 
-    /// `songs` without the ones in `setlist` or repeated, in order.
+    /// `songs` without the ones already a slot of `setlist` or repeated, in order (a medley
+    /// member's song comes in as its reprise, P9-3 decision 8).
     private static func fresh(_ songs: [SongID], for setlist: Setlist) -> [SongID] {
         var seen: Set<SongID> = []
-        return songs.filter { !setlist.contains($0) && seen.insert($0).inserted }
+        return songs.filter { song in
+            setlist.canAdd(song, as: .slot).isAllowed && seen.insert(song).inserted
+        }
     }
 }

@@ -19,6 +19,10 @@
         /// when it ends.
         var rehearse: @MainActor (SongID, StageSlot, @escaping @MainActor () -> Void)
             -> Void = { _, _, _ in }
+        /// Rehearse Medley (P9-3 12): an unlogged run of a whole setlist slot; `onEnd` runs
+        /// when it ends.
+        var rehearseSlot: @MainActor (SetlistEntry, @escaping @MainActor () -> Void)
+            -> Void = { _, _ in }
     }
 
     extension EnvironmentValues {

@@ -44,14 +44,24 @@ extension SetlistTiming {
     @MainActor
     init(setlist: Setlist, library: LibraryViewModel, defaultChangeover: Int) {
         var times: [SetlistItemID: SlotTime] = [:]
+        var medleys: [SetlistItemID: MedleyTime] = [:]
         for entry in setlist.entries {
             if let song = entry.songId, let record = library.song(id: song) {
                 times[entry.itemId] = library.times.slot(record, arrangement: entry.arrangement)
+            }
+            // A medley: each member's slot time through the same cache (P9-3 7).
+            if let medley = entry.medley {
+                medleys[entry.itemId] = MedleyTime(members: medley.members.map { member in
+                    library.song(id: member.songId)
+                        .map { library.times.slot($0, arrangement: member.arrangement) }
+                        ?? .unknown(.missingSong)
+                })
             }
         }
         self.init(
             entries: setlist.entries,
             times: times,
+            medleyTimes: medleys,
             target: setlist.targetDuration,
             changeover: ChangeoverSetting.effective(
                 for: setlist.changeoverSeconds,
@@ -63,14 +73,21 @@ extension SetlistTiming {
     /// The same, uncached (tests and callers without a library view model).
     init(setlist: Setlist, songs: (SongID) -> SongRecord?, defaultChangeover: Int) {
         var times: [SetlistItemID: SlotTime] = [:]
+        var medleys: [SetlistItemID: MedleyTime] = [:]
         for entry in setlist.entries {
             if let song = entry.songId, let record = songs(song) {
                 times[entry.itemId] = SlotTimes.slot(record, arrangement: entry.arrangement)
+            }
+            if let medley = entry.medley {
+                medleys[entry.itemId] = SlotTimes.medley(medley.members.map {
+                    (songs($0.songId), $0.arrangement)
+                })
             }
         }
         self.init(
             entries: setlist.entries,
             times: times,
+            medleyTimes: medleys,
             target: setlist.targetDuration,
             changeover: ChangeoverSetting.effective(
                 for: setlist.changeoverSeconds,
@@ -83,7 +100,9 @@ extension SetlistTiming {
 extension SetlistTiming {
     /// Row 30's closed-vocabulary summary of these timings (counts and buckets only).
     func summary(arranged: Int, tolerance: TimeInterval) -> SetlistTimedSummary {
-        let songs = items.compactMap(\.slot)
+        // Songs are slots and medley members (P9-3 7).
+        let medleys = items.compactMap(\.medley)
+        let songs = items.compactMap(\.slot) + medleys.flatMap { $0.members.compactMap(\.slot) }
         let known = items.compactMap(\.time).filter { $0.source != .intermission }
         let target: SetlistTimedTarget = if let target = self.target, target > 0 {
             abs(total - target) <= tolerance ? .within : total < target ? .under : .over
@@ -97,6 +116,8 @@ extension SetlistTiming {
             arranged: SmallBucket(arranged),
             estimatedOnly: !known.isEmpty && known.allSatisfy(\.estimated),
             target: target,
+            medleys: SmallBucket(medleys.count),
+            medleyUnknown: medleys.contains { !$0.unknownMembers.isEmpty },
         )
     }
 }

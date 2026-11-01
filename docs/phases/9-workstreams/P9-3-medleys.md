@@ -397,6 +397,8 @@ Rendered in the session scratchpad `p9-3/` on real material (a three-song Bollyw
 
 Recommendation: builder **A** (one block reads as one slot, matching the decision that a medley is one entry), map **B**, header as 9.2.
 
+**Picked (R187, 2026-11-01):** builder **A**, the group card, whose disclosure collapses it to **C**'s one row of member chips; the composer's inline ghost with the medley spelled out in the status line (composer **A**, never rewriting the typing); on stage, map **B** (each member's chips in a labelled container, the current member lit) under the quiet member header of 9.2. Mockups: `.build/design-p9/png/p9-3-medley/` (not committed).
+
 ## 17. Test plan (R113)
 
 ### 17.1 SegueCore model and store (`SetlistMedleyTests`, `SetlistStoreMedleyTests`, new; extend `SetlistTests`, `ShowRecordTests`)

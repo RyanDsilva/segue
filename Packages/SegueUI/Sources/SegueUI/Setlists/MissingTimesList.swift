@@ -153,20 +153,52 @@
                     continue
                 }
                 number += 1
-                guard within?.contains(entry.itemId) ?? true, let song = entry.songId,
-                      let record = library.song(id: song),
-                      let reason = library.times.slot(record, arrangement: entry.arrangement)
-                          .unknown
-                else { continue }
-                rows.append(Row(
-                    id: entry.itemId,
-                    song: song,
-                    title: SongSummary.title(record),
-                    place: hasParts ? "\(part) · #\(number)" : "#\(number)",
-                    reason: reason,
-                ))
+                let place = hasParts ? "\(part) · #\(number)" : "#\(number)"
+                // A medley's members are listed like slots: "Tum Hi Ho (in Love medley)" at
+                // "#4b" (P9-3 7).
+                if let medley = entry.medley {
+                    for (index, member) in medley.members.enumerated() {
+                        let label = Setlist.memberLabel(slot: number, index: index)
+                        guard let row = Self.row(
+                            member.asSlot,
+                            within: within,
+                            library: library,
+                            place: hasParts ? "\(part) · #\(label)" : "#\(label)",
+                            medley: medley.displayTitle,
+                        ) else { continue }
+                        rows.append(row)
+                    }
+                    continue
+                }
+                if let row = Self.row(entry, within: within, library: library, place: place) {
+                    rows.append(row)
+                }
             }
             return rows
+        }
+
+        /// The row of a song slot (or a member as its slot) without a time, if it has none.
+        @MainActor
+        private static func row(
+            _ entry: SetlistEntry,
+            within: Set<SetlistItemID>?,
+            library: LibraryViewModel,
+            place: String,
+            medley: String? = nil,
+        ) -> Row? {
+            guard within?.contains(entry.itemId) ?? true, let song = entry.songId,
+                  let record = library.song(id: song),
+                  let reason = library.times.slot(record, arrangement: entry.arrangement)
+                      .unknown
+            else { return nil }
+            let title = SongSummary.title(record)
+            return Row(
+                id: entry.itemId,
+                song: song,
+                title: medley.map { "\(title) (in \($0))" } ?? title,
+                place: place,
+                reason: reason,
+            )
         }
     }
 

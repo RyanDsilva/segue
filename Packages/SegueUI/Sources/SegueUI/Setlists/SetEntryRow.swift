@@ -43,11 +43,12 @@
         var body: some View {
             let display = SetlistEntryDisplay(entry: entry, record: record)
             HStack(spacing: 8) {
-                Text("\(position)")
+                Text(numberText)
                     .font(SchibstedGrotesk.medium.font(size: 14))
                     .foregroundStyle(Theme.color.muted)
                     .frame(width: 32, alignment: .leading)
                 titleColumn
+                    .padding(.leading, member == nil ? 0 : MedleyMemberPlace.indent)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 cell(display.key ?? "-", width: 56, weight: .semiBold, isOverridden: hasKeyOverride)
                     .accessibilityIdentifier(AccessibilityID.entryKey)
@@ -65,15 +66,20 @@
                 EntryAssistantCells(assistant: assistant, title: title, isHovered: isHovered)
                 removeButton
             }
-            .padding(.leading, 32)
-            .padding(.trailing, 12)
-            .padding(.vertical, 11)
-            .background(isSelected || isHovered || isEditing ? Theme.color.surfaceAlt
-                : Theme.color.ground)
+            .padding(.leading, member == nil ? 32 : 32 - MedleyMemberPlace.cardInset)
+            .padding(.trailing, member == nil ? 12 : 12 - MedleyMemberPlace.cardInset)
+            .padding(.vertical, member == nil ? 11 : 8)
+            .background(rowBackground)
             .overlay(alignment: .leading) {
-                Rectangle().fill(PartPalette.color(part)).frame(width: 4)
+                if member == nil {
+                    Rectangle().fill(PartPalette.color(part)).frame(width: 4)
+                }
             }
-            .overlay(alignment: .bottom) { Rule() }
+            .overlay(alignment: .bottom) {
+                if member == nil {
+                    Rule()
+                }
+            }
             .contentShape(Rectangle())
             .onHover { isHovered = $0 }
             .onTapGesture {
@@ -90,6 +96,10 @@
                 )
             }
             .contextMenu {
+                if let makeMedley {
+                    Button(makeMedley.title, action: makeMedley.action)
+                    Divider()
+                }
                 Button("Edit Key, Capo and Note…") { isEditing = true }
                     .disabled(isReadOnly)
                 Button("Arrange Sections…") { onArrange?() }
@@ -100,15 +110,18 @@
                     .disabled(isReadOnly)
             }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel(repeatOf.map { "\(position). \(title), also at \($0)" }
-                ?? "\(position). \(title)")
+            .accessibilityLabel(accessibilityTitle)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
-            .accessibilityIdentifier(AccessibilityID.setlistEntry)
+            .accessibilityIdentifier(member == nil ? AccessibilityID.setlistEntry
+                : AccessibilityID.medleyMember)
             .accessibilityAction(named: "Edit") { isEditing = true }
             .accessibilityAction(named: "Arrange Sections") { onArrange?() }
             .entryAssistantActions(assistant)
             .accessibilityActions {
-                if let onMove {
+                if let member, !isReadOnly {
+                    MedleyMemberMenuItems(place: member, isReadOnly: isReadOnly, spoken: true)
+                }
+                if let onMove, member == nil {
                     if position > 1 {
                         Button("Move up") { onMove(-1) }
                     }
@@ -123,6 +136,32 @@
             record.map(SongSummary.title) ?? "Missing song"
         }
 
+        /// "4" for a slot, "4b" for a medley member.
+        private var numberText: String {
+            member?.label ?? "\(position)"
+        }
+
+        /// A medley member sits on its card: no fill until selected or hovered.
+        private var rowBackground: Color {
+            if isSelected || isHovered || isEditing {
+                return member == nil ? Theme.color.surfaceAlt : Theme.color.line
+            }
+            return member == nil ? Theme.color.ground : .clear
+        }
+
+        /// "4. Kesariya", "4b, Tum Hi Ho, key A, in Love medley", with the repeat or the
+        /// reprise mark read too.
+        private var accessibilityTitle: String {
+            let reprise = reprise.map { ", \($0.spoken)" } ?? ""
+            if let member {
+                let key = SetlistEntryDisplay(entry: entry, record: record).key
+                    .map { ", key \($0)" } ?? ""
+                return "\(member.label), \(title)\(key), in \(member.medleyTitle)\(reprise)"
+            }
+            return repeatOf.map { "\(position). \(title), also at \($0)" }
+                ?? "\(position). \(title)\(reprise)"
+        }
+
         private var hasKeyOverride: Bool {
             entry.overrides.transpose != nil || entry.overrides.capo != nil
         }
@@ -133,11 +172,23 @@
 
         private var titleColumn: some View {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(SchibstedGrotesk.semiBold.font(size: 16))
-                    .foregroundStyle(record == nil ? Theme.color.muted : Theme.color.ink)
-                    .lineLimit(1)
-                    .accessibilityIdentifier(AccessibilityID.entryTitle)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(title)
+                        .font(SchibstedGrotesk.semiBold.font(size: 16))
+                        .foregroundStyle(record == nil ? Theme.color.muted : Theme.color.ink)
+                        .lineLimit(1)
+                        .accessibilityIdentifier(AccessibilityID.entryTitle)
+                    if let reprise {
+                        Text(reprise.text)
+                            .font(SchibstedGrotesk.medium.font(size: 12))
+                            .foregroundStyle(Theme.color.muted)
+                            .lineLimit(1)
+                            .layoutPriority(1)
+                            .help(reprise.help)
+                            .accessibilityHidden(true)
+                            .accessibilityIdentifier(AccessibilityID.medleyReprise)
+                    }
+                }
                 if record == nil {
                     Text("No longer in the library folder")
                         .font(SchibstedGrotesk.medium.font(size: 13))

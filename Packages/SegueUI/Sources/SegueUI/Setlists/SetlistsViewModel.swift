@@ -23,8 +23,13 @@ public final class SetlistsViewModel {
     /// The builder's mode (Setlist > Pick Songs ⌘1 / Arrange Set ⌘2), shared by every
     /// setlist so switching setlists keeps it.
     public var builderMode: BuilderMode = .pick
-    /// Arrange's selected rows (songs and breaks) in the shown setlist.
+    /// Arrange's selected rows (songs, breaks, medley headers and members) in the shown
+    /// setlist.
     var arrangeSelection = ListSelection<SetlistItemID>()
+    /// Medleys shown collapsed to one row of member chips (P9-3 6.2); in memory only.
+    var collapsedMedleys: Set<SetlistItemID> = []
+    /// The medley whose title field is being edited (double-click, Return on its header).
+    var renamingMedley: SetlistItemID?
     /// The slot whose Arrange Sections sheet is open (P3-16).
     public var arranging: ArrangingSlot?
     /// The set composer at the end of the shown builder's set list (P8-5); ⌘L focuses it.
@@ -90,11 +95,14 @@ public final class SetlistsViewModel {
         return created
     }
 
-    /// Appends `songID` to setlist `id`; returns whether it was added. A song already in
-    /// the setlist is not added again (a song appears at most once per setlist).
+    /// Appends `songID` to setlist `id`; returns whether it was added. A song already a slot
+    /// of the setlist is not added again; one that is only a medley member is added as its
+    /// reprise (P9-3 decision 8).
     @discardableResult
     public func add(_ songID: SongID, to id: SetlistID) async -> Bool {
-        let alreadyIn = await store.setlist(id: id)?.contains(songID) ?? false
+        let alreadyIn = await store.setlist(id: id).map {
+            !$0.canAdd(songID, as: .slot).isAllowed
+        } ?? false
         let updated = await mutate(undo: (id, "Add Song")) { store in
             try await store.addSong(songID, to: id)
         }
@@ -195,11 +203,14 @@ public final class SetlistsViewModel {
     }
 
     /// Inserts `songIDs` into setlist `id` at `offset` (nil appends): drag from the
-    /// library column, or its `+` button. Songs already in the setlist are skipped.
+    /// library column, or its `+` button. Songs already a slot are skipped; a medley
+    /// member's song is added as its reprise (P9-3 decision 8).
     public func insert(_ songIDs: [SongID], into id: SetlistID, at offset: Int?) async {
         let current = setlist(id)
         var seen: Set<SongID> = []
-        let fresh = songIDs.filter { current?.contains($0) != true && seen.insert($0).inserted }
+        let fresh = songIDs.filter { song in
+            current?.canAdd(song, as: .slot).isAllowed != false && seen.insert(song).inserted
+        }
         guard !fresh.isEmpty else { return }
         await mutate(undo: (id, fresh.count == 1 ? "Add Song" : "Add Songs")) { store in
             try await store.insertSongs(fresh, into: id, at: offset)

@@ -53,6 +53,8 @@
         var isLocked = false
         /// Nil when the setlist is read-only.
         var onToggleLock: (() -> Void)?
+        /// Replaces the lock's help (a medley's lock is on and disabled, P9-3 11).
+        var lockHelp: String?
     }
 
     /// The score cell (after a build) and the lock button of a set row.
@@ -75,6 +77,7 @@
                     isLocked: assistant.isLocked,
                     isHovered: isHovered,
                     onToggle: assistant.onToggleLock,
+                    help: assistant.lockHelp,
                 )
             }
         }
@@ -127,6 +130,7 @@
         let isHovered: Bool
         /// Nil when the setlist is read-only.
         let onToggle: (() -> Void)?
+        var help: String?
 
         var body: some View {
             Button {
@@ -141,8 +145,8 @@
             .buttonStyle(.plain)
             .opacity(isLocked || (isHovered && onToggle != nil) ? 1 : 0)
             .disabled(onToggle == nil)
-            .help(isLocked ? "Unlock: Rebuild may replace this song"
-                : "Lock: Rebuild keeps this song here")
+            .help(help ?? (isLocked ? "Unlock: Rebuild may replace this song"
+                    : "Lock: Rebuild keeps this song here"))
             .accessibilityLabel(isLocked ? "Unlock \(title)" : "Lock \(title)")
             .accessibilityValue(isLocked ? "Locked" : "Unlocked")
             .accessibilityIdentifier(AccessibilityID.entryLock)

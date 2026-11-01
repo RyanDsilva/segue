@@ -154,12 +154,3 @@ Packages/SegueCore/Sources/Library/FillSpan.swift	SegueFillE2ETests
 Packages/SegueCore/Sources/Playback/PhraseBuilder+Fill.swift	SegueFillE2ETests
 Packages/SegueCore/Sources/Library/Timing/SlotTime.swift	SegueSongMetadataE2ETests SegueSetlistBuilderE2ETests
 UITests/SegueSongMetadataE2ETests.swift	SegueSongMetadataE2ETests
-UITests/SegueSingerViewE2ETests.swift	SegueSingerViewE2ETests
-Packages/SegueCore/Sources/Editing/SingerView.swift	SegueSingerViewE2ETests
-Packages/SegueCore/Sources/LiveLayout/Singer*	SegueSingerViewE2ETests
-Packages/SegueCore/Sources/LiveLayout/SongPreparation.swift	SegueSingerViewE2ETests
-Packages/SegueUI/Sources/SegueUI/Live/*Singer*	SegueSingerViewE2ETests
-Packages/SegueUI/Sources/SegueUI/Live/StageRequest*	SegueSingerViewE2ETests
-Packages/SegueUI/Sources/SegueUI/Live/StageChrome.swift	SegueSingerViewE2ETests
-Packages/SegueUI/Sources/SegueUI/Live/LiveView.swift	SegueSingerViewE2ETests
-Packages/SegueUI/Sources/SegueUI/AccessibilityID+Singer.swift	SegueSingerViewE2ETests

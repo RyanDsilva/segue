@@ -303,6 +303,11 @@
                                 )
                             }
                         },
+                        rehearseSlot: { entry, onEnd in
+                            Task {
+                                await app.startSlotSession(entry, kind: .rehearsal, onEnd: onEnd)
+                            }
+                        },
                     ))
                     .environment(\.openSong, OpenSongAction { song in
                         // The no-time list's Open Song: the song's card in the Library with

@@ -35,7 +35,8 @@
 
         var body: some View {
             if let setlist = model.setlist(slot.setlist),
-               let entry = setlist.entry(slot.item),
+               // A medley member edits exactly like a song slot (P9-3 5.5).
+               let entry = setlist.songSlot(slot.item)?.asEntry,
                let songID = entry.songId,
                let record = library.song(id: songID)
             {
@@ -74,7 +75,8 @@
             let slot = slot
             Task {
                 await editor.settle()
-                guard let entry = model.setlist(slot.setlist)?.entry(slot.item) else { return }
+                guard let entry = model.setlist(slot.setlist)?.songSlot(slot.item)?.asEntry
+                else { return }
                 model.services.record(.featureUsed(.arrangementRehearse, .builder))
                 model.arranging = nil
                 stage.rehearse(song, StageSlot(entry)) { model.arranging = slot }
@@ -223,10 +225,10 @@
             .frame(height: 52)
         }
 
-        /// "Harbor Lights · Friday · slot 4".
+        /// "Harbor Lights · Friday · slot 4" ("slot 4b" for a medley member).
         private var subtitle: String {
-            let songs = setlist.entries.filter { $0.songId != nil }
-            let number = (songs.firstIndex { $0.itemId == entry.itemId } ?? 0) + 1
+            let number = setlist.songSlotLabels.first { $0.slot.itemId == entry.itemId }?.label
+                ?? "1"
             return "\(SongSummary.title(record)) · \(setlist.name) · slot \(number)"
         }
 

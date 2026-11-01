@@ -36,6 +36,28 @@
             slot: StageSlot? = nil,
             onEnd: (@MainActor () -> Void)? = nil,
         ) async -> Bool {
+            guard let ids = session?.stores.ids else { return false }
+            let entry = SetlistEntry(
+                itemId: SetlistItemID(ids.next()),
+                songId: song,
+                overrides: slot?.overrides ?? SetlistOverrides(),
+                note: slot?.note,
+                arrangement: slot?.arrangement,
+            )
+            return await startSlotSession(entry, kind: kind, onEnd: onEnd, from: .library)
+        }
+
+        /// Starts an unsaved run of one setlist slot (P9-3 12): a song entry, or a medley
+        /// entry played as one plan through its members (Rehearse Medley). Built as an
+        /// in-memory one-entry setlist: no checklist, nothing logged. Returns false when it
+        /// did not start.
+        @discardableResult
+        func startSlotSession(
+            _ entry: SetlistEntry,
+            kind: ShowKind,
+            onEnd: (@MainActor () -> Void)? = nil,
+            from context: FeatureContext = .builder,
+        ) async -> Bool {
             guard let session, live == nil, !isStartingShow, pendingResume == nil else {
                 return false
             }
@@ -43,26 +65,28 @@
             defer { isStartingShow = false }
             await session.library.flushEditor()
             await session.library.refresh()
-            guard let record = session.library.song(id: song) else {
-                startFailure = "This song can no longer be found in the library folder."
+            let records = entry.songIds.compactMap(session.library.song(id:))
+            guard let record = records.first else {
+                startFailure = entry.isMedley
+                    ? "None of this medley's songs can be found in the library folder."
+                    : "This song can no longer be found in the library folder."
                 return false
             }
             let stores = session.stores
             let setlist = Setlist(
                 id: SetlistID(stores.ids.next()),
-                name: SongSummary.title(record),
-                entries: [SetlistEntry(
-                    itemId: SetlistItemID(stores.ids.next()),
-                    songId: song,
-                    overrides: slot?.overrides ?? SetlistOverrides(),
-                    note: slot?.note,
-                    arrangement: slot?.arrangement,
-                )],
+                name: entry.medley?.displayTitle ?? SongSummary.title(record),
+                entries: [entry],
             )
+            // Members whose song is gone are left out, as at a show's start.
+            let missing = Set(entry.medley?.members
+                .filter { session.library.song(id: $0.songId) == nil }
+                .map(\.itemId) ?? [])
             do {
                 let controller = try await ShowController.start(
                     setlist: setlist,
                     kind: kind,
+                    omitting: missing,
                     environment: ShowEnvironment(
                         store: nil,
                         songs: stores.library,
@@ -70,10 +94,12 @@
                         ids: stores.ids,
                     ),
                 )
-                services.record(.featureUsed(
-                    kind == .rehearsal ? .singleSongRehearse : .singleSongLive,
-                    .library,
-                ))
+                if !entry.isMedley {
+                    services.record(.featureUsed(
+                        kind == .rehearsal ? .singleSongRehearse : .singleSongLive,
+                        context,
+                    ))
+                }
                 await presentSongStage(controller, kind: kind, session: session, onEnd: onEnd)
                 return true
             } catch {

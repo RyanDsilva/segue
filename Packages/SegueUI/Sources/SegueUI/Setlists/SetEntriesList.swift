@@ -29,7 +29,7 @@
         /// The row a drag hovers over (an insertion line is drawn above it).
         @State private var dropTarget: SetlistItemID?
         @AppStorage(ChangeoverSetting.defaultsKey) private var defaultChangeover = 0
-        @FocusState private var listFocused: Bool
+        @FocusState var listFocused: Bool
 
         var body: some View {
             let timing = SetlistTiming(
@@ -70,13 +70,17 @@
                     keyMove(press, proxy: proxy)
                 }
                 .onKeyPress(.space) { toggleFocusedBreakdown($shownBreakdown) }
+                .onKeyPress(keys: [.leftArrow, .rightArrow, .return, .delete]) { press in
+                    medleyKey(press)
+                }
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.setlistEntries)
         }
 
+        /// The rows in order, an expanded medley's members after its header (P9-3 6.3).
         private var order: [SetlistItemID] {
-            setlist.entries.map(\.itemId)
+            model.rowOrder(of: setlist)
         }
 
         /// ↑ / ↓ move the selection (⇧ extends it); ⌥ moves the selected rows, for when the
@@ -85,6 +89,15 @@
             let delta = press.key == .upArrow ? -1 : 1
             if press.modifiers.contains(.option) {
                 guard !isReadOnly else { return .ignored }
+                // A member moves within its medley and never leaves it (a beep at its edge).
+                if let member = model.selectedMember(in: setlist.id) {
+                    Task {
+                        if await !model.moveMember(member, by: delta, in: setlist.id) {
+                            NSSound.beep()
+                        }
+                    }
+                    return .handled
+                }
                 Task { await model.moveSelection(in: setlist.id, by: delta) }
                 return .handled
             }
@@ -109,7 +122,7 @@
 
         /// A click: plain selects the row (and the caller opens its editor); ⌘ toggles it
         /// and ⇧ extends to it. Returns whether it was a plain click.
-        private func select(_ id: SetlistItemID) -> Bool {
+        func select(_ id: SetlistItemID) -> Bool {
             listFocused = true
             let flags = NSEvent.modifierFlags
             if flags.contains(.command) {
@@ -144,7 +157,7 @@
         }
 
         /// Where a row sits: its song number (nil for a break) and its part.
-        private struct Place {
+        struct Place {
             var position: Int?
             var part: Int
         }
@@ -159,6 +172,14 @@
         ) -> some View {
             if let info = entry.breakInfo {
                 breakRow(offset: offset, part: place.part, entry: entry, info: info, timing: timing)
+            } else if let medley = entry.medley {
+                medleyRow(
+                    offset: offset,
+                    place: place,
+                    entry: entry,
+                    medley: medley,
+                    timing: timing,
+                )
             } else {
                 let record = entry.songId.flatMap(library.song(id:))
                 dragDrop(
@@ -186,6 +207,8 @@
                         onMove: isReadOnly ? nil : { delta in move(offset, by: delta) },
                         isLast: offset == setlist.entries.count - 1,
                         assistant: assistantCells(for: entry, shown: $shownBreakdown),
+                        reprise: entry.songId.flatMap { RepriseMark.forSlot($0, in: setlist) },
+                        makeMedley: makeMedleyItem(for: entry.itemId),
                     ),
                     offset: offset,
                     entry: entry,
@@ -225,7 +248,7 @@
         }
 
         /// The insertion line, drag source and drop target every row shares.
-        private func dragDrop(
+        func dragDrop(
             _ content: some View,
             offset: Int,
             entry: SetlistEntry,
@@ -259,15 +282,21 @@
             guard !isReadOnly else { return false }
             let dragged = items.compactMap(SongDragPayload.decode)
             if !dragged.isEmpty {
-                // A song already in the set is never added again (its library row does not
-                // drag; this guards drags from elsewhere).
-                let songs = dragged.filter { !setlist.contains($0) }
+                // A song already a slot is never added again (its library row does not drag;
+                // this guards drags from elsewhere); a medley member's comes in as its reprise.
+                let songs = dragged.filter { setlist.canAdd($0, as: .slot).isAllowed }
                 guard !songs.isEmpty else { return false }
                 Task { await model.insert(songs, into: setlist.id, at: offset) }
                 return true
             }
-            guard let moved = items.compactMap(SetDragPayload.decodeItem).first,
-                  let from = setlist.entries.firstIndex(where: { $0.itemId == moved })
+            guard let moved = items.compactMap(SetDragPayload.decodeItem).first
+            else { return false }
+            // A member dragged out of its medley becomes a slot right after it (P9-3 6.3).
+            if setlist.member(moved) != nil {
+                Task { await model.removeFromMedley(moved, in: setlist.id) }
+                return true
+            }
+            guard let from = setlist.entries.firstIndex(where: { $0.itemId == moved })
             else { return false }
             let destination = offset ?? setlist.entries.count
             guard destination != from, destination != from + 1 else { return true }
@@ -281,10 +310,14 @@
             return true
         }
 
-        private var isReadOnly: Bool {
+        var isReadOnly: Bool {
             setlist.readOnly != nil
         }
+    }
 
+    // MARK: - The set composer row and moves
+
+    extension SetEntriesList {
         private static let composerID = "segue.setlist.composer.row"
 
         /// The set composer (P8-5): the last row, and the drop zone that appends.
