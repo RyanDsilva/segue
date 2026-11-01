@@ -260,6 +260,7 @@ public final class LibraryViewModel {
             let songs = try await store.allSongs()
             catalog = songs
             SegueTips.librarySongCount = songs.count
+            SegueTips.isLibraryLoaded = true
             catalogIndex = Dictionary(songs.map { ($0.id, $0) }) { first, _ in first }
             loadIssues = await store.loadIssues
             tags = try await store.allTags()

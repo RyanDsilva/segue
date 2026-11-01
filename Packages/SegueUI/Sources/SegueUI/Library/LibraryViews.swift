@@ -107,6 +107,12 @@
         @Bindable var model: LibraryViewModel
         let session: LibrarySession
         @State private var isShowingLoadIssues = false
+        /// The header's two tips, one at a time and in this order: on a library of 5 or more
+        /// songs search comes first; otherwise (or once searched) the paste tip.
+        @State private var headerTips = TipGroup(.firstAvailable) {
+            SearchAnyLineTip()
+            PasteSongTip()
+        }
 
         var body: some View {
             VStack(spacing: 0) {
@@ -158,7 +164,7 @@
                         prompt: "Search or filter",
                         accessibilityIdentifier: AccessibilityID.librarySearch,
                     )
-                    .popoverTip(SearchAnyLineTip()) { action in
+                    .popoverTip(headerTips.currentTip as? SearchAnyLineTip) { action in
                         GuideTipAction.handle(
                             action,
                             page: SearchAnyLineTip.guidePage,
@@ -169,7 +175,7 @@
                         .buttonStyle(.seguePrimary)
                         .help(model.isPerforming ? "New Song: starts blank during a show (⌘N)"
                             : "Paste or type a new song (⌘N)")
-                        .popoverTip(PasteSongTip()) { action in
+                        .popoverTip(headerTips.currentTip as? PasteSongTip) { action in
                             GuideTipAction.handle(
                                 action,
                                 page: PasteSongTip.guidePage,

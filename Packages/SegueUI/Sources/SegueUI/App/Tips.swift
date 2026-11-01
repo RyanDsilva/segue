@@ -24,6 +24,10 @@
         // MARK: Per-tip parameters
 
         @Parameter static var librarySongCount: Int = 0
+        /// The library has loaded this launch, so `librarySongCount` is current. The
+        /// header's tips wait for it: without it the paste tip (no count rule) won the race
+        /// against the search tip on every launch where the count arrived second.
+        @Parameter static var isLibraryLoaded: Bool = false
         @Parameter static var openSetlistHasEntries: Bool = false
         @Parameter static var gigModeConfigured: Bool = false
 
@@ -84,6 +88,8 @@
             let frequency: Tips.ConfigurationOption.DisplayFrequency =
                 launch.tips == .show ? .immediate : .daily
             try? Tips.configure([.displayFrequency(frequency), .datastoreLocation(location)])
+            // Parameters persist across launches; this one is about this launch.
+            isLibraryLoaded = false
         }
     }
 
@@ -118,6 +124,7 @@
 
         var rules: [Tips.Rule] {
             Self.globalRules + [
+                #Rule(SegueTips.$isLibraryLoaded) { $0 == true },
                 #Rule(SegueTips.$librarySongCount) { $0 >= 5 },
                 #Rule(SegueTips.searched) { $0.donations.count == 0 },
             ]
@@ -143,7 +150,10 @@
         }
 
         var rules: [Tips.Rule] {
-            Self.globalRules + [#Rule(SegueTips.pasteReviewed) { $0.donations.count == 0 }]
+            Self.globalRules + [
+                #Rule(SegueTips.$isLibraryLoaded) { $0 == true },
+                #Rule(SegueTips.pasteReviewed) { $0.donations.count == 0 },
+            ]
         }
     }
 
