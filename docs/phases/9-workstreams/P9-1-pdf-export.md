@@ -1,6 +1,6 @@
 # P9-1 - PDF export: single chart, songbook, print and the embedded preview
 
-Phase 9 workstream (new, 2026-10-31). Ruling: `docs/release/decisions.md` **R176** (v1.0 builds PDF export before submission: single chart, songbook, print, preview, the Bass chart option and fills); its questions are closed by **R178** (section 18). This spec replaces `docs/phases/4-export.md` (now a pointer here) and carries its resolved decisions forward (`docs/decisions.md` Phase 4: table of contents, no duplex, notes opt-in per export, no branding footer). Built on: **R147** (every section and repeat written out, section map, `RepeatCollapser` gone), **R149** (per-pass show modes: Full, Chords only, First line only, Skip), **R158** P8-2 Q9 (the PDF has its own repeats option, default written out in full) and P8-4 Q7 / Q8 (anyone may use the bass-note view; a "Bass chart" PDF option), **R161** (the Bass chart toggle moved into this build), **R162** Q4 (walk-ups only in the bass-note view), **R167** / **R168** (fills, `t` fills-as-tab, a fill's tab under the line holding its first chord), **R169** (walk-ups into a key change in the new key), **R172** / **R173** (several artists, Movie / Album, slot time from the timeline, "~3:40", unknown time and flagged totals), **R175** (saved fills always show in the bass-note view), **R122** (an out-of-date arrangement plays the full song), **R113** (test budget), **R39** (design directions before new UI), **R140** (one store media pass after these builds), brand.md sections 5, 6 and 9 (light palette for print, shared tokens, same chord/lyric ratio as the stage).
+Phase 9 workstream (new, 2026-10-31). Ruling: `docs/release/decisions.md` **R176** (v1.0 builds PDF export before submission: single chart, songbook, print, preview, the Bass chart option and fills); its questions are closed by **R178** (section 18), with the spec-fold choices confirmed by **R181** (library-selection songbooks in the library's current order with no times; analytics extras, Q12). This spec replaces `docs/phases/4-export.md` (now a pointer here) and carries its resolved decisions forward (`docs/decisions.md` Phase 4: table of contents, no duplex, notes opt-in per export, no branding footer). Built on: **R147** (every section and repeat written out, section map, `RepeatCollapser` gone), **R149** (per-pass show modes: Full, Chords only, First line only, Skip), **R158** P8-2 Q9 (the PDF has its own repeats option, default written out in full) and P8-4 Q7 / Q8 (anyone may use the bass-note view; a "Bass chart" PDF option), **R161** (the Bass chart toggle moved into this build), **R162** Q4 (walk-ups only in the bass-note view), **R167** / **R168** (fills, `t` fills-as-tab, a fill's tab under the line holding its first chord), **R169** (walk-ups into a key change in the new key), **R172** / **R173** (several artists, Movie / Album, slot time from the timeline, "~3:40", unknown time and flagged totals), **R175** (saved fills always show in the bass-note view), **R122** (an out-of-date arrangement plays the full song), **R113** (test budget), **R39** (design directions before new UI), **R140** (one store media pass after these builds), brand.md sections 5, 6 and 9 (light palette for print, shared tokens, same chord/lyric ratio as the stage).
 
 Sibling specs written at the same time: **P9-2 Singer view** (lyrics only) and **P9-3 Medleys**. This spec owns the printing of both and states exactly what it needs from each (sections 8 and 9). Where P9-2 or P9-3 lands a different model, their model wins and only the adapter named there changes; the print rules here stay.
 
@@ -178,10 +178,10 @@ Option **Fit on one page** (default off; disabled for a songbook). When on: `Lay
 
 Pages are always light (decision 8): the renderer forces `\.colorScheme = .light` on every page view, so `Theme.color` resolves the light tokens whatever Settings > Appearance says. The preview sheet's chrome (options column, buttons, the gray around the pages) follows the app appearance; `PDFView`'s background uses `surfaceAlt`. There is no dark-page variant (R178: light pages only).
 
-### 5.13 A songbook from a library multi-selection (R178)
+### 5.13 A songbook from a library multi-selection (R178, R181)
 
 - **Entry:** with two or more songs selected in the library list, File > Export PDF... / Print... target the selection (a single selected song stays a Song export), and the selection's context menu gains "Export N Songs as PDF...". Disabled while a show runs, as in section 4.
-- **Order:** the library list's current sort and filter order, as the user sees it; no reordering in the preview (make a setlist for a running order).
+- **Order:** the library list's current sort and filter order, as the user sees it (R181); no reordering in the preview (make a setlist for a running order).
 - **Contents page:** the 5.10 set list page with the head "Songbook" (24 pt ExtraBold) and a muted line "12 songs" (no venue, date or total: a selection is not a set, so no times or totals print); rows numbered 1..N with title, credits, key as written and page, each a link. No breaks, no medley rows.
 - **Songs:** each as a Song export (section 4: the full song as written with its sidecar display prefs), each starting a new page; the header carries no slot number; the footer's left side reads "Songbook".
 - **Outline:** "Contents", then one entry per song. **Analytics:** `segue.target` = `selection`.
@@ -280,7 +280,7 @@ What print needs from P9-3's model (names are print's assumption; P9-3's names w
 - `ErrorCode.pdfExport` (render or save failure).
 - `FeatureKey` gains nothing: the summary's `part` replaces P8-4 6.6's planned `bassChart` key (one signal, not two); `docs/phases/8-workstreams/P8-4-bass.md` 6.6 is noted as superseded in the P9-1b commit message, not edited by this spec.
 - Update `ServicesVocabularyTests`, the WS3 catalogue row, and `AnalyticsContextEnvironment` if a context note is needed.
-- Proposed extra signals (section 18 Q12, still open): the share sheet's chosen service type is not available to the app, so none; a `helpOpened(.pdf)` when the sheet's help button opens the guide.
+- Extra signals (R181, section 18 Q12): only `helpOpened(.pdf)`, sent when the sheet's help button opens the guide. The share sheet's chosen service type is not available to the app, so nothing is recorded for it.
 
 ## 12. Accessibility
 
@@ -373,7 +373,7 @@ What print needs from P9-3's model (names are print's assumption; P9-3's names w
 - A 20-song songbook re-renders within the 7.3 budget on Apple Silicon; the low-spec figure is recorded.
 - Entitlements and the verify scripts agree; analytics row, guide page and links are live; the one E2E is green; all section 14 suites are green; no code depends on `SeguePersonalModules`.
 
-## 18. Closed questions (R178, 2026-11-01)
+## 18. Closed questions (R178 and R181, 2026-11-01)
 
 1. **Cover page:** no separate cover; the set list page is the contents (R178; decision 9).
 2. **Menu and shortcuts:** File > Export PDF... (⇧⌘E) and File > Print... (⌘P) both open the in-app preview; ⌘P inside it prints (R178; section 4).
@@ -387,7 +387,9 @@ What print needs from P9-3's model (names are print's assumption; P9-3's names w
 10. **Songbook from a library multi-selection:** yes, as well as from a setlist (R178, differing from the spec's recommendation; 5.13).
 11. **Medley members on paper:** members flow on without page breaks, with the transition note between them (R178, differing from the spec's recommendation; section 9, 5.3 rule 7).
 
-Still open (no ruling in R176-R180): **12. Analytics extras.** (a) Row 31 as in section 11 plus `helpOpened(.pdf)`. (b) Row 31 only. Recommend (a). Close before P9-1b step 5.
+12. **Analytics extras:** row 31 as in section 11 plus `helpOpened(.pdf)`, nothing else (R181; section 11).
+
+No questions remain open.
 
 ## Appendix: what `docs/phases/4-export.md` said, and where it went
 
