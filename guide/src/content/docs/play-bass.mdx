@@ -1,6 +1,6 @@
 ---
 title: Playing bass
-description: See the note to play instead of the chord, at sounding pitch, with a mini neck on stage and walk-ups into the next chord.
+description: See the note to play instead of the chord, at sounding pitch, with a mini neck on stage, walk-ups into the next chord and fills you make yourself.
 ---
 import Shot from '../../components/Shot.astro';
 import Steps from '../../components/Steps.astro';
@@ -67,6 +67,47 @@ Choose **Walk-ups…** in the editor's top bar, or right-click a song in the lib
 At the top, **Feel** sets the style for this song: **Default**, **Pop**, **Rock**, **Worship**, **Country / gospel** or **Bollywood**. The feel only changes which walk-ups come first. Default uses **Default feel** from Settings.
 
 If you edit the song and some saved walk-ups no longer match, the list's footer shows them with a **Remove** button each, and **Remove All**.
+
+## Fills {#fills}
+
+A fill is your own bass line over a run of chords, ending on the chord it lands on: a turnaround into the chorus, a run into a key change. Segue suggests a few, you hear them, pick one and change any note.
+
+<Steps>
+1. Open the song in the editor (or select it in the library) with the bass-note view on.
+2. In the preview, click the first chord of the run, then <kbd>⇧</kbd>-click the chord the fill lands on. The run can cross a section or a key change.
+3. Click **Create Bass Fill…** under the landing chord, or press <kbd>⌥⌘F</kbd>.
+4. Play the options, pick one, change what you like, and click **Save**.
+</Steps>
+
+<Shot id="fill-editor" alt="The bass fill editor: the chords across the top, options A to D on the left with their pattern names, the fretboard and rhythm grid, the mini tab and the footer with Shows on and Save" />
+
+### Select the chords {#fill-span}
+
+A plain click on a chord still plays it and also marks where the fill starts; the <kbd>⇧</kbd>-click is silent. The chords in the run are tinted and underlined. A fill covers 2 to 9 chords and at most 8 bars, and can't cross `N.C.`: when the run doesn't fit, the capsule says why instead. You can also <kbd>⇧</kbd>-click chords in the play-along lane, or right-click a tinted chord. With VoiceOver, use **Start fill at** and **End fill at** in a line's actions. <kbd>Esc</kbd> clears the run.
+
+### Hear and pick an option {#fill-options}
+
+The editor opens with four options, **A** to **D**, each a different kind of fill (an approach, a chromatic line, an arpeggio, a stop and so on) named under its notes. **More** adds a fifth, and **Start from scratch** gives an empty bar to write your own.
+
+- Click the play button beside an option, or press <kbd>Space</kbd> for the highlighted one, to hear it over its chords with the click. <kbd>A</kbd> to <kbd>E</kbd> or <kbd>↑</kbd> <kbd>↓</kbd> highlight an option.
+- **Loop** is on at first: picking another option while it plays switches at the start of the next pass, so you can compare them back to back.
+- **Tempo** plays it slower (never saved), and **Click** turns the click off.
+
+The fill plays with the chord lengths the chart has; when they're estimated, the lane at the top says so and you can set them there (see [Chord timing](/guide/chord-timing)).
+
+### Change the notes {#fill-edit}
+
+The highlighted option is yours to edit. **Fretboard** shows a neck and a rhythm grid, one row per string; **Piano Roll** shows the notes by pitch. Switch with the toggle or <kbd>⌘1</kbd> and <kbd>⌘2</kbd>; Segue remembers which you used.
+
+On the grid, <kbd>←</kbd> <kbd>→</kbd> move a step and <kbd>↑</kbd> <kbd>↓</kbd> a string. Type a fret number to put that note there (two digits, like `12`, typed quickly), <kbd>+</kbd> and <kbd>-</kbd> make a note a step longer or shorter, and <kbd>R</kbd> or <kbd>⌫</kbd> turns it into a rest. Click a string on the neck to keep the note on that string. The buttons under the grid, or <kbd>⌥S</kbd> <kbd>⌥H</kbd> <kbd>⌥P</kbd> <kbd>⌥G</kbd> <kbd>⌥.</kbd> <kbd>⌥&gt;</kbd>, add a slide, hammer-on, pull-off, ghost note, staccato or accent.
+
+In the piano roll, click to add a note, drag to move or stretch it, <kbd>↑</kbd> <kbd>↓</kbd> move the selected notes a half step (<kbd>⇧</kbd> for an octave) and <kbd>←</kbd> <kbd>→</kbd> a step in time. <kbd>⌘Z</kbd> undoes in either view, and **Revert to B** (under the option you changed) puts it back as Segue suggested it. The mini tab under the editor shows how the fill will read on stage.
+
+### Save {#fill-save}
+
+In the footer, give the fill a name if you like, then choose **Shows on**: **Every time** the change plays, **Only Chorus #2** for one play, or **Last time** (the last time that section plays in the song). **Show as** picks note names over the chords or a mini tab. **Save** keeps it in the song's `.segue.json` file, never in its `.cho` file.
+
+To change a fill later, select the same chords and click **Edit Bass Fill…**, or open it from the **Fills** group in the Walk-ups list or from the walk-up picker on that change. **Delete Fill** removes it, and the walk-up shows there again. Nothing opens or plays during a gig.
 
 ## Fills on charts and on stage {#fills-on-stage}
 

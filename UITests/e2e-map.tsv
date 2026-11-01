@@ -144,5 +144,13 @@ Packages/SegueUI/Sources/SegueUI/Settings/Instrument*	SegueBassE2ETests
 Packages/SegueUI/Sources/SegueUI/Editor/*Bass*	SegueBassE2ETests
 Packages/SegueCore/Sources/Editing/InstrumentProfile.swift	SegueBassE2ETests
 Packages/SegueCore/Sources/Library/Timing/*	SegueBassE2ETests
+UITests/SegueFillE2ETests.swift	SegueFillE2ETests
+Packages/SegueUI/Sources/SegueUI/Editor/Fill/*	SegueFillE2ETests
+Packages/SegueUI/Sources/SegueUI/*Fill*	SegueFillE2ETests
+Packages/SegueUI/Sources/SegueUI/Diagrams/MiniTabView.swift	SegueFillE2ETests
+Packages/SegueCore/Sources/MusicTheory/Fill*	SegueFillE2ETests
+Packages/SegueCore/Sources/Library/*Part*	SegueFillE2ETests
+Packages/SegueCore/Sources/Library/FillSpan.swift	SegueFillE2ETests
+Packages/SegueCore/Sources/Playback/PhraseBuilder+Fill.swift	SegueFillE2ETests
 Packages/SegueCore/Sources/Library/Timing/SlotTime.swift	SegueSongMetadataE2ETests SegueSetlistBuilderE2ETests
 UITests/SegueSongMetadataE2ETests.swift	SegueSongMetadataE2ETests
