@@ -61,6 +61,13 @@ public enum PassMode: String, Sendable, Hashable, Codable, CaseIterable {
     case firstLine = "first"
     /// Kept in the arrangement for the editor; never on stage or in the map.
     case skip
+
+    /// The mode a pass takes in singer view (P9-2 section 6.3, R178): a Chords only pass
+    /// shows its first lyric line (it is played, but its words were not chosen to be read);
+    /// the others are kept.
+    public var singer: Self {
+        self == .chordsOnly ? .firstLine : self
+    }
 }
 
 /// One pass of a slot arrangement (R149): a part of the song and how it is shown. "x2" is
