@@ -158,6 +158,21 @@ struct MeasuredSection {
     /// The pass's items as rendered and annotated (walk-ups, fills), before measuring: what
     /// print's Compact repeats compares to find identical passes (P9-1 spec 5.6).
     var renderItems: [RenderItem] = []
+    /// The medley member this pass belongs to (P9-3); 0 for a song.
+    var segment = 0
+    /// The member header that opens this pass's segment (its first pass only).
+    var header: MeasuredHeader?
+}
+
+/// A member header as auto-fit sees it (P9-3 9.2).
+struct MeasuredHeader {
+    var header: MemberHeader
+    /// The transition, measured as a cue (it is drawn in the cue callout style).
+    var transition: MeasuredParagraph?
+    /// A later member's song and slot notes, under the transition.
+    var notes: [MeasuredParagraph]
+    /// A rule above it separates it from the previous member's last pass.
+    var rule: Bool
 }
 
 struct MeasuredCue {

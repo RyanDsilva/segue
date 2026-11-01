@@ -249,6 +249,7 @@ struct FitSearch {
             width: width,
             gutters: gutters,
             measurer: measurer,
+            columnWidth: columnWidth(columns),
         )
         let song = song
         let hasNotes = !song.notes.isEmpty

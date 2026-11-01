@@ -1,5 +1,6 @@
 // Phase 2 frozen interface (docs/phases/2-interfaces.md). Owner: unit B.
 
+import ChordPro
 import Editing
 import Foundation
 import Library
@@ -399,6 +400,49 @@ public struct LayoutRequest: Sendable {
     public var walkUps: BassLineContext?
     /// The chart (chords over lyrics) or singer view (lyrics only, P9-2 section 6.2).
     public var view: StageView
+    /// A medley's members (P9-3 9.1), laid out as one plan with one lyric size; empty for a
+    /// single song, which is laid out from `model`, `cues`, `notes`, `passes` and `walkUps`.
+    public var segments: [LayoutSegment] = []
+
+    /// The segments to lay out: `segments`, else the single song as one segment.
+    public var resolvedSegments: [LayoutSegment] {
+        guard segments.isEmpty else { return segments }
+        return [LayoutSegment(
+            model: model,
+            passes: passes,
+            cues: cues,
+            notes: notes,
+            walkUps: walkUps,
+        )]
+    }
+
+    /// A medley request: one plan through every member's segment. The single-song fields
+    /// hold the first member (callers that read `model` see the opening song).
+    public init(
+        segments: [LayoutSegment],
+        viewport: LayoutSize,
+        minLyricSize: Double,
+        zoom: Double = 1,
+        columns: Int? = nil,
+        style: LayoutStyle = .stage,
+        view: StageView = .chart,
+    ) {
+        let first = segments.first
+        self.init(
+            model: first?.model ?? RenderModel(document: SongDocument(), options: DisplayOptions()),
+            viewport: viewport,
+            minLyricSize: minLyricSize,
+            zoom: zoom,
+            columns: columns,
+            cues: first?.cues ?? [],
+            notes: first?.notes ?? [],
+            passes: first?.passes,
+            style: style,
+            walkUps: first?.walkUps,
+            view: view,
+        )
+        self.segments = segments
+    }
 
     public init(
         model: RenderModel,

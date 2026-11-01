@@ -94,7 +94,7 @@ let package = Package(
         // Phase 2 unit B: live auto-fit layout and auto-scroll model (pure).
         .target(
             name: "LiveLayout",
-            dependencies: ["ChordPro", "Editing", "Library"],
+            dependencies: ["ChordPro", "Editing", "Library", "Setlists"],
             swiftSettings: strictSettings,
         ),
         .target(

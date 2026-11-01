@@ -64,6 +64,7 @@ struct PlanAssembly {
                     bottom: bottom,
                     weight: placement.height,
                 ))
+                passes[passes.count - 1].segment = section.segment
             }
         }
         return passes
@@ -89,7 +90,7 @@ struct PlanAssembly {
             PlacedLine(text: line.text, baseline: line.baseline + top)
         }
         let continuation = section.name.map { "\($0) \(SongPreparation.continuationText)" }
-        return LayoutBlock(
+        var block = LayoutBlock(
             id: section.id,
             source: section.source,
             pass: section.isNotes ? nil : section.id,
@@ -107,6 +108,12 @@ struct PlanAssembly {
             labelLines: labelLines,
             part: placement.part,
         )
+        block.segment = section.segment
+        if isFirst, let header = section.header {
+            block.memberHeader = header
+            block.memberHeaderTop = inset
+        }
+        return block
     }
 
     /// Scroll offsets for PgDn/PgUp: each page starts at the top of the last row that was

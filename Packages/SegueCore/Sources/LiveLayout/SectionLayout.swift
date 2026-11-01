@@ -50,6 +50,10 @@ struct LaidSection {
     var brokeVerbatim: Bool
     /// A lyric line wraps.
     var wrapped: Bool
+    /// The medley member this pass belongs to (P9-3); 0 for a song.
+    var segment = 0
+    /// The member header in the head, above the cues (a segment's first pass only).
+    var header: PlacedMemberHeader?
 }
 
 /// A gutter label, top-aligned: line baselines measured from the first line's ink top (0),
@@ -76,6 +80,12 @@ struct SectionLayout {
     /// depend on the lyric size, so they are laid out once per plan.
     let gutters: [Int: SectionGutters]
     let measurer: Measurer
+    /// The whole column's width (gutter included): a member header spans it (P9-3 9.2).
+    var columnWidth: Double?
+
+    var headerWidth: Double {
+        columnWidth ?? width
+    }
 
     var style: LayoutStyle {
         context.style
@@ -83,8 +93,9 @@ struct SectionLayout {
 
     func lay(_ section: MeasuredSection) -> LaidSection {
         var cues: [PlacedCue] = []
-        var head = 0.0
-        let headInkTop: Double? = section.cues.isEmpty ? nil : 0
+        let header = section.header.map(memberHeader)
+        var head = header?.height ?? 0
+        let headInkTop: Double? = section.cues.isEmpty ? nil : head
         for cue in section.cues {
             let placed = callout(cue, y: head)
             cues.append(placed)
@@ -112,6 +123,8 @@ struct SectionLayout {
             units: units,
             brokeVerbatim: broke,
             wrapped: units.contains(where: \.wrapped),
+            segment: section.segment,
+            header: header,
         )
     }
 

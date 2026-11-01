@@ -294,6 +294,13 @@ public struct LayoutBlock: Sendable, Hashable, Identifiable {
     /// 0 for a section's first (or only) part; 1, 2, ... for the continuation of a section
     /// that had to be split across columns (labelled "(cont.)", no cues; same `id`).
     public var part: Int
+    /// The medley member this block belongs to (P9-3); 0 for a song.
+    public var segment = 0
+    /// The member header at the block's head (a segment's first pass, first part only),
+    /// placed from `memberHeaderTop`; nil otherwise.
+    public var memberHeader: PlacedMemberHeader?
+    /// Where the header's top is from the block's top (the block inset).
+    public var memberHeaderTop = 0.0
 
     public init(
         id: Int,
@@ -362,6 +369,8 @@ public struct PlanPass: Sendable, Hashable {
     public var bottom: Double
     /// Sum of its blocks' heights (the map chip's width).
     public var weight: Double
+    /// The medley member it belongs to (P9-3); 0 for a song.
+    public var segment = 0
 
     public init(
         index: Int,

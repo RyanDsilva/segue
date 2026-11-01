@@ -11,14 +11,48 @@ struct SongPreparation {
     let request: LayoutRequest
     let measurer: Measurer
 
+    /// The song, or a medley's segments one after another (P9-3 9.1): each measured as a
+    /// song, pass ids numbered through the whole plan, a member header on each segment's
+    /// first pass. The first segment's notes sit at the top as for a song; a later member's
+    /// notes go in its header.
     func measure() -> MeasuredSong {
-        let original = request.model.sections
+        let segments = request.resolvedSegments
+        guard segments.count > 1 || segments.first?.header != nil else {
+            return measure(segments.first ?? LayoutSegment(model: request.model))
+        }
+        var result = MeasuredSong(notes: [], sections: [], lineCount: 0)
+        for (index, segment) in segments.enumerated() {
+            var song = measure(segment)
+            let offset = result.sections.count
+            for position in song.sections.indices {
+                song.sections[position].id += offset
+                song.sections[position].segment = index
+            }
+            if let header = segment.header, !song.sections.isEmpty {
+                song.sections[0].header = MeasuredHeader(
+                    header: header,
+                    transition: header.transition.map { measurer.paragraph($0, role: .cue) },
+                    notes: index == 0 ? [] : song.notes,
+                    rule: index > 0,
+                )
+            }
+            if index == 0 {
+                result.notes = song.notes
+            }
+            result.sections += song.sections
+            result.lineCount += song.lineCount
+        }
+        return result
+    }
+
+    private func measure(_ segment: LayoutSegment) -> MeasuredSong {
+        let original = segment.model.sections
         let units = SongSections.units(of: original)
         // Cues pin to the song's own sections (song-relative label + occurrence) before the
         // passes reorder them; a cue shows on its part's first shown pass only, and a cue on
         // a part that is only skipped is simply not played (not "unmatched").
-        let (pinned, unmatched) = pinCues(original)
-        let order = request.passes ?? ArrangementResolver.fullSong(units)
+        let (pinned, unmatched) = pinCues(original, cues: segment.cues)
+        let order = segment.passes ?? ArrangementResolver.fullSong(units)
         var arranged = ArrangedSections.build(original, order: order)
         // Counted before singer view drops anything, so both views scroll at one speed.
         let lineCount = arranged.reduce(0) { $0 + Self.lyricLines($1.section.items) }
@@ -28,7 +62,7 @@ struct SongPreparation {
             for index in arranged.indices {
                 arranged[index].section = SingerView.section(arranged[index].section)
             }
-        } else if let walkUps = request.walkUps {
+        } else if let walkUps = segment.walkUps {
             // Each pass gets the walk-up into what actually follows it (P8-4b section 8.6).
             let annotated = BassLine.annotate(
                 arranged.map(\.section),
@@ -54,7 +88,7 @@ struct SongPreparation {
             )
         }
         // Singer view lays out no notes block: song and slot notes are player reminders (R178).
-        var notes = (singer ? [] : request.notes)
+        var notes = (singer ? [] : segment.notes)
             .flatMap { $0.components(separatedBy: .newlines) }
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
@@ -210,11 +244,13 @@ struct SongPreparation {
     /// Cues per section and the cues whose section no longer exists, by the section notes
     /// anchoring rule (`SectionNotes.pin`: display label, case-insensitive, and 1-based
     /// occurrence of that label).
-    private func pinCues(_ sections: [RenderSection]) -> ([[SongCue]], [SongCue]) {
-        let (pinned, unmatched) = SectionNotes.pin(request.cues, to: sections)
+    private func pinCues(_ sections: [RenderSection], cues: [SongCue])
+        -> ([[SongCue]], [SongCue])
+    {
+        let (pinned, unmatched) = SectionNotes.pin(cues, to: sections)
         return (
-            pinned.map { $0.map { request.cues[$0] } },
-            unmatched.map { request.cues[$0] },
+            pinned.map { $0.map { cues[$0] } },
+            unmatched.map { cues[$0] },
         )
     }
 
