@@ -18,8 +18,8 @@ public extension AnalyticsEvent {
         let name = "Segue.\(area).\(eventName)"
         switch self {
         case .aiAssistantUsed, .aiModelDownload, .aiPasteFinished, .analyticsEnabled,
-             .feedbackSent, .libraryCreated, .setlistComposerSession, .showEnded, .showStarted,
-             .songImported, .timingTapCaptured, .pdfExported:
+             .feedbackSent, .libraryCreated, .pdfExported, .setlistComposerSession, .showEnded,
+             .showStarted, .songImported, .timingTapCaptured:
             return .perOccurrence
         case .appLaunched, .librarySnapshot, .songDeleted:
             return .daily(key: name)
