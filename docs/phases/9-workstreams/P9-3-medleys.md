@@ -1,6 +1,6 @@
 # P9-3 - Medleys: several songs in one setlist slot, with written transitions
 
-Phase 9 workstream (new, 2026-10-31). Rulings: `docs/release/decisions.md` **R176** (the first App Store release is v1.0 and builds Medleys before submission, specced with its open questions closed first), **R178** (this spec's questions closed, section 21), **R138** / **R140** (Medleys are in the release; the one store media pass comes after it), and `docs/00-vision.md:91` ("Medleys - several songs joined into one set slot with a written transition"). Built on Phase 8 and earlier: **R122** / **R149** (per-slot arrangements, pass show modes), **R147** / **R148** (every pass written out, section map, jump and loop), **R150** / **R156** (single-song sessions, Rehearse this), **R153** / **R157** (set composer, `RomanNormalizer`), **R154** (pedal safety, serialized undo), **R167** / **R168** Q3 (one `SongTimeline`; the metronome switches tempo and meter at pass boundaries), **R169** (a walk-up into a key change is planned in the new key), **R172** / **R173** (slot time = tempo x played bars, unknown never invented, "~" when estimated), **R85** / **R86** / **R105** (breaks, changeover, intermission), **R115** (locked slots), **R16** (builder undo), **R113** (test budget), **R39** (design directions before new UI), **R79** (accessibility walk), the walkthrough rule "a song appears at most once per setlist" (with R178's one exception, the medley reprise, decision 8), and the owner's romanized Hindi rule (spell-check and autocorrect off in typed text; nothing "corrects" romanized Hindi).
+Phase 9 workstream (new, 2026-10-31). Rulings: `docs/release/decisions.md` **R176** (the first App Store release is v1.0 and builds Medleys before submission, specced with its open questions closed first), **R178** (this spec's questions closed, section 21), **R181** (the spec-fold choices confirmed: a song at most twice in a set, two medleys sharing a song refused, Rebuild drops an unlocked reprise with a note), **R138** / **R140** (Medleys are in the release; the one store media pass comes after it), and `docs/00-vision.md:91` ("Medleys - several songs joined into one set slot with a written transition"). Built on Phase 8 and earlier: **R122** / **R149** (per-slot arrangements, pass show modes), **R147** / **R148** (every pass written out, section map, jump and loop), **R150** / **R156** (single-song sessions, Rehearse this), **R153** / **R157** (set composer, `RomanNormalizer`), **R154** (pedal safety, serialized undo), **R167** / **R168** Q3 (one `SongTimeline`; the metronome switches tempo and meter at pass boundaries), **R169** (a walk-up into a key change is planned in the new key), **R172** / **R173** (slot time = tempo x played bars, unknown never invented, "~" when estimated), **R85** / **R86** / **R105** (breaks, changeover, intermission), **R115** (locked slots), **R16** (builder undo), **R113** (test budget), **R39** (design directions before new UI), **R79** (accessibility walk), the walkthrough rule "a song appears at most once per setlist" (with R178's one exception, the medley reprise, decision 8), and the owner's romanized Hindi rule (spell-check and autocorrect off in typed text; nothing "corrects" romanized Hindi).
 
 **Sibling specs in this folder, written in parallel:** **P9-1** (PDF export) prints medleys in the songbook through section 13's interface; **P9-2** (singer view) adds `LayoutRequest.view`, which applies to every medley member (P9-2 section 6.12).
 
@@ -82,7 +82,7 @@ Composer and assistant:
 5. **One stage plan per medley.** The stage lays every member's passes into one plan, one segment per member, each with its own key, capo, arrangement, cues, notes, walk-ups and tempo; the map strip spans all of them; a member header opens each segment. Moving from member to member is scrolling, not a song change.
 6. **The current member follows the reading line** and is committed to the show record (as `.next` / `.previous`) once the reading line has stayed in the new member for 1 s, or at once on a key (R178).
 7. **Slot time is the sum of the members' slot times** (R172: each member's tempo x the bars of its played passes); no changeover between members; a member with an unknown time adds nothing and makes the medley's time a lower bound; "~" when any member is estimated (R173). Transitions add no time (none is ever invented).
-8. **One song once per setlist, with one exception: the medley reprise** (R178). A song that is a medley member may also appear once elsewhere in the set as an ordinary song slot (a reprise), before or after the medley. Everything else stays refused: a song twice as a slot, a song in two medleys, a song twice in one medley. So a song appears at most twice in a set, and only as one member plus one slot. Every duplicate check asks `Setlist.canAdd(_:as:)` (5.1) instead of "is it in the set".
+8. **One song once per setlist, with one exception: the medley reprise** (R178, confirmed by R181). A song that is a medley member may also appear once elsewhere in the set as an ordinary song slot (a reprise), before or after the medley. Everything else stays refused: a song twice as a slot, a song in two medleys, a song twice in one medley. So a song appears at most twice in a set, and only as one member plus one slot. Every duplicate check asks `Setlist.canAdd(_:as:)` (5.1) instead of "is it in the set".
 9. **Two to twelve members.** The editor refuses an edit that leaves a medley with more than 12 members, and a medley left with one member becomes that song's slot (auto-ungroup) in the same undo step.
 
 ## 5. Data model and schema
@@ -343,7 +343,7 @@ Piecewise: `AutoScroller` gains `segments: [ScrollSegment { fromOffset, speed }]
 ## 11. Set assistant
 
 - **Rebuild keeps every medley in place**, locked or not, and never changes its members (the assistant cannot compose medleys); its lock control shows on and disabled with the help "Medleys stay in place on Rebuild" (R178).
-- The assistant never makes a reprise: member songs are never candidates for other slots. A reprise slot the user made is kept when locked (R115) and otherwise left out like any unpicked slot, with the draft's note "Kesariya's reprise was left out: lock it to keep it".
+- The assistant never makes a reprise: member songs are never candidates for other slots. A reprise slot the user made is kept when locked (R115) and otherwise left out like any unpicked slot, with the draft's note "Kesariya's reprise was left out: lock it to keep it" (R181).
 - **Time**: a medley counts its `MedleyTime.known` toward the target; with unknown members it counts what is known and the draft's note says "1 song in a medley has no time" (the left-out list does not apply: the medley is kept, not left out).
 - **Flow** (`Scorer.flow`): the slot before a medley flows into its **first** member; the slot after it flows from its **last** member; `SlotContext` for a medley's neighbours uses those members' keys and tempos.
 - New sets from a request never contain medleys. Requests can name a medley member like any song (it is still in the library); the request rules of decision 8 apply (a member song may be requested as a reprise slot; a song already a slot is excluded).
@@ -473,7 +473,7 @@ All known (sum, no changeover inside, one changeover after); one unknown (lower 
 - P9-1 has `printSlots`, `MemberHeader.make` and `MedleyTime` to print medleys.
 - Analytics, accessibility, guide pages and `keyboard.json` updated; targeted suites green per step; one `make quick` per session; `make e2e-one` green for `SegueMedleyE2ETests` and any changed class.
 
-## 21. Closed questions (R178, 2026-11-01)
+## 21. Closed questions (R178 and R181, 2026-11-01)
 
 1. **How a medley exists in a running show:** one show item per member, grouped into one plan (R178; decision 4).
 2. **When the current member changes:** it follows the reading line, after a 1 s settle, at once on a key (R178; 9.6).
@@ -482,10 +482,12 @@ All known (sum, no changeover inside, one changeover after); one unknown (lower 
 5. **Walk-up into the next member:** yes, in the next member's key (R178; 9.1).
 6. **Composer syntax:** songs joined with " + " (R178; section 10).
 7. **Auto-scroll across members:** per member (R178; 9.7).
-8. **A song in a medley and again in the set:** allowed as a reprise; the once-per-set rule and its duplicate checks make that one exception (R178, differing from the spec's recommendation; decision 8, 5.1, 5.3, 5.5, 5.6, 6.1, 6.4, 8.2, 8.3, sections 10 and 11).
+8. **A song in a medley and again in the set:** allowed as a reprise; the once-per-set rule and its duplicate checks make that one exception. A song appears at most twice, once as a member and once as a plain slot; two medleys sharing a song are refused; Rebuild drops an unlocked reprise with a "lock it to keep it" note (R178, differing from the spec's recommendation; the details confirmed by R181; decision 8, 5.1, 5.3, 5.5, 5.6, 6.1, 6.4, 8.2, 8.3, sections 10 and 11).
 9. **Member numbering:** 4a, 4b, 4c (R178; 6.2).
 10. **Medleys in the printed songbook:** members flow on without page breaks, with the transition note between them (R178; section 13, P9-1 section 9).
 11. **Gig Log presentation:** members nested under the medley (R178; 8.3).
 12. **`x` on a member:** skips the current member only (R178; 9.5).
 13. **Rehearse this from a member's Arrange sheet:** plays that member (R178; section 12).
 14. **Non-adjacent rows:** a medley may be made from non-adjacent rows (R178; 5.6, 6.1).
+
+No questions remain open.
