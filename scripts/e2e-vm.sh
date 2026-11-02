@@ -23,6 +23,7 @@
 #   E2E_VM_GOLDEN        golden VM name (default segue-e2e-golden)
 #   E2E_VM_TIMEOUT       minutes before a shard's run is killed (default 90)
 #   E2E_VM_SKIP_BUILD=1  reuse the products already in .build/DerivedData
+#   E2E_VM_EXTRA=<dir>   stage <dir> into the guest as products/extra (the library copy test)
 #   VM_VNC=1             Tart: serve the guest screen over VNC to watch a run
 #   SEGUE_RESULT_BUNDLE  where the result bundle goes (as in scripts/xcodebuild.sh)
 #
@@ -203,6 +204,11 @@ mkdir -p "$stage/products" "$stage/results"
 rsync -a --exclude '*.swiftmodule' --exclude '*.a' \
     "$products_dir/$configuration" "$stage/products/"
 cp "$products_dir/$xctestrun" "$stage/products/"
+# Extra input a test reads in the guest (scripts/library-copy-test.sh): staged as
+# products/extra, which the guest copies with the products.
+if [[ -n "${E2E_VM_EXTRA:-}" ]]; then
+    ditto "$E2E_VM_EXTRA" "$stage/products/extra"
+fi
 cp scripts/lib/e2e-vm-guest.sh "$stage/products/guest-run.sh"
 staged=$SECONDS
 log "staged $(du -sh "$stage/products" | cut -f1) in $(elapsed $((staged - build_done)))"

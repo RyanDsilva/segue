@@ -57,7 +57,7 @@ WRANGLER     := pnpm dlx wrangler@4.151.1
 	test-perf e2e e2e-one e2e-smoke e2e-vm e2e-vm-golden gate quick eval-ai eval-import review-gold import-canary lint format verify-appstore check bump \
 	site-fonts site-html guide guide-dev guide-check help-book help-book-check guide-keys docs-shots docs-clips screenshots screenshots-compose preview preview-edit docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts \
-	store-check store-upload review-video
+	store-check store-upload review-video library-copy-test
 
 bootstrap: ## Install pinned tools and Xcode's Metal Toolchain, fetch dependencies, generate the workspace
 	GEMRC=Config/gemrc mise install
@@ -194,6 +194,9 @@ e2e-smoke: ## The E2E smoke set: library to editor to setlist to live (E2E_SMOKE
 
 e2e-vm: ## UI tests in a throwaway VM clone, off the screen: make e2e-vm [ONLY=Class[/test][,...]] [E2E_VM_SHARDS=2] [VM_VNC=1]
 	E2E_RUNNER=$(if $(filter lume,$(E2E_RUNNER)),lume,vm) scripts/e2e-run.sh $(E2E_ONLY_ARGS)
+
+library-copy-test: ## 1.0 opens a COPY of ~/Music/Segue in the E2E VM; readable diff in .build/library-copy-test (LIBRARY=dir)
+	scripts/library-copy-test.sh $(LIBRARY)
 
 e2e-vm-golden: ## Create or refresh the golden E2E VM for this Mac's Xcode (pulls about 69 GB the first time)
 	E2E_RUNNER=$(if $(filter lume,$(E2E_RUNNER)),lume,vm) scripts/e2e-vm-golden.sh

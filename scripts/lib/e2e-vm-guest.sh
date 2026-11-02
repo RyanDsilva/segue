@@ -50,6 +50,12 @@ out="$HOME/segue-results"
 ditto "$share/products" "$run"
 mkdir -p "$out"
 
+# The library copy test's staged library (scripts/library-copy-test.sh); TEST_RUNNER_ hands
+# it to the UI test runner as SEGUE_COPY_LIBRARY.
+if [[ -d "$run/extra/library" ]]; then
+    export TEST_RUNNER_SEGUE_COPY_LIBRARY="$run/extra/library"
+fi
+
 status=0
 xcodebuild test-without-building \
     -xctestrun "$run/$xctestrun" \
