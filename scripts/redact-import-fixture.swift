@@ -16,7 +16,7 @@ import Foundation
 
 /// Words kept as written: chord and section vocabulary, field labels, UG's placeholder
 /// artists, and the site words a junk filter must still see.
-let keptWords: Set<String> = [
+let keptWords: Set = [
     "intro", "verse", "chorus", "prechorus", "pre", "bridge", "outro", "interlude", "solo",
     "hook", "refrain", "instrumental", "riff", "tag", "coda", "ending", "break", "post",
     "capo", "key", "tuning", "standard", "fret", "strumming", "pattern", "tempo", "bpm",
@@ -112,7 +112,10 @@ func redactWords(_ text: String) -> String {
 
 /// UG content: `[ch]X[/ch]` chords and `[Verse 1]`-style headers kept, every other word redacted.
 func redactMarkup(_ text: String) -> String {
-    let token = try! Regex(#"\[/?(ch|tab|b|i|u|verse|chorus|bridge|intro|outro)\]|\[[A-Za-z][A-Za-z0-9 -]{0,30}\]"#)
+    let token =
+        try! Regex(
+            #"\[/?(ch|tab|b|i|u|verse|chorus|bridge|intro|outro)\]|\[[A-Za-z][A-Za-z0-9 -]{0,30}\]"#,
+        )
     var output = ""
     var cursor = text.startIndex
     var inChord = false
@@ -131,7 +134,7 @@ func redactMarkup(_ text: String) -> String {
 // MARK: JSON
 
 /// Keys whose string values are vocabulary, not content: kept as written.
-let keptKeys: Set<String> = [
+let keptKeys: Set = [
     "type", "tonality_name", "tonality", "tab_access_type", "marketing_type", "difficulty",
     "status", "value", "name_of_tuning", "@type", "@context", "TYPE", "CHORDS_KEY", "CAPO",
     "date", "date_update", "index",
@@ -149,7 +152,8 @@ func redactJSON(_ value: Any, key: String? = nil) -> Any {
         if let key, keptKeys.contains(key) {
             return text
         }
-        return text.contains("[ch]") || text.contains("[tab]") ? redactMarkup(text) : redactWords(text)
+        return text.contains("[ch]") || text
+            .contains("[tab]") ? redactMarkup(text) : redactWords(text)
     default:
         return value
     }
@@ -157,7 +161,14 @@ func redactJSON(_ value: Any, key: String? = nil) -> Any {
 
 /// UG's store carries the whole site's state (recommendations, charts, user data); only the
 /// parts the tab and search readers use are kept.
-let keptStoreData: Set<String> = ["tab", "tab_view", "results", "results_count", "pagination", "search_query"]
+let keptStoreData: Set = [
+    "tab",
+    "tab_view",
+    "results",
+    "results_count",
+    "pagination",
+    "search_query",
+]
 
 func pruned(_ object: Any) -> Any {
     guard var root = object as? [String: Any], var store = root["store"] as? [String: Any],
@@ -174,7 +185,10 @@ func redactJSONText(_ text: String) -> String? {
           let object = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
     else { return nil }
     let redacted = redactJSON(pruned(object))
-    guard let out = try? JSONSerialization.data(withJSONObject: redacted, options: [.sortedKeys, .withoutEscapingSlashes])
+    guard let out = try? JSONSerialization.data(
+        withJSONObject: redacted,
+        options: [.sortedKeys, .withoutEscapingSlashes],
+    )
     else { return nil }
     return String(decoding: out, as: UTF8.self)
 }
@@ -183,7 +197,14 @@ func redactJSONText(_ text: String) -> String? {
 
 func unescapeAttribute(_ text: String) -> String {
     var result = text
-    for (entity, char) in [("&quot;", "\""), ("&#039;", "'"), ("&#39;", "'"), ("&lt;", "<"), ("&gt;", ">"), ("&amp;", "&")] {
+    for (entity, char) in [
+        ("&quot;", "\""),
+        ("&#039;", "'"),
+        ("&#39;", "'"),
+        ("&lt;", "<"),
+        ("&gt;", ">"),
+        ("&amp;", "&"),
+    ] {
         result = result.replacingOccurrences(of: entity, with: char)
     }
     return result
@@ -212,7 +233,10 @@ func redactScript(open: String, body: String) -> String? {
 }
 
 func redactHTML(_ html: String) -> String {
-    let piece = try! Regex(#"(?is)<script\b[^>]*>.*?</script>|<style\b[^>]*>.*?</style>|<!--.*?-->|<[^>]+>"#)
+    let piece =
+        try! Regex(
+            #"(?is)<script\b[^>]*>.*?</script>|<style\b[^>]*>.*?</style>|<!--.*?-->|<[^>]+>"#,
+        )
     var output = ""
     var cursor = html.startIndex
     for match in html.matches(of: piece) {
@@ -241,7 +265,7 @@ func redactHTML(_ html: String) -> String {
 /// Attribute values are redacted like text (titles, names and lyric snippets hide in `title`,
 /// `alt`, `content`, `href`, `data-text`, custom `artist=`/`song=` attributes), except the
 /// structural ones a reader selects by; `data-content` JSON is redacted as JSON.
-let structuralAttributes: Set<String> = [
+let structuralAttributes: Set = [
     "class", "id", "style", "type", "rel", "charset", "name", "lang", "data-chord", "property",
     "itemprop", "itemtype", "itemscope", "width", "height", "dir", "role", "tabindex",
     "aria-hidden", "method", "target", "for", "colspan", "rowspan", "http-equiv", "media",
@@ -271,7 +295,8 @@ func redactTag(_ tag: String) -> String {
             return "\(name)=\(quote)\(raw)\(quote)"
         }
         let plain = unescapeAttribute(raw)
-        let redacted = name == "data-content" ? (redactJSONText(plain) ?? redactWords(plain)) : redactWords(plain)
+        let redacted = name == "data-content" ? (redactJSONText(plain) ?? redactWords(plain)) :
+            redactWords(plain)
         let q = quote.isEmpty ? "\"" : quote
         return "\(name)=\(q)\(q == "'" ? redacted.replacingOccurrences(of: "'", with: "&#39;") : escapeAttribute(redacted))\(q)"
     }
@@ -293,11 +318,14 @@ func redactText(_ text: String) -> String {
 
 let args = CommandLine.arguments
 guard args.count == 3 else {
-    FileHandle.standardError.write(Data("usage: redact-import-fixture.swift <input> <output>\n".utf8))
+    FileHandle.standardError
+        .write(Data("usage: redact-import-fixture.swift <input> <output>\n".utf8))
     exit(2)
 }
+
 let input = try String(contentsOfFile: args[1], encoding: .utf8)
 let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-let output = (trimmed.hasPrefix("{") || trimmed.hasPrefix("[")) ? (redactJSONText(trimmed) ?? redactWords(input)) : redactHTML(input)
+let output = (trimmed.hasPrefix("{") || trimmed.hasPrefix("[")) ?
+    (redactJSONText(trimmed) ?? redactWords(input)) : redactHTML(input)
 try output.write(toFile: args[2], atomically: true, encoding: .utf8)
 print("\(args[2]): \(input.utf8.count) -> \(output.utf8.count) bytes")
