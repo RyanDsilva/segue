@@ -24,7 +24,7 @@ extension SongFiles {
         var song = song
         var sidecar = song.record.sidecar
         sidecar.parts = parts
-        sidecar.schemaVersion = max(sidecar.schemaVersion, Sidecar.currentSchemaVersion)
+        sidecar.schemaVersion = Sidecar.currentSchemaVersion
         sidecar.updatedAt = SegueJSON.stamp(clock.now())
         let data = try SidecarCodec.encode(sidecar)
         let url = sidecarURL(slug: song.slug)

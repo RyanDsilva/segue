@@ -23,8 +23,6 @@
 #   5. Fails unless THIRD_PARTY_NOTICES.md and the licence texts ship in the bundle.
 #   6. Fails unless the sound bank ships exactly once, in the app's Contents/Resources (never
 #      again in the Quick Look extension's copy of the SegueUI bundle, P8-6).
-#   7. Fails unless the offline Help Book ships in both flavours with every in-app Help
-#      anchor (P9-5 3.3).
 #
 # The flavors have separate bundle IDs (docs/release/decisions.md R11): the App Store build is
 # dev.ryandsilva.segue (App/SegueAppStore.entitlements), Personal is
@@ -121,42 +119,32 @@ check_personal_free() {
     fi
 }
 
-# check_quicklook <configuration>: the App Store app embeds exactly SegueQuickLook.appex (the
-# preview, WS2b 4.7, I-14) and SegueQuickLookThumbnail.appex (Finder thumbnails, P9-5 P3).
+# check_quicklook <configuration>: the App Store app embeds exactly SegueQuickLook.appex (WS2b
+# 4.7, I-14) with the App Store extension ID, signed with the sandbox entitlement, with no
+# personal-package symbols, and its SegueUI resource bundle stamped like the app's.
 check_quicklook() {
-    local config="$1" app="$products/$1/Segue.app" plugins
+    local config="$1" app="$products/$1/Segue.app" plugins appex id ent
     plugins=$(cd "$app/Contents/PlugIns" 2>/dev/null && find . -maxdepth 1 -name '*.appex' \
         | sed 's|^\./||' | sort | tr '\n' ' ')
-    if [[ "$plugins" != "SegueQuickLook.appex SegueQuickLookThumbnail.appex " ]]; then
-        fail "$config: PlugIns must hold exactly SegueQuickLook.appex and" \
-            "SegueQuickLookThumbnail.appex (found: ${plugins:-none})"
+    if [[ "$plugins" != "SegueQuickLook.appex " ]]; then
+        fail "$config: PlugIns must hold exactly SegueQuickLook.appex (found: ${plugins:-none})"
         return
     fi
-    check_appex "$config" "$app/Contents/PlugIns/SegueQuickLook.appex" \
-        dev.ryandsilva.segue.quicklook
-    check_appex "$config" "$app/Contents/PlugIns/SegueQuickLookThumbnail.appex" \
-        dev.ryandsilva.segue.thumbnail
-}
-
-# check_appex <configuration> <appex> <id>: one extension has the App Store extension ID, is
-# signed with the sandbox entitlement only, has no personal-package symbols, and its SegueUI
-# resource bundle is stamped like the app's.
-check_appex() {
-    local config="$1" appex="$2" want="$3" id ent
+    appex="$app/Contents/PlugIns/SegueQuickLook.appex"
     id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$appex/Contents/Info.plist" \
         2>/dev/null || true)
-    if [[ "$id" == "$want" ]]; then
-        pass "$config: extension $(basename "$appex") is $id"
+    if [[ "$id" == "dev.ryandsilva.segue.quicklook" ]]; then
+        pass "$config: Quick Look extension is $id"
     else
-        fail "$config: extension $(basename "$appex") identifier is '${id:-unreadable}'"
+        fail "$config: Quick Look extension identifier is '${id:-unreadable}'"
     fi
     if ent=$(codesign -d --entitlements - --xml "$appex" 2>/dev/null | plutil -convert json -o - - \
         2>/dev/null) && [[ $(jq -r '."com.apple.security.app-sandbox"' <<<"$ent") == "true" ]] \
         && [[ $(jq -r 'del(."com.apple.security.app-sandbox", ."com.apple.security.get-task-allow")
             | keys | length' <<<"$ent") == "0" ]]; then
-        pass "$config: $(basename "$appex") is sandboxed with nothing else"
+        pass "$config: Quick Look extension is sandboxed with nothing else"
     else
-        fail "$config: $(basename "$appex") entitlements are not exactly the sandbox: ${ent:-unreadable}"
+        fail "$config: Quick Look extension entitlements are not exactly the sandbox: ${ent:-unreadable}"
     fi
     local binary hits=""
     for binary in "$appex"/Contents/MacOS/*; do
@@ -165,11 +153,11 @@ check_appex() {
         fi
     done
     if [[ -n "$hits" ]]; then
-        fail "$config: personal-package symbols in $(basename "$appex"):"$'\n'"$hits"
+        fail "$config: personal-package symbols in the Quick Look extension:"$'\n'"$hits"
     else
-        pass "$config: no personal-package symbols in $(basename "$appex")"
+        pass "$config: no personal-package symbols in the Quick Look extension"
     fi
-    check_resource_bundle "$config $(basename "$appex" .appex)" "$appex"
+    check_resource_bundle "$config Quick Look" "$appex"
 }
 
 # check_entitlements <configuration>: the signed entitlements must be exactly
@@ -215,11 +203,9 @@ check_no_test_hooks Release-AppStore "$products/Release-AppStore/Segue.app/Conte
 check_resource_bundle Release-AppStore "$products/Release-AppStore/Segue.app"
 check_third_party_notices Release-AppStore "$products/Release-AppStore/Segue.app"
 check_sound_bank Release-AppStore "$products/Release-AppStore/Segue.app"
-check_help_book Release-AppStore "$products/Release-AppStore/Segue.app"
 
 build Segue-Personal Release-Personal
 check_entitlements Release-Personal
-check_help_book Release-Personal "$products/Release-Personal/Segue.app"
 
 if ((failures > 0)); then
     echo "verify-appstore: $failures check(s) failed" >&2

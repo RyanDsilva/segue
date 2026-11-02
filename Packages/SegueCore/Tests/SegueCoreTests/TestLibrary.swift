@@ -139,7 +139,6 @@ final class TestLibrary: Sendable {
             "scrollSpeedFactor" : 1,
             "zoom" : 1
           },
-          "minReaderVersion" : \(Sidecar.currentMinReaderVersion),
           "parts" : [
 
           ],

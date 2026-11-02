@@ -50,11 +50,7 @@ public struct UserShapeLibrary: Sendable, Hashable, Codable {
         if !fileSystem.directoryExists(at: directory) {
             try fileSystem.createDirectory(at: directory)
         }
-        let stored = StoredLibrary(
-            schemaVersion: Self.currentSchemaVersion,
-            minReaderVersion: Self.currentSchemaVersion,
-            entries: entries,
-        )
+        let stored = StoredLibrary(schemaVersion: Self.currentSchemaVersion, entries: entries)
         try fileSystem.writeAtomically(SegueJSON.encode(stored), to: url)
     }
 
@@ -70,11 +66,9 @@ public struct UserShapeLibrary: Sendable, Hashable, Codable {
     public static let currentSchemaVersion = 1
     private static let migrator = SchemaMigrator(currentVersion: currentSchemaVersion, steps: [:])
 
-    /// The on-disk form: `{ "entries": [...], "minReaderVersion": 1, "schemaVersion": 1 }`
-    /// (R196: `minReaderVersion` equals the schema version in v1.0).
+    /// The on-disk form: `{ "entries": [...], "schemaVersion": 1 }`.
     private struct StoredLibrary: Codable {
         var schemaVersion: Int
-        var minReaderVersion: Int?
         var entries: [Entry]
 
         var library: UserShapeLibrary {

@@ -3,8 +3,7 @@
 # drift. Source it from the repo root after defining `prefix` (the line prefix, e.g.
 # "verify-appstore"). Provides `forbidden`, `perf_strings`, `test_hook_strings`,
 # `app_entitlements`, `fail`, `pass`, `failures`, `check_no_test_hooks`,
-# `check_resource_bundle`, `check_third_party_notices`, `check_sound_bank` and
-# `check_help_book`.
+# `check_resource_bundle`, `check_third_party_notices` and `check_sound_bank`.
 
 # Anything that can only come from the personal package or its compilation condition,
 # including Settings > AI > Advanced custom models and the eval code "Check this model" runs
@@ -149,44 +148,5 @@ check_sound_bank() {
         pass "$label: the sound bank ships once, at Contents/Resources/SegueSounds.sf2"
     else
         fail "$label: the sound bank must ship exactly once, at Contents/Resources:"$'\n'"${copies:-none}"
-    fi
-}
-
-# guide_help_anchors: the Help Book anchor of every SegueLinks.Guide page (P9-5 3.4), from
-# the raw values in SegueLinks.swift: the page slug, `<slug>-<id>` for a heading, `index` for
-# the home. Mirrors `SegueLinks.Guide.helpAnchor`.
-guide_help_anchors() {
-    sed -n -E 's|^ *case [A-Za-z]+ = "https://segue\.ryandsilva\.dev/guide/?([^"]*)"$|\1|p' \
-        Packages/SegueUI/Sources/SegueUI/App/SegueLinks.swift \
-        | sed -E 's|^$|index|; s|#|-|'
-}
-
-# check_help_book <label> <app>: the offline Help Book (P9-5 3.3) ships in
-# Contents/Resources/Segue.help, the Info.plist names it, it has its search index, and every
-# in-app Help anchor is in it. Fails closed on anything unreadable.
-check_help_book() {
-    local label="$1" app="$2" book="$2/Contents/Resources/Segue.help" anchors anchor missing=""
-    local pages="$book/Contents/Resources/en.lproj"
-    if [[ "$(/usr/libexec/PlistBuddy -c "Print :CFBundleHelpBookFolder" "$app/Contents/Info.plist" 2>/dev/null)" != "Segue.help" \
-        || "$(/usr/libexec/PlistBuddy -c "Print :CFBundleHelpBookName" "$app/Contents/Info.plist" 2>/dev/null)" != "dev.ryandsilva.segue.help" \
-        || "$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$book/Contents/Info.plist" 2>/dev/null)" != "dev.ryandsilva.segue.help" ]]; then
-        fail "$label: the Help Book is missing or not named in Info.plist ($book)"
-        return
-    fi
-    if [[ ! -s "$pages/Segue.helpindex" || ! -s "$pages/index.html" ]]; then
-        fail "$label: the Help Book has no index.html or Segue.helpindex"
-        return
-    fi
-    if ! anchors=$(guide_help_anchors) || [[ -z "$anchors" ]]; then
-        fail "$label: could not read the guide anchors from SegueLinks.swift"
-        return
-    fi
-    while IFS= read -r anchor; do
-        grep -q -r -F "<a name=\"$anchor\"></a>" "$pages" --include='*.html' || missing+="$anchor "
-    done <<<"$anchors"
-    if [[ -n "$missing" ]]; then
-        fail "$label: Help anchors missing from the book: $missing"
-    else
-        pass "$label: the Help Book ships with every in-app anchor ($(wc -l <<<"$anchors" | tr -d ' '))"
     fi
 }

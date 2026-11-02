@@ -106,13 +106,9 @@ struct ShowStoreTests {
         let (harness, endings) = (gigs.harness, gigs.endings)
         let newerPath = harness.showPath(endings[1].record.id)
         let original = try harness.lib.read(newerPath)
-        // Newer, and not editable by this build (R196: its minimum reader is newer too).
         let newer = original.replacingOccurrences(
             of: "\"schemaVersion\" : \(ShowRecord.currentSchemaVersion)",
             with: "\"schemaVersion\" : 9",
-        ).replacingOccurrences(
-            of: "\"minReaderVersion\" : \(ShowRecord.currentMinReaderVersion)",
-            with: "\"minReaderVersion\" : 9",
         )
         try harness.lib.write(newer, to: newerPath)
         let brokenID = ShowID(harness.lib.ids.next())
@@ -158,8 +154,7 @@ struct ShowStoreTests {
         )
         // `currentItemId` is absent once the show has ended.
         #expect(Set(object.keys) == [
-            "closure", "endedAt", "events", "gig", "id", "items", "kind", "minReaderVersion",
-            "planned",
+            "closure", "endedAt", "events", "gig", "id", "items", "kind", "planned",
             "requests", "schemaVersion", "scrollPosition", "setlistId", "setlistName",
             "startedAt", "updatedAt",
         ])

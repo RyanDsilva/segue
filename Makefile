@@ -19,9 +19,9 @@ SWIFT_TEST  := swift test --disable-index-store
 # uncompiled). Swift Build suppresses warnings in the non-root SegueCore package, which
 # conflicts with its warnings-as-errors setting, so warnings are failed by grep instead.
 UI_TEST     := $(SWIFT_TEST) --build-system swiftbuild -Xswiftc -no-warnings-as-errors
-# Timing-budget tests (the *PerformanceTests suites, the 2,000-song quick search and the long-song stage plans): they
+# Timing-budget tests (the *PerformanceTests suites, the 2,000-song quick search and the long-song stage plan): they
 # run alone in `test-perf`, never beside another build or test run.
-PERF_TESTS  := PerformanceTests|over 2000 tagged songs|a long song plans within budget|a long song plans quickly
+PERF_TESTS  := PerformanceTests|over 2000 tagged songs|a long song plans within budget
 # Long property tests `make quick` skips (`make test`, gate and check run them).
 SLOW_TESTS  := random command sequences
 # Swift Testing regexes: what test-packages leaves out and what test-perf runs (quick

@@ -99,14 +99,6 @@ Size: about 6 MB (shots and clips kept, Pagefind dropped; R179). The book docume
 - It must match the App Store build: the guide already documents that flavour. The book is versioned with the app (its home page names the version), so a reviewer never reads about a feature the build lacks.
 - 5.1.1(i) is unchanged: Privacy Policy stays a Help menu item opening the web page.
 
-### 3.6 Spike results (step 0, 2026-11-01, macOS 26.6.2, Xcode 27.1)
-
-- Tips (`com.apple.helpviewer`) opens a third-party book from an app's main bundle: `NSApp.showHelp` shows its home, `openHelpAnchor(_:inBook:)` opens the page holding the anchor. Starlight's CSS, the bundled web fonts, AVIF shots, dark mode (`prefers-color-scheme`) and relative links all render.
-- The Help menu's search field lists book topics beside menu items ("metronome" finds the Metronome page).
-- A heading anchor (`go-on-stage-checklist`) opens the right page but at its top: Tips did not scroll to the `<a name>` (an `id` on it changed nothing). Page-level anchors are exact; heading anchors land on the page.
-- `HPD*` keys as in `Skim.help`: `HPDBookAccessPath`, `HPDBookIndexPath`, `HPDBookTitle`, `HPDBookType` 3, `CFBundleSignature` `hbwr`. The index is `hiutil -I lsm -Caf <out> -s en -l en en.lproj`.
-- Built as specced with one change: the help-mode build keeps `base: '/guide'`, so `helpbook.mjs` tells guide pages (`/guide/...`, made relative) from site pages (`/privacy`, made absolute) without guessing. Scripts and the Pagefind box are dropped from the book. Each page's footer names the app version and links "Read this guide online". The book is rebuilt by `scripts/help-book.sh` before every `scripts/xcodebuild.sh` build (a hash of the sources skips it when current), `make help-book-check` (in `make quick`) fails a stale book, and `check_help_book` (verify-appstore for both flavours, verify-archive check 8) checks the shipped book carries every `helpAnchor`. UI test runs use no book (Help logs its web fallback) unless `-SegueHelpBook YES`.
-
 ## 4. String Catalogs (P9-5c; R179: English only, catalogs per module in place for later)
 
 ### 4.1 Language

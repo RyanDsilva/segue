@@ -33,25 +33,14 @@ struct HelpMenuTests {
         }
         // The URL table itself (scheme, host, paths) is `SegueLinksTests`.
         let page = { (url: URL) in ["open " + url.absoluteString] }
+        #expect(opened["Segue Help"] == page(SegueLinks.help))
         #expect(opened["What's New in Segue"] == page(SegueLinks.changelog))
         #expect(opened["Request a Feature…"] == page(SegueLinks.feedback))
         #expect(opened["Privacy Policy"] == page(SegueLinks.privacy))
         #expect(opened["Terms of Use"] == page(SegueLinks.terms))
         let mail = try #require(opened["Report a Problem…"]?.first)
         #expect(mail.hasPrefix("open " + SegueLinks.supportEmail.absoluteString), "\(mail)")
-        #expect(opened.count == 5, "\(opened.keys.sorted())")
-    }
-
-    @Test
-    func `segue help opens the help book and waits with keyboard shortcuts while a show is up`() {
-        let items = HelpMenu.items(hooks: AppHooks(), writeReview: nil)
-        let help = items.first { $0.title == "Segue Help" }
-        guard case .helpBook = help?.action else {
-            Issue.record("Segue Help does not open the Help Book")
-            return
-        }
-        let waiting = items.filter(\.disabledWhilePerforming).map(\.title)
-        #expect(waiting == ["Segue Help", "Keyboard Shortcuts", "What's New in Segue"])
+        #expect(opened.count == 6, "\(opened.keys.sorted())")
     }
 
     @Test

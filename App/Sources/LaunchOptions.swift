@@ -270,7 +270,7 @@ import VendorServices
             servicesLiveFlag, consentFlag, appearanceFlag, mailLogFlag,
             onboardingFlag, seedWelcomeFlag, changelogPathFlag, lastSeenVersionFlag,
             appVersionFlag, reviewLogFlag, tipsFlag, exportPathFlag, completedGigsFlag,
-            statePathFlag, folderKindFlag, defaultWindowFrameFlag, helpBookFlag,
+            statePathFlag, folderKindFlag, defaultWindowFrameFlag,
             screenshotLibraryFlag, windowFrameFlag, stageWindowedFlag, fixedClockFlag,
             scriptedAIFlag, guideFixturesFlag, clockRateFlag,
         ]
@@ -385,7 +385,7 @@ import VendorServices
             if let folderKind {
                 dependencies.folderKind = { _ in folderKind }
             }
-            return withHelpBook(dependencies)
+            return dependencies
         }
 
         /// WS2b's stores and switches for this launch. A test run never asks the system for

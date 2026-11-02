@@ -133,7 +133,7 @@
         public var body: some View {
             let (table, warning) = loadBindings()
             KeyboardShortcutsView(stage: KeyHelp.groups(table), stageWarning: warning)
-                .guideLinks(app.help)
+                .guideLinks(app.dependencies.workspace)
         }
 
         private func loadBindings() -> (InputBindingTable, String?) {

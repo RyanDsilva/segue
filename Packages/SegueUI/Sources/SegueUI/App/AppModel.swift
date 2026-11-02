@@ -45,9 +45,6 @@
         public var hooks: AppHooks
         /// Opens links and reveals files (Help links, Show in Finder).
         public var workspace: any WorkspaceActions
-        /// The offline Help Book (P9-5 3): the app's bundled one. A bundle without it (an
-        /// in-process test runner) falls back to the web through `workspace`.
-        public var helpBook: any HelpBookOpening = SystemHelpBook()
         /// Where File > Import Songs… gets its files.
         public var importPanel: any ImportPanel
         /// Test-only override of the autosave idle debounce (`-SegueAutosaveDelay`); nil

@@ -26,7 +26,6 @@ struct LibraryIdentityTests {
         {
           "createdAt" : "2026-01-01T00:00:00.000Z",
           "id" : "\(first.id)",
-          "minReaderVersion" : 1,
           "schema" : 1
         }
 
@@ -51,11 +50,11 @@ struct LibraryIdentityTests {
     }
 
     @Test
-    func `a newer schema this build may read is kept and never rewritten`() throws {
+    func `a newer schema with an ID is kept and never rewritten`() throws {
         let lib = try TestLibrary()
         let id = "01JBZ6S0X5Q4M3N2P1R0S9T8V7"
-        let newer = #"{"schema": 2, "minReaderVersion": 1, "id": "\#(id)", "#
-            + #""createdAt": "2026-10-01T10:00:00Z", "zone": "x"}"#
+        let newer = #"{"schema": 2, "id": "\#(id)", "createdAt": "2026-10-01T10:00:00Z", "#
+            + #""zone": "x"}"#
         try lib.write(newer, to: ".segue/library.json")
 
         let identity = try LibraryIdentity.resolve(

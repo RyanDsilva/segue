@@ -323,14 +323,9 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
     /// (`ShowItem.medley`, medley slots in `planned`, P9-3). An older build opens a newer
     /// file read-only.
     public static let currentSchemaVersion = 5
-    /// The `minReaderVersion` this build writes (R196: equal to the schema version in v1.0).
-    public static let currentMinReaderVersion = 5
 
     public var id: ShowID
     public var schemaVersion: Int
-    /// The file's `minReaderVersion` as read (R196); written back only while the file stays
-    /// at a newer version than this build's.
-    public var minReaderVersion: Int?
     public var kind: ShowKind
     public var setlistId: SetlistID
     /// The setlist's name at start (the gig log's title if it is renamed or deleted).
@@ -370,7 +365,6 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
     enum CodingKeys: String, CodingKey, CaseIterable {
         case id
         case schemaVersion
-        case minReaderVersion
         case kind
         case setlistId
         case setlistName

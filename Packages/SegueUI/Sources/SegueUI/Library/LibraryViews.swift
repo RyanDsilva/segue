@@ -129,8 +129,6 @@
                         stats: model.playStats[record.id],
                         isSelected: model.listSelection == record.id,
                     )
-                    // P9-5 5 (P2): drag a song out to Finder or Messages as its `.cho`.
-                    .songDragOut(session.dragOut(record), title: SongSummary.title(record))
                 } menu: { record in
                     // A right-click inside a multi-selection adds the whole selection.
                     SongActions(

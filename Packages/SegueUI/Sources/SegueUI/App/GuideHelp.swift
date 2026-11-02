@@ -2,29 +2,17 @@
     import SwiftUI
     import TipKit
 
-    // WS6 section 7, P9-5 section 3: Help buttons and tips open the matching page of the
-    // offline Help Book, with the guide page on the web as the fallback (`HelpRouter`). The
-    // action travels in the environment; a view with no action set (a window that never got
-    // one) shows no Help button rather than a dead one. While a show is up or starting the
-    // buttons are disabled.
+    // WS6 section 7: Help buttons and tips open the matching user guide page in the default
+    // browser, through `WorkspaceActions` like every other link. The action travels in the
+    // environment; a view with no action set (a window that never got one) shows no Help
+    // button rather than a dead one.
 
     /// Opens a guide page.
     public struct OpenGuideAction {
         private let handler: @MainActor (SegueLinks.Guide) -> Void
-        private let available: @MainActor () -> Bool
 
-        public init(
-            isAvailable: @escaping @MainActor () -> Bool = { true },
-            _ handler: @escaping @MainActor (SegueLinks.Guide) -> Void,
-        ) {
-            available = isAvailable
+        public init(_ handler: @escaping @MainActor (SegueLinks.Guide) -> Void) {
             self.handler = handler
-        }
-
-        /// False while a show is up or starting: Help buttons are disabled.
-        @MainActor
-        public var isAvailable: Bool {
-            available()
         }
 
         @MainActor
@@ -38,18 +26,9 @@
     }
 
     public extension View {
-        /// Lets Help buttons and tips under this view open guide pages through `router`
-        /// (the Help Book, the web as fallback).
-        func guideLinks(_ router: HelpRouter) -> some View {
-            environment(\.openGuide, OpenGuideAction(
-                isAvailable: { router.isAvailable },
-                { router.open($0) },
-            ))
-        }
-
-        /// Guide pages on the web only, with `workspace` (views built without the app).
+        /// Lets Help buttons and tips under this view open guide pages with `workspace`.
         func guideLinks(_ workspace: any WorkspaceActions) -> some View {
-            guideLinks(HelpRouter.web(workspace))
+            environment(\.openGuide, OpenGuideAction { workspace.open($0.url) })
         }
     }
 
@@ -71,8 +50,7 @@
                     openGuide(page)
                     opened?()
                 }
-                .disabled(!openGuide.isAvailable)
-                .help("Open “\(page.title)” in Segue Help")
+                .help("Open “\(page.title)” in the Segue Guide")
                 .accessibilityLabel("Help: \(page.title)")
                 .accessibilityIdentifier(AccessibilityID.guideHelp(page))
             }
@@ -122,7 +100,7 @@
             page: SegueLinks.Guide,
             openGuide: OpenGuideAction?,
         ) {
-            if action.id == learnMore, openGuide?.isAvailable == true {
+            if action.id == learnMore {
                 openGuide?(page)
             }
         }

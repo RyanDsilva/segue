@@ -9,9 +9,6 @@ public extension Setlist {
         var object = try LenientObject<CodingKeys>(decoder)
         id = try object.required(.id)
         schemaVersion = object.value(.schemaVersion, default: Self.currentSchemaVersion)
-        // Kept only while the file is newer than this build (R196): it is written back then.
-        minReaderVersion = schemaVersion > Self.currentSchemaVersion
-            ? object.value(.minReaderVersion) : nil
         name = try object.required(.name)
         entries = try object.container.decodeIfPresent([SetlistEntry].self, forKey: .entries) ?? []
         createdAt = object.value(.createdAt)
@@ -29,15 +26,6 @@ public extension Setlist {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(schemaVersion, forKey: .schemaVersion)
-        try container.encode(
-            SchemaMigrator.minReaderVersion(
-                writing: schemaVersion,
-                kept: minReaderVersion,
-                current: Self.currentSchemaVersion,
-                currentMinimum: Self.currentMinReaderVersion,
-            ),
-            forKey: .minReaderVersion,
-        )
         try container.encode(name, forKey: .name)
         try container.encode(entries, forKey: .entries)
         try container.encodeIfPresent(createdAt, forKey: .createdAt)
@@ -46,11 +34,5 @@ public extension Setlist {
         try container.encodeIfPresent(date, forKey: .date)
         try container.encodeIfPresent(targetDuration, forKey: .targetDuration)
         try container.encodeIfPresent(changeoverSeconds, forKey: .changeoverSeconds)
-    }
-
-    /// The version a save writes: the current one, or a newer file's own (R196: a newer
-    /// file this build may edit is never downgraded).
-    mutating func stampWrittenVersion() {
-        schemaVersion = max(schemaVersion, Self.currentSchemaVersion)
     }
 }

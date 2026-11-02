@@ -20,15 +20,12 @@
                     }
                     Button(item.title) {
                         if let help = item.analytics {
-                            app.dependencies.services.record(.helpOpened(
-                                help,
-                                from: help == .reportProblem ? .menu : nil,
-                            ))
+                            app.dependencies.services.record(.helpOpened(help))
                         }
                         perform(item.action)
                     }
                     .keyboardShortcut(item.shortcut?.shortcut)
-                    .disabled(item.disabledWhilePerforming && app.isShowUp)
+                    .disabled(item.disabledWhilePerforming && app.isPerforming)
                 }
             }
         }
@@ -39,8 +36,6 @@
                 open(app.dependencies.workspace)
             case let .window(id):
                 openWindow(id: id)
-            case .helpBook:
-                app.help.openHome()
             }
         }
     }
@@ -52,9 +47,6 @@
             case workspace(AppHooks.Hook)
             /// Opens one of the app's windows.
             case window(String)
-            /// Opens the Help Book's home, or the guide on the web (`HelpRouter`, which
-            /// records row 14 with the route taken).
-            case helpBook
         }
 
         let title: String
@@ -62,8 +54,7 @@
         var disabledWhilePerforming = false
         /// A separator goes above this item.
         var dividerBefore = false
-        /// `Segue.Help.opened`'s `segue.item` (WS3 spec 5 row 14); nil: not counted here
-        /// (Segue Help is counted by `HelpRouter` with its route).
+        /// `Segue.Help.opened`'s `segue.item` (WS3 spec 5 row 14); nil: not counted.
         var analytics: HelpItem?
         let action: Action
 
@@ -82,21 +73,18 @@
             help(hooks) + feedback(hooks, writeReview: writeReview) + legal
         }
 
-        /// Help, Keyboard Shortcuts, Welcome (once its hook is set), What's New. Segue Help and
-        /// Keyboard Shortcuts wait while a show is up or starting (P9-5 3.2): Tips or the
-        /// window would become key and the stage would lose its keys.
+        /// Help, Keyboard Shortcuts, Welcome (once its hook is set), What's New.
         private static func help(_ hooks: AppHooks) -> [HelpMenuItem] {
             var items = [
                 HelpMenuItem(
                     title: MenuShortcuts.help.title,
                     shortcut: MenuShortcuts.help,
-                    disabledWhilePerforming: true,
-                    action: .helpBook,
+                    analytics: .help,
+                    action: .workspace { $0.open(SegueLinks.help) },
                 ),
                 HelpMenuItem(
                     title: MenuShortcuts.keyboardShortcuts.title,
                     shortcut: MenuShortcuts.keyboardShortcuts,
-                    disabledWhilePerforming: true,
                     analytics: .keyboardShortcuts,
                     action: .window(KeyboardShortcutsWindow.id),
                 ),

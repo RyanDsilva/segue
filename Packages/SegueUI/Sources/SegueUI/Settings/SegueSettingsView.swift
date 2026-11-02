@@ -74,7 +74,7 @@
                 }
             }
             .frame(width: 560)
-            .guideLinks(app.help)
+            .guideLinks(app.dependencies.workspace)
         }
     }
 

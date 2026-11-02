@@ -91,6 +91,4 @@ public enum FeatureKey: String, Sendable, CaseIterable {
     /// P9-3 section 14: a stage run that shows a medley (once per run), Rehearse Medley
     /// (builder).
     case medley
-    /// P9-5 section 6: a library song dragged out as its `.cho` file (to Finder, Messages).
-    case songDragOut
 }

@@ -13,9 +13,6 @@
 # Nothing reads it (Xcode the IDE indexes into its own DerivedData) and it costs compile
 # time on every non-trivial build (docs/test-performance.md A5).
 #
-# Help Book: scripts/help-book.sh runs first, so every build path (make build,
-# verify-appstore, E2E, docs-shots, the release archive) ships a book matching the guide.
-#
 # Result bundles: each run writes one to .build/results; only the newest $keep_results are
 # kept (older ones go to the Trash, see scripts/lib/discard.sh), so they do not pile up.
 # SEGUE_RESULT_BUNDLE writes it to that path instead (the capture runs read their
@@ -31,10 +28,6 @@ results=".build/results"
 keep_results=10
 mkdir -p "$results"
 bundle="${SEGUE_RESULT_BUNDLE:-$results/$(date +%Y%m%d-%H%M%S)-$$.xcresult}"
-
-# The offline Help Book both app targets bundle (P9-5 3.3): rebuilt here only when the guide
-# sources changed, since the Xcode build never runs Node.
-scripts/help-book.sh
 
 status=0
 xcodebuild \

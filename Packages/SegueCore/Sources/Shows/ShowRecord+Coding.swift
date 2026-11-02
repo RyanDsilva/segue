@@ -66,9 +66,6 @@ public extension ShowRecord {
         let container = object.container
         id = try object.required(.id)
         schemaVersion = object.value(.schemaVersion, default: Self.currentSchemaVersion)
-        // Kept only while the file is newer than this build (R196): it is written back then.
-        minReaderVersion = schemaVersion > Self.currentSchemaVersion
-            ? object.value(.minReaderVersion) : nil
         kind = try object.required(.kind)
         setlistId = try object.required(.setlistId)
         setlistName = object.value(.setlistName, default: "")
@@ -94,15 +91,6 @@ public extension ShowRecord {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(schemaVersion, forKey: .schemaVersion)
-        try container.encode(
-            SchemaMigrator.minReaderVersion(
-                writing: schemaVersion,
-                kept: minReaderVersion,
-                current: Self.currentSchemaVersion,
-                currentMinimum: Self.currentMinReaderVersion,
-            ),
-            forKey: .minReaderVersion,
-        )
         try container.encode(kind, forKey: .kind)
         try container.encode(setlistId, forKey: .setlistId)
         try container.encode(setlistName, forKey: .setlistName)

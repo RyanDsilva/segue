@@ -16,10 +16,6 @@ public actor ModelStore: LocalModelInstaller {
     private let curated: [LocalModelManifest]
     let options: Options
     private var custom: [LocalModelManifest] = []
-    /// `custom-models.json` as read: its kept keys, unreadable entries and the entries this
-    /// build refuses, all written back with `custom` (R196: nothing a newer Segue wrote is
-    /// dropped).
-    private var customFile = LocalModelCatalog(models: [])
     /// Transient states only (downloading, verifying, paused, failed); installed and not
     /// installed come from the disk.
     var transient: [String: LocalModelState] = [:]
@@ -38,8 +34,9 @@ public actor ModelStore: LocalModelInstaller {
            let data = try? Data(contentsOf: location.customCatalogURL),
            let catalog = try? LocalModelCatalog.decode(data)
         {
-            custom = catalog.models.filter(Self.isUsableCustom)
-            customFile = catalog
+            custom = catalog.models.filter { model in
+                model.role == .custom && ModelStoreLocation.isSafe(model) && model.isVerifiable
+            }
         }
     }
 
@@ -182,25 +179,12 @@ public actor ModelStore: LocalModelInstaller {
         custom.append(manifest)
         do {
             try location.prepare()
-            let data = try JSONEncoder().encode(customCatalog())
+            let data = try JSONEncoder().encode(LocalModelCatalog(models: custom))
             try data.write(to: location.customCatalogURL, options: .atomic)
         } catch {
             throw .fileSystem
         }
         publish()
-    }
-
-    private static func isUsableCustom(_ model: LocalModelManifest) -> Bool {
-        model.role == .custom && ModelStoreLocation.isSafe(model) && model.isVerifiable
-    }
-
-    /// The file to write: what was read, with the usable entries replaced by `custom`.
-    private func customCatalog() -> LocalModelCatalog {
-        var file = customFile
-        let ids = Set(custom.map(\.id))
-        file.models = customFile.models.filter { !Self.isUsableCustom($0) && !ids.contains($0.id) }
-            + custom
-        return file
     }
 
     /// Deletes a custom model's files and forgets the entry.
@@ -209,7 +193,7 @@ public actor ModelStore: LocalModelInstaller {
         try delete(id)
         custom.removeAll { $0.id == id }
         do {
-            let data = try JSONEncoder().encode(customCatalog())
+            let data = try JSONEncoder().encode(LocalModelCatalog(models: custom))
             try data.write(to: location.customCatalogURL, options: .atomic)
         } catch {
             throw .fileSystem

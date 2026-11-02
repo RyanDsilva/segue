@@ -268,9 +268,7 @@ enum VocabularySample {
         events += Milestone.allCases.map {
             .milestoneReached($0, daysSinceFirstLaunch: .zero)
         }
-        events += HelpItem.allCases.map { AnalyticsEvent.helpOpened($0) }
-        events += HelpRoute.allCases.map { AnalyticsEvent.helpOpened(.contextHelp, via: $0) }
-        events += HelpOrigin.allCases.map { AnalyticsEvent.helpOpened(.reportProblem, from: $0) }
+        events += HelpItem.allCases.map(AnalyticsEvent.helpOpened)
         events += FeedbackTransport.allCases.map {
             .feedbackSent(FeedbackSentSummary(
                 transport: $0,

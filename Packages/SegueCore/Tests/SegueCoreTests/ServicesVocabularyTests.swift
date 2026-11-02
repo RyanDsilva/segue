@@ -296,18 +296,4 @@ struct ServicesVocabularyTests {
         #expect(AnalyticsEvent.errorOccurred(.pdfExport).render()
             .params["segue.code"] == "pdfExport")
     }
-
-    /// P9-5 section 6: row 14's route and origin, sent only when known.
-    @Test func `help opened carries its route and origin only when known`() {
-        let menu = AnalyticsEvent.helpOpened(.help, via: .book).render()
-        #expect(menu.name == "Segue.Help.opened")
-        #expect(menu.params == ["segue.item": "help", "segue.via": "book"])
-        let button = AnalyticsEvent.helpOpened(.contextHelp, via: .web).render()
-        #expect(button.params == ["segue.item": "contextHelp", "segue.via": "web"])
-        let report = AnalyticsEvent.helpOpened(.reportProblem, from: .errorBanner).render()
-        #expect(report.params == ["segue.item": "reportProblem", "segue.from": "errorBanner"])
-        #expect(AnalyticsEvent.helpOpened(.terms).render().params == ["segue.item": "terms"])
-        #expect(AnalyticsEvent.featureUsed(.songDragOut, .library).render()
-            .params["segue.feature"] == "songDragOut")
-    }
 }
