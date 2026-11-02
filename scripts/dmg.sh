@@ -86,6 +86,10 @@ personal)
     app_id="dev.ryandsilva.segue.personal"
     archive_name="Segue-Personal-$marketing-$build"
     volume="Segue Personal $marketing (owner only)"
+    # Installs beside the App Store or TestFlight Segue.app. Only the bundle's folder is
+    # renamed, in the DMG: the signature does not cover it, the build products and every
+    # test path stay Segue.app, and the menu bar keeps CFBundleName "Segue".
+    app_bundle="Segue Personal.app"
     ;;
 appstore)
     scheme="Segue-AppStore"
@@ -94,6 +98,7 @@ appstore)
     # The name scripts/release.sh uses, so friends get the binary TestFlight gets.
     archive_name="Segue-$marketing-$build"
     volume="Segue $marketing"
+    app_bundle="Segue.app"
     ;;
 *) usage ;;
 esac
@@ -297,15 +302,15 @@ EOF
 build_dmg() {
     local app="$1" out="$2" stage="$scratch/stage" notice_args=()
     mkdir -p "$stage" "$(dirname "$out")"
-    ditto "$app" "$stage/Segue.app"
+    ditto "$app" "$stage/$app_bundle"
     if [[ "$flavour" == personal ]]; then
         notice_text >"$stage/Personal build - owner only.txt"
         notice_args=(-D "notice=$stage/Personal build - owner only.txt")
     fi
     discard "$out"
     say "building the DMG ($volume)"
-    "${dmgbuild[@]}" -s scripts/lib/dmg-settings.py -D "app=$stage/Segue.app" \
-        -D "icon=$stage/Segue.app/Contents/Resources/Segue.icns" "${notice_args[@]}" \
+    "${dmgbuild[@]}" -s scripts/lib/dmg-settings.py -D "app=$stage/$app_bundle" \
+        -D "icon=$stage/$app_bundle/Contents/Resources/Segue.icns" "${notice_args[@]}" \
         "$volume" "$out" >/dev/null
     [[ -s "$out" ]] || die "dmgbuild wrote no $out"
 }
@@ -335,9 +340,11 @@ check_gatekeeper() {
     output=$(spctl -a -vvv -t install "$dmg_file" 2>&1) || ok=0
     indent "spctl install" "$output"
     mounted=$(hdiutil attach -nobrowse -readonly -noautoopen "$dmg_file" | sed -n -E 's|.*(/Volumes/.*)$|\1|p' | tail -n 1)
-    [[ -n "$mounted" && -d "$mounted/Segue.app" ]] || die "could not mount $dmg_file or find Segue.app in it"
+    [[ -n "$mounted" && -d "$mounted/$app_bundle" ]] || die "could not mount $dmg_file or find $app_bundle in it"
+    codesign --verify --deep --strict "$mounted/$app_bundle" \
+        || die "$app_bundle in the DMG fails codesign --verify --strict (Finder info or other detritus?)"
     local inner
-    inner=$(spctl -a -vvv -t exec "$mounted/Segue.app" 2>&1) || ok=0
+    inner=$(spctl -a -vvv -t exec "$mounted/$app_bundle" 2>&1) || ok=0
     indent "spctl exec (app in the DMG)" "$inner"
     [[ -L "$mounted/Applications" ]] || die "the DMG has no Applications link"
     if ((dry_run)); then
@@ -348,7 +355,7 @@ check_gatekeeper() {
         say "dry run: Gatekeeper rejects the un-notarized DMG, as it must"
         return
     fi
-    xcrun stapler validate "$mounted/Segue.app" >/dev/null || ok=0
+    xcrun stapler validate "$mounted/$app_bundle" >/dev/null || ok=0
     hdiutil detach -quiet "$mounted" && mounted=""
     xcrun stapler validate "$dmg_file" >/dev/null || ok=0
     grep -q 'source=Notarized Developer ID' <<<"$output" || ok=0

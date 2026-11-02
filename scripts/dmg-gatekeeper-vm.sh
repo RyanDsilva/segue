@@ -113,33 +113,36 @@ echo "$out" | sed 's/^/  spctl install: /'
 grep -q 'source=Notarized Developer ID' <<<"$out" || verdict=1
 
 mnt=$(hdiutil attach -readonly -noautoopen "$dl" | sed -n -E 's|.*(/Volumes/.*)$|\1|p' | tail -n 1)
-if [[ -z "$mnt" || ! -d "$mnt/Segue.app" ]]; then
-    step "FAIL: could not mount the DMG or find Segue.app"
+# The one app in the image: Segue.app, or Segue Personal.app for the Personal flavour.
+bundle=$(find "$mnt" -maxdepth 1 -name '*.app' -print -quit 2>/dev/null)
+if [[ -z "$mnt" || -z "$bundle" ]]; then
+    step "FAIL: could not mount the DMG or find its app"
     exit 1
 fi
+installed="/Applications/$(basename "$bundle")"
 # The window a friend sees on double-click, for a human to check the layout.
 open "$mnt"
 sleep 8
 screencapture -x "$results/dmg-window.png" || step "note: no screenshot of the DMG window"
-rm -rf /Applications/Segue.app
-ditto "$mnt/Segue.app" /Applications/Segue.app
+rm -rf "$installed"
+ditto "$bundle" "$installed"
 hdiutil detach -quiet -force "$mnt" || true
-if ! xattr -p com.apple.quarantine /Applications/Segue.app >/dev/null 2>&1; then
+if ! xattr -p com.apple.quarantine "$installed" >/dev/null 2>&1; then
     # Finder copies carry the image's quarantine; make sure ditto's copy does too.
-    xattr -w com.apple.quarantine "0083;$(printf %x "$(date +%s)");Safari;$(uuidgen)" /Applications/Segue.app
+    xattr -w com.apple.quarantine "0083;$(printf %x "$(date +%s)");Safari;$(uuidgen)" "$installed"
 fi
-step "app quarantine: $(xattr -p com.apple.quarantine /Applications/Segue.app)"
+step "app quarantine: $(xattr -p com.apple.quarantine "$installed")"
 
-out=$(spctl -a -vvv -t exec /Applications/Segue.app 2>&1) || verdict=1
+out=$(spctl -a -vvv -t exec "$installed" 2>&1) || verdict=1
 echo "$out" | sed 's/^/  spctl exec: /'
 grep -q 'source=Notarized Developer ID' <<<"$out" || verdict=1
-out=$(xcrun stapler validate /Applications/Segue.app 2>&1) || verdict=1
+out=$(xcrun stapler validate "$installed" 2>&1) || verdict=1
 echo "$out" | sed 's/^/  stapler: /'
-out=$(syspolicy_check distribution /Applications/Segue.app 2>&1) || verdict=1
+out=$(syspolicy_check distribution "$installed" 2>&1) || verdict=1
 echo "$out" | sed 's/^/  syspolicy_check: /'
 
 # `open` waits while a Gatekeeper dialog is up, so it runs in the background.
-open /Applications/Segue.app &
+open "$installed" &
 opener=$!
 sleep 15
 screencapture -x "$results/first-launch.png" || step "note: no screenshot of the first launch"

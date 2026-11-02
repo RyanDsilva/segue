@@ -2,11 +2,11 @@
 # R200). dmgbuild (MIT, pinned in scripts/dmg.sh) writes the window layout's .DS_Store
 # itself, so no Finder or AppleScript is involved and the build runs headless.
 #
-# Defines (dmgbuild -D): app = path to the signed Segue.app; notice = optional path to a
+# Defines (dmgbuild -D): app = path to the signed app (Segue.app, or Segue Personal.app); notice = optional path to a
 # text file placed beside it (the Personal flavour's "owner only" note); icon = optional
 # .icns for the volume.
 #
-# The window: Segue.app on the left, an Applications alias on the right, nothing else
+# The window: the app on the left, an Applications alias on the right, nothing else
 # visible. No background image, so Finder draws its own window colour and the icon labels
 # stay readable in both light and dark appearance.
 import os.path
@@ -37,4 +37,5 @@ show_pathbar = False
 show_sidebar = False
 show_icon_preview = False
 include_list_view_settings = False
-hide_extensions = [app_name]
+# No hide_extensions: it sets Finder info on the app bundle, which `codesign --verify
+# --strict` rejects as detritus. Finder hides ".app" by default anyway.
