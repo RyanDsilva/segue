@@ -151,11 +151,15 @@ struct LyricsSearchTests {
     }
 
     @Test
-    func `other scripts and generic albums are left out`() throws {
+    func `other scripts are greyed rows and generic albums are left out`() throws {
         let urdu = try JSONDecoder().decode(LyricsRecord.self, from: JSONSerialization.data(
             withJSONObject: Self.record(9, "تم ہی ہو", "Someone", plain: "تم ہی ہو تم ہی ہو"),
         ))
-        #expect(LyricsSearchSource.candidate(urdu) == nil)
+        let row = try #require(LyricsSearchSource.candidate(urdu))
+        #expect(row.unsupportedScript && !row.isPickable)
+        #expect(row.title == "Untitled")
+        #expect(row.artist == "Someone")
+        #expect(row.lyrics == nil && row.firstLines == nil)
         #expect(LyricsSearchSource.album(album: "Single", title: "X") == nil)
         #expect(LyricsSearchSource.album(album: "Tum Hi Ho", title: "Tum Hi Ho") == nil)
         #expect(LyricsSearchSource.album(album: "Aashiqui 2", title: "Tum Hi Ho") == "Aashiqui 2")

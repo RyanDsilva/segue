@@ -40,7 +40,7 @@ extension FindLyricsModel {
     func move(_ offset: Int) {
         let rows = rows.filter { row in
             guard let (_, candidate) = candidate(for: row) else { return false }
-            return !candidate.isInstrumental
+            return candidate.isPickable
         }
         guard !rows.isEmpty else { return }
         guard let selection, let index = rows.firstIndex(of: selection) else {

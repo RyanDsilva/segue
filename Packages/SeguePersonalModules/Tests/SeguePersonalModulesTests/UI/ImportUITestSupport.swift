@@ -141,6 +141,15 @@ enum ImportSamples {
         romanized: true,
     )
 
+    /// A record in a script Segue doesn't show: a greyed row, never picked (spec 6.5).
+    static let otherScript = SearchCandidate(
+        id: "102",
+        title: "Untitled",
+        artist: "Rahat Fateh Ali Khan",
+        kind: .lyrics,
+        unsupportedScript: true,
+    )
+
     static let tabSong = ImportedSong(
         text: chart,
         fields: SourceFields(
@@ -161,7 +170,7 @@ enum ImportSamples {
     static func sources(
         tab: Result<[SearchCandidate], ImportFailure> = .success(tabVersions),
         pre: Result<[SearchCandidate], ImportFailure> = .failure(.challenged),
-        lyrics: Result<[SearchCandidate], ImportFailure> = .success([lyricsRecord]),
+        lyrics: Result<[SearchCandidate], ImportFailure> = .success([lyricsRecord, otherScript]),
     ) -> [any SongSearchSource] {
         [
             StubSearchSource(

@@ -108,11 +108,21 @@ struct LyricsSearchSource: SongSearchSource {
         return found
     }
 
-    /// A record as a candidate, romanized; nil for a record in a script Segue doesn't show.
+    /// A record as a candidate, romanized. A record in a script Segue doesn't show is a
+    /// greyed, unpickable row whose text in that script is never displayed (spec 6.5).
     static func candidate(_ record: LyricsRecord) -> SearchCandidate? {
         let fields = [record.trackName, record.artistName, record.albumName, record.plainLyrics]
             .compactMap(\.self).joined(separator: " ")
-        guard !hasOtherScript(fields) else { return nil }
+        guard !hasOtherScript(fields) else {
+            return SearchCandidate(
+                id: String(record.id),
+                title: latinOnly(record.trackName) ?? "Untitled",
+                artist: latinOnly(record.artistName),
+                kind: .lyrics,
+                isInstrumental: record.isInstrumental,
+                unsupportedScript: true,
+            )
+        }
         let lyrics = record.plainLyrics.map(HindiRomanizer.romanize)
         return SearchCandidate(
             id: String(record.id),
@@ -129,6 +139,7 @@ struct LyricsSearchSource: SongSearchSource {
     }
 
     func song(for candidate: SearchCandidate) async throws(ImportFailure) -> ImportedSong {
+        guard !candidate.unsupportedScript else { throw .unsupportedScript }
         guard !candidate.isInstrumental else { throw .noChart(.notFound) }
         guard let id = Int(candidate.id) else { throw .notFound }
         var record = try await services.lyrics.record(id: id)
@@ -175,6 +186,15 @@ struct LyricsSearchSource: SongSearchSource {
               trimmed.lowercased() != title?.trimmingCharacters(in: .whitespaces).lowercased()
         else { return nil }
         return trimmed
+    }
+
+    /// The text when it holds only Latin letters (after romanizing Devanagari), else nil.
+    static func latinOnly(_ text: String?) -> String? {
+        guard let text = text.map(HindiRomanizer.romanize), !text.isEmpty,
+              !text.unicodeScalars
+                  .contains(where: { $0.properties.isAlphabetic && $0.value > 0x024F })
+        else { return nil }
+        return text
     }
 
     /// More than a few letters of a script other than Latin or Devanagari (spec 6.5).

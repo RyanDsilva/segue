@@ -37,6 +37,9 @@ struct FindLyricsSongRow: View {
                     if song.best.isInstrumental {
                         mark("Instrumental")
                     }
+                    if song.best.unsupportedScript {
+                        mark("In a script Segue doesn't show")
+                    }
                 }
                 if !subtitle.isEmpty {
                     Text(verbatim: subtitle)

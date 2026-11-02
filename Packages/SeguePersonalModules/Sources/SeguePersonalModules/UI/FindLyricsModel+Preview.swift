@@ -18,6 +18,10 @@ extension FindLyricsModel {
             preview = .loaded(key, cached, chordPro: Self.chordPro(cached))
             return
         }
+        guard !candidate.unsupportedScript else {
+            preview = .failed(key, "In a script Segue doesn't show.")
+            return
+        }
         guard !candidate.isInstrumental else {
             preview = .failed(key, "An instrumental has no lyrics.")
             return
@@ -64,7 +68,7 @@ extension FindLyricsModel {
     /// Return, double-click or Review: the selected version into the review sheet.
     func pick() {
         guard pickTask == nil, let host, let selection,
-              let (song, candidate) = candidate(for: selection), !candidate.isInstrumental,
+              let (song, candidate) = candidate(for: selection), candidate.isPickable,
               let source = sources.first(where: { $0.group == song.group })
         else { return }
         let key = key(song.group, candidate)

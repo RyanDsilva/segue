@@ -200,8 +200,8 @@ struct FindLyricsSheet: View {
                 toggle: { toggle(song) },
             )
             .tag(FindLyricsModel.Row.song(song.id))
-            .selectionDisabled(song.best.isInstrumental)
-            .opacity(group.isStale || song.best.isInstrumental ? 0.45 : 1)
+            .selectionDisabled(!song.best.isPickable)
+            .opacity(group.isStale || !song.best.isPickable ? 0.45 : 1)
             .accessibilityIdentifier(AccessibilityID.findLyricsResult(index(of: .song(song.id))))
             if song.nests, model.expanded.contains(song.id) {
                 ForEach(Array(song.versions.enumerated()), id: \.element.id) { offset, version in

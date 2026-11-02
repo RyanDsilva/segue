@@ -175,6 +175,14 @@ public struct SearchCandidate: Sendable, Hashable, Identifiable {
     public var songKey: String?
     /// Devanagari in the record was romanized for display (spec 6.5).
     public var romanized: Bool
+    /// The record is in a script Segue doesn't show (spec 6.5): listed greyed, never
+    /// previewed or imported, and its text in that script is never displayed.
+    public var unsupportedScript: Bool
+
+    /// Whether the candidate can be previewed and imported.
+    public var isPickable: Bool {
+        !isInstrumental && !unsupportedScript
+    }
 
     public init(
         id: String,
@@ -191,6 +199,7 @@ public struct SearchCandidate: Sendable, Hashable, Identifiable {
         pageURL: URL? = nil,
         songKey: String? = nil,
         romanized: Bool = false,
+        unsupportedScript: Bool = false,
     ) {
         self.id = id
         self.title = title
@@ -206,6 +215,7 @@ public struct SearchCandidate: Sendable, Hashable, Identifiable {
         self.pageURL = pageURL
         self.songKey = songKey
         self.romanized = romanized
+        self.unsupportedScript = unsupportedScript
     }
 }
 

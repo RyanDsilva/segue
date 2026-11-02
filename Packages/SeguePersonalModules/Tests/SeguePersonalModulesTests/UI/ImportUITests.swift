@@ -111,10 +111,16 @@ struct ImportUITests {
         #expect(model.groups[2].songs.first?.best.romanized == true)
 
         // Rows run through the groups; Left collapses the selected song's versions.
-        #expect(model.rows.count == 7)
+        #expect(model.rows.count == 8)
+        #expect(model.groups[2].songs.last?.best.isPickable == false)
         model.setExpanded(false)
         #expect(model.selection == .song(tab.songs[0].id))
-        #expect(model.rows.count == 3)
+        #expect(model.rows.count == 4)
+        // Down never lands on the record in a script Segue doesn't show.
+        for _ in 0 ..< 6 {
+            model.move(1)
+        }
+        #expect(model.selection == .song(model.groups[2].songs[0].id))
 
         let searched = stub.events.compactMap { event -> SongSearchedSummary? in
             if case let .importSearched(summary) = event {
