@@ -3,8 +3,8 @@
   "releases": [
     {
       "version": "1.0",
-      "date": "2026-11-20",
-      "title": "First beta",
+      "date": "{SUBMISSION_DATE}",
+      "title": "Version 1.0",
       "summary": "Segue's first public release on the Mac App Store.",
       "showInApp": false,
       "draft": true,

@@ -110,6 +110,9 @@ func sha256(_ data: Data) -> String {
 /// `{UPPER_SNAKE}` values that only a [RYAN] step can fill.
 let placeholderPattern = #"\{[A-Z][A-Z0-9_]*\}"#
 
+/// The changelog date of a draft release until the submission step sets it (R197).
+let submissionDatePlaceholder = "{SUBMISSION_DATE}"
+
 func isPlaceholder(_ text: String) -> Bool {
     !captures(placeholderPattern, in: text).isEmpty
 }
@@ -419,16 +422,21 @@ func parseRelease(_ raw: Any, at path: String) throws -> Release {
     else {
         throw SiteError.changelog("\(path).version must look like 0.5 or 0.5.1")
     }
-    guard let date = object["date"] as? String, isValidDate(date) else {
-        throw SiteError.changelog("\(path).date must be a real YYYY-MM-DD date")
+    let draft = object["draft"] == nil ? false : jsonBool(object["draft"])
+    guard let draft else { throw SiteError.changelog("\(path).draft must be true or false") }
+    // A draft may carry the submission-day placeholder (R197); a published release never does.
+    guard let date = object["date"] as? String,
+          isValidDate(date) || (draft && date == submissionDatePlaceholder)
+    else {
+        throw SiteError.changelog(
+            "\(path).date must be a real YYYY-MM-DD date (\(submissionDatePlaceholder) only in a draft)",
+        )
     }
     let title = try requireText(object, "title", at: path, max: 60) ?? ""
     let summary = try requireText(object, "summary", at: path, max: 200, optional: true)
     guard let showInApp = jsonBool(object["showInApp"]) else {
         throw SiteError.changelog("\(path).showInApp is required and must be true or false")
     }
-    let draft = object["draft"] == nil ? false : jsonBool(object["draft"])
-    guard let draft else { throw SiteError.changelog("\(path).draft must be true or false") }
     guard let items = object["highlights"] as? [Any], (1 ... 8).contains(items.count) else {
         throw SiteError.changelog("\(path).highlights must hold 1-8 items")
     }
@@ -462,7 +470,7 @@ func loadChangelog() throws -> [Release] {
         guard isNewer else {
             throw SiteError.changelog("\(label): newest first, versions unique")
         }
-        guard newer.date >= older.date else {
+        guard newer.date == submissionDatePlaceholder || newer.date >= older.date else {
             throw SiteError.changelog("\(label): dates must not increase down the list")
         }
     }
@@ -1486,7 +1494,10 @@ struct Checker {
     mutating func checkStrict() {
         let live = build.config.isLive
         for leaf in build.config.leaves() where isPlaceholder(leaf.value) {
-            if !live, leaf.path.hasPrefix("appStore.") {
+            // Before release the badge values and the legal effective dates are unknown: the
+            // dates are the submission day (R197) and the pages say "on the App Store release
+            // date" until then. Once appStore.status is "live", every placeholder fails.
+            if !live, leaf.path.hasPrefix("appStore.") || leaf.path.hasPrefix("legal.") {
                 continue
             }
             fail("content/site.json \(leaf.path): placeholder \(leaf.value) (--strict)")
