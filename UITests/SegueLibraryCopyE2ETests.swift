@@ -182,7 +182,7 @@ final class SegueLibraryCopyE2ETests: XCTestCase {
     @MainActor
     private func attach(_ root: URL, _ name: String) throws {
         for (folder, label) in [("library", "library-after-\(name)"), ("trash", "trash-\(name)")] {
-            let attachment = XCTAttachment(contentsOfDirectory: root.appending(path: folder))
+            let attachment = XCTAttachment(compressedContentsOfDirectory: root.appending(path: folder))
             attachment.name = label
             attachment.lifetime = .keepAlways
             add(attachment)
