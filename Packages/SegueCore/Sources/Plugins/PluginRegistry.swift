@@ -7,7 +7,7 @@ import Synchronization
 
 /// Common identity of every plugin.
 public protocol Plugin: Sendable {
-    /// Stable reverse-DNS identifier, e.g. `dev.ryandsilva.segue.lrclib`.
+    /// Stable reverse-DNS identifier, e.g. `dev.ryandsilva.segue.web-page`.
     var id: String { get }
     /// Name shown in the UI.
     var displayName: String { get }

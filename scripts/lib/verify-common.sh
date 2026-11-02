@@ -11,7 +11,10 @@
 # (R62, R97: Personal only).
 # SwiftSoup is the personal package's own dependency (P9-4); its notices ship only in the
 # Personal app (THIRD_PARTY_NOTICES-Personal.md), so the App Store bundle never names it.
-forbidden='SeguePersonalModules|PersonalModules|SEGUE_PERSONAL|AdvancedModels|AIEval|SwiftSoup|THIRD_PARTY_NOTICES-Personal'
+# P9-4 spec 13: the web import and song search, named so no core or SegueUI text can collide
+# (a bare `echords` would match core's `inlineChords`; "ultimate guitar app" in JunkRules has a
+# space, not the host's hyphen).
+forbidden='SeguePersonalModules|PersonalModules|SEGUE_PERSONAL|AdvancedModels|AIEval|SwiftSoup|THIRD_PARTY_NOTICES-Personal|lrclib|LRCLIB|ultimate-guitar\.com|e-chords\.com|chordie\.com|TabJSONParser|ChordPreParser|ChordSpansParser|GenericPageReader|HindiRomanizer|URLSessionTransport|WebKitPageLoader|UGSearchReader|EChordsSearchReader|VersionRanker|ChallengeDetector|OpenHereSheet|FindLyricsModel|WebImportModel|ImportFixtureSet|SegueImportFixtures'
 
 # Editor performance notices that exist in Debug builds only (WS1 4.8a).
 perf_strings=('slow key' 'slow keystroke' 'slow run loop turn')
