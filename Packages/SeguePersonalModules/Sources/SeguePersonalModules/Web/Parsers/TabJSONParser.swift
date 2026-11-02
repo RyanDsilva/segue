@@ -79,12 +79,8 @@ enum TabJSONParser {
 
     static func fields(tab: Any?, meta: Any?) -> SourceFields {
         let artist = HTMLText.string(tab, ["artist_name"])
-        var fields = SourceFields()
-        if let name = HTMLText.string(tab, ["song_name"]) {
-            let split = SourceCredits.titleAndAlbum(songName: name, artist: artist)
-            fields.title = split.title
-            fields.album = split.album
-        }
+        var fields = HTMLText.string(tab, ["song_name"])
+            .map { SourceCredits.fields(songName: $0, artist: artist) } ?? SourceFields()
         // Spec 5.4: a placeholder artist's singer comes from UG's structured credits.
         let singers = ((HTMLText.value(tab, ["recording", "recording_artists"]) as? [Any]) ?? [])
             .compactMap { HTMLText.string($0, ["artist", "name"]) }

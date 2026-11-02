@@ -36,12 +36,8 @@ enum ChordPreParser {
         let artist = HTMLText.string(byArtist, ["name"])
             ?? ((byArtist as? [Any])?.first).flatMap { HTMLText.string($0, ["name"]) }
             ?? metadata["ARTIST_NAME"]
-        var fields = SourceFields()
-        if let name {
-            let split = SourceCredits.titleAndAlbum(songName: name, artist: artist)
-            fields.title = split.title
-            fields.album = split.album
-        }
+        var fields = name
+            .map { SourceCredits.fields(songName: $0, artist: artist) } ?? SourceFields()
         fields.artistCredit = SourceCredits.credit(artist)
         fields.key = metadata["CHORDS_KEY"] ?? HTMLText.string(composition, ["musicalKey"])
         fields.capo = metadata["CAPO"].flatMap { Int($0) }

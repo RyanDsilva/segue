@@ -30,20 +30,39 @@ enum SourceCredits {
         artist.trimmingCharacters(in: .whitespaces).lowercased().hasPrefix("misc ")
     }
 
-    /// A film song's "<Movie> - <Title>" name under a placeholder artist: split at the first
-    /// " - " only then; otherwise the name is the title as written.
+    /// A film song's "<Movie> - <Title>" name under a placeholder artist (R194). One " - " is
+    /// split by code. With more, the fields hold the fallback split at the last " - ", every
+    /// possible split, and the title is flagged until the model picks one
+    /// (`FilmTitleResolver`). Any other artist: the name is the title as written.
+    static func fields(songName: String, artist: String?) -> SourceFields {
+        let name = songName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = name.components(separatedBy: " - ")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        guard let artist, isPlaceholderArtist(artist), parts.count >= 2,
+              !parts.contains(where: \.isEmpty)
+        else { return SourceFields(title: name) }
+        let splits = (1 ..< parts.count).map { cut in
+            TitleSplit(
+                title: parts[cut...].joined(separator: " - "),
+                album: parts[..<cut].joined(separator: " - "),
+            )
+        }
+        guard let fallback = splits.last else { return SourceFields(title: name) }
+        return SourceFields(
+            title: fallback.title,
+            album: fallback.album,
+            titleSplits: splits.count > 1 ? splits : [],
+            titleUncertain: splits.count > 1,
+        )
+    }
+
+    /// The single-split reading (title, album), for callers that need only the pair.
     static func titleAndAlbum(
         songName: String,
         artist: String?,
     ) -> (title: String, album: String?) {
-        let name = songName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let artist, isPlaceholderArtist(artist), let dash = name.range(of: " - ") else {
-            return (name, nil)
-        }
-        let movie = name[..<dash.lowerBound].trimmingCharacters(in: .whitespaces)
-        let title = name[dash.upperBound...].trimmingCharacters(in: .whitespaces)
-        guard !movie.isEmpty, !title.isEmpty else { return (name, nil) }
-        return (title, movie)
+        let fields = fields(songName: songName, artist: artist)
+        return (fields.title ?? songName, fields.album)
     }
 
     /// The artist credit to use: nil for a placeholder, else the value trimmed.

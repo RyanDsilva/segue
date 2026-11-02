@@ -15,6 +15,12 @@ public struct SourceFields: Sendable, Hashable {
     /// A stated key, kept only when `SongKey(parsing:)` reads it.
     public var key: String?
     public var capo: Int?
+    /// R194: a film song name with more than one " - " ("Brahmāstra Part One - Shiva -
+    /// Kesariya") is ambiguous. `title` and `album` then hold the fallback (split at the last
+    /// " - "), `titleSplits` every possible split, and `titleUncertain` is true until a model
+    /// picks one of them (or the review shows the field flagged).
+    public var titleSplits: [TitleSplit]
+    public var titleUncertain: Bool
 
     public init(
         title: String? = nil,
@@ -22,12 +28,27 @@ public struct SourceFields: Sendable, Hashable {
         album: String? = nil,
         key: String? = nil,
         capo: Int? = nil,
+        titleSplits: [TitleSplit] = [],
+        titleUncertain: Bool = false,
     ) {
         self.title = title
         self.artistCredit = artistCredit
         self.album = album
         self.key = key
         self.capo = capo
+        self.titleSplits = titleSplits
+        self.titleUncertain = titleUncertain
+    }
+}
+
+/// One way to read a "<Movie> - <Title>" name.
+public struct TitleSplit: Sendable, Hashable {
+    public var title: String
+    public var album: String
+
+    public init(title: String, album: String) {
+        self.title = title
+        self.album = album
     }
 }
 
