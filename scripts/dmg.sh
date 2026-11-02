@@ -81,7 +81,7 @@ if ((dry_run)); then
 fi
 case "$flavour" in
 personal)
-    scheme="Segue"
+    scheme="Segue-Personal"
     configuration="Release-Personal"
     app_id="dev.ryandsilva.segue.personal"
     archive_name="Segue-Personal-$marketing-$build"
