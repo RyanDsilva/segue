@@ -18,7 +18,7 @@ struct FillCandidatesColumn: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 2) {
-                Text("OPTIONS")
+                Text("OPTIONS", bundle: #bundle)
                     .font(SchibstedGrotesk.bold.font(size: 11))
                     .tracking(0.88)
                     .foregroundStyle(Theme.color.muted)
@@ -26,7 +26,7 @@ struct FillCandidatesColumn: View {
                     .padding(.bottom, 4)
                     .accessibilityAddTraits(.isHeader)
                 if model.candidates.isEmpty, model.editing == nil {
-                    Text("No fill fits these chords. Start from scratch.")
+                    Text("No fill fits these chords. Start from scratch.", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
                         .padding(.horizontal, 10)
@@ -100,7 +100,7 @@ struct FillCandidatesColumn: View {
         names: [String],
     ) -> some View {
         HStack(alignment: .top, spacing: 9) {
-            Text(row == .saved ? "\u{2713}" : letter)
+            Text(verbatim: row == .saved ? "\u{2713}" : letter)
                 .font(SchibstedGrotesk.extraBold.font(size: 12))
                 .foregroundStyle(selected ? Theme.color.ground : Theme.color.ink)
                 .frame(width: 20, height: 20)
@@ -117,7 +117,7 @@ struct FillCandidatesColumn: View {
                 HStack(spacing: 8) {
                     Sparkline(values: model.contour(row))
                         .frame(width: 40, height: 14)
-                    Text(names.isEmpty ? "No notes" : names.joined(separator: " "))
+                    Text(names.isEmpty ? uiString("No notes") : names.joined(separator: " "))
                         .font(SchibstedGrotesk.semiBold.font(size: 12))
                         .foregroundStyle(Theme.color.ink.opacity(0.8))
                         .lineLimit(1)
@@ -155,7 +155,7 @@ struct FillCandidatesColumn: View {
     @ViewBuilder
     private func revertButton(_ row: FillEditorModel.Row, letter: String) -> some View {
         if model.selected == row, model.isEdited(row), row != .scratch {
-            Button(row == .saved ? "Revert to Saved" : "Revert to \(letter)") {
+            Button(row == .saved ? uiString("Revert to Saved") : uiString("Revert to \(letter)")) {
                 model.revert()
             }
             .buttonStyle(.link)
@@ -180,9 +180,10 @@ struct FillCandidatesColumn: View {
         }
         .buttonStyle(.plain)
         .disabled(!model.canPlay)
-        .help(model.canPlay ? (sounding ? "Stop" : "Play this fill over its chords")
+        .help(model
+            .canPlay ? (sounding ? uiString("Stop") : uiString("Play this fill over its chords"))
             : SoundGate.offHelp)
-        .accessibilityLabel(sounding ? "Stop" : "Play")
+        .accessibilityLabel(sounding ? uiString("Stop") : uiString("Play"))
         .accessibilityIdentifier(AccessibilityID.fillCandidatePlay(letter))
     }
 
@@ -194,7 +195,7 @@ struct FillCandidatesColumn: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 9, weight: .bold))
                     .rotationEffect(.degrees(model.showsMore ? 90 : 0))
-                Text(model.showsMore ? "Fewer" : "More")
+                Text(model.showsMore ? uiString("Fewer") : uiString("More"))
                     .font(SchibstedGrotesk.semiBold.font(size: 12))
             }
             .foregroundStyle(Theme.color.muted)
@@ -203,7 +204,7 @@ struct FillCandidatesColumn: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(model.showsMore ? "Fewer options" : "More options")
+        .accessibilityLabel(model.showsMore ? uiString("Fewer options") : uiString("More options"))
         .accessibilityIdentifier(AccessibilityID.fillMore)
     }
 
@@ -221,7 +222,7 @@ struct FillCandidatesColumn: View {
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
                             .fill(selected ? Theme.color.cue : Theme.color.surfaceAlt),
                     )
-                Text("Start from scratch")
+                Text("Start from scratch", bundle: #bundle)
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
                     .foregroundStyle(Theme.color.ink)
                 Spacer(minLength: 0)

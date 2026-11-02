@@ -42,12 +42,12 @@
                 Image(systemName: "music.mic")
                     .foregroundStyle(Theme.color.muted)
                     .accessibilityHidden(true)
-                Text("Singer preview: chords are hidden. Turn off Singer to edit chords.")
+                Text(uiString("Singer preview: chords are hidden. Turn off Singer to edit chords."))
                     .font(SchibstedGrotesk.medium.font(size: 13))
                     .foregroundStyle(Theme.color.muted)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 12)
-                Button("Turn Off") { model.preview?.setSinger(false, from: .editor) }
+                Button(uiString("Turn Off")) { model.preview?.setSinger(false, from: .editor) }
                     .buttonStyle(.segueSecondary)
                     .controlSize(.small)
                     .accessibilityIdentifier(AccessibilityID.editorSingerTurnOff)

@@ -109,10 +109,10 @@
                 // Edits save themselves (R17); Done only closes the editor after a last
                 // save. No Esc shortcut: Esc belongs to the editor (completion, chord
                 // selection, palette).
-                Button("Done", action: onDone)
+                Button(uiString("Done"), action: onDone)
                     .buttonStyle(.seguePrimary)
                     .controlSize(.regular)
-                    .help("Save and close the editor")
+                    .help(uiString("Save and close the editor"))
                     .accessibilityIdentifier(AccessibilityID.editorDone)
                     // Without the shared glass capsule the toolbar gives no trailing inset.
                     .padding(.trailing, 6)
@@ -264,23 +264,23 @@
         var body: some View {
             SegmentedGroup {
                 SegmentButton(
-                    title: "Text",
+                    title: uiString("Text"),
                     isOn: model.editorMode == .text,
                     fontSize: 14,
                     horizontalPadding: 14,
                     verticalPadding: 5,
                 ) { model.setEditorMode(.text) }
                     .accessibilityIdentifier(AccessibilityID.editorModeText)
-                    .help("Edit the ChordPro source")
+                    .help(uiString("Edit the ChordPro source"))
                 SegmentButton(
-                    title: "Visual",
+                    title: uiString("Visual"),
                     isOn: model.editorMode == .visual,
                     fontSize: 14,
                     horizontalPadding: 14,
                     verticalPadding: 5,
                 ) { model.setEditorMode(.visual) }
                     .accessibilityIdentifier(AccessibilityID.editorModeVisual)
-                    .help("Place chords over the lyrics")
+                    .help(uiString("Place chords over the lyrics"))
             }
             .fixedSize()
         }

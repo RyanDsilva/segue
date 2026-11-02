@@ -42,7 +42,7 @@ struct FillTimeAxis: Equatable {
         for bar in grid.bars {
             let x = axis.x(bar.tick)
             context.draw(
-                Text("\(bar.number)")
+                Text(verbatim: "\(bar.number)")
                     .font(SchibstedGrotesk.semiBold.font(size: 10))
                     .foregroundStyle(Theme.color.muted),
                 at: CGPoint(x: x + 3, y: 6),

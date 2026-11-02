@@ -48,9 +48,9 @@
             switch conflict.kind {
             case .sourceChanged:
                 reload
-                Button("Overwrite") { resolve(.overwrite) }
+                Button(uiString("Overwrite")) { resolve(.overwrite) }
                     .buttonStyle(.segueSecondary)
-                    .help("Replace the other app’s version with your edits")
+                    .help(uiString("Replace the other app’s version with your edits"))
                     .accessibilityIdentifier(AccessibilityID.editorConflictOverwrite)
                 copy("Save as Copy")
             case .deleted:
@@ -62,16 +62,16 @@
         }
 
         private var reload: some View {
-            Button("Reload") { resolve(.reload) }
+            Button(uiString("Reload")) { resolve(.reload) }
                 .buttonStyle(.segueSecondary)
-                .help("Show the song as it is now; your edits are dropped")
+                .help(uiString("Show the song as it is now; your edits are dropped"))
                 .accessibilityIdentifier(AccessibilityID.editorConflictReload)
         }
 
         private func copy(_ title: String) -> some View {
             Button(title) { resolve(.saveAsCopy) }
                 .buttonStyle(.seguePrimary)
-                .help("Keep the other version and save your edits as a new song")
+                .help(uiString("Keep the other version and save your edits as a new song"))
                 .accessibilityIdentifier(AccessibilityID.editorConflictCopy)
         }
     }

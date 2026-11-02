@@ -11,7 +11,7 @@
 
         var body: some View {
             HStack(spacing: 8) {
-                Text("Chords in song")
+                Text("Chords in song", bundle: #bundle)
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                     .padding(.trailing, 6)
@@ -42,7 +42,7 @@
             Button {
                 isAdding = true
             } label: {
-                Text("Add chord")
+                Text("Add chord", bundle: #bundle)
                     .font(SchibstedGrotesk.semiBold.font(size: 14))
                     .foregroundStyle(Theme.color.muted)
                     .padding(.horizontal, 12)
@@ -58,10 +58,10 @@
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier(AccessibilityID.editorAddChord)
-            .help("Pick up a new chord, then click above a syllable to drop it")
+            .help(uiString("Pick up a new chord, then click above a syllable to drop it"))
             .popover(isPresented: $isAdding, arrowEdge: .bottom) {
                 ChordPopoverView(
-                    title: "Pick up a chord",
+                    title: uiString("Pick up a chord"),
                     initial: "",
                     suggestions: { model.displayChordSuggestions(prefix: $0) },
                     onCommit: { chord in
@@ -104,7 +104,8 @@
             .buttonStyle(.plain)
             .accessibilityIdentifier(AccessibilityID.editorPaletteChord)
             .accessibilityAddTraits(isArmed ? .isSelected : [])
-            .help(isArmed ? "Click a chord slot to drop \(title); click again to put it down" :
+            .help(isArmed ?
+                uiString("Click a chord slot to drop \(title); click again to put it down") :
                 "Pick up \(title)")
         }
     }
@@ -125,7 +126,7 @@
                 }
                 // No tabular figures: Schibsted Grotesk's would open a gap before the comma.
                 // Never wraps in a narrow window: the file name truncates instead.
-                Text("Line \(model.cursor.line), column \(model.cursor.column)")
+                Text("Line \(model.cursor.line), column \(model.cursor.column)", bundle: #bundle)
                     .fixedSize()
                     .accessibilityIdentifier(AccessibilityID.editorCursor)
                 Spacer(minLength: 12)
@@ -139,7 +140,7 @@
                         .frame(width: 1, height: 1)
                         .accessibilityElement()
                         // SwiftUI drops the value of an empty element; the label carries it.
-                        .accessibilityLabel("Typing latency \(model.keystrokeSummary)")
+                        .accessibilityLabel(uiString("Typing latency \(model.keystrokeSummary)"))
                         .accessibilityIdentifier(AccessibilityID.editorKeystrokeStats)
                     Color.clear
                         .frame(width: 1, height: 1)
@@ -164,17 +165,17 @@
         @ViewBuilder private var problems: some View {
             let diagnostics = model.diagnostics
             if diagnostics.isEmpty {
-                Text("No problems")
+                Text("No problems", bundle: #bundle)
                     .fixedSize()
                     .accessibilityIdentifier(AccessibilityID.editorProblems)
             } else {
                 Menu {
                     ForEach(Array(diagnostics.enumerated()), id: \.offset) { _, diagnostic in
-                        Button("Line \(diagnostic.line): \(diagnostic.message)") {
+                        Button(uiString("Line \(diagnostic.line): \(diagnostic.message)")) {
                             model.reveal(diagnostic)
                         }
                         if let fix = diagnostic.fix {
-                            Button("Fix: \(fix.title)") {
+                            Button(uiString("Fix: \(fix.title)")) {
                                 model.applyFix(of: diagnostic)
                             }
                             .accessibilityIdentifier(AccessibilityID.editorProblemFix)
@@ -190,7 +191,7 @@
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
-                .help(diagnostics.first.map { "Line \($0.line): \($0.message)" } ?? "")
+                .help(diagnostics.first.map { uiString("Line \($0.line): \($0.message)") } ?? "")
                 .accessibilityIdentifier(AccessibilityID.editorProblems)
             }
         }
@@ -213,7 +214,7 @@
                         .foregroundStyle(Theme.color.muted)
                 }
                 Spacer(minLength: 12)
-                Button("Dismiss") { model.dismissFlaggedDefines() }
+                Button(uiString("Dismiss")) { model.dismissFlaggedDefines() }
                     .buttonStyle(.segueSecondary)
                     .controlSize(.small)
             }

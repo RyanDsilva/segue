@@ -81,7 +81,7 @@
                 return .handled
             }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("Chord lengths")
+            .accessibilityLabel(uiString("Chord lengths"))
             .accessibilityIdentifier(AccessibilityID.playAlongLane)
         }
 
@@ -367,7 +367,7 @@
 
         private var label: some View {
             HStack(spacing: 5) {
-                Text(chord.isSilent ? "N.C." : title)
+                Text(chord.isSilent ? uiString("N.C.") : title)
                     .font(SchibstedGrotesk.bold.font(size: 13))
                     .foregroundStyle(chord.isSilent ? Theme.color.muted : Theme.color.cueText)
                 // The review's "4 → 3" where it fits; VoiceOver and the tooltip always say it.

@@ -73,7 +73,7 @@ struct FillsGroup: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("FILLS")
+            Text("FILLS", bundle: #bundle)
                 .font(SchibstedGrotesk.bold.font(size: 11))
                 .tracking(0.88)
                 .foregroundStyle(Theme.color.muted)
@@ -102,7 +102,7 @@ struct FillsGroup: View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 if renaming == item.id {
-                    TextField("Name", text: $draftName)
+                    TextField(uiString("Name"), text: $draftName)
                         .textFieldStyle(.roundedBorder)
                         .focused($nameFocused)
                         .onSubmit { commitRename(item) }
@@ -119,7 +119,7 @@ struct FillsGroup: View {
                         .lineLimit(1)
                 }
                 Text(item.span.map { "\($0) \u{00B7} \(item.shows)" }
-                    ?? "No longer matches this song")
+                    ?? uiString("No longer matches this song"))
                     .font(SchibstedGrotesk.medium.font(size: 12))
                     .foregroundStyle(Theme.color.muted)
                     .lineLimit(1)
@@ -127,7 +127,7 @@ struct FillsGroup: View {
             }
             Spacer(minLength: 8)
             if item.span != nil {
-                Button("Rename") {
+                Button(uiString("Rename")) {
                     draftName = item.hasName ? item.title : ""
                     renaming = item.id
                     nameFocused = true
@@ -135,18 +135,26 @@ struct FillsGroup: View {
                 .buttonStyle(.segueSecondary)
                 .controlSize(.small)
                 .disabled(source.readOnlyHelp != nil)
-                Button("Edit\u{2026}") { editing = source.openFill(item.id) }
+                Button(uiString("Edit\u{2026}")) { editing = source.openFill(item.id) }
                     .buttonStyle(.segueSecondary)
                     .controlSize(.small)
                     .disabled(source.readOnlyHelp != nil)
-                    .accessibilityLabel("Edit \(item.title)")
+                    .accessibilityLabel(uiString("Edit \(item.title)"))
             }
-            Button(item.span == nil ? "Remove" : "Delete") { source.deleteFills([item.id]) }
-                .buttonStyle(.segueSecondary)
-                .controlSize(.small)
-                .disabled(source.readOnlyHelp != nil)
-                .accessibilityLabel("\(item.span == nil ? "Remove" : "Delete") \(item.title)")
+            deleteButton(item)
         }
+    }
+
+    /// Remove (a saved fill) or Delete (one placed on a span).
+    private func deleteButton(_ item: FillListItem) -> some View {
+        Button(item.span == nil ? uiString("Remove") : uiString("Delete")) {
+            source.deleteFills([item.id])
+        }
+        .buttonStyle(.segueSecondary)
+        .controlSize(.small)
+        .disabled(source.readOnlyHelp != nil)
+        .accessibilityLabel(item.span == nil
+            ? uiString("Remove \(item.title)") : uiString("Delete \(item.title)"))
     }
 
     private func commitRename(_ item: FillListItem) {

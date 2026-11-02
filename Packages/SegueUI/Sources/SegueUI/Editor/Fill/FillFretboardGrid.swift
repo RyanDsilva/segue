@@ -122,7 +122,7 @@ struct FillNeck: View {
         let below = y(0) + 15
         for fret in [3, 5, 7, 9, 12, 15] {
             context.draw(
-                Text("\(fret)")
+                Text(verbatim: "\(fret)")
                     .font(SchibstedGrotesk.semiBold.font(size: 9))
                     .foregroundStyle(Theme.color.muted),
                 at: CGPoint(x: x(fret), y: below),
@@ -212,7 +212,7 @@ struct FillNeck: View {
             )
             context.fill(Path(ellipseIn: rect), with: .color(Theme.color.cue))
             context.draw(
-                Text("\(selected.fret)")
+                Text(verbatim: "\(selected.fret)")
                     .font(SchibstedGrotesk.bold.font(size: 8.5))
                     .foregroundStyle(Theme.color.ground),
                 at: center,
@@ -270,7 +270,7 @@ struct FillStepGrid: View {
         }
         .frame(height: height + 4)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Step grid")
+        .accessibilityLabel(uiString("Step grid"))
         .accessibilityIdentifier(AccessibilityID.fillGrid)
     }
 
@@ -482,11 +482,11 @@ struct FillStepGrid: View {
                         model.adjustStep(tick, up: direction == .increment)
                     }
                     .accessibilityActions {
-                        Button("Lengthen") { model.lengthenStep(tick, by: 1) }
-                        Button("Shorten") { model.lengthenStep(tick, by: -1) }
-                        Button("Rest") { model.restStep(tick) }
-                        Button("String up") { model.moveStepString(tick, by: 1) }
-                        Button("String down") { model.moveStepString(tick, by: -1) }
+                        Button(uiString("Lengthen")) { model.lengthenStep(tick, by: 1) }
+                        Button(uiString("Shorten")) { model.lengthenStep(tick, by: -1) }
+                        Button(uiString("Rest")) { model.restStep(tick) }
+                        Button(uiString("String up")) { model.moveStepString(tick, by: 1) }
+                        Button(uiString("String down")) { model.moveStepString(tick, by: -1) }
                     }
             }
         }

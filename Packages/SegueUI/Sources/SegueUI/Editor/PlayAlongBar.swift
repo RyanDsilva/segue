@@ -15,10 +15,13 @@
                     Group {
                         transport
                         rangeMenu
-                        Toggle("Loop", isOn: Binding(get: { model.loops }, set: model.setLoops))
-                            .toggleStyle(.checkbox)
-                            .accessibilityIdentifier(AccessibilityID.playAlongLoop)
-                            .help("Repeat the range")
+                        Toggle(
+                            uiString("Loop"),
+                            isOn: Binding(get: { model.loops }, set: model.setLoops),
+                        )
+                        .toggleStyle(.checkbox)
+                        .accessibilityIdentifier(AccessibilityID.playAlongLoop)
+                        .help(uiString("Repeat the range"))
                     }
                     // Tap Timing owns the range and the keys while its panel is open.
                     .disabled(model.tap != nil)
@@ -36,8 +39,8 @@
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Close Play Along")
-                    .help("Close Play Along")
+                    .accessibilityLabel(uiString("Close Play Along"))
+                    .help(uiString("Close Play Along"))
                     .accessibilityIdentifier(AccessibilityID.playAlongClose)
                 }
                 // Voices and tempo side by side, or stacked in a narrow pane.
@@ -95,13 +98,13 @@
             .keyboardShortcut(.space, modifiers: .option)
             .disabled(model.timeline.chords.isEmpty || !model.timeline.hasTempo)
             .accessibilityValue(model.transportValue)
-            .help("Play along (⌥Space)")
+            .help(uiString("Play along (⌥Space)"))
             .accessibilityIdentifier(AccessibilityID.playAlongPlay)
         }
 
         private var rangeMenu: some View {
             Menu {
-                Button("Whole Song") { model.setRange(.whole) }
+                Button(uiString("Whole Song")) { model.setRange(.whole) }
                 if let source = model.source {
                     let passes = source.playablePasses
                     if !passes.isEmpty {
@@ -111,7 +114,7 @@
                         }
                         Divider()
                         ForEach(passes.dropFirst(), id: \.self) { pass in
-                            Button("From \(source.passTitle(pass)) to the End") {
+                            Button(uiString("From \(source.passTitle(pass)) to the End")) {
                                 model.setRange(.from(pass))
                             }
                         }
@@ -123,7 +126,7 @@
             }
             .menuStyle(.button)
             .fixedSize()
-            .accessibilityLabel("Range")
+            .accessibilityLabel(uiString("Range"))
             .accessibilityValue(rangeTitle)
             .accessibilityIdentifier(AccessibilityID.playAlongRange)
         }
@@ -154,7 +157,7 @@
                 .disabled(isOff)
                 .opacity(isOff ? 0.45 : 1)
                 .accessibilityIdentifier(AccessibilityID.playAlongVoice(voice.rawValue))
-                .help(isOff ? "Walk-ups are Off in Settings > Instrument"
+                .help(isOff ? uiString("Walk-ups are Off in Settings > Instrument")
                     : isOn ? "Mute the \(title.lowercased())" : "Play the \(title.lowercased())")
         }
     }
@@ -165,7 +168,7 @@
 
         var body: some View {
             HStack(spacing: 6) {
-                StepButton(symbol: "minus", label: "Slower") {
+                StepButton(symbol: "minus", label: uiString("Slower")) {
                     model.setTempo((model.tempo ?? 0) - 1)
                 }
                 .disabled((model.tempo ?? 0) <= PlayAlong.tempoRange.lowerBound)
@@ -174,11 +177,11 @@
                     .monospacedDigit()
                     .foregroundStyle(Theme.color.ink)
                     .frame(minWidth: 64)
-                    .accessibilityLabel("Tempo")
+                    .accessibilityLabel(uiString("Tempo"))
                     .accessibilityValue(model.tempo.map { "\(Int($0)) beats per minute" }
                         ?? "No tempo")
                     .accessibilityIdentifier(AccessibilityID.playAlongTempo)
-                StepButton(symbol: "plus", label: "Faster") {
+                StepButton(symbol: "plus", label: uiString("Faster")) {
                     model.setTempo((model.tempo ?? 0) + 1)
                 }
                 .disabled((model.tempo ?? .infinity) >= PlayAlong.tempoRange.upperBound)
@@ -206,43 +209,47 @@
 
         var body: some View {
             Menu {
-                Section("Each Chord") {
+                Section(uiString("Each Chord")) {
                     rule("One Chord per Half Bar", .each(.halfBar))
                     rule("One Chord per Bar", .each(.bar))
                     rule("One Chord per Two Bars", .each(.twoBars))
                 }
-                Section("Each Line") {
+                Section(uiString("Each Line")) {
                     rule("Each Line Lasts 1 Bar", .line(1))
                     rule("Each Line Lasts 2 Bars", .line(2))
                     rule("Each Line Lasts 4 Bars", .line(4))
                 }
-                Menu("Every Chord Lasts") {
+                Menu(uiString("Every Chord Lasts")) {
                     ForEach([1, 2, 3, 4, 6, 8, 12, 16], id: \.self) { beats in
                         rule(beats == 1 ? "1 Beat" : "\(beats) Beats", .beats(beats))
                     }
                 }
                 Divider()
-                Button("Reset Corrections in This Section") { model.resetCorrectionsInSection() }
-                    .disabled(!model.sectionHasCorrections)
-                Button("Reset Corrections in the Song") { model.resetAllCorrections() }
+                Button(uiString("Reset Corrections in This Section")) {
+                    model.resetCorrectionsInSection()
+                }
+                .disabled(!model.sectionHasCorrections)
+                Button(uiString("Reset Corrections in the Song")) { model.resetAllCorrections() }
                     .disabled(model.source?.timing.chords.isEmpty ?? true)
                 let unmatched = model.unmatchedCorrections.count
                 if unmatched > 0 {
                     Divider()
-                    Section(unmatched == 1 ? "1 timing change no longer matches"
+                    Section(unmatched == 1 ? uiString("1 timing change no longer matches")
                         : "\(unmatched) timing changes no longer match")
                     {
-                        Button("Remove") { model.removeUnmatchedCorrections() }
+                        Button(uiString("Remove")) { model.removeUnmatchedCorrections() }
                     }
                 }
             } label: {
-                Text("Timing")
+                Text("Timing", bundle: #bundle)
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
             }
             .menuStyle(.button)
             .fixedSize()
             .disabled(!model.canEditTiming)
-            .help(model.canEditTiming ? "How long each chord lasts" : "Save the song first")
+            .help(model
+                .canEditTiming ? uiString("How long each chord lasts") :
+                uiString("Save the song first"))
             .accessibilityIdentifier(AccessibilityID.playAlongTiming)
         }
 
@@ -263,7 +270,7 @@
             Button {
                 model.beginTapCapture()
             } label: {
-                Label("Tap Timing", systemImage: "hand.tap")
+                Label(uiString("Tap Timing"), systemImage: "hand.tap")
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
             }
             .buttonStyle(.segueSecondary)
@@ -284,7 +291,7 @@
             Button {
                 model.setOpen(!model.isOpen)
             } label: {
-                Label("Play Along", systemImage: "play.circle")
+                Label(uiString("Play Along"), systemImage: "play.circle")
             }
             .labelStyle(.titleAndIcon)
             .buttonStyle(.segueSecondary)

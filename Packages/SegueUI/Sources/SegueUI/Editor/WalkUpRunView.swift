@@ -21,9 +21,9 @@ struct WalkUpRunView: View {
             .buttonStyle(.plain)
             .pointerStyle(.link)
             .onHover { isHovered = $0 }
-            .help("Shows other walk-ups")
+            .help(uiString("Shows other walk-ups"))
             .accessibilityLabel(Self.spokenName(run))
-            .accessibilityHint("Shows other walk-ups")
+            .accessibilityHint(uiString("Shows other walk-ups"))
             .accessibilityIdentifier(AccessibilityID.sheetWalkUp)
             .popover(isPresented: presented, arrowEdge: .bottom) {
                 WalkUpPopover(id: run.change, picking: picking) {

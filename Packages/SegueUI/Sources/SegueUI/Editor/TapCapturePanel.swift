@@ -20,51 +20,64 @@
                 }
             }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("Tap Timing")
+            .accessibilityLabel(uiString("Tap Timing"))
             .accessibilityIdentifier(AccessibilityID.playAlongTapPanel)
         }
 
         private var options: some View {
             HStack(spacing: 14) {
                 SegmentedGroup {
-                    SegmentButton(title: "With Click", isOn: tap.mode == .click) {
+                    SegmentButton(title: uiString("With Click"), isOn: tap.mode == .click) {
                         tap.setMode(.click)
                     }
                     .accessibilityIdentifier(AccessibilityID.playAlongTapMode("click"))
-                    .help("Segue clicks at the song's tempo; taps land on the nearest beat")
-                    SegmentButton(title: "No Click", isOn: tap.mode == .free) {
+                    .help(
+                        uiString("Segue clicks at the song's tempo; taps land on the nearest beat"),
+                    )
+                    SegmentButton(title: uiString("No Click"), isOn: tap.mode == .free) {
                         tap.setMode(.free)
                     }
                     .accessibilityIdentifier(AccessibilityID.playAlongTapMode("free"))
-                    .help("No sound; the tempo comes from your taps")
+                    .help(uiString("No sound; the tempo comes from your taps"))
                 }
                 .fixedSize()
                 .disabled(tap.phase != .ready)
-                Toggle("Half beats", isOn: Binding(get: { tap.halfBeats }, set: tap.setHalfBeats))
-                    .toggleStyle(.checkbox)
-                    .help("Snap every tap to half a beat (or hold ⌥ as you tap)")
+                Toggle(
+                    uiString("Half beats"),
+                    isOn: Binding(get: { tap.halfBeats }, set: tap.setHalfBeats),
+                )
+                .toggleStyle(.checkbox)
+                .help(uiString("Snap every tap to half a beat (or hold ⌥ as you tap)"))
                 if tap.mode == .click, tap.phase != .review {
-                    Toggle("Chords", isOn: Binding(get: { tap.playChords }, set: tap.setPlayChords))
-                        .toggleStyle(.checkbox)
-                        .help("Play the chords as they are timed now")
-                    Toggle("Bass", isOn: Binding(get: { tap.playBass }, set: tap.setPlayBass))
-                        .toggleStyle(.checkbox)
-                        .help("Play the bass as it is timed now")
+                    Toggle(
+                        uiString("Chords"),
+                        isOn: Binding(get: { tap.playChords }, set: tap.setPlayChords),
+                    )
+                    .toggleStyle(.checkbox)
+                    .help(uiString("Play the chords as they are timed now"))
+                    Toggle(
+                        uiString("Bass"),
+                        isOn: Binding(get: { tap.playBass }, set: tap.setPlayBass),
+                    )
+                    .toggleStyle(.checkbox)
+                    .help(uiString("Play the bass as it is timed now"))
                 }
                 Toggle(
-                    "Announce taps",
+                    uiString("Announce taps"),
                     isOn: Binding(get: { tap.announcesTaps }, set: tap.setAnnouncesTaps),
                 )
                 .toggleStyle(.checkbox)
-                .help("VoiceOver says each chord as you tap it")
+                .help(uiString("VoiceOver says each chord as you tap it"))
                 Spacer(minLength: 8)
                 if tap.phase != .review {
-                    Button(tap.phase == .tapping ? "Stop" : "Cancel") {
+                    Button(tap.phase == .tapping ? uiString("Stop") : uiString("Cancel")) {
                         tap.phase == .tapping ? tap.stop() : tap.cancel()
                     }
                     .buttonStyle(.segueSecondary)
                     .controlSize(.small)
-                    .help(tap.phase == .tapping ? "Stop and review (Esc)" : "Close (Esc)")
+                    .help(tap
+                        .phase == .tapping ? uiString("Stop and review (Esc)") :
+                        uiString("Close (Esc)"))
                     .accessibilityIdentifier(AccessibilityID.playAlongTapStop)
                 }
             }
@@ -95,12 +108,12 @@
                 Spacer(minLength: 12)
                 if tap.phase == .tapping {
                     VStack(alignment: .trailing, spacing: 0) {
-                        Text("\(tap.taps)")
+                        Text(verbatim: "\(tap.taps)")
                             .font(SchibstedGrotesk.bold.font(size: 30))
                             .monospacedDigit()
                             .foregroundStyle(Theme.color.ink)
                             .contentTransition(.numericText())
-                        Text(tap.taps == 1 ? "tap" : "taps")
+                        Text(tap.taps == 1 ? uiString("tap") : uiString("taps"))
                             .font(.callout)
                             .foregroundStyle(Theme.color.muted)
                     }
@@ -132,7 +145,7 @@
                 withAnimation(.easeOut(duration: 0.18)) { flash += 1 }
             }
             .accessibilityElement()
-            .accessibilityLabel("Tap pad")
+            .accessibilityLabel(uiString("Tap pad"))
             .accessibilityValue(tap.spokenValue)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(.default) { tap.tap() }
@@ -146,7 +159,7 @@
 
         @ViewBuilder private var headline: some View {
             if tap.phase == .ready {
-                Text("Press Space to start")
+                Text("Press Space to start", bundle: #bundle)
                     .font(SchibstedGrotesk.bold.font(size: 20))
                     .foregroundStyle(Theme.color.ink)
             } else {
@@ -188,7 +201,7 @@
 
         var body: some View {
             HStack(spacing: 8) {
-                Text("Count-in")
+                Text("Count-in", bundle: #bundle)
                     .font(SchibstedGrotesk.bold.font(size: 20))
                     .foregroundStyle(Theme.color.ink)
                 ForEach(1 ... beats, id: \.self) { index in
@@ -198,7 +211,7 @@
                 }
             }
             .accessibilityElement()
-            .accessibilityLabel("Count-in, beat \(beat) of \(beats)")
+            .accessibilityLabel(uiString("Count-in, beat \(beat) of \(beats)"))
         }
     }
 
@@ -214,36 +227,38 @@
                     .accessibilityIdentifier(AccessibilityID.playAlongTapSummary)
                 if tap.showsTempo, let tempo = tap.proposal?.tempo {
                     Rectangle().fill(Theme.color.line).frame(width: 1, height: 18)
-                    Text("Tempo from your taps")
+                    Text("Tempo from your taps", bundle: #bundle)
                         .font(.callout)
                         .foregroundStyle(Theme.color.muted)
-                    StepButton(symbol: "minus", label: "Slower") {
+                    StepButton(symbol: "minus", label: uiString("Slower")) {
                         tap.setReviewTempo(tempo - 1)
                     }
-                    Text("\(TapCapture.tempoText(tempo)) BPM")
+                    Text("\(TapCapture.tempoText(tempo)) BPM", bundle: #bundle)
                         .font(SchibstedGrotesk.semiBold.font(size: 13))
                         .monospacedDigit()
                         .foregroundStyle(Theme.color.ink)
                         .frame(minWidth: 60)
-                        .accessibilityLabel("Tempo from your taps")
-                        .accessibilityValue("\(TapCapture.tempoText(tempo)) beats per minute")
+                        .accessibilityLabel(uiString("Tempo from your taps"))
+                        .accessibilityValue(
+                            uiString("\(TapCapture.tempoText(tempo)) beats per minute"),
+                        )
                         .accessibilityIdentifier(AccessibilityID.playAlongTapTempo)
-                    StepButton(symbol: "plus", label: "Faster") {
+                    StepButton(symbol: "plus", label: uiString("Faster")) {
                         tap.setReviewTempo(tempo + 1)
                     }
                     SegmentedGroup {
                         SegmentButton(title: "½×", isOn: false) { tap.setReviewTempo(tempo / 2) }
-                            .help("Half the tempo: each tap was two beats")
-                            .accessibilityLabel("Half the tempo")
+                            .help(uiString("Half the tempo: each tap was two beats"))
+                            .accessibilityLabel(uiString("Half the tempo"))
                         SegmentButton(title: "2×", isOn: false) { tap.setReviewTempo(tempo * 2) }
-                            .help("Double the tempo: each tap was half as many beats")
-                            .accessibilityLabel("Double the tempo")
+                            .help(uiString("Double the tempo: each tap was half as many beats"))
+                            .accessibilityLabel(uiString("Double the tempo"))
                     }
                     .fixedSize()
                 }
                 Spacer(minLength: 8)
                 if tap.offersSongTempo || tap.tempoSet {
-                    Button(tap.tempoSet ? "Song Tempo Set"
+                    Button(tap.tempoSet ? uiString("Song Tempo Set")
                         : "Set Song Tempo to \(TapCapture.tempoText(tap.proposal?.tempo ?? 0))")
                     {
                         tap.setSongTempo()
@@ -251,19 +266,19 @@
                     .buttonStyle(.segueSecondary)
                     .controlSize(.small)
                     .disabled(tap.tempoSet)
-                    .help("Write this tempo into the song as {tempo}")
+                    .help(uiString("Write this tempo into the song as {tempo}"))
                     .accessibilityIdentifier(AccessibilityID.playAlongTapSetTempo)
                 }
-                Button("Discard") { tap.discard() }
+                Button(uiString("Discard")) { tap.discard() }
                     .buttonStyle(.segueSecondary)
                     .controlSize(.small)
-                    .help("Keep the lengths as they were (Esc)")
+                    .help(uiString("Keep the lengths as they were (Esc)"))
                     .accessibilityIdentifier(AccessibilityID.playAlongTapDiscard)
-                Button("Keep") { tap.keep() }
+                Button(uiString("Keep")) { tap.keep() }
                     .buttonStyle(.seguePrimary)
                     .controlSize(.small)
                     .disabled(tap.proposal?.changed.isEmpty ?? true)
-                    .help("Save the tapped lengths (Return)")
+                    .help(uiString("Save the tapped lengths (Return)"))
                     .accessibilityIdentifier(AccessibilityID.playAlongTapKeep)
             }
             .frame(minHeight: 32)

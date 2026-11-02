@@ -49,7 +49,7 @@
                     }
                 }
                 if let onDelete {
-                    Button("Remove Chord", role: .destructive, action: onDelete)
+                    Button(uiString("Remove Chord"), role: .destructive, action: onDelete)
                         .buttonStyle(.segueSecondary)
                         .controlSize(.small)
                         .accessibilityIdentifier(AccessibilityID.editorChordDelete)
@@ -63,7 +63,7 @@
         }
 
         private func field(items: [String]) -> some View {
-            TextField("Chord", text: $text)
+            TextField(uiString("Chord"), text: $text)
                 .textFieldStyle(.plain)
                 .font(SchibstedGrotesk.bold.font(size: 18))
                 .foregroundStyle(Theme.color.cueText)

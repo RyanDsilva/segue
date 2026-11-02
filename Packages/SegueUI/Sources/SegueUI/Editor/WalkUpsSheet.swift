@@ -63,7 +63,7 @@ struct WalkUpsSheet: View {
                     unmatched(source)
                 }
             } else {
-                Text("This song is no longer available.")
+                Text("This song is no longer available.", bundle: #bundle)
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.muted)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -71,7 +71,7 @@ struct WalkUpsSheet: View {
             Rule()
             HStack {
                 Spacer()
-                Button("Done") { dismiss() }
+                Button(uiString("Done")) { dismiss() }
                     .buttonStyle(.seguePrimary)
                     .keyboardShortcut(.defaultAction)
                     .accessibilityIdentifier(AccessibilityID.walkUpsDone)
@@ -88,7 +88,7 @@ struct WalkUpsSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Walk-ups")
+                    Text("Walk-ups", bundle: #bundle)
                         .font(SchibstedGrotesk.extraBold.font(size: 17))
                         .foregroundStyle(Theme.color.ink)
                         .accessibilityAddTraits(.isHeader)
@@ -104,7 +104,7 @@ struct WalkUpsSheet: View {
                 scaleMenu(source)
             }
             if source.density == .off {
-                Text("Walk-ups are off on charts. Turn them on in Settings > Instrument.")
+                Text(uiString("Walk-ups are off on charts. Turn them on in Settings > Instrument."))
                     .font(SchibstedGrotesk.medium.font(size: 12))
                     .foregroundStyle(Theme.color.muted)
             } else if let help = source.readOnlyHelp {
@@ -120,11 +120,11 @@ struct WalkUpsSheet: View {
     /// The song's feel, which orders its walk-ups.
     private func feelMenu(_ source: WalkUpsSource) -> some View {
         Menu {
-            Picker("Feel", selection: Binding(
+            Picker(uiString("Feel"), selection: Binding(
                 get: { source.feel },
                 set: { source.setFeel($0) },
             )) {
-                Text("Default (\(source.defaultFeel.title))").tag(BassGenre?.none)
+                Text("Default (\(source.defaultFeel.title))", bundle: #bundle).tag(BassGenre?.none)
                 Divider()
                 ForEach(BassGenre.allCases, id: \.self) { genre in
                     Text(genre.title).tag(BassGenre?.some(genre))
@@ -140,7 +140,7 @@ struct WalkUpsSheet: View {
         .controlSize(.small)
         .fixedSize()
         .disabled(source.readOnlyHelp != nil)
-        .help(source.readOnlyHelp ?? "Reorders this song's walk-ups for its style")
+        .help(source.readOnlyHelp ?? uiString("Reorders this song's walk-ups for its style"))
         .accessibilityIdentifier(AccessibilityID.walkUpsFeel)
     }
 
@@ -148,7 +148,7 @@ struct WalkUpsSheet: View {
     private func scaleMenu(_ source: WalkUpsSource) -> some View {
         let fallback = "Default (\(source.defaultScale.title))"
         return Menu {
-            Picker("Scale", selection: Binding(
+            Picker(uiString("Scale"), selection: Binding(
                 get: { source.scale },
                 set: { source.setScale($0) },
             )) {
@@ -180,7 +180,7 @@ struct WalkUpsSheet: View {
         return ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 if groups.isEmpty {
-                    Text("No chord changes to walk between.")
+                    Text("No chord changes to walk between.", bundle: #bundle)
                         .font(Theme.font.body)
                         .foregroundStyle(Theme.color.muted)
                 }
@@ -215,12 +215,12 @@ struct WalkUpsSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 let count = source.unmatched.count
-                Text(count == 1 ? "1 saved walk-up no longer matches this song"
+                Text(count == 1 ? uiString("1 saved walk-up no longer matches this song")
                     : "\(count) saved walk-ups no longer match this song")
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
                     .foregroundStyle(Theme.color.ink)
                 Spacer()
-                Button("Remove All") { source.remove(source.unmatched.map(\.pick)) }
+                Button(uiString("Remove All")) { source.remove(source.unmatched.map(\.pick)) }
                     .buttonStyle(.segueSecondary)
                     .controlSize(.small)
                     .disabled(source.readOnlyHelp != nil)
@@ -234,11 +234,11 @@ struct WalkUpsSheet: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                     Spacer()
-                    Button("Remove") { source.remove([item.pick]) }
+                    Button(uiString("Remove")) { source.remove([item.pick]) }
                         .buttonStyle(.segueSecondary)
                         .controlSize(.small)
                         .disabled(source.readOnlyHelp != nil)
-                        .accessibilityLabel("Remove \(item.text)")
+                        .accessibilityLabel(uiString("Remove \(item.text)"))
                         .accessibilityIdentifier(AccessibilityID.walkUpsRemove(index))
                 }
             }
@@ -299,8 +299,8 @@ private struct WalkUpsRow: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!audition.isEnabled)
-                .help(audition.isEnabled ? "Play this walk-up" : SoundGate.offHelp)
-                .accessibilityLabel("Play \(change.fromName) to \(change.toName)")
+                .help(audition.isEnabled ? uiString("Play this walk-up") : SoundGate.offHelp)
+                .accessibilityLabel(uiString("Play \(change.fromName) to \(change.toName)"))
                 .accessibilityIdentifier(AccessibilityID.walkUpsPlay)
             }
             rowButton
@@ -312,7 +312,7 @@ private struct WalkUpsRow: View {
             isPresented = true
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text("\(change.fromName) \u{2192} \(change.toName)")
+                Text(verbatim: "\(change.fromName) \u{2192} \(change.toName)")
                     .font(SchibstedGrotesk.bold.font(size: 14))
                     .foregroundStyle(Theme.color.ink)
                     .frame(width: 120, alignment: .leading)
@@ -335,7 +335,7 @@ private struct WalkUpsRow: View {
         .buttonStyle(.plain)
         .disabled(!picking.isEnabled)
         .onHover { isHovered = $0 }
-        .help(picking.isEnabled ? "Shows other walk-ups" : "")
+        .help(picking.isEnabled ? uiString("Shows other walk-ups") : "")
         .popover(isPresented: $isPresented, arrowEdge: .trailing) {
             WalkUpPopover(id: change.id, picking: picking) {
                 isPresented = false
@@ -343,7 +343,7 @@ private struct WalkUpsRow: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Self.spoken(change, section: section))
-        .accessibilityHint("Shows other walk-ups")
+        .accessibilityHint(uiString("Shows other walk-ups"))
         .accessibilityAddTraits(.isButton)
     }
 

@@ -241,7 +241,7 @@
             case .slot:
                 lineSelection = band.paragraphs
                 redrawOverlay()
-                let menu = NSMenu(title: "Section")
+                let menu = NSMenu(title: uiString("Section"))
                 for chip in sectionOffers {
                     menu.addItem(item("Make \(chip.title)") { [weak self] in
                         self?.applySection(chip.kind)
@@ -258,10 +258,10 @@
         private func sectionMenu(band index: Int, at point: CGPoint) -> NSMenu? {
             let band = bands.bands[index]
             guard let path = band.sectionPath else { return nil }
-            let menu = NSMenu(title: "Section")
+            let menu = NSMenu(title: uiString("Section"))
             menu.autoenablesItems = false
             menu.addItem(item("Rename...") { [weak self] in self?.beginRename(band: index) })
-            let kinds = NSMenuItem(title: "Change Kind", action: nil, keyEquivalent: "")
+            let kinds = NSMenuItem(title: uiString("Change Kind"), action: nil, keyEquivalent: "")
             kinds.submenu = kindMenu(path)
             menu.addItem(kinds)
             menu
@@ -307,8 +307,8 @@
         }
 
         private func kindMenu(_ path: BlockPath) -> NSMenu {
-            let menu = NSMenu(title: "Change Kind")
-            for chip in sectionOffers + [SectionChip(key: "", title: "Tab", kind: .tab)] {
+            let menu = NSMenu(title: uiString("Change Kind"))
+            for chip in sectionOffers + [SectionChip(key: "", title: uiString("Tab"), kind: .tab)] {
                 menu.addItem(item(chip.title) { [weak self] in
                     self?.model.perform(.changeSectionKind(path, to: chip.kind))
                 })

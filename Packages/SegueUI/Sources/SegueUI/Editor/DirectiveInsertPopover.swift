@@ -47,9 +47,9 @@
                 }
                 HStack {
                     Spacer()
-                    Button("Cancel", action: close)
+                    Button(uiString("Cancel"), action: close)
                         .keyboardShortcut(.cancelAction)
-                    Button("Insert", action: commit)
+                    Button(uiString("Insert"), action: commit)
                         .keyboardShortcut(.defaultAction)
                         .accessibilityIdentifier(AccessibilityID.directiveInsertCommit)
                 }
@@ -73,11 +73,11 @@
             switch draft.directive {
             case .key:
                 VStack(alignment: .leading, spacing: 6) {
-                    Picker("Key", selection: $key) {
-                        Section("Major") {
+                    Picker(uiString("Key"), selection: $key) {
+                        Section(uiString("Major")) {
                             ForEach(KeyChoices.keys(.major), id: \.self) { Text($0.name).tag($0) }
                         }
-                        Section("Minor") {
+                        Section(uiString("Minor")) {
                             ForEach(KeyChoices.keys(.minor), id: \.self) { Text($0.name).tag($0) }
                         }
                         if !KeyChoices.keys(draft.key.mode).contains(draft.key) {
@@ -87,22 +87,23 @@
                     .pickerStyle(.menu)
                     .accessibilityIdentifier(AccessibilityID.directiveInsertKey)
                     if let capo = draft.capoNote {
-                        Text("Written key (\(capo): sounds \(sounding(key).name))")
+                        Text("Written key (\(capo): sounds \(sounding(key).name))", bundle: #bundle)
                             .font(.callout)
                             .foregroundStyle(Theme.color.muted)
                     }
                 }
             case .tempo, .time:
                 HStack(spacing: 8) {
-                    TextField(draft.directive == .time ? "3/4" : "96", text: $text)
+                    TextField(draft.directive == .time ? "3/4" as String : "96", text: $text)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 90)
                         .focused($fieldFocused)
                         .onSubmit(commit)
                         .onChange(of: text) { problem = nil }
-                        .accessibilityLabel(draft.directive == .time ? "Time" : "Tempo")
+                        .accessibilityLabel(draft
+                            .directive == .time ? uiString("Time") : uiString("Tempo"))
                         .accessibilityIdentifier(AccessibilityID.directiveInsertValue)
-                    Text(draft.directive == .time ? "time signature" : "BPM")
+                    Text(draft.directive == .time ? uiString("time signature") : uiString("BPM"))
                         .font(.callout)
                         .foregroundStyle(Theme.color.muted)
                 }

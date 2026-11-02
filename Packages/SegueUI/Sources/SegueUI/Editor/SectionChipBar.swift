@@ -81,7 +81,7 @@
 
         var body: some View {
             HStack(spacing: 6) {
-                Text("\(lines) \(lines == 1 ? "line" : "lines")")
+                Text(verbatim: "\(lines) \(lines == 1 ? "line" : "lines")")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 2)
@@ -93,7 +93,7 @@
                 ForEach(shownExtras) { chip in
                     chipButton(chip, showsKey: false)
                 }
-                Button("Custom...", action: custom)
+                Button(uiString("Custom..."), action: custom)
                     .buttonStyle(SectionChipStyle(color: nil))
                     .accessibilityIdentifier("\(AccessibilityID.sectionBandChip).custom")
             }
@@ -111,7 +111,7 @@
             )
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.sectionBandChipBar)
-            .accessibilityLabel("Make a section")
+            .accessibilityLabel(uiString("Make a section"))
         }
 
         private func chipButton(_ chip: SectionChip, showsKey: Bool) -> some View {
@@ -138,7 +138,7 @@
                 "\(AccessibilityID.sectionBandChip).\(chip.title.lowercased())",
             )
             .accessibilityLabel(chip.title)
-            .accessibilityHint(showsKey ? "Shortcut \(chip.key.uppercased())" : "")
+            .accessibilityHint(showsKey ? uiString("Shortcut \(chip.key.uppercased())") : "")
         }
     }
 
@@ -233,8 +233,8 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Rename Section").font(.headline)
-                TextField("Section label", text: $text)
+                Text("Rename Section", bundle: #bundle).font(.headline)
+                TextField(uiString("Section label"), text: $text)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 200)
                     .autocorrectionDisabled()

@@ -67,7 +67,7 @@ struct FillPianoRoll: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Piano roll")
+        .accessibilityLabel(uiString("Piano roll"))
         .accessibilityIdentifier(AccessibilityID.fillPianoRoll)
     }
 
@@ -310,15 +310,15 @@ struct FillPianoRoll: View {
                         )
                     }
                     .accessibilityActions {
-                        Button("Lengthen") {
+                        Button(uiString("Lengthen")) {
                             model.draft.selection = [note.id]
                             model.lengthen(by: 1, in: .pianoRoll)
                         }
-                        Button("Shorten") {
+                        Button(uiString("Shorten")) {
                             model.draft.selection = [note.id]
                             model.lengthen(by: -1, in: .pianoRoll)
                         }
-                        Button("Delete") {
+                        Button(uiString("Delete")) {
                             model.draft.delete([note.id], on: grid)
                         }
                     }

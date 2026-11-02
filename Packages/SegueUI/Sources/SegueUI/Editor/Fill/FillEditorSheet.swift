@@ -35,7 +35,7 @@ struct FillEditorSheet: View {
                     .overlay(alignment: .bottomTrailing) {
                         if model.isEstimated {
                             Label(
-                                "Chord lengths are estimated - set them here",
+                                uiString("Chord lengths are estimated - set them here"),
                                 systemImage: "info.circle",
                             )
                             .font(SchibstedGrotesk.medium.font(size: 12))
@@ -95,19 +95,21 @@ struct FillEditorSheet: View {
         ) {
             switch model.confirmation {
             case .replace:
-                Button("Replace", role: .destructive) { model.confirmReplace() }
+                Button(uiString("Replace"), role: .destructive) { model.confirmReplace() }
             case .delete:
-                Button("Delete Fill", role: .destructive) { model.delete() }
+                Button(uiString("Delete Fill"), role: .destructive) { model.delete() }
             case nil:
                 EmptyView()
             }
-            Button("Cancel", role: .cancel) { model.confirmation = nil }
+            Button(uiString("Cancel"), role: .cancel) { model.confirmation = nil }
         } message: {
             switch model.confirmation {
             case .replace:
-                Text("This fill shares a chord change with it. The other fill is removed.")
+                Text(
+                    uiString("This fill shares a chord change with it. The other fill is removed."),
+                )
             case .delete:
-                Text("Its walk-ups show again where it played.")
+                Text("Its walk-ups show again where it played.", bundle: #bundle)
             case nil:
                 EmptyView()
             }
@@ -194,15 +196,15 @@ struct FillEditorSheet: View {
     /// ⌘Z / ⇧⌘Z on the sheet's own undo stack; ⌘1 / ⌘2 switch the view.
     private var hiddenShortcuts: some View {
         ZStack {
-            Button("Undo") { model.draft.undo() }
+            Button(uiString("Undo")) { model.draft.undo() }
                 .keyboardShortcut("z", modifiers: .command)
                 .disabled(!model.draft.canUndo || focus == .name)
-            Button("Redo") { model.draft.redo() }
+            Button(uiString("Redo")) { model.draft.redo() }
                 .keyboardShortcut("z", modifiers: [.command, .shift])
                 .disabled(!model.draft.canRedo || focus == .name)
-            Button("Fretboard") { model.view = .fretboard }
+            Button(uiString("Fretboard")) { model.view = .fretboard }
                 .keyboardShortcut("1", modifiers: .command)
-            Button("Piano Roll") { model.view = .pianoRoll }
+            Button(uiString("Piano Roll")) { model.view = .pianoRoll }
                 .keyboardShortcut("2", modifiers: .command)
         }
         .opacity(0)
@@ -342,7 +344,7 @@ struct FillEditorPresenter: ViewModifier {
                     }
                 }),
             ) {
-                Button("OK") { note = nil }
+                Button(uiString("OK")) { note = nil }
             } message: {
                 Text(note ?? "")
             }

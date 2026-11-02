@@ -98,11 +98,11 @@
                 if let selected = model.selected {
                     let pulses = model.pulses(of: selected)
                     let whole = Int(pulses.rounded())
-                    StepButton(symbol: "minus", label: "Fewer beats") {
+                    StepButton(symbol: "minus", label: uiString("Fewer beats")) {
                         model.setBeats(selected, Int(pulses.rounded(.up)) - 1)
                     }
                     .disabled(!model.canEditTiming || pulses <= 1)
-                    TextField("Beats", text: $text)
+                    TextField(uiString("Beats"), text: $text)
                         .textFieldStyle(.plain)
                         .font(SchibstedGrotesk.semiBold.font(size: 13))
                         .monospacedDigit()
@@ -128,24 +128,24 @@
                         .onAppear { text = BeatsText.format(pulses) }
                         .onChange(of: pulses) { _, new in text = BeatsText.format(new) }
                         .onChange(of: selected) { text = BeatsText.format(pulses) }
-                        .help("Type a length in beats: 3, 2.5 or 2½")
-                        .accessibilityLabel("Beats")
+                        .help(uiString("Type a length in beats: 3, 2.5 or 2½"))
+                        .accessibilityLabel(uiString("Beats"))
                         .accessibilityValue(BeatsText.format(pulses))
                         .accessibilityIdentifier(AccessibilityID.playAlongBeats)
-                    StepButton(symbol: "plus", label: "More beats") {
+                    StepButton(symbol: "plus", label: uiString("More beats")) {
                         model.setBeats(selected, Int(pulses.rounded(.down)) + 1)
                     }
                     .disabled(!model.canEditTiming || whole >= SongTimeline.maximumPulses)
                     PushMenu(model: model, index: selected)
                         .padding(.leading, 6)
                     if model.correction(of: selected) != nil {
-                        Button("Use the Song's Rule") { model.clearCorrection(selected) }
+                        Button(uiString("Use the Song's Rule")) { model.clearCorrection(selected) }
                             .buttonStyle(.segueSecondary)
                             .controlSize(.small)
                             .accessibilityIdentifier(AccessibilityID.playAlongUseRule)
                     }
                 } else {
-                    Text("Click a chord to change how long it lasts")
+                    Text("Click a chord to change how long it lasts", bundle: #bundle)
                         .font(.callout)
                         .foregroundStyle(Theme.color.muted)
                 }
@@ -178,11 +178,11 @@
                     .font(.callout)
                     .foregroundStyle(Theme.color.muted)
             } else if let span = model.fillSpan {
-                Button("Create Bass Fill\u{2026}") { open(span) }
+                Button(uiString("Create Bass Fill\u{2026}")) { open(span) }
                     .buttonStyle(.segueSecondary)
                     .controlSize(.small)
                     .disabled(!model.canEditTiming || !model.session.isAvailable)
-                    .help(model.session.isAvailable ? "Make a bass fill over these chords"
+                    .help(model.session.isAvailable ? uiString("Make a bass fill over these chords")
                         : SoundGate.offHelp)
                     .accessibilityIdentifier(AccessibilityID.fillCreate)
             }
@@ -207,8 +207,8 @@
             .menuStyle(.button)
             .fixedSize()
             .disabled(!model.canEditTiming || model.chord(index)?.isSilent != false)
-            .help("Start this chord early, ahead of the beat (<)")
-            .accessibilityLabel("Push")
+            .help(uiString("Start this chord early, ahead of the beat (<)"))
+            .accessibilityLabel(uiString("Push"))
             .accessibilityValue(push.map { "\(BeatsText.spoken($0)) early" } ?? "on the beat")
             .accessibilityIdentifier(AccessibilityID.playAlongPush)
         }

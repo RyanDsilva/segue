@@ -325,7 +325,7 @@
         func showEditPopover(_ pill: PillLayout) {
             let ref = pill.chord.ref
             presentPopover(
-                title: "Edit chord",
+                title: uiString("Edit chord"),
                 initial: shownText(of: pill.chord),
                 anchor: pill.rect,
                 onDelete: { [weak self] in

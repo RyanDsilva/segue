@@ -12,15 +12,18 @@
         }
 
         static let rows = [
-            Row(title: "Suggest chords (text mode)", keys: "["),
-            Row(title: "Suggest directives (text mode)", keys: "{"),
-            Row(title: "Insert a section or note (text mode, at a line start)", keys: "/"),
-            Row(title: "Choose a suggestion", keys: "← →  ↑ ↓"),
-            Row(title: "Accept a suggestion", keys: "↩  ⇥"),
-            Row(title: "Close suggestions, drop a picked-up chord", keys: "⎋"),
-            Row(title: "Delete the selected chord pill", keys: "⌫"),
-            Row(title: "Nudge the selected chord pill", keys: "← →"),
-            Row(title: "Edit the selected chord pill", keys: "↩"),
+            Row(title: uiString("Suggest chords (text mode)"), keys: "["),
+            Row(title: uiString("Suggest directives (text mode)"), keys: "{"),
+            Row(
+                title: uiString("Insert a section or note (text mode, at a line start)"),
+                keys: "/",
+            ),
+            Row(title: uiString("Choose a suggestion"), keys: "← →  ↑ ↓"),
+            Row(title: uiString("Accept a suggestion"), keys: "↩  ⇥"),
+            Row(title: uiString("Close suggestions, drop a picked-up chord"), keys: "⎋"),
+            Row(title: uiString("Delete the selected chord pill"), keys: "⌫"),
+            Row(title: uiString("Nudge the selected chord pill"), keys: "← →"),
+            Row(title: uiString("Edit the selected chord pill"), keys: "↩"),
         ]
     }
 
@@ -241,7 +244,7 @@
                     .strokeBorder(Theme.color.controlBorder, lineWidth: 1)
             }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("\(state.kind.title) suggestions")
+            .accessibilityLabel(uiString("\(state.kind.title) suggestions"))
         }
 
         private var chips: some View {

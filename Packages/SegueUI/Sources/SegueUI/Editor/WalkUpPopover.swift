@@ -77,7 +77,7 @@ struct WalkUpPopover: View {
                     }
                     .onDisappear { stopSound() }
             } else {
-                Text("This change is no longer in the song.")
+                Text("This change is no longer in the song.", bundle: #bundle)
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.muted)
             }
@@ -126,12 +126,12 @@ struct WalkUpPopover: View {
     private func header(_ details: WalkUpDetails) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline) {
-                Text("\(details.change.fromName) \u{2192} \(details.change.toName)")
+                Text(verbatim: "\(details.change.fromName) \u{2192} \(details.change.toName)")
                     .font(SchibstedGrotesk.bold.font(size: 15))
                     .foregroundStyle(Theme.color.ink)
                 Spacer(minLength: 8)
                 if let audition {
-                    Toggle("Loop", isOn: Binding(
+                    Toggle(uiString("Loop"), isOn: Binding(
                         get: { listening?.looping ?? false },
                         set: { isOn in
                             listening?.setLooping(
@@ -149,7 +149,7 @@ struct WalkUpPopover: View {
                         audition.isEnabled ? "Repeat the change; choose another option to switch"
                             : SoundGate.offHelp,
                     )
-                    .accessibilityLabel("Loop this change")
+                    .accessibilityLabel(uiString("Loop this change"))
                     .accessibilityIdentifier(AccessibilityID.walkUpLoop)
                 }
             }
@@ -162,12 +162,12 @@ struct WalkUpPopover: View {
     /// "A fill covers this change" (the pick still shows on the passes the fill skips).
     private func coveredNote(_ part: PartID) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text("A fill covers this change")
+            Text("A fill covers this change", bundle: #bundle)
                 .font(SchibstedGrotesk.semiBold.font(size: 12))
                 .foregroundStyle(Theme.color.ink)
             Spacer(minLength: 4)
             if let editFill = picking.editFill {
-                Button("Edit Fill\u{2026}") {
+                Button(uiString("Edit Fill\u{2026}")) {
                     dismiss()
                     editFill(part)
                 }
@@ -214,7 +214,7 @@ struct WalkUpPopover: View {
                 }
         }
         if change.pick != nil {
-            Button("Reset to suggestion") {
+            Button(uiString("Reset to suggestion")) {
                 picking.reset(change)
                 dismiss()
             }
@@ -278,7 +278,7 @@ struct WalkUpPopover: View {
                             .font(SchibstedGrotesk.medium.font(size: 12))
                             .foregroundStyle(Theme.color.muted)
                     }
-                    Text(description + (suggested ? " \u{00B7} Suggested" : ""))
+                    Text(description + (suggested ? uiString(" \u{00B7} Suggested") : ""))
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
                     if optionHeld, highlighted == Self.options(change).firstIndex(of: candidate) {
@@ -301,10 +301,7 @@ struct WalkUpPopover: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(
-            "Option \(letter), \(notes.joined(separator: ", ")), \(description.lowercased())"
-                + (suggested ? ", suggested" : "") + (selected ? ", selected" : ""),
-        )
+        .accessibilityLabel(Self.optionLabel(letter, notes, description, suggested, selected))
         .accessibilityIdentifier(AccessibilityID.walkUpOption(index))
     }
 
@@ -315,7 +312,7 @@ struct WalkUpPopover: View {
                 playButton(
                     index,
                     change: change,
-                    label: "nothing here, \(change.fromName) into \(change.toName)",
+                    label: uiString("nothing here, \(change.fromName) into \(change.toName)"),
                 )
             }
             nothingButton(change, selected: selected)
@@ -328,7 +325,7 @@ struct WalkUpPopover: View {
             rowClicked(Self.options(change).count, change: change)
         } label: {
             HStack {
-                Text("Nothing here")
+                Text("Nothing here", bundle: #bundle)
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.ink)
                 Spacer(minLength: 4)
@@ -343,7 +340,7 @@ struct WalkUpPopover: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Nothing here" + (selected ? ", selected" : ""))
+        .accessibilityLabel(uiString("Nothing here") + (selected ? uiString(", selected") : ""))
         .accessibilityIdentifier(AccessibilityID.walkUpNothing)
     }
 
@@ -461,12 +458,29 @@ extension WalkUpPopover {
     @ViewBuilder
     private func useButton(_ index: Int, change: ChordChange) -> some View {
         if audition != nil, highlighted == index {
-            Button("Use this") {
+            Button(uiString("Use this")) {
                 pick(change, candidate(index, change: change))
             }
             .buttonStyle(.segueSecondary)
             .controlSize(.mini)
             .accessibilityIdentifier(AccessibilityID.walkUpUse)
         }
+    }
+}
+
+extension WalkUpPopover {
+    /// A candidate row's spoken label: "Option A, G, A, B, a walk up, suggested, selected".
+    static func optionLabel(
+        _ letter: String,
+        _ notes: [String],
+        _ description: String,
+        _ suggested: Bool,
+        _ selected: Bool,
+    ) -> String {
+        let option = uiString(
+            "Option \(letter), \(notes.joined(separator: ", ")), \(description.lowercased())",
+        )
+        return option + (suggested ? uiString(", suggested") : "")
+            + (selected ? uiString(", selected") : "")
     }
 }

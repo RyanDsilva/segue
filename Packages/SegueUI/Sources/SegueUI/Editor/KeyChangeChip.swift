@@ -51,12 +51,12 @@
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(Theme.color.muted)
                     .accessibilityHidden(true)
-                Text("Looks like a key change to \(suggestion.key.name)")
+                Text("Looks like a key change to \(suggestion.key.name)", bundle: #bundle)
                     .font(SchibstedGrotesk.semiBold.font(size: 12))
                     .foregroundStyle(Theme.color.muted)
                     .lineLimit(1)
                 Button(action: accept) {
-                    Text("Insert {key: \(suggestion.key.name)}")
+                    Text("Insert {key: \(suggestion.key.name)}", bundle: #bundle)
                         .font(SchibstedGrotesk.bold.font(size: 12))
                         .foregroundStyle(Theme.color.cueText)
                         .padding(.horizontal, 8)
@@ -65,7 +65,7 @@
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .help("Write {key: \(suggestion.key.name)} before this section")
+                .help(uiString("Write {key: \(suggestion.key.name)} before this section"))
                 .accessibilityIdentifier(AccessibilityID.keyChangeInsert)
                 Button(action: dismiss) {
                     Image(systemName: "xmark")
@@ -75,8 +75,8 @@
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("Not a key change")
-                .accessibilityLabel("Dismiss")
+                .help(uiString("Not a key change"))
+                .accessibilityLabel(uiString("Dismiss"))
                 .accessibilityIdentifier(AccessibilityID.keyChangeDismiss)
             }
             .padding(.leading, 10)
@@ -88,7 +88,7 @@
             }
             .fixedSize()
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("Looks like a key change to \(suggestion.key.name)")
+            .accessibilityLabel(uiString("Looks like a key change to \(suggestion.key.name)"))
             .accessibilityIdentifier(AccessibilityID.keyChangeChip)
         }
     }

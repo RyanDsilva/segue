@@ -137,7 +137,7 @@
                 // Keep the filter visible with nothing matching, so Backspace can recover.
                 completion.show(
                     kind: kind,
-                    items: [CompletionPopup.Entry(title: "No match")],
+                    items: [CompletionPopup.Entry(title: uiString("No match"))],
                     header: header,
                     below: anchor,
                     parent: window,

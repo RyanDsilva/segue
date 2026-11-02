@@ -32,10 +32,12 @@
                     // Compact, so it shares the diagrams row instead of adding one.
                     stageGroup.frame(height: 30).padding(.trailing, 20)
                     if model.options.transpose != 0 {
-                        Button("Apply to Source") { model.applyTranspositionToSource() }
+                        Button(uiString("Apply to Source")) { model.applyTranspositionToSource() }
                             .buttonStyle(.segueSecondary)
                             .controlSize(.small)
-                            .help("Rewrite the chords and {key} in the new key (keeps {capo})")
+                            .help(uiString("""
+                            Rewrite the chords and {key} in the new key (keeps {capo})
+                            """))
                             .accessibilityIdentifier(AccessibilityID.editorApplyTransposition)
                             .frame(height: 30)
                     }
@@ -65,15 +67,19 @@
         private var transposeGroup: some View {
             HStack(spacing: 8) {
                 BarLabel("Transpose")
-                StepButton(symbol: "minus", label: "Transpose down") { model.stepTranspose(by: -1) }
-                    .accessibilityIdentifier(AccessibilityID.editorTransposeDown)
+                StepButton(symbol: "minus", label: uiString("Transpose down")) {
+                    model.stepTranspose(by: -1)
+                }
+                .accessibilityIdentifier(AccessibilityID.editorTransposeDown)
                 Text(transposeText)
                     .font(SchibstedGrotesk.semiBold.font(size: 14))
                     .foregroundStyle(Theme.color.ink)
                     .frame(minWidth: 70)
                     .accessibilityIdentifier(AccessibilityID.editorTransposeValue)
-                StepButton(symbol: "plus", label: "Transpose up") { model.stepTranspose(by: 1) }
-                    .accessibilityIdentifier(AccessibilityID.editorTransposeUp)
+                StepButton(symbol: "plus", label: uiString("Transpose up")) {
+                    model.stepTranspose(by: 1)
+                }
+                .accessibilityIdentifier(AccessibilityID.editorTransposeUp)
             }
         }
 
@@ -87,16 +93,16 @@
         private var capoGroup: some View {
             HStack(spacing: 8) {
                 BarLabel("Capo")
-                StepButton(symbol: "minus", label: "Capo down") { model.stepCapo(by: -1) }
+                StepButton(symbol: "minus", label: uiString("Capo down")) { model.stepCapo(by: -1) }
                     .disabled(model.capo == 0)
                     .accessibilityIdentifier(AccessibilityID.editorCapoDown)
-                Text("\(model.capo)")
+                Text(verbatim: "\(model.capo)")
                     .font(SchibstedGrotesk.semiBold.font(size: 14))
                     .foregroundStyle(Theme.color.ink)
                     .monospacedDigit()
                     .frame(minWidth: 24)
                     .accessibilityIdentifier(AccessibilityID.editorCapoValue)
-                StepButton(symbol: "plus", label: "Capo up") { model.stepCapo(by: 1) }
+                StepButton(symbol: "plus", label: uiString("Capo up")) { model.stepCapo(by: 1) }
                     .disabled(model.capo >= 11)
                     .accessibilityIdentifier(AccessibilityID.editorCapoUp)
             }
@@ -105,13 +111,19 @@
         private var displayGroup: some View {
             HStack(spacing: 8) {
                 SegmentedGroup {
-                    SegmentButton(title: "Shapes", isOn: model.options.capoMode == .shapes) {
+                    SegmentButton(
+                        title: uiString("Shapes"),
+                        isOn: model.options.capoMode == .shapes,
+                    ) {
                         model.setCapoMode(.shapes)
                     }
                     .accessibilityIdentifier(AccessibilityID.editorShapes)
                     .help(model.showsBassNotes ? Self.bassPitchHelp
                         : "Chords as written: guitar shapes for the capo")
-                    SegmentButton(title: "Concert", isOn: model.options.capoMode == .concert) {
+                    SegmentButton(
+                        title: uiString("Concert"),
+                        isOn: model.options.capoMode == .concert,
+                    ) {
                         model.setCapoMode(.concert)
                     }
                     .accessibilityIdentifier(AccessibilityID.editorConcert)
@@ -120,7 +132,7 @@
                 }
                 .disabled(model.capo == 0 || model.showsBassNotes)
                 SegmentedGroup {
-                    SegmentButton(title: "Nashville", isOn: model.options.nashville) {
+                    SegmentButton(title: uiString("Nashville"), isOn: model.options.nashville) {
                         model.setNashville(!model.options.nashville)
                     }
                     .accessibilityIdentifier(AccessibilityID.editorNashville)
@@ -130,11 +142,11 @@
                 }
                 // Always there, with or without "I play bass" (R158 Q7): user-level.
                 SegmentedGroup {
-                    SegmentButton(title: "Bass", isOn: model.showsBassNotes) {
+                    SegmentButton(title: uiString("Bass"), isOn: model.showsBassNotes) {
                         model.toggleBassNotes()
                     }
                     .accessibilityIdentifier(AccessibilityID.editorBass)
-                    .help("Show the note to play at sounding pitch (all songs)")
+                    .help(uiString("Show the note to play at sounding pitch (all songs)"))
                 }
                 if let preview = model.preview {
                     // The previews' own singer toggle (P9-2 section 7), shared with the
@@ -159,10 +171,10 @@
                     chartDiagramGroup
                 }
                 if model.showsBassNotes {
-                    Button("Walk-ups\u{2026}") { showsWalkUps = true }
+                    Button(uiString("Walk-ups\u{2026}")) { showsWalkUps = true }
                         .buttonStyle(.segueSecondary)
                         .controlSize(.small)
-                        .help("Every chord change's walk-up in this song, and its feel")
+                        .help(uiString("Every chord change's walk-up in this song, and its feel"))
                         .accessibilityIdentifier(AccessibilityID.editorWalkUps)
                         .sheet(isPresented: $showsWalkUps) {
                             WalkUpsSheet(source: { model.walkUpsSource })
@@ -177,20 +189,20 @@
         private var bassistGroup: some View {
             HStack(spacing: 8) {
                 SegmentedGroup {
-                    SegmentButton(title: "Fretboard", isOn: model.showsFretboard) {
+                    SegmentButton(title: uiString("Fretboard"), isOn: model.showsFretboard) {
                         model.toggleFretboard()
                     }
                     .accessibilityIdentifier(AccessibilityID.editorFretboard)
-                    .help("Show where to play each chord on the bass (all songs)")
+                    .help(uiString("Show where to play each chord on the bass (all songs)"))
                 }
                 Menu {
-                    Toggle("Fills as Tab", isOn: Binding(
+                    Toggle(uiString("Fills as Tab"), isOn: Binding(
                         get: { model.fillsAsTab },
                         set: { _ in model.toggleFillsAsTab() },
                     ))
                     .accessibilityIdentifier(AccessibilityID.editorFillsAsTab)
                     Divider()
-                    Button("Instrument Settings\u{2026}") { openInstrumentSettings?() }
+                    Button(uiString("Instrument Settings\u{2026}")) { openInstrumentSettings?() }
                 } label: {
                     Text(model.bassInstrumentTitle)
                         .font(SchibstedGrotesk.semiBold.font(size: 13))
@@ -200,26 +212,28 @@
                 .controlSize(.small)
                 .fixedSize()
                 .accessibilityIdentifier(AccessibilityID.editorBassInstrument)
-                .help("Strings and tuning for the bass fretboard, in Settings > Instrument")
+                .help(
+                    uiString("Strings and tuning for the bass fretboard, in Settings > Instrument"),
+                )
             }
         }
 
         private var chartDiagramGroup: some View {
             HStack(spacing: 8) {
                 SegmentedGroup {
-                    SegmentButton(title: "Diagrams", isOn: model.options.showDiagrams) {
+                    SegmentButton(title: uiString("Diagrams"), isOn: model.options.showDiagrams) {
                         model.setShowDiagrams(!model.options.showDiagrams)
                     }
                     .accessibilityIdentifier(AccessibilityID.editorDiagramsToggle)
                 }
                 Menu {
-                    Picker("Instrument", selection: instrument) {
-                        Text("Guitar").tag(Instrument.guitar)
-                        Text("Piano").tag(Instrument.piano)
+                    Picker(uiString("Instrument"), selection: instrument) {
+                        Text("Guitar", bundle: #bundle).tag(Instrument.guitar)
+                        Text("Piano", bundle: #bundle).tag(Instrument.piano)
                     }
                     .pickerStyle(.inline)
                     if model.options.instrument == .guitar {
-                        Picker("Tuning", selection: tuning) {
+                        Picker(uiString("Tuning"), selection: tuning) {
                             ForEach(tuningChoices, id: \.self) { tuning in
                                 Text(tuning.name).tag(tuning)
                             }
@@ -235,17 +249,18 @@
                 .controlSize(.small)
                 .fixedSize()
                 .accessibilityIdentifier(AccessibilityID.editorInstrument)
-                .help("Instrument and tuning for chord diagrams")
+                .help(uiString("Instrument and tuning for chord diagrams"))
             }
         }
 
         /// Stage display settings: this song's column count in live mode.
         private var stageGroup: some View {
             Menu {
-                Picker("Columns on stage", selection: stageColumns) {
-                    Text("Auto (Settings > Live)").tag(Int?.none)
+                Picker(uiString("Columns on stage"), selection: stageColumns) {
+                    Text("Auto (Settings > Live)", bundle: #bundle).tag(Int?.none)
                     ForEach(1 ... 3, id: \.self) { count in
-                        Text(count == 1 ? "1 column" : "\(count) columns").tag(Int?.some(count))
+                        Text(count == 1 ? uiString("1 column") : uiString("\(count) columns"))
+                            .tag(Int?.some(count))
                     }
                 }
                 .pickerStyle(.inline)
@@ -254,14 +269,16 @@
                     .labelStyle(.titleAndIcon)
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
             }
-            .accessibilityLabel("Columns on stage: \(stageTitle)")
+            .accessibilityLabel(uiString("Columns on stage: \(stageTitle)"))
             .menuStyle(.button)
             .buttonStyle(.segueSecondary)
             .controlSize(.small)
             .fixedSize()
             .accessibilityIdentifier(AccessibilityID.editorStageColumns)
-            .help("Columns for this song on stage: Auto follows Settings > Live (C on stage "
-                + "changes it too)")
+            .help(uiString("""
+            Columns for this song on stage: Auto follows Settings > Live (C on stage changes it \
+            too)
+            """))
         }
 
         private var stageTitle: String {
@@ -383,7 +400,7 @@
             }
             .buttonStyle(.plain)
             .accessibilityAddTraits(isOn ? .isSelected : [])
-            .accessibilityValue(isOn ? "on" : "off")
+            .accessibilityValue(isOn ? uiString("on") : uiString("off"))
         }
     }
 

@@ -20,8 +20,8 @@ struct WalkUpPlayButton: View {
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
-        .help(isEnabled ? (playing ? "Stop" : "Play") : SoundGate.offHelp)
-        .accessibilityLabel(playing ? "Stop \(label)" : "Play \(label)")
+        .help(isEnabled ? (playing ? uiString("Stop") : uiString("Play")) : SoundGate.offHelp)
+        .accessibilityLabel(playing ? uiString("Stop \(label)") : uiString("Play \(label)"))
         .accessibilityIdentifier(AccessibilityID.walkUpPlay(letter))
     }
 }

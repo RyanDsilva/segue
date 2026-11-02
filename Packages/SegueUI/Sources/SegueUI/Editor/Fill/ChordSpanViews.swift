@@ -82,7 +82,7 @@ struct ChordUnitSpanMark: ViewModifier {
                     Button(span.selection.actionTitle) { span.openSpan() }
                         .disabled(!span.isEnabled || span.disabledHelp != nil
                             || span.selection.problem != nil)
-                    Button("Clear Selection") { span.selection.clear() }
+                    Button(uiString("Clear Selection")) { span.selection.clear() }
                 }
                 .accessibilityIdentifier(
                     place.place == 1 ? AccessibilityID.fillSpanUnit : "",
@@ -191,12 +191,12 @@ struct ChordSpanActionsModifier: ViewModifier {
                 ForEach(chords) { item in
                     let spoken = item.spoken
                     let chord = item.chord
-                    Button("Start fill at \(spoken)") {
+                    Button(uiString("Start fill at \(spoken)")) {
                         if let index = span.index(line: line, chord: chord) {
                             span.selection.start(at: index)
                         }
                     }
-                    Button("End fill at \(spoken)") {
+                    Button(uiString("End fill at \(spoken)")) {
                         if let index = span.index(line: line, chord: chord) {
                             span.selection.finish(at: index)
                             AccessibilityNotification.Announcement(
@@ -228,7 +228,7 @@ struct SpanEscape: View {
             .onTapGesture { selection.clear() }
             .overlay {
                 if selection.span != nil, !selection.sourceHasFocus {
-                    Button("Clear Fill Span") { selection.clear() }
+                    Button(uiString("Clear Fill Span")) { selection.clear() }
                         .keyboardShortcut(.cancelAction)
                         .opacity(0)
                         .accessibilityHidden(true)
