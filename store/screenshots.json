@@ -87,6 +87,15 @@
         "headline": "Paste a song from anywhere.",
         "subline": "Segue converts it. You check it before it saves.",
         "crop": null
+      },
+      {
+        "id": "10-songbook",
+        "raw": "appstore-10-songbook",
+        "appearance": "light",
+        "background": "light",
+        "headline": "Print the whole set as a songbook.",
+        "subline": "Laid out like the stage: chords, bass notes or lyrics.",
+        "crop": null
       }
     ]
   },

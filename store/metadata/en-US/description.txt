@@ -1,0 +1,55 @@
+Segue is a chord chart and setlist app for performing musicians, made for the Mac. Paste a song in from anywhere, build tonight's set in minutes, and play it from a stage view that fits each song on one screen.
+
+TRY IT IN A MINUTE
+Segue starts with a small Welcome library: a few original demo songs and a demo setlist. Press Start Show and you are in stage mode. Delete the demo songs whenever you like.
+
+PASTE A SONG, CHECK IT, DONE
+- Copy a chord sheet from a website or a note and choose File > New Song from Clipboard. Segue turns it into a ChordPro song with its sections and title, and shows you the result before it saves.
+- Text and .crd files convert the same way, several in one review.
+- Optional on-device AI double-checks section labels and title. It works with Apple Intelligence, or with a free local model you can download in Settings. It never rewrites your lyrics or chords, and nothing you paste leaves your Mac.
+
+YOUR SONGS, AS FILES
+- One ChordPro file per song, in a folder you choose. No account, no sign-in.
+- Your songs stay readable by other ChordPro tools, so they are never locked in.
+- Everything saves as you type. Deleted songs go to the Trash.
+- Fast search across titles, artists, lyrics and tags, including romanized Hindi with loose, casual spelling.
+- Tags, proficiency marks and smart filters show what is gig-ready.
+
+AN EDITOR THAT KEEPS UP
+- A song card for artists, Movie / Album, key, tempo (tap it in), capo, time signature and tags: controls, not syntax.
+- Edit the ChordPro text, or place chords on syllables in the visual editor. Select lines and press V, C or B to mark a verse, chorus or bridge.
+- Transpose in one step, with a capo that shows shapes or concert pitch, and Nashville numbers.
+- Guitar chord diagrams with alternate tunings and your own shapes, plus piano voicings.
+
+SETLISTS IN MINUTES
+- Tick songs in the order you want them, then fine-tune the order.
+- Or type a request like "45 min, songs I know well, upbeat start" and Segue fills the set. Lock the songs you want and rebuild the rest.
+- Breaks between sets, changeover time and a running total for each part, timed from each song's tempo and the bars you play. Songs with no tempo are listed, never guessed.
+- Arrange a song for one gig: skip, repeat or reorder its sections without changing the song.
+- Medleys: join songs into one slot, each in its own key and capo, with a written transition.
+
+STAGE MODE
+- A dark stage view that fits each song to the screen, choosing columns and size for you.
+- Set a minimum lyric size. If a song cannot fit, Segue scrolls instead of shrinking it.
+- Auto-scroll that you can pause, speed up or slow down.
+- A visual metronome that pulses at the song's tempo, and a click when you rehearse.
+- An "Up next" footer with the next song's key and capo.
+- Singer view hides every chord, on stage or on a second display for the singer.
+- A request comes in? Search the library mid-show and play it next.
+- A pre-show checklist, a display that stays awake, and shows that reopen where you left off.
+
+PRINT, PLAY AND REHEARSE
+- Print a song or save the whole set as a songbook PDF, laid out like the stage. Chords, bass notes or lyrics only.
+- Click a chord to hear it. Rehearse with play-along bass, chords and click.
+- Bass notes instead of chords, with walk-ups and fills you shape yourself.
+
+MADE FOR THE MAC
+- Native macOS design in light and dark. Follow the system, or pick one in Settings.
+- Full keyboard control. Press ? to see every shortcut.
+- Optional: run your own shortcuts from the Shortcuts app when a show starts and ends.
+- Works offline. Only the optional AI model download needs a network, once.
+
+PRIVATE BY DESIGN
+Your songs stay on your Mac, in files you own, and Segue's AI runs on your Mac too. Segue has no account and no ads. Usage statistics and crash reports are each sent only if you say yes, and you can change your mind at any time in Settings.
+
+Segue is free, with no subscription and no in-app purchases.

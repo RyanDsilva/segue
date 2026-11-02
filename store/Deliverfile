@@ -1,0 +1,18 @@
+# fastlane deliver settings for `make store-upload` (docs/release/specs/WS5-store-listing.md 10).
+# Text from store/metadata (en-US only, A46), screenshots from .build/screenshots/final (made
+# by `make screenshots`). Never uploads a binary, never submits, never releases on its own,
+# and keeps deliver's HTML preview confirmation (no `force`). The API key and the review
+# phone come from the environment scripts/store-upload.sh sets; neither is ever in git.
+platform("osx")
+app_identifier("dev.ryandsilva.segue")
+app_version(ENV.fetch("SEGUE_STORE_VERSION"))
+api_key_path(ENV.fetch("SEGUE_ASC_KEY_JSON"))
+metadata_path("./metadata")
+screenshots_path("../.build/screenshots/final")
+skip_binary_upload(true)
+submit_for_review(false)
+automatic_release(false)
+overwrite_screenshots(true)
+run_precheck_before_submit(false)
+ignore_language_directory_validation(false)
+app_review_information(phone_number: ENV.fetch("SEGUE_REVIEW_PHONE"))

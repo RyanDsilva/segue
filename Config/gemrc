@@ -1,0 +1,3 @@
+# Used by `make bootstrap` (GEMRC) so mise installs fastlane without building gem docs,
+# which fails with Ruby 3.4.12 (rdoc/markup/inline_parser LoadError).
+gem: --no-document

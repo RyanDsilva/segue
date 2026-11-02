@@ -198,4 +198,27 @@ final class AppStoreScreenshotTests: StoreShotCase {
         storeShot("09", "paste", mainWindow(app))
         element(app, GuideAXID.pasteCancel).click(in: app)
     }
+
+    /// 10 songbook (R197): "JamFest Opener" in the PDF preview from Setlist > Export PDF...,
+    /// once the sheet has counted its pages.
+    @MainActor
+    func test10Songbook() {
+        let app = launch()
+        openSetlist(app, "JamFest Opener")
+        element(app, "segue.setlist.menu").click(in: app)
+        let export = app.menuItems["segue.pdf.export.setlist"].firstMatch
+        XCTAssertTrue(export.appears(timeout: 5), "no Export PDF... in the Setlist menu")
+        export.click(in: app)
+        XCTAssertTrue(element(app, "segue.pdf.sheet").appears(timeout: 10), "no PDF preview")
+        let subtitle = element(app, "segue.pdf.subtitle")
+        XCTAssertTrue(
+            E2E.waitUntil(timeout: 20) {
+                let text = (subtitle.value as? String ?? "") + subtitle.label
+                return text.hasPrefix("Songbook PDF") && text.hasSuffix("pages")
+            },
+            "the PDF preview never counted its pages",
+        )
+        storeShot("10", "songbook", mainWindow(app))
+        element(app, "segue.pdf.done").click(in: app)
+    }
 }

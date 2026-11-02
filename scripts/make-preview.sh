@@ -12,8 +12,52 @@
 # mise ffmpeg 9.0.2) to .build/preview/segue-preview-en-US.mp4. Exits non-zero if the
 # result misses any of: 1920x1080, at most 30 fps, 15-30 s, H.264 High 4.0, stereo AAC,
 # at most 500 MB.
+#
+#   scripts/make-preview.sh --review <raw.mov>
+#
+# The App Review attachment instead (9.5, `make review-video`): Ryan's QuickTime walkthrough
+# trimmed to REVIEW_IN..REVIEW_OUT seconds (optional; cut idle stretches before, never by
+# time-stretching), scaled to 1920 wide at 30 fps, H.264 High at 8 Mbps with a silent stereo
+# AAC track, to .build/review/segue-review-walkthrough.mp4. No captions, no scrim. Exits
+# non-zero unless it is 60-90 s, at most 30 fps, H.264 and at most 200 MB.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+if [[ "${1:-}" == --review ]]; then
+    raw="${2:-}"
+    [[ -s "$raw" ]] || { echo "make-preview: no recording at '$raw' (record it per WS5 9.5)" >&2; exit 1; }
+    out=".build/review"
+    mp4="$out/segue-review-walkthrough.mp4"
+    mkdir -p "$out"
+    trim=()
+    [[ -n "${REVIEW_IN:-}" ]] && trim+=(-ss "$REVIEW_IN")
+    [[ -n "${REVIEW_OUT:-}" ]] && trim+=(-to "$REVIEW_OUT")
+    mise exec -- ffmpeg -hide_banner -loglevel error -y "${trim[@]}" -i "$raw" \
+        -f lavfi -i "anullsrc=channel_layout=stereo:sample_rate=48000" \
+        -map 0:v:0 -map 1:a -shortest \
+        -vf "scale=1920:-2:flags=lanczos,fps=30,format=yuv420p" \
+        -c:v libx264 -profile:v high -b:v 8M -maxrate 9M -bufsize 16M -r 30 \
+        -c:a aac -b:a 128k -ar 48000 -ac 2 -movflags +faststart "$mp4"
+    probe() { # <entry>: one value of the video stream
+        mise exec -- ffprobe -v error -select_streams v:0 -show_entries "stream=$1" \
+            -of default=noprint_wrappers=1:nokey=1 "$mp4"
+    }
+    codec=$(probe codec_name)
+    rate=$(probe r_frame_rate)
+    duration=$(mise exec -- ffprobe -v error -show_entries format=duration -of csv=p=0 "$mp4")
+    size=$(stat -f %z "$mp4")
+    problems=""
+    [[ "$codec" == h264 ]] || problems+="codec $codec (want h264); "
+    perl -e "exit !(eval('$rate') <= 30)" || problems+="frame rate $rate (at most 30); "
+    perl -e "exit !($duration >= 60 && $duration <= 90)" || problems+="duration ${duration}s (60-90 s; set REVIEW_IN/REVIEW_OUT); "
+    ((size <= 200 * 1024 * 1024)) || problems+="size $((size / 1048576)) MB (at most 200 MB); "
+    if [[ -n "$problems" ]]; then
+        echo "make-preview: FAIL: $problems" >&2
+        exit 1
+    fi
+    echo "make-preview: $mp4 ok (${duration}s, $((size / 1024)) KB, $codec $(probe width)x$(probe height) $rate)"
+    exit 0
+fi
 
 raw="$1" from="$2" length="$3"
 out=".build/preview"

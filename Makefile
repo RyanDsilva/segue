@@ -56,10 +56,11 @@ WRANGLER     := pnpm dlx wrangler@4.151.1
 .PHONY: sentry-pull bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
 	test-perf e2e e2e-one e2e-smoke e2e-vm e2e-vm-golden gate quick eval-ai eval-import review-gold import-canary lint format verify-appstore check bump \
 	site-fonts site-html guide guide-dev guide-check help-book help-book-check guide-keys docs-shots docs-clips screenshots screenshots-compose preview preview-edit docs-check shellcheck actionlint repo-check \
-	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
+	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts \
+	store-check store-upload review-video
 
 bootstrap: ## Install pinned tools and Xcode's Metal Toolchain, fetch dependencies, generate the workspace
-	mise install
+	GEMRC=Config/gemrc mise install
 	git config core.hooksPath .githooks
 	# MLX's Metal kernels need Xcode's downloadable Metal Toolchain (P3-A section 5.1).
 	xcodebuild -showComponent MetalToolchain 2>/dev/null | grep 'Status: installed' >/dev/null \
@@ -136,6 +137,15 @@ preview: ## App Store preview video: record the storyboard, edit, check Apple's 
 
 preview-edit: ## Re-edit the App Store preview from the last recording (no capture)
 	scripts/store-shots.sh preview-edit
+
+review-video: ## App Review walkthrough from Ryan's QuickTime take (.build/review/raw.mov; REVIEW_IN/REVIEW_OUT seconds)
+	scripts/make-preview.sh --review .build/review/raw.mov
+
+store-check: ## Store text and captions within App Store limits and listing rules (store/)
+	scripts/check-store-metadata.swift store
+
+store-upload: ## Upload store text + screenshots with fastlane deliver (Ryan, Terminal.app: API key from 1Password; DRY_RUN=1)
+	scripts/store-upload.sh $(if $(DRY_RUN),--dry-run)
 
 site-raster: ## Re-render OG image, touch icon, favicon PNG, wordmark PNGs and screenshot JPEGs
 	scripts/gen-site.swift --raster
@@ -245,7 +255,7 @@ review-gold: ## Manual: review the import eval's gold in a local page at http://
 verify-appstore: ## Build the App Store flavor and assert no personal-module symbols
 	scripts/verify-appstore.sh
 
-check: generate lint repo-check tokens-check icon-check site-check build ## Release gate, everything: CI checks, builds, all package tests, verify-appstore, the full E2E suite
+check: generate lint repo-check tokens-check icon-check site-check store-check build ## Release gate, everything: CI checks, builds, all package tests, verify-appstore, the full E2E suite
 	# verify-appstore (which builds Debug- and Release-AppStore) runs beside the package
 	# tests; the timing budgets run after both, and E2E (keystroke latency) last, alone.
 	scripts/parallel.sh tests "make --no-print-directory test-packages" \

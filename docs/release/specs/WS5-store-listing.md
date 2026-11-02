@@ -133,6 +133,8 @@ The final screenshots and videos are derived binaries. They live under `.build/`
 
 ### 4.2 Promotional text (162 chars, editable without a new version)
 
+> *R197 (2026-11-01): the 1.0 text is P3, "Your chart, your set, your cue. Paste a song in, build tonight's set in minutes, play it on a stage view that fits every song, and print the songbook. No account." (162). `store/metadata/en-US/promotional_text.txt` is canonical from here on; the text below is the earlier approved version.*
+
 ```
 Your chart, your set, your cue. Paste a chord sheet from any site, build tonight's set in minutes, and play it from a stage view that fits every song. No account.
 ```
@@ -140,6 +142,8 @@ Your chart, your set, your cue. Paste a chord sheet from any site, build tonight
 The 0.5 promo before phase 3 (169 chars) was: "Your chart, your set, your cue. Keep songs as plain ChordPro files, build tonight's set, and play it from a stage view that fits every song. No account, no subscription." It stays true; the new line leads with paste. Approved (R129).
 
 ### 4.3 Description (plain text)
+
+> *R197 (2026-11-01): the 1.0 description is D1 from `docs/release/v1.0-readiness.md` 3.3 (3,987 / 4,000), which adds medleys, Singer view, PDF export, sound and bass and drops a few lines to fit. `store/metadata/en-US/description.txt` is canonical from here on; the text below is the earlier version. D1's new claims need rows in 4.4.*
 
 ```
 Segue is a chord chart and setlist app for performing musicians, made for the Mac. Paste a song in from anywhere, build tonight's set in minutes, and play it from a stage view that fits each song on one screen.
@@ -246,6 +250,11 @@ If a row fails, **delete its line from the description**. Never ship a claim on 
 | Light and dark; follow the system or pick one in Settings | shipped, R36 | Toggle the system appearance; Settings > Appearance offers Match System / Light / Dark and each applies. |
 | Works offline; only the optional model download needs a network, once | shipped, R66 | Wi-Fi off: the full show flow and a paste work, with no error banners. The model card's Download needs the network (Settings > AI). |
 | Statistics and crash reports each opt-in; change in Settings | R25, R26, A10 | The last Welcome step asks two separate questions, each with equal-weight buttons; Settings > Privacy has both toggles. |
+| Medleys: songs in one slot, own key and capo, written transition | P9-3 | Make a medley of two Welcome songs with different keys and a transition line; on stage it plays as one chart showing each key. |
+| Singer view hides every chord, on stage or on a second display | P9-2, R190 | On stage press V: no chord shows; Live > Singer View (Shift-Cmd-V) with a second display opens the Singer Screen. |
+| Print a song or the set as a songbook PDF, chords / bass notes / lyrics only | P9-1, R193 | File > Export PDF... (Shift-Cmd-E) on a song, and the builder's Setlist menu > Export PDF...; switch Chords, Bass and Lyrics only in the preview; Print opens the print panel. |
+| Click a chord to hear it; play-along bass, chords and click in Rehearsal | P8-6, R192 | Click a chord in the editor: it sounds. Rehearse a song with a tempo, Play Along (Shift-Cmd-P): bass, chords and click play; a live show stays silent. |
+| Bass notes instead of chords, walk-ups and fills | P8-4, P8-7 | Turn on bass notes; a walk-up shows into the next chord; open the fill editor on a chord change. |
 | No ads, no IAP | R2 | Trivially true. |
 
 Do not add a page-turner pedal claim unless Ryan has verified one with real hardware. The default bindings do map PgUp/PgDn and the arrows.
@@ -507,6 +516,7 @@ Library content for every shot comes from `-SegueScreenshotLibrary YES` (8.2): t
 | 7 | `minsize` | Stage mode on the longest Welcome song at a large minimum lyric size, scrolled partway (scroll position visible) | Dark | Readable from the mic stand. | Set a minimum size. Segue scrolls rather than shrinks. |
 | 8 | `checklist` | Pre-show checklist sheet over the setlist. No Gig Mode Shortcut rows (hidden until configured, A37, R18) | Dark | Ready before you walk on. | A pre-show checklist, and shows that survive a crash. |
 | 9 | `paste` | The paste review sheet for a chord-site paste of a Welcome song (the guide's fixture), the original on the left, the converted song on the right with the AI marks of the recorded refinement (R129) | Light | Paste a song from anywhere. | Segue converts it. You check it before it saves. |
+| 10 | `songbook` | The PDF preview of "JamFest Opener" from Setlist > Export PDF..., pages counted (R197) | Light | Print the whole set as a songbook. | Laid out like the stage: chords, bass notes or lyrics. |
 
 Headlines are 23-35 characters and sublines 32-57. Keep any edit within about 36 and about 60, so they set on one line each at the chosen size.
 

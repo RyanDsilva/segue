@@ -84,3 +84,8 @@ website/guide/
 
 # The guide home, moved out of website/guide by guide/scripts/postbuild.mjs
 website/guide.html
+
+# fastlane deliver output (make store-upload, WS5 10)
+store/report.xml
+store/*.html
+store/fastlane/

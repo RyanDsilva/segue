@@ -15,6 +15,9 @@ jq = "1.8.2"
 yq = "4.54.1"
 # Guide clips (WS6 6, `make docs-clips`) and the App Store preview (WS5 9.4).
 ffmpeg = "9.0.2"
+# App Store text and screenshots upload (WS5 10, `make store-upload`): fastlane deliver.
+ruby = "3.4.12"
+"gem:fastlane" = "2.241.2"
 # dSYM upload to Sentry in `make upload` / `make upload-dsyms` (WS3 6.5).
 "aqua:getsentry/sentry-cli" = "3.8.0"
 # Off-screen E2E (R180, docs/research/e2e-off-screen.md): the Tart VM runner behind
