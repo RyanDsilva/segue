@@ -258,6 +258,12 @@ public struct LayoutStyle: Sendable, Hashable {
     /// When every layout that fits wraps a lyric line, lay out one column at the largest size
     /// that wraps none, and scroll it (singer view, R188). Off for the stage and print.
     public var scrollsRatherThanWrap: Bool
+    /// A medley member header's title size; nil = `PlacedMemberHeader.titleScale` x the
+    /// lyric size (the stage). Print sets a paper size (R193).
+    public var memberTitleSize: Double?
+    /// The size of a member header's "2 of 3" and key line; nil = the stage's (12 pt and
+    /// 13 pt or more). Print sets a paper size (R193).
+    public var memberDetailSize: Double?
 
     public init(
         gutterWidth: Double = 64,
@@ -351,7 +357,7 @@ public struct LayoutStyle: Sendable, Hashable {
     /// 1.25 (not the stage's 0.6) so a section's tint, which overhangs its block by a fixed
     /// 6 pt above and below, never meets the next one's at print sizes (R187).
     public static func print(lyricSize: Double) -> Self {
-        Self(
+        var style = Self(
             gutterWidth: 44,
             maxGutterWidth: 72,
             gutterGap: 10,
@@ -374,6 +380,10 @@ public struct LayoutStyle: Sendable, Hashable {
             cuePadding: LayoutSize(width: 5, height: 2.5),
             calloutSpacing: 4,
         )
+        // A medley member's header (R193: the stage's header at paper sizes).
+        style.memberTitleSize = 14
+        style.memberDetailSize = 10
+        return style
     }
 }
 

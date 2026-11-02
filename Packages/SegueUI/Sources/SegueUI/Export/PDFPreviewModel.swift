@@ -170,7 +170,7 @@
             case let .slot(slot):
                 parts += ["Slot PDF", "\(slot.setlist.name), slot \(slot.number)"]
             case let .setlist(setlist, _):
-                let songs = setlist.entries.count { $0.songId != nil }
+                let songs = setlist.songCount
                 parts += ["Songbook PDF", songs == 1 ? "1 song" : "\(songs) songs"]
             case let .selection(records):
                 parts += ["Songbook PDF", "\(records.count) songs"]
@@ -339,7 +339,7 @@
                 shared: shared,
                 songs: SmallBucket(document?.songPageCounts.count ?? 0),
                 pages: SmallBucket(pdf?.pageCount ?? 0),
-                medleys: SmallBucket(0),
+                medleys: SmallBucket(snapshot.medleyCount),
                 optionChanges: SmallBucket(optionChanges),
                 renderTime: RenderTimeBucket(firstRenderTime ?? .zero),
             )

@@ -48,6 +48,48 @@
             )
         }
 
+        /// A slot export of `itemID`: a song slot, a medley slot (its members' songs), or a
+        /// medley member alone, labelled "Medley 5 · 2 of 3" (spec 9).
+        static func pdfSlot(
+            _ itemID: SetlistItemID,
+            in setlist: Setlist,
+            library: LibraryViewModel,
+        ) -> PDFSlotSnapshot? {
+            let numbered = setlist.entries.filter { !$0.isBreak }
+            let total = numbered.count
+            if let index = numbered.firstIndex(where: { $0.itemId == itemID }) {
+                let entry = numbered[index]
+                var records: [SongID: SongRecord] = [:]
+                for song in entry.songIds {
+                    records[song] = library.song(id: song)
+                }
+                return PDFSlotSnapshot(
+                    setlist: setlist,
+                    entry: entry,
+                    record: entry.songId.flatMap { library.song(id: $0) },
+                    number: index + 1,
+                    total: total,
+                    records: records,
+                )
+            }
+            for (index, entry) in numbered.enumerated() {
+                guard let medley = entry.medley,
+                      let position = medley.members.firstIndex(where: { $0.itemId == itemID })
+                else { continue }
+                let member = medley.members[position]
+                return PDFSlotSnapshot(
+                    setlist: setlist,
+                    entry: member.asSlot,
+                    record: library.song(id: member.songId),
+                    number: index + 1,
+                    total: total,
+                    label: "Medley \(index + 1) \u{00B7} "
+                        + "\(position + 1) of \(medley.members.count)",
+                )
+            }
+            return nil
+        }
+
         func closePDF() {
             pdfPreview?.close()
             pdfPreview = nil
@@ -64,24 +106,15 @@
                 content = .song(record)
             case let .slot(setlistID, itemID):
                 guard let setlist = session.setlists.setlist(setlistID),
-                      let entry = setlist.entries.first(where: { $0.itemId == itemID }),
-                      let song = entry.songId
+                      let slot = Self.pdfSlot(itemID, in: setlist, library: library)
                 else { return nil }
-                let songs = setlist.entries.filter { $0.songId != nil }
-                let number = (songs.firstIndex { $0.itemId == itemID } ?? 0) + 1
-                content = .slot(PDFSlotSnapshot(
-                    setlist: setlist,
-                    entry: entry,
-                    record: library.song(id: song),
-                    number: number,
-                    total: songs.count,
-                ))
+                content = .slot(slot)
             case let .setlist(id):
                 guard let setlist = session.setlists.setlist(id), setlist.songCount > 0 else {
                     return nil
                 }
                 var records: [SongID: SongRecord] = [:]
-                for song in setlist.entries.compactMap(\.songId) {
+                for song in setlist.songIds {
                     records[song] = library.song(id: song)
                 }
                 content = .setlist(setlist, records)

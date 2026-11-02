@@ -4,7 +4,7 @@ extension SectionLayout {
     /// The header at the head's top: an optional rule, the title line, the transition and
     /// change line in one callout, then the member's notes.
     func memberHeader(_ measured: MeasuredHeader) -> PlacedMemberHeader {
-        let titleSize = context.lyricSize * PlacedMemberHeader.titleScale
+        let titleSize = style.memberTitleSize ?? context.lyricSize * PlacedMemberHeader.titleScale
         var y = measured.rule ? titleSize * 0.7 : 0
         let titleBand = titleSize * style.lineHeight
         let titleBaseline = y + SizeContext.baseline(

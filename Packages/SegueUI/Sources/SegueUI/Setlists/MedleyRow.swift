@@ -26,6 +26,7 @@
         let onDropMember: ([String], Int?) -> Bool
         @State private var isHovered = false
         @Environment(\.arrangementStage) private var stage
+        @Environment(\.exportPDF) private var exportPDF
 
         private var isCollapsed: Bool {
             model.collapsedMedleys.contains(entry.itemId)
@@ -239,6 +240,14 @@
                 .disabled(!canRehearse)
             Button(isCollapsed ? "Expand Medley" : "Collapse Medley") {
                 model.setCollapsed(entry.itemId, !isCollapsed)
+            }
+            // P9-1 spec 9: the medley alone, its members flowing on.
+            if let exportPDF {
+                Button("Export Medley as PDF\u{2026}") {
+                    exportPDF.open(.slot(setlist.id, entry.itemId), false)
+                }
+                .disabled(!exportPDF.isEnabled)
+                .accessibilityIdentifier(AccessibilityID.pdfExportMedley)
             }
             Divider()
             Button("Remove from Setlist", role: .destructive) {

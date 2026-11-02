@@ -1,6 +1,7 @@
 #if os(macOS)
     import CoreGraphics
     import Foundation
+    import LiveLayout
     import PDFKit
     import Printing
     import SwiftUI
@@ -71,7 +72,7 @@
                     let link = PDFAnnotation(bounds: bounds, forType: .link, withProperties: nil)
                     link.destination = PDFDestination(
                         page: destination,
-                        at: CGPoint(x: 0, y: paper.height),
+                        at: CGPoint(x: 0, y: destinationY(row.targetTop, paper: paper)),
                     )
                     link.border = PDFBorder()
                     link.border?.lineWidth = 0
@@ -87,7 +88,10 @@
                 guard let page = pdf.page(at: entry.page) else { return nil }
                 let item = PDFOutline()
                 item.label = entry.title
-                item.destination = PDFDestination(page: page, at: CGPoint(x: 0, y: paper.height))
+                item.destination = PDFDestination(
+                    page: page,
+                    at: CGPoint(x: 0, y: destinationY(entry.top, paper: paper)),
+                )
                 for child in entry.children {
                     if let node = outline(child) {
                         item.insertChild(node, at: item.numberOfChildren)
@@ -101,6 +105,13 @@
                 }
             }
             pdf.outlineRoot = root
+        }
+
+        /// A destination's y in PDF space: the page top, or a little above `top` (from the
+        /// paper's top edge) so a medley member's header lands in view with its rule.
+        static func destinationY(_ top: Double?, paper: LayoutSize) -> Double {
+            guard let top else { return paper.height }
+            return min(paper.height, paper.height - top + 12)
         }
 
         static func attributes(_ metadata: PrintMetadata) -> [AnyHashable: Any] {

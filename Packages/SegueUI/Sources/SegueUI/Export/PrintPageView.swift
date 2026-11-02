@@ -279,6 +279,17 @@
                     key: song.key,
                     time: song.time,
                     page: placed.target.map { $0 + 1 },
+                    member: song.member != nil,
+                )
+            case let .medley(medley):
+                songRow(
+                    number: medley.number,
+                    title: medley.title,
+                    credits: nil,
+                    key: nil,
+                    time: medley.time,
+                    page: placed.target.map { $0 + 1 },
+                    keyColumn: false,
                 )
             case let .missing(number):
                 songRow(
@@ -291,24 +302,29 @@
                     missing: true,
                 )
             case let .breakHeading(title, total, interval):
-                VStack(alignment: .leading, spacing: 0) {
-                    if let interval {
-                        printText(interval, .semiBold, 9.5, Theme.color.muted)
-                            .padding(.leading, numberColumn + numberGap)
-                            .line(Metrics.intervalLine, top: Metrics.intervalTop)
-                            .padding(.bottom, Metrics.intervalBottom)
-                    }
-                    HStack(alignment: .center, spacing: 10) {
-                        printText(title, .extraBold, 13, Theme.color.ink).fixedSize()
-                        Rectangle().fill(Theme.color.ink).frame(height: 1.5)
-                        if let total, page.showsTimes {
-                            printText(total, .bold, 10, Theme.color.muted).fixedSize()
-                        }
-                    }
-                    .line(Metrics.headingLine, top: Metrics.headingTop)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isHeader)
+                breakRow(title: title, total: total, interval: interval)
+            }
+        }
+
+        /// A break's heading with its part total, after the intermission when it has one.
+        private func breakRow(title: String, total: String?, interval: String?) -> some View {
+            VStack(alignment: .leading, spacing: 0) {
+                if let interval {
+                    printText(interval, .semiBold, 9.5, Theme.color.muted)
+                        .padding(.leading, numberColumn + numberGap)
+                        .line(Metrics.intervalLine, top: Metrics.intervalTop)
+                        .padding(.bottom, Metrics.intervalBottom)
                 }
+                HStack(alignment: .center, spacing: 10) {
+                    printText(title, .extraBold, 13, Theme.color.ink).fixedSize()
+                    Rectangle().fill(Theme.color.ink).frame(height: 1.5)
+                    if let total, page.showsTimes {
+                        printText(total, .bold, 10, Theme.color.muted).fixedSize()
+                    }
+                }
+                .line(Metrics.headingLine, top: Metrics.headingTop)
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isHeader)
             }
         }
 
@@ -317,6 +333,7 @@
         private let keyColumn = 96.0
         private let timeColumn = 52.0
         private let pageColumn = 32.0
+        private let memberIndent = 14.0
 
         // swiftlint:disable:next function_parameter_count
         private func songRow(
@@ -327,19 +344,31 @@
             time: String?,
             page target: Int?,
             missing: Bool = false,
+            member: Bool = false,
+            keyColumn: Bool = true,
         ) -> some View {
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
-                printText(number, .extraBold, 16, missing ? Theme.color.muted : Theme.color.ink)
-                    .frame(width: numberColumn, alignment: .trailing)
-                    .padding(.trailing, numberGap)
+            // A medley member ("5a") sits indented under its medley, a step smaller.
+            let member = member || number.last?.isLetter == true
+            let quiet = missing || member
+            return HStack(alignment: .firstTextBaseline, spacing: 0) {
+                printText(
+                    number,
+                    member ? .bold : .extraBold,
+                    member ? 12 : 16,
+                    missing ? Theme.color.muted : Theme.color.ink,
+                )
+                .frame(width: numberColumn + (member ? memberIndent : 0), alignment: .trailing)
+                .padding(.trailing, numberGap)
                 VStack(alignment: .leading, spacing: 0) {
                     printText(
                         title,
-                        missing ? .semiBold : .extraBold,
-                        missing ? 13 : 16,
+                        missing ? .semiBold : (member ? .bold : .extraBold),
+                        quiet ? 13 : 16,
                         missing ? Theme.color.muted : Theme.color.ink,
                     )
-                    .tracking(missing ? 0 : -0.2)
+                    .tracking(quiet ? 0 : -0.2)
+                    // A medley's long "Medley: A / B / C" shrinks before it truncates.
+                    .minimumScaleFactor(keyColumn ? 1 : 0.7)
                     .truncationMode(.tail)
                     .frame(height: Metrics.rowTitleLine, alignment: .leading)
                     if let credits {
@@ -349,9 +378,12 @@
                     }
                 }
                 Spacer(minLength: 8)
-                printText(key ?? "", .bold, 12.5, Theme.color.cueText)
-                    .truncationMode(.tail)
-                    .frame(width: keyColumn, alignment: .leading)
+                // A medley row has no key: its title takes the column (its members list theirs).
+                if keyColumn {
+                    printText(key ?? "", .bold, 12.5, Theme.color.cueText)
+                        .truncationMode(.tail)
+                        .frame(width: self.keyColumn, alignment: .leading)
+                }
                 if page.showsTimes {
                     printText(time ?? "", .medium, 9.5, Theme.color.muted)
                         .frame(width: timeColumn, alignment: .trailing)

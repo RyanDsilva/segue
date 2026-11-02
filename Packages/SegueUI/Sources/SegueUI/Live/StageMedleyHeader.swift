@@ -54,11 +54,13 @@
                     .foregroundStyle(Theme.color.ink)
                     .accessibilityAddTraits(.isHeader)
                 Text(header.positionText)
-                    .font(SchibstedGrotesk.semiBold.font(size: 12))
+                    .font(SchibstedGrotesk.semiBold.font(size: style.memberDetailSize ?? 12))
                     .foregroundStyle(Theme.color.muted)
                 if !header.keyLine.isEmpty {
                     Text(header.keyLine)
-                        .font(SchibstedGrotesk.medium.font(size: max(13, placed.titleSize * 0.55)))
+                        .font(SchibstedGrotesk.medium.font(
+                            size: style.memberDetailSize ?? max(13, placed.titleSize * 0.55),
+                        ))
                         .foregroundStyle(Theme.color.muted)
                 }
             }

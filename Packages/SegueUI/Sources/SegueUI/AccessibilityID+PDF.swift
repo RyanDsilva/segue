@@ -27,6 +27,8 @@ public extension AccessibilityID {
     /// menu's Export PDF... and Print..., and the selection's "Export N Songs as PDF...".
     static let pdfExportSong = "segue.pdf.export.song"
     static let pdfExportSlot = "segue.pdf.export.slot"
+    /// A medley row's "Export Medley as PDF..." (spec 9).
+    static let pdfExportMedley = "segue.pdf.export.medley"
     static let pdfExportSetlist = "segue.pdf.export.setlist"
     static let pdfPrintSetlist = "segue.pdf.print.setlist"
     static let pdfExportSelection = "segue.pdf.export.selection"

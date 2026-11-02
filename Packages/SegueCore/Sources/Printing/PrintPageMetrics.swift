@@ -115,7 +115,7 @@ public enum SetListMetrics {
         switch row {
         case let .song(song):
             2 * rowPadding + rowTitleLine + (song.credits == nil ? 0 : rowCreditsLine)
-        case .missing:
+        case .medley, .missing:
             2 * rowPadding + rowTitleLine
         case let .breakHeading(_, _, interval):
             headingTop + headingLine + headingBottom

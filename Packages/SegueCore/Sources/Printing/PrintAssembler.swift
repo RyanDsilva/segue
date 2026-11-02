@@ -120,7 +120,10 @@ public enum PrintAssembler {
             )
         }
         var paged = paginate()
-        if options.sectionMap, let map = PrintMapLine.text(paged.passes) {
+        // A medley's page header is its first member's: the map line names that member's
+        // passes (R193); each later member opens with its own header.
+        let passes = song.members.isEmpty ? paged.passes : paged.passes.filter { $0.segment == 0 }
+        if options.sectionMap, let map = PrintMapLine.text(passes) {
             header.mapLines = PrintMapLine.lines(map, width: width, metrics: metrics)
             paged = paginate()
         }
@@ -190,38 +193,40 @@ public enum PrintAssembler {
             next += song.paged.pages.count
         }
         let total = next
-        func footer(_ index: Int) -> PrintFooter {
+        let footer = { (index: Int) in
             PrintFooter(left: job.footerName, right: "Page \(index + 1) of \(total)")
         }
-        var pages: [PrintPage] = setList.enumerated().map { index, page in
-            var page = page
-            page.footer = footer(index)
-            page.rows = page.rows.map { placed in
-                var placed = placed
-                if case let .song(song) = placed.row, firstPages.indices.contains(song.song) {
-                    placed.target = firstPages[song.song]
-                }
-                return placed
-            }
-            return .setList(page)
-        }
+        var pages: [PrintPage] = []
+        var anchors: [Int: [Int: Anchor]] = [:]
         for (index, song) in laid.enumerated() {
             let plans = song.paged.numbered(firstPage: firstPages[index] + 1)
-            for (offset, plan) in plans.enumerated() {
-                pages.append(.song(SongPage(
+            let members = job.songs.indices.contains(index) ? job.songs[index].members : []
+            if !members.isEmpty {
+                anchors[index] = memberAnchors(
+                    plans,
+                    firstPage: firstPages[index],
                     header: song.header,
-                    isFirst: offset == 0,
-                    plan: plan,
-                    extras: song.paged.extras.filter { $0.page == offset },
-                    diagrams: song.diagrams,
-                    footer: footer(firstPages[index] + offset),
-                    song: index,
-                )))
+                )
             }
+            pages += songPages(
+                song,
+                plans: plans,
+                members: members,
+                at: (index, firstPages[index]),
+                footer: footer,
+            )
+        }
+        let listPages: [PrintPage] = setList.enumerated().map { index, page in
+            .setList(targeted(
+                page,
+                footer: footer(index),
+                firstPages: firstPages,
+                anchors: anchors,
+            ))
         }
         return PrintDocument(
-            pages: pages,
-            outline: outline(job, firstPages: firstPages),
+            pages: listPages + pages,
+            outline: outline(job, firstPages: firstPages, anchors: anchors),
             metadata: metadata(job),
             fileName: PrintFileName.name(title: job.title, part: job.options.part),
             paper: job.options.paper,
@@ -267,51 +272,6 @@ public enum PrintAssembler {
         }
         close()
         return pages
-    }
-
-    /// Single chart: the title. Songbook: "Set list" (or "Contents"), then each song,
-    /// nested under its break heading when the set has breaks.
-    static func outline(_ job: PrintJob, firstPages: [Int]) -> [PrintOutlineEntry] {
-        guard let contents = job.contents else {
-            return [PrintOutlineEntry(title: job.title, page: 0)]
-        }
-        var entries = [PrintOutlineEntry(
-            title: job.target == .selection ? "Contents" : "Set list",
-            page: 0,
-        )]
-        let hasBreaks = contents.rows.contains { row in
-            if case .breakHeading = row {
-                return true
-            }
-            return false
-        }
-        for row in contents.rows {
-            switch row {
-            case let .song(song):
-                guard firstPages.indices.contains(song.song) else { continue }
-                let entry = PrintOutlineEntry(
-                    title: job.songs[song.song].outlineTitle,
-                    page: firstPages[song.song],
-                )
-                if hasBreaks, entries.count > 1 {
-                    entries[entries.count - 1].children.append(entry)
-                } else {
-                    entries.append(entry)
-                }
-            case let .breakHeading(title, _, _):
-                entries.append(PrintOutlineEntry(title: title, page: 0))
-            case .missing:
-                continue
-            }
-        }
-        // A heading points at its first song's page; one with no songs stays on the list.
-        return entries.map { entry in
-            var entry = entry
-            if let first = entry.children.first {
-                entry.page = first.page
-            }
-            return entry
-        }
     }
 
     static func metadata(_ job: PrintJob) -> PrintMetadata {

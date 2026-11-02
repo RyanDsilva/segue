@@ -78,25 +78,45 @@ public struct PrintDiagramBlock: Sendable, Hashable {
     }
 }
 
+/// One member of a printed medley, by its segment in the medley's request (P9-1 spec 9,
+/// R193): what a continuation page whose top is in this member says.
+public struct PrintMember: Sendable, Hashable {
+    /// "Kesariya".
+    public var title: String
+    /// "Medley 5 · 2 of 3".
+    public var slotLabel: String?
+
+    public init(title: String, slotLabel: String?) {
+        self.title = title
+        self.slotLabel = slotLabel
+    }
+}
+
 /// One song (a library song, a slot or a selected song) ready to print: its layout request
-/// built the stage's way, its header and its optional diagrams.
+/// built the stage's way, its header and its optional diagrams. A medley slot is one print
+/// song whose request has a segment per member (P9-3 9.1), its members flowing on with no
+/// page break (R178).
 public struct PrintSong: Sendable {
     public var request: LayoutRequest
     public var header: PrintHeader
     public var diagrams: PrintDiagramBlock?
     /// The outline entry's title: "3. Harbour Lights" in a setlist songbook.
     public var outlineTitle: String
+    /// A medley's members, one per segment; empty for a song.
+    public var members: [PrintMember]
 
     public init(
         request: LayoutRequest,
         header: PrintHeader,
         diagrams: PrintDiagramBlock? = nil,
         outlineTitle: String? = nil,
+        members: [PrintMember] = [],
     ) {
         self.request = request
         self.header = header
         self.diagrams = diagrams
         self.outlineTitle = outlineTitle ?? header.title
+        self.members = members
     }
 }
 
@@ -106,8 +126,12 @@ public enum SetListRow: Sendable, Hashable {
     /// A break: its heading ("Set 2") and part total, after the intermission length
     /// ("Interval 20:00") when the break has one.
     case breakHeading(title: String, total: String?, interval: String?)
-    /// A slot whose song is not in the library.
+    /// A slot whose song is not in the library ("5b" for a medley member).
     case missing(number: String)
+    /// A medley slot (P9-1 spec 9): "5  Medley: Tujh Mein Rab / Kesariya / Tum Hi Ho" with
+    /// the medley's total, linking to its first page; its members follow as `.song` rows
+    /// with `member` set, numbered "5a", "5b".
+    case medley(SetListSong)
 }
 
 public struct SetListSong: Sendable, Hashable {
@@ -121,6 +145,9 @@ public struct SetListSong: Sendable, Hashable {
     public var time: String?
     /// Index into the job's songs.
     public var song: Int
+    /// A medley member's segment in its medley's request: the row is indented and links to
+    /// the member's inline header; nil for a song or a medley row.
+    public var member: Int?
 
     public init(
         number: String,
@@ -129,6 +156,7 @@ public struct SetListSong: Sendable, Hashable {
         key: String? = nil,
         time: String? = nil,
         song: Int,
+        member: Int? = nil,
     ) {
         self.number = number
         self.title = title
@@ -136,6 +164,7 @@ public struct SetListSong: Sendable, Hashable {
         self.key = key
         self.time = time
         self.song = song
+        self.member = member
     }
 }
 
@@ -145,6 +174,9 @@ public struct PlacedSetListRow: Sendable, Hashable {
     public var y: Double
     public var height: Double
     public var target: Int?
+    /// Where on `target` the link lands, from the paper's top edge; nil = the page top (a
+    /// medley member's inline header shares its page, spec 9).
+    public var targetTop: Double?
 }
 
 public struct SetListHead: Sendable, Hashable {
@@ -184,11 +216,14 @@ public struct PrintOutlineEntry: Sendable, Hashable {
     public var title: String
     /// 0-based page index.
     public var page: Int
+    /// From the paper's top edge; nil = the page top (a medley member's header, spec 9).
+    public var top: Double?
     public var children: [Self]
 
-    public init(title: String, page: Int, children: [Self] = []) {
+    public init(title: String, page: Int, top: Double? = nil, children: [Self] = []) {
         self.title = title
         self.page = page
+        self.top = top
         self.children = children
     }
 }

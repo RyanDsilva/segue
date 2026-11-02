@@ -50,9 +50,9 @@
         var records: [SongRecord] {
             switch content {
             case let .song(record): [record]
-            case let .slot(slot): slot.record.map { [$0] } ?? []
-            case let .setlist(setlist, songs): setlist.entries
-                .compactMap { $0.songId.flatMap { songs[$0] } }
+            case let .slot(slot):
+                slot.record.map { [$0] } ?? slot.entry.songIds.compactMap { slot.records[$0] }
+            case let .setlist(setlist, songs): setlist.songIds.compactMap { songs[$0] }
             case let .selection(records): records
             }
         }
@@ -61,7 +61,8 @@
         var title: String {
             switch content {
             case let .song(record): SongSummary.title(record)
-            case let .slot(slot): slot.record.map(SongSummary.title) ?? "Untitled"
+            case let .slot(slot):
+                slot.record.map(SongSummary.title) ?? slot.medley?.displayTitle ?? "Untitled"
             case let .setlist(setlist, _): setlist.name
             case .selection: "Songbook"
             }
@@ -76,20 +77,41 @@
             }
         }
 
+        /// The medley slots it prints (analytics' `segue.medleys`).
+        var medleyCount: Int {
+            switch content {
+            case let .slot(slot): slot.medley == nil ? 0 : 1
+            case let .setlist(setlist, _): setlist.entries.count { $0.medley != nil }
+            case .selection, .song: 0
+            }
+        }
+
         /// Any printed song has a saved fill (the Bass part's Fills as tab option shows).
         var hasFills: Bool {
             records.contains { !$0.sidecar.parts.isEmpty }
         }
     }
 
-    /// A slot export: the slot, its song (nil when missing), its number among the song slots
-    /// and how many song slots the set has.
+    /// A slot export: the slot, its song (nil when missing or a medley), its number among the
+    /// numbered slots and how many the set has. A medley slot carries its members' songs; a
+    /// medley member exported alone carries its label ("Medley 5 · 2 of 3").
     struct PDFSlotSnapshot {
         var setlist: Setlist
         var entry: SetlistEntry
         var record: SongRecord?
         var number: Int
         var total: Int
+        var records: [SongID: SongRecord] = [:]
+        var label: String?
+
+        var medley: SetlistMedley? {
+            entry.medley
+        }
+
+        /// "4 of 18", or a member's "Medley 5 · 2 of 3".
+        var slotLabel: String {
+            label ?? "\(number) of \(total)"
+        }
     }
 
     /// Builds the print job the stage's way (spec decision 2): `StageRequest`'s statics
@@ -114,86 +136,12 @@
                     date: snapshot.date,
                 )
             case let .slot(slot):
-                let songs = slot.record.map { record in
-                    [song(
-                        record,
-                        slot: StageSlot(slot.entry),
-                        snapshot: snapshot,
-                        options: options,
-                        slotLabel: "\(slot.number) of \(slot.total)",
-                    )]
-                } ?? []
-                return PrintJob(
-                    target: .slot,
-                    title: snapshot.title,
-                    songs: songs,
-                    options: options,
-                    author: slot.record
-                        .flatMap { ArtistNames.display($0.document.metadata.artists) },
-                    tags: slot.record?.sidecar.tags ?? [],
-                    date: snapshot.date,
-                )
+                return slotJob(slot, snapshot: snapshot, options: options)
             case let .setlist(setlist, records):
                 return setlistJob(setlist, records: records, snapshot: snapshot, options: options)
             case let .selection(records):
                 return selectionJob(records, snapshot: snapshot, options: options)
             }
-        }
-
-        private static func setlistJob(
-            _ setlist: Setlist,
-            records: [SongID: SongRecord],
-            snapshot: PDFSnapshot,
-            options: PrintOptions,
-        ) -> PrintJob {
-            let total = setlist.entries.count { $0.songId != nil }
-            var songs: [PrintSong] = []
-            var slots: [SetlistItemID: PrintSlot] = [:]
-            var number = 0
-            for entry in setlist.entries {
-                guard let id = entry.songId else { continue }
-                number += 1
-                guard let record = records[id] else { continue }
-                let song = song(
-                    record,
-                    slot: StageSlot(entry),
-                    snapshot: snapshot,
-                    options: options,
-                    slotLabel: "\(number) of \(total)",
-                    outlineTitle: "\(number). \(SongSummary.title(record))",
-                )
-                slots[entry.itemId] = PrintSlot(
-                    title: song.header.title,
-                    credits: song.header.credits,
-                    key: setListKey(song.request.model, part: options.part),
-                    song: songs.count,
-                )
-                songs.append(song)
-            }
-            let timing = SetlistTiming(
-                setlist: setlist,
-                songs: { records[$0] },
-                defaultChangeover: snapshot.defaultChangeover,
-            )
-            let rows = PrintSetList.rows(entries: setlist.entries, timing: timing, slots: slots)
-            let line = [
-                setlist.venue?.trimmingCharacters(in: .whitespaces).nonEmpty,
-                setlist.date?.displayText,
-                total == 1 ? "1 song" : "\(total) songs",
-                timing.totalText,
-            ].compactMap(\.self).joined(separator: " \u{00B7} ")
-            let subject = [setlist.venue?.nonEmpty, setlist.date?.displayText]
-                .compactMap(\.self).joined(separator: " \u{00B7} ")
-            return PrintJob(
-                target: .setlist,
-                title: setlist.name,
-                songs: songs,
-                contents: PrintJob.Contents(title: setlist.name, line: line, rows: rows),
-                options: options,
-                subject: subject.isEmpty ? nil : subject,
-                footerName: setlist.name,
-                date: snapshot.date,
-            )
         }
 
         private static func selectionJob(
