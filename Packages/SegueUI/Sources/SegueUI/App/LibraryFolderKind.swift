@@ -87,10 +87,11 @@
             serviceName.map { "This library is in \($0)." }
         }
 
-        /// The rest of the warning (5.4).
+        /// The rest of the warning (5.4). v1.0 has no Settings > Sync (R195), so it names
+        /// the risk and the local-folder fix only.
         public static let warningDetail = "Files there can be moved off this Mac to save "
-            + "space, so a song might not be here at a gig. To keep both Macs in step, use "
-            + "Settings > Sync, which keeps every song on this Mac."
+            + "space, so a song might not be here at a gig. For shows, keep your library in "
+            + "a folder on this Mac."
 
         /// The whole warning, for Settings > Data.
         public var warning: String? {
