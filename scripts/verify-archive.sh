@@ -8,10 +8,9 @@
 # Fails closed: an unreadable input or tool output is a failure, never a pass. Prints ok:/FAIL:
 # lines like verify-appstore.sh and exits 1 on any failure.
 #
-# "Bundles" are the app plus every Contents/PlugIns/*.appex. The only allowed extension is the
-# Quick Look preview dev.ryandsilva.segue.quicklook (I-14, built by WS2b); with no extension
-# embedded the extension rules simply have nothing to check, so nothing here changes when it
-# lands. Gig Mode confirmation runs through Shortcuts Events (Path SE, docs/release/decisions.md
+# "Bundles" are the app plus every Contents/PlugIns/*.appex. The only allowed extensions are the
+# Quick Look preview dev.ryandsilva.segue.quicklook (I-14, built by WS2b) and the Finder
+# thumbnails dev.ryandsilva.segue.thumbnail (P9-5 P3), each with its own profile. Gig Mode confirmation runs through Shortcuts Events (Path SE, docs/release/decisions.md
 # R59): the app's allowed entitlements include the Apple-events pair (`app_entitlements` in
 # scripts/lib/verify-common.sh) and NSAppleEventsUsageDescription is required.
 set -uo pipefail
@@ -24,8 +23,10 @@ source scripts/lib/verify-common.sh
 team="V6BM673U35"
 app_id="dev.ryandsilva.segue"
 appex_id="dev.ryandsilva.segue.quicklook"
+thumbnail_id="dev.ryandsilva.segue.thumbnail"
 app_profile="Segue Mac App Store"
 appex_profile="Segue Mac App Store QuickLook"
+thumbnail_profile="Segue Mac App Store Thumbnail"
 copyright="© 2026 Ryan Rony Dsilva"
 buddy=/usr/libexec/PlistBuddy
 
@@ -101,7 +102,8 @@ check_1() {
     local bundle
     for bundle in "${bundles[@]:1}"; do
         id=$(bundle_id "$bundle")
-        [[ "$id" == "$appex_id" ]] || { fail "1: unexpected extension $(short "$bundle") ($id)"; ok=0; }
+        [[ "$id" == "$appex_id" || "$id" == "$thumbnail_id" ]] \
+            || { fail "1: unexpected extension $(short "$bundle") ($id)"; ok=0; }
     done
     ((ok)) && pass "1: $app_id from Segue-AppStore, $((${#bundles[@]} - 1)) extension(s)"
 }
@@ -226,7 +228,11 @@ check_6() {
     now=$(date -u +%s)
     for bundle in "${bundles[@]}"; do
         id=$(bundle_id "$bundle")
-        [[ "$id" == "$app_id" ]] && want="$app_profile" || want="$appex_profile"
+        case "$id" in
+            "$app_id") want="$app_profile" ;;
+            "$thumbnail_id") want="$thumbnail_profile" ;;
+            *) want="$appex_profile" ;;
+        esac
         profile="$scratch/profile-$id.plist"
         if ! security cms -D -i "$bundle/Contents/embedded.provisionprofile" >"$profile" 2>/dev/null; then
             fail "6: $id has no readable Contents/embedded.provisionprofile"
@@ -301,6 +307,8 @@ check_8() {
     check_resource_bundle "8" "$app"
     check_third_party_notices "8" "$app"
     check_sound_bank "8" "$app"
+    # The offline Help Book with every in-app Help anchor (P9-5 3.3).
+    check_help_book "8" "$app"
 }
 
 # MARK: 9. Privacy manifest

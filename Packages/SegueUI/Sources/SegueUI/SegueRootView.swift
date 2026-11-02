@@ -39,7 +39,7 @@
             }
             .task { await app.start() }
             // Help buttons and tips open guide pages (WS6 7.2); sheets inherit it.
-            .guideLinks(app.dependencies.workspace)
+            .guideLinks(app.help)
             // The consent prompt (WS3 4.2) once the library state has settled.
             .servicesPresentations(app)
             // The Welcome sheet (WS2b 4.1).
@@ -343,6 +343,14 @@
                     Text(message)
                         .lineLimit(2)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                    // P9-5 5 (P1): report it while it is on screen, never from the stage.
+                    if !app.isShowUp {
+                        Button("Report…") { app.reportBannerError(message) }
+                            .buttonStyle(.segueSecondary)
+                            .controlSize(.small)
+                            .help("Report this problem to Segue's developer")
+                            .accessibilityIdentifier(AccessibilityID.errorBannerReport)
+                    }
                     Button("Dismiss") {
                         session.library.errorMessage = nil
                         session.setlists.errorMessage = nil

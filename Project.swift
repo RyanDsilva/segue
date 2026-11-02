@@ -149,6 +149,10 @@ let appInfoPlist: [String: Plist.Value] = [
             "CFBundleTypeIconFile": "Segue-Document",
         ],
     ],
+    // The offline Help Book (P9-5 3.3), built from the guide by `make help-book` into
+    // Derived/HelpBook and copied into Contents/Resources by `appResources`.
+    "CFBundleHelpBookFolder": "Segue.help",
+    "CFBundleHelpBookName": "dev.ryandsilva.segue.help",
     // Hosted services (WS3): filled from the per-flavor build settings in `appTarget`.
     "SegueSentryDSN": "$(SEGUE_SENTRY_DSN)",
     "SegueTelemetryDeckAppID": "$(SEGUE_TELEMETRYDECK_APP_ID)",
@@ -167,6 +171,8 @@ func appTarget(name: String, personal: Bool) -> Target {
     var dependencies: [TargetDependency] = [
         // The Quick Look preview, embedded in Contents/PlugIns (WS2b 4.7).
         .target(name: quickLookName(personal: personal)),
+        // Finder's thumbnails of .cho files, beside it (P9-5 5, P3).
+        .target(name: thumbnailName(personal: personal)),
         .external(name: "SegueUI"),
         .external(name: "SegueCore"),
         // Hosted services (WS3): our TelemetryDeck ingest client and the Sentry SDK.
@@ -217,7 +223,7 @@ func appTarget(name: String, personal: Bool) -> Target {
         sources: ["App/Sources/**"],
         resources: appResources(personal: personal),
         entitlements: .file(path: .relativeToRoot(entitlementsPath)),
-        scripts: [stampResourceBundle],
+        scripts: [checkHelpBook, stampResourceBundle],
         dependencies: dependencies,
         // Signing is repeated at target level because Tuist's target defaults set
         // CODE_SIGN_IDENTITY for macOS, which would override the project-level value.
@@ -242,6 +248,10 @@ func appResources(personal: Bool) -> ResourceFileElements {
         // and not in the SegueUI package's resources, so the Quick Look extension's copy
         // of that bundle does not carry 11 MB it never plays (verify-common.sh checks).
         "Packages/SegueUI/Sources/SegueUI/Audio/Sounds/SegueSounds.sf2",
+        // The offline Help Book (P9-5 3.3) in both flavours, generated from the guide by
+        // scripts/help-book.sh (which scripts/xcodebuild.sh runs); `checkHelpBook` fails a
+        // build that lacks it.
+        .folderReference(path: "Derived/HelpBook/Segue.help"),
     ] + (personal ? [
         // Notices of the components only the Personal build links (P9-4: SwiftSoup), so the
         // App Store bundle never names them.
@@ -281,6 +291,22 @@ let stampResourceBundle: TargetScript = .post(
         "$(DERIVED_FILE_DIR)/stamp-resource-bundle.stamp",
         "\(segueUIBundle)/Contents/Info.plist",
     ],
+    basedOnDependencyAnalysis: false,
+)
+
+/// Before compiling: the Help Book must exist (P9-5 3.3). The Xcode build never runs Node;
+/// `make help-book` (or any scripts/xcodebuild.sh build) makes it.
+let checkHelpBook: TargetScript = .pre(
+    script: """
+    if [ ! -r "$SRCROOT/Derived/HelpBook/Segue.help/Contents/Info.plist" ]; then
+      echo "error: the Help Book is missing: run make help-book"
+      exit 1
+    fi
+    touch "$DERIVED_FILE_DIR/check-help-book.stamp"
+    """,
+    name: "Check Help Book",
+    inputPaths: ["$(SRCROOT)/Derived/HelpBook/Segue.help/Contents/Info.plist"],
+    outputPaths: ["$(DERIVED_FILE_DIR)/check-help-book.stamp"],
     basedOnDependencyAnalysis: false,
 )
 
@@ -330,10 +356,57 @@ func quickLookTarget(hostName: String, hostBundleID: String) -> Target {
     )
 }
 
+/// The Quick Look thumbnail extension's target name per flavor (P9-5 5, P3).
+func thumbnailName(personal: Bool) -> String {
+    personal ? "SegueQuickLookThumbnailPersonal" : "SegueQuickLookThumbnail"
+}
+
+/// Finder's thumbnails of ChordPro songs for one app flavor (P9-5 5, P3): the top of the
+/// song page drawn by SegueUI's `SongThumbnail`. Like the preview, one per flavor
+/// (`<host>.thumbnail`; the App Store one needs its App ID and the profile
+/// "Segue Mac App Store Thumbnail"), sandboxed with nothing else.
+func thumbnailTarget(hostName: String, hostBundleID: String) -> Target {
+    .target(
+        name: thumbnailName(personal: hostName == "Segue"),
+        destinations: [.mac],
+        product: .appExtension,
+        bundleId: "\(hostBundleID).thumbnail",
+        deploymentTargets: deploymentTargets,
+        infoPlist: .extendingDefault(with: [
+            "CFBundleDisplayName": "Segue",
+            "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+            "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
+            "NSHumanReadableCopyright": "© 2026 Ryan Rony Dsilva",
+            "NSExtension": [
+                "NSExtensionPointIdentifier": "com.apple.quicklook.thumbnail",
+                "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).ThumbnailProvider",
+                "NSExtensionAttributes": [
+                    "QLSupportedContentTypes": [.string(chordProTypeID)],
+                    "QLThumbnailMinimumDimension": 32,
+                ],
+            ],
+        ]),
+        sources: ["Extensions/QuickLookThumbnail/Sources/**"],
+        // The same sandbox-only entitlements as the preview.
+        entitlements: .file(path: .relativeToRoot("Extensions/QuickLook/QuickLook.entitlements")),
+        scripts: [stampResourceBundle],
+        dependencies: [
+            .external(name: "SegueUI"),
+            .external(name: "SegueCore"),
+        ],
+        settings: .settings(base: [
+            "ENABLE_APP_SANDBOX": "YES",
+            "SKIP_INSTALL": "YES",
+        ].merging(signingSettings) { _, new in new }),
+    )
+}
+
 let personalApp = appTarget(name: "Segue", personal: true)
 let appStoreApp = appTarget(name: "SegueAppStore", personal: false)
 let personalQuickLook = quickLookTarget(hostName: "Segue", hostBundleID: personalBundleID)
 let appStoreQuickLook = quickLookTarget(hostName: "SegueAppStore", hostBundleID: appStoreBundleID)
+let personalThumbnail = thumbnailTarget(hostName: "Segue", hostBundleID: personalBundleID)
+let appStoreThumbnail = thumbnailTarget(hostName: "SegueAppStore", hostBundleID: appStoreBundleID)
 
 let uiTests: Target = .target(
     name: "SegueUITests",
@@ -410,7 +483,8 @@ let project = Project(
     ),
     settings: projectSettings,
     targets: [
-        personalApp, appStoreApp, personalQuickLook, appStoreQuickLook, uiTests, appStoreUITests,
+        personalApp, appStoreApp, personalQuickLook, appStoreQuickLook, personalThumbnail,
+        appStoreThumbnail, uiTests, appStoreUITests,
     ],
     schemes: [personalScheme, appStoreScheme],
 )

@@ -96,7 +96,8 @@ public struct SchemaMigrator: Sendable {
 
     /// Result of inspecting a file.
     public enum Outcome: Equatable {
-        /// Already at the current version; decode `data` as is.
+        /// Already at the current version, or newer with a `minReaderVersion` this build
+        /// meets (R196); decode `data` as is.
         case current(Data)
         /// Migrated from an older version; decode `data` (the migrated JSON).
         case migrated(Data, from: Int)
@@ -122,6 +123,11 @@ public struct SchemaMigrator: Sendable {
             return .current(data)
         }
         if found > currentVersion {
+            // R196: a newer file this build may still edit declares so with a
+            // `minReaderVersion` it meets; it is decoded as is, keeping what it adds.
+            if let minimum = try Self.minimumReader(of: object), minimum <= currentVersion {
+                return .current(data)
+            }
             return .newer(found: found)
         }
         for version in found ..< currentVersion {
@@ -133,6 +139,36 @@ public struct SchemaMigrator: Sendable {
         object["schemaVersion"] = currentVersion
         let migrated = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
         return .migrated(migrated, from: found)
+    }
+
+    /// The `minReaderVersion` key every versioned file carries (R196): the oldest schema
+    /// version whose readers may edit the file. Absent (files from before R196) means the
+    /// file's own `schemaVersion`.
+    public static let minReaderKey = "minReaderVersion"
+
+    /// The `minReaderVersion` to write with a value at `schemaVersion`: a file kept at a
+    /// newer version than this build's `current` keeps its own minimum (`kept`, else its
+    /// version); anything else is written at `current`, with `currentMinimum` (R196: v1.0
+    /// writes it equal to the schema version).
+    public static func minReaderVersion(
+        writing schemaVersion: Int,
+        kept: Int?,
+        current: Int,
+        currentMinimum: Int,
+    ) -> Int {
+        schemaVersion > current ? (kept ?? schemaVersion) : currentMinimum
+    }
+
+    private static func minimumReader(of object: [String: Any]) throws -> Int? {
+        guard let raw = object[minReaderKey] else { return nil }
+        guard let number = raw as? NSNumber,
+              CFGetTypeID(number) == CFNumberGetTypeID(),
+              let version = Int(exactly: number.doubleValue),
+              version >= 0
+        else {
+            throw SchemaMigrationError.invalidSchemaVersion
+        }
+        return version
     }
 
     private static func version(of object: [String: Any]) throws -> Int {

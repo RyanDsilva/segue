@@ -37,6 +37,7 @@
     "scrollSpeedFactor" : 1,
     "zoom" : 1
   },
+  "minReaderVersion" : 6,
   "parts" : [
 
   ],

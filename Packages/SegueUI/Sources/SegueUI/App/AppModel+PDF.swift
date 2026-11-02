@@ -194,7 +194,7 @@
                     PDFPreviewSheet(model: model, windowSize: windowSize) { app.closePDF() }
                         // The root view's guide links sit inside this modifier, so the
                         // sheet gets its own for the Help button.
-                        .guideLinks(app.dependencies.workspace)
+                        .guideLinks(app.help)
                 }
         }
     }

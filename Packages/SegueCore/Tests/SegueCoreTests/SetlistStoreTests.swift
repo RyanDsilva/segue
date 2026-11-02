@@ -63,6 +63,7 @@ struct SetlistStoreTests {
             }
           ],
           "id" : "\(setlist.id)",
+          "minReaderVersion" : 7,
           "name" : "Sangeet Night",
           "schemaVersion" : 7,
           "updatedAt" : "\(stamp)"

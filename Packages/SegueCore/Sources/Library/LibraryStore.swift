@@ -391,7 +391,7 @@ public actor LibraryStore {
         in library: OpenLibrary,
     ) throws -> SongRecord {
         var sidecar = sidecar
-        sidecar.schemaVersion = Sidecar.currentSchemaVersion
+        sidecar.schemaVersion = max(sidecar.schemaVersion, Sidecar.currentSchemaVersion)
         sidecar.updatedAt = SegueJSON.stamp(clock.now())
         let song = try library.files.write(source: source, sidecar: sidecar, slug: existing.slug)
         try library.index.upsert(song.indexed)

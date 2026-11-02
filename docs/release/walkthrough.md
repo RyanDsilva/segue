@@ -130,3 +130,10 @@ The automated audit (`AccessibilityAuditE2ETests/testPhase3ScreensLight`, docs/r
 | Metronome overlay (stage) | [ ] read as "Metronome, <n> beats per minute"; it never steals VoiceOver focus from the song while pulsing | [ ] n/a (M key) | [ ] M toggles it; K toggles the rehearsal click |
 | Live repeat message | [ ] the refusal and "Move to Next" are announced and reachable | [ ] "Click Move to Next" | [ ] Return and Esc answer it |
 | About panel links (dark) | [ ] each link is read with its name | [ ] "Click Website" | [ ] Tab reaches each link |
+
+## Mac polish (P9-5)
+- [ ] **Help Book (both builds):** Help > Segue Help (Cmd-?) opens "Segue Help" in Tips with no network; type "metronome" in the Help menu's search field and pick the topic under Help Topics; a Help button (Settings > Live) opens its page; each page's footer reads "This guide describes Segue 1.0" and "Read this guide online" opens the web page. Heading anchors land at the top of their page (Tips does not scroll to them, P9-5 3.6): say whether that is acceptable.
+- [ ] Start a show: Segue Help and Keyboard Shortcuts are greyed out on the second display's menu bar and Cmd-? does nothing; the stage keeps its keys.
+- [ ] **Report... on the error banner:** cause a banner (delete a song's file in Finder while it is open, then save) and click Report...: the form's message starts "Segue showed this error:".
+- [ ] **Drag out:** drag a library song onto the Desktop (a copy of its `.cho` appears and the song stays in the library), and into a Messages chat (it attaches as a file).
+- [ ] **Finder thumbnails (one flavour installed):** the Welcome songs show their title and first lines in Finder's icon view (64 and up) and gallery view, light and dark; `pluginkit -m -p com.apple.quicklook.thumbnail | grep segue` lists the extension.

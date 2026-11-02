@@ -10,6 +10,7 @@
     }
   ],
   "id" : "01JCCCCCCCCCCCCCCCCCCCCCCC",
+  "minReaderVersion" : 7,
   "name" : "Phase 0 (compat)",
   "schemaVersion" : 7,
   "updatedAt" : "2026-01-01T00:00:00.000Z"

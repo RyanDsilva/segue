@@ -47,7 +47,34 @@ enum CompatFixtures {
     /// The fixture names of `format` to migrate: every `v<N>.json` plus `unknown-keys.json`.
     static func inputs(_ format: PersistedFormat) -> [String] {
         format.versions.map { "v\($0).json" } + (format.hasUnknownKeysFixture
-            ? ["unknown-keys.json"] : [])
+            ? ["unknown-keys.json", compatibleNewer] : [])
+    }
+
+    /// A file from a newer Segue (version 999) whose `minReaderVersion` this build meets
+    /// (R196): editable, saved at its own version, keeping what it added.
+    static let compatibleNewer = "compatible-newer.json"
+
+    /// The versions a save of fixture `name` of `format` must write (R196): the current
+    /// version, or the newer file's own; `minReaderVersion` the format's current minimum.
+    static func expectVersions(
+        _ saved: String,
+        _ format: PersistedFormat,
+        _ name: String,
+        sourceLocation: SourceLocation = #_sourceLocation,
+    ) throws {
+        let object = try object(saved)
+        let newer = name == compatibleNewer
+        #expect(
+            object["schemaVersion"] as? Int == (newer ? 999 : format.current),
+            sourceLocation: sourceLocation,
+        )
+        #expect(
+            object["minReaderVersion"] as? Int == format.current,
+            sourceLocation: sourceLocation,
+        )
+        if newer {
+            #expect(object["addedByANewerSegue"] != nil, sourceLocation: sourceLocation)
+        }
     }
 
     /// Compares `saved` with the golden for fixture `name`, or writes it when updating.
@@ -191,6 +218,7 @@ struct DataCompatibilityGuardTests {
             }
         }
         #expect(CompatFixtures.exists(format.name, "future.json"))
+        #expect(CompatFixtures.exists(format.name, CompatFixtures.compatibleNewer))
         if format.hasUnknownKeysFixture {
             #expect(CompatFixtures.exists(format.name, "unknown-keys.json"))
         }
@@ -268,8 +296,7 @@ struct DataCompatibilitySongTests {
             cues: sidecar.cues,
         ))
         let saved = try lib.read("songs/harbour-lights.segue.json")
-        #expect(try CompatFixtures.object(saved)["schemaVersion"] as? Int
-            == Sidecar.currentSchemaVersion)
+        try CompatFixtures.expectVersions(saved, .named("sidecar"), fixture)
         try CompatFixtures.expectGolden(saved, "sidecar", fixture)
     }
 
@@ -339,8 +366,7 @@ struct DataCompatibilitySetlistTests {
         #expect(setlist.readOnly == nil)
         _ = try await store.rename(id, to: setlist.name + " (compat)")
         let saved = try lib.read("setlists/friday.setlist.json")
-        #expect(try CompatFixtures.object(saved)["schemaVersion"] as? Int
-            == Setlist.currentSchemaVersion)
+        try CompatFixtures.expectVersions(saved, .named("setlist"), fixture)
         try CompatFixtures.expectGolden(saved, "setlist", fixture)
     }
 

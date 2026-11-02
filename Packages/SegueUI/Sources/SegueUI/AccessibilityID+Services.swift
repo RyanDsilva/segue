@@ -52,6 +52,8 @@ public extension AccessibilityID {
     static let reportMessage = "segue.report.message"
     static let reportCounter = "segue.report.counter"
     static let reportProblem = "segue.report.problem"
+    /// The error banner's Report... (P9-5 5, P1).
+    static let errorBannerReport = "segue.errorBanner.report"
     static let reportEmail = "segue.report.email"
     static let reportAttachLogs = "segue.report.attach.logs"
     static let reportAttachMetricKit = "segue.report.attach.metricKit"

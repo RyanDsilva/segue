@@ -2,6 +2,8 @@ import Diagrams
 import Editing
 import Foundation
 import Library
+import ModelPort
+import Printing
 import Setlists
 import Shows
 import Support
@@ -37,8 +39,7 @@ struct DataCompatibilityShowTests {
         gig.notes = (gig.notes ?? "") + " (compat)"
         _ = try await store.updateGigDetails(gig, of: id)
         let saved = try lib.read(path)
-        #expect(try CompatFixtures.object(saved)["schemaVersion"] as? Int
-            == ShowRecord.currentSchemaVersion)
+        try CompatFixtures.expectVersions(saved, .named("show"), fixture)
         try CompatFixtures.expectGolden(saved, "show", fixture)
     }
 
@@ -106,6 +107,7 @@ struct DataCompatibilityFilterTests {
         #expect(filter.readOnly == nil)
         _ = try await store.rename(id, to: filter.name + " (compat)")
         let saved = try lib.read("filters/slow.filter.json")
+        try CompatFixtures.expectVersions(saved, .named("filter"), fixture)
         try CompatFixtures.expectGolden(saved, "filter", fixture)
     }
 
@@ -182,6 +184,9 @@ struct DataCompatibilityAppFileTests {
         try lib.write(CompatFixtures.text("shapes", "v1.json"), to: "shapes.json")
         #expect(try UserShapeLibrary.load(from: lib.url("shapes.json"), fileSystem: lib.fileSystem)
             == .empty)
+        try lib.write(CompatFixtures.text("shapes", "compatible-newer.json"), to: "newer.json")
+        #expect(try UserShapeLibrary.load(from: lib.url("newer.json"), fileSystem: lib.fileSystem)
+            == .empty)
         try lib.write(CompatFixtures.text("shapes", "future.json"), to: "future.json")
         #expect(throws: UserShapeLibraryError.self) {
             try UserShapeLibrary.load(from: lib.url("future.json"), fileSystem: lib.fileSystem)
@@ -190,7 +195,7 @@ struct DataCompatibilityAppFileTests {
 
     @Test
     func `the library identity is read at every version and never re-minted`() throws {
-        for fixture in ["v1.json", "future.json"] {
+        for fixture in ["v1.json", CompatFixtures.compatibleNewer] {
             let lib = try TestLibrary()
             let text = try CompatFixtures.text("library-identity", fixture)
             try lib.write(text, to: ".segue/library.json")
@@ -203,6 +208,67 @@ struct DataCompatibilityAppFileTests {
             #expect(identity.id.description == "01JKKKKKKKKKKKKKKKKKKKKKKK")
             #expect(try lib.read(".segue/library.json") == text)
         }
+    }
+
+    @Test
+    func `a newer library identity refuses to open the library and is never replaced`() throws {
+        let lib = try TestLibrary()
+        let text = try CompatFixtures.text("library-identity", "future.json")
+        try lib.write(text, to: ".segue/library.json")
+        #expect(throws: LibraryIdentityError.newerSchema(found: 999, supported: 1)) {
+            try LibraryState.resolve(
+                root: lib.root,
+                location: lib.stateLocation,
+                fileSystem: lib.fileSystem,
+                clock: lib.clock,
+                ids: lib.ids,
+            )
+        }
+        #expect(try lib.read(".segue/library.json") == text)
+        #expect(lib.trashedNames().isEmpty)
+    }
+
+    @Test
+    func `a newer bindings file this build may edit applies as current`() throws {
+        let lib = try TestLibrary()
+        try lib.write(CompatFixtures.text("bindings", "compatible-newer.json"), to: "b.json")
+        let loaded = try InputBindingTable.loadReporting(
+            from: lib.url("b.json"),
+            fileSystem: lib.fileSystem,
+        )
+        #expect(loaded.newerSchema == nil)
+        #expect(loaded.table.command(for: .key(KeyStroke("y"))) == .toggleSingerView)
+    }
+
+    @Test
+    func `the custom model catalog keeps entries and keys it cannot read`() throws {
+        let manifest = #"""
+        {"id": "m1", "displayName": "M", "status": "custom", "role": "custom", "repo": "a/b",
+         "revision": "abc", "files": [], "license": {"id": "mit", "name": "MIT",
+         "url": "https://x.test", "upstreamRepo": "a/b"}, "memoryBytes": 1, "quant": "4bit"}
+        """#
+        let json = #"{"schemaVersion": 1, "pinned": true, "models": [\#(manifest), "#
+            + #"{"id": "m2", "status": "sideloaded"}]}"#
+        let catalog = try JSONDecoder().decode(LocalModelCatalog.self, from: Data(json.utf8))
+        #expect(catalog.models.map(\.id) == ["m1"])
+        let saved = try CompatFixtures.object(
+            #require(String(bytes: JSONEncoder().encode(catalog), encoding: .utf8)),
+        )
+        #expect(saved["pinned"] as? Bool == true)
+        let models = try #require(saved["models"] as? [[String: Any]])
+        #expect(models.map { $0["id"] as? String } == ["m1", "m2"])
+        #expect(models.first?["quant"] as? String == "4bit")
+    }
+
+    @Test
+    func `remembered PDF options keep keys they do not know`() throws {
+        let json = #"{"paper": "letter", "size": "huge", "bleed": 3}"#
+        let options = try JSONDecoder().decode(RememberedPrintOptions.self, from: Data(json.utf8))
+        #expect(options.paper == .letter)
+        let saved = try CompatFixtures.object(
+            #require(String(bytes: JSONEncoder().encode(options), encoding: .utf8)),
+        )
+        #expect(saved["bleed"] as? Int == 3)
     }
 
     // MARK: Unversioned records (state, upgrade marks, settings)

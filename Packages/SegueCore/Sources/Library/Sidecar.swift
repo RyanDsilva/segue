@@ -21,8 +21,13 @@ public struct Sidecar: Sendable, Equatable, Codable {
     /// 5 = P8-4b (`bass`: per-song walk-up feel and picks, play-along timing for P8-6; R161);
     /// 6 = P8-7c (`parts`: per-song instrument-neutral parts, bass fills; R167).
     public static let currentSchemaVersion = 6
+    /// The `minReaderVersion` this build writes (R196: equal to the schema version in v1.0).
+    public static let currentMinReaderVersion = 6
 
     public var schemaVersion: Int
+    /// The file's `minReaderVersion` as read (R196); written back only while the file stays
+    /// at a newer version than this build's.
+    public var minReaderVersion: Int?
     public var id: SongID
     /// Free-form tags, in the user's order and spelling (matching is case-insensitive).
     public var tags: [String]
@@ -78,6 +83,7 @@ public struct Sidecar: Sendable, Equatable, Codable {
     /// `unknown`).
     enum CodingKeys: String, CodingKey, CaseIterable {
         case schemaVersion
+        case minReaderVersion
         case id
         case tags
         case proficiency
@@ -96,7 +102,11 @@ public struct Sidecar: Sendable, Equatable, Codable {
     public init(from decoder: any Decoder) throws {
         var partial = try PartialSidecar(from: decoder)
         partial.repairCueIDs()
-        guard let sidecar = partial.complete(schemaVersion: Self.currentSchemaVersion) else {
+        let version = max(
+            partial.schemaVersion ?? Self.currentSchemaVersion,
+            Self.currentSchemaVersion,
+        )
+        guard let sidecar = partial.complete(schemaVersion: version) else {
             throw DecodingError.dataCorrupted(DecodingError.Context(
                 codingPath: decoder.codingPath,
                 debugDescription: "a sidecar needs an id",
@@ -109,6 +119,15 @@ public struct Sidecar: Sendable, Equatable, Codable {
         try unknown.encode(to: encoder)
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(
+            SchemaMigrator.minReaderVersion(
+                writing: schemaVersion,
+                kept: minReaderVersion,
+                current: Self.currentSchemaVersion,
+                currentMinimum: Self.currentMinReaderVersion,
+            ),
+            forKey: .minReaderVersion,
+        )
         try container.encode(id, forKey: .id)
         try container.encode(tags, forKey: .tags)
         try container.encodeIfPresent(proficiency, forKey: .proficiency)

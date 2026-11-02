@@ -213,7 +213,7 @@ struct SongFiles: Sendable {
         let now = SegueJSON.stamp(clock.now())
         var sidecar = song.record.sidecar
         sidecar.id = id
-        sidecar.schemaVersion = Sidecar.currentSchemaVersion
+        sidecar.schemaVersion = max(sidecar.schemaVersion, Sidecar.currentSchemaVersion)
         sidecar.createdAt = now
         sidecar.updatedAt = now
         let data = try SidecarCodec.encode(sidecar)

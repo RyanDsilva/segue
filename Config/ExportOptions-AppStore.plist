@@ -28,6 +28,8 @@
 		<string>Segue Mac App Store</string>
 		<key>dev.ryandsilva.segue.quicklook</key>
 		<string>Segue Mac App Store QuickLook</string>
+		<key>dev.ryandsilva.segue.thumbnail</key>
+		<string>Segue Mac App Store Thumbnail</string>
 	</dict>
 	<key>manageAppVersionAndBuildNumber</key>
 	<false/>

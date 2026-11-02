@@ -88,6 +88,7 @@
     }
   ],
   "id" : "01JCCCCCCCCCCCCCCCCCCCCCCC",
+  "minReaderVersion" : 7,
   "name" : "Friday (compat)",
   "schemaVersion" : 7,
   "targetDuration" : 2700,

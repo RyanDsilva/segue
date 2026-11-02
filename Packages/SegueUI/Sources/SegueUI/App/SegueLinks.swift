@@ -74,6 +74,8 @@ public enum SegueLinks {
         case ai = "https://segue.ryandsilva.dev/guide/ai"
         case privacySettings = "https://segue.ryandsilva.dev/guide/privacy-settings"
         case backUp = "https://segue.ryandsilva.dev/guide/back-up"
+        /// Troubleshooting's "Built-in help" (P9-5 7).
+        case builtInHelp = "https://segue.ryandsilva.dev/guide/troubleshooting#help"
 
         public var url: URL {
             SegueLinks.url(rawValue)
@@ -106,6 +108,7 @@ public enum SegueLinks {
             case .ai: "AI in Segue"
             case .privacySettings: "Privacy settings"
             case .backUp: "Back up and restore"
+            case .builtInHelp: "Built-in help"
             }
         }
     }
