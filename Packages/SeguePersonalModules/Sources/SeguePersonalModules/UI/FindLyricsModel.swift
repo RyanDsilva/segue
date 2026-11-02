@@ -73,8 +73,17 @@ final class FindLyricsModel {
     var showsArtist = false
     var groups: [Group]
     var selection: Row? {
-        didSet { schedulePreview() }
+        didSet {
+            if !isAutoSelecting {
+                autoSelectedGroup = nil
+            }
+            schedulePreview()
+        }
     }
+
+    /// The group whose first song the search selected by itself, until the user moves.
+    @ObservationIgnored var autoSelectedGroup: SearchGroup?
+    @ObservationIgnored private var isAutoSelecting = false
 
     var expanded: Set<String> = []
     var preview = Preview.empty
@@ -198,14 +207,22 @@ final class FindLyricsModel {
         groups[index].status = .done
         groups[index].isStale = false
         searchStats.answered(results: candidates.count)
-        // The first answer selects the best version of the first song (spec 6.10).
-        if selection == nil, let first = groups[index].songs.first {
+        // The best version of the first song of the top-most group that answered is
+        // selected (spec 6.10): a group above the auto-selected one takes over as it
+        // answers, until the user moves the selection.
+        let earlier = autoSelectedGroup.map { group.rawValue < $0.rawValue } ?? true
+        if selection == nil || (autoSelectedGroup != nil && earlier),
+           let first = groups[index].songs.first
+        {
+            isAutoSelecting = true
             if first.nests, first.versions.count > 1 {
                 expanded.insert(first.id)
                 selection = .version(key(group, first.best))
             } else {
                 selection = .song(first.id)
             }
+            isAutoSelecting = false
+            autoSelectedGroup = group
         }
         finishIfDone()
     }

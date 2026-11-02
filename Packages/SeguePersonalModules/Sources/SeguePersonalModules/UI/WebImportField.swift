@@ -46,6 +46,7 @@ struct WebImportField: View {
                 ImportMessageView(message: message) { action in
                     Task { await model.perform(action, chooseFile: SavedPagePanel.choose) }
                 }
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier(AccessibilityID.pasteWebMessage)
             }
         }

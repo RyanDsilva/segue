@@ -168,6 +168,34 @@ struct ImportUITests {
     }
 
     @Test
+    func `a chord group answering after the lyrics still takes the selection`() async {
+        let stub = StubHost(search: true)
+        var sources = ImportSamples.sources()
+        sources[0] = StubSearchSource(
+            id: "tab",
+            displayName: "Ultimate Guitar",
+            group: .tabJSON,
+            result: .success(ImportSamples.tabVersions),
+            delay: .milliseconds(80),
+        )
+        let model = FindLyricsModel(sources: sources, challenges: nil, previewDelay: .zero)
+        model.attach(stub.host)
+        model.query = "tum hi ho"
+        model.search()
+        await model.settle()
+        let best = model.key(.tabJSON, ImportSamples.tabVersions[0])
+        #expect(model.selection == .version(best))
+
+        // Once the user moved, a later answer leaves the selection alone.
+        let lyrics = model.groups[2].songs[0].id
+        model.selection = .song(lyrics)
+        model.search()
+        model.selection = .song(lyrics)
+        await model.settle()
+        #expect(model.selection == .song(lyrics))
+    }
+
+    @Test
     func `escape cancels a running search first, then closes`() {
         let stub = StubHost(search: true)
         var slow = ImportSamples.sources()

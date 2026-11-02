@@ -53,9 +53,12 @@ struct FindLyricsSongRow: View {
             }
         }
         .padding(.vertical, 3)
-        .accessibilityElement(children: .combine)
+        // One element per row, so its label (and the list's identifier) is the row's own;
+        // the disclosure is an action, as Left and Right are on the keyboard.
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
         .accessibilityHint(song.nests ? "" : (song.best.firstLines ?? ""))
+        .accessibilityAction(named: expanded ? "Hide versions" : "Show versions", toggle)
     }
 
     private var subtitle: String {
@@ -71,7 +74,8 @@ struct FindLyricsSongRow: View {
     private var label: String {
         var text = [song.title, song.artist, song.album].compactMap(\.self).joined(separator: ", ")
         if song.nests {
-            text += ". \(song.versions.count) versions"
+            let count = song.versions.count
+            text += count == 1 ? ". 1 version" : ". \(count) versions"
         }
         if song.inLibrary {
             text += ". In your library"
@@ -118,7 +122,7 @@ struct FindLyricsVersionRow: View {
         }
         .padding(.leading, 18)
         .padding(.vertical, 2)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
     }
 

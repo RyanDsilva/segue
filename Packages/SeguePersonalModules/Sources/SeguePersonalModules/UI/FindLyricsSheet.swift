@@ -32,6 +32,7 @@ struct FindLyricsSheet: View {
         }
         .frame(width: 960, height: 600)
         .background(Theme.color.ground)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.findLyricsSheet)
         .onExitCommand { model.escape() }
         .onAppear {
@@ -230,6 +231,7 @@ struct FindLyricsSheet: View {
         }
         .padding(.vertical, 4)
         .selectionDisabled()
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.findLyricsStatus)
     }
 

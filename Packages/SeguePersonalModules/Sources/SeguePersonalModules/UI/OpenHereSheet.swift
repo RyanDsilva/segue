@@ -69,6 +69,7 @@ struct OpenHereSheet: View {
         }
         .frame(minWidth: 760, idealWidth: 900, minHeight: 560, idealHeight: 680)
         .background(Theme.color.ground)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.openHereSheet)
         .task {
             guard let source else { return }

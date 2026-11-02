@@ -276,6 +276,7 @@
                             }
                         }
                     }
+                    .accessibilityElement(children: .contain)
                     .accessibilityIdentifier(AccessibilityID.libraryEmpty)
                 }
             }
