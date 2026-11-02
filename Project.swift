@@ -244,6 +244,8 @@ func appResources(personal: Bool) -> ResourceFileElements {
     .resources([
         "design/icon/Segue.icon", "App/PrivacyInfo.xcprivacy", "website/changelog.json",
         "design/icon/document/Segue-Document.icns", "THIRD_PARTY_NOTICES.md",
+        // The Info.plist strings' English (P9-5 4.3): the Automation prompt and the name.
+        "App/InfoPlist.xcstrings",
         // The sound bank (P8-6 section 12) at Contents/Resources/SegueSounds.sf2: here
         // and not in the SegueUI package's resources, so the Quick Look extension's copy
         // of that bundle does not carry 11 MB it never plays (verify-common.sh checks).

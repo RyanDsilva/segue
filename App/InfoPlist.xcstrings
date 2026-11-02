@@ -1,0 +1,42 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "The app's name in the Dock and Finder (R3).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Segue"
+          }
+        }
+      }
+    },
+    "CFBundleName" : {
+      "comment" : "The app's short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Segue"
+          }
+        }
+      }
+    },
+    "NSAppleEventsUsageDescription" : {
+      "comment" : "The one-time Automation prompt for Shortcuts Events (R59, Path SE).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Segue runs your Gig Mode Shortcuts when a show starts and ends, for example to turn on your Performing Focus, and checks that they finished. It runs only the Shortcuts you name in Settings > Live."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
