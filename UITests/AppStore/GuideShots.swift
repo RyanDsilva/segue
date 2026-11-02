@@ -18,7 +18,7 @@ final class GuideShots: GuideShotCase {
         shoot("card", window, callouts: [
             "key": element(app, GuideAXID.cardToken("key")),
             "tempo": element(app, GuideAXID.cardToken("tempo")),
-            "artists": element(app, GuideAXID.songCardArtists),
+            "artists": element(app, GuideAXID.songCardArtist),
         ])
 
         let search = element(app, GuideAXID.librarySearch)
@@ -202,7 +202,13 @@ final class GuideShots: GuideShotCase {
             app.typeKey(.return, modifierFlags: [], in: app)
         }
         field.typeText("soundchek in A", in: app)
-        _ = element(app, GuideAXID.setlistComposerGhost)
+        // The ghost ("→ Soundcheck at Seven") is hidden from accessibility: wait for the
+        // typed line, then let the row settle.
+        XCTAssertTrue(
+            E2E.waitUntil(timeout: 5) { (field.value as? String) == "soundchek in A" },
+            "the composer never held the typed line",
+        )
+        _ = field.settles(timeout: 3)
         shoot("builder-composer", window)
     }
 

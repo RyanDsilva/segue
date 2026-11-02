@@ -26,7 +26,7 @@
       "callouts" : {
 
       },
-      "height" : 1224,
+      "height" : 1038,
       "stage" : false,
       "width" : 1760
     },
@@ -50,7 +50,7 @@
         },
         "total" : {
           "h" : 0.14999999999999999,
-          "w" : 0.22722672064777327,
+          "w" : 0.23481781376518218,
           "x" : 0,
           "y" : 0.84999999999999998
         }
@@ -86,14 +86,37 @@
           "h" : 0.34250000000000003,
           "w" : 0.074999999999999997,
           "x" : 0.46132812499999998,
-          "y" : 0.46250000000000002
+          "y" : 0.51000000000000001
         }
       },
       "height" : 1100,
       "stage" : false,
       "width" : 1760
     },
+    "bass-stage" : {
+      "appearances" : [
+        "dark"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
+      "stage" : true,
+      "width" : 1760
+    },
     "builder-arrange" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "builder-composer" : {
       "appearances" : [
         "dark",
         "light"
@@ -123,17 +146,23 @@
         "light"
       ],
       "callouts" : {
+        "artists" : {
+          "h" : 0.02375,
+          "w" : 0.086718749999999997,
+          "x" : 0.466796875,
+          "y" : 0.15373046874999999
+        },
         "key" : {
           "h" : 0.029999999999999999,
           "w" : 0.023046875000000001,
           "x" : 0.466796875,
-          "y" : 0.20250000000000001
+          "y" : 0.22875000000000001
         },
         "tempo" : {
           "h" : 0.029999999999999999,
           "w" : 0.052343750000000001,
           "x" : 0.49531249999999999,
-          "y" : 0.20250000000000001
+          "y" : 0.22875000000000001
         }
       },
       "height" : 1100,
@@ -178,6 +207,18 @@
 
       },
       "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "fill-editor" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1185,
       "stage" : false,
       "width" : 1760
     },
@@ -229,6 +270,34 @@
       "stage" : false,
       "width" : 1760
     },
+    "medley-builder" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "medley" : {
+          "h" : 0.0275,
+          "w" : 0.78749999999999998,
+          "x" : 0.203125,
+          "y" : 0.40749999999999997
+        }
+      },
+      "height" : 1100,
+      "stage" : false,
+      "width" : 1760
+    },
+    "medley-stage" : {
+      "appearances" : [
+        "dark"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1100,
+      "stage" : true,
+      "width" : 1760
+    },
     "metronome" : {
       "appearances" : [
         "dark"
@@ -238,6 +307,23 @@
       },
       "height" : 1100,
       "stage" : true,
+      "width" : 1760
+    },
+    "missing-times" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+        "list" : {
+          "h" : 0.1128125,
+          "w" : 0.390625,
+          "x" : 0.080468750000000006,
+          "y" : 0.27421875000000001
+        }
+      },
+      "height" : 1100,
+      "stage" : false,
       "width" : 1760
     },
     "new-song" : {
@@ -272,8 +358,8 @@
         "note" : {
           "h" : 0.034375000000000003,
           "w" : 0.14335937500000001,
-          "x" : 0.578125,
-          "y" : 0.6925
+          "x" : 0.095312499999999994,
+          "y" : 1.433125
         }
       },
       "height" : 1100,
@@ -302,7 +388,7 @@
           "h" : 1.1457142857142857,
           "w" : 0.33936170212765959,
           "x" : 0.46063829787234045,
-          "y" : 0.44428571428571428
+          "y" : 0.54000000000000004
         }
       },
       "height" : 1311,
@@ -316,15 +402,39 @@
       ],
       "callouts" : {
         "label" : {
-          "h" : 0.043923865300146414,
+          "h" : 0.054644808743169397,
           "w" : 0.14890282131661442,
           "x" : 0,
-          "y" : 0.052708638360175697
+          "y" : 0.065573770491803282
         }
       },
-      "height" : 683,
+      "height" : 549,
       "stage" : false,
       "width" : 638
+    },
+    "pdf-preview" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1040,
+      "stage" : false,
+      "width" : 1760
+    },
+    "pdf-songbook" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 1206,
+      "stage" : false,
+      "width" : 1701
     },
     "settings-ai" : {
       "appearances" : [
@@ -334,7 +444,7 @@
       "callouts" : {
 
       },
-      "height" : 1216,
+      "height" : 1310,
       "stage" : false,
       "width" : 1120
     },
@@ -346,7 +456,7 @@
       "callouts" : {
 
       },
-      "height" : 1216,
+      "height" : 1296,
       "stage" : false,
       "width" : 1120
     },
@@ -358,7 +468,7 @@
       "callouts" : {
 
       },
-      "height" : 1216,
+      "height" : 1456,
       "stage" : false,
       "width" : 1120
     },
@@ -384,7 +494,7 @@
           "h" : 0.44500000000000001,
           "w" : 0.25,
           "x" : 0.47499999999999998,
-          "y" : 0.49875000000000003
+          "y" : 0.54625000000000001
         }
       },
       "height" : 1100,
@@ -464,6 +574,18 @@
       "height" : 1100,
       "stage" : false,
       "width" : 1760
+    },
+    "walk-up-popover" : {
+      "appearances" : [
+        "dark",
+        "light"
+      ],
+      "callouts" : {
+
+      },
+      "height" : 524,
+      "stage" : false,
+      "width" : 752
     },
     "welcome-cards" : {
       "appearances" : [

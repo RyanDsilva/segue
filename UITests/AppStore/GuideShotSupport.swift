@@ -27,6 +27,17 @@ class GuideShotCase: XCTestCase {
 
     var app: XCUIApplication?
 
+    /// The libraries' state folder (`-SegueStatePath`, P9-6 5.2) inside the App Store
+    /// flavour's own sandbox container: it has no `/private/tmp/segue-e2e` exception (the
+    /// E2E default), and the shared app group is out of reach in an E2E VM, where the
+    /// development profile is not valid. One per test process, like the E2E default.
+    static let statePath: String = {
+        let home = getpwuid(getuid()).map { String(cString: $0.pointee.pw_dir) }
+            ?? NSHomeDirectory()
+        return "\(home)/Library/Containers/dev.ryandsilva.segue/Data/tmp/"
+            + "segue-capture-state-\(UUID().uuidString)"
+    }()
+
     /// `dark` or `light`, from `TEST_RUNNER_SEGUE_SHOT_APPEARANCE` (make docs-shots).
     var appearance: String {
         ProcessInfo.processInfo.environment["SEGUE_SHOT_APPEARANCE"] ?? "dark"
@@ -57,6 +68,7 @@ class GuideShotCase: XCTestCase {
             "-SegueStageWindowed", "YES",
             "-SegueFixedClock", Self.fixedClock,
             "-SegueGuideFixtures", "YES",
+            "-SegueStatePath", Self.statePath,
         ] + extra)
         // The frame is applied once the window exists: wait for it before driving the UI.
         let window = mainWindow(app)
@@ -207,7 +219,8 @@ enum GuideAXID {
     static let newSong = "segue.library.newSong"
     static let songCard = "segue.songCard"
     static let songCardTempo = "segue.songCard.tempo"
-    static let songCardArtists = "segue.songCard.artists"
+    /// The heading's artists line under the title.
+    static let songCardArtist = "segue.songCard.artist"
     static let editSong = "segue.song.edit"
     static let editorVisual = "segue.editor.visual"
     static let editorTransposeUp = "segue.editor.transpose.up"
@@ -216,7 +229,6 @@ enum GuideAXID {
     static let setlistStartShow = "segue.setlist.startShow"
     static let newSetlistName = "segue.setlists.new.name"
     static let setlistComposer = "segue.setlist.composer"
-    static let setlistComposerGhost = "segue.setlist.composer.ghost"
     static let checklistStart = "segue.live.checklist.start"
     static let liveTitle = "segue.live.title"
     static let liveSearch = "segue.live.search"
