@@ -25,6 +25,14 @@
         }
 
         static func save(_ options: RememberedPrintOptions, to defaults: UserDefaults = .standard) {
+            var options = options
+            // The sheet knows only the modelled options: keep the keys it does not (R196).
+            if options.unknown.isEmpty,
+               let data = defaults.data(forKey: defaultsKey),
+               let stored = try? JSONDecoder().decode(RememberedPrintOptions.self, from: data)
+            {
+                options.unknown = stored.unknown
+            }
             if let data = try? JSONEncoder().encode(options) {
                 defaults.set(data, forKey: defaultsKey)
             }

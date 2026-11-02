@@ -121,7 +121,7 @@ let package = Package(
         // refinement). Pure; the Foundation Models and MLX adapters live in Packages/SegueAI.
         .target(
             name: "ModelPort",
-            dependencies: ["Ingest"],
+            dependencies: ["Ingest", "Support"],
             swiftSettings: strictSettings,
         ),
         // Phase 3 P3-7: the set assistant (request lexicon, scorer with breakdowns, packer,
@@ -144,7 +144,7 @@ let package = Package(
         // metadata, file names). Pure; SegueUI draws it.
         .target(
             name: "Printing",
-            dependencies: ["Editing", "Library", "LiveLayout", "Setlists"],
+            dependencies: ["Editing", "Library", "LiveLayout", "Setlists", "Support"],
             swiftSettings: strictSettings,
         ),
         .testTarget(

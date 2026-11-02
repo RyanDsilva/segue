@@ -1,4 +1,5 @@
 import Foundation
+import Support
 
 // Downloadable local models (spec section 5, R64, R66, R67): the value types and the port the
 // Settings > AI pane drives. `Packages/SegueAI`'s `ModelStore` implements the port; the UI and
@@ -78,6 +79,9 @@ public struct LocalModelManifest: Sendable, Hashable, Codable, Identifiable {
     public var license: License
     /// Peak memory while the model works, in bytes (shown, and the basis of the low-RAM note).
     public var memoryBytes: Int64
+    /// Keys this build does not model, kept for the next save (R196,
+    /// docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
 
     public init(
         id: String,
@@ -102,6 +106,46 @@ public struct LocalModelManifest: Sendable, Hashable, Codable, Identifiable {
     }
 
     /// The model the MLX provider names in `ProviderID.mlx`.
+    private enum CodingKeys: String, CodingKey, CaseIterable {
+        case id
+        case displayName
+        case status
+        case role
+        case repo
+        case revision
+        case files
+        case license
+        case memoryBytes
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let object = try LenientObject<CodingKeys>(decoder)
+        id = try object.required(.id)
+        displayName = try object.required(.displayName)
+        status = try object.required(.status)
+        role = try object.required(.role)
+        repo = try object.required(.repo)
+        revision = try object.required(.revision)
+        files = try object.required(.files)
+        license = try object.required(.license)
+        memoryBytes = try object.required(.memoryBytes)
+        unknown = object.unknown
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(displayName, forKey: .displayName)
+        try container.encode(status, forKey: .status)
+        try container.encode(role, forKey: .role)
+        try container.encode(repo, forKey: .repo)
+        try container.encode(revision, forKey: .revision)
+        try container.encode(files, forKey: .files)
+        try container.encode(license, forKey: .license)
+        try container.encode(memoryBytes, forKey: .memoryBytes)
+    }
+
     public var ref: ModelRef {
         ModelRef(repo: repo, revision: revision)
     }
@@ -119,13 +163,37 @@ public struct LocalModelManifest: Sendable, Hashable, Codable, Identifiable {
 }
 
 /// The curated catalog file.
+///
+/// Lenient (R196): an entry this build cannot read is left out of `models` and kept, with
+/// any key the catalog does not model, for the next save.
 public struct LocalModelCatalog: Sendable, Hashable, Codable {
     public var schemaVersion: Int
     public var models: [LocalModelManifest]
+    /// Keys and entries this build cannot read, kept for the next save.
+    public var unknown: UnknownFields = .empty
 
     public init(schemaVersion: Int = 1, models: [LocalModelManifest]) {
         self.schemaVersion = schemaVersion
         self.models = models
+    }
+
+    private enum CodingKeys: String, CodingKey, CaseIterable {
+        case schemaVersion
+        case models
+    }
+
+    public init(from decoder: any Decoder) throws {
+        var object = try LenientObject<CodingKeys>(decoder)
+        schemaVersion = object.value(.schemaVersion, default: 1)
+        models = object.elements(.models) ?? []
+        unknown = object.unknown
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(unknown.appending(models, to: "models"), forKey: .models)
     }
 
     public static func decode(_ data: Data) throws -> Self {

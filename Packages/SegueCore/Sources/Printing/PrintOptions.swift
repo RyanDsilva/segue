@@ -1,6 +1,7 @@
 // Owner: P9-1 (spec 6.2). The PDF preview's options: what one export prints and how.
 
 import LiveLayout
+import Support
 
 /// Which part one export prints (spec decision 6): chords, bass notes or lyrics (P9-2's
 /// singer view, spec section 8).
@@ -190,6 +191,9 @@ public struct RememberedPrintOptions: Sendable, Hashable, Codable {
     public var repeats: PrintRepeats
     public var sectionMap: Bool
     public var diagrams: PrintDiagrams
+    /// Keys this build does not model, kept for the next save (R196,
+    /// docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
 
     public init(
         paper: PrintPaper,
@@ -216,7 +220,7 @@ public struct RememberedPrintOptions: Sendable, Hashable, Codable {
         Self(paper: paper)
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case paper
         case size
         case lyricsSize
@@ -242,5 +246,19 @@ public struct RememberedPrintOptions: Sendable, Hashable, Codable {
             sectionMap: value(.sectionMap, true),
             diagrams: value(.diagrams, .asSong),
         )
+        unknown = UnknownFields(from: decoder, known: Set(CodingKeys.allCases.map(\.stringValue)))
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(paper, forKey: .paper)
+        try container.encode(size, forKey: .size)
+        try container.encode(lyricsSize, forKey: .lyricsSize)
+        try container.encode(columns, forKey: .columns)
+        try container.encode(fitOnePage, forKey: .fitOnePage)
+        try container.encode(repeats, forKey: .repeats)
+        try container.encode(sectionMap, forKey: .sectionMap)
+        try container.encode(diagrams, forKey: .diagrams)
     }
 }
