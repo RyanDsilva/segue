@@ -27,6 +27,7 @@ let keptWords: Set = [
     "com", "net", "org", "html", "htm", "php", "txt", "json", "true", "false", "null", "public",
     "type", "id", "the", "of", "on", "a", "i", "e", "b", "g", "d", "difficulty", "novice",
     "intermediate", "advanced", "beginner", "copyright", "letter", "violates", "block", "removed",
+    "claiming", "that", "this", "their", "received", "someone", "have",
 ]
 
 let chordPattern = try Regex(
@@ -51,11 +52,30 @@ func hash(_ text: String) -> UInt64 {
     return value
 }
 
+/// A chord glued to the front of a word ("EmHum") keeps its chord, so the glued-chords
+/// sanity check still sees the fault in a redacted fixture.
+let gluedChord = try Regex("^([A-G][#b]?(m|7|m7|maj7|sus[24]|add9|dim)?)([A-Z][a-z].*)$")
+
 func placeholder(_ word: Substring) -> String {
+    if let match = word.wholeMatch(of: gluedChord), let chord = match.output[1].substring,
+       let rest = match.output[3].substring
+    {
+        return String(chord) + letters(rest)
+    }
+    return letters(word)
+}
+
+/// Same length and case pattern; an uppercase A-G inside a word stays as written (a chord
+/// glued into a word, "meCra").
+func letters(_ word: Substring) -> String {
     var seed = hash(String(word))
     var result = ""
     for (index, char) in word.enumerated() {
         guard char.isLetter else {
+            result.append(char)
+            continue
+        }
+        if index > 0, char.isUppercase, "ABCDEFG".contains(char) {
             result.append(char)
             continue
         }
