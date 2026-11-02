@@ -11,6 +11,29 @@ import Plugins
 import SeguePersonalModules
 
 let arguments = Array(CommandLine.arguments.dropFirst())
+
+// Canary mode (spec 16.4, `make import-canary`): one freshly fetched page, its verdict.
+if let page = arguments.firstIndex(of: "--page").map({ arguments[$0 + 1] }),
+   let address = arguments.firstIndex(of: "--url").map({ arguments[$0 + 1] }),
+   let url = URL(string: address)
+{
+    let html = (try? String(contentsOf: URL(filePath: page), encoding: .utf8)) ?? ""
+    let reading = WebImportEval.read(page: html, url: url)
+    let checks = WebImportEval.siteCheck(page: html, url: url)
+    if let result = reading.result, !reading.fellBack {
+        let lines = result.text.split(separator: "\n").count
+        print(
+            "PASS \(reading.reader?.rawValue ?? "-"): \(result.metadata.title ?? "untitled"), \(lines) lines",
+        )
+        exit(0)
+    }
+    let why = reading.failure.map { "\($0)" } ?? "fell back to the generic reader"
+    print(
+        "FAIL \(WebImportEval.readerName(for: url)): \(why); site reader: \(checks.joined(separator: ", "))",
+    )
+    exit(1)
+}
+
 guard let root = arguments.first else {
     FileHandle.standardError
         .write(Data("usage: segue-import-eval <corpus dir> [--show slug]\n".utf8))

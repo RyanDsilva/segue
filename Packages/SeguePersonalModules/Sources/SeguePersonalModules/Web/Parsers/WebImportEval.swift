@@ -63,4 +63,9 @@ public enum WebImportEval {
             )
         }
     }
+
+    /// The reader the registry picks for an address (canary output).
+    public static func readerName(for url: URL) -> String {
+        PageParserRegistry.reader(for: url).rawValue
+    }
 }

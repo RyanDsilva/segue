@@ -72,3 +72,7 @@ Gold (`gold/<slug>.json`, gitignored) is drafted by `tools/gold-draft.py` indepe
 | Silent wrong charts | 6 | 0 |
 
 Not yet meeting the targets. Most lyric misses trace to the drafted gold (credit and note lines, repeated sections), not the readers: the converted charts read right where checked by eye. The gold is reviewed next with the local review tool (`make review-gold`), then the readers are fixed against it.
+
+### a8 - canary (`make import-canary`), 2026-11-01
+
+Live: one known page per reader fetched (UG and Chordie plain, E-Chords through `tools/wkfetch`, a generic page plain) and read by the Personal build's readers, plus one LRCLIB search. First run: UG, Chordie, E-Chords, generic and LRCLIB all PASS. The E-Chords load uses the research loader, not the app's `WebKitPageLoader`, whose live path is exercised in the hands-on walk.
