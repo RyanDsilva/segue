@@ -13,7 +13,7 @@ final class SegueMacPolishE2ETests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
-        Self.quitTips()
+        quitTips()
         E2E.terminate(app)
         if let root = library?.root {
             try? FileManager.default.removeItem(at: root)
@@ -23,7 +23,7 @@ final class SegueMacPolishE2ETests: XCTestCase {
     @MainActor
     func testHelpOpensTheBook() throws {
         let library = try XCTUnwrap(library)
-        Self.quitTips()
+        quitTips()
         let app = XCUIApplication()
         self.app = app
         E2E.launch(app, arguments: library.arguments(["-SegueHelpBook", "YES"]))
@@ -33,7 +33,7 @@ final class SegueMacPolishE2ETests: XCTestCase {
         help.click(in: app)
         help.menuItems["Segue Help"].firstMatch.click()
         XCTAssertTrue(tips.reaches(.runningForeground, timeout: 20), "Tips did not open")
-        Self.quitTips()
+        quitTips()
 
         // Settings > Live's Help button opens its page in the book too.
         E2E.bringToFront(app)
@@ -70,14 +70,14 @@ final class SegueMacPolishE2ETests: XCTestCase {
     private var tips: XCUIApplication {
         XCUIApplication(bundleIdentifier: "com.apple.helpviewer")
     }
+}
 
-    /// Quits Tips if it is running, so each check starts with it closed.
-    nonisolated private static func quitTips() {
-        MainActor.assumeIsolated {
-            let tips = XCUIApplication(bundleIdentifier: "com.apple.helpviewer")
-            if tips.state != .notRunning {
-                tips.terminate()
-            }
+/// Quits Tips if it is running, so each check starts with it closed.
+private func quitTips() {
+    MainActor.assumeIsolated {
+        let tips = XCUIApplication(bundleIdentifier: "com.apple.helpviewer")
+        if tips.state != .notRunning {
+            tips.terminate()
         }
     }
 }
