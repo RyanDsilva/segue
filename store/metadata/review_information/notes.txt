@@ -12,6 +12,7 @@ THINGS TO TRY
 4. Setlists: open "Welcome Set". Arrange (Command-2) has a request bar: type "15 min" and click Build (one Undo takes it back).
 5. Stage: Setlist > Start Show (Command-Return), continue past the checklist. Stage mode is full screen and hides the Dock and menu bar only while performing. Right Arrow next song, A auto-scroll, Command-K search for a request, ? every key, Command-Period then End Show to leave.
 6. Window > Segue Library (Command-0) reopens a closed main window.
+7. Setlist menu > Export PDF... on "Welcome Set" shows the songbook preview; on stage press V for Singer view (lyrics only).
 
 ON-DEVICE AI (optional)
 Segue converts pastes with its own rules first. A model only re-checks section labels and the title, and reads set requests; it runs entirely on the Mac and nothing pasted or typed is sent anywhere. Apple Intelligence (Foundation Models framework) is used when the Mac has it turned on; Settings > AI shows its status. A free local model (Qwen3 4B, Apache-2.0, 2.27 GB) is offered in Settings > AI and downloads only when the user clicks Download, with its size shown first. The download is model weights (data files) checked against SHA-256 hashes built into the app; it is run by the MLX framework bundled in the app and adds no code. Delete removes it. Everything works without either model, and Settings > AI has one switch to turn AI off.
