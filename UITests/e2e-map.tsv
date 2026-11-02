@@ -33,6 +33,9 @@ UITests/e2e-map.tsv	NONE
 Config/ExportOptions-AppStore.plist	NONE
 scripts/*	NONE
 scripts/xcodebuild.sh	ALL
+# The offline Help Book (P9-5): built from the guide by scripts/help-book.sh.
+scripts/help-book.sh	SegueMacPolishE2ETests
+guide/*	SegueMacPolishE2ETests
 scripts/stamp-resource-bundle.sh	ALL
 scripts/gen-tokens.swift	SegueEditorE2ETests SegueLiveE2ETests
 scripts/gen-icon.swift	NONE
@@ -128,6 +131,7 @@ UITests/SegueReportProblemE2ETests.swift	SegueReportProblemE2ETests
 # WS2b. SegueWelcomeE2ETests.swift also holds the shared WelcomeLibrary fixture.
 UITests/SegueWelcomeE2ETests.swift	SegueWelcomeE2ETests SegueSettingsE2ETests SegueFinderE2ETests SegueWhatsNewE2ETests SegueSectionBandE2ETests SegueSectionNotesE2ETests
 UITests/SegueSettingsE2ETests.swift	SegueSettingsE2ETests
+UITests/SegueMacPolishE2ETests.swift	SegueMacPolishE2ETests
 UITests/SegueWhatsNewE2ETests.swift	SegueWhatsNewE2ETests
 UITests/SegueReviewPromptE2ETests.swift	SegueReviewPromptE2ETests
 UITests/SegueTipsE2ETests.swift	SegueTipsE2ETests

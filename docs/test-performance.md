@@ -361,3 +361,17 @@ tests: 51 -> 42 (CoreUX 22 -> 14, Editor 6 -> 5).
   Mac.
 - `make gate` (a Live-only change since its base: Live class + smoke set, package tests,
   App Store build): 5:51. It found the two Live waits fixed in `51a3ac0`.
+
+## 7. Launch time (P9-5 P4, 2026-11-01)
+
+Recorded, never asserted, so later launch work (the Help Book registration, the String
+Catalogs) shows up as a number.
+
+| Measure | Where | Result |
+|---|---|---|
+| Launch to first frame, Welcome library, Debug-Personal | `SegueMacPolishE2ETests/testLaunchTime` (`XCTApplicationLaunchMetric`, 3 runs, Tart VM) | 1.18 s average (1.10, 1.27, 1.17; RSD 5.6%) |
+| 500-song library: first open (full index), no-change refresh, relaunch, rebuild index | `PerformanceTests` "a large library reopens..." (500 and 2000 songs, debug build, M-series host) | 1.39 s, 0.07 s, 0.13 s, 0.35 s |
+| 2000-song library, same four | the same test | 3.53 s, 0.24 s, 0.48 s, 1.33 s |
+
+The Help Book is registered lazily, on the first Help action, so it is not on the launch
+path at all.

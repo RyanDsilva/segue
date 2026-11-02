@@ -30,10 +30,12 @@ struct PerformanceTests {
 
     /// 2000 songs: relaunch with an up-to-date index and a no-change refresh must not re-hash
     /// or re-index anything (mtime + size short-circuit, one index transaction per scan).
-    @Test
-    func `a 2000-song library reopens and refreshes without re-reading files`() async throws {
+    /// 500 songs is the launch-time figure in docs/test-performance.md (P9-5 P4).
+    @Test(arguments: [500, 2000])
+    func `a large library reopens and refreshes without re-reading files`(
+        songCount: Int,
+    ) async throws {
         let lib = try TestLibrary()
-        let songCount = 2000
         for number in 0 ..< songCount {
             let source = RomanizedHindiFixtures.songs[number % RomanizedHindiFixtures.songs.count]
                 .replacingOccurrences(of: "{title: ", with: "{title: \(number) ")
