@@ -51,12 +51,17 @@ def allowed(url):
     parts = urllib.parse.urlsplit(url)
     base = f"{parts.scheme}://{parts.netloc}"
     if base not in robots:
-        parser = urllib.robotparser.RobotFileParser(base + "/robots.txt")
-        pace(parts.netloc)
-        try:
-            parser.read()
-        except Exception as error:  # an unreadable robots.txt allows nothing
-            log(f"robots unreadable for {base}: {error}")
+        # Read with the collector's own user agent (urllib's default agent is refused by
+        # some hosts, which robotparser would take as "disallow everything").
+        status, _, body = plain(base + "/robots.txt", "text/plain")
+        if status == 200:
+            parser = urllib.robotparser.RobotFileParser()
+            parser.parse(body.splitlines())
+        elif 400 <= status < 500 and status not in (401, 403):
+            parser = urllib.robotparser.RobotFileParser()
+            parser.parse([])  # no robots.txt: everything allowed
+        else:
+            log(f"robots unreadable for {base}: HTTP {status}")
             parser = None
         robots[base] = parser
     parser = robots[base]

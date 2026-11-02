@@ -1,0 +1,27 @@
+# fixture	corpus file under research/phase9-import (regenerate: swift scripts/redact-import-fixture.swift <corpus file> <fixture>)
+ug/film-song-capo.html	pages/ug/tabs_ultimate-guitar_com_tab_misc-soundtrack_aashiqui-2-tum-hi-ho-chords-1244521.html
+ug/short-address.html	pages/ug/tabs_ultimate-guitar_com_tab_4275298.html
+ug/tab-only.html	pages/ug/tabs_ultimate-guitar_com_tab_misc-soundtrack_tamasha-agar-tum-saath-ho-tabs-1875406.html
+ug/pro.html	pages/ug/tabs_ultimate-guitar_com_tab_aakash-gandhi_tum-hi-ho-guitar-pro-1479556.html
+ug/english-capo.html	pages/ug/tabs_ultimate-guitar_com_tab_oasis_wonderwall-chords-27596.html
+echords/glued-chords.html	pages/echords/www_e-chords_com_chords_arijit-singh_tum-hi-ho.html
+echords/ab-lyric.html	pages/echords/www_e-chords_com_chords_misc-soundtrack_aashiqui-2-tum-hi-ho.html
+echords/english.html	pages/echords/www_e-chords_com_chords_oasis_wonderwall.html
+echords/english-2.html	pages/echords/www_e-chords_com_chords_the-beatles_let-it-be.html
+chordie/hindi.html	pages/chordie/www_chordie_com_chord_pere_www_guitaretab_com_s_sonu-nigam_87653_html.html
+chordie/removed.html	pages/chordie/copyright-notice-wonderwall.html
+chordie/english.html	pages/chordie/www_chordie_com_chord_pere_www_guitaretab_com_b_beatles_1169_html.html
+chordie/hindi-2.html	pages/chordie/www_chordie_com_chord_pere_www_guitartabs_cc_tabs_k_kailash_kher_saiyyan_crd_html.html
+generic/script-app.html	pages/generic/www_naadanchords_com_tum-hi-ho-aashiqui-2.html
+generic/blogspot.html	pages/generic/guitarnama_blogspot_com_2013_07_aashiqui-2-tum-hi-ho-chords_html.html
+generic/plain-text.html	pages/generic/zenandjuice_com_music_rem_guitar_we_walk_txt.html
+generic/indichords.html	pages/generic/indichords_com_song_1266_channa-mereya-ae-dil-hai-mushkil-arijit-singh-adhm-pritam.html
+generic/guitaretab.html	pages/generic/www_guitaretab_com_b_boyce-avenue_268379_html.html
+generic/wordpress.html	pages/generic/tabandchord_com_2016_11_channa-mereya-guitar-chords-ae-dil-hai-mushkil_.html
+generic/pre-page.html	pages/generic/www_guitartabs_cc_tabs_o_oasis_wonderwall_crd_ver_8_html.html
+search/ug-tum-hi-ho.html	search/ug/www_ultimate-guitar_com_search_php_search_type_title_value_tum_hi_ho.html
+search/ug-wonderwall.html	search/ug/www_ultimate-guitar_com_search_php_search_type_title_value_wonderwall.html
+search/ug-kesariya.html	search/ug/www_ultimate-guitar_com_search_php_search_type_title_value_kesariya.html
+search/echords-tum-hi-ho.json	search/echords/www_e-chords_com_search-all_tum_20hi_20ho.json
+search/echords-wonderwall.json	search/echords/www_e-chords_com_search-all_wonderwall.json
+search/echords-kesariya.json	search/echords/www_e-chords_com_search-all_kesariya.json
