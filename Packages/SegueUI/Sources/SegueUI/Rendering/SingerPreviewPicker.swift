@@ -11,16 +11,16 @@
         let identifier: String
 
         var body: some View {
-            Picker("Preview", selection: selection) {
-                Text("Chords").tag(false)
-                Text("Singer").tag(true)
+            Picker(uiString("Preview"), selection: selection) {
+                Text("Chords", bundle: #bundle).tag(false)
+                Text("Singer", bundle: #bundle).tag(true)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
             .fixedSize()
-            .help("Preview lyrics only, as a singer sees them")
-            .accessibilityLabel("Preview")
-            .accessibilityValue(prefs.singer ? "Singer, lyrics only" : "Chords")
+            .help(uiString("Preview lyrics only, as a singer sees them"))
+            .accessibilityLabel(uiString("Preview"))
+            .accessibilityValue(prefs.singer ? uiString("Singer, lyrics only") : uiString("Chords"))
             .accessibilityIdentifier(identifier)
         }
 

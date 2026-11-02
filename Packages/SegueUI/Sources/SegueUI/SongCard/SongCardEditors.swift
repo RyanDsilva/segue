@@ -40,13 +40,13 @@
                     suggestion(detected)
                 }
                 HStack {
-                    Text("Key")
+                    Text("Key", bundle: #bundle)
                         .font(Theme.font.label)
                         .foregroundStyle(Theme.color.muted)
                     Spacer()
-                    Picker("Mode", selection: $mode) {
-                        Text("Major").tag(KeyMode.major)
-                        Text("Minor").tag(KeyMode.minor)
+                    Picker(uiString("Mode"), selection: $mode) {
+                        Text("Major", bundle: #bundle).tag(KeyMode.major)
+                        Text("Minor", bundle: #bundle).tag(KeyMode.minor)
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
@@ -80,7 +80,7 @@
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
                         .background(Theme.color.ink, in: RoundedRectangle(cornerRadius: 5))
-                    Text(matches ? "matches the chords" : "from chords")
+                    Text(matches ? uiString("matches the chords") : uiString("from chords"))
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
                     Spacer(minLength: 0)
@@ -91,20 +91,20 @@
             }
             .buttonStyle(.plain)
             .keyboardShortcut(.defaultAction)
-            .accessibilityLabel("\(key.name), from chords")
+            .accessibilityLabel(uiString("\(key.name), from chords"))
             .accessibilityIdentifier(AccessibilityID.songCardKeySuggestion)
         }
 
         private var footer: some View {
             HStack(alignment: .firstTextBaseline) {
                 if capo > 0 {
-                    Text("With a capo, this is the shapes key.")
+                    Text("With a capo, this is the shapes key.", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 11))
                         .foregroundStyle(Theme.color.muted)
                 }
                 Spacer(minLength: 8)
                 if current != nil {
-                    Button("Clear") { onPick(nil) }
+                    Button(uiString("Clear")) { onPick(nil) }
                         .buttonStyle(.link)
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .accessibilityIdentifier(AccessibilityID.songCardClear)
@@ -130,27 +130,27 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Tempo")
+                Text("Tempo", bundle: #bundle)
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                 HStack(spacing: 8) {
-                    TextField("Tempo", text: $text, prompt: Text("BPM"))
+                    TextField(uiString("Tempo"), text: $text, prompt: Text("BPM", bundle: #bundle))
                         .textFieldStyle(.roundedBorder)
                         .font(SchibstedGrotesk.medium.font(size: 13).monospacedDigit())
                         .frame(width: 64)
                         .focused($focused)
                         .onSubmit(commit)
-                        .accessibilityLabel("Tempo in beats per minute")
+                        .accessibilityLabel(uiString("Tempo in beats per minute"))
                         .accessibilityIdentifier(AccessibilityID.songCardTempo)
-                    Text("BPM")
+                    Text("BPM", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
-                    Button("Tap", action: tap)
+                    Button(uiString("Tap"), action: tap)
                         .buttonStyle(.segueSecondary)
-                        .help("Tap along with the song; the tempo fills in")
-                        .accessibilityHint("Tap repeatedly in time with the song")
+                        .help(uiString("Tap along with the song; the tempo fills in"))
+                        .accessibilityHint(uiString("Tap repeatedly in time with the song"))
                         .accessibilityIdentifier(AccessibilityID.songCardTap)
-                    Button("Set", action: commit)
+                    Button(uiString("Set"), action: commit)
                         .buttonStyle(.segueSecondary)
                         .accessibilityIdentifier(AccessibilityID.songCardSet)
                 }
@@ -194,7 +194,7 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Time signature")
+                Text("Time signature", bundle: #bundle)
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                 HStack(spacing: 6) {
@@ -208,11 +208,15 @@
                         .accessibilityIdentifier(AccessibilityID.songCardTimeOther)
                 }
                 if showsOther {
-                    TextField("Time signature", text: $other, prompt: Text("7/8"))
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 80)
-                        .onSubmit { problem = onCommit(other) }
-                        .accessibilityIdentifier(AccessibilityID.songCardTime)
+                    TextField(
+                        uiString("Time signature"),
+                        text: $other,
+                        prompt: Text(verbatim: "7/8"),
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 80)
+                    .onSubmit { problem = onCommit(other) }
+                    .accessibilityIdentifier(AccessibilityID.songCardTime)
                 }
                 if let problem {
                     Text(problem)
@@ -220,7 +224,7 @@
                         .foregroundStyle(Theme.color.cueText)
                 }
                 if current != nil {
-                    Button("Clear") { problem = onCommit("") }
+                    Button(uiString("Clear")) { problem = onCommit("") }
                         .buttonStyle(.link)
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .accessibilityIdentifier(AccessibilityID.songCardClear)
@@ -237,22 +241,22 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Capo")
+                Text("Capo", bundle: #bundle)
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                 HStack(spacing: 10) {
                     Button { onSet(capo - 1) } label: { Image(systemName: "minus") }
                         .buttonStyle(.segueSecondary)
                         .disabled(capo == 0)
-                        .accessibilityLabel("Lower capo")
-                    Text(capo == 0 ? "None" : "Fret \(capo)")
+                        .accessibilityLabel(uiString("Lower capo"))
+                    Text(capo == 0 ? uiString("None") : uiString("Fret \(capo)"))
                         .font(SchibstedGrotesk.semiBold.font(size: 13).monospacedDigit())
                         .frame(minWidth: 52)
                         .accessibilityIdentifier(AccessibilityID.songCardCapo)
                     Button { onSet(capo + 1) } label: { Image(systemName: "plus") }
                         .buttonStyle(.segueSecondary)
                         .disabled(capo >= 11)
-                        .accessibilityLabel("Raise capo")
+                        .accessibilityLabel(uiString("Raise capo"))
                 }
             }
             .padding(12)

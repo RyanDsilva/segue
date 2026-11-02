@@ -75,7 +75,7 @@ struct DiagramStripContent: View {
             }
             .buttonStyle(DiagramCellButtonStyle())
             .disabled(!hearing.isEnabled)
-            .help(hearing.isEnabled ? "Play \(bass.note); ⌥-click plays \(bass.chordName)"
+            .help(hearing.isEnabled ? uiString("Play \(bass.note); ⌥-click plays \(bass.chordName)")
                 : SoundGate.offHelp)
             .accessibilityAction(named: "Play chord \(bass.chordName)") {
                 hearing.playConcert(bass.chordName)
@@ -97,9 +97,9 @@ struct DiagramStripContent: View {
                 )
             }
             .buttonStyle(DiagramCellButtonStyle())
-            .help("Customize \(diagram.name)")
+            .help(uiString("Customize \(diagram.name)"))
             .contextMenu {
-                Button("Customize Shape…") {
+                Button(uiString("Customize Shape…")) {
                     onCustomize(diagram)
                 }
             }
@@ -160,14 +160,14 @@ private struct NameOnlyDiagram: View {
                 .strokeBorder(Theme.color.line, style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                 .frame(width: metrics.stringGap * 5, height: metrics.fretGap * 4)
                 .overlay {
-                    Text("No diagram")
+                    Text("No diagram", bundle: #bundle)
                         .font(SchibstedGrotesk.semiBold.font(size: metrics.labelSize))
                         .foregroundStyle(Theme.color.muted)
                         .multilineTextAlignment(.center)
                 }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(name), no diagram")
+        .accessibilityLabel(uiString("\(name), no diagram"))
     }
 }
 

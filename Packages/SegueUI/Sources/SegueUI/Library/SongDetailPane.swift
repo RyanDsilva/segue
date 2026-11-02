@@ -122,9 +122,11 @@
                 if sessionButtons {
                     SongSessionButtons(songID: record.id)
                 }
-                Button("Edit") { model.beginEditing(record) }
+                Button(uiString("Edit")) { model.beginEditing(record) }
                     .buttonStyle(.segueSecondary)
-                    .help(record.isReadOnly ? "This song is read-only" : "Edit ChordPro")
+                    .help(record
+                        .isReadOnly ? uiString("This song is read-only") :
+                        uiString("Edit ChordPro"))
                     .disabled(record.isReadOnly)
                     .accessibilityIdentifier(AccessibilityID.editSong)
             }
@@ -146,10 +148,10 @@
                     .fixedSize(horizontal: false, vertical: true)
                     .onTapGesture(count: 2) { beginHeadingEdit(.title, render: render) }
                     .contextMenu {
-                        Button("Edit Title") { beginHeadingEdit(.title, render: render) }
+                        Button(uiString("Edit Title")) { beginHeadingEdit(.title, render: render) }
                             .disabled(record.isReadOnly)
                     }
-                    .help(record.isReadOnly ? "" : "Double-click to edit the title")
+                    .help(record.isReadOnly ? "" : uiString("Double-click to edit the title"))
                     .accessibilityIdentifier(AccessibilityID.songTitle)
                     .accessibilityAction(named: "Edit Title") {
                         beginHeadingEdit(.title, render: render)
@@ -242,13 +244,13 @@
                 // of the text buttons beside it so the two line up.
                 Image(systemName: "ellipsis")
                     .frame(minWidth: 18, minHeight: 20)
-                    .accessibilityLabel("More")
+                    .accessibilityLabel(uiString("More"))
             }
             .menuStyle(.button)
             .menuIndicator(.hidden)
             .buttonStyle(.segueSecondary)
             .fixedSize()
-            .help("Add to a setlist, show in Finder or move to the Trash")
+            .help(uiString("Add to a setlist, show in Finder or move to the Trash"))
             .accessibilityIdentifier(AccessibilityID.songMoreMenu)
         }
 
@@ -277,7 +279,7 @@
                     .padding(.bottom, -12)
                 }
                 if render.sections.isEmpty {
-                    Text("No lyrics yet.")
+                    Text("No lyrics yet.", bundle: #bundle)
                         .font(Theme.font.body)
                         .foregroundStyle(Theme.color.muted)
                 } else {

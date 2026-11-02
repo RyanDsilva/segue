@@ -31,7 +31,7 @@
                         }
                         .buttonStyle(.plain)
                         .disabled(isDisabled)
-                        .accessibilityLabel("Remove \(tag)")
+                        .accessibilityLabel(uiString("Remove \(tag)"))
                         .accessibilityIdentifier(AccessibilityID.songTagRemove)
                     }
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
@@ -47,7 +47,7 @@
                     .accessibilityLabel(tag)
                     .accessibilityIdentifier(AccessibilityID.songTag)
                 }
-                TextField("Add tag", text: $draft)
+                TextField(uiString("Add tag"), text: $draft)
                     .textFieldStyle(.plain)
                     .font(SchibstedGrotesk.medium.font(size: 13))
                     .frame(width: 120)
@@ -59,7 +59,7 @@
                     }
                     .onSubmit(add)
                     .disabled(isDisabled)
-                    .accessibilityLabel("Add tag")
+                    .accessibilityLabel(uiString("Add tag"))
                     .accessibilityIdentifier(AccessibilityID.songTagField)
             }
         }

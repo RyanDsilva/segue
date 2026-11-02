@@ -90,7 +90,7 @@ struct BassFretboardView: View {
             mark(&context, tone)
         }
         if let suggested = diagram.suggested {
-            let label = Text("\(suggested.fret)")
+            let label = Text(verbatim: "\(suggested.fret)")
                 .font(SchibstedGrotesk.semiBold.font(size: 9))
                 .foregroundStyle(Theme.color.muted)
             context.draw(label, at: CGPoint(x: x(suggested.fret), y: inlayY + 8))

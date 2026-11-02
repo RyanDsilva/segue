@@ -81,7 +81,8 @@
 
         private var header: some View {
             HStack(spacing: 10) {
-                Text(review.isBatch || review.importMethod != nil ? "Import Songs" : "Review Song")
+                Text(review.isBatch || review
+                    .importMethod != nil ? uiString("Import Songs") : uiString("Review Song"))
                     .font(SchibstedGrotesk.extraBold.font(size: 17))
                     .foregroundStyle(Theme.color.ink)
                 Text(subtitle)
@@ -143,7 +144,7 @@
                     footerLine(content)
                 }
                 Spacer(minLength: 12)
-                Button("Cancel", action: context.cancel)
+                Button(uiString("Cancel"), action: context.cancel)
                     .buttonStyle(.segueSecondary)
                     .keyboardShortcut(.cancelAction)
                     .accessibilityIdentifier(AccessibilityID.pasteCancel)
@@ -151,7 +152,7 @@
                     .buttonStyle(.seguePrimary)
                     .keyboardShortcut(.return, modifiers: .command)
                     .disabled(!review.canAccept)
-                    .help("Save to the library (⌘↩)")
+                    .help(uiString("Save to the library (⌘↩)"))
                     .accessibilityIdentifier(AccessibilityID.pasteAccept)
             }
             .padding(.horizontal, 18)
@@ -168,13 +169,13 @@
                     dot
                     HStack(spacing: 5) {
                         Circle().fill(Color.orange).frame(width: 6, height: 6)
-                        Text(item.unknownLines.count == 1 ? "1 line kept as a note" :
+                        Text(item.unknownLines.count == 1 ? uiString("1 line kept as a note") :
                             "\(item.unknownLines.count) lines kept as notes")
                     }
                 }
                 if let item, !item.badChords.isEmpty {
                     dot
-                    Text(item.badChords.count == 1 ? "1 chord not recognised" :
+                    Text(item.badChords.count == 1 ? uiString("1 chord not recognised") :
                         "\(item.badChords.count) chords not recognised")
                         .help(item.badChords.joined(separator: ", "))
                 }
@@ -209,7 +210,7 @@
         }
 
         private var dot: some View {
-            Text("·").accessibilityHidden(true)
+            Text(verbatim: "·").accessibilityHidden(true)
         }
     }
 
@@ -226,7 +227,7 @@
         var body: some View {
             VStack(spacing: 0) {
                 HStack {
-                    Text("New Song")
+                    Text("New Song", bundle: #bundle)
                         .font(SchibstedGrotesk.extraBold.font(size: 17))
                         .foregroundStyle(Theme.color.ink)
                     Spacer()
@@ -241,16 +242,18 @@
                         .autocorrectionDisabled()
                         .focused($isFocused)
                         .padding(10)
-                        .accessibilityLabel("Song text")
+                        .accessibilityLabel(uiString("Song text"))
                         .accessibilityIdentifier(AccessibilityID.pasteInput)
                     if review.draftText.isEmpty {
                         VStack(spacing: 8) {
-                            Text("Paste or type a song")
+                            Text("Paste or type a song", bundle: #bundle)
                                 .font(SchibstedGrotesk.bold.font(size: 18))
                                 .foregroundStyle(Theme.color.ink)
-                            Text("Chords over lyrics, a chord-site page or ChordPro. ⌘V pastes.")
-                                .font(SchibstedGrotesk.medium.font(size: 13))
-                                .foregroundStyle(Theme.color.muted)
+                            Text(uiString("""
+                            Chords over lyrics, a chord-site page or ChordPro. ⌘V pastes.
+                            """))
+                            .font(SchibstedGrotesk.medium.font(size: 13))
+                            .foregroundStyle(Theme.color.muted)
                         }
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
@@ -267,21 +270,21 @@
                 Rule()
                 HStack(spacing: 10) {
                     Button(action: context.startBlank) {
-                        Text("Start blank").underline()
+                        Text("Start blank", bundle: #bundle).underline()
                     }
                     .buttonStyle(.plain)
                     .pointerStyle(.link)
                     .foregroundStyle(Theme.color.ink)
                     .accessibilityIdentifier(AccessibilityID.pasteStartBlank)
-                    Text("opens the editor with the song card")
+                    Text("opens the editor with the song card", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 12.5))
                         .foregroundStyle(Theme.color.muted)
                     Spacer()
-                    Button("Cancel", action: context.cancel)
+                    Button(uiString("Cancel"), action: context.cancel)
                         .buttonStyle(.segueSecondary)
                         .keyboardShortcut(.cancelAction)
                         .accessibilityIdentifier(AccessibilityID.pasteCancel)
-                    Button("Continue") { review.submitDraft() }
+                    Button(uiString("Continue")) { review.submitDraft() }
                         .buttonStyle(.seguePrimary)
                         .keyboardShortcut(.return, modifiers: .command)
                         .disabled(review.draftText

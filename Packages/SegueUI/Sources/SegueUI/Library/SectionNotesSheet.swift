@@ -139,7 +139,7 @@
                 HStack {
                     GuideHelpButton(.sectionNotes)
                     Spacer()
-                    Button("Done", action: finish)
+                    Button(uiString("Done"), action: finish)
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(.seguePrimary)
                         .accessibilityIdentifier(AccessibilityID.sectionNotesDone)
@@ -166,10 +166,10 @@
                 ),
                 presenting: chartConfirmation,
             ) { note in
-                Button("Move") {
+                Button(uiString("Move")) {
                     run(.setStageOnly(note.id, false), repeatHint: true)
                 }
-                Button("Cancel", role: .cancel) {}
+                Button(uiString("Cancel"), role: .cancel) {}
             } message: { note in
                 if let group = notes.group(of: note.id) {
                     Text(SectionNotesPlacement.chartConfirmation(for: note, in: group) ?? "")
@@ -179,7 +179,7 @@
 
         private var header: some View {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Section Notes")
+                Text("Section Notes", bundle: #bundle)
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
                 Text("Notes show in the chart and on stage, every time a section is played or "
@@ -219,10 +219,10 @@
                     }
                     Spacer()
                     if canAdd(to: group) {
-                        Button("Add Note", systemImage: "plus") { add(to: group) }
+                        Button(uiString("Add Note"), systemImage: "plus") { add(to: group) }
                             .buttonStyle(.segueSecondary)
                             .controlSize(.small)
-                            .accessibilityLabel("Add Note to \(group.title)")
+                            .accessibilityLabel(uiString("Add Note to \(group.title)"))
                             .accessibilityIdentifier(AccessibilityID.sectionNotesAdd(group.title))
                     }
                 }
@@ -233,7 +233,7 @@
                     additionRow(addition, in: group)
                 }
                 if group.notes.isEmpty, !additions.contains(where: { $0.group == group.id }) {
-                    Text("No notes")
+                    Text("No notes", bundle: #bundle)
                         .font(.callout)
                         .foregroundStyle(Theme.color.muted)
                 }
@@ -258,12 +258,12 @@
         private func noteRow(_ note: SectionNote, in group: SectionNoteGroup) -> some View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
-                    TextField("Note", text: draftBinding(note))
+                    TextField(uiString("Note"), text: draftBinding(note))
                         .textFieldStyle(.roundedBorder)
                         .focused($focused, equals: .note(note.id))
                         .onSubmit { commit(.note(note.id)) }
                         .disabled(host.isReadOnly)
-                        .accessibilityLabel("Note on \(group.title)")
+                        .accessibilityLabel(uiString("Note on \(group.title)"))
                         .accessibilityIdentifier(AccessibilityID.sectionNoteText)
                     if note.needsPlacementCheck {
                         CheckPlacementMark()
@@ -281,8 +281,8 @@
                     .buttonStyle(.plain)
                     .foregroundStyle(Theme.color.muted)
                     .disabled(host.isReadOnly)
-                    .help("Delete Note")
-                    .accessibilityLabel("Delete Note")
+                    .help(uiString("Delete Note"))
+                    .accessibilityLabel(uiString("Delete Note"))
                     .accessibilityIdentifier(AccessibilityID.sectionNoteDelete)
                 }
                 if movedToRepeat == note.id,
@@ -303,7 +303,7 @@
             let allowed = note.isStageOnly
                 ? group.kind == .section
                 : group.kind == .section && host.canEditStageNotes
-            return Toggle("Show on stage only", isOn: Binding(
+            return Toggle(uiString("Show on stage only"), isOn: Binding(
                 get: { note.isStageOnly },
                 set: { stageOnly in
                     if !stageOnly, SectionNotesPlacement.chartConfirmation(for: note, in: group)
@@ -336,7 +336,7 @@
         @ViewBuilder
         private func placement(_ note: SectionNote, in group: SectionNoteGroup) -> some View {
             if note.isStageOnly, group.kind == .orphaned {
-                Menu("Move to") {
+                Menu(uiString("Move to")) {
                     ForEach(notes.groups.filter { $0.kind == .section }) { target in
                         Button(target.title) {
                             run(.pin(note.id, section: target.title, occurrence: nil))

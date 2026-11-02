@@ -60,7 +60,7 @@
                 ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
                     let trimmed = line.trimmingCharacters(in: .whitespaces)
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
-                        Text("\(index + 1)")
+                        Text(verbatim: "\(index + 1)")
                             .foregroundStyle(Theme.color.indicatorOff)
                             .frame(width: 24, alignment: .trailing)
                             .accessibilityHidden(true)
@@ -89,19 +89,19 @@
         private var result: some View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
-                    PasteColumnHeading(title: "Result")
+                    PasteColumnHeading(title: uiString("Result"))
                     if item.hasAIDecisions {
                         HStack(spacing: 3) {
                             SparkleMark()
-                            Text("= decided by AI")
+                            Text("= decided by AI", bundle: #bundle)
                         }
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Sparkles mark what AI decided")
+                        .accessibilityLabel(uiString("Sparkles mark what AI decided"))
                     }
                     Spacer()
-                    Button(isEditingText ? "Preview" : "Edit in Text") {
+                    Button(isEditingText ? uiString("Preview") : uiString("Edit in Text")) {
                         isEditingText.toggle()
                     }
                     .buttonStyle(.segueSecondary)
@@ -118,7 +118,7 @@
                                 .font(.system(size: 12.5, design: .monospaced))
                                 .autocorrectionDisabled()
                                 .frame(minHeight: 320)
-                                .accessibilityLabel("ChordPro text")
+                                .accessibilityLabel(uiString("ChordPro text"))
                                 .accessibilityIdentifier(AccessibilityID.pasteResultText)
                         } else {
                             PasteChartPreview(item: item)
@@ -144,7 +144,7 @@
                     keepAsOne: item.keepAsOne,
                 )
                 HStack(spacing: 10) {
-                    Button("Swap Title and Artist", systemImage: "arrow.up.arrow.down") {
+                    Button(uiString("Swap Title and Artist"), systemImage: "arrow.up.arrow.down") {
                         item.swapTitleAndArtist()
                     }
                     .buttonStyle(.segueSecondary)
@@ -155,7 +155,7 @@
                     if item.aiFields.contains(.title) {
                         HStack(spacing: 4) {
                             SparkleMark()
-                            Text("Title decided by AI")
+                            Text("Title decided by AI", bundle: #bundle)
                         }
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
@@ -221,22 +221,22 @@
                 Image(systemName: "scissors")
                     .font(.system(size: 10, weight: .semibold))
                     .accessibilityHidden(true)
-                Text("Split from “\(split.original)”  ·")
+                Text("Split from “\(split.original)”  ·", bundle: #bundle)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Button("Keep as one", action: keepAsOne)
+                Button(uiString("Keep as one"), action: keepAsOne)
                     .buttonStyle(.plain)
                     .foregroundStyle(Theme.color.cueText)
                     .fontWeight(.semibold)
                     .fixedSize()
-                    .help("Make these artists one name again")
+                    .help(uiString("Make these artists one name again"))
                     .accessibilityIdentifier(AccessibilityID.pasteKeepAsOne)
             }
             .font(SchibstedGrotesk.medium.font(size: 12))
             .foregroundStyle(Theme.color.muted)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(
-                "Split from \(split.original.replacingOccurrences(of: "&", with: "and"))",
+                uiString("Split from \(split.original.replacingOccurrences(of: "&", with: "and"))"),
             )
             .accessibilityAction(named: "Keep as one", keepAsOne)
             .accessibilityIdentifier(AccessibilityID.pasteArtistSplit)
@@ -353,10 +353,10 @@
                         .accessibilityElement(children: .ignore)
                         // Static text exposes its words as the value, so the AI mark is
                         // part of the one spoken label rather than a separate value.
-                        .accessibilityLabel(isAI ? "\(label), labelled by AI" : label)
+                        .accessibilityLabel(isAI ? uiString("\(label), labelled by AI") : label)
                         .accessibilityAddTraits(.isStaticText)
                         .accessibilityIdentifier(AccessibilityID.pasteSectionLabel)
-                        .help(isAI ? "\(label): labelled by AI" : label)
+                        .help(isAI ? uiString("\(label): labelled by AI") : label)
                     } else {
                         Color.clear.frame(height: 1)
                     }
@@ -382,14 +382,14 @@
 
         private func noteRow(_ text: String, flagged: Bool) -> some View {
             HStack(spacing: 0) {
-                Text("Note")
+                Text("Note", bundle: #bundle)
                     .font(SchibstedGrotesk.bold.font(size: 12))
                     .foregroundStyle(Theme.color.muted)
                     .frame(width: 96, alignment: .leading)
                 if flagged {
                     Circle().fill(Color.orange).frame(width: 6, height: 6)
                         .padding(.trailing, 6)
-                        .help("Segue could not place this line, so it is kept as a note")
+                        .help(uiString("Segue could not place this line, so it is kept as a note"))
                 }
                 Text(text)
                     .font(SchibstedGrotesk.medium.font(size: 13).italic())
@@ -407,7 +407,7 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 0) {
-                PasteColumnHeading(title: "\(review.items.count) files to convert")
+                PasteColumnHeading(title: uiString("\(review.items.count) files to convert"))
                     .padding(.horizontal, 14)
                     .padding(.top, 14)
                     .padding(.bottom, 8)
@@ -419,7 +419,7 @@
                         }
                     }
                 }
-                Text("Unticked files are not imported.")
+                Text("Unticked files are not imported.", bundle: #bundle)
                     .font(SchibstedGrotesk.medium.font(size: 12))
                     .foregroundStyle(Theme.color.muted)
                     .padding(14)
@@ -439,10 +439,10 @@
                 }
                 .toggleStyle(.checkbox)
                 .labelsHidden()
-                .accessibilityLabel(item.fileName ?? "Song")
+                .accessibilityLabel(item.fileName ?? uiString("Song"))
                 .accessibilityIdentifier(AccessibilityID.pasteBatchTick)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title.flatMap { $0.isEmpty ? nil : $0 } ?? "Untitled")
+                    Text(title.flatMap { $0.isEmpty ? nil : $0 } ?? uiString("Untitled"))
                         .font(SchibstedGrotesk.bold.font(size: 13))
                         .foregroundStyle(Theme.color.ink)
                         .lineLimit(1)
@@ -455,14 +455,14 @@
                 Spacer(minLength: 4)
                 if case .running = item.status {
                     ProgressView().controlSize(.mini)
-                        .accessibilityLabel("Refining")
+                        .accessibilityLabel(uiString("Refining"))
                 }
                 if item.nearDuplicate != nil {
                     Circle()
                         .fill(Theme.color.cue)
                         .frame(width: 6, height: 6)
                         .padding(.top, 5)
-                        .help("Looks like a song in your library")
+                        .help(uiString("Looks like a song in your library"))
                         .accessibilityHidden(true)
                 }
             }
@@ -472,7 +472,7 @@
             .contentShape(Rectangle())
             .onTapGesture { review.selectedID = item.id }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel((item.fileName ?? "Song")
+            .accessibilityLabel((item.fileName ?? uiString("Song"))
                 + (item.nearDuplicate == nil ? "" : ", looks like a song in your library"))
             .accessibilityIdentifier(AccessibilityID.pasteBatchRow)
             .accessibilityAddTraits(isSelected ? .isSelected : [])

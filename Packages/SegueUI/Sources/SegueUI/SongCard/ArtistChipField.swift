@@ -104,7 +104,7 @@
                     return true
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(name), \(noun) \(index + 1) of \(artists.count)")
+                .accessibilityLabel(uiString("\(name), \(noun) \(index + 1) of \(artists.count)"))
                 .accessibilityAddTraits(.isButton)
                 .accessibilityIdentifier(AccessibilityID.songCardArtistChip)
                 .accessibilityAction(named: "Remove") { remove(at: index) }
@@ -120,11 +120,11 @@
                     .foregroundStyle(Theme.color.ink)
                     .lineLimit(1)
                 if canSplit {
-                    Button("Split") { split(at: index) }
+                    Button(uiString("Split")) { split(at: index) }
                         .buttonStyle(.plain)
                         .font(SchibstedGrotesk.semiBold.font(size: 11))
                         .foregroundStyle(Theme.color.cueText)
-                        .help("Split into separate artists")
+                        .help(uiString("Split into separate artists"))
                         .accessibilityHidden(true)
                         .accessibilityIdentifier(AccessibilityID.songCardArtistSplit)
                 }
@@ -138,7 +138,7 @@
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("Remove \(name)")
+                .help(uiString("Remove \(name)"))
                 .accessibilityHidden(true)
             }
         }

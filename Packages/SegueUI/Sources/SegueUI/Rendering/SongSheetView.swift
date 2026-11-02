@@ -282,7 +282,7 @@ struct LyricLineView: View {
                         .fixedSize()
                 }
                 // The lyric face's space and line height, measured once per line.
-                Text(" ")
+                Text(verbatim: " ")
                     .font(Theme.font.liveLyric(size: style.lyricSize))
                     .fixedSize()
                     .hidden()

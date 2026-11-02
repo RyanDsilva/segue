@@ -31,7 +31,7 @@ enum SectionNotesPlacement {
         guard group.hasPlacements else { return [] }
         let hidesWrittenOut = chart && group.writtenOut.count == 1
         let instances = group.instances.filter { !(hidesWrittenOut && $0.acceptsChartNotes) }
-        return [Choice(placement: .everyTime, title: "Every time", isRepeat: false)]
+        return [Choice(placement: .everyTime, title: uiString("Every time"), isRepeat: false)]
             + instances.map { instance in
                 Choice(
                     placement: .instance(instance.occurrence),
@@ -109,11 +109,11 @@ extension SectionNoteEdit {
 
         var body: some View {
             HStack(spacing: 6) {
-                Text("Shows on")
+                Text("Shows on", bundle: #bundle)
                     .font(.caption)
                     .foregroundStyle(Theme.color.muted)
                     .accessibilityHidden(true)
-                Picker("Shows on", selection: $selection) {
+                Picker(uiString("Shows on"), selection: $selection) {
                     ForEach(choices) { choice in
                         Text(choice.title).tag(choice.placement)
                     }
@@ -121,7 +121,7 @@ extension SectionNoteEdit {
                 .labelsHidden()
                 .fixedSize()
                 .controlSize(.small)
-                .accessibilityLabel("Shows on")
+                .accessibilityLabel(uiString("Shows on"))
                 .accessibilityIdentifier(identifier)
             }
         }
@@ -130,15 +130,16 @@ extension SectionNoteEdit {
     /// The quiet mark on a stage note whose section changed since it was placed.
     struct CheckPlacementMark: View {
         var body: some View {
-            Label("Check placement", systemImage: "exclamationmark.circle")
+            Label(uiString("Check placement"), systemImage: "exclamationmark.circle")
                 .font(.caption)
                 .foregroundStyle(Theme.color.muted)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(Capsule().strokeBorder(Theme.color.lineStrong))
                 .fixedSize()
-                .help("This section changed since the note was placed. Pick where it shows "
-                    + "to confirm.")
+                .help(uiString("""
+                This section changed since the note was placed. Pick where it shows to confirm.
+                """))
                 .accessibilityIdentifier(AccessibilityID.sectionNoteCheckPlacement)
         }
     }

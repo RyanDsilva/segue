@@ -135,7 +135,8 @@ struct LyricRowBreaker {
 }
 
 /// Lays out one lyric line from `LyricToken`s. Subviews, in order: for each token its chord
-/// `Text` (only when it has a chord) then its lyric `Text`; last, a hidden `Text(" ")` in the
+/// `Text` (only when it has a chord) then its lyric `Text`; last, a hidden `Text(verbatim: " ")` in
+/// the
 /// lyric face that measures the space width and the lyric line height. Every row's chords
 /// share one chord band above the lyric, so a chord never drops to the lyric line, and the
 /// layout's first text baseline is the first row's lyric baseline.

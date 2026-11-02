@@ -19,10 +19,10 @@
             if let songSession {
                 HStack(spacing: size == .large ? 8 : 6) {
                     button("Rehearse", symbol: "play.fill", kind: .rehearsal, songSession)
-                        .help("Rehearse this song on stage, not logged (⌥⌘↩)")
+                        .help(uiString("Rehearse this song on stage, not logged (⌥⌘↩)"))
                         .accessibilityIdentifier(AccessibilityID.librarySongRehearse)
                     button("Live", symbol: nil, kind: .gig, songSession)
-                        .help("Play this song live on stage, not logged (⇧⌘↩)")
+                        .help(uiString("Play this song live on stage, not logged (⇧⌘↩)"))
                         .accessibilityIdentifier(AccessibilityID.librarySongLive)
                 }
             }

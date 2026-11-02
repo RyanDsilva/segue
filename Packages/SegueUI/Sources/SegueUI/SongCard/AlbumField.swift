@@ -32,7 +32,7 @@
                     text: text,
                     font: ArtistChipField.inputFont,
                     identifier: AccessibilityID.songCardAlbum,
-                    placeholder: "Movie or album",
+                    placeholder: uiString("Movie or album"),
                     focusRequest: focusRequest,
                     selectAllRequest: 0,
                     accessibilityLabel: "Movie or album",

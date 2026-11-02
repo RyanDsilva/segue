@@ -61,10 +61,10 @@
                     HStack(spacing: 8) {
                         Spacer(minLength: 0)
                         if let openGuide {
-                            Button("Learn More") { openGuide(.fileSync) }
+                            Button(uiString("Learn More")) { openGuide(.fileSync) }
                                 .accessibilityIdentifier(AccessibilityID.fileSyncLearnMore)
                         }
-                        Button("Don't Show Again") { session.dismissFileSyncWarning() }
+                        Button(uiString("Don't Show Again")) { session.dismissFileSyncWarning() }
                             .accessibilityIdentifier(AccessibilityID.fileSyncDismiss)
                     }
                     .buttonStyle(.segueSecondary)

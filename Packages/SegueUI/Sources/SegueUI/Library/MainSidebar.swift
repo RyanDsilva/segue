@@ -22,7 +22,7 @@
                 }
                 .tag(LibrarySession.Section.library)
                 .accessibilityIdentifier(AccessibilityID.sidebarLibrary)
-                Label("Gig Log", systemImage: "music.mic")
+                Label(uiString("Gig Log"), systemImage: "music.mic")
                     .tag(LibrarySession.Section.gigLog)
                     .accessibilityIdentifier(AccessibilityID.sidebarGigLog)
                 Section {
@@ -30,7 +30,7 @@
                         setlistRow(setlist)
                     }
                     if session.setlists.setlists.isEmpty {
-                        Text("No setlists yet")
+                        Text("No setlists yet", bundle: #bundle)
                             .foregroundStyle(Theme.color.muted)
                             .selectionDisabled()
                     }
@@ -39,7 +39,7 @@
                 }
                 SmartFiltersSidebarSection(session: session, renaming: $renamingFilter)
                 if !session.library.tags.isEmpty {
-                    Section("Tags") {
+                    Section(uiString("Tags")) {
                         ForEach(session.library.tags.prefix(12), id: \.tag) { tag in
                             tagRow(tag)
                         }
@@ -77,14 +77,14 @@
                 Text(title)
                 Spacer(minLength: 4)
                 // Hierarchical, so it stays legible on the selection highlight.
-                Text("\(count)")
+                Text(verbatim: "\(count)")
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
         }
 
         private var setlistsHeader: some View {
-            Text("Setlists")
+            Text("Setlists", bundle: #bundle)
                 .accessibilityIdentifier(AccessibilityID.sidebarSetlists)
         }
 
@@ -94,7 +94,7 @@
             Button {
                 session.isNamingNewSetlist = true
             } label: {
-                Label("New Setlist", systemImage: "plus")
+                Label(uiString("New Setlist"), systemImage: "plus")
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
                     .foregroundStyle(Theme.color.muted)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -103,7 +103,7 @@
             .buttonStyle(.plain)
             .padding(.horizontal, 18)
             .padding(.vertical, 10)
-            .help("New Setlist")
+            .help(uiString("New Setlist"))
             .accessibilityIdentifier(AccessibilityID.newSetlist)
             // Its own view, so it never competes with the rename sheet. Also opened by
             // Setlist > New Setlist… (Shift-Cmd-N).
@@ -144,14 +144,14 @@
                     Text(tag.tag)
                         .lineLimit(1)
                     Spacer(minLength: 4)
-                    Text("\(tag.count)")
+                    Text(verbatim: "\(tag.count)")
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Show songs tagged “\(tag.tag)”")
+            .help(uiString("Show songs tagged “\(tag.tag)”"))
             .accessibilityIdentifier(AccessibilityID.sidebarTag)
             .contextMenu {
                 SidebarTagMenu(

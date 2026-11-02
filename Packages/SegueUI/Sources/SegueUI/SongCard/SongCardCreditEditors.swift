@@ -27,7 +27,7 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Artists")
+                Text("Artists", bundle: #bundle)
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                 ArtistChipField(
@@ -37,7 +37,7 @@
                     undoManager: host.undoManager,
                     onChange: host.writeArtists,
                 )
-                Text("Return or comma adds an artist. Drag to reorder.")
+                Text("Return or comma adds an artist. Drag to reorder.", bundle: #bundle)
                     .font(SchibstedGrotesk.medium.font(size: 11))
                     .foregroundStyle(Theme.color.muted)
             }
@@ -56,7 +56,7 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Movie / Album")
+                Text("Movie / Album", bundle: #bundle)
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                 AlbumField(

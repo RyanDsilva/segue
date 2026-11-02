@@ -24,7 +24,7 @@
                     }
                     .accessibilityLabel(title)
                     .accessibilityIdentifier(AccessibilityID.songProficiency(level))
-                    .help(isOn ? "Clear the proficiency" : "Mark as \(title)")
+                    .help(isOn ? uiString("Clear the proficiency") : uiString("Mark as \(title)"))
                 }
             }
             .disabled(isDisabled)

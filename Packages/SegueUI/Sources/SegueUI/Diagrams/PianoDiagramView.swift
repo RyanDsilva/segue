@@ -27,7 +27,7 @@ struct PianoDiagramView: View {
                 })
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(name), piano")
+        .accessibilityLabel(uiString("\(name), piano"))
         .accessibilityValue(accessibilityValue)
         .accessibilityIdentifier(AccessibilityID.pianoDiagram)
     }

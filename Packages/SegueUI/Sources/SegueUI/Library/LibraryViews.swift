@@ -48,10 +48,10 @@
             .navigationSubtitle(model.editor == nil ? songCount(shownCount) : "")
             .toolbar {
                 ToolbarItem(placement: .navigation) {
-                    Button("Refresh", systemImage: "arrow.clockwise") {
+                    Button(uiString("Refresh"), systemImage: "arrow.clockwise") {
                         Task { await model.refresh() }
                     }
-                    .help("Pick up changes made in other apps (⌘R)")
+                    .help(uiString("Pick up changes made in other apps (⌘R)"))
                     .accessibilityIdentifier(AccessibilityID.refreshLibrary)
                 }
             }
@@ -71,7 +71,7 @@
                 ZStack(alignment: .bottom) {
                     Rectangle()
                         .strokeBorder(Theme.color.cue, lineWidth: 2)
-                    Label("Drop to import", systemImage: "square.and.arrow.down")
+                    Label(uiString("Drop to import"), systemImage: "square.and.arrow.down")
                         .font(SchibstedGrotesk.semiBold.font(size: 13))
                         .foregroundStyle(Theme.color.ink)
                         .padding(.horizontal, 12)
@@ -129,7 +129,6 @@
                         stats: model.playStats[record.id],
                         isSelected: model.listSelection == record.id,
                     )
-                    // P9-5 5 (P2): drag a song out to Finder or Messages as its `.cho`.
                     .songDragOut(session.dragOut(record), title: SongSummary.title(record))
                 } menu: { record in
                     // A right-click inside a multi-selection adds the whole selection.
@@ -163,7 +162,7 @@
                 HStack(spacing: 8) {
                     SearchField(
                         text: $model.query,
-                        prompt: "Search or filter",
+                        prompt: uiString("Search or filter"),
                         accessibilityIdentifier: AccessibilityID.librarySearch,
                     )
                     .popoverTip(headerTips.currentTip as? SearchAnyLineTip) { action in
@@ -173,9 +172,10 @@
                             openGuide: openGuide,
                         )
                     }
-                    Button("New song") { model.beginNewSongFlow() }
+                    Button(uiString("New song")) { model.beginNewSongFlow() }
                         .buttonStyle(.seguePrimary)
-                        .help(model.isPerforming ? "New Song: starts blank during a show (⌘N)"
+                        .help(model
+                            .isPerforming ? uiString("New Song: starts blank during a show (⌘N)")
                             : "Paste or type a new song (⌘N)")
                         .popoverTip(headerTips.currentTip as? PasteSongTip) { action in
                             GuideTipAction.handle(
@@ -237,7 +237,7 @@
                 .font(.callout)
                 .padding(10)
                 .background(.bar)
-                .help("Show which files and why")
+                .help(uiString("Show which files and why"))
                 .accessibilityIdentifier(AccessibilityID.libraryLoadIssues)
                 .popover(isPresented: $isShowingLoadIssues, arrowEdge: .top) {
                     LoadIssuesList(issues: model.loadIssues)
@@ -249,38 +249,42 @@
             if model.results.isEmpty, model.isSearching, model.isFiltering {
                 ProgressView()
                     .controlSize(.small)
-                    .accessibilityLabel("Searching")
+                    .accessibilityLabel(uiString("Searching"))
                     .accessibilityIdentifier(AccessibilityID.librarySearching)
             } else if model.results.isEmpty, !model.isSearching {
                 if model.isFiltering {
                     ContentUnavailableView(
                         "No Matches",
                         systemImage: "magnifyingglass",
-                        description: Text("No song matches the search and filters."),
+                        description: Text(uiString("No song matches the search and filters.")),
                     )
                 } else if model.catalog.isEmpty {
                     ContentUnavailableView {
-                        Label("No Songs Yet", systemImage: "music.note")
+                        Label(uiString("No Songs Yet"), systemImage: "music.note")
                     } description: {
-                        Text("Paste a chord sheet, write a song, or drop song files here.")
+                        Text(
+                            uiString("Paste a chord sheet, write a song, or drop song files here."),
+                        )
                     } actions: {
                         VStack(spacing: 12) {
                             HStack(spacing: 8) {
-                                Button("Paste a Song") { pasteFromEmptyState() }
+                                Button(uiString("Paste a Song")) { pasteFromEmptyState() }
                                     .buttonStyle(.segueSecondary)
                                     .disabled(!model.canPaste)
                                     .help(model.pasteUnavailableReason
                                         ?? "Review the clipboard's chord sheet as a new song (⌥⌘V)")
                                     .accessibilityIdentifier(AccessibilityID.pasteFromEmptyLibrary)
-                                Button("New Song") { model.beginNewSongFlow() }
+                                Button(uiString("New Song")) { model.beginNewSongFlow() }
                                     .buttonStyle(.segueSecondary)
-                                Button("Import Songs…") { Task { await session.chooseAndImport() } }
-                                    .buttonStyle(.segueSecondary)
-                                    .help("Import ChordPro, text or .crd files (⇧⌘I)")
-                                    .accessibilityIdentifier(AccessibilityID.importSongs)
+                                Button(uiString("Import Songs…")) {
+                                    Task { await session.chooseAndImport() }
+                                }
+                                .buttonStyle(.segueSecondary)
+                                .help(uiString("Import ChordPro, text or .crd files (⇧⌘I)"))
+                                .accessibilityIdentifier(AccessibilityID.importSongs)
                             }
                             if let openGuide {
-                                Button("How to bring songs in") { openGuide(.pasteASong) }
+                                Button(uiString("How to bring songs in")) { openGuide(.pasteASong) }
                                     .buttonStyle(.link)
                                     .accessibilityIdentifier(AccessibilityID.emptyLibraryGuide)
                             }
@@ -303,9 +307,9 @@
 
         var body: some View {
             if selection.count <= 1, let songSession {
-                Button("Rehearse Song") { songSession.start(songID, .rehearsal) }
+                Button(uiString("Rehearse Song")) { songSession.start(songID, .rehearsal) }
                     .disabled(!songSession.isEnabled)
-                Button("Play Song Live") { songSession.start(songID, .gig) }
+                Button(uiString("Play Song Live")) { songSession.start(songID, .gig) }
                     .disabled(!songSession.isEnabled)
                 Divider()
             }
@@ -315,14 +319,14 @@
                 AddToSetlistMenu(session: session, songID: songID)
             }
             if selection.count <= 1, session.library.showsWalkUps {
-                Button("Walk-ups\u{2026}") { session.library.walkUpsSongID = songID }
+                Button(uiString("Walk-ups\u{2026}")) { session.library.walkUpsSongID = songID }
                     .accessibilityIdentifier(AccessibilityID.librarySongWalkUps)
             }
-            Button("Show in Finder") { session.revealSong(songID) }
+            Button(uiString("Show in Finder")) { session.revealSong(songID) }
                 .accessibilityIdentifier(AccessibilityID.songShowInFinder)
             SongPDFExportItems(songID: songID, selection: selection)
             Divider()
-            Button("Move to Trash", role: .destructive) {
+            Button(uiString("Move to Trash"), role: .destructive) {
                 session.requestMoveSongToTrash(songID)
             }
             .accessibilityIdentifier(AccessibilityID.songMoveToTrash)
@@ -340,10 +344,12 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 10) {
-                Text("These files were skipped. They are left untouched in the library folder.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Text(uiString("""
+                These files were skipped. They are left untouched in the library folder.
+                """))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
                 ForEach(issues, id: \.relativePath) { issue in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(issue.relativePath)
@@ -397,7 +403,7 @@
                             Image(systemName: "lock.fill")
                                 .font(.caption)
                                 .foregroundStyle(Theme.color.muted)
-                                .help("Read-only")
+                                .help(uiString("Read-only"))
                         }
                     }
                     SongCreditsLine(
@@ -487,7 +493,7 @@
             ContentUnavailableView(
                 "No Song Selected",
                 systemImage: "music.note.list",
-                description: Text("Choose a song from the list, or create a new one."),
+                description: Text(uiString("Choose a song from the list, or create a new one.")),
             )
         }
     }

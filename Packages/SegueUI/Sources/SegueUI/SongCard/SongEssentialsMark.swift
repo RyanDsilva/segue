@@ -14,7 +14,8 @@
                 EssentialsDot()
                     .padding(4)
                     .contentShape(Rectangle())
-                    .help("\(SetEssential.spokenMissing(missing)). \(SetEssential.help)")
+                    .help(Text(verbatim: SetEssential.spokenMissing(missing) + ". " + SetEssential
+                            .help))
                     .accessibilityHidden(false)
                     .accessibilityElement()
                     .accessibilityAddTraits(.isStaticText)

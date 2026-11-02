@@ -166,7 +166,7 @@
                 title: PrintFileName.selectionTitle(songs: records.count),
                 songs: songs,
                 contents: PrintJob.Contents(
-                    title: "Songbook",
+                    title: uiString("Songbook"),
                     line: count,
                     rows: PrintSetList.selectionRows(slots),
                 ),

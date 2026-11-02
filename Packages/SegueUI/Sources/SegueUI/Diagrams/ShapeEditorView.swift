@@ -66,7 +66,8 @@ struct ShapeEditorView: View {
     }
 
     private var header: some View {
-        Text(instrument == .guitar ? "Custom shape, \(tuning.name) tuning" : "Custom piano voicing")
+        Text(instrument == .guitar ? uiString("Custom shape, \(tuning.name) tuning") :
+            uiString("Custom piano voicing"))
             .font(Theme.font.sectionHeading)
             .foregroundStyle(Theme.color.ink)
     }
@@ -98,19 +99,19 @@ struct ShapeEditorView: View {
                     Image(systemName: "minus").frame(width: 12, height: 14)
                 }
                 .disabled(guitar.baseFret <= 1)
-                .accessibilityLabel("Lower base fret")
+                .accessibilityLabel(uiString("Lower base fret"))
                 Button {
                     guitar.baseFret += 1
                 } label: {
                     Image(systemName: "plus").frame(width: 12, height: 14)
                 }
                 .disabled(guitar.baseFret >= GuitarDraft.maxBaseFret)
-                .accessibilityLabel("Raise base fret")
+                .accessibilityLabel(uiString("Raise base fret"))
             }
             .buttonStyle(.segueSecondary)
             .controlSize(.small)
             if !guitar.isFingerable(stringCount: tuning.strings.count) {
-                Text("Needs more than four fingers; saved without fingering.")
+                Text("Needs more than four fingers; saved without fingering.", bundle: #bundle)
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
             }
@@ -124,7 +125,7 @@ struct ShapeEditorView: View {
             PianoDiagramView(name: chordName, voicing: piano.voicing, size: .stage) { key in
                 piano.toggle(key)
             }
-            Text("Tap keys to add or remove them.")
+            Text("Tap keys to add or remove them.", bundle: #bundle)
                 .font(Theme.font.label)
                 .foregroundStyle(Theme.color.muted)
         }
@@ -134,13 +135,13 @@ struct ShapeEditorView: View {
 
     private var footer: some View {
         HStack {
-            Button("Reset", action: reset)
+            Button(uiString("Reset"), action: reset)
                 .buttonStyle(.segueSecondary)
             Spacer()
-            Button("Cancel", action: onCancel)
+            Button(uiString("Cancel"), action: onCancel)
                 .buttonStyle(.segueSecondary)
                 .keyboardShortcut(.cancelAction)
-            Button("Save") {
+            Button(uiString("Save")) {
                 if let definition {
                     onSave(definition)
                 }

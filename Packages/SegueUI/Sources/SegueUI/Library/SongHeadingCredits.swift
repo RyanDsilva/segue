@@ -43,7 +43,7 @@
                     .fixedSize(horizontal: false, vertical: true)
                     .onTapGesture(count: 2) { begin(.artist) }
                     .contextMenu { editMenu }
-                    .help(host.isReadOnly ? "" : "Double-click to edit the artists")
+                    .help(host.isReadOnly ? "" : uiString("Double-click to edit the artists"))
                     .accessibilityIdentifier(AccessibilityID.songCardArtist)
                     .accessibilityAction(named: "Edit Artists") { begin(.artist) }
             } else if !host.isReadOnly {
@@ -79,9 +79,9 @@
                 .foregroundStyle(Theme.color.muted)
                 .onTapGesture(count: 2) { begin(.album) }
                 .contextMenu { editMenu }
-                .help(host.isReadOnly ? "" : "Double-click to edit the movie or album")
+                .help(host.isReadOnly ? "" : uiString("Double-click to edit the movie or album"))
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Movie or album: \(album)")
+                .accessibilityLabel(uiString("Movie or album: \(album)"))
                 .accessibilityIdentifier(AccessibilityID.songCardAlbum)
                 .accessibilityAction(named: "Edit Movie / Album") { begin(.album) }
             } else if !host.isReadOnly {
@@ -95,9 +95,9 @@
         // MARK: Editing
 
         @ViewBuilder private var editMenu: some View {
-            Button("Edit Artists") { begin(.artist) }
+            Button(uiString("Edit Artists")) { begin(.artist) }
                 .disabled(host.isReadOnly)
-            Button("Edit Movie / Album") { begin(.album) }
+            Button(uiString("Edit Movie / Album")) { begin(.album) }
                 .disabled(host.isReadOnly)
         }
 

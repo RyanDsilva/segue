@@ -45,7 +45,7 @@
         var body: some View {
             Menu(title) {
                 if session.setlists.setlists.isEmpty {
-                    Button("No Setlists") {}
+                    Button(uiString("No Setlists")) {}
                         .disabled(true)
                 }
                 ForEach(session.setlists.setlists) { setlist in
@@ -72,10 +72,10 @@
                     .font(.system(size: 32, weight: .regular))
                     .foregroundStyle(Theme.color.muted)
                     .accessibilityHidden(true)
-                Text("\(songIDs.count) songs selected")
+                Text("\(songIDs.count) songs selected", bundle: #bundle)
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
-                Text("⌘-click to add or remove a song, ⇧-click to select a range.")
+                Text("⌘-click to add or remove a song, ⇧-click to select a range.", bundle: #bundle)
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.muted)
                 AddSongsToSetlistMenu(session: session, songIDs: songIDs)

@@ -13,11 +13,11 @@
         func additionRow(_ addition: Addition, in group: SectionNoteGroup) -> some View {
             let onRepeat = SectionNotesPlacement.isRepeat(addition.placement, in: group)
             return VStack(alignment: .leading, spacing: 6) {
-                TextField("New note", text: additionBinding(addition.id, \.text, or: ""))
+                TextField(uiString("New note"), text: additionBinding(addition.id, \.text, or: ""))
                     .textFieldStyle(.roundedBorder)
                     .focused($focused, equals: .addition(addition.id))
                     .onSubmit { commit(.addition(addition.id)) }
-                    .accessibilityLabel("New note on \(group.title)")
+                    .accessibilityLabel(uiString("New note on \(group.title)"))
                     .accessibilityIdentifier(AccessibilityID.sectionNoteText)
                 additionControls(addition, in: group, onRepeat: onRepeat)
                 if !addition.stageOnly,
@@ -46,7 +46,7 @@
             let chartAllowed = group.acceptsChartNotes
             let stageAllowed = group.acceptsStageNotes && host.canEditStageNotes
             return HStack(spacing: 8) {
-                Toggle("Show on stage only", isOn: Binding(
+                Toggle(uiString("Show on stage only"), isOn: Binding(
                     get: { onRepeat || addition.stageOnly },
                     set: { setAdditionStageOnly(addition.id, $0, in: group) },
                 ))
@@ -78,8 +78,8 @@
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Theme.color.muted)
-                .help("Discard Note")
-                .accessibilityLabel("Discard Note")
+                .help(uiString("Discard Note"))
+                .accessibilityLabel(uiString("Discard Note"))
                 .accessibilityIdentifier(AccessibilityID.sectionNoteDiscard)
             }
         }

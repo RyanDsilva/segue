@@ -77,7 +77,7 @@
                 PDFKitView(document: model.pdf, currentPage: $model.currentPage, handle: pdfView)
                     .opacity(model.pdf == nil ? 0 : 1)
                 if model.pdf == nil, model.phase == .making {
-                    ProgressView("Making the PDF\u{2026}")
+                    ProgressView(uiString("Making the PDF\u{2026}"))
                         .controlSize(.small)
                         .accessibilityIdentifier(AccessibilityID.pdfProgress)
                 }
@@ -95,20 +95,20 @@
                 indicator
                 Spacer(minLength: 16)
                 share
-                Button("Save PDF\u{2026}") {
+                Button(uiString("Save PDF\u{2026}")) {
                     Task { await model.save(in: NSApp.keyWindow) }
                 }
                 .buttonStyle(.segueSecondary)
                 .keyboardShortcut("s")
                 .disabled(!model.isReady)
                 .accessibilityIdentifier(AccessibilityID.pdfSave)
-                Button("Print\u{2026}") { model.print(in: NSApp.keyWindow) }
+                Button(uiString("Print\u{2026}")) { model.print(in: NSApp.keyWindow) }
                     .buttonStyle(.segueSecondary)
                     .keyboardShortcut("p")
                     .disabled(!model.isReady)
                     .focused($focusesPrint)
                     .accessibilityIdentifier(AccessibilityID.pdfPrint)
-                Button("Done", action: onDone)
+                Button(uiString("Done"), action: onDone)
                     .buttonStyle(.seguePrimary)
                     .keyboardShortcut(.defaultAction)
                     .accessibilityIdentifier(AccessibilityID.pdfDone)
@@ -121,7 +121,7 @@
         @ViewBuilder private var share: some View {
             if model.isReady, let url = model.shareURL {
                 ShareLink(item: url) {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                    Label(uiString("Share"), systemImage: "square.and.arrow.up")
                         .labelStyle(.titleAndIcon)
                 }
                 .buttonStyle(.segueSecondary)
@@ -129,7 +129,7 @@
                 .accessibilityIdentifier(AccessibilityID.pdfShare)
             } else {
                 Button {} label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                    Label(uiString("Share"), systemImage: "square.and.arrow.up")
                         .labelStyle(.titleAndIcon)
                 }
                 .buttonStyle(.segueSecondary)
@@ -156,7 +156,7 @@
                         .accessibilityAddTraits(.updatesFrequently)
                     if model.phase == .updating {
                         ProgressView().controlSize(.mini)
-                        Text("Updating\u{2026}")
+                        Text("Updating\u{2026}", bundle: #bundle)
                     }
                 }
             }
@@ -168,9 +168,9 @@
         /// ⌘+ and ⌘- zoom the pages (spec 6.3).
         private var zoomShortcuts: some View {
             HStack {
-                Button("Zoom In") { pdfView.zoomIn() }.keyboardShortcut("+")
-                Button("Zoom In") { pdfView.zoomIn() }.keyboardShortcut("=")
-                Button("Zoom Out") { pdfView.zoomOut() }.keyboardShortcut("-")
+                Button(uiString("Zoom In")) { pdfView.zoomIn() }.keyboardShortcut("+")
+                Button(uiString("Zoom In")) { pdfView.zoomIn() }.keyboardShortcut("=")
+                Button(uiString("Zoom Out")) { pdfView.zoomOut() }.keyboardShortcut("-")
             }
             .opacity(0)
             .accessibilityHidden(true)
@@ -204,11 +204,11 @@
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(Theme.color.cueText)
                     .accessibilityHidden(true)
-                Text("Segue could not make this PDF (\(reason)). Try again")
+                Text("Segue could not make this PDF (\(reason)). Try again", bundle: #bundle)
                     .foregroundStyle(Theme.color.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
-                Button("Try Again", action: retry)
+                Button(uiString("Try Again"), action: retry)
                     .buttonStyle(.segueSecondary)
                     .accessibilityIdentifier(AccessibilityID.pdfTryAgain)
             }
@@ -233,51 +233,51 @@
         var body: some View {
             Form {
                 Section {
-                    Picker("Chart", selection: $model.options.part) {
-                        Text("Chords").tag(PrintPart.chords)
-                        Text("Bass notes").tag(PrintPart.bass)
-                        Text("Lyrics").tag(PrintPart.lyrics)
+                    Picker(uiString("Chart"), selection: $model.options.part) {
+                        Text("Chords", bundle: #bundle).tag(PrintPart.chords)
+                        Text("Bass notes", bundle: #bundle).tag(PrintPart.bass)
+                        Text("Lyrics", bundle: #bundle).tag(PrintPart.lyrics)
                     }
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier(AccessibilityID.pdfOption("part"))
                 }
-                Section("Page") {
-                    Picker("Paper", selection: $model.options.paper) {
-                        Text("A4").tag(PrintPaper.a4)
-                        Text("US Letter").tag(PrintPaper.letter)
+                Section(uiString("Page")) {
+                    Picker(uiString("Paper"), selection: $model.options.paper) {
+                        Text("A4", bundle: #bundle).tag(PrintPaper.a4)
+                        Text("US Letter", bundle: #bundle).tag(PrintPaper.letter)
                     }
                     .accessibilityIdentifier(AccessibilityID.pdfOption("paper"))
-                    Picker("Text size", selection: $model.options.textSize) {
-                        Text("Small").tag(PrintTextSize.small)
-                        Text("Medium").tag(PrintTextSize.medium)
-                        Text("Large").tag(PrintTextSize.large)
+                    Picker(uiString("Text size"), selection: $model.options.textSize) {
+                        Text("Small", bundle: #bundle).tag(PrintTextSize.small)
+                        Text("Medium", bundle: #bundle).tag(PrintTextSize.medium)
+                        Text("Large", bundle: #bundle).tag(PrintTextSize.large)
                     }
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier(AccessibilityID.pdfOption("size"))
-                    Picker("Columns", selection: $model.options.columns) {
-                        Text("Auto").tag(PrintColumns.auto)
-                        Text("1").tag(PrintColumns.one)
-                        Text("2").tag(PrintColumns.two)
+                    Picker(uiString("Columns"), selection: $model.options.columns) {
+                        Text("Auto", bundle: #bundle).tag(PrintColumns.auto)
+                        Text(verbatim: "1").tag(PrintColumns.one)
+                        Text(verbatim: "2").tag(PrintColumns.two)
                     }
                     .accessibilityIdentifier(AccessibilityID.pdfOption("columns"))
                     fitOnePage
                 }
-                Section("Content") {
-                    Picker("Repeats", selection: $model.options.repeats) {
-                        Text("Written out").tag(PrintRepeats.writtenOut)
-                        Text("Compact").tag(PrintRepeats.compact)
+                Section(uiString("Content")) {
+                    Picker(uiString("Repeats"), selection: $model.options.repeats) {
+                        Text("Written out", bundle: #bundle).tag(PrintRepeats.writtenOut)
+                        Text("Compact", bundle: #bundle).tag(PrintRepeats.compact)
                     }
                     .accessibilityIdentifier(AccessibilityID.pdfOption("repeats"))
-                    Toggle("Section map", isOn: $model.options.sectionMap)
+                    Toggle(uiString("Section map"), isOn: $model.options.sectionMap)
                         .toggleStyle(.checkbox)
                         .accessibilityIdentifier(AccessibilityID.pdfOption("sectionMap"))
                     diagrams
                     if model.options.part == .bass, model.snapshot.hasFills {
-                        Toggle("Fills as tab", isOn: $model.options.fillsAsTab)
+                        Toggle(uiString("Fills as tab"), isOn: $model.options.fillsAsTab)
                             .toggleStyle(.checkbox)
                             .accessibilityIdentifier(AccessibilityID.pdfOption("fillsAsTab"))
                     }
-                    Toggle("Stage notes and cues", isOn: $model.options.stageNotes)
+                    Toggle(uiString("Stage notes and cues"), isOn: $model.options.stageNotes)
                         .toggleStyle(.checkbox)
                         .accessibilityIdentifier(AccessibilityID.pdfOption("stageNotes"))
                 }
@@ -296,7 +296,7 @@
             }
             .toggleStyle(.checkbox)
             .disabled(songbook)
-            .help(songbook ? "Songbooks always paginate" : "")
+            .help(songbook ? uiString("Songbooks always paginate") : "")
             .accessibilityIdentifier(AccessibilityID.pdfOption("fitOnePage"))
         }
 
@@ -309,9 +309,9 @@
             Group {
                 if model.isSongbook {
                     Picker(selection: $model.options.diagrams) {
-                        Text("As each song").tag(PrintDiagrams.asSong)
-                        Text("All songs").tag(PrintDiagrams.all)
-                        Text("None").tag(PrintDiagrams.off)
+                        Text("As each song", bundle: #bundle).tag(PrintDiagrams.asSong)
+                        Text("All songs", bundle: #bundle).tag(PrintDiagrams.all)
+                        Text("None", bundle: #bundle).tag(PrintDiagrams.off)
                     } label: {
                         OptionLabel("Chord diagrams", caption: caption)
                     }

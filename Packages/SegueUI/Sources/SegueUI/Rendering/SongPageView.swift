@@ -42,7 +42,7 @@ struct SongPageView: View {
                 }
             }
             if model.sections.isEmpty {
-                Text("No lyrics yet.")
+                Text("No lyrics yet.", bundle: #bundle)
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.muted)
             } else {

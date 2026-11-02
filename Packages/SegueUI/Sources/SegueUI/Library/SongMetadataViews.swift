@@ -138,7 +138,7 @@
         /// saved on Return or when the field loses focus.
         private var songNotes: some View {
             TextField(
-                "Add a note for the whole song",
+                uiString("Add a note for the whole song"),
                 text: Binding(
                     get: { notesDraft ?? record.sidecar.notes ?? "" },
                     set: { notesDraft = $0 },
@@ -152,7 +152,7 @@
             .focused($notesFocused)
             .onSubmit(commitNotes)
             .disabled(record.isReadOnly)
-            .accessibilityLabel("Song notes")
+            .accessibilityLabel(uiString("Song notes"))
             .accessibilityIdentifier(AccessibilityID.songNotes)
         }
 
@@ -180,7 +180,7 @@
                                 .foregroundStyle(Theme.color.ink)
                                 .fixedSize(horizontal: false, vertical: true)
                             if note.isStageOnly {
-                                Text("Stage only")
+                                Text("Stage only", bundle: #bundle)
                                     .font(.caption)
                                     .foregroundStyle(Theme.color.cueText)
                                     .padding(.horizontal, 6)
@@ -192,7 +192,7 @@
                         .accessibilityIdentifier(AccessibilityID.sectionNotesSummary)
                     }
                 }
-                Button("Section Notes…") {
+                Button(uiString("Section Notes…")) {
                     commitNotes()
                     isEditingSectionNotes = true
                 }

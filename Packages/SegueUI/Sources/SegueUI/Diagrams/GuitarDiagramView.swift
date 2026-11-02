@@ -32,7 +32,7 @@ struct GuitarDiagramView: View {
                 })
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(name), guitar")
+        .accessibilityLabel(uiString("\(name), guitar"))
         .accessibilityValue(accessibilityValue)
         .accessibilityIdentifier(AccessibilityID.guitarDiagram)
     }
@@ -348,7 +348,8 @@ private struct GuitarDiagramRenderer {
         let font = SchibstedGrotesk.semiBold.font(size: metrics.labelSize)
         if geometry.baseFret > 1 {
             let centre = geometry.noteCentre(string: 0, fret: 1)
-            let label = Text("\(geometry.baseFret)fr").font(font).foregroundStyle(Theme.color.muted)
+            let label = Text("\(geometry.baseFret)fr", bundle: #bundle).font(font)
+                .foregroundStyle(Theme.color.muted)
             context.draw(
                 label,
                 at: CGPoint(x: centre.x - metrics.dotSize / 2 - 3, y: centre.y),
@@ -356,7 +357,8 @@ private struct GuitarDiagramRenderer {
             )
         }
         if let capo = geometry.capoFret {
-            let label = Text("Capo \(capo)").font(font).foregroundStyle(Theme.color.muted)
+            let label = Text("Capo \(capo)", bundle: #bundle).font(font)
+                .foregroundStyle(Theme.color.muted)
             let x = (geometry.stringX(0) + geometry.stringX(geometry.stringCount - 1)) / 2
             context.draw(
                 label,

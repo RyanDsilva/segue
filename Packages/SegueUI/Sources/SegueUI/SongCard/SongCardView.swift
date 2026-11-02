@@ -112,25 +112,29 @@
 
         /// The title, in the same box as the Artists and Movie / Album fields.
         private func titleField(_ values: SongCardValues) -> some View {
-            TextField("Title", text: $draftTitle, prompt: Text("Song title"))
-                .textFieldStyle(.plain)
-                .font(Font(ArtistChipField.inputFont))
-                // The same box as the Artists and Movie / Album fields: 18 + 5 + 5.
-                .frame(height: 18)
-                .padding(.vertical, 5)
-                .padding(.horizontal, 8)
-                .background(Theme.color.ground, in: RoundedRectangle(cornerRadius: 7))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(
-                            focus == .title ? Theme.color.cue : Theme.color.controlBorder,
-                            lineWidth: 1,
-                        )
-                }
-                .frame(maxWidth: 320)
-                .focused($focus, equals: .title)
-                .onSubmit { commitTitle(values) }
-                .accessibilityIdentifier(AccessibilityID.songCardTitle)
+            TextField(
+                uiString("Title"),
+                text: $draftTitle,
+                prompt: Text("Song title", bundle: #bundle),
+            )
+            .textFieldStyle(.plain)
+            .font(Font(ArtistChipField.inputFont))
+            // The same box as the Artists and Movie / Album fields: 18 + 5 + 5.
+            .frame(height: 18)
+            .padding(.vertical, 5)
+            .padding(.horizontal, 8)
+            .background(Theme.color.ground, in: RoundedRectangle(cornerRadius: 7))
+            .overlay {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .strokeBorder(
+                        focus == .title ? Theme.color.cue : Theme.color.controlBorder,
+                        lineWidth: 1,
+                    )
+            }
+            .frame(maxWidth: 320)
+            .focused($focus, equals: .title)
+            .onSubmit { commitTitle(values) }
+            .accessibilityIdentifier(AccessibilityID.songCardTitle)
         }
 
         private func commitTitle(_ values: SongCardValues) {
@@ -175,7 +179,7 @@
             token(
                 .artist,
                 title: Self.artistsTitle(values.artists),
-                placeholder: "Artists",
+                placeholder: uiString("Artists"),
                 essential: false,
             ) {
                 ArtistsEditor(host: host, artists: values.artists)
@@ -183,7 +187,12 @@
         }
 
         private func albumToken(_ values: SongCardValues) -> some View {
-            token(.album, title: values.album, placeholder: "Movie / Album", essential: false) {
+            token(
+                .album,
+                title: values.album,
+                placeholder: uiString("Movie / Album"),
+                essential: false,
+            ) {
                 AlbumEditor(host: host, album: values.album) { open = nil }
             }
         }
@@ -194,7 +203,7 @@
         }
 
         private func keyToken(_ values: SongCardValues) -> some View {
-            token(.key, title: values.key, placeholder: "Key", essential: true) {
+            token(.key, title: values.key, placeholder: uiString("Key"), essential: true) {
                 KeyPickerView(
                     current: values.key,
                     detected: values.detectedKey,
@@ -210,7 +219,7 @@
             token(
                 .tempo,
                 title: values.tempoText.map { "\($0) BPM" },
-                placeholder: "Tempo",
+                placeholder: uiString("Tempo"),
                 essential: true,
             ) {
                 TempoEditorView(current: values.tempo) { text in
@@ -223,7 +232,7 @@
             token(
                 .capo,
                 title: values.capo > 0 ? "Capo \(values.capo)" : nil,
-                placeholder: "Capo",
+                placeholder: uiString("Capo"),
                 essential: false,
             ) {
                 CapoEditorView(capo: values.capo) { capo in
@@ -233,7 +242,7 @@
         }
 
         private func timeToken(_ values: SongCardValues) -> some View {
-            token(.time, title: values.time, placeholder: "Time", essential: false) {
+            token(.time, title: values.time, placeholder: uiString("Time"), essential: false) {
                 TimeEditorView(current: values.time) { text in
                     write(SongCardWrite.time(text))
                 }
@@ -249,10 +258,10 @@
         private func addMenu(_ values: SongCardValues) -> some View {
             Menu {
                 if values.capo == 0 {
-                    Button("Capo") { open = .capo }
+                    Button(uiString("Capo")) { open = .capo }
                 }
                 if values.time == nil {
-                    Button("Time Signature") { open = .time }
+                    Button(uiString("Time Signature")) { open = .time }
                 }
             } label: {
                 Image(systemName: "plus")
@@ -265,8 +274,8 @@
             .menuIndicator(.hidden)
             .buttonStyle(.plain)
             .fixedSize()
-            .help("Add a capo or time signature")
-            .accessibilityLabel("Add capo or time signature")
+            .help(uiString("Add a capo or time signature"))
+            .accessibilityLabel(uiString("Add capo or time signature"))
             .accessibilityIdentifier(AccessibilityID.songCardAdd)
         }
 
@@ -370,7 +379,8 @@
             }
             .buttonStyle(.plain)
             .help(isMissingEssential ? SetEssential.help : "Change the \(placeholder.lowercased())")
-            .accessibilityLabel(title.map { "\(placeholder): \($0)" } ?? "\(placeholder): not set")
+            .accessibilityLabel(title
+                .map { "\(placeholder): \($0)" } ?? uiString("\(placeholder): not set"))
             .accessibilityHint(isMissingEssential ? SetEssential.help : "")
         }
     }

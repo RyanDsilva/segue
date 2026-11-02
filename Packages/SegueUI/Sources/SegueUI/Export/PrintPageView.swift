@@ -294,7 +294,7 @@
             case let .missing(number):
                 songRow(
                     number: number,
-                    title: "Song not in library",
+                    title: uiString("Song not in library"),
                     credits: nil,
                     key: nil,
                     time: nil,

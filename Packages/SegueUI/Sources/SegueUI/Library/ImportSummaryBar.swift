@@ -21,7 +21,7 @@
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier(AccessibilityID.importSummary)
                 if !summary.skipped.isEmpty || !summary.converted.isEmpty {
-                    Button("Details") { isShowingDetails = true }
+                    Button(uiString("Details")) { isShowingDetails = true }
                         .buttonStyle(.segueSecondary)
                         .controlSize(.small)
                         .accessibilityIdentifier(AccessibilityID.importSummaryDetails)
@@ -29,7 +29,7 @@
                             ImportDetailsList(summary: summary)
                         }
                 }
-                Button("Dismiss", action: onDismiss)
+                Button(uiString("Dismiss"), action: onDismiss)
                     .buttonStyle(.segueSecondary)
                     .controlSize(.small)
             }
@@ -58,7 +58,7 @@
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     if !summary.skipped.isEmpty {
-                        Text("These files were not imported. They are left as they were.")
+                        Text(uiString("These files were not imported. They are left as they were."))
                             .font(.callout)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -75,7 +75,7 @@
                         }
                     }
                     if !summary.converted.isEmpty {
-                        Text("Converted to UTF-8")
+                        Text("Converted to UTF-8", bundle: #bundle)
                             .font(.callout.weight(.semibold))
                             .padding(.top, summary.skipped.isEmpty ? 0 : 4)
                         ForEach(summary.converted, id: \.self) { line in
