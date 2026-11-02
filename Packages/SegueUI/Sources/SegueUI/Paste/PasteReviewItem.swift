@@ -5,6 +5,7 @@ import Ingest
 import Library
 import ModelPort
 import Observation
+import Plugins
 import Services
 
 // One song in the paste review sheet (spec 6.2, R63): the deterministic result at once, AI
@@ -64,23 +65,61 @@ public final class PasteReviewItem: Identifiable {
         didSet { refreshNearDuplicate() }
     }
 
+    /// Where a web page or search result came from (P9-4 spec 11.6): the review header's
+    /// source line. Never stored (R179). Nil for pastes and files.
+    public let provenance: Provenance?
+    /// R194: the source's film song name had more than one " - " and no model picked the
+    /// split, so the title and Movie / Album are flagged for review.
+    public let titleUncertain: Bool
+
     /// How long the refinement ran, once it finished (nil: no model was asked).
     var refinementSeconds: TimeInterval?
     let candidate: ImportCandidate?
     @ObservationIgnored var refinementTask: Task<Void, Never>?
 
-    init(
+    convenience init(
         source: PasteSource,
         original: String,
         fileName: String? = nil,
         candidate: ImportCandidate? = nil,
         origin: IngestOrigin,
     ) {
+        self.init(
+            source: source,
+            original: original,
+            fileName: fileName,
+            candidate: candidate,
+            result: IngestPipeline.ingest(original, origin: origin),
+        )
+    }
+
+    /// A web page or search result (P9-4 spec 5.2): the source's fields win over the text.
+    convenience init(song: ImportedSong, source: PasteSource) {
+        let origin: IngestOrigin = song.provenance.reader == .lyricsRecord ? .lyrics : .web
+        self.init(
+            source: source,
+            original: song.text,
+            result: IngestPipeline.ingest(song.text, origin: origin, source: song.fields),
+            provenance: song.provenance,
+            titleUncertain: song.fields.titleUncertain,
+        )
+    }
+
+    private init(
+        source: PasteSource,
+        original: String,
+        fileName: String? = nil,
+        candidate: ImportCandidate? = nil,
+        result: IngestResult,
+        provenance: Provenance? = nil,
+        titleUncertain: Bool = false,
+    ) {
         self.source = source
         self.original = original
         self.fileName = fileName
         self.candidate = candidate
-        let result = IngestPipeline.ingest(original, origin: origin)
+        self.provenance = provenance
+        self.titleUncertain = titleUncertain
         base = result
         proposal = result
         // An already-ChordPro lookalike is kept exactly as read: no model runs and Accept

@@ -239,6 +239,8 @@ public final class LibraryViewModel {
     public internal(set) var pasteReview: PasteReviewModel?
     /// The AI router the review sheet refines with; the session hands over the app's.
     @ObservationIgnored public var aiRouter = Router(providers: [])
+    /// P9-4 (Personal build only): web import and Find Lyrics; empty in the App Store build.
+    public var plugins = PluginEntries()
     /// Undo targets of metadata edits, one per song (3.9.1).
     let metadataTargets = UndoTargets<SongID>()
     /// Metadata undo and redo writes, run in order.

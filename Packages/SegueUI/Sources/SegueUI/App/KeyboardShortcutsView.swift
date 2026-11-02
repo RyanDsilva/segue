@@ -13,11 +13,18 @@
     public struct KeyboardShortcutsView: View {
         let stage: [KeyHelp.Group]
         let stageWarning: String?
+        /// The Personal build's web import and search items are listed (P9-4 spec 11.1).
+        let includesPersonal: Bool
         @Environment(\.openGuide) private var openGuide
 
-        public init(stage: [KeyHelp.Group] = [], stageWarning: String? = nil) {
+        public init(
+            stage: [KeyHelp.Group] = [],
+            stageWarning: String? = nil,
+            includesPersonal: Bool = false,
+        ) {
             self.stage = stage
             self.stageWarning = stageWarning
+            self.includesPersonal = includesPersonal
         }
 
         public var body: some View {
@@ -28,7 +35,10 @@
                         .tracking(Theme.tracking.title * 28)
                         .foregroundStyle(Theme.color.ink)
                     shortcutSection("Main window", id: AccessibilityID.shortcutsMainSection) {
-                        ForEach(Self.menuGroups, id: \.menu) { menuGroup in
+                        ForEach(
+                            Self.menuGroups(includesPersonal: includesPersonal),
+                            id: \.menu,
+                        ) { menuGroup in
                             shortcutGroup(
                                 menuGroup.menu,
                                 rows: menuGroup.items.map { ($0.title, [$0.displayText]) },
@@ -71,9 +81,11 @@
         }
 
         /// `MenuShortcuts` grouped by menu, in menu order.
-        static var menuGroups: [(menu: String, items: [MenuShortcut])] {
+        static func menuGroups(includesPersonal: Bool = false)
+            -> [(menu: String, items: [MenuShortcut])]
+        {
             var groups: [(menu: String, items: [MenuShortcut])] = []
-            for shortcut in MenuShortcuts.all {
+            for shortcut in MenuShortcuts.all(includesPersonal: includesPersonal) {
                 if let index = groups.firstIndex(where: { $0.menu == shortcut.menu }) {
                     groups[index].items.append(shortcut)
                 } else {
@@ -133,7 +145,11 @@
 
         public var body: some View {
             let (table, warning) = loadBindings()
-            KeyboardShortcutsView(stage: KeyHelp.groups(table), stageWarning: warning)
+            KeyboardShortcutsView(
+                stage: KeyHelp.groups(table),
+                stageWarning: warning,
+                includesPersonal: app.dependencies.plugins.webImport != nil,
+            )
                 .guideLinks(app.help)
         }
 

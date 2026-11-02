@@ -705,6 +705,9 @@
     "Copy" : {
 
     },
+    "Copy the whole page in your browser, then press ⌘V here." : {
+
+    },
     "Count-in" : {
 
     },
@@ -1057,6 +1060,12 @@
     "Filtering by %@" : {
 
     },
+    "Find Lyrics…" : {
+
+    },
+    "Find lyrics" : {
+
+    },
     "Finger" : {
 
     },
@@ -1088,6 +1097,9 @@
 
     },
     "From" : {
+
+    },
+    "From %@" : {
 
     },
     "From %@ to the End" : {
@@ -1193,6 +1205,12 @@
 
     },
     "Import files" : {
+
+    },
+    "Import from Web Page…" : {
+
+    },
+    "Import from a web page" : {
 
     },
     "In %@" : {
@@ -1715,6 +1733,9 @@
 
     },
     "Open Song" : {
+
+    },
+    "Open the page in your browser" : {
 
     },
     "Open “%@” in Segue Help" : {
@@ -2916,6 +2937,9 @@
     "Walk-ups…" : {
 
     },
+    "Web import" : {
+
+    },
     "Welcome songs" : {
 
     },
@@ -3013,7 +3037,13 @@
     "and 1 more change" : {
 
     },
+    "check where the title and Movie / Album split" : {
+
+    },
     "collapsed" : {
+
+    },
+    "converted from Devanagari" : {
 
     },
     "dev.segue.audio-engine" : {
@@ -3066,6 +3096,9 @@
 
     },
     "play.fill" : {
+
+    },
+    "read with the general page reader" : {
 
     },
     "selected" : {

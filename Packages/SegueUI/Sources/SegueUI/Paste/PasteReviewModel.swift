@@ -3,6 +3,7 @@ import Ingest
 import Library
 import ModelPort
 import Observation
+import Plugins
 import Services
 
 // The paste review sheet's state (spec 6.1-6.2, R83, R93-R96): the New Song input state,
@@ -14,6 +15,9 @@ public enum PasteReviewPhase: Equatable, Sendable {
     case input
     /// One song or a batch of files under review.
     case review
+    /// Find Lyrics (P9-4 spec 6.4, Personal build only): the plugin's search; a picked
+    /// result moves the same sheet to review.
+    case search
 }
 
 /// The review sheet's model. Opens with deterministic results at once; refinement runs in
@@ -29,6 +33,17 @@ public final class PasteReviewModel {
     public var draftText = ""
     /// True once Accept or Cancel ran (the host dismisses the sheet).
     public private(set) var isClosed = false
+    /// P9-4 spec 11.4-11.5: an address or saved page the web field reads as soon as it
+    /// appears (a lone pasted URL, a dropped link, Import a Saved Page).
+    public private(set) var pendingWebInput: PendingWebInput?
+    /// The web field is reading a page: the text area dims (spec 11.3).
+    public var isReadingWeb = false
+    /// Paste the Page Instead (spec 8.6): the input state explains copying the page.
+    public private(set) var showsPasteHint = false
+    /// The Personal build's web import exists (the lone-URL rule of spec 11.4).
+    public let webImportAvailable: Bool
+    /// Import from Web Page opened the sheet: the web field has focus (spec 11.1).
+    public var focusesWebField = false
 
     /// How the files came in (nil for a paste): the import analytics row.
     public let importMethod: ImportMethod?
@@ -53,6 +68,8 @@ public final class PasteReviewModel {
     ///   - nearDuplicates: the library the songs are checked against for lookalikes.
     ///   - router: the AI router (`AIServices.router`).
     ///   - services: the analytics hub.
+    ///   - search: opens on Find Lyrics instead of the input state.
+    ///   - webImport: the Personal build's web import exists.
     ///   - commit: writes the accepted songs as one import; nil when it failed.
     init(
         items: [PasteReviewItem],
@@ -62,9 +79,12 @@ public final class PasteReviewModel {
         nearDuplicates: NearDuplicateIndex? = nil,
         router: Router,
         services: ServicesHub,
+        search: Bool = false,
+        webImport: Bool = false,
         commit: @escaping ([ImportCandidate]) async -> ImportSummary?,
     ) {
-        phase = items.isEmpty ? .input : .review
+        phase = items.isEmpty ? (search ? .search : .input) : .review
+        webImportAvailable = webImport
         self.items = items
         selectedID = items.first?.id
         self.importMethod = importMethod
@@ -111,12 +131,55 @@ public final class PasteReviewModel {
         let text = draftText
         guard phase == .input, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else { return }
+        // Spec 11.4: a lone page address goes to the web field, not the converter.
+        if webImportAvailable, let url = LoneWebAddress.url(in: text) {
+            draftText = ""
+            pendingWebInput = .address(url, .pastedURL)
+            return
+        }
         let item = PasteReviewItem(source: source, original: text, origin: .paste)
         item.nearDuplicates = nearDuplicates
         items = [item]
         selectedID = item.id
         phase = .review
         startRefinement()
+    }
+
+    // MARK: Web import and search (P9-4 spec 5.2)
+
+    /// Something to read at once: the web field picks it up (spec 11.4-11.5).
+    public func receive(_ input: PendingWebInput) {
+        guard webImportAvailable, phase != .review else { return }
+        showsPasteHint = false
+        phase = .input
+        pendingWebInput = input
+    }
+
+    /// Hands over the pending web input once (the web field reads it).
+    public func takePendingWebInput() -> PendingWebInput? {
+        defer { pendingWebInput = nil }
+        return pendingWebInput
+    }
+
+    /// A page or search result read by a plugin: one item from
+    /// `IngestPipeline.ingest(_:origin:source:)`, then the paste flow as for any paste.
+    public func submitSource(_ song: ImportedSong, source: PasteSource) {
+        guard phase != .review, !isClosed else { return }
+        let item = PasteReviewItem(song: song, source: source)
+        item.nearDuplicates = nearDuplicates
+        items = [item]
+        selectedID = item.id
+        isReadingWeb = false
+        phase = .review
+        startRefinement()
+    }
+
+    /// Paste the Page Instead (spec 8.6): the input state, explaining how to copy the page.
+    public func showPasteInstead() {
+        guard phase != .review, !isClosed else { return }
+        isReadingWeb = false
+        showsPasteHint = true
+        phase = .input
     }
 
     // MARK: Ticks
@@ -154,6 +217,7 @@ public final class PasteReviewModel {
     public func cancel() {
         guard !isClosed else { return }
         stopAll()
+        isReadingWeb = false
         if phase == .review {
             for item in items {
                 record(item, outcome: .cancelled)

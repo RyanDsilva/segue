@@ -82,6 +82,8 @@
 
         /// The Mac's audio outputs for Settings > Audio "Play through" (a fixed list in tests).
         public var audioDevices: any AudioDeviceDirectory = CoreAudioDeviceDirectory()
+        /// P9-4 spec 4.3: web import and Find Lyrics, filled only in the Personal build.
+        public var plugins = PluginEntries()
 
         public init(
             fileSystem: any FileSystem,
@@ -231,6 +233,9 @@
             )
             dependencies.polish.router.app = self
             OpenDocuments.shared.app = self
+            if let panel = dependencies.importPanel as? OpenPanelImportPanel {
+                panel.extraExtensions = dependencies.plugins.webImport?.fileExtensions ?? []
+            }
             observeAudio(host)
         }
 

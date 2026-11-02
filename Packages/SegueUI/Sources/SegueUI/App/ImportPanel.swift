@@ -15,6 +15,9 @@
     /// `NSOpenPanel`: several files and folders of the accepted types.
     @MainActor
     public final class OpenPanelImportPanel: ImportPanel {
+        /// More file types to offer (P9-4 spec 8.1: saved web pages, Personal build only).
+        public var extraExtensions: [String] = []
+
         public init() {}
 
         public func chooseFiles() async -> [URL] {
@@ -25,9 +28,8 @@
             panel.canChooseFiles = true
             panel.canChooseDirectories = true
             panel.allowsMultipleSelection = true
-            panel.allowedContentTypes = SongFileTypes.importExtensions.compactMap {
-                UTType(filenameExtension: $0)
-            } + [.folder]
+            panel.allowedContentTypes = (SongFileTypes.importExtensions + extraExtensions)
+                .compactMap { UTType(filenameExtension: $0) } + [.folder]
             let response = await withCheckedContinuation { continuation in
                 panel.begin { response in
                     continuation.resume(returning: response)

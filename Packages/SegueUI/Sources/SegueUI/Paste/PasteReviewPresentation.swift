@@ -58,6 +58,18 @@
                 openSystemSettings: {
                     AIAvailabilityCopy.openSettings(with: app.dependencies.workspace)
                 },
+                plugins: library.plugins,
+                host: { review in
+                    ImportHost(
+                        review: review,
+                        router: library.aiRouter,
+                        nearDuplicates: review.nearDuplicates,
+                        record: { library.services.record($0) },
+                        open: { app.dependencies.workspace.open($0) },
+                        cancel: { Task { await library.cancelPasteReview() } },
+                    )
+                },
+                openURL: { app.dependencies.workspace.open($0) },
             )
         }
     }

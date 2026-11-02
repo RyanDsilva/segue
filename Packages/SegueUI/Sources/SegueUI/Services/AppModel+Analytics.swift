@@ -52,6 +52,7 @@
             session.gigLog.services = services
             session.smartFilters.services = services
             session.library.aiRouter = ai.router
+            session.library.plugins = dependencies.plugins
             liveSettings.services = services
             instrumentProfile.services = services
             previewPrefs.services = services

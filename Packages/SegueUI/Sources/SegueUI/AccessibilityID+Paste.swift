@@ -46,4 +46,46 @@ public extension AccessibilityID {
     static let pasteBatchTick = "segue.paste.batchTick"
     /// The empty library's "Paste a Song".
     static let pasteFromEmptyLibrary = "segue.library.pasteSong"
+
+    /// The input state's hint line (Paste the Page Instead's copy-the-page hint).
+    static let pasteHint = "segue.paste.hint"
+
+    // P9-4 spec 14 (Personal build only): the web field, Find Lyrics and Open Here.
+    static let pasteWebField = "segue.paste.webField"
+    static let pasteWebImport = "segue.paste.webImport"
+    static let pasteWebMessage = "segue.paste.webMessage"
+    static let pasteWebHelp = "segue.paste.webHelp"
+    /// A failure's action (Open in Safari, Import a Saved Page..., ...), by its title.
+    static let pasteWebAction = "segue.paste.webAction"
+    static let findLyricsSheet = "segue.findLyrics.sheet"
+    static let findLyricsField = "segue.findLyrics.field"
+    static let findLyricsArtist = "segue.findLyrics.artist"
+    static let findLyricsResults = "segue.findLyrics.results"
+    /// A group heading; the group's technique name follows.
+    static func findLyricsGroup(_ group: String) -> String {
+        "segue.findLyrics.group.\(group)"
+    }
+
+    /// A group's status line and its actions.
+    static let findLyricsStatus = "segue.findLyrics.status"
+    /// A song row, by its position in the whole list.
+    static func findLyricsResult(_ index: Int) -> String {
+        "segue.findLyrics.result.\(index)"
+    }
+
+    /// A version row under a song, by its position in the whole list.
+    static func findLyricsVersion(_ index: Int) -> String {
+        "segue.findLyrics.version.\(index)"
+    }
+
+    static let findLyricsPreview = "segue.findLyrics.preview"
+    static let findLyricsReview = "segue.findLyrics.review"
+    static let findLyricsAttribution = "segue.findLyrics.attribution"
+    static let findLyricsHelp = "segue.findLyrics.help"
+    static let reviewSourceLine = "segue.paste.sourceLine"
+    static let emptyLibraryWebImport = "segue.library.webImport"
+    static let emptyLibraryFindLyrics = "segue.library.findLyrics"
+    static let webOpenHere = "segue.web.openHere"
+    static let openHereSheet = "segue.web.openHereSheet"
+    static let clearSiteData = "segue.settings.clearSiteData"
 }

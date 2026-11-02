@@ -101,6 +101,14 @@
             [.command, .option],
         )
         static let importSongs = MenuShortcut("File", "Import Songs…", "i", [.command, .shift])
+        /// P9-4 spec 11.1 (R179), Personal build only: listed in `personal`, not `all`.
+        static let importWebPage = MenuShortcut(
+            "File",
+            "Import from Web Page…",
+            "u",
+            [.command, .shift],
+        )
+        static let findLyrics = MenuShortcut("File", "Find Lyrics…", "l", [.command, .shift])
         static let showInFinder = MenuShortcut("File", "Show in Finder", "r", [.command, .option])
         static let moveToTrash = MenuShortcut("File", "Move to Trash", .delete)
         static let close = MenuShortcut("File", "Close", "w")
@@ -189,6 +197,20 @@
             arrangeSections, makeMedley, ungroupMedley, moveUp, moveDown, mainWindow, help,
             keyboardShortcuts,
         ]
+
+        /// The Personal build's items (P9-4 spec 11.1): in the menus and Keyboard Shortcuts
+        /// only when the app composed the web import and search entries.
+        public static let personal: [MenuShortcut] = [importWebPage, findLyrics]
+
+        /// `all`, with the Personal items after Import Songs… when `includesPersonal`.
+        static func all(includesPersonal: Bool) -> [MenuShortcut] {
+            guard includesPersonal, let index = all.firstIndex(of: importSongs) else {
+                return all
+            }
+            var shortcuts = all
+            shortcuts.insert(contentsOf: personal, at: index + 1)
+            return shortcuts
+        }
     }
 
     extension View {

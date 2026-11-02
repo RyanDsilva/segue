@@ -53,6 +53,12 @@
                     SettingsNote(text: "Four songs and a setlist written for Segue. Removing "
                         + "them moves them to the Trash and keeps any you edited.")
                 }
+                // P9-4 spec 8.6 (Personal build only): Clear Site Data.
+                if let section = app.dependencies.plugins.webImport?.settings {
+                    Section(uiString("Web import")) {
+                        section()
+                    }
+                }
                 Section(uiString("Reset")) {
                     HStack {
                         Button(uiString("Reset Tips")) {

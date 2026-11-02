@@ -49,6 +49,31 @@
             }
         }
 
+        /// File > Import from Web Page… (P9-4 spec 11.1, Personal build only): the New Song
+        /// sheet with the web field focused.
+        func importFromWebPage() {
+            openLibrary { $0.beginWebImport() }
+        }
+
+        /// File > Find Lyrics… (P9-4 spec 6.4, Personal build only).
+        func findLyrics() {
+            openLibrary { $0.beginSongSearch() }
+        }
+
+        /// Runs `action` on the library, switching to it first (never while the stage has
+        /// the keyboard, R109).
+        private func openLibrary(_ action: @escaping (LibraryViewModel) -> Void) {
+            guard let session, !isStageKey, session.library.canPaste else { return }
+            if session.section == .library {
+                action(session.library)
+            } else {
+                session.library.navigate {
+                    session.section = .library
+                    action(session.library)
+                }
+            }
+        }
+
         /// The general pasteboard's plain text.
         static func clipboardText() -> String? {
             NSPasteboard.general.string(forType: .string)

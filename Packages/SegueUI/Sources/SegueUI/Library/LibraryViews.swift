@@ -85,21 +85,6 @@
         }
     }
 
-    extension View {
-        /// Accepts dropped files and folders for import while import is possible; refused
-        /// drops show no highlight.
-        func importDrop(model: LibraryViewModel, isTargeted: Binding<Bool>) -> some View {
-            dropDestination(for: URL.self) { urls, _ in
-                let files = urls.filter(\.isFileURL)
-                guard model.canImport, !files.isEmpty else { return false }
-                Task { await model.importSongs(files) }
-                return true
-            } isTargeted: { targeted in
-                isTargeted.wrappedValue = targeted && model.canImport
-            }
-        }
-    }
-
     /// The song list column: search with typed filter tokens, filter chips, "New song",
     /// then one row per song (key chip, proficiency mark).
     struct SongListView: View {
@@ -283,6 +268,7 @@
                                 .help(uiString("Import ChordPro, text or .crd files (⇧⌘I)"))
                                 .accessibilityIdentifier(AccessibilityID.importSongs)
                             }
+                            personalImportRow
                             if let openGuide {
                                 Button(uiString("How to bring songs in")) { openGuide(.pasteASong) }
                                     .buttonStyle(.link)

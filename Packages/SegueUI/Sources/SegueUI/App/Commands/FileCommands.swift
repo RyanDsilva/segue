@@ -27,6 +27,19 @@
                 Button(MenuShortcuts.importSongs.title) { Task { await app.importSongs() } }
                     .keyboardShortcut(MenuShortcuts.importSongs)
                     .disabled(app.session == nil)
+                // P9-4 spec 11.1: only when the Personal build composed the entries.
+                if app.dependencies.plugins.webImport != nil {
+                    Button(MenuShortcuts.importWebPage.title) { app.importFromWebPage() }
+                        .keyboardShortcut(MenuShortcuts.importWebPage)
+                        .disabled(app.session == nil || app.isPerforming)
+                        .help(app.isPerforming ? LibraryViewModel.pasteDuringShowReason : "")
+                }
+                if app.dependencies.plugins.songSearch != nil {
+                    Button(MenuShortcuts.findLyrics.title) { app.findLyrics() }
+                        .keyboardShortcut(MenuShortcuts.findLyrics)
+                        .disabled(app.session == nil || app.isPerforming)
+                        .help(app.isPerforming ? LibraryViewModel.pasteDuringShowReason : "")
+                }
                 if let export = app.dependencies.hooks.exportArchive {
                     Button(uiString("Export Library Archive…")) {
                         export(app.dependencies.workspace)

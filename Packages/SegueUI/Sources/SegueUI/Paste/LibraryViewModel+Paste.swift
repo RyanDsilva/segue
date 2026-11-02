@@ -39,10 +39,39 @@ public extension LibraryViewModel {
         guard canPaste, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
+        // P9-4 spec 11.4: a lone page address opens the web field and reads it at once.
+        if plugins.webImport != nil, let url = LoneWebAddress.url(in: text) {
+            beginWebImport(.address(url, .pastedURL))
+            return
+        }
         let item = PasteReviewItem(source: source, original: text, origin: .paste)
         pasteReview = makeReview(items: [item], nearDuplicates: NearDuplicateIndex(catalog))
         SegueTips.donate(SegueTips.pasteReviewed)
         PasteSongTip().invalidate(reason: .actionPerformed)
+    }
+
+    /// Import from Web Page (P9-4 spec 11.1-11.5, Personal build only): the New Song sheet
+    /// with the web field focused, reading `input` at once when given. R109: never during a
+    /// show or over an open review.
+    func beginWebImport(_ input: PendingWebInput? = nil) {
+        guard plugins.webImport != nil, canPaste else { return }
+        let review = makeReview(items: [], nearDuplicates: NearDuplicateIndex(catalog))
+        review.focusesWebField = true
+        if let input {
+            review.receive(input)
+        }
+        pasteReview = review
+    }
+
+    /// Find Lyrics (P9-4 spec 6.4, Personal build only): the review sheet's search phase; a
+    /// picked result moves it to review.
+    func beginSongSearch() {
+        guard plugins.songSearch != nil, canPaste else { return }
+        pasteReview = makeReview(
+            items: [],
+            nearDuplicates: NearDuplicateIndex(catalog),
+            search: true,
+        )
     }
 
     /// "Start blank": closes the sheet (writing nothing) and opens the new-song editor with
@@ -70,7 +99,9 @@ public extension LibraryViewModel {
         } else {
             await reload()
             if !summary.imported.isEmpty {
-                recordSongsCreated(.newSong, nearDuplicate: lookalike)
+                // A web page or search result is row 5's `web` (P9-4 spec 12).
+                let web = review.items.contains { $0.provenance != nil }
+                recordSongsCreated(web ? .web : .newSong, nearDuplicate: lookalike)
             }
             showImported(summary, bar: !summary.skipped.isEmpty)
         }
@@ -106,6 +137,14 @@ public extension LibraryViewModel {
     /// it imports directly, without the warning.
     func importWithReview(_ urls: [URL], method: ImportMethod = .dragDrop) async {
         guard canImport, !urls.isEmpty, pasteReview == nil else { return }
+        // P9-4 spec 8.1 (Personal build only): one saved web page imports through the web
+        // reader, like a page address.
+        if urls.count == 1, let file = urls.first, let web = plugins.webImport,
+           web.acceptsFile(file)
+        {
+            beginWebImport(.file(file))
+            return
+        }
         await flushEditor()
         let prepared: ([ImportCandidate], [ImportSkip])
         do {
@@ -207,6 +246,7 @@ extension LibraryViewModel {
         direct: [ImportCandidate] = [],
         skipped: [ImportSkip] = [],
         nearDuplicates: NearDuplicateIndex? = nil,
+        search: Bool = false,
     ) -> PasteReviewModel {
         PasteReviewModel(
             items: items,
@@ -216,6 +256,8 @@ extension LibraryViewModel {
             nearDuplicates: nearDuplicates,
             router: aiRouter,
             services: services,
+            search: search,
+            webImport: plugins.webImport != nil,
         ) { [weak self] candidates in
             await self?.writeReviewed(candidates)
         }

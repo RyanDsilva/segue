@@ -1,6 +1,7 @@
 #if os(macOS)
     import Library
     import ModelPort
+    import Plugins
     import Services
     import SwiftUI
 
@@ -29,6 +30,11 @@
         var openAISettings: () -> Void
         /// The R69 "Open System Settings".
         var openSystemSettings: () -> Void
+        /// P9-4 (Personal build only): the web field and Find Lyrics, with their host.
+        var plugins = PluginEntries()
+        var host: ((PasteReviewModel) -> ImportHost)?
+        /// Opens a review's source page in the browser (spec 11.6).
+        var openURL: (URL) -> Void = { _ in }
     }
 
     struct PasteReviewSheet: View {
@@ -42,6 +48,10 @@
                     PasteInputView(review: review, context: context)
                 case .review:
                     reviewBody
+                case .search:
+                    if let search = context.plugins.songSearch, let host = context.host {
+                        search.sheet(host(review))
+                    }
                 }
             }
             .background(Theme.color.ground)
@@ -81,14 +91,28 @@
 
         private var header: some View {
             HStack(spacing: 10) {
-                Text(review.isBatch || review
-                    .importMethod != nil ? uiString("Import Songs") : uiString("Review Song"))
-                    .font(SchibstedGrotesk.extraBold.font(size: 17))
-                    .foregroundStyle(Theme.color.ink)
-                Text(subtitle)
-                    .font(SchibstedGrotesk.medium.font(size: 12.5))
-                    .foregroundStyle(Theme.color.muted)
-                    .lineLimit(1)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 10) {
+                        Text(review.isBatch || review
+                            .importMethod != nil ? uiString("Import Songs") :
+                            uiString("Review Song"))
+                            .font(SchibstedGrotesk.extraBold.font(size: 17))
+                            .foregroundStyle(Theme.color.ink)
+                        Text(subtitle)
+                            .font(SchibstedGrotesk.medium.font(size: 12.5))
+                            .foregroundStyle(Theme.color.muted)
+                            .lineLimit(1)
+                    }
+                    if let item = review.selected, let provenance = item.provenance {
+                        ReviewSourceLine(
+                            line: ReviewSourceLine.Content(
+                                provenance,
+                                titleUncertain: item.titleUncertain,
+                            ),
+                            open: { context.openURL(provenance.sourceURL) },
+                        )
+                    }
+                }
                 Spacer(minLength: 12)
                 if let line = footerContent?.refiningLine {
                     HStack(spacing: 7) {
@@ -236,6 +260,13 @@
                 .padding(.horizontal, 18)
                 .padding(.vertical, 14)
                 Rule()
+                if let web = context.plugins.webImport, let host = context.host {
+                    // P9-4 spec 11.3 (Personal build only, R198 direction A): the address
+                    // field above the paste area.
+                    web.field(host(review))
+                        .padding(.horizontal, 16)
+                        .padding(.top, 14)
+                }
                 ZStack {
                     TextEditor(text: $review.draftText)
                         .font(.system(size: 13, design: .monospaced))
@@ -250,16 +281,29 @@
                             Text("Paste or type a song", bundle: #bundle)
                                 .font(SchibstedGrotesk.bold.font(size: 18))
                                 .foregroundStyle(Theme.color.ink)
-                            Text(uiString("""
-                            Chords over lyrics, a chord-site page or ChordPro. ⌘V pastes.
-                            """))
+                            Group {
+                                if review.showsPasteHint {
+                                    Text(uiString(
+                                        "Copy the whole page in your browser, then press ⌘V here.",
+                                    ))
+                                } else {
+                                    Text(uiString("""
+                                    Chords over lyrics, a chord-site page or ChordPro. ⌘V pastes.
+                                    """))
+                                }
+                            }
                             .font(SchibstedGrotesk.medium.font(size: 13))
                             .foregroundStyle(Theme.color.muted)
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier(AccessibilityID.pasteHint)
                         }
+                        .padding(.horizontal, 24)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                     }
                 }
+                .opacity(review.isReadingWeb ? 0.45 : 1)
+                .disabled(review.isReadingWeb)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
                         .strokeBorder(
@@ -295,8 +339,17 @@
                 .padding(.horizontal, 18)
                 .padding(.vertical, 11)
             }
-            .frame(width: 640, height: 440)
-            .onAppear { isFocused = true }
+            // The Personal sheet grows by the web field's height (spec 11.3).
+            .frame(width: 640, height: context.plugins.webImport == nil ? 440 : 520)
+            .onAppear {
+                // Import from Web Page focuses the web field instead (spec 11.1).
+                isFocused = !review.focusesWebField || context.plugins.webImport == nil
+            }
+            .onChange(of: review.showsPasteHint) { _, hint in
+                if hint {
+                    isFocused = true
+                }
+            }
             .onChange(of: review.draftText) { old, new in
                 // A paste lands as one multi-line change into an empty area: review it at
                 // once. Typing goes on until Continue.
