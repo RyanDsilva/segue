@@ -38,6 +38,13 @@
             }
         }
 
+        /// The alert's Remove or Not Now: the offer leaves the alert at once (so closing the
+        /// alert never reads as a second, "Not Now" answer), then is answered.
+        func chooseDurationOffer(remove: Bool) {
+            durationOffer = nil
+            Task { await answerDurationOffer(remove: remove) }
+        }
+
         /// Not Now or Remove: the offer is recorded as made (it never appears again for this
         /// library); Remove deletes every `{duration}` line, one undo step.
         func answerDurationOffer(remove: Bool) async {
@@ -108,18 +115,16 @@
                 ),
             ) {
                 if session.upgradeNote != nil {
-                    Button("OK") { session.upgradeNote = nil }
+                    // Closing the alert clears the note (the setter above). Clearing it here
+                    // too made the setter see only the offer and answer it Not Now unseen.
+                    Button("OK") {}
                         .keyboardShortcut(.defaultAction)
                 } else {
-                    Button("Remove") {
-                        Task { await session.answerDurationOffer(remove: true) }
-                    }
-                    .keyboardShortcut(.defaultAction)
-                    .accessibilityIdentifier(AccessibilityID.durationCleanupRemove)
-                    Button("Not Now", role: .cancel) {
-                        Task { await session.answerDurationOffer(remove: false) }
-                    }
-                    .accessibilityIdentifier(AccessibilityID.durationCleanupNotNow)
+                    Button("Remove") { session.chooseDurationOffer(remove: true) }
+                        .keyboardShortcut(.defaultAction)
+                        .accessibilityIdentifier(AccessibilityID.durationCleanupRemove)
+                    Button("Not Now", role: .cancel) { session.chooseDurationOffer(remove: false) }
+                        .accessibilityIdentifier(AccessibilityID.durationCleanupNotNow)
                 }
             } message: {
                 if let note = session.upgradeNote {
