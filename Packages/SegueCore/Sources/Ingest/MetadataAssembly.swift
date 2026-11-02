@@ -103,7 +103,7 @@ enum MetadataAssembly {
     }
 
     /// Chords as written (chord lines, inline chords, header chords), for the capo rule.
-    private static func writtenChords(_ blocks: [IngestBlock]) -> [ChartChord] {
+    static func writtenChords(_ blocks: [IngestBlock]) -> [ChartChord] {
         var texts: [String] = []
         for block in blocks where block.role == .content {
             if let trailing = block.header?.trailingChords {
@@ -118,6 +118,24 @@ enum MetadataAssembly {
             }
         }
         return texts.compactMap { ChordToken(parsing: $0).chord }
+    }
+}
+
+extension MetadataAssembly {
+    /// The `{key}` for a stated key with a capo (phase 1 ruling: the shapes key): the stated
+    /// key is taken as the shapes key unless the stated key lowered by the capo fits the
+    /// written chords better.
+    static func keyToWrite(stated text: String, capo: Int, chords: [ChartChord]) -> String {
+        guard capo > 0, let stated = SongKey(parsing: text),
+              let detection = KeyDetector.detect(chords)
+        else { return text }
+        let lowered = stated.transposed(by: -capo)
+        let rank: (SongKey) -> Int = { key in
+            detection.ranking.firstIndex {
+                $0.key.tonic.pitchClass == key.tonic.pitchClass && $0.key.mode == key.mode
+            } ?? Int.max
+        }
+        return rank(lowered) < rank(stated) ? lowered.name : text
     }
 }
 
@@ -225,18 +243,8 @@ private struct Collector {
             result.key = shapesKey
             return result
         }
-        guard let text = statedKey, let stated = SongKey(parsing: text),
-              let detection = KeyDetector.detect(chords)
-        else { return result }
-        let lowered = stated.transposed(by: -capo)
-        let rank: (SongKey) -> Int = { key in
-            detection.ranking.firstIndex {
-                $0.key.tonic.pitchClass == key.tonic.pitchClass && $0.key.mode == key.mode
-            } ?? Int.max
-        }
-        if rank(lowered) < rank(stated) {
-            result.key = lowered.name
-        }
+        guard let text = statedKey else { return result }
+        result.key = MetadataAssembly.keyToWrite(stated: text, capo: capo, chords: chords)
         return result
     }
 }

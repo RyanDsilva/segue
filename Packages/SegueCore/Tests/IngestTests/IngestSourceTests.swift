@@ -164,4 +164,15 @@ struct IngestSourceTests {
         #expect(refined.metadata.album == "Aashiqui 2")
         #expect(refined.artistSplits == base.artistSplits)
     }
+
+    /// A site states the sounding key; with a capo the shapes key is written (phase 1
+    /// ruling), exactly as for a pasted "Key" line.
+    @Test
+    func `a sounding key with a capo becomes the shapes key`() {
+        let shapes = "Verse 1\nEm          C\nHum tere bin ab reh nahi sakte\nD           Bm\n"
+            + "Tere bina kya wajood mera\nEm          C\nTum hi ho\nD    Bm   C\nAb tum hi ho"
+        let result = Self.ingest(shapes, SourceFields(title: "Song", key: "Fm", capo: 1))
+        #expect(result.metadata.capo == 1)
+        #expect(result.metadata.key == "Em")
+    }
 }

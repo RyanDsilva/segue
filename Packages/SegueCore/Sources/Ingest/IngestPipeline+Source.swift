@@ -35,11 +35,17 @@ public extension IngestPipeline {
         if !skip.contains(.album), let album = plausible(source.album) {
             draft.metadata.album = album
         }
-        if !skip.contains(.key), let key = source.key.flatMap(SongKey.init(parsing:)) {
-            draft.metadata.key = key.name
-        }
         if !skip.contains(.capo), let capo = source.capo, (1 ... 11).contains(capo) {
             draft.metadata.capo = capo
+        }
+        if !skip.contains(.key), let key = source.key.flatMap(SongKey.init(parsing:)) {
+            // A site states the sounding key; with a capo `{key}` names the shapes key, by
+            // the same rule as a pasted "Key" line (phase 1 ruling).
+            draft.metadata.key = MetadataAssembly.keyToWrite(
+                stated: key.name,
+                capo: draft.metadata.capo ?? 0,
+                chords: MetadataAssembly.writtenChords(draft.blocks),
+            )
         }
         consumeHeadingLines(in: &draft, source: source)
 
