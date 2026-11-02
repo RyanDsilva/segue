@@ -68,6 +68,15 @@ research/phase3-eval/pastes/*
 research/phase3-eval/gold.local.json
 research/phase3-eval/results/
 
+# P9-4 import corpus (spec 16.1): fetched pages, search pages, LRCLIB responses and gold
+# files contain copyrighted lyrics and are never committed. Only the README, the URL list
+# and the tools are tracked; committed fixtures are the redacted ones in the personal package.
+research/phase9-import/pages/
+research/phase9-import/search/
+research/phase9-import/lrclib/
+research/phase9-import/gold/
+research/phase9-import/logs/
+
 # User guide (WS6): dependencies, Astro state and the build output Pages rebuilds from source
 guide/node_modules/
 guide/.astro/

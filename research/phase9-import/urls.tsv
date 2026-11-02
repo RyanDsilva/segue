@@ -1,0 +1,129 @@
+# P9-4 import corpus URL list (spec 16.1): site, kind, lang, url, note. Read by
+# scripts/collect-import-corpus.sh; pages land in the gitignored corpus folders.
+# kind: search (results pages, R184), discover (Chordie results used only to find chart
+# pages; robots.txt allows them), page (chart pages). lang: hi (Hindi film song) or en.
+ug	search	hi	https://www.ultimate-guitar.com/search.php?search_type=title&value=tum+hi+ho	
+ug	search	hi	https://www.ultimate-guitar.com/search.php?search_type=title&value=channa+mereya	
+ug	search	hi	https://www.ultimate-guitar.com/search.php?search_type=title&value=kesariya	
+ug	search	hi	https://www.ultimate-guitar.com/search.php?search_type=title&value=tujhe+dekha+to	
+ug	search	hi	https://www.ultimate-guitar.com/search.php?search_type=title&value=agar+tum+saath+ho	
+ug	search	en	https://www.ultimate-guitar.com/search.php?search_type=title&value=wonderwall	
+ug	search	en	https://www.ultimate-guitar.com/search.php?search_type=title&value=perfect+ed+sheeran	
+ug	search	en	https://www.ultimate-guitar.com/search.php?search_type=title&value=let+it+be	
+ug	search	en	https://www.ultimate-guitar.com/search.php?search_type=title&value=hotel+california	
+ug	search	en	https://www.ultimate-guitar.com/search.php?search_type=title&value=someone+like+you	
+echords	search	hi	https://www.e-chords.com/search-all/tum%20hi%20ho	
+echords	search	hi	https://www.e-chords.com/search-all/channa%20mereya	
+echords	search	hi	https://www.e-chords.com/search-all/kesariya	
+echords	search	hi	https://www.e-chords.com/search-all/tujhe%20dekha%20to	
+echords	search	hi	https://www.e-chords.com/search-all/agar%20tum%20saath%20ho	
+echords	search	en	https://www.e-chords.com/search-all/wonderwall	
+echords	search	en	https://www.e-chords.com/search-all/perfect%20ed%20sheeran	
+echords	search	en	https://www.e-chords.com/search-all/let%20it%20be	
+echords	search	en	https://www.e-chords.com/search-all/hotel%20california	
+echords	search	en	https://www.e-chords.com/search-all/someone%20like%20you	
+chordie	discover	hi	https://www.chordie.com/result.php?q=tum+hi+ho	
+chordie	discover	hi	https://www.chordie.com/result.php?q=kesariya	
+chordie	discover	hi	https://www.chordie.com/result.php?q=channa+mereya	
+chordie	discover	hi	https://www.chordie.com/result.php?q=pehla+nasha	
+chordie	discover	en	https://www.chordie.com/result.php?q=wonderwall	
+chordie	discover	en	https://www.chordie.com/result.php?q=let+it+be	
+chordie	discover	en	https://www.chordie.com/result.php?q=hotel+california	
+chordie	discover	en	https://www.chordie.com/result.php?q=yesterday	
+chordie	discover	en	https://www.chordie.com/result.php?q=perfect	
+chordie	discover	en	https://www.chordie.com/result.php?q=hallelujah	
+lrclib	search	hi	https://lrclib.net/api/search?q=ae+dil+hai+mushkil	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=apna+bana+le	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=bekhayali	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=chaiyya+chaiyya	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=dil+diyan+gallan	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=gerua+arijit	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=hawayein+arijit	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=ilahi+arijit	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=jeene+laga+hoon	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=kesariya+arijit	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=khairiyat+arijit	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=kun+faya+kun	bake-off capture
+lrclib	search	hi	https://lrclib.net/api/search?q=tuj+mai+rab+dikta+hai	deliberate misspelling (variants)
+lrclib	search	hi	https://lrclib.net/api/search?q=channa+mereyaa	deliberate misspelling (variants)
+lrclib	search	hi	https://lrclib.net/api/search?q=kesaria	deliberate misspelling (variants)
+lrclib	search	hi	https://lrclib.net/api/search?q=pehela+nasha	deliberate misspelling (variants)
+lrclib	search	hi	https://lrclib.net/api/search?q=tum+hi+hoo	deliberate misspelling (variants)
+lrclib	search	hi	https://lrclib.net/api/search?q=tum+hi+ho+arijit	
+lrclib	search	hi	https://lrclib.net/api/search?q=agar+tum+saath+ho+arijit	
+lrclib	search	hi	https://lrclib.net/api/search?q=kal+ho+naa+ho	
+lrclib	search	en	https://lrclib.net/api/search?q=wonderwall+oasis	
+lrclib	search	en	https://lrclib.net/api/search?q=let+it+be+beatles	
+lrclib	search	en	https://lrclib.net/api/search?q=hotel+california+eagles	
+lrclib	search	en	https://lrclib.net/api/search?q=someone+like+you+adele	
+lrclib	search	en	https://lrclib.net/api/search?q=perfect+ed+sheeran	
+lrclib	search	en	https://lrclib.net/api/search?q=yesterday+beatles	
+lrclib	search	en	https://lrclib.net/api/search?q=hallelujah+leonard+cohen	
+lrclib	search	en	https://lrclib.net/api/search?q=bohemian+rhapsody	
+lrclib	search	en	https://lrclib.net/api/search?q=imagine+john+lennon	
+lrclib	search	en	https://lrclib.net/api/search?q=fix+you+coldplay	
+lrclib	search	en	https://lrclib.net/api/search?q=shape+of+you	
+lrclib	search	en	https://lrclib.net/api/search?q=riptide+vance+joy	
+lrclib	search	en	https://lrclib.net/api/search?q=creep+radiohead	
+lrclib	search	en	https://lrclib.net/api/search?q=stand+by+me	
+lrclib	search	en	https://lrclib.net/api/search?q=country+roads	
+ug	page	hi	https://tabs.ultimate-guitar.com/tab/misc-soundtrack/aashiqui-2-tum-hi-ho-chords-1244521	spec probe page, capo, singer credits
+ug	page	hi	https://tabs.ultimate-guitar.com/tab/misc-soundtrack/aashiqui-2-tum-hi-ho-chords-1234996	
+ug	page	hi	https://tabs.ultimate-guitar.com/tab/misc-soundtrack/tamasha-agar-tum-saath-ho-chords-1780526	
+ug	page	hi	https://tabs.ultimate-guitar.com/tab/misc-soundtrack/ae-dil-hai-mushkil-channa-mereya-chords-1879445	
+ug	page	hi	https://tabs.ultimate-guitar.com/tab/4275298	short tab address (Kesariya)
+ug	page	hi	https://tabs.ultimate-guitar.com/tab/misc-soundtrack/dilwale-dulhania-le-jayenge-tujhe-dekha-to-chords-1761484	
+ug	page	hi	https://tabs.ultimate-guitar.com/tab/shreya-ghoshal/tum-hi-ho-rehnuma-chords-4430258	
+ug	page	hi	https://tabs.ultimate-guitar.com/tab/mickey-singh/channa-mereya-chords-2421001	no votes
+ug	page	hi	https://tabs.ultimate-guitar.com/tab/misc-soundtrack/tamasha-agar-tum-saath-ho-tabs-1875406	tab-only page (refused)
+ug	page	hi	https://tabs.ultimate-guitar.com/tab/aakash-gandhi/tum-hi-ho-guitar-pro-1479556	Pro page (refused)
+ug	page	en	https://tabs.ultimate-guitar.com/tab/eagles/hotel-california-chords-46190	
+ug	page	en	https://tabs.ultimate-guitar.com/tab/the-beatles/let-it-be-chords-17427	
+ug	page	en	https://tabs.ultimate-guitar.com/tab/ed-sheeran/perfect-chords-1956589	capo
+ug	page	en	https://tabs.ultimate-guitar.com/tab/adele/someone-like-you-chords-1006751	capo
+ug	page	en	https://tabs.ultimate-guitar.com/tab/oasis/wonderwall-chords-27596	capo
+echords	page	hi	https://www.e-chords.com/chords/arijit-singh/tum-hi-ho	glued chords trap
+echords	page	hi	https://www.e-chords.com/chords/misc-soundtrack/aashiqui-2-tum-hi-ho	Ab lyric trap
+echords	page	hi	https://www.e-chords.com/chords/aashiqui-2/tum-hi-ho	
+echords	page	hi	https://www.e-chords.com/chords/mithoon/tum-hi-ho	
+echords	page	hi	https://www.e-chords.com/chords/misc-soundtrack/brahmastra-kesariya	
+echords	page	hi	https://www.e-chords.com/chords/atif-aslam/channa-coke-studio	
+echords	page	hi	https://www.e-chords.com/chords/mithoon/tujhe-kitna-chahne-lage	
+echords	page	hi	https://www.e-chords.com/chords/ankit-tiwari/agar-tu-hota	
+echords	page	hi	https://www.e-chords.com/chords/kishore-kumar/aa-chal-ke-tujhe-main-leke-chaloon	
+echords	page	hi	https://www.e-chords.com/chords/sonu-nigam/chanda-ki-doli	
+echords	page	en	https://www.e-chords.com/chords/oasis/wonderwall	
+echords	page	en	https://www.e-chords.com/chords/eagles/hotel-california	
+echords	page	en	https://www.e-chords.com/chords/the-beatles/let-it-be	
+echords	page	en	https://www.e-chords.com/chords/ed-sheeran/perfect	
+echords	page	en	https://www.e-chords.com/chords/adele/someone-like-you	
+chordie	page	hi	https://www.chordie.com/chord.pere/www.guitaretab.com/s/sonu-nigam/87653.html	bake-off capture
+chordie	page	hi	https://www.chordie.com/chord.pere/www.guitartabs.cc/tabs/k/kailash_kher/saiyyan_crd.html	
+chordie	page	hi	https://www.chordie.com/chord.pere/www.guitaretab.com/n/nikhil-paul-george/340988.html	
+chordie	page	hi	https://www.chordie.com/chord.pere/www.guitaretab.com/a/ali-haider/39480.html	
+chordie	page	hi	https://www.chordie.com/chord.pere/www.guitartabs.cc/tabs/r/raeth/tum_meri_ho_crd.html	
+chordie	page	hi	https://www.chordie.com/chord.pere/www.azchords.com/a/ankittiwari-tabs-54602/alfazonkitarah1-tabs-880044.html	
+chordie	page	hi	https://www.chordie.com/chord.pere/www.guitartabs.cc/tabs/s/sonu_nigam/ab_mujhe_raat_din_tab.html	
+chordie	page	hi	https://www.chordie.com/chord.pere/www.guitaretab.com/a/ali-azmat/53557.html	
+chordie	page	en	https://www.chordie.com/chord.pere/www.guitaretab.com/w/wonderwall/287302.html	
+chordie	page	en	https://www.chordie.com/chord.pere/www.guitartabs.cc/tabs/o/oasis/wonderwall_crd_ver_8.html	
+chordie	page	en	https://www.chordie.com/chord.pere/www.guitaretab.com/b/beatles/1169.html	
+chordie	page	en	https://www.chordie.com/chord.pere/www.xguitar.com/guitar-tabs/eagles/hotel_california/hotel_california.txt	
+chordie	page	en	https://www.chordie.com/chord.pere/www.guitartabs.cc/tabs/b/boys_ii_men/yesterday_crd_ver_2.html	
+chordie	page	en	https://www.chordie.com/chord.pere/www.guitaretab.com/b/boyce-avenue/268379.html	
+chordie	page	en	https://www.chordie.com/chord.pere/www.guitartabs.cc/tabs/s/shawn_mcdonald/hallelujah_crd.html	
+generic	page	hi	https://www.naadanchords.com/tum-hi-ho-aashiqui-2	
+generic	page	hi	https://guitarnama.blogspot.com/2013/07/aashiqui-2-tum-hi-ho-chords.html	
+generic	page	hi	https://indianguitartabs.com/blog/tum-hi-ho-aashiqui-2-guitar-chords.html	
+generic	page	hi	https://indichords.com/song/1266/channa-mereya-ae-dil-hai-mushkil-arijit-singh-adhm-pritam	
+generic	page	hi	https://guitar.indianraag.com/channa-mereya-guitar-chords-arijit-singh/	
+generic	page	hi	https://tabandchord.com/2016/11/channa-mereya-guitar-chords-ae-dil-hai-mushkil/	
+generic	page	hi	https://www.guitarchordworld.net/2016/09/channa-mereya-chords-ae-dil-hai-mushkil.html	
+generic	page	hi	https://www.themelodymaps.com/chords/channa-mereya	
+generic	page	hi	https://www.pickachord.com/chords-for-channa-mereya-ae-dil-hai-mushkil	
+generic	page	en	https://www.guitaretab.com/b/beatles/1169.html	
+generic	page	en	https://www.guitartabs.cc/tabs/o/oasis/wonderwall_crd_ver_8.html	
+generic	page	hi	https://www.azchords.com/a/ankittiwari-tabs-54602/alfazonkitarah1-tabs-880044.html	
+generic	page	en	https://www.xguitar.com/guitar-tabs/eagles/hotel_california/hotel_california.txt	
+generic	page	en	https://zenandjuice.com/music/rem/guitar/we_walk.txt	
+generic	page	en	https://www.guitaretab.com/b/boyce-avenue/268379.html	
