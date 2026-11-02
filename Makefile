@@ -67,8 +67,14 @@ bootstrap: ## Install pinned tools and Xcode's Metal Toolchain, fetch dependenci
 	$(MISE) tuist install
 	$(MISE) tuist generate --no-open
 
-generate: ## Regenerate the workspace after editing manifests
+generate: Tuist/.build/install.stamp ## Regenerate the workspace after editing manifests
 	$(MISE) tuist generate --no-open
+
+# Re-fetch dependencies whenever the pinned set changes, so a new package (e.g. SwiftSoup) never
+# breaks generate in a clone or worktree that fetched before it was added.
+Tuist/.build/install.stamp: Tuist/Package.swift Tuist/Package.resolved
+	$(MISE) tuist install
+	@mkdir -p $(@D) && touch $@
 
 tokens: ## Regenerate colour tokens (asset catalog, Swift, website tokens.css) from design/tokens.json
 	scripts/gen-tokens.swift
