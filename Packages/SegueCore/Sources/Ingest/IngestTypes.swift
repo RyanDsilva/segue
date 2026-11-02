@@ -9,6 +9,11 @@ public enum IngestOrigin: Sendable, Equatable, Hashable {
     case paste
     /// A file read by import; `extension` is lowercased, without the dot (`txt`, `crd`).
     case file(extension: String)
+    /// A web page read by a page reader (P9-4, Personal build); the reader travels in the
+    /// plugin's `Provenance`, not here.
+    case web
+    /// A lyrics record from a lyrics search (P9-4, Personal build).
+    case lyrics
 }
 
 /// The shape of the whole text.

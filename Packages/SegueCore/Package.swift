@@ -113,7 +113,8 @@ let package = Package(
         // validate, metadata, lyric guard, key inference). Pure; no model.
         .target(
             name: "Ingest",
-            dependencies: ["ChordPro", "MusicTheory"],
+            // Plugins: the source fields of `ingest(_:origin:source:)` (P9-4 spec 5.1).
+            dependencies: ["ChordPro", "MusicTheory", "Plugins"],
             swiftSettings: strictSettings,
         ),
         // Phase 3 P3-2: the AI provider port (tasks, router, ScriptedProvider, paste

@@ -1,9 +1,9 @@
 import Synchronization
 
-// Plugin seam for restricted, personal-build-only modules (phase 5). Core defines the
-// protocols; `SeguePersonalModules` implements them. Core never knows that package exists.
-// The capability protocols are intentionally empty beyond identity in phase 0; phase 5
-// adds their real requirements. The two capabilities are LRCLIB lyrics and URL import.
+// Plugin seam for restricted, personal-build-only modules. Core defines the protocols;
+// `SeguePersonalModules` implements them. Core never knows that package exists. The two
+// capabilities are web page import and song search (P9-4 spec 4.2; value types in
+// `PluginTypes.swift`). Every call is cancellable: `Task` cancellation maps to `.cancelled`.
 
 /// Common identity of every plugin.
 public protocol Plugin: Sendable {
@@ -13,11 +13,20 @@ public protocol Plugin: Sendable {
     var displayName: String { get }
 }
 
-/// Turns external input (URL, file, page) into a song. Phase 5 (URL import).
-public protocol SongImporter: Plugin {}
+/// Turns a page address or a saved page file into text the ingest pipeline reads.
+public protocol SongImporter: Plugin {
+    /// Cheap and offline: whether this importer takes the input, and which reader it will try.
+    func accepts(_ input: ImportInput) -> ReaderKind?
+    func importSong(_ input: ImportInput) async throws(ImportFailure) -> ImportedSong
+}
 
-/// Looks up lyrics from an external source (e.g. LRCLIB). Phase 5.
-public protocol LyricsSource: Plugin {}
+/// One searchable source; the results show grouped by `group`, in its fixed order (R182).
+public protocol SongSearchSource: Plugin {
+    var group: SearchGroup { get }
+    func search(_ query: SongQuery) async throws(ImportFailure) -> [SearchCandidate]
+    /// The chart or lyrics for one candidate, for the preview pane and then the review.
+    func song(for candidate: SearchCandidate) async throws(ImportFailure) -> ImportedSong
+}
 
 /// A bundle of plugins that registers itself, e.g. `SeguePersonalModules`.
 public protocol PluginModule {
@@ -29,7 +38,7 @@ public protocol PluginModule {
 public final class PluginRegistry: Sendable {
     private struct Contents {
         var songImporters: [any SongImporter] = []
-        var lyricsSources: [any LyricsSource] = []
+        var songSearchSources: [any SongSearchSource] = []
     }
 
     private let contents = Mutex(Contents())
@@ -48,15 +57,21 @@ public final class PluginRegistry: Sendable {
         contents.withLock { $0.songImporters.append(importer) }
     }
 
-    public func register(_ source: any LyricsSource) {
-        contents.withLock { $0.lyricsSources.append(source) }
+    public func register(_ source: any SongSearchSource) {
+        contents.withLock { $0.songSearchSources.append(source) }
     }
 
     public var songImporters: [any SongImporter] {
         contents.withLock { $0.songImporters }
     }
 
-    public var lyricsSources: [any LyricsSource] {
-        contents.withLock { $0.lyricsSources }
+    /// In the fixed group order (R182), whatever order they registered in.
+    public var songSearchSources: [any SongSearchSource] {
+        contents.withLock { $0.songSearchSources }
+            .enumerated()
+            .sorted { lhs, rhs in
+                (lhs.element.group.rawValue, lhs.offset) < (rhs.element.group.rawValue, rhs.offset)
+            }
+            .map(\.element)
     }
 }
