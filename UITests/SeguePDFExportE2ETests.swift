@@ -35,7 +35,7 @@ final class SeguePDFExportE2ETests: SetlistE2ETestCase {
     @MainActor
     private var subtitle: XCUIElement {
         get throws {
-            SetlistE2E.element(try XCTUnwrap(app), PDFAXID.subtitle)
+            try SetlistE2E.element(XCTUnwrap(app), PDFAXID.subtitle)
         }
     }
 

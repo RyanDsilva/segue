@@ -26,7 +26,7 @@ struct PrintLyricsTests {
     static let kitaabon = StageWindowSuites.SingerViewSnapshotTests.kitaabon
         .replacingOccurrences(of: "{tempo: 84}\n", with: "{tempo: 84}\n[Am] [G] [F] [E]\n")
 
-    static let chordNames: Set<String> = ["Am", "G", "F", "E", "C", "Dm", "D", "Em", "Bm"]
+    static let chordNames: Set = ["Am", "G", "F", "E", "C", "Dm", "D", "Em", "Bm"]
 
     /// Every word of the lyric lines, chords removed, as singer view keeps them.
     static func lyricWords(_ source: String) -> [String] {

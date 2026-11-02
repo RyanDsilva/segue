@@ -50,9 +50,9 @@
                     openGuide(page)
                     opened?()
                 }
-                    .help("Open “\(page.title)” in the Segue Guide")
-                    .accessibilityLabel("Help: \(page.title)")
-                    .accessibilityIdentifier(AccessibilityID.guideHelp(page))
+                .help("Open “\(page.title)” in the Segue Guide")
+                .accessibilityLabel("Help: \(page.title)")
+                .accessibilityIdentifier(AccessibilityID.guideHelp(page))
             }
         }
     }
