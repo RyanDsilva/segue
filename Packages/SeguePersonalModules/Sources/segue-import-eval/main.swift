@@ -2,7 +2,9 @@
 // scores the result against the hand-written gold. Manual and offline: `make eval-import`.
 // Never part of quick, gate or check.
 //
-// Usage: segue-import-eval <corpus dir> [--list] [--show <page slug>]
+// Usage: segue-import-eval <corpus dir> [--list] [--show <page slug>] [--dump <dir>]
+// --dump writes what the import makes of each page (<slug>.cho, or a `# noChart` line) for
+// the gold review tool (tools/review-gold.py) to start from.
 import Foundation
 import Ingest
 import Plugins
@@ -24,6 +26,17 @@ for row in rows {
     let reading = WebImportEval.read(page: html, url: row.url)
     let score = EvalScore(row: row, reading: reading)
     report.add(score)
+    if let dump = arguments.firstIndex(of: "--dump")
+        .flatMap({ arguments.indices.contains($0 + 1) ? arguments[$0 + 1] : nil })
+    {
+        let out = URL(filePath: dump).appending(path: row.slug + ".cho")
+        let text = reading.result?.text ?? "# noChart: \(reading.failure.map { "\($0)" } ?? "unknown")\n"
+        try? FileManager.default.createDirectory(
+            at: out.deletingLastPathComponent(),
+            withIntermediateDirectories: true,
+        )
+        try? Data(text.utf8).write(to: out)
+    }
     if arguments.contains("--list") {
         let meta = reading.result?.metadata
         let lines = reading.result?.text.split(separator: "\n").count ?? 0

@@ -54,7 +54,7 @@ HTMLVALIDATE := pnpm dlx html-validate@11.16.4
 WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: sentry-pull bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
-	test-perf e2e e2e-one e2e-smoke e2e-vm e2e-vm-golden gate quick eval-ai eval-import lint format verify-appstore check bump \
+	test-perf e2e e2e-one e2e-smoke e2e-vm e2e-vm-golden gate quick eval-ai eval-import review-gold lint format verify-appstore check bump \
 	site-fonts site-html guide guide-dev guide-check guide-keys docs-shots docs-clips screenshots screenshots-compose preview preview-edit docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
@@ -226,6 +226,10 @@ eval-ai: ## Manual: real FM + MLX over the paste fixtures and local pastes vs th
 
 eval-import: ## Manual, offline: every web page reader over the gitignored corpus vs its gold (P9-4 16.3; SHOW=slug prints one chart); never in quick, gate or check
 	cd Packages/SeguePersonalModules && $(SWIFT_TEST:test=run) segue-import-eval ../../research/phase9-import $(if $(SHOW),--show $(SHOW))
+
+review-gold: ## Manual: review the import eval's gold in a local page at http://127.0.0.1:8765 (127.0.0.1 only; writes only the gitignored corpus)
+	cd Packages/SeguePersonalModules && $(SWIFT_TEST:test=run) segue-import-eval ../../research/phase9-import --dump ../../research/phase9-import/.build/gold-drafts > /dev/null
+	python3 -I research/phase9-import/tools/review-gold.py $(or $(PORT),8765)
 
 verify-appstore: ## Build the App Store flavor and assert no personal-module symbols
 	scripts/verify-appstore.sh

@@ -5,6 +5,7 @@ import SeguePersonalModules
 
 /// One corpus page: its address (from `urls.tsv`), saved file and hand-written gold.
 struct EvalRow {
+    var slug: String
     var site: String
     var lang: String
     var url: URL
@@ -46,8 +47,16 @@ enum EvalCorpus {
             guard FileManager.default.fileExists(atPath: file.path) else { continue }
             let goldURL = root.appending(path: "gold/\(slug).json")
             let data = try? Data(contentsOf: goldURL)
-            let gold = data.flatMap { try? JSONDecoder().decode(Gold.self, from: $0) }
-            rows.append(EvalRow(site: parts[0], lang: parts[2], url: url, file: file, gold: gold))
+            let drafted = data.flatMap { try? JSONDecoder().decode(Gold.self, from: $0) }
+            let gold = Gold.reviewed(root: root, slug: slug) ?? drafted
+            rows.append(EvalRow(
+                slug: slug,
+                site: parts[0],
+                lang: parts[2],
+                url: url,
+                file: file,
+                gold: gold,
+            ))
         }
         return rows
     }
@@ -62,5 +71,43 @@ enum EvalCorpus {
         return String(String(raw
                 .map { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") ? $0 : "_" })
             .prefix(150))
+    }
+}
+
+/// `gold/<slug>.review.json` from the review tool: the owner's verdict on the expected chart.
+struct GoldReview: Decodable {
+    /// "ok" or "fixed" (anything else is not reviewed yet).
+    var status: String
+    /// "chart", "notFound", "tab", "pro" or "removed".
+    var kind: String?
+}
+
+extension Gold {
+    /// The gold from a reviewed expected chart (`gold/<slug>.cho`): fields from its
+    /// directives, chords and lyric words from its body. Nil when not reviewed.
+    static func reviewed(root: URL, slug: String) -> Gold? {
+        let base = root.appending(path: "gold/\(slug)")
+        guard let data = try? Data(contentsOf: base.appendingPathExtension("review.json")),
+              let review = try? JSONDecoder().decode(GoldReview.self, from: data),
+              review.status == "ok" || review.status == "fixed"
+        else { return nil }
+        let kind = review.kind ?? "chart"
+        guard kind == "chart",
+              let cho = try? String(contentsOf: base.appendingPathExtension("cho"), encoding: .utf8)
+        else { return Gold(kind: kind) }
+        func values(_ name: String) -> [String] {
+            cho.matches(of: try! Regex("(?m)^\\{\\s*\(name)\\s*:\\s*(.*?)\\s*\\}\\s*$"))
+                .compactMap { $0.output[1].substring.map(String.init) }
+        }
+        return Gold(
+            kind: "chart",
+            title: values("title").first,
+            artists: values("artist"),
+            album: values("album").first,
+            key: values("key").first,
+            capo: values("capo").first.flatMap { Int($0) },
+            lyrics: EvalScore.lyricWords(cho),
+            chords: EvalScore.chords(cho),
+        )
     }
 }
