@@ -9,14 +9,14 @@
       "showInApp": false,
       "draft": true,
       "highlights": [
-        { "kind": "new", "text": "Paste a chord sheet from a website: Segue turns it into ChordPro and shows you the result before saving.", "help": "/guide/paste-a-song" },
-        { "kind": "new", "text": "On-device AI checks the sections and title of a paste. Nothing you paste leaves your Mac.", "help": "/guide/ai" },
-        { "kind": "new", "text": "Stage mode that fits every song on one screen, never below your minimum size.", "help": "/guide/go-on-stage#minimum-size" },
+        { "kind": "new", "text": "Paste a chord sheet from a website and on-device AI checks its sections and title; nothing you paste leaves your Mac.", "help": "/guide/paste-a-song" },
+        { "kind": "new", "text": "Drag in ChordPro, text and .crd files, then fill each song's card: artists, Movie / Album, key, tempo, capo and tags.", "help": "/guide/import-files" },
         { "kind": "new", "text": "Build a set by ticking songs in order or typing a request, with per-show key and capo, breaks and running totals.", "help": "/guide/build-a-set" },
-        { "kind": "new", "text": "The song card: several artists as chips, Movie / Album, key, tempo, capo and tags, nothing to memorise.", "help": "/guide/song-card" },
-        { "kind": "new", "text": "Arrange a song for one gig: skip, repeat or reorder its sections without changing the song.", "help": "/guide/arrange-sections" },
-        { "kind": "new", "text": "A visual metronome on stage, and a click in rehearsals.", "help": "/guide/metronome" },
-        { "kind": "new", "text": "Import ChordPro, text and .crd files by dragging them onto the library.", "help": "/guide/import-files" }
+        { "kind": "new", "text": "Arrange a song for one gig, or join songs into a medley, each in its own key, with a written transition.", "help": "/guide/medleys" },
+        { "kind": "new", "text": "A stage view that fits every song on one screen, with a visual metronome on stage and a click in rehearsals.", "help": "/guide/go-on-stage#minimum-size" },
+        { "kind": "new", "text": "Singer view: lyrics only, on stage with V or on a second display for the singer.", "help": "/guide/singer-view" },
+        { "kind": "new", "text": "Print a song, or the whole set as a songbook PDF that looks like the stage, with chords, bass notes or lyrics only.", "help": "/guide/print-and-pdf" },
+        { "kind": "new", "text": "Bass notes, walk-ups and fills, and a play-along of bass, chords and click when you rehearse.", "help": "/guide/play-bass" }
       ]
     }
   ]
