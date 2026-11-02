@@ -22,15 +22,13 @@ if let page = arguments.firstIndex(of: "--page").map({ arguments[$0 + 1] }),
     let checks = WebImportEval.siteCheck(page: html, url: url)
     if let result = reading.result, !reading.fellBack {
         let lines = result.text.split(separator: "\n").count
-        print(
-            "PASS \(reading.reader?.rawValue ?? "-"): \(result.metadata.title ?? "untitled"), \(lines) lines",
-        )
+        let reader = reading.reader?.rawValue ?? "-"
+        print("PASS \(reader): \(result.metadata.title ?? "untitled"), \(lines) lines")
         exit(0)
     }
     let why = reading.failure.map { "\($0)" } ?? "fell back to the generic reader"
-    print(
-        "FAIL \(WebImportEval.readerName(for: url)): \(why); site reader: \(checks.joined(separator: ", "))",
-    )
+    let reader = WebImportEval.readerName(for: url)
+    print("FAIL \(reader): \(why); site reader: \(checks.joined(separator: ", "))")
     exit(1)
 }
 
