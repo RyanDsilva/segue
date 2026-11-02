@@ -172,6 +172,9 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
     /// The song's file name when last saved ("tum-hi-ho.cho", R191), so a missing song is
     /// still named after a relaunch. Song slots only; written when known.
     public var fileName: String?
+    /// Keys this build does not model, kept for the next save
+    /// (docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
 
     public var id: SetlistItemID {
         itemId
@@ -239,7 +242,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
     /// A song slot: `{itemId, songId, overrides?, note?, locked?, arrangement?}` (`locked`
     /// since v4, `arrangement` since v5); a break row (v3): `{itemId, break: {label, length?}}`;
     /// a medley slot (v7): `{itemId, medley: {title?, members}, locked?}`.
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case itemId
         case songId
         case `break`
@@ -253,6 +256,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        unknown = UnknownFields(from: decoder, known: Set(CodingKeys.allCases.map(\.stringValue)))
         itemId = try container.decode(SetlistItemID.self, forKey: .itemId)
         if let info = try container.decodeIfPresent(SetlistBreak.self, forKey: .break) {
             kind = .break(info)
@@ -280,6 +284,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
     }
 
     public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(itemId, forKey: .itemId)
         switch kind {
@@ -334,8 +339,12 @@ public struct Setlist: Sendable, Equatable, Identifiable, Codable {
     public var changeoverSeconds: Int?
     /// Runtime state, not persisted: non-nil when edits are blocked.
     public var readOnly: ReadOnlyReason?
+    /// Keys this build does not model, kept for the next save
+    /// (docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
 
-    private enum CodingKeys: String, CodingKey {
+    /// The on-disk keys (`Setlist+Coding.swift`).
+    enum CodingKeys: String, CodingKey, CaseIterable {
         case id
         case schemaVersion
         case name

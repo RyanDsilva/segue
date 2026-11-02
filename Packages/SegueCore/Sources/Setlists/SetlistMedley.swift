@@ -1,5 +1,6 @@
 import Foundation
 import Library
+import Support
 
 /// A medley slot (P9-3): two or more songs played as one block, with written transitions
 /// between them. It lives in its setlist slot (like an arrangement, R122), never in the
@@ -13,6 +14,8 @@ public struct SetlistMedley: Sendable, Hashable, Codable {
     /// Shown in the builder, on stage and in the Gig Log; nil = "Medley".
     public var title: String?
     public var members: [MedleyMember]
+    /// Keys this build does not model and unreadable members, kept for the next save.
+    public var unknown: UnknownFields = .empty
 
     public init(title: String? = nil, members: [MedleyMember]) {
         self.title = Self.clean(title)
@@ -57,35 +60,30 @@ public struct SetlistMedley: Sendable, Hashable, Codable {
         return trimmed
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case title
         case members
     }
 
-    /// Lenient (P9-3 5.3): a member without a readable `itemId` or `songId` is dropped; an
-    /// unknown key is ignored; a blank title or transition reads as nil.
+    /// Lenient (P9-3 5.3): a member without a readable `itemId` or `songId` is left out of
+    /// the medley (and kept raw, written back after the others); a blank title or transition
+    /// reads as nil. Unknown keys are kept for the next save
+    /// (docs/architecture/data-compatibility.md).
     public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let title = try? container.decodeIfPresent(String.self, forKey: .title)
-        let lenient = (try? container.decodeIfPresent([LenientMember].self, forKey: .members))
-            ?? []
-        self.init(title: title, members: lenient.compactMap(\.member))
+        var object = try LenientObject<CodingKeys>(decoder)
+        let title: String? = object.value(.title)
+        let members: [MedleyMember] = object.elements(.members) ?? []
+        self.init(title: title, members: members)
         self = normalized()
+        unknown = object.unknown
     }
 
     public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
         var container = encoder.container(keyedBy: CodingKeys.self)
         let medley = normalized()
         try container.encodeIfPresent(medley.title, forKey: .title)
-        try container.encode(medley.members, forKey: .members)
-    }
-
-    private struct LenientMember: Decodable {
-        var member: MedleyMember?
-
-        init(from decoder: any Decoder) throws {
-            member = try? MedleyMember(from: decoder)
-        }
+        try container.encode(unknown.appending(medley.members, to: "members"), forKey: .members)
     }
 }
 
@@ -105,6 +103,8 @@ public struct MedleyMember: Sendable, Hashable, Codable, Identifiable {
     /// Written between the previous member and this one ("into this member"); ignored for
     /// the first member.
     public var transition: String?
+    /// Keys this build does not model, kept for the next save.
+    public var unknown: UnknownFields = .empty
 
     public var id: SetlistItemID {
         itemId
@@ -138,6 +138,7 @@ public struct MedleyMember: Sendable, Hashable, Codable, Identifiable {
             arrangement: entry.arrangement,
         )
         fileName = entry.fileName
+        unknown = entry.unknown
     }
 
     /// The song slot this member becomes on ungroup or removal (its transition dropped).
@@ -150,10 +151,11 @@ public struct MedleyMember: Sendable, Hashable, Codable, Identifiable {
             arrangement: arrangement,
         )
         slot.fileName = fileName
+        slot.unknown = unknown
         return slot
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case itemId
         case songId
         case overrides
@@ -175,9 +177,11 @@ public struct MedleyMember: Sendable, Hashable, Codable, Identifiable {
             try? container.decodeIfPresent(String.self, forKey: .transition),
         )
         fileName = try? container.decodeIfPresent(String.self, forKey: .fileName)
+        unknown = UnknownFields(from: decoder, known: Set(CodingKeys.allCases.map(\.stringValue)))
     }
 
     public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(itemId, forKey: .itemId)
         try container.encode(songId, forKey: .songId)

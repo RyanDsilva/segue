@@ -4,6 +4,7 @@
 
 import Foundation
 import MusicTheory
+import Support
 
 /// A song's bass settings: never in the `.cho`.
 public struct BassPrefs: Sendable, Hashable, Codable {
@@ -16,6 +17,8 @@ public struct BassPrefs: Sendable, Hashable, Codable {
     public var walkUps: [WalkUpPick]
     /// Filled by P8-6 (its section 7.3); P8-4b only preserves it.
     public var timing: ChordTiming
+    /// Keys this build does not model, kept for the next save.
+    public var unknown: UnknownFields = .empty
 
     public init(
         genre: BassGenre? = nil,
@@ -48,7 +51,7 @@ public struct BassPrefs: Sendable, Hashable, Codable {
         return prefs
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case genre
         case mode
         case walkUps
@@ -64,9 +67,14 @@ public struct BassPrefs: Sendable, Hashable, Codable {
         walkUps = (try? container.decodeIfPresent([Lenient<WalkUpPick>].self, forKey: .walkUps))?
             .compactMap(\.value) ?? []
         timing = (try? container.decodeIfPresent(ChordTiming.self, forKey: .timing)) ?? .init()
+        var object = try LenientObject<CodingKeys>(decoder)
+        let _: BassGenre? = object.value(.genre)
+        let _: FillMode? = object.value(.mode)
+        unknown = object.unknown
     }
 
     public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(genre, forKey: .genre)
         try container.encodeIfPresent(mode, forKey: .mode)

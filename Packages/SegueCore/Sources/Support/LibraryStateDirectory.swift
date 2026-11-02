@@ -136,6 +136,17 @@ public struct LibraryStateRecord: Sendable, Equatable, Codable {
     public var lastOpened: Date?
     /// "Don't Show Again" on the file-sync folder warning (5.4).
     public var fileSyncWarningDismissed: Bool
+    /// Keys this build does not model, kept for the next save
+    /// (docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
+
+    private enum CodingKeys: String, CodingKey, CaseIterable {
+        case lastRoot
+        case rootIdentifier
+        case rootBookmark
+        case lastOpened
+        case fileSyncWarningDismissed
+    }
 
     public init(
         lastRoot: String? = nil,
@@ -147,14 +158,25 @@ public struct LibraryStateRecord: Sendable, Equatable, Codable {
         self.fileSyncWarningDismissed = fileSyncWarningDismissed
     }
 
+    /// Lenient per field: an unreadable value reads as absent (and is kept raw).
     public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        lastRoot = try container.decodeIfPresent(String.self, forKey: .lastRoot)
-        rootIdentifier = try container.decodeIfPresent(UInt64.self, forKey: .rootIdentifier)
-        rootBookmark = try container.decodeIfPresent(Data.self, forKey: .rootBookmark)
-        lastOpened = try container.decodeIfPresent(Date.self, forKey: .lastOpened)
-        fileSyncWarningDismissed = try container
-            .decodeIfPresent(Bool.self, forKey: .fileSyncWarningDismissed) ?? false
+        var object = try LenientObject<CodingKeys>(decoder)
+        lastRoot = object.value(.lastRoot)
+        rootIdentifier = object.value(.rootIdentifier)
+        rootBookmark = object.value(.rootBookmark)
+        lastOpened = object.value(.lastOpened)
+        fileSyncWarningDismissed = object.value(.fileSyncWarningDismissed, default: false)
+        unknown = object.unknown
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(lastRoot, forKey: .lastRoot)
+        try container.encodeIfPresent(rootIdentifier, forKey: .rootIdentifier)
+        try container.encodeIfPresent(rootBookmark, forKey: .rootBookmark)
+        try container.encodeIfPresent(lastOpened, forKey: .lastOpened)
+        try container.encode(fileSyncWarningDismissed, forKey: .fileSyncWarningDismissed)
     }
 
     /// The record in `directory`; an unreadable or missing file reads as empty.

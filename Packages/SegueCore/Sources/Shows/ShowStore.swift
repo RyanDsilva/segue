@@ -225,12 +225,15 @@ public actor ShowStore {
         if let rating = details.rating, !GigDetails.ratingRange.contains(rating) {
             throw ShowError.invalidRating(rating)
         }
-        record.gig = GigDetails(
+        var gig = GigDetails(
             venue: ShowRecord.trimmed(details.venue),
             date: details.date,
             notes: ShowRecord.trimmed(details.notes),
             rating: details.rating,
         )
+        // The gig log edits only the modelled fields: keep the keys it does not know.
+        gig.unknown = record.gig.unknown
+        record.gig = gig
         record.updatedAt = SegueJSON.stamp(clock.now())
         try await save(record)
         return record

@@ -150,6 +150,8 @@ public struct Part: Sendable, Hashable, Identifiable, Codable {
     /// nil = written from scratch.
     public var origin: PartOrigin?
     public var events: [PartEvent]
+    /// Keys this build does not model, kept for the next save.
+    public var unknown: UnknownFields = .empty
 
     public init(
         id: PartID = PartID(),
@@ -181,7 +183,7 @@ public struct Part: Sendable, Hashable, Identifiable, Codable {
         (0 ..< max(0, chordCount - 1)).map { ($0, $0 + 1) }
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case id
         case instrument
         case name
@@ -234,9 +236,15 @@ public struct Part: Sendable, Hashable, Identifiable, Codable {
                 debugDescription: "a part has at least one event",
             )
         }
+        var object = try LenientObject<CodingKeys>(decoder)
+        let _: PassFilter? = object.value(.passes)
+        let _: PartShow? = object.value(.show)
+        let _: PartOrigin? = object.value(.origin)
+        unknown = object.unknown
     }
 
     public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(instrument, forKey: .instrument)

@@ -29,17 +29,29 @@ final class FillEditorSettings {
         var view: FillEditorView = .fretboard
         /// "Fills show in the bass-note view..." was shown once.
         var bassViewNoteShown = false
+        /// Keys this build does not model, kept for the next save
+        /// (docs/architecture/data-compatibility.md).
+        var unknown: UnknownFields = .empty
+
+        private enum CodingKeys: String, CodingKey, CaseIterable {
+            case view
+            case bassViewNoteShown
+        }
 
         init() {}
 
         init(from decoder: any Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            view = (try? container.decodeIfPresent(FillEditorView.self, forKey: .view))
-                ?? .fretboard
-            bassViewNoteShown = (try? container.decodeIfPresent(
-                Bool.self,
-                forKey: .bassViewNoteShown,
-            )) ?? false
+            var object = try LenientObject<CodingKeys>(decoder)
+            view = object.value(.view, default: .fretboard)
+            bassViewNoteShown = object.value(.bassViewNoteShown, default: false)
+            unknown = object.unknown
+        }
+
+        func encode(to encoder: any Encoder) throws {
+            try unknown.encode(to: encoder)
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(view, forKey: .view)
+            try container.encode(bassViewNoteShown, forKey: .bassViewNoteShown)
         }
     }
 

@@ -117,6 +117,9 @@ public struct ShowItem: Sendable, Hashable, Codable, Identifiable {
     public var arrangementState: ArrangementState?
     /// The medley this item is a member of (v5, P9-3); nil for a plain item.
     public var medley: ShowMedleyRef?
+    /// Keys this build does not model, kept for the next save
+    /// (docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
 
     public var id: ShowItemID {
         itemId
@@ -270,6 +273,8 @@ public struct GigDetails: Sendable, Hashable, Codable {
     public var notes: String?
     /// 1...5; nil = not rated.
     public var rating: Int?
+    /// Keys this build does not model, kept for the next save.
+    public var unknown: UnknownFields = .empty
 
     public init(
         venue: String? = nil,
@@ -352,8 +357,12 @@ public struct ShowRecord: Sendable, Hashable, Codable, Identifiable {
     public var reorderReview: ReorderReviewState?
     /// Runtime state, not persisted: non-nil when the file is from a newer Segue.
     public var readOnly: ReadOnlyReason?
+    /// Keys this build does not model, and requests or events it cannot read, kept for the
+    /// next save (docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
 
-    private enum CodingKeys: String, CodingKey {
+    /// The on-disk keys (`ShowRecord+Coding.swift`).
+    enum CodingKeys: String, CodingKey, CaseIterable {
         case id
         case schemaVersion
         case kind

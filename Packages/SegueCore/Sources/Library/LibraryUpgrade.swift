@@ -18,11 +18,27 @@ public struct LibraryUpgradeState: Sendable, Equatable, Codable {
         self.stateMoved = stateMoved
     }
 
+    /// Marks a newer Segue recorded (keys this build does not model), kept for the next save
+    /// so an older build never forgets them (docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
+
+    private enum CodingKeys: String, CodingKey, CaseIterable {
+        case durationCleanupOffered
+        case stateMoved
+    }
+
     public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        durationCleanupOffered = try container
-            .decodeIfPresent(Bool.self, forKey: .durationCleanupOffered) ?? false
-        stateMoved = try container.decodeIfPresent(Bool.self, forKey: .stateMoved) ?? false
+        var object = try LenientObject<CodingKeys>(decoder)
+        durationCleanupOffered = object.value(.durationCleanupOffered, default: false)
+        stateMoved = object.value(.stateMoved, default: false)
+        unknown = object.unknown
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(durationCleanupOffered, forKey: .durationCleanupOffered)
+        try container.encode(stateMoved, forKey: .stateMoved)
     }
 }
 

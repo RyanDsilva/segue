@@ -40,6 +40,9 @@ public struct Sidecar: Sendable, Equatable, Codable {
     public var parts: [Part]
     public var createdAt: Date
     public var updatedAt: Date
+    /// Keys this build does not model, kept verbatim for the next save
+    /// (docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields
 
     public init(
         schemaVersion: Int = Self.currentSchemaVersion,
@@ -54,6 +57,7 @@ public struct Sidecar: Sendable, Equatable, Codable {
         parts: [Part] = [],
         createdAt: Date,
         updatedAt: Date,
+        unknown: UnknownFields = .empty,
     ) {
         self.schemaVersion = schemaVersion
         self.id = id
@@ -67,6 +71,55 @@ public struct Sidecar: Sendable, Equatable, Codable {
         self.parts = parts
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.unknown = unknown
+    }
+
+    /// The top-level keys this build models (`SidecarCodec` reads every other key into
+    /// `unknown`).
+    enum CodingKeys: String, CodingKey, CaseIterable {
+        case schemaVersion
+        case id
+        case tags
+        case proficiency
+        case notes
+        case cues
+        case displayPrefs
+        case live
+        case bass
+        case parts
+        case createdAt
+        case updatedAt
+    }
+
+    /// Decoded field by field and leniently (`SidecarCodec`); without a usable `id` the
+    /// file is not a sidecar.
+    public init(from decoder: any Decoder) throws {
+        var partial = try PartialSidecar(from: decoder)
+        partial.repairCueIDs()
+        guard let sidecar = partial.complete(schemaVersion: Self.currentSchemaVersion) else {
+            throw DecodingError.dataCorrupted(DecodingError.Context(
+                codingPath: decoder.codingPath,
+                debugDescription: "a sidecar needs an id",
+            ))
+        }
+        self = sidecar
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(id, forKey: .id)
+        try container.encode(tags, forKey: .tags)
+        try container.encodeIfPresent(proficiency, forKey: .proficiency)
+        try container.encodeIfPresent(notes, forKey: .notes)
+        try container.encode(unknown.appending(cues, to: "cues"), forKey: .cues)
+        try container.encode(displayPrefs, forKey: .displayPrefs)
+        try container.encode(live, forKey: .live)
+        try container.encode(bass, forKey: .bass)
+        try container.encode(unknown.appending(parts, to: "parts"), forKey: .parts)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
     }
 }
 
@@ -130,6 +183,8 @@ public struct SongCue: Sendable, Hashable, Codable {
     /// longer name a section with this fingerprint, the cue re-anchors to the one same-label
     /// section that has it (R145 question 5, `SectionNotes.reanchor`).
     public var fingerprint: String?
+    /// Keys this build does not model, kept for the next save.
+    public var unknown: UnknownFields = .empty
 
     public init(
         id: CueID = CueID(),
@@ -151,7 +206,7 @@ public struct SongCue: Sendable, Hashable, Codable {
             && fingerprint == other.fingerprint
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case id
         case section
         case occurrence
@@ -162,15 +217,18 @@ public struct SongCue: Sendable, Hashable, Codable {
     /// A missing or unparseable `id` decodes as `CueID.unassigned`; the sidecar decoder then
     /// derives a stable one (`SidecarCodec`).
     public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = (try? container.decodeIfPresent(CueID.self, forKey: .id)) ?? .unassigned
+        var object = try LenientObject<CodingKeys>(decoder)
+        let container = object.container
+        id = object.value(.id) ?? .unassigned
         section = try container.decode(String.self, forKey: .section)
         occurrence = try container.decodeIfPresent(Int.self, forKey: .occurrence)
         text = try container.decode(String.self, forKey: .text)
-        fingerprint = try? container.decodeIfPresent(String.self, forKey: .fingerprint)
+        fingerprint = object.value(.fingerprint)
+        unknown = object.unknown
     }
 
     public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(section, forKey: .section)
@@ -195,6 +253,8 @@ public struct LivePrefs: Sendable, Hashable, Codable {
     public var scrollSpeedFactor: Double
     /// Start auto-scroll on the first advance into this song instead of waiting for `A`.
     public var autoStartScroll: Bool
+    /// Keys this build does not model, kept for the next save.
+    public var unknown: UnknownFields = .empty
 
     public init(
         zoom: Double = 1,
@@ -208,23 +268,33 @@ public struct LivePrefs: Sendable, Hashable, Codable {
         self.autoStartScroll = autoStartScroll
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case zoom
         case columns
         case scrollSpeedFactor
         case autoStartScroll
     }
 
+    /// Keys removed on purpose, dropped rather than kept: `collapseRepeats` (R147).
+    static let retiredKeys: Set = ["collapseRepeats"]
+
     public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
+        var object = try LenientObject<CodingKeys>(decoder, retired: Self.retiredKeys)
         let defaults = Self()
-        func field<T: Decodable>(_ key: CodingKeys, _ fallback: T) -> T {
-            (try? container.decodeIfPresent(T.self, forKey: key)) ?? fallback
-        }
-        zoom = field(.zoom, defaults.zoom)
-        columns = (try? container.decodeIfPresent(Int.self, forKey: .columns))
-        scrollSpeedFactor = field(.scrollSpeedFactor, defaults.scrollSpeedFactor)
-        autoStartScroll = field(.autoStartScroll, defaults.autoStartScroll)
+        zoom = object.value(.zoom, default: defaults.zoom)
+        columns = object.value(.columns)
+        scrollSpeedFactor = object.value(.scrollSpeedFactor, default: defaults.scrollSpeedFactor)
+        autoStartScroll = object.value(.autoStartScroll, default: defaults.autoStartScroll)
+        unknown = object.unknown
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(zoom, forKey: .zoom)
+        try container.encodeIfPresent(columns, forKey: .columns)
+        try container.encode(scrollSpeedFactor, forKey: .scrollSpeedFactor)
+        try container.encode(autoStartScroll, forKey: .autoStartScroll)
     }
 }
 
@@ -249,6 +319,8 @@ public struct DisplayPrefs: Sendable, Equatable, Codable {
     /// The song's guitar tuning (also written to the source as `{meta: tuning ...}`, which
     /// wins when present).
     public var tuning: Tuning
+    /// Keys this build does not model, kept for the next save.
+    public var unknown: UnknownFields = .empty
 
     public init(
         transpose: Int = 0,
@@ -290,7 +362,7 @@ public struct DisplayPrefs: Sendable, Equatable, Codable {
         )
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case transpose
         case capoMode
         case nashville
@@ -300,16 +372,25 @@ public struct DisplayPrefs: Sendable, Equatable, Codable {
     }
 
     public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
+        var object = try LenientObject<CodingKeys>(decoder)
         let defaults = Self()
-        func field<T: Decodable>(_ key: CodingKeys, _ fallback: T) -> T {
-            (try? container.decodeIfPresent(T.self, forKey: key)) ?? fallback
-        }
-        transpose = field(.transpose, defaults.transpose)
-        capoMode = field(.capoMode, defaults.capoMode)
-        nashville = field(.nashville, defaults.nashville)
-        showDiagrams = field(.showDiagrams, defaults.showDiagrams)
-        instrument = field(.instrument, defaults.instrument)
-        tuning = field(.tuning, defaults.tuning)
+        transpose = object.value(.transpose, default: defaults.transpose)
+        capoMode = object.value(.capoMode, default: defaults.capoMode)
+        nashville = object.value(.nashville, default: defaults.nashville)
+        showDiagrams = object.value(.showDiagrams, default: defaults.showDiagrams)
+        instrument = object.value(.instrument, default: defaults.instrument)
+        tuning = object.value(.tuning, default: defaults.tuning)
+        unknown = object.unknown
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(transpose, forKey: .transpose)
+        try container.encode(capoMode, forKey: .capoMode)
+        try container.encode(nashville, forKey: .nashville)
+        try container.encode(showDiagrams, forKey: .showDiagrams)
+        try container.encode(instrument, forKey: .instrument)
+        try container.encode(tuning, forKey: .tuning)
     }
 }

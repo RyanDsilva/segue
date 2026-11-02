@@ -166,7 +166,19 @@ public actor SmartFilterStore {
         _ id: SmartFilterID,
         conditions: SmartFilterConditions,
     ) throws -> SmartFilter {
-        try mutate(id) { $0.conditions = conditions }
+        try mutate(id) { $0.conditions = Self.keepingUnknown(conditions, of: $0.conditions) }
+    }
+
+    /// `conditions` with the keys of `current` this build does not model, when an editor
+    /// built `conditions` afresh (it knows only the modelled keys).
+    private static func keepingUnknown(
+        _ conditions: SmartFilterConditions,
+        of current: SmartFilterConditions,
+    ) -> SmartFilterConditions {
+        guard conditions.unknown.isEmpty else { return conditions }
+        var kept = conditions
+        kept.unknown = current.unknown
+        return kept
     }
 
     /// Writes `filter` back whole (an undo snapshot of name and conditions) into its file.
@@ -174,7 +186,7 @@ public actor SmartFilterStore {
     public func replace(_ filter: SmartFilter) throws -> SmartFilter {
         try mutate(filter.id) { current in
             current.name = filter.name
-            current.conditions = filter.conditions
+            current.conditions = Self.keepingUnknown(filter.conditions, of: current.conditions)
         }
     }
 

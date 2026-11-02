@@ -128,7 +128,10 @@ public extension LibraryStore {
         let library = try openLibrary()
         let existing = try editableSong(id, in: library)
         var sidecar = try sidecarToWrite(for: existing, files: library.files)
+        let kept = sidecar.live.unknown
         sidecar.live = prefs
+        // The live view knows only the modelled keys: keep the ones it does not.
+        sidecar.live.unknown = kept
         let song = try library.files.writingSidecar(sidecar, of: existing)
         self.library?.songs[id] = song
         return song.record

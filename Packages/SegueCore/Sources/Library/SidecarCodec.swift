@@ -139,8 +139,10 @@ enum SidecarCodec {
 }
 
 /// Every sidecar field optional, each decoded independently so one bad or unknown-shaped
-/// field (from a newer schema) does not hide the others.
-private struct PartialSidecar: Decodable {
+/// field (from a newer schema) does not hide the others. Keys the sidecar does not model,
+/// values it cannot read (an enum case from a newer Segue) and unreadable cues or parts are
+/// kept in `unknown` and written back on save (docs/architecture/data-compatibility.md).
+struct PartialSidecar: Decodable {
     var id: SongID?
     var tags: [String]?
     var proficiency: Proficiency?
@@ -152,34 +154,22 @@ private struct PartialSidecar: Decodable {
     var parts: [Part]?
     var createdAt: Date?
     var updatedAt: Date?
-
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case tags
-        case proficiency
-        case notes
-        case cues
-        case displayPrefs
-        case live
-        case bass
-        case parts
-        case createdAt
-        case updatedAt
-    }
+    var unknown: UnknownFields
 
     init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try? container.decodeIfPresent(SongID.self, forKey: .id)
-        tags = try? container.decodeIfPresent([String].self, forKey: .tags)
-        proficiency = try? container.decodeIfPresent(Proficiency.self, forKey: .proficiency)
-        notes = try? container.decodeIfPresent(String.self, forKey: .notes)
-        cues = Self.lenientCues(container)
-        displayPrefs = try? container.decodeIfPresent(DisplayPrefs.self, forKey: .displayPrefs)
-        live = try? container.decodeIfPresent(LivePrefs.self, forKey: .live)
-        bass = try? container.decodeIfPresent(BassPrefs.self, forKey: .bass)
-        parts = Self.lenientParts(container)
-        createdAt = try? container.decodeIfPresent(Date.self, forKey: .createdAt)
-        updatedAt = try? container.decodeIfPresent(Date.self, forKey: .updatedAt)
+        var object = try LenientObject<Sidecar.CodingKeys>(decoder)
+        id = object.value(.id)
+        tags = object.value(.tags)
+        proficiency = object.value(.proficiency)
+        notes = object.value(.notes)
+        cues = object.elements(.cues)
+        displayPrefs = object.value(.displayPrefs)
+        live = object.value(.live)
+        bass = object.value(.bass)
+        parts = object.elements(.parts)
+        createdAt = object.value(.createdAt)
+        updatedAt = object.value(.updatedAt)
+        unknown = object.unknown
     }
 
     func complete(schemaVersion: Int) -> Sidecar? {
@@ -198,6 +188,7 @@ private struct PartialSidecar: Decodable {
             parts: parts ?? [],
             createdAt: created,
             updatedAt: updatedAt ?? created,
+            unknown: unknown,
         )
     }
 
@@ -228,32 +219,5 @@ private struct PartialSidecar: Decodable {
             timestamp: created ?? Date(timeIntervalSince1970: 0),
             randomness: Array(digest.prefix(10)),
         ))
-    }
-
-    /// Parts one by one (each lenient inside, section 9.5), so one bad part does not hide the
-    /// others.
-    private static func lenientParts(_ container: KeyedDecodingContainer<CodingKeys>) -> [Part]? {
-        struct Lenient: Decodable {
-            var part: Part?
-
-            init(from decoder: any Decoder) throws {
-                part = try? Part(from: decoder)
-            }
-        }
-        return (try? container.decodeIfPresent([Lenient].self, forKey: .parts))?
-            .compactMap(\.part)
-    }
-
-    /// Cues one by one, so one malformed cue does not hide the others.
-    private static func lenientCues(_ container: KeyedDecodingContainer<CodingKeys>) -> [SongCue]? {
-        struct Lenient: Decodable {
-            var cue: SongCue?
-
-            init(from decoder: any Decoder) throws {
-                cue = try? SongCue(from: decoder)
-            }
-        }
-        return (try? container.decodeIfPresent([Lenient].self, forKey: .cues))?
-            .compactMap(\.cue)
     }
 }

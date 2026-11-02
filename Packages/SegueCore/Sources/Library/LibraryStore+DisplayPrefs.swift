@@ -12,6 +12,8 @@ extension SongFiles {
         var song = song
         var sidecar = song.record.sidecar
         sidecar.displayPrefs = prefs
+        // The editor knows only the modelled keys: keep the ones it does not.
+        sidecar.displayPrefs.unknown = song.record.sidecar.displayPrefs.unknown
         sidecar.schemaVersion = Sidecar.currentSchemaVersion
         sidecar.updatedAt = SegueJSON.stamp(clock.now())
         let data = try SidecarCodec.encode(sidecar)

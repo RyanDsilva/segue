@@ -2,6 +2,7 @@
 
 import Foundation
 import Library
+import Support
 
 /// A pre-show checklist row.
 public enum ChecklistItem: String, Sendable, Hashable, Codable, CaseIterable {
@@ -54,6 +55,9 @@ public struct LiveSettings: Sendable, Hashable, Codable {
     /// The display the Singer Screen last opened on (P9-2c 6.13), by its localized name; it
     /// is used again whenever a display of that name is connected.
     public var singerScreenDisplay: String?
+    /// Keys this build does not model, kept for the next save
+    /// (docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
 
     /// The column counts a song or the default can fix.
     public static let columnRange: ClosedRange<Int> = 1 ... 3
@@ -80,7 +84,7 @@ public struct LiveSettings: Sendable, Hashable, Codable {
         self.singerScreenDisplay = singerScreenDisplay
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case minLyricSize
         case startShortcut
         case endShortcut
@@ -114,9 +118,11 @@ public struct LiveSettings: Sendable, Hashable, Codable {
             singerZoom: (value(.singerZoom) as Double?).map(Self.clampedSingerZoom) ?? 1,
             singerScreenDisplay: value(.singerScreenDisplay),
         )
+        unknown = UnknownFields(from: decoder, known: Set(CodingKeys.allCases.map(\.stringValue)))
     }
 
     public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(minLyricSize, forKey: .minLyricSize)
         try container.encodeIfPresent(startShortcut, forKey: .startShortcut)

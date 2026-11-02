@@ -31,6 +31,9 @@ public struct AudioSettings: Sendable, Hashable, Codable {
     public var tapMode: TapMode
     public var tapHalfBeats: Bool
     public var tapAnnounce: Bool
+    /// Keys this build does not model, kept for the next save
+    /// (docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
 
     public init(
         chordSound: ChordSound = .piano,
@@ -62,7 +65,7 @@ public struct AudioSettings: Sendable, Hashable, Codable {
         self.tapAnnounce = tapAnnounce
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case chordSound
         case chordStyle
         case bassSound
@@ -99,6 +102,25 @@ public struct AudioSettings: Sendable, Hashable, Codable {
             tapHalfBeats: field(.tapHalfBeats, defaults.tapHalfBeats),
             tapAnnounce: field(.tapAnnounce, defaults.tapAnnounce),
         )
+        unknown = UnknownFields(from: decoder, known: Set(CodingKeys.allCases.map(\.stringValue)))
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(chordSound, forKey: .chordSound)
+        try container.encode(chordStyle, forKey: .chordStyle)
+        try container.encode(bassSound, forKey: .bassSound)
+        try container.encode(volume, forKey: .volume)
+        try container.encodeIfPresent(outputUID, forKey: .outputUID)
+        try container.encodeIfPresent(outputName, forKey: .outputName)
+        try container.encode(playAlongBass, forKey: .playAlongBass)
+        try container.encode(playAlongChords, forKey: .playAlongChords)
+        try container.encode(playAlongClick, forKey: .playAlongClick)
+        try container.encodeIfPresent(playAlongWalkUps, forKey: .playAlongWalkUps)
+        try container.encode(tapMode, forKey: .tapMode)
+        try container.encode(tapHalfBeats, forKey: .tapHalfBeats)
+        try container.encode(tapAnnounce, forKey: .tapAnnounce)
     }
 }
 

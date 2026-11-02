@@ -72,6 +72,9 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
     /// The file still holds the old Length condition (P8-8 7.1): ignored when matching,
     /// never written, so it is dropped on the filter's next save; the editor says so.
     public var hadRemovedLength = false
+    /// Keys this build does not model and values it cannot read (a proficiency from a newer
+    /// Segue), kept for the next save (docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
 
     public init(
         allTags: [String] = [],
@@ -95,7 +98,7 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
         self.albums = albums
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case allTags
         case anyTags
         case noneTags
@@ -115,18 +118,38 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
     /// Missing keys take their empty value, so a hand-written file may list only what it
     /// uses.
     public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        allTags = try container.decodeIfPresent([String].self, forKey: .allTags) ?? []
-        anyTags = try container.decodeIfPresent([String].self, forKey: .anyTags) ?? []
-        noneTags = try container.decodeIfPresent([String].self, forKey: .noneTags) ?? []
-        proficiencies = try container
-            .decodeIfPresent([Proficiency].self, forKey: .proficiencies) ?? []
-        keys = try container.decodeIfPresent([String].self, forKey: .keys) ?? []
-        tempo = try container.decodeIfPresent(SmartFilterRange.self, forKey: .tempo)
-        neverPlayed = try container.decodeIfPresent(Bool.self, forKey: .neverPlayed) ?? false
-        artists = try container.decodeIfPresent([String].self, forKey: .artists) ?? []
-        albums = try container.decodeIfPresent([String].self, forKey: .albums) ?? []
+        var object = try LenientObject<CodingKeys>(
+            decoder,
+            retired: Set([RemovedKeys.length.stringValue]),
+        )
+        allTags = object.value(.allTags, default: [])
+        anyTags = object.value(.anyTags, default: [])
+        noneTags = object.value(.noneTags, default: [])
+        proficiencies = object.elements(.proficiencies) ?? []
+        keys = object.value(.keys, default: [])
+        tempo = object.value(.tempo)
+        neverPlayed = object.value(.neverPlayed, default: false)
+        artists = object.value(.artists, default: [])
+        albums = object.value(.albums, default: [])
         hadRemovedLength = try decoder.container(keyedBy: RemovedKeys.self).contains(.length)
+        unknown = object.unknown
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(allTags, forKey: .allTags)
+        try container.encode(anyTags, forKey: .anyTags)
+        try container.encode(noneTags, forKey: .noneTags)
+        try container.encode(
+            unknown.appending(proficiencies, to: CodingKeys.proficiencies.stringValue),
+            forKey: .proficiencies,
+        )
+        try container.encode(keys, forKey: .keys)
+        try container.encodeIfPresent(tempo, forKey: .tempo)
+        try container.encode(neverPlayed, forKey: .neverPlayed)
+        try container.encode(artists, forKey: .artists)
+        try container.encode(albums, forKey: .albums)
     }
 
     /// How many conditions are set (analytics' conditions bucket, the sidebar's summary).
@@ -189,6 +212,8 @@ public struct SmartFilter: Sendable, Equatable, Identifiable, Codable {
     /// Non-nil when the file is from a newer Segue: listed and usable with the conditions
     /// this build understands, never rewritten. Not stored.
     public var readOnly: ReadOnlyReason?
+    /// Keys this build does not model, kept for the next save.
+    public var unknown: UnknownFields = .empty
 
     public init(
         id: SmartFilterID,
@@ -208,13 +233,38 @@ public struct SmartFilter: Sendable, Equatable, Identifiable, Codable {
         self.readOnly = readOnly
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case id
         case schemaVersion
         case name
         case conditions
         case createdAt
         case updatedAt
+    }
+
+    public init(from decoder: any Decoder) throws {
+        var object = try LenientObject<CodingKeys>(decoder)
+        id = try object.required(.id)
+        schemaVersion = object.value(.schemaVersion, default: Self.currentSchemaVersion)
+        name = try object.required(.name)
+        conditions = try object.container
+            .decodeIfPresent(SmartFilterConditions.self, forKey: .conditions)
+            ?? SmartFilterConditions()
+        createdAt = object.value(.createdAt, default: Date(timeIntervalSince1970: 0))
+        updatedAt = object.value(.updatedAt, default: createdAt)
+        readOnly = nil
+        unknown = object.unknown
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(name, forKey: .name)
+        try container.encode(conditions, forKey: .conditions)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
     }
 
     /// The songs of `songs` (order kept) this filter matches.

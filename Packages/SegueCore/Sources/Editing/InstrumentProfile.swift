@@ -2,6 +2,7 @@
 
 import Diagrams
 import MusicTheory
+import Support
 
 /// The user's instrument (Settings > Instrument, R152). App-level: never in a sidecar or a
 /// `.cho`. Decoded leniently per field: a missing or unreadable field keeps its default.
@@ -27,6 +28,9 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
     /// "Fills as tab" (P8-7 section 14.2, R168 Q8): every saved fill draws as a mini tab,
     /// whatever its own choice (`t` on stage, the editor's Bass menu, Settings). Default off.
     public var fillsAsTab: Bool
+    /// Keys this build does not model, kept for the next save
+    /// (docs/architecture/data-compatibility.md).
+    public var unknown: UnknownFields = .empty
 
     public init(
         playsBass: Bool = false,
@@ -99,7 +103,7 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey, CaseIterable {
         case playsBass
         case strings
         case tuning
@@ -113,22 +117,35 @@ public struct InstrumentProfile: Sendable, Hashable, Codable {
     }
 
     public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
+        var object = try LenientObject<CodingKeys>(decoder)
         let defaults = Self()
-        func field<T: Decodable>(_ key: CodingKeys, _ fallback: T) -> T {
-            (try? container.decodeIfPresent(T.self, forKey: key)) ?? fallback
-        }
-        playsBass = field(.playsBass, defaults.playsBass)
-        strings = field(.strings, defaults.strings)
-        tuning = field(.tuning, defaults.tuning)
-        bassNotes = field(.bassNotes, defaults.bassNotes)
-        chordBeside = field(.chordBeside, defaults.chordBeside)
-        stageNeck = field(.stageNeck, defaults.stageNeck)
-        fretboard = field(.fretboard, defaults.fretboard)
-        walkUps = field(.walkUps, defaults.walkUps)
-        genre = field(.genre, defaults.genre)
-        fillsAsTab = field(.fillsAsTab, defaults.fillsAsTab)
+        playsBass = object.value(.playsBass, default: defaults.playsBass)
+        strings = object.value(.strings, default: defaults.strings)
+        tuning = object.value(.tuning, default: defaults.tuning)
+        bassNotes = object.value(.bassNotes, default: defaults.bassNotes)
+        chordBeside = object.value(.chordBeside, default: defaults.chordBeside)
+        stageNeck = object.value(.stageNeck, default: defaults.stageNeck)
+        fretboard = object.value(.fretboard, default: defaults.fretboard)
+        walkUps = object.value(.walkUps, default: defaults.walkUps)
+        genre = object.value(.genre, default: defaults.genre)
+        fillsAsTab = object.value(.fillsAsTab, default: defaults.fillsAsTab)
+        unknown = object.unknown
         normalize()
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        try unknown.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(playsBass, forKey: .playsBass)
+        try container.encode(strings, forKey: .strings)
+        try container.encode(tuning, forKey: .tuning)
+        try container.encode(bassNotes, forKey: .bassNotes)
+        try container.encode(chordBeside, forKey: .chordBeside)
+        try container.encode(stageNeck, forKey: .stageNeck)
+        try container.encode(fretboard, forKey: .fretboard)
+        try container.encode(walkUps, forKey: .walkUps)
+        try container.encode(genre, forKey: .genre)
+        try container.encode(fillsAsTab, forKey: .fillsAsTab)
     }
 }
 
