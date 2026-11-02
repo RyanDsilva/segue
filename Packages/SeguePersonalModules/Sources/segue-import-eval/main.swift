@@ -12,6 +12,13 @@ import SeguePersonalModules
 
 let arguments = Array(CommandLine.arguments.dropFirst())
 
+// Romanizer mode (spec 16.3, R182): the bake-off's gold (`gold.json`, a list of lines with
+// `deva_words` and `gold_words`), word exact and RomanNormalizer-equivalent agreement.
+if let gold = arguments.firstIndex(of: "--romanizer").map({ arguments[$0 + 1] }) {
+    print(RomanizerEval.run(gold: URL(filePath: gold)))
+    exit(0)
+}
+
 // Canary mode (spec 16.4, `make import-canary`): one freshly fetched page, its verdict.
 if let page = arguments.firstIndex(of: "--page").map({ arguments[$0 + 1] }),
    let address = arguments.firstIndex(of: "--url").map({ arguments[$0 + 1] }),
