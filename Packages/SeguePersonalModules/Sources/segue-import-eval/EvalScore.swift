@@ -59,7 +59,7 @@ struct EvalScore {
     static func textFailures(_ text: String, _ gold: Gold) -> [String] {
         var failing: [String] = []
         if let lyrics = gold.lyrics {
-            let distance = editDistance(lyricWords(text), lyrics.map(loose))
+            let distance = editDistance(lyricWords(text).map(loose), lyrics.map(loose))
             let accuracy = 1 - Double(distance) / Double(max(lyrics.count, 1))
             if accuracy < 0.99 {
                 failing.append(String(format: "lyrics %.1f%%", accuracy * 100))
@@ -84,9 +84,11 @@ struct EvalScore {
         if let least = gold.minLyricWords, lyricWords(text).count < least {
             failing.append("lyric words \(lyricWords(text).count) < \(least)")
         }
-        let junk = text.components(separatedBy: "\n").count(where: IngestPipeline.isJunkLine)
-        if junk > 0 {
-            failing.append("junk \(junk)")
+        // A line carrying chords is chart content (a bar line), whatever the junk rule says.
+        let junk = text.components(separatedBy: "\n")
+            .filter { IngestPipeline.isJunkLine($0) && !$0.contains("[") }
+        if let line = junk.first {
+            failing.append("junk \(junk.count): \(line.prefix(40))")
         }
         return failing
     }
@@ -173,20 +175,24 @@ struct EvalReport {
             let group = scores.filter { $0.row.site == site }
             guard !group.isEmpty else { continue }
             let passed = group.count(where: \.passed)
-            lines.append(String(
-                format: "%-8@ %2d/%2d pass (%.0f%%)",
-                site as NSString,
-                passed,
-                group.count,
-                Double(passed) / Double(group.count) * 100,
-            ))
+            let checked = group.filter(\.row.reviewed)
+            let reviewedPass = checked.count(where: \.passed)
+            let share = Double(passed) / Double(group.count) * 100
+            lines.append(
+                site.padding(toLength: 8, withPad: " ", startingAt: 0)
+                    + " \(passed)/\(group.count) pass"
+                    + " (\(Int(share.rounded()))%); reviewed \(reviewedPass)/\(checked.count);"
+                    + " silent wrong \(group.count(where: \.silentWrong))"
+                    + " (reviewed \(checked.count(where: \.silentWrong)))",
+            )
             for score in group where !score.passed {
                 let reader = score.reading.reader?.rawValue ?? "-"
                 let flag = score.silentWrong ? " SILENT-WRONG" : ""
                 let path = score.reading.fellBack ? " (fell back)" : ""
                 let name = score.row.url.lastPathComponent.prefix(48)
                 let reasons = score.failing.joined(separator: "; ")
-                lines.append("   \(name) [\(reader)\(path)]\(flag): \(reasons)")
+                let tag = score.row.reviewed ? "R " : "  "
+                lines.append(" \(tag)\(name) [\(reader)\(path)]\(flag): \(reasons)")
             }
         }
         let silent = scores.count(where: \.silentWrong)

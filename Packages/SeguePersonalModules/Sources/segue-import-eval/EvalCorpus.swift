@@ -11,6 +11,8 @@ struct EvalRow {
     var url: URL
     var file: URL
     var gold: Gold?
+    /// The gold came from the owner's review (`gold/<slug>.review.json`).
+    var reviewed = false
 }
 
 /// `gold/<slug>.json`, written by hand (spec 16.1). Lyrics live in gitignored files only.
@@ -48,7 +50,8 @@ enum EvalCorpus {
             let goldURL = root.appending(path: "gold/\(slug).json")
             let data = try? Data(contentsOf: goldURL)
             let drafted = data.flatMap { try? JSONDecoder().decode(Gold.self, from: $0) }
-            let gold = Gold.reviewed(root: root, slug: slug) ?? drafted
+            let reviewed = Gold.reviewed(root: root, slug: slug)
+            let gold = reviewed ?? drafted
             rows.append(EvalRow(
                 slug: slug,
                 site: parts[0],
@@ -56,6 +59,7 @@ enum EvalCorpus {
                 url: url,
                 file: file,
                 gold: gold,
+                reviewed: reviewed != nil,
             ))
         }
         return rows
@@ -86,14 +90,17 @@ extension Gold {
     /// The gold from a reviewed expected chart (`gold/<slug>.cho`): fields from its
     /// directives, chords and lyric words from its body. Nil when not reviewed.
     static func reviewed(root: URL, slug: String) -> Gold? {
-        let base = root.appending(path: "gold/\(slug)")
-        guard let data = try? Data(contentsOf: base.appendingPathExtension("review.json")),
+        let gold = root.appending(path: "gold")
+        guard let data = try? Data(contentsOf: gold.appending(path: slug + ".review.json")),
               let review = try? JSONDecoder().decode(GoldReview.self, from: data),
               review.status == "ok" || review.status == "fixed"
         else { return nil }
         let kind = review.kind ?? "chart"
         guard kind == "chart",
-              let cho = try? String(contentsOf: base.appendingPathExtension("cho"), encoding: .utf8)
+              let cho = try? String(
+                  contentsOf: gold.appending(path: slug + ".cho"),
+                  encoding: .utf8,
+              )
         else { return Gold(kind: kind) }
         func values(_ name: String) -> [String] {
             cho.split(separator: "\n").compactMap { line -> String? in

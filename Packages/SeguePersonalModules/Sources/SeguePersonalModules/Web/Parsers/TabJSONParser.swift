@@ -109,7 +109,7 @@ enum TabJSONParser {
             .replacingOccurrences(of: "\r", with: "\n")
         text = rejoinSplitChords(text)
         var lines: [String] = []
-        for source in text.components(separatedBy: "\n") {
+        for source in droppingLeadingNotes(text.components(separatedBy: "\n")) {
             let line = convertLine(source)
             let expected = chordTokens(inMarkup: source)
             if !expected.isEmpty {
@@ -128,6 +128,35 @@ enum TabJSONParser {
         return .success(lines.joined(separator: "\n")
             .replacing(/\n{3,}/, with: "\n\n")
             .trimmingCharacters(in: .newlines))
+    }
+
+    /// The contributor's notes above the first section header ("This is a simplified
+    /// version...", fingering tables, "CAPO: II") are not part of the chart (the owner's
+    /// gold review, R194): before the first `[Section]` line only chord and tab lines stay.
+    static func droppingLeadingNotes(_ lines: [String]) -> [String] {
+        // The first header that a chart line follows ("[Coda]" inside a fingering note is
+        // not one).
+        let first = lines.indices.first { index in
+            isSectionHeader(lines[index]) && lines[(index + 1)...]
+                .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                .prefix(4).contains { $0.contains("[ch]") || $0.contains("|-") }
+        }
+        guard let first else { return lines }
+        let head = lines[..<first].filter { line in
+            line.contains("[ch]") || line.contains("|-") || isCreditLine(line)
+        }
+        return head + lines[first...]
+    }
+
+    /// "Singers: ...", "By ...", "Movie: ..." and the like stay: the converter reads credits.
+    private static func isCreditLine(_ line: String) -> Bool {
+        let label = /^(singers?|sung by|artists?|by|music|movie|film|album|lyric(s|ist)|composer)\b/
+        return line.trimmingCharacters(in: .whitespaces).lowercased().contains(label)
+    }
+
+    private static func isSectionHeader(_ line: String) -> Bool {
+        line.trimmingCharacters(in: .whitespaces)
+            .wholeMatch(of: /\[(?!ch\]|tab\]|\/)[A-Za-z][^\]]{0,30}\]/) != nil
     }
 
     struct IntegrityFailure: Error, Sendable {
