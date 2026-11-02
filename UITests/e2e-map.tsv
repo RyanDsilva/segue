@@ -113,7 +113,7 @@ UITests/SegueStageMapE2ETests.swift	SegueStageMapE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/*Pass*	SegueStageMapE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/StageMap*	SegueStageMapE2ETests
 Packages/SegueUI/Sources/SegueUI/App/AppModel+SongSession.swift	SegueStageMapE2ETests
-UITests/SegueSetlistE2ESupport.swift	SegueSetlistBuilderE2ETests SegueSetBuilderE2ETests SegueSetlistLibraryE2ETests SegueSetlistGigLogE2ETests SegueSetComposerE2ETests
+UITests/SegueSetlistE2ESupport.swift	SegueSetlistBuilderE2ETests SegueSetBuilderE2ETests SegueSetlistLibraryE2ETests SegueSetlistGigLogE2ETests SegueSetComposerE2ETests SegueMedleyE2ETests
 UITests/SegueSetComposerE2ETests.swift	SegueSetComposerE2ETests
 UITests/SegueSetlistBuilderE2ETests.swift	SegueSetlistBuilderE2ETests
 UITests/SegueSetBuilderE2ETests.swift	SegueSetBuilderE2ETests
@@ -163,3 +163,14 @@ Packages/SegueUI/Sources/SegueUI/Live/StageRequest*	SegueSingerViewE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/StageChrome.swift	SegueSingerViewE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/LiveView.swift	SegueSingerViewE2ETests
 Packages/SegueUI/Sources/SegueUI/AccessibilityID+Singer.swift	SegueSingerViewE2ETests
+
+# P9-3 medleys: the make-a-medley-and-play-it-through flow.
+Packages/SegueCore/Sources/Setlists/*Medley*	SegueMedleyE2ETests
+Packages/SegueCore/Sources/Shows/*Medley*	SegueMedleyE2ETests
+Packages/SegueCore/Sources/LiveLayout/LayoutSegment.swift	SegueMedleyE2ETests
+Packages/SegueCore/Sources/LiveLayout/MedleyFollow.swift	SegueMedleyE2ETests
+Packages/SegueUI/Sources/SegueUI/Setlists/*Medley*	SegueMedleyE2ETests
+Packages/SegueUI/Sources/SegueUI/Live/*Medley*	SegueMedleyE2ETests
+Packages/SegueUI/Sources/SegueUI/GigLog/GigMedleyRows.swift	SegueMedleyE2ETests
+Packages/SegueUI/Sources/SegueUI/AccessibilityID+Medley*	SegueMedleyE2ETests
+UITests/SegueMedleyE2ETests.swift	SegueMedleyE2ETests
