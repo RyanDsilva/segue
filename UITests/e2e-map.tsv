@@ -113,7 +113,7 @@ UITests/SegueStageMapE2ETests.swift	SegueStageMapE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/*Pass*	SegueStageMapE2ETests
 Packages/SegueUI/Sources/SegueUI/Live/StageMap*	SegueStageMapE2ETests
 Packages/SegueUI/Sources/SegueUI/App/AppModel+SongSession.swift	SegueStageMapE2ETests
-UITests/SegueSetlistE2ESupport.swift	SegueSetlistBuilderE2ETests SegueSetBuilderE2ETests SegueSetlistLibraryE2ETests SegueSetlistGigLogE2ETests SegueSetComposerE2ETests SegueMedleyE2ETests
+UITests/SegueSetlistE2ESupport.swift	SegueSetlistBuilderE2ETests SegueSetBuilderE2ETests SegueSetlistLibraryE2ETests SegueSetlistGigLogE2ETests SegueSetComposerE2ETests SegueMedleyE2ETests SeguePDFExportE2ETests
 UITests/SegueSetComposerE2ETests.swift	SegueSetComposerE2ETests
 UITests/SegueSetlistBuilderE2ETests.swift	SegueSetlistBuilderE2ETests
 UITests/SegueSetBuilderE2ETests.swift	SegueSetBuilderE2ETests
@@ -174,3 +174,8 @@ Packages/SegueUI/Sources/SegueUI/Live/*Medley*	SegueMedleyE2ETests
 Packages/SegueUI/Sources/SegueUI/GigLog/GigMedleyRows.swift	SegueMedleyE2ETests
 Packages/SegueUI/Sources/SegueUI/AccessibilityID+Medley*	SegueMedleyE2ETests
 UITests/SegueMedleyE2ETests.swift	SegueMedleyE2ETests
+
+# PDF export (P9-1 spec 14.5): the one PDF flow.
+Packages/SegueUI/Sources/SegueUI/Export/*	SeguePDFExportE2ETests
+Packages/SegueCore/Sources/Printing/*	SeguePDFExportE2ETests
+UITests/SeguePDFExportE2ETests.swift	SeguePDFExportE2ETests

@@ -4,6 +4,8 @@
 public extension AccessibilityID {
     /// The preview sheet (spec 6.2).
     static let pdfSheet = "segue.pdf.sheet"
+    /// "Songbook PDF · 18 songs · 31 pages" under the title.
+    static let pdfSubtitle = "segue.pdf.subtitle"
     /// The pages (`PDFView`) and the page indicator under them.
     static let pdfView = "segue.pdf.view"
     static let pdfPageIndicator = "segue.pdf.pageIndicator"

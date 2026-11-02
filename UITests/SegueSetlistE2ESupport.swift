@@ -418,7 +418,11 @@ class SetlistE2ETestCase: XCTestCase {
     /// `light` forces the light appearance (the design mockups are light) whatever the
     /// system appearance is; otherwise the app follows the system.
     @MainActor
-    func launch(waitForSongs: Bool = true, light: Bool = false) throws -> XCUIApplication {
+    func launch(
+        waitForSongs: Bool = true,
+        light: Bool = false,
+        arguments extra: [String] = [],
+    ) throws -> XCUIApplication {
         let root = try XCTUnwrap(libraryRoot)
         let app = XCUIApplication()
         self.app = app
@@ -433,6 +437,7 @@ class SetlistE2ETestCase: XCTestCase {
         if light {
             arguments += ["-NSRequiresAquaSystemAppearance", "YES"]
         }
+        arguments += extra
         E2E.launch(app, arguments: arguments)
         if waitForSongs {
             SetlistE2E.waitUntil("The seeded songs never listed") {

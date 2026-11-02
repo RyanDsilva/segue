@@ -66,6 +66,7 @@
                     .font(SchibstedGrotesk.medium.font(size: 13))
                     .foregroundStyle(Theme.color.muted)
                     .lineLimit(1)
+                    .accessibilityIdentifier(AccessibilityID.pdfSubtitle)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
