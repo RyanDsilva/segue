@@ -133,7 +133,8 @@ final class SegueArrangementE2ETests: SetlistE2ETestCase {
         )
         XCTAssertEqual(after, cho, "The song file changed")
         let file = try XCTUnwrap(SetlistFixture.setlistFiles(root).first)
-        XCTAssertEqual(file["schemaVersion"] as? Int, 6)
+        // Setlist schema 7 holds medley slots (P9-3 5.2); an arranged song slot saves as 7.
+        XCTAssertEqual(file["schemaVersion"] as? Int, 7)
     }
 
     /// "Rehearse this": the stage plays the slot as arranged (no Bridge, the fourth chorus
