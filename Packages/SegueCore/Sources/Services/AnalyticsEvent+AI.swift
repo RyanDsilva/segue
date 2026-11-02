@@ -53,6 +53,10 @@ public enum PasteSource: String, Sendable, CaseIterable {
     /// An already-ChordPro file that looks like a library song, reviewed for its warning
     /// (P8-1, R158 Q4).
     case fileCho
+    /// A web page read by address, a dropped link or a saved page (P9-4, Personal only).
+    case webPage
+    /// A Find Lyrics result (P9-4, Personal only).
+    case songSearch
 }
 
 /// Which provider answered (shared by rows 19 and 21).

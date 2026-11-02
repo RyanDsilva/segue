@@ -18,8 +18,9 @@ public extension AnalyticsEvent {
         let name = "Segue.\(area).\(eventName)"
         switch self {
         case .aiAssistantUsed, .aiModelDownload, .aiPasteFinished, .analyticsEnabled,
-             .feedbackSent, .libraryCreated, .pdfExported, .setlistComposerSession, .showEnded,
-             .showStarted, .songImported, .timingTapCaptured:
+             .feedbackSent, .importPageRead, .importSearched, .libraryCreated, .pdfExported,
+             .setlistComposerSession, .showEnded, .showStarted, .songImported,
+             .timingTapCaptured:
             return .perOccurrence
         case .appLaunched, .librarySnapshot, .songDeleted:
             return .daily(key: name)
@@ -62,6 +63,8 @@ public extension AnalyticsEvent {
             return .daily(key: "\(name)|\(summary.target.rawValue)")
         case let .setlistMedley(action, _, entry):
             return .daily(key: "\(name)|\(action.rawValue)|\(entry.rawValue)")
+        case let .importSearchPicked(summary):
+            return .daily(key: "\(name)|\(summary.group.rawValue)|\(summary.rank.rawValue)")
         case let .songArtistSplit(summary):
             return .daily(key: "\(name)|\(summary.source.rawValue)|"
                 + "\(summary.separator.rawValue)|\(summary.outcome.rawValue)")

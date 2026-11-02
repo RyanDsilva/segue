@@ -184,6 +184,7 @@ enum VocabularySample {
         events += setlistTimedEvents
         events += pdfExportEvents
         events += medleyEvents
+        events += importEvents
         return events
     }
 

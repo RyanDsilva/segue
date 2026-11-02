@@ -105,6 +105,13 @@ public enum AnalyticsEvent: Sendable, Hashable {
     case setlistMedley(action: MedleyAction, members: SmallBucket, entry: MedleyEntryPoint)
     /// Row 31 (P9-1 spec 11): one per PDF preview sheet closed.
     case pdfExported(PDFExportSummary)
+    /// Row 33 (P9-4 spec 12, Personal build only): one per Import from a web page.
+    case importPageRead(PageReadSummary)
+    /// Row 34 (P9-4 spec 12, Personal build only): one per Find Lyrics search.
+    case importSearched(SongSearchedSummary)
+    /// Row 35 (P9-4 spec 12, Personal build only): a search result opened in the review
+    /// (daily per group and rank).
+    case importSearchPicked(SearchPickedSummary)
 }
 
 // MARK: - Grouped parameters (cases with more than four values)
@@ -171,6 +178,8 @@ public enum LibraryLocation: String, Sendable, CaseIterable {
 public enum SongSource: String, Sendable, CaseIterable {
     case newSong
     case `import`
+    /// A song accepted from a web page or a search result (P9-4 spec 12, Personal only).
+    case web
 }
 
 public enum ImportMethod: String, Sendable, CaseIterable {
@@ -326,6 +335,7 @@ extension AnalyticsEvent {
         case .fillSaved, .walkUpPicked: "Bass"
         case .timingKeyChange, .timingTapCaptured: "Timing"
         case .pdfExported: "Export"
+        case .importPageRead, .importSearched, .importSearchPicked: "Import"
         }
     }
 
@@ -361,6 +371,9 @@ extension AnalyticsEvent {
         case .setlistTimed: "timed"
         case .setlistMedley: "medley"
         case .pdfExported: "pdf"
+        case .importPageRead: "pageRead"
+        case .importSearched: "searched"
+        case .importSearchPicked: "searchPicked"
         }
     }
 
@@ -475,6 +488,7 @@ extension AnalyticsEvent {
         case let .setlistTimed(summary): summary.params
         case .setlistMedley: medleyParams
         case let .pdfExported(summary): summary.params
+        case .importPageRead, .importSearched, .importSearchPicked: importParams
         }
     }
 }

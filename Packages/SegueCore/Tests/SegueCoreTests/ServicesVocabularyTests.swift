@@ -34,15 +34,16 @@ struct ServicesVocabularyTests {
         // (P3-17), one signal name each, the set composer row 24 (P8-5), two signals, the
         // walk-up row 25 (P8-4b), the fill row 26, the timing rows 27 and 28 (P8-7), the
         // artist split row 29 and the setlist time row 30 (P8-8), the PDF export row 31
-        // (P9-1), the medley row 32 (P9-3).
-        #expect(names.count == 33)
+        // (P9-1), the medley row 32 (P9-3), the web import rows 33-35 (P9-4).
+        #expect(names.count == 36)
         #expect(names.isSuperset(of: [
             "Segue.AI.pasteFinished", "Segue.AI.modelDownload", "Segue.AI.assistantUsed",
             "Segue.AI.smartFilterUsed", "Segue.Notes.edited", "Segue.Setlist.composed",
             "Segue.Setlist.composerSession", "Segue.Bass.walkUpPicked",
             "Segue.Bass.fillSaved", "Segue.Timing.tapCaptured", "Segue.Timing.keyChange",
             "Segue.Song.artistSplit", "Segue.Setlist.timed", "Segue.Export.pdf",
-            "Segue.Setlist.medley",
+            "Segue.Setlist.medley", "Segue.Import.pageRead", "Segue.Import.searched",
+            "Segue.Import.searchPicked",
         ]))
     }
 
