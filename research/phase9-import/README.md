@@ -76,3 +76,14 @@ Not yet meeting the targets. Most lyric misses trace to the drafted gold (credit
 ### a8 - canary (`make import-canary`), 2026-11-01
 
 Live: one known page per reader fetched (UG and Chordie plain, E-Chords through `tools/wkfetch`, a generic page plain) and read by the Personal build's readers, plus one LRCLIB search. First run: UG, Chordie, E-Chords, generic and LRCLIB all PASS. The E-Chords load uses the research loader, not the app's `WebKitPageLoader`, whose live path is exercised in the hands-on walk.
+
+#### Against Ryan's reviewed gold (2026-11-01, 19 UG and E-Chords pages reviewed in `make review-gold`)
+
+| Reader | Pass (all) | Pass (reviewed) | Silent wrong (all / reviewed) |
+|---|---|---|---|
+| UG | 13/15 (87%) | 13/15 | 0 / 0 |
+| E-Chords | 6/15 (40%) | 4/4 | 0 / 0 |
+| Chordie | 2/15 (13%) | none reviewed | 1 / - |
+| Generic | 6/15 (40%) | none reviewed | 4 / - |
+
+Pages not yet reviewed are scored against the scripted drafts, which miss credit and note lines and repeats, so their numbers can't be trusted until they are reviewed. The two UG misses left are a performance note sung as a lyric line ("Keep repeating these 2 chords till the end") and a parenthesised optional chord, "(G)", whose line the paste pipeline reads as lyrics.
