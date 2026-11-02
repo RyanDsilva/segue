@@ -30,6 +30,8 @@ cd "$(dirname "$0")/.."
 
 # shellcheck source=lib/discard.sh
 source scripts/lib/discard.sh
+# shellcheck source=lib/archive.sh
+source scripts/lib/archive.sh
 
 team="V6BM673U35"
 appstore_id="dev.ryandsilva.segue"
@@ -148,31 +150,7 @@ archive_bundle_ids() {
 # MARK: - Archive and export
 
 build_archive() {
-    local tmp_archive=".build/archives/.$name.partial.xcarchive"
-    mkdir -p .build/archives
-    discard "$tmp_archive"
-
-    say "generating the workspace"
-    mise exec -- tuist generate --no-open
-
-    say "archiving Segue-AppStore (Release-AppStore) as $name"
-    SEGUE_DESTINATION='generic/platform=macOS' SEGUE_DERIVED_DATA=.build/DerivedData-release \
-        scripts/xcodebuild.sh \
-        -scheme Segue-AppStore -configuration Release-AppStore \
-        -archivePath "$tmp_archive" archive
-    [[ -d "$tmp_archive" ]] || die "xcodebuild reported success but wrote no archive"
-    mv "$tmp_archive" "$archive"
-
-    local dirty
-    dirty=$(git status --porcelain | wc -l | tr -d ' ')
-    {
-        echo "commit=$(git rev-parse HEAD)"
-        echo "dirty_paths=$dirty"
-        echo "built=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    } >"$provenance"
-    if [[ "$dirty" != 0 ]]; then
-        say "note: the working tree had $dirty uncommitted path(s) when archiving (see $provenance)"
-    fi
+    archive_build Segue-AppStore Release-AppStore "$archive" "$provenance" .build/DerivedData-release
 }
 
 export_pkg() {
