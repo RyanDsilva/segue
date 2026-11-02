@@ -58,3 +58,17 @@ Findings: on 2026-11-01 E-Chords' managed challenge cleared on its own in about 
 
 - Search pages: 10 UG (`search.php`, plain requests, all 200), 10 E-Chords (`/api/search` JSON read inside the hidden view, 1.4-3.2 s each, no challenge), 10 Chordie discovery pages.
 - LRCLIB: 35 queries listed (20 Hindi including 5 deliberate misspellings, 15 English; 12 from the bake-off); 33 recorded; 2 still answered 503 after 5 retries (`tum hi hoo`, `country roads`), the retry policy's failure case.
+
+### a7 - offline eval (`make eval-import`), first run 2026-11-01
+
+Gold (`gold/<slug>.json`, gitignored) is drafted by `tools/gold-draft.py` independently of the Swift readers (fields from each site's structured data, chords from the page's own chord markup, lyric words from its lyric lines) and corrected by hand in `tools/gold-overrides.json` (tracked: field values only, no lyrics). Generic pages carry fields plus a minimum chord and lyric-word count, since no full transcription is kept. A page passes per spec 16.3 (title, artists, album, key when given, capo, lyric words >= 99%, chord F1 >= 98%, no junk line left).
+
+| Reader | Pass | Target |
+|---|---|---|
+| UG | 7/15 (47%) | >= 95% |
+| E-Chords | 4/15 (27%) | >= 95% |
+| Chordie | 2/15 (13%) | >= 95% |
+| Generic | 6/15 (40%) | >= 80% |
+| Silent wrong charts | 6 | 0 |
+
+Not yet meeting the targets. Most lyric misses trace to the drafted gold (credit and note lines, repeated sections), not the readers: the converted charts read right where checked by eye. The gold is reviewed next with the local review tool (`make review-gold`), then the readers are fixed against it.

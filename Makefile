@@ -54,7 +54,7 @@ HTMLVALIDATE := pnpm dlx html-validate@11.16.4
 WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: sentry-pull bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
-	test-perf e2e e2e-one e2e-smoke e2e-vm e2e-vm-golden gate quick eval-ai lint format verify-appstore check bump \
+	test-perf e2e e2e-one e2e-smoke e2e-vm e2e-vm-golden gate quick eval-ai eval-import lint format verify-appstore check bump \
 	site-fonts site-html guide guide-dev guide-check guide-keys docs-shots docs-clips screenshots screenshots-compose preview preview-edit docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
@@ -223,6 +223,9 @@ probe-shortcuts: ## R35 probe: build the sandboxed Shortcuts Events probe app (r
 
 eval-ai: ## Manual: real FM + MLX over the paste fixtures and local pastes vs the baseline (BASELINE=1, RECORD=1, PROVIDERS=, MODEL=); never in check or gate
 	scripts/eval-ai.sh
+
+eval-import: ## Manual, offline: every web page reader over the gitignored corpus vs its gold (P9-4 16.3; SHOW=slug prints one chart); never in quick, gate or check
+	cd Packages/SeguePersonalModules && $(SWIFT_TEST:test=run) segue-import-eval ../../research/phase9-import $(if $(SHOW),--show $(SHOW))
 
 verify-appstore: ## Build the App Store flavor and assert no personal-module symbols
 	scripts/verify-appstore.sh

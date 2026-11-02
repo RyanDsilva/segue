@@ -22,6 +22,9 @@ let package = Package(
     platforms: [.macOS("26.0")],
     products: [
         .library(name: "SeguePersonalModules", targets: ["SeguePersonalModules"]),
+        // P9-4 spec 16.3: the offline parse-accuracy eval (`make eval-import`), never linked
+        // by the app and never part of quick, gate or check.
+        .executable(name: "segue-import-eval", targets: ["segue-import-eval"]),
     ],
     dependencies: [
         .package(path: "../SegueCore"),
@@ -38,6 +41,14 @@ let package = Package(
                 .product(name: "SegueAI", package: "SegueAI"),
                 .product(name: "SegueAIEval", package: "SegueAI"),
                 .product(name: "SwiftSoup", package: "SwiftSoup"),
+            ],
+            swiftSettings: strictSettings,
+        ),
+        .executableTarget(
+            name: "segue-import-eval",
+            dependencies: [
+                "SeguePersonalModules",
+                .product(name: "SegueCore", package: "SegueCore"),
             ],
             swiftSettings: strictSettings,
         ),
