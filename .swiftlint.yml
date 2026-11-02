@@ -123,6 +123,16 @@ custom_rules:
     excluded: 'Packages/SegueVendorServices/'
     message: "Vendor SDKs are imported only in Packages/SegueVendorServices (WS3 spec 3.1)."
     severity: error
+  # P9-4 spec 4.1: the Personal build's HTML parser is imported only in the personal
+  # package's Web/ folder (and its tests), so it can never reach core, SegueUI or the App Store build.
+  swiftsoup_import:
+    name: "SwiftSoup import"
+    regex: '^\s*(@\w+(\([^)]*\))?\s+)*import\s+SwiftSoup\b'
+    excluded:
+      - 'Packages/SeguePersonalModules/Sources/SeguePersonalModules/Web/'
+      - 'Packages/SeguePersonalModules/Tests/'
+    message: "SwiftSoup is imported only in SeguePersonalModules/Web (P9-4 spec 4.1)."
+    severity: error
   vendor_host:
     name: "Vendor host"
     regex: '(telemetrydeck\.com|sentry\.io)'

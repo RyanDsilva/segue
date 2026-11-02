@@ -4,7 +4,8 @@
 // `Packages/` are integrated as Xcode targets through here, alongside GRDB and Tonic.
 // GRDB and Tonic are pinned to the SAME exact versions as `Packages/SegueCore/Package.swift`,
 // sentry-cocoa to the same exact version as `Packages/SegueVendorServices/Package.swift`,
-// mlx-swift-lm and swift-transformers to the same exact versions as `Packages/SegueAI`.
+// mlx-swift-lm and swift-transformers to the same exact versions as `Packages/SegueAI`,
+// SwiftSoup to the same exact version as `Packages/SeguePersonalModules/Package.swift`.
 
 import PackageDescription
 
@@ -106,5 +107,8 @@ let package = Package(
         // Phase 3 (P3-3): MLX + tokenizer, pinned like Packages/SegueAI/Package.swift.
         .package(url: "https://github.com/ml-explore/mlx-swift-lm", exact: "3.32.3"),
         .package(url: "https://github.com/huggingface/swift-transformers", exact: "1.3.5"),
+        // Phase 9 (P9-4): the HTML parser of the Personal build's web import, pinned like
+        // Packages/SeguePersonalModules/Package.swift (R182). The App Store target never links it.
+        .package(url: "https://github.com/scinfu/SwiftSoup", exact: "2.14.3"),
     ],
 )
