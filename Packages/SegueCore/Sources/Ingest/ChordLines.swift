@@ -129,8 +129,21 @@ enum ChordLines {
         guard carrying.count >= 2 else { return lines }
         return lines.map { line in
             guard !chordGroups(line).isEmpty, !isRepeatMark(line) else { return line }
+            // R198: on a line of chords only that mixes plain and bracketed chords
+            // ("      (G)        D"), a bracketed chord is a
+            // chord of that line: its brackets become spaces so the columns stay put and the
+            // line still reads as a chord line, not a lyric with an inline chord.
+            let tokens = line.split(separator: " ")
+            let chordsOnly = tokens.contains { isChord(String($0)) && !$0.hasPrefix("(") }
+                && tokens.allSatisfy { token in
+                    let bare = token.hasPrefix("(") && token.hasSuffix(")")
+                        ? token.dropFirst().dropLast() : token
+                    return isChord(String(bare)) || isRepeatMark(String(token))
+                        || decorations.contains(String(token))
+                }
             return line.replacing(pattern) { match in
-                isChord(String(match.output.1)) ? "[\(match.output.1)]" : String(match.output.0)
+                guard isChord(String(match.output.1)) else { return String(match.output.0) }
+                return chordsOnly ? " \(match.output.1) " : "[\(match.output.1)]"
             }
         }
     }

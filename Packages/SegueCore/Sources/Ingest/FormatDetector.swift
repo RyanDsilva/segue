@@ -33,6 +33,11 @@ public enum FormatDetector {
         if HeaderParser.parse(line) != nil, !underChordLine || trimmed.hasPrefix("[") {
             return .headerLine
         }
+        // R198: a playing instruction under its chords ("Keep repeating these 2 chords till
+        // the end.") is a note, not a lyric, even under a chord line.
+        if MetadataExtractor.isPlayingInstruction(line) {
+            return .unknown
+        }
         if underChordLine {
             return .lyricLine
         }

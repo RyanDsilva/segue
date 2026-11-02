@@ -100,6 +100,19 @@ enum MetadataExtractor {
     /// Both field forms need a label whose last word is in `noteLabels`, so a lyric that merely
     /// starts with an emoji or holds a dash is never taken. Fields that carry metadata
     /// (`Capo – 3rd Fret`) are `keyValueFields` lines instead.
+    /// R198: a sentence telling the player what to do with the chords ("Keep repeating these
+    /// 2 chords till the end.", "Play the intro chords twice"): it names chords, strumming or
+    /// the capo and an instruction word. Lyrics rarely say "chords", so this stays narrow.
+    static func isPlayingInstruction(_ line: String) -> Bool {
+        let lowered = line.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !ChordLines.hasInlineChords(lowered), keyValueFields(line) == nil,
+              lowered.contains(/\b(chords?|strum\w*|pattern|capo)\b/)
+        else { return false }
+        let instruction = /\b(repeat\w*|throughout|(till|until) the end|same (chords?|pattern))\b/
+        return lowered.contains(instruction)
+            || lowered.contains(/\bkeep (playing|repeating|strumming)\b/)
+    }
+
     static func isNoteLine(_ line: String) -> Bool {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         guard !ChordLines.hasInlineChords(trimmed) else { return false }
