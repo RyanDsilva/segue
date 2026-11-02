@@ -19,7 +19,7 @@ book="$derived/Segue.help"
 stamp="$derived/source.sha256"
 
 current_hash() {
-    mise exec -- node guide/scripts/helpbook.mjs --hash
+    mise exec node -- node guide/scripts/helpbook.mjs --hash
 }
 
 up_to_date() {
@@ -47,7 +47,7 @@ fi
 echo "help-book: building $book from guide/"
 (
     cd guide
-    mise exec -- pnpm install --frozen-lockfile --silent
-    HELP_BOOK=1 ASTRO_TELEMETRY_DISABLED=1 mise exec -- pnpm --silent exec astro build >/dev/null
+    mise exec node pnpm -- pnpm install --frozen-lockfile --silent
+    HELP_BOOK=1 ASTRO_TELEMETRY_DISABLED=1 mise exec node pnpm -- pnpm --silent exec astro build >/dev/null
 )
-mise exec -- node guide/scripts/helpbook.mjs
+mise exec node -- node guide/scripts/helpbook.mjs
