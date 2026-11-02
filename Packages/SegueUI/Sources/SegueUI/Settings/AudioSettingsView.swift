@@ -17,7 +17,7 @@
         var body: some View {
             Form {
                 Section {
-                    Picker("Play through", selection: outputBinding) {
+                    Picker(uiString("Play through"), selection: outputBinding) {
                         Text(sound.systemOutputTitle).tag(String?.none)
                         ForEach(sound.outputChoices) { choice in
                             Text(choice.title).tag(Optional(choice.uid))
@@ -29,50 +29,52 @@
                     }
                 }
                 Section {
-                    Picker("Chord sound", selection: binding(\.chordSound)) {
-                        Text("Piano").tag(ChordSound.piano)
-                        Text("Clean guitar").tag(ChordSound.cleanGuitar)
+                    Picker(uiString("Chord sound"), selection: binding(\.chordSound)) {
+                        Text("Piano", bundle: #bundle).tag(ChordSound.piano)
+                        Text("Clean guitar", bundle: #bundle).tag(ChordSound.cleanGuitar)
                     }
                     .pickerStyle(.segmented)
                     .fixedSize()
                     .accessibilityIdentifier(AccessibilityID.settingsAudioChordSound)
-                    Picker("Chords play as", selection: binding(\.chordStyle)) {
-                        Text("Strum").tag(ChordStyle.strum)
-                        Text("Block").tag(ChordStyle.block)
+                    Picker(uiString("Chords play as"), selection: binding(\.chordStyle)) {
+                        Text("Strum", bundle: #bundle).tag(ChordStyle.strum)
+                        Text("Block", bundle: #bundle).tag(ChordStyle.block)
                     }
                     .pickerStyle(.segmented)
                     .fixedSize()
                     .accessibilityIdentifier(AccessibilityID.settingsAudioChordStyle)
-                    Picker("Bass", selection: binding(\.bassSound)) {
-                        Text("Finger").tag(BassSound.finger)
-                        Text("Pick").tag(BassSound.pick)
+                    Picker(uiString("Bass"), selection: binding(\.bassSound)) {
+                        Text("Finger", bundle: #bundle).tag(BassSound.finger)
+                        Text("Pick", bundle: #bundle).tag(BassSound.pick)
                     }
                     .pickerStyle(.segmented)
                     .fixedSize()
                     .accessibilityIdentifier(AccessibilityID.settingsAudioBassSound)
                 }
                 Section {
-                    LabeledContent("Volume") {
+                    LabeledContent(uiString("Volume")) {
                         HStack(spacing: 8) {
                             Image(systemName: "speaker.fill")
                                 .foregroundStyle(.secondary)
                                 .accessibilityHidden(true)
                             Slider(value: binding(\.volume), in: 0 ... 1)
                                 .frame(minWidth: 160)
-                                .accessibilityLabel("Volume")
-                                .accessibilityValue("\(Int((settings.volume * 100).rounded()))%")
+                                .accessibilityLabel(uiString("Volume"))
+                                .accessibilityValue(
+                                    Text(verbatim: "\(Int((settings.volume * 100).rounded()))%"),
+                                )
                                 .accessibilityIdentifier(AccessibilityID.settingsAudioVolume)
                             Image(systemName: "speaker.wave.3.fill")
                                 .foregroundStyle(.secondary)
                                 .accessibilityHidden(true)
                         }
                     }
-                    LabeledContent("Test") {
-                        Button("Play a G Chord") {
+                    LabeledContent(uiString("Test")) {
+                        Button(uiString("Play a G Chord")) {
                             sound.testSound(tuning: instrument?.profile.tuning ?? .bassStandard4)
                         }
                         .disabled(!sound.isAvailable)
-                        .help(sound.isAvailable ? "Plays a G chord with its bass note"
+                        .help(sound.isAvailable ? uiString("Plays a G chord with its bass note")
                             : SoundGate.offHelp)
                         .accessibilityIdentifier(AccessibilityID.settingsAudioTest)
                     }

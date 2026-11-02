@@ -31,30 +31,34 @@
                 get: { preferences.selectedPane.flatMap(Pane.init) ?? .general },
                 set: { preferences.selectedPane = $0.rawValue },
             )) {
-                Tab("General", systemImage: "gearshape", value: Pane.general) {
+                Tab(uiString("General"), systemImage: "gearshape", value: Pane.general) {
                     GeneralSettingsView(app: app)
                         .accessibilityIdentifier(AccessibilityID.settingsPane("general"))
                 }
-                Tab("Appearance", systemImage: "circle.lefthalf.filled", value: Pane.appearance) {
+                Tab(
+                    uiString("Appearance"),
+                    systemImage: "circle.lefthalf.filled",
+                    value: Pane.appearance,
+                ) {
                     AppearanceSettingsView(store: app.polish.appearance)
                         .accessibilityIdentifier(AccessibilityID.settingsPane("appearance"))
                 }
-                Tab("Instrument", systemImage: "guitars", value: Pane.instrument) {
+                Tab(uiString("Instrument"), systemImage: "guitars", value: Pane.instrument) {
                     InstrumentSettingsView(store: app.instrumentProfile)
                         .accessibilityIdentifier(AccessibilityID.settingsPane("instrument"))
                 }
-                Tab("Audio", systemImage: "speaker.wave.2", value: Pane.audio) {
+                Tab(uiString("Audio"), systemImage: "speaker.wave.2", value: Pane.audio) {
                     AudioSettingsView(sound: app.sound, instrument: app.instrumentProfile)
                         .accessibilityIdentifier(AccessibilityID.settingsPane("audio"))
                 }
-                Tab("Live", systemImage: "music.mic", value: Pane.live) {
+                Tab(uiString("Live"), systemImage: "music.mic", value: Pane.live) {
                     LiveSettingsView(
                         store: app.liveSettings,
                         shortcuts: app.dependencies.live.shortcuts,
                         workspace: app.dependencies.workspace,
                     )
                 }
-                Tab("AI", systemImage: "sparkles", value: Pane.ai) {
+                Tab(uiString("AI"), systemImage: "sparkles", value: Pane.ai) {
                     AISettingsView(
                         ai: app.ai,
                         workspace: app.dependencies.workspace,
@@ -62,13 +66,13 @@
                     )
                     .accessibilityIdentifier(AccessibilityID.settingsPane("ai"))
                 }
-                Tab("Privacy", systemImage: "hand.raised", value: Pane.privacy) {
+                Tab(uiString("Privacy"), systemImage: "hand.raised", value: Pane.privacy) {
                     PrivacySettingsView(
                         store: app.dependencies.consent,
                         workspace: app.dependencies.workspace,
                     )
                 }
-                Tab("Data", systemImage: "externaldrive", value: Pane.data) {
+                Tab(uiString("Data"), systemImage: "externaldrive", value: Pane.data) {
                     DataSettingsView(app: app)
                         .accessibilityIdentifier(AccessibilityID.settingsPane("data"))
                 }

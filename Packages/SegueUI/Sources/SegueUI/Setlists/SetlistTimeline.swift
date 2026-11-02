@@ -357,7 +357,8 @@
                 isOpen.toggle()
             } label: {
                 HStack(spacing: 4) {
-                    Text(followsTotal ? "+ \(count) unknown" : "\(count) unknown")
+                    Text(followsTotal ? uiString("+ \(count) unknown") :
+                        uiString("\(count) unknown"))
                     Image(systemName: "chevron.down")
                         .font(.system(size: 8, weight: .bold))
                 }
@@ -371,8 +372,8 @@
             }
             .buttonStyle(.plain)
             .fixedSize()
-            .help("Songs with no time")
-            .accessibilityLabel(count == 1 ? "1 song with no time" :
+            .help(uiString("Songs with no time"))
+            .accessibilityLabel(count == 1 ? uiString("1 song with no time") :
                 "\(count) songs with no time")
             .accessibilityIdentifier(AccessibilityID.setlistUnknownButton)
             .popover(isPresented: $isOpen, arrowEdge: .bottom) {

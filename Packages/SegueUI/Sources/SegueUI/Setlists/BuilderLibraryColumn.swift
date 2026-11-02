@@ -163,12 +163,12 @@
 
         private var header: some View {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Library")
+                Text("Library", bundle: #bundle)
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
                 SearchField(
                     text: $state.query,
-                    prompt: "Search or filter: ready, upbeat, key G",
+                    prompt: uiString("Search or filter: ready, upbeat, key G"),
                     accessibilityIdentifier: AccessibilityID.builderSearch,
                     onSubmit: focusFirstResult,
                 )
@@ -317,11 +317,11 @@
                 .frame(maxWidth: .infinity, alignment: .leading)
                 stateLabel
                 if number == nil, let medley = tick.medleyTitle(of: record.id) {
-                    Text("In \(medley)")
+                    Text("In \(medley)", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 13))
                         .foregroundStyle(Theme.color.muted)
                         .lineLimit(1)
-                        .help("This song plays in \(medley). Tick it to add a reprise.")
+                        .help(uiString("This song plays in \(medley). Tick it to add a reprise."))
                         .accessibilityIdentifier(AccessibilityID.medleyReprise)
                 }
             }
@@ -373,7 +373,7 @@
                             lineWidth: 1.5,
                         )
                     if let number {
-                        Text("\(number)")
+                        Text(verbatim: "\(number)")
                             .font(SchibstedGrotesk.extraBold.font(size: number > 99 ? 8 : 10.5))
                             .foregroundStyle(Theme.color.ground)
                             .minimumScaleFactor(0.6)
@@ -384,12 +384,12 @@
             }
             .buttonStyle(.plain)
             .disabled(isReadOnly)
-            .help(isInSet ? "In the set at #\(number ?? 0). Click to take it out."
+            .help(isInSet ? uiString("In the set at #\(number ?? 0). Click to take it out.")
                 : "Add to the end of the set")
             .accessibilityLabel(isInSet
                 ? "Remove \(SongSummary.title(record)) from setlist"
                 : "Add \(SongSummary.title(record)) to setlist")
-            .accessibilityValue(isInSet ? "In set at \(number ?? 0)" : "")
+            .accessibilityValue(isInSet ? uiString("In set at \(number ?? 0)") : "")
             .accessibilityAddTraits(isInSet ? .isSelected : [])
             .accessibilityIdentifier(isInSet ? AccessibilityID.builderInSet : AccessibilityID
                 .builderAdd)

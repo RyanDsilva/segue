@@ -79,7 +79,7 @@
             .onChange(of: selection) { scroll(to: selection, in: plan) }
             .accessibilityElement(children: .ignore)
             // One spoken label: static text exposes its words as the value.
-            .accessibilityLabel("Stage preview, " + Self.spokenCount(plan.passes.count))
+            .accessibilityLabel(uiString("Stage preview, \(Self.spokenCount(plan.passes.count))"))
             .accessibilityAddTraits(.isStaticText)
             .accessibilityIdentifier(AccessibilityID.arrangementPreview)
         }

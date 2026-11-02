@@ -25,7 +25,7 @@
                         count: missing,
                     )
                     .tag(LibrarySession.Section.missingEssentials)
-                    .help("Songs without a key, length or tempo (the set essentials)")
+                    .help(uiString("Songs without a key, length or tempo (the set essentials)"))
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier(AccessibilityID.missingEssentialsRow)
                 }
@@ -47,16 +47,16 @@
                 Button {
                     model.editing = .new
                 } label: {
-                    Label("New Smart Filter", systemImage: "plus")
+                    Label(uiString("New Smart Filter"), systemImage: "plus")
                         .foregroundStyle(Theme.color.muted)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("Save a filter of songs by tags, proficiency, key, tempo or length")
+                .help(uiString("Save a filter of songs by tags, proficiency, key, tempo or length"))
                 .accessibilityIdentifier(AccessibilityID.newSmartFilter)
             } header: {
-                Text("Smart Filters")
+                Text("Smart Filters", bundle: #bundle)
                     .accessibilityIdentifier(AccessibilityID.sidebarSmartFilters)
             }
         }
@@ -67,7 +67,7 @@
                     Text(title)
                         .lineLimit(1)
                     Spacer(minLength: 4)
-                    Text("\(count)")
+                    Text(verbatim: "\(count)")
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
@@ -78,11 +78,11 @@
         }
 
         @ViewBuilder private func menu(_ filter: SmartFilter) -> some View {
-            Button("Edit Smart Filter…") { model.editing = .edit(filter.id) }
+            Button(uiString("Edit Smart Filter…")) { model.editing = .edit(filter.id) }
                 .disabled(filter.readOnly != nil)
-            Button("Rename…") { renaming = filter }
+            Button(uiString("Rename…")) { renaming = filter }
                 .disabled(filter.readOnly != nil)
-            Button("Duplicate") {
+            Button(uiString("Duplicate")) {
                 Task {
                     if let copy = await model.duplicate(filter.id) {
                         session.showSmartFilter(copy.id)
@@ -90,14 +90,14 @@
                 }
             }
             Divider()
-            Button("Show in Finder") {
+            Button(uiString("Show in Finder")) {
                 Task {
                     if let url = await model.fileURL(for: filter.id) {
                         session.workspace.reveal([url])
                     }
                 }
             }
-            Button("Move to Trash") { Task { await model.delete(filter.id) } }
+            Button(uiString("Move to Trash")) { Task { await model.delete(filter.id) } }
         }
     }
 
@@ -110,11 +110,11 @@
         let onDelete: () -> Void
 
         var body: some View {
-            Button("Rename Tag…") { sheet = .rename(tag) }
-            Button("Merge Into…") { sheet = .merge(tag) }
+            Button(uiString("Rename Tag…")) { sheet = .rename(tag) }
+            Button(uiString("Merge Into…")) { sheet = .merge(tag) }
                 .disabled(otherTags.isEmpty)
             Divider()
-            Button("Delete Tag", role: .destructive, action: onDelete)
+            Button(uiString("Delete Tag"), role: .destructive, action: onDelete)
         }
     }
 
@@ -149,13 +149,13 @@
                     .foregroundStyle(Theme.color.ink)
                 switch purpose {
                 case .rename:
-                    TextField("New name", text: $text)
+                    TextField(uiString("New name"), text: $text)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 300)
                         .onSubmit(commit)
                         .accessibilityIdentifier(AccessibilityID.tagNameField)
                 case .merge:
-                    Picker("Merge into", selection: $text) {
+                    Picker(uiString("Merge into"), selection: $text) {
                         ForEach(otherTags, id: \.self) { Text($0).tag($0) }
                     }
                     .frame(width: 300)
@@ -169,10 +169,10 @@
                     .fixedSize(horizontal: false, vertical: true)
                 HStack {
                     Spacer()
-                    Button("Cancel", role: .cancel) { dismiss() }
+                    Button(uiString("Cancel"), role: .cancel) { dismiss() }
                         .keyboardShortcut(.cancelAction)
                         .buttonStyle(.segueSecondary)
-                    Button(isMerge ? "Merge" : "Rename", action: commit)
+                    Button(isMerge ? uiString("Merge") : uiString("Rename"), action: commit)
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(.seguePrimary)
                         .disabled(!canCommit)
@@ -245,7 +245,7 @@
             switch request {
             case .new:
                 SmartFilterEditorSheet(
-                    title: "New Smart Filter",
+                    title: uiString("New Smart Filter"),
                     saveTitle: "Save",
                     draft: SmartFilterDraft(name: "", conditions: SmartFilterConditions()),
                     libraryTags: library.tagNames,
@@ -259,7 +259,7 @@
             case let .edit(id):
                 if let filter = session.smartFilters.filter(id) {
                     SmartFilterEditorSheet(
-                        title: "Edit Smart Filter",
+                        title: uiString("Edit Smart Filter"),
                         saveTitle: "Save",
                         draft: SmartFilterDraft(name: filter.name, conditions: filter.conditions),
                         libraryTags: library.tagNames,
@@ -285,20 +285,20 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Rename Smart Filter")
+                Text("Rename Smart Filter", bundle: #bundle)
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
-                TextField("Name", text: $text)
+                TextField(uiString("Name"), text: $text)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 300)
                     .onSubmit(commit)
                     .accessibilityIdentifier(AccessibilityID.smartFilterName)
                 HStack {
                     Spacer()
-                    Button("Cancel", role: .cancel) { dismiss() }
+                    Button(uiString("Cancel"), role: .cancel) { dismiss() }
                         .keyboardShortcut(.cancelAction)
                         .buttonStyle(.segueSecondary)
-                    Button("Rename", action: commit)
+                    Button(uiString("Rename"), action: commit)
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(.seguePrimary)
                         .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

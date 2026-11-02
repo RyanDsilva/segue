@@ -88,10 +88,14 @@
         func entryAssistantActions(_ assistant: EntryAssistant) -> some View {
             accessibilityActions {
                 if let toggle = assistant.onToggleLock {
-                    Button(assistant.isLocked ? "Unlock" : "Lock", action: toggle)
+                    Button(
+                        assistant.isLocked ? uiString("Unlock") : uiString("Lock"),
+                        action: toggle,
+                    )
                 }
                 if assistant.breakdown != nil {
-                    Button("Show score breakdown") { assistant.isBreakdownShown.wrappedValue = true
+                    Button(uiString("Show score breakdown")) {
+                        assistant.isBreakdownShown.wrappedValue = true
                     }
                 }
             }
@@ -117,7 +121,7 @@
                 .popover(isPresented: $isShown, arrowEdge: .leading) {
                     ScoreBreakdownView(title: title, breakdown: breakdown)
                 }
-                .help("Why this song: hover, or press Space on the selected row")
+                .help(uiString("Why this song: hover, or press Space on the selected row"))
                 .accessibilityLabel(ScoreBreakdownView.spoken(breakdown))
                 .accessibilityIdentifier(AccessibilityID.entryScore)
         }
@@ -145,10 +149,10 @@
             .buttonStyle(.plain)
             .opacity(isLocked || (isHovered && onToggle != nil) ? 1 : 0)
             .disabled(onToggle == nil)
-            .help(help ?? (isLocked ? "Unlock: Rebuild may replace this song"
+            .help(help ?? (isLocked ? uiString("Unlock: Rebuild may replace this song")
                     : "Lock: Rebuild keeps this song here"))
-            .accessibilityLabel(isLocked ? "Unlock \(title)" : "Lock \(title)")
-            .accessibilityValue(isLocked ? "Locked" : "Unlocked")
+            .accessibilityLabel(isLocked ? uiString("Unlock \(title)") : uiString("Lock \(title)"))
+            .accessibilityValue(isLocked ? uiString("Locked") : uiString("Unlocked"))
             .accessibilityIdentifier(AccessibilityID.entryLock)
         }
     }

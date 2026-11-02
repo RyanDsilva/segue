@@ -89,7 +89,7 @@
         private var header: some View {
             HStack(alignment: .top, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Gig")
+                    Text("Gig", bundle: #bundle)
                         .font(Theme.font.label)
                         .foregroundStyle(Theme.color.muted)
                     Text(entry.details.venue ?? entry.setlistName)
@@ -104,11 +104,11 @@
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Menu {
-                    Button("Show in Finder", action: onReveal)
+                    Button(uiString("Show in Finder"), action: onReveal)
                         .accessibilityIdentifier(AccessibilityID.gigReveal)
                     Divider()
                     // No confirmation: Edit > Undo brings the gig and its plays back (A23).
-                    Button("Move to Trash", role: .destructive) {
+                    Button(uiString("Move to Trash"), role: .destructive) {
                         Task { await model.delete(entry.id) }
                     }
                     .accessibilityIdentifier(AccessibilityID.gigDelete)
@@ -117,14 +117,14 @@
                     // of the text buttons beside it so the two line up.
                     Image(systemName: "ellipsis")
                         .frame(minWidth: 18, minHeight: 20)
-                        .accessibilityLabel("More")
+                        .accessibilityLabel(uiString("More"))
                 }
                 .menuStyle(.button)
                 .menuIndicator(.hidden)
                 .buttonStyle(.segueSecondary)
                 .controlSize(.large)
                 .fixedSize()
-                .help("Show in Finder or move this gig to the Trash")
+                .help(uiString("Show in Finder or move this gig to the Trash"))
                 .accessibilityIdentifier(AccessibilityID.gigMoreMenu)
             }
         }
@@ -154,10 +154,14 @@
             Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 16, verticalSpacing: 12) {
                 GridRow {
                     label("Venue")
-                    TextField("Venue", text: $draft.venue, prompt: Text("Where you played"))
-                        .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: 320)
-                        .accessibilityIdentifier(AccessibilityID.gigVenue)
+                    TextField(
+                        uiString("Venue"),
+                        text: $draft.venue,
+                        prompt: Text("Where you played", bundle: #bundle),
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 320)
+                    .accessibilityIdentifier(AccessibilityID.gigVenue)
                 }
                 GridRow {
                     label("Date")
@@ -212,11 +216,11 @@
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("\(value) star\(value == 1 ? "" : "s")")
+                    .accessibilityLabel(uiString("\(value) star\(value == 1 ? "" : "s")"))
                     .accessibilityAddTraits(rating == value ? .isSelected : [])
                     .accessibilityIdentifier(AccessibilityID.gigRating(value))
                 }
-                Text(rating == nil ? "Not rated" : "Click again to clear")
+                Text(rating == nil ? uiString("Not rated") : uiString("Click again to clear"))
                     .font(.callout)
                     .foregroundStyle(Theme.color.muted)
                     .padding(.leading, 6)
@@ -244,7 +248,7 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Played")
+                Text("Played", bundle: #bundle)
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
                     .padding(.bottom, 8)
@@ -252,12 +256,12 @@
                     GigPlayedSlotRows(slot: slot, number: offset + 1)
                 }
                 if entry.played.isEmpty {
-                    Text("Nothing was played to the end.")
+                    Text("Nothing was played to the end.", bundle: #bundle)
                         .font(Theme.font.body)
                         .foregroundStyle(Theme.color.muted)
                 }
                 if !entry.skipped.isEmpty {
-                    Text("Skipped")
+                    Text("Skipped", bundle: #bundle)
                         .font(Theme.font.sectionHeading)
                         .foregroundStyle(Theme.color.ink)
                         .padding(.top, 24)

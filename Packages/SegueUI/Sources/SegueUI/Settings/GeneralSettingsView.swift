@@ -11,8 +11,8 @@
 
         var body: some View {
             Form {
-                Section("Library") {
-                    LabeledContent("Library folder") {
+                Section(uiString("Library")) {
+                    LabeledContent(uiString("Library folder")) {
                         Text(libraryPath)
                             .foregroundStyle(app.session == nil ? .secondary : .primary)
                             .lineLimit(1)
@@ -22,7 +22,7 @@
                             .accessibilityIdentifier(AccessibilityID.settingsLibraryPath)
                     }
                     HStack {
-                        Button("Change…") {
+                        Button(uiString("Change…")) {
                             let choose = { Task { await app.chooseLibrary() } }
                             if let session = app.session {
                                 session.library.navigate { _ = choose() }
@@ -32,16 +32,17 @@
                         }
                         .disabled(!app.canSwitchLibrary)
                         .help(app
-                            .canSwitchLibrary ? "" : "End the show before switching libraries.")
+                            .canSwitchLibrary ? "" :
+                            uiString("End the show before switching libraries."))
                         .accessibilityIdentifier(AccessibilityID.settingsChangeLibrary)
-                        Button("Show Library in Finder") { app.session?.revealLibrary() }
+                        Button(uiString("Show Library in Finder")) { app.session?.revealLibrary() }
                             .disabled(app.session == nil)
                             .accessibilityIdentifier(AccessibilityID.settingsShowLibrary)
                     }
                     SettingsNote(text: "Songs are plain ChordPro files in this folder. Back it up "
                         + "like any folder; Time Machine works.")
                 }
-                Section("Setlists") {
+                Section(uiString("Setlists")) {
                     Stepper(
                         value: Binding(
                             get: { ChangeoverSetting.clamped(changeover) },
@@ -51,7 +52,7 @@
                         step: ChangeoverSetting.step,
                     ) {
                         LabeledContent(
-                            "Changeover between songs",
+                            uiString("Changeover between songs"),
                             value: SetlistTiming.formatChangeover(
                                 TimeInterval(ChangeoverSetting.clamped(changeover)),
                             ),

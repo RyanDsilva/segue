@@ -190,7 +190,7 @@
         var body: some View {
             let shape = RoundedRectangle(cornerRadius: 9, style: .continuous)
             VStack(alignment: .leading, spacing: 1) {
-                Text("\(chip.id + 1)")
+                Text(verbatim: "\(chip.id + 1)")
                     .font(SchibstedGrotesk.bold.font(size: 10))
                     .foregroundStyle(Theme.color.indicatorOff)
                 Text(chip.title)
@@ -276,13 +276,13 @@
                     Button { perform(.duplicate(chip.id)) } label: {
                         Image(systemName: "plus").frame(width: 18, height: 18)
                     }
-                    .help("Duplicate (⌘D)")
+                    .help(uiString("Duplicate (⌘D)"))
                     .disabled(!canAppend)
                     .accessibilityIdentifier(AccessibilityID.arrangementChipDuplicate(chip.id))
                     Button { perform(.remove(chip.id)) } label: {
                         Image(systemName: "xmark").frame(width: 18, height: 18)
                     }
-                    .help("Remove (⌫)")
+                    .help(uiString("Remove (⌫)"))
                     .accessibilityIdentifier(AccessibilityID.arrangementChipRemove(chip.id))
                 }
                 .buttonStyle(.borderless)
@@ -301,23 +301,24 @@
                     set: { _ in perform(.setMode(chip.id, mode)) },
                 ))
             }
-            Button(isSkipped ? "Play" : "Skip") { perform(.toggleSkip(chip.id)) }
+            Button(isSkipped ? uiString("Play") : uiString("Skip")) { perform(.toggleSkip(chip.id))
+            }
             Divider()
-            Button("Duplicate") { perform(.duplicate(chip.id)) }
+            Button(uiString("Duplicate")) { perform(.duplicate(chip.id)) }
                 .disabled(!canAppend)
-            Button("Play Again at End") { perform(.playAgainAtEnd(chip.id)) }
+            Button(uiString("Play Again at End")) { perform(.playAgainAtEnd(chip.id)) }
                 .disabled(!canAppend)
             Divider()
-            Button("Move Earlier") { perform(.move(from: chip.id, to: chip.id - 1)) }
+            Button(uiString("Move Earlier")) { perform(.move(from: chip.id, to: chip.id - 1)) }
                 .disabled(isFirst)
-            Button("Move Later") { perform(.move(from: chip.id, to: chip.id + 2)) }
+            Button(uiString("Move Later")) { perform(.move(from: chip.id, to: chip.id + 2)) }
                 .disabled(isLast)
-            Button("Move to Start") { perform(.move(from: chip.id, to: 0)) }
+            Button(uiString("Move to Start")) { perform(.move(from: chip.id, to: 0)) }
                 .disabled(isFirst)
-            Button("Move to End") { perform(.move(from: chip.id, to: count)) }
+            Button(uiString("Move to End")) { perform(.move(from: chip.id, to: count)) }
                 .disabled(isLast)
             Divider()
-            Button("Remove") { perform(.remove(chip.id)) }
+            Button(uiString("Remove")) { perform(.remove(chip.id)) }
         }
 
         /// "Chorus, pass 2 of 3" or "Chorus 3rd".

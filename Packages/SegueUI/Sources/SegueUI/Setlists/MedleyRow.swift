@@ -109,7 +109,7 @@
     extension MedleyRow {
         private func header(collapsed: Bool) -> some View {
             HStack(alignment: collapsed ? .center : .firstTextBaseline, spacing: 8) {
-                Text("\(number)")
+                Text(verbatim: "\(number)")
                     .font(SchibstedGrotesk.medium.font(size: 14))
                     .foregroundStyle(Theme.color.muted)
                     .frame(width: 32, alignment: .leading)
@@ -156,7 +156,9 @@
                 .foregroundStyle(Theme.color.ink)
                 .lineLimit(1)
                 .frame(width: 56 + 8 + 64, alignment: .leading)
-                .accessibilityLabel("Keys \(keyPath.replacingOccurrences(of: "→", with: "to"))")
+                .accessibilityLabel(
+                    uiString("Keys \(keyPath.replacingOccurrences(of: "→", with: "to"))"),
+                )
                 .accessibilityIdentifier(AccessibilityID.medleyKeyPath)
             Text(timeText)
                 .font(SchibstedGrotesk.medium.font(size: 14))
@@ -176,7 +178,7 @@
 
         private func titleLine(showsCount: Bool) -> some View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("MEDLEY")
+                Text("MEDLEY", bundle: #bundle)
                     .font(SchibstedGrotesk.bold.font(size: 11))
                     .tracking(0.88)
                     .foregroundStyle(Theme.color.muted)
@@ -193,11 +195,11 @@
                         },
                     )
                 } else {
-                    Text(medley.title ?? "Medley")
+                    Text(medley.title ?? uiString("Medley"))
                         .font(SchibstedGrotesk.semiBold.font(size: 16))
                         .foregroundStyle(medley.title == nil ? Theme.color.muted : Theme.color.ink)
                         .lineLimit(1)
-                        .help(isReadOnly ? "" : "Double-click to rename")
+                        .help(isReadOnly ? "" : uiString("Double-click to rename"))
                         .accessibilityIdentifier(AccessibilityID.medleyTitle)
                 }
                 if showsCount {
@@ -224,33 +226,34 @@
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help(isCollapsed ? "Show the songs" : "Collapse to one row")
-            .accessibilityLabel(isCollapsed ? "Expand \(displayTitle)" : "Collapse \(displayTitle)")
+            .help(isCollapsed ? uiString("Show the songs") : uiString("Collapse to one row"))
+            .accessibilityLabel(isCollapsed ? uiString("Expand \(displayTitle)") :
+                uiString("Collapse \(displayTitle)"))
             .accessibilityIdentifier(AccessibilityID.medleyDisclosure)
         }
 
         @ViewBuilder private var headerMenu: some View {
-            Button("Rename Medley") { model.renamingMedley = entry.itemId }
+            Button(uiString("Rename Medley")) { model.renamingMedley = entry.itemId }
                 .disabled(isReadOnly)
-            Button("Ungroup Medley") {
+            Button(uiString("Ungroup Medley")) {
                 Task { await model.ungroup(entry.itemId, in: setlist.id, entry: .contextMenu) }
             }
             .disabled(isReadOnly)
-            Button("Rehearse Medley") { rehearseMedley() }
+            Button(uiString("Rehearse Medley")) { rehearseMedley() }
                 .disabled(!canRehearse)
-            Button(isCollapsed ? "Expand Medley" : "Collapse Medley") {
+            Button(isCollapsed ? uiString("Expand Medley") : uiString("Collapse Medley")) {
                 model.setCollapsed(entry.itemId, !isCollapsed)
             }
             // P9-1 spec 9: the medley alone, its members flowing on.
             if let exportPDF {
-                Button("Export Medley as PDF\u{2026}") {
+                Button(uiString("Export Medley as PDF\u{2026}")) {
                     exportPDF.open(.slot(setlist.id, entry.itemId), false)
                 }
                 .disabled(!exportPDF.isEnabled)
                 .accessibilityIdentifier(AccessibilityID.pdfExportMedley)
             }
             Divider()
-            Button("Remove from Setlist", role: .destructive) {
+            Button(uiString("Remove from Setlist"), role: .destructive) {
                 guard let index = setlist.entries.firstIndex(of: entry) else { return }
                 Task { await model.remove(in: setlist.id, atOffsets: IndexSet(integer: index)) }
             }
@@ -259,13 +262,13 @@
 
         @ViewBuilder private var headerActions: some View {
             if !isReadOnly {
-                Button("Ungroup") { ungroup() }
-                Button("Rename") { model.renamingMedley = entry.itemId }
+                Button(uiString("Ungroup")) { ungroup() }
+                Button(uiString("Rename")) { model.renamingMedley = entry.itemId }
             }
             if canRehearse {
-                Button("Rehearse Medley") { rehearseMedley() }
+                Button(uiString("Rehearse Medley")) { rehearseMedley() }
             }
-            Button(isCollapsed ? "Expand" : "Collapse") {
+            Button(isCollapsed ? uiString("Expand") : uiString("Collapse")) {
                 model.setCollapsed(entry.itemId, !isCollapsed)
             }
         }
@@ -344,7 +347,8 @@
 
         /// A medley of one (a hand-edited file, P9-3 5.3).
         private var lonelyHint: some View {
-            Text(medley.members.isEmpty ? "Empty medley" : "Add a song or Ungroup")
+            Text(medley.members
+                .isEmpty ? uiString("Empty medley") : uiString("Add a song or Ungroup"))
                 .font(SchibstedGrotesk.medium.font(size: 13))
                 .foregroundStyle(Theme.color.muted)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -443,14 +447,14 @@
 
         var body: some View {
             if !spoken || place.index > 0 {
-                Button("Move Earlier in Medley", action: place.moveEarlier)
+                Button(uiString("Move Earlier in Medley"), action: place.moveEarlier)
                     .disabled(isReadOnly || place.index == 0)
             }
             if !spoken || place.index < place.count - 1 {
-                Button("Move Later in Medley", action: place.moveLater)
+                Button(uiString("Move Later in Medley"), action: place.moveLater)
                     .disabled(isReadOnly || place.index == place.count - 1)
             }
-            Button("Remove from Medley", action: place.removeFromMedley)
+            Button(uiString("Remove from Medley"), action: place.removeFromMedley)
                 .disabled(isReadOnly)
         }
     }
@@ -472,7 +476,7 @@
             else { return nil }
             return Self(
                 text: "also \(slot.label)",
-                help: "This song is also in the set at "
+                help: uiString("This song is also in the set at ")
                     + slot.label,
             )
         }
@@ -483,7 +487,7 @@
             else { return nil }
             return Self(
                 text: "reprise of \(member.label)",
-                help: "This song is also in the "
+                help: uiString("This song is also in the ")
                     + "set at \(member.label)",
             )
         }

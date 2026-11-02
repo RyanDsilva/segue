@@ -49,13 +49,13 @@
                         .buttonStyle(.segueSecondary)
                         .controlSize(.small)
                         .disabled(onArrange == nil)
-                        .help("Choose which sections this slot plays for this gig")
-                        .accessibilityLabel("Arrangement: \(arrangementText)")
+                        .help(uiString("Choose which sections this slot plays for this gig"))
+                        .accessibilityLabel(uiString("Arrangement: \(arrangementText)"))
                         .accessibilityIdentifier(AccessibilityID.arrangementOpen)
                     }
                     GridRow {
                         label("Note")
-                        TextField("“start soft”", text: $note)
+                        TextField(uiString("“start soft”"), text: $note)
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 220)
                             .onSubmit(saveNote)
@@ -63,7 +63,7 @@
                     }
                 }
                 HStack {
-                    Button("Use Song’s Key and Capo") {
+                    Button(uiString("Use Song’s Key and Capo")) {
                         var updated = entry
                         updated.overrides = SetlistOverrides()
                         onChange(updated)
@@ -73,7 +73,7 @@
                     .disabled(entry.overrides.isEmpty)
                     .accessibilityIdentifier(AccessibilityID.entryReset)
                     Spacer()
-                    Button("Done") {
+                    Button(uiString("Done")) {
                         saveNote()
                         dismiss()
                     }
@@ -166,7 +166,7 @@
                     Image(systemName: "minus").frame(width: 12, height: 16)
                 }
                 .buttonStyle(.segueSecondary)
-                .accessibilityLabel("Down")
+                .accessibilityLabel(uiString("Down"))
                 .accessibilityIdentifier(down)
                 Text(value)
                     .font(SchibstedGrotesk.semiBold.font(size: 14))
@@ -175,7 +175,7 @@
                     .accessibilityIdentifier(valueID)
                 Button { step(1) } label: { Image(systemName: "plus").frame(width: 12, height: 16) }
                     .buttonStyle(.segueSecondary)
-                    .accessibilityLabel("Up")
+                    .accessibilityLabel(uiString("Up"))
                     .accessibilityIdentifier(up)
             }
         }

@@ -111,24 +111,24 @@
                     Button(makeMedley.title, action: makeMedley.action)
                     Divider()
                 }
-                Button("Edit Key, Capo and Note…") { isEditing = true }
+                Button(uiString("Edit Key, Capo and Note…")) { isEditing = true }
                     .disabled(isReadOnly)
-                Button("Arrange Sections…") { onArrange?() }
+                Button(uiString("Arrange Sections…")) { onArrange?() }
                     .disabled(onArrange == nil)
                 if let member {
                     MedleyMemberMenuItems(place: member, isReadOnly: isReadOnly)
                 } else {
-                    Button("Insert Break After") { onInsertBreak?() }
+                    Button(uiString("Insert Break After")) { onInsertBreak?() }
                         .disabled(onInsertBreak == nil)
                 }
                 if let exportPDF, let setlistID = pdfSetlist {
-                    Button("Export Slot as PDF\u{2026}") {
+                    Button(uiString("Export Slot as PDF\u{2026}")) {
                         exportPDF.open(.slot(setlistID, entry.itemId), false)
                     }
                     .disabled(!exportPDF.isEnabled || record == nil)
                     .accessibilityIdentifier(AccessibilityID.pdfExportSlot)
                 }
-                Button("Remove from Setlist", role: .destructive, action: onRemove)
+                Button(uiString("Remove from Setlist"), role: .destructive, action: onRemove)
                     .disabled(isReadOnly)
             }
             .accessibilityElement(children: .contain)
@@ -145,10 +145,10 @@
                 }
                 if let onMove, member == nil {
                     if position > 1 {
-                        Button("Move up") { onMove(-1) }
+                        Button(uiString("Move up")) { onMove(-1) }
                     }
                     if !isLast {
-                        Button("Move down") { onMove(1) }
+                        Button(uiString("Move down")) { onMove(1) }
                     }
                 }
             }
@@ -212,16 +212,19 @@
                     }
                 }
                 if record == nil {
-                    Text("No longer in the library folder")
+                    Text("No longer in the library folder", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 13))
                         .foregroundStyle(Theme.color.muted)
                 } else if let repeatOf {
-                    Label("Also at #\(repeatOf)", systemImage: "exclamationmark.triangle.fill")
-                        .font(SchibstedGrotesk.medium.font(size: 13))
-                        .foregroundStyle(Theme.color.muted)
-                        .symbolRenderingMode(.multicolor)
-                        .help("This song is in the set twice. Remove one of them.")
-                        .accessibilityIdentifier(AccessibilityID.entryRepeat)
+                    Label(
+                        uiString("Also at #\(repeatOf)"),
+                        systemImage: "exclamationmark.triangle.fill",
+                    )
+                    .font(SchibstedGrotesk.medium.font(size: 13))
+                    .foregroundStyle(Theme.color.muted)
+                    .symbolRenderingMode(.multicolor)
+                    .help(uiString("This song is in the set twice. Remove one of them."))
+                    .accessibilityIdentifier(AccessibilityID.entryRepeat)
                 } else {
                     SlotDetailLines(entry: entry, record: record, openArrangement: onArrange)
                 }
@@ -242,7 +245,7 @@
                 .underline(isOverridden, pattern: .dot, color: Theme.color.muted)
                 .lineLimit(1)
                 .frame(width: width, alignment: alignment)
-                .help(help ?? (isOverridden ? "Set for this setlist only" : ""))
+                .help(help ?? (isOverridden ? uiString("Set for this setlist only") : ""))
         }
 
         private var removeButton: some View {
@@ -256,8 +259,8 @@
             .buttonStyle(.plain)
             .opacity(isHovered && !isReadOnly ? 1 : 0)
             .disabled(isReadOnly)
-            .help("Remove from setlist")
-            .accessibilityLabel("Remove \(title)")
+            .help(uiString("Remove from setlist"))
+            .accessibilityLabel(uiString("Remove \(title)"))
             .accessibilityIdentifier(AccessibilityID.entryRemove)
         }
     }

@@ -17,16 +17,16 @@
             HStack(spacing: 8) {
                 switch time {
                 case .known:
-                    Text("Time for this gig: \(time.clock)")
+                    Text("Time for this gig: \(time.clock)", bundle: #bundle)
                         .monospacedDigit()
                         .help(time.help)
-                        .accessibilityLabel("Time for this gig: \(time.spoken)")
+                        .accessibilityLabel(uiString("Time for this gig: \(time.spoken)"))
                 case .unknown(.noTempo):
-                    Text("No tempo")
-                    Button("Set Tempo…") { isSettingTempo = true }
+                    Text("No tempo", bundle: #bundle)
+                    Button(uiString("Set Tempo…")) { isSettingTempo = true }
                         .buttonStyle(.link)
                         .font(SchibstedGrotesk.semiBold.font(size: 12))
-                        .help("Sets the song's tempo")
+                        .help(uiString("Sets the song's tempo"))
                         .disabled(isReadOnly || record.isReadOnly)
                         .accessibilityIdentifier(AccessibilityID.arrangementSetTempo)
                         .popover(isPresented: $isSettingTempo, arrowEdge: .top) {
@@ -44,9 +44,9 @@
                             .padding(12)
                         }
                 case .unknown(.noChords):
-                    Text("No chords to time")
+                    Text("No chords to time", bundle: #bundle)
                 case .unknown(.missingSong):
-                    Text("Song missing")
+                    Text("Song missing", bundle: #bundle)
                 }
             }
             .lineLimit(1)

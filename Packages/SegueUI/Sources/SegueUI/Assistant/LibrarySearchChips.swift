@@ -132,7 +132,7 @@
                 if !read.isEmpty || !suggestions.chips.isEmpty {
                     FlowLayout(spacing: 6, lineSpacing: 6) {
                         if !read.isEmpty {
-                            Text("Reading")
+                            Text("Reading", bundle: #bundle)
                                 .font(SchibstedGrotesk.semiBold.font(size: 12))
                                 .foregroundStyle(Theme.color.muted)
                         }

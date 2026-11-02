@@ -23,14 +23,14 @@
                         ContentUnavailableView(
                             "No Gig Selected",
                             systemImage: "music.mic",
-                            description: Text("Finished shows appear here."),
+                            description: Text("Finished shows appear here.", bundle: #bundle),
                         )
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.color.ground)
             }
-            .navigationTitle("Gig Log")
+            .navigationTitle(uiString("Gig Log"))
             .navigationSubtitle(model.entries.count == 1 ? "1 gig" : "\(model.entries.count) gigs")
             .task { await model.reload() }
         }
@@ -44,9 +44,11 @@
             .overlay {
                 if model.entries.isEmpty {
                     ContentUnavailableView {
-                        Label("No Gigs Yet", systemImage: "music.mic")
+                        Label(uiString("No Gigs Yet"), systemImage: "music.mic")
                     } description: {
-                        Text("When you end a show, it is logged here with what you played.")
+                        Text(uiString("""
+                        When you end a show, it is logged here with what you played.
+                        """))
                     }
                     .accessibilityIdentifier(AccessibilityID.gigLogEmpty)
                 }
@@ -72,7 +74,7 @@
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text("\(entry.played.count) played")
+                    Text("\(entry.played.count) played", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 13))
                         .foregroundStyle(Theme.color.muted)
                     if let rating = entry.details.rating {
@@ -101,7 +103,7 @@
                 }
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Rated \(rating) of 5")
+            .accessibilityLabel(uiString("Rated \(rating) of 5"))
         }
     }
 

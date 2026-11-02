@@ -21,11 +21,14 @@
             SettingsPaneHeight(minimum: 460) {
                 Form {
                     Section {
-                        Toggle("Use AI to refine pastes and set requests", isOn: $preferences.useAI)
-                            .accessibilityIdentifier(AccessibilityID.settingsAIUseAI)
+                        Toggle(
+                            uiString("Use AI to refine pastes and set requests"),
+                            isOn: $preferences.useAI,
+                        )
+                        .accessibilityIdentifier(AccessibilityID.settingsAIUseAI)
                         SettingsNote(text: Self.toggleNote)
                     }
-                    Section("Apple Intelligence") {
+                    Section(uiString("Apple Intelligence")) {
                         appleIntelligence
                     }
                     .disabled(!preferences.useAI)
@@ -55,10 +58,10 @@
                             text: Self.modelNote(ai.availability[.foundationModels]),
                         )
                     } header: {
-                        Text("Local model")
+                        Text("Local model", bundle: #bundle)
                     }
                     if let advanced = ai.advancedSection {
-                        Section("Advanced") {
+                        Section(uiString("Advanced")) {
                             advanced()
                         }
                         .accessibilityIdentifier(AccessibilityID.settingsAIAdvanced)
@@ -75,7 +78,7 @@
             }
             .onDisappear { ai.models.stop() }
             .confirmationDialog(
-                confirmingDelete.map { "Delete \($0.displayName)?" } ?? "",
+                confirmingDelete.map { uiString("Delete \($0.displayName)?") } ?? "",
                 isPresented: Binding(
                     get: { confirmingDelete != nil },
                     set: {
@@ -87,11 +90,11 @@
                 titleVisibility: .visible,
                 presenting: confirmingDelete,
             ) { model in
-                Button("Delete", role: .destructive) {
+                Button(uiString("Delete"), role: .destructive) {
                     Task { await ai.models.delete(model.id) }
                 }
                 .accessibilityIdentifier(AccessibilityID.settingsAIDeleteConfirm)
-                Button("Cancel", role: .cancel) {}
+                Button(uiString("Cancel"), role: .cancel) {}
             } message: { model in
                 Text(Self.deleteMessage(model))
             }
@@ -103,7 +106,7 @@
             case .unavailable: "Not available"
             case nil: "Checking…"
             }
-            LabeledContent("Status") {
+            LabeledContent(uiString("Status")) {
                 Text(status)
                     .accessibilityIdentifier(AccessibilityID.settingsAIAppleIntelligence)
             }
@@ -201,7 +204,7 @@
                         id: AccessibilityID.settingsAIModelMemory,
                     )
                     GridRow {
-                        Text("License").foregroundStyle(.secondary)
+                        Text("License", bundle: #bundle).foregroundStyle(.secondary)
                         Button(model.license.name) { workspace.open(model.license.url) }
                             .buttonStyle(.link)
                             .help(model.license.upstreamRepo)
@@ -242,24 +245,29 @@
             switch state {
             case .failed, .notInstalled:
                 // R93: a quiet link, never a prompt.
-                Button(state == .notInstalled ? "Download" : "Try Again", action: download)
-                    .buttonStyle(.link)
-                    .accessibilityIdentifier(AccessibilityID.settingsAIDownload)
+                Button(
+                    state == .notInstalled ? uiString("Download") : uiString("Try Again"),
+                    action: download,
+                )
+                .buttonStyle(.link)
+                .accessibilityIdentifier(AccessibilityID.settingsAIDownload)
             case let .paused(received, total):
                 HStack(spacing: 16) {
-                    Button("Resume Download", action: download)
+                    Button(uiString("Resume Download"), action: download)
                         .buttonStyle(.link)
                         .accessibilityIdentifier(AccessibilityID.settingsAIDownload)
-                    Button("Delete…", action: delete)
+                    Button(uiString("Delete…"), action: delete)
                         .buttonStyle(.link)
                         .accessibilityIdentifier(AccessibilityID.settingsAIDelete)
                 }
-                .help("\(ByteFormat.size(received)) of \(ByteFormat.size(total)) downloaded")
+                .help(uiString("""
+                \(ByteFormat.size(received)) of \(ByteFormat.size(total)) downloaded
+                """))
             case let .downloading(received, total):
                 HStack(spacing: 10) {
                     ProgressView(value: Double(received), total: Double(max(total, 1)))
                         .accessibilityIdentifier(AccessibilityID.settingsAIProgress)
-                    Button("Cancel", action: cancel)
+                    Button(uiString("Cancel"), action: cancel)
                         .accessibilityIdentifier(AccessibilityID.settingsAICancel)
                 }
             case .verifying:
@@ -267,7 +275,7 @@
                     .controlSize(.small)
                     .accessibilityIdentifier(AccessibilityID.settingsAIProgress)
             case .installed:
-                Button("Delete…", action: delete)
+                Button(uiString("Delete…"), action: delete)
                     .accessibilityIdentifier(AccessibilityID.settingsAIDelete)
             case .otherAppDownloading:
                 EmptyView()

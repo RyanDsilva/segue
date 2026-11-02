@@ -14,21 +14,23 @@
 
         var body: some View {
             Form {
-                Section("Lyrics on stage") {
-                    LabeledContent("Minimum lyric size") {
+                Section(uiString("Lyrics on stage")) {
+                    LabeledContent(uiString("Minimum lyric size")) {
                         Stepper(value: minSize, in: LiveSettings.minLyricSizeRange, step: 1) {
-                            Text("\(Int(store.settings.minLyricSize)) pt")
+                            Text("\(Int(store.settings.minLyricSize)) pt", bundle: #bundle)
                                 .monospacedDigit()
                         }
                         .accessibilityIdentifier(AccessibilityID.settingsMinLyricSize)
                     }
-                    Text("Songs that do not fit at this size scroll instead of shrinking.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                    Picker("Columns", selection: $store.settings.defaultColumns) {
-                        Text("Auto").tag(Int?.none)
+                    Text(
+                        uiString("Songs that do not fit at this size scroll instead of shrinking."),
+                    )
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    Picker(uiString("Columns"), selection: $store.settings.defaultColumns) {
+                        Text("Auto", bundle: #bundle).tag(Int?.none)
                         ForEach(LiveSettings.columnRange, id: \.self) { count in
-                            Text("\(count)").tag(Int?.some(count))
+                            Text(verbatim: "\(count)").tag(Int?.some(count))
                         }
                     }
                     .pickerStyle(.segmented)
@@ -39,7 +41,7 @@
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Toggle(
-                        "Show lyrics only on stage (Singer view)",
+                        uiString("Show lyrics only on stage (Singer view)"),
                         isOn: $store.settings.singerView,
                     )
                     .accessibilityIdentifier(AccessibilityID.settingsSingerView)
@@ -52,7 +54,7 @@
                         GuideHelpButton(.singerView)
                     }
                 }
-                Section("Gig Mode Shortcuts") {
+                Section(uiString("Gig Mode Shortcuts")) {
                     shortcutRow(
                         "On show start",
                         text: shortcutBinding(\.startShortcut),
@@ -65,8 +67,11 @@
                         prompt: LiveSettings.suggestedEndShortcut,
                         id: AccessibilityID.settingsEndShortcut,
                     )
-                    Toggle("Also run them for rehearsals", isOn: $store.runsShortcutsForRehearsals)
-                        .accessibilityIdentifier(AccessibilityID.settingsRehearsalShortcuts)
+                    Toggle(
+                        uiString("Also run them for rehearsals"),
+                        isOn: $store.runsShortcutsForRehearsals,
+                    )
+                    .accessibilityIdentifier(AccessibilityID.settingsRehearsalShortcuts)
                     if let testResult {
                         Text(testResult)
                             .font(.callout)
@@ -77,7 +82,7 @@
                     if testNotPermitted,
                        let url = AppleEventShortcutRunner.Message.automationSettingsURL
                     {
-                        Button("Open Automation Settings…") { workspace.open(url) }
+                        Button(uiString("Open Automation Settings…")) { workspace.open(url) }
                             .accessibilityIdentifier(AccessibilityID.settingsAutomationSettings)
                     }
                     HStack(alignment: .firstTextBaseline) {
@@ -89,13 +94,13 @@
                         GuideHelpButton(.gigMode)
                     }
                 }
-                Section("Pre-show checklist") {
+                Section(uiString("Pre-show checklist")) {
                     ForEach(ChecklistItem.allCases, id: \.self) { item in
                         Toggle(Self.title(item), isOn: checklistBinding(item))
                     }
                 }
-                Section("Metronome") {
-                    Toggle("Start shows with the metronome on", isOn: $store.metronomeOn)
+                Section(uiString("Metronome")) {
+                    Toggle(uiString("Start shows with the metronome on"), isOn: $store.metronomeOn)
                         .accessibilityIdentifier(AccessibilityID.settingsMetronome)
                     Text(Self.metronomeHelp)
                         .font(.callout)
@@ -138,12 +143,12 @@
             LabeledContent(label) {
                 HStack(spacing: 8) {
                     // The suggested name is a placeholder only, never a stored value (R18).
-                    TextField("Shortcut name", text: text, prompt: Text(prompt))
+                    TextField(uiString("Shortcut name"), text: text, prompt: Text(prompt))
                         .textFieldStyle(.roundedBorder)
                         .labelsHidden()
                         .autocorrectionDisabled()
                         .accessibilityIdentifier(id)
-                    Button("Test") { test(text.wrappedValue) }
+                    Button(uiString("Test")) { test(text.wrappedValue) }
                         .disabled(LiveSettingsStore.shortcutName(text.wrappedValue) == nil)
                 }
             }

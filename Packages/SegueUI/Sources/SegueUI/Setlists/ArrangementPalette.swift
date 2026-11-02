@@ -54,7 +54,7 @@
                         .font(SchibstedGrotesk.semiBold.font(size: 13))
                         .foregroundStyle(Theme.color.ink)
                     if group.isNew {
-                        Text("New")
+                        Text("New", bundle: #bundle)
                             .font(SchibstedGrotesk.bold.font(size: 11))
                             .foregroundStyle(Theme.color.cueText)
                     }
@@ -84,9 +84,11 @@
                     occurrenceItems
                 }
             }
-            .help("Add \(group.title) after the selected pass (\(group.token.text) in the roadmap)")
-            .accessibilityLabel("Add \(group.title)")
-            .accessibilityHint("Adds a pass after the selected one")
+            .help(uiString("""
+            Add \(group.title) after the selected pass (\(group.token.text) in the roadmap)
+            """))
+            .accessibilityLabel(uiString("Add \(group.title)"))
+            .accessibilityHint(uiString("Adds a pass after the selected one"))
             .accessibilityActions {
                 if group.units.count > 1, !isReadOnly {
                     occurrenceItems

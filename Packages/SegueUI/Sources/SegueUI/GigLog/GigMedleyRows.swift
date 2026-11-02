@@ -46,7 +46,8 @@
                 title: GigMedleyText.title(title),
                 marker: nil,
                 time: members.first.map { GigText.time($0.startedAt) } ?? "",
-                detail: "Medley · \(count) \(count == 1 ? "song" : "songs")",
+                detail: count == 1
+                    ? uiString("Medley · \(count) song") : uiString("Medley · \(count) songs"),
             )
             .accessibilityIdentifier(AccessibilityID.gigMedleyRow)
             ForEach(GigMedleyText.rows(members: members, skipped: skipped), id: \.id) { row in

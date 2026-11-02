@@ -25,22 +25,26 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 14) {
-                Text(isCreating ? "New Setlist" : "Rename Setlist")
+                Text(isCreating ? uiString("New Setlist") : uiString("Rename Setlist"))
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
-                TextField("Name", text: $name, prompt: Text("Friday at the Blue Room"))
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 300)
-                    .onSubmit(commit)
-                    .accessibilityIdentifier(isCreating
-                        ? AccessibilityID.newSetlistName
-                        : AccessibilityID.setlistNameField)
+                TextField(
+                    uiString("Name"),
+                    text: $name,
+                    prompt: Text("Friday at the Blue Room", bundle: #bundle),
+                )
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 300)
+                .onSubmit(commit)
+                .accessibilityIdentifier(isCreating
+                    ? AccessibilityID.newSetlistName
+                    : AccessibilityID.setlistNameField)
                 HStack {
                     Spacer()
-                    Button("Cancel", role: .cancel) { dismiss() }
+                    Button(uiString("Cancel"), role: .cancel) { dismiss() }
                         .keyboardShortcut(.cancelAction)
                         .buttonStyle(.segueSecondary)
-                    Button(isCreating ? "Create" : "Rename", action: commit)
+                    Button(isCreating ? uiString("Create") : uiString("Rename"), action: commit)
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(.seguePrimary)
                         .disabled(trimmedName.isEmpty)
@@ -91,20 +95,24 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Details")
+                Text("Details", bundle: #bundle)
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
                 Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
                     GridRow {
                         label("Venue")
-                        TextField("Venue", text: $venue, prompt: Text("The Anchor"))
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityIdentifier(AccessibilityID.detailsVenue)
+                        TextField(
+                            uiString("Venue"),
+                            text: $venue,
+                            prompt: Text("The Anchor", bundle: #bundle),
+                        )
+                        .textFieldStyle(.roundedBorder)
+                        .accessibilityIdentifier(AccessibilityID.detailsVenue)
                     }
                     GridRow {
                         label("Date")
                         HStack {
-                            Toggle("Set a date", isOn: $hasDate)
+                            Toggle(uiString("Set a date"), isOn: $hasDate)
                                 .labelsHidden()
                                 .accessibilityIdentifier(AccessibilityID.detailsHasDate)
                             DatePicker("Date", selection: $date, displayedComponents: .date)
@@ -116,10 +124,14 @@
                     GridRow {
                         label("Target")
                         HStack {
-                            TextField("Target", text: $target, prompt: Text("45:00"))
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 90)
-                                .accessibilityIdentifier(AccessibilityID.detailsTarget)
+                            TextField(
+                                uiString("Target"),
+                                text: $target,
+                                prompt: Text(verbatim: "45:00"),
+                            )
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 90)
+                            .accessibilityIdentifier(AccessibilityID.detailsTarget)
                             Text(targetHint)
                                 .font(.callout)
                                 .foregroundStyle(Theme.color.muted)
@@ -127,8 +139,8 @@
                     }
                     GridRow {
                         label("Changeover")
-                        Picker("Changeover", selection: $changeover) {
-                            Text("Default (\(defaultText))").tag(-1)
+                        Picker(uiString("Changeover"), selection: $changeover) {
+                            Text("Default (\(defaultText))", bundle: #bundle).tag(-1)
                             Divider()
                             ForEach(choices, id: \.self) { seconds in
                                 Text(SetlistTiming.formatChangeover(TimeInterval(seconds)))
@@ -137,16 +149,16 @@
                         }
                         .labelsHidden()
                         .fixedSize()
-                        .help("Added after every song but the last of each part")
+                        .help(uiString("Added after every song but the last of each part"))
                         .accessibilityIdentifier(AccessibilityID.detailsChangeover)
                     }
                 }
                 HStack {
                     Spacer()
-                    Button("Cancel", role: .cancel) { dismiss() }
+                    Button(uiString("Cancel"), role: .cancel) { dismiss() }
                         .keyboardShortcut(.cancelAction)
                         .buttonStyle(.segueSecondary)
-                    Button("Save", action: save)
+                    Button(uiString("Save"), action: save)
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(.seguePrimary)
                         .disabled(!isTargetValid)

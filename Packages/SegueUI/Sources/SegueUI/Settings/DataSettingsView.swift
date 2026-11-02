@@ -12,16 +12,16 @@
 
         var body: some View {
             Form {
-                Section("Library") {
-                    LabeledContent("Archive") {
+                Section(uiString("Library")) {
+                    LabeledContent(uiString("Archive")) {
                         HStack(spacing: 8) {
                             if app.isExporting {
                                 ProgressView()
                                     .controlSize(.small)
-                                    .accessibilityLabel("Exporting")
+                                    .accessibilityLabel(uiString("Exporting"))
                                     .accessibilityIdentifier(AccessibilityID.exportProgress)
                             }
-                            Button("Export Library Archive…") {
+                            Button(uiString("Export Library Archive…")) {
                                 Task { await app.exportLibraryArchive() }
                             }
                             .disabled(!app.canExportArchive)
@@ -30,8 +30,8 @@
                     }
                     SettingsNote(text: "One zip of your songs, setlists, shows and filters, "
                         + "as they are in the library folder.")
-                    LabeledContent("Index") {
-                        Button("Rebuild Index") {
+                    LabeledContent(uiString("Index")) {
+                        Button(uiString("Rebuild Index")) {
                             guard let session = app.session else { return }
                             Task { await session.library.rebuildIndex() }
                         }
@@ -42,25 +42,25 @@
                         + "Your songs are not changed.")
                     libraryLocationNotes
                 }
-                Section("Welcome songs") {
+                Section(uiString("Welcome songs")) {
                     HStack {
-                        Button("Add Welcome Songs") { addWelcomeSongs() }
+                        Button(uiString("Add Welcome Songs")) { addWelcomeSongs() }
                             .accessibilityIdentifier(AccessibilityID.settingsAddWelcome)
-                        Button("Remove Welcome Songs…") { askToRemove() }
+                        Button(uiString("Remove Welcome Songs…")) { askToRemove() }
                             .accessibilityIdentifier(AccessibilityID.settingsRemoveWelcome)
                     }
                     .disabled(!app.canChangeLibraryData || working)
                     SettingsNote(text: "Four songs and a setlist written for Segue. Removing "
                         + "them moves them to the Trash and keeps any you edited.")
                 }
-                Section("Reset") {
+                Section(uiString("Reset")) {
                     HStack {
-                        Button("Reset Tips") {
+                        Button(uiString("Reset Tips")) {
                             app.resetTips()
                             status = "Tips will show again after you restart Segue."
                         }
                         .accessibilityIdentifier(AccessibilityID.settingsResetTips)
-                        Button("Reset All Settings…") { confirmingReset = true }
+                        Button(uiString("Reset All Settings…")) { confirmingReset = true }
                             .accessibilityIdentifier(AccessibilityID.settingsResetAll)
                     }
                     SettingsNote(text: "Reset All Settings keeps your library and your Privacy "
@@ -89,24 +89,24 @@
                 titleVisibility: .visible,
                 presenting: removal,
             ) { plan in
-                Button("Move to Trash", role: .destructive) { remove(plan) }
+                Button(uiString("Move to Trash"), role: .destructive) { remove(plan) }
                     .accessibilityIdentifier(AccessibilityID.settingsRemoveWelcomeConfirm)
-                Button("Cancel", role: .cancel) {}
+                Button(uiString("Cancel"), role: .cancel) {}
             } message: { plan in
-                Text(plan.keptNote ?? "You can put them back from the Trash.")
+                Text(plan.keptNote ?? uiString("You can put them back from the Trash."))
             }
             .confirmationDialog(
                 "Reset all settings?",
                 isPresented: $confirmingReset,
                 titleVisibility: .visible,
             ) {
-                Button("Reset All Settings", role: .destructive) {
+                Button(uiString("Reset All Settings"), role: .destructive) {
                     app.resetAllSettings()
                     status = "Settings are back to their defaults. Tips will show again after "
                         + "you restart Segue."
                 }
                 .accessibilityIdentifier(AccessibilityID.settingsResetAllConfirm)
-                Button("Cancel", role: .cancel) {}
+                Button(uiString("Cancel"), role: .cancel) {}
             } message: {
                 Text(Self.resetMessage)
             }

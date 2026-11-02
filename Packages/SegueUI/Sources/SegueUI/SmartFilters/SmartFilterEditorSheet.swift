@@ -49,15 +49,19 @@
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
                 HStack(spacing: 12) {
-                    Text("Name")
+                    Text("Name", bundle: #bundle)
                         .font(SchibstedGrotesk.semiBold.font(size: 13))
                         .foregroundStyle(Theme.color.muted)
-                    TextField("Name", text: $draft.name, prompt: Text("Openers"))
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 280)
-                        .accessibilityIdentifier(AccessibilityID.smartFilterName)
+                    TextField(
+                        uiString("Name"),
+                        text: $draft.name,
+                        prompt: Text("Openers", bundle: #bundle),
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 280)
+                    .accessibilityIdentifier(AccessibilityID.smartFilterName)
                 }
-                Text("Songs matching all of these conditions")
+                Text("Songs matching all of these conditions", bundle: #bundle)
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
                     .foregroundStyle(Theme.color.ink)
                 VStack(alignment: .leading, spacing: 8) {
@@ -77,7 +81,7 @@
                     }
                 }
                 .accessibilityElement(children: .contain)
-                .accessibilityLabel("Conditions")
+                .accessibilityLabel(uiString("Conditions"))
                 .accessibilityIdentifier(AccessibilityID.smartFilterConditions)
                 Rule()
                 HStack(spacing: 10) {
@@ -87,7 +91,7 @@
                         .foregroundStyle(draft.problem == nil ? Theme.color.muted : Theme.color.cue)
                         .accessibilityIdentifier(AccessibilityID.smartFilterMatchCount)
                     Spacer()
-                    Button("Cancel", role: .cancel) { dismiss() }
+                    Button(uiString("Cancel"), role: .cancel) { dismiss() }
                         .keyboardShortcut(.cancelAction)
                         .buttonStyle(.segueSecondary)
                     Button(saveTitle, action: save)
@@ -163,12 +167,12 @@
 
         var body: some View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(isFirst ? "" : "and")
+                Text(isFirst ? "" : uiString("and"))
                     .font(SchibstedGrotesk.medium.font(size: 11))
                     .foregroundStyle(Theme.color.muted)
                     .frame(width: 26, alignment: .leading)
                     .accessibilityHidden(true)
-                Picker("Field", selection: fieldBinding) {
+                Picker(uiString("Field"), selection: fieldBinding) {
                     ForEach(fields) { field in
                         Text(field.rawValue).tag(field)
                     }
@@ -177,7 +181,7 @@
                 .pickerStyle(.menu)
                 .frame(width: 130, alignment: .leading)
                 .accessibilityIdentifier(AccessibilityID.smartFilterField)
-                Picker("Operator", selection: $row.kind) {
+                Picker(uiString("Operator"), selection: $row.kind) {
                     ForEach(kinds.filter { $0.field == row.kind.field }) { kind in
                         Text(kind.operatorTitle).tag(kind)
                     }
@@ -194,23 +198,25 @@
                             .frame(width: 12, height: 12)
                     }
                     .disabled(!canRemove)
-                    .help("Remove this condition")
-                    .accessibilityLabel("Remove condition")
+                    .help(uiString("Remove this condition"))
+                    .accessibilityLabel(uiString("Remove condition"))
                     .accessibilityIdentifier(AccessibilityID.smartFilterRemoveRow)
                     Button(action: onAdd) {
                         Image(systemName: "plus")
                             .frame(width: 12, height: 12)
                     }
                     .disabled(!canAdd)
-                    .help("Add a condition")
-                    .accessibilityLabel("Add condition")
+                    .help(uiString("Add a condition"))
+                    .accessibilityLabel(uiString("Add condition"))
                     .accessibilityIdentifier(AccessibilityID.smartFilterAddRow)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
             }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("\(row.kind.field.rawValue) \(row.kind.operatorTitle)")
+            .accessibilityLabel(
+                Text(verbatim: "\(row.kind.field.rawValue) \(row.kind.operatorTitle)"),
+            )
             .accessibilityIdentifier(AccessibilityID.smartFilterRow)
         }
 
@@ -262,9 +268,9 @@
             case .keys:
                 keys
             case .tempo:
-                range(prompt: "BPM", unit: "BPM")
+                range(prompt: uiString("BPM"), unit: "BPM")
             case .neverPlayed:
-                Text("in any show")
+                Text("in any show", bundle: #bundle)
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.muted)
             case .artists:
@@ -299,9 +305,9 @@
                                 .font(.system(size: 9, weight: .bold))
                         }
                     }
-                    .accessibilityLabel("Remove key \(key)")
+                    .accessibilityLabel(uiString("Remove key \(key)"))
                 }
-                Menu("Add key") {
+                Menu(uiString("Add key")) {
                     ForEach(freeKeys, id: \.self) { key in
                         Button(key) { row.keys.append(key) }
                     }
@@ -319,18 +325,18 @@
 
         private func range(prompt: String, unit: String?) -> some View {
             HStack(spacing: 6) {
-                TextField("From", text: $row.lower, prompt: Text(prompt))
+                TextField(uiString("From"), text: $row.lower, prompt: Text(prompt))
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 70)
-                    .accessibilityLabel("From")
+                    .accessibilityLabel(uiString("From"))
                     .accessibilityIdentifier(AccessibilityID.smartFilterLower)
-                Text("and")
+                Text("and", bundle: #bundle)
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.muted)
-                TextField("To", text: $row.upper, prompt: Text(prompt))
+                TextField(uiString("To"), text: $row.upper, prompt: Text(prompt))
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 70)
-                    .accessibilityLabel("To")
+                    .accessibilityLabel(uiString("To"))
                     .accessibilityIdentifier(AccessibilityID.smartFilterUpper)
                 if let unit {
                     Text(unit)

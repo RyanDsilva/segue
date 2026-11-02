@@ -90,7 +90,7 @@
                 presenting: model.pendingRemoval,
             ) { removal in
                 Button(removal.buttonTitle, role: .destructive) { confirmRemoval(removal) }
-                Button("Cancel", role: .cancel) {}
+                Button(uiString("Cancel"), role: .cancel) {}
             }
         }
 

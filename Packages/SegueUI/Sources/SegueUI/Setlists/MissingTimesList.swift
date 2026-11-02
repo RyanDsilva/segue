@@ -41,14 +41,16 @@
             let rows = Self.rows(setlist, within: within, library: library)
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(rows.count == 1 ? "1 song with no time" :
+                    Text(rows.count == 1 ? uiString("1 song with no time") :
                         "\(rows.count) songs with no time")
                         .font(SchibstedGrotesk.bold.font(size: 14))
                         .foregroundStyle(Theme.color.ink)
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("In set order. Type or tap a tempo, and the time comes from the bars.")
-                            .font(SchibstedGrotesk.medium.font(size: 12))
-                            .foregroundStyle(Theme.color.muted)
+                        Text(uiString("""
+                        In set order. Type or tap a tempo, and the time comes from the bars.
+                        """))
+                        .font(SchibstedGrotesk.medium.font(size: 12))
+                        .foregroundStyle(Theme.color.muted)
                         GuideHelpButton(.unknownTimes)
                             .controlSize(.mini)
                     }
@@ -58,7 +60,7 @@
                 .padding(.bottom, 10)
                 if rows.isEmpty {
                     Rule()
-                    Text("Every song has a time.")
+                    Text("Every song has a time.", bundle: #bundle)
                         .font(Theme.font.body)
                         .foregroundStyle(Theme.color.muted)
                         .padding(16)
@@ -80,7 +82,9 @@
                         .font(SchibstedGrotesk.semiBold.font(size: 14))
                         .foregroundStyle(Theme.color.ink)
                         .lineLimit(1)
-                    Text(row.reason == .noChords ? "\(row.place) · No chords to time" : row.place)
+                    Text(row
+                        .reason == .noChords ? uiString("\(row.place) · No chords to time") : row
+                        .place)
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
                 }
@@ -90,10 +94,10 @@
                         Self.writeTempo(text, song: row.song, library: library)
                     }
                 }
-                Button("Open Song") { openSong(row.song) }
+                Button(uiString("Open Song")) { openSong(row.song) }
                     .buttonStyle(.link)
                     .font(SchibstedGrotesk.semiBold.font(size: 12))
-                    .help("Show \(row.title) in the Library")
+                    .help(uiString("Show \(row.title) in the Library"))
                     .accessibilityIdentifier(AccessibilityID.missingTimesOpen)
             }
             .padding(.horizontal, 16)
@@ -213,20 +217,20 @@
         var body: some View {
             VStack(alignment: .trailing, spacing: 2) {
                 HStack(spacing: 6) {
-                    TextField("Tempo", text: $text, prompt: Text("BPM"))
+                    TextField(uiString("Tempo"), text: $text, prompt: Text("BPM", bundle: #bundle))
                         .textFieldStyle(.roundedBorder)
                         .font(SchibstedGrotesk.medium.font(size: 13).monospacedDigit())
                         .frame(width: 64)
                         .onSubmit(commit)
-                        .accessibilityLabel("Tempo in beats per minute")
+                        .accessibilityLabel(uiString("Tempo in beats per minute"))
                         .accessibilityIdentifier(AccessibilityID.missingTimesTempo)
-                    Text("BPM")
+                    Text("BPM", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
-                    Button("Tap", action: tap)
+                    Button(uiString("Tap"), action: tap)
                         .buttonStyle(.segueSecondary)
-                        .help("Tap along with the song; the tempo fills in")
-                        .accessibilityHint("Tap repeatedly in time with the song")
+                        .help(uiString("Tap along with the song; the tempo fills in"))
+                        .accessibilityHint(uiString("Tap repeatedly in time with the song"))
                         .accessibilityIdentifier(AccessibilityID.missingTimesTap)
                 }
                 if let problem {

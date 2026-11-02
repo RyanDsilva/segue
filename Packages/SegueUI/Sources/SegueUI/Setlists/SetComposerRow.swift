@@ -73,7 +73,7 @@
             let state = ComposerRowState(composer: composer, setlist: setlist, library: library)
             return HStack(alignment: .firstTextBaseline, spacing: 8) {
                 // The next slot number (a medley is one slot).
-                Text(state.isBreak ? "" : "\(setlist.slotCount + 1)")
+                Text(verbatim: state.isBreak ? "" : "\(setlist.slotCount + 1)")
                     .font(SchibstedGrotesk.medium.font(size: 14))
                     .foregroundStyle(Theme.color.muted)
                     .frame(width: 32, alignment: .leading)
@@ -98,7 +98,9 @@
                     .frame(width: 4)
             }
             .overlay(alignment: .bottom) { Rule() }
-            .help("Type a song name and press Return (\(MenuShortcuts.addSongByName.displayText))")
+            .help(uiString("""
+            Type a song name and press Return (\(MenuShortcuts.addSongByName.displayText))
+            """))
         }
 
         @ViewBuilder
@@ -150,7 +152,7 @@
             }
             .overlay(alignment: .topTrailing) {
                 if composer.showsAlternatives, state.matchCount > 1 {
-                    Text("\(composer.choice + 1) of \(state.matchCount)")
+                    Text("\(composer.choice + 1) of \(state.matchCount)", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 12))
                         .monospacedDigit()
                         .foregroundStyle(Theme.color.muted)
@@ -164,7 +166,7 @@
         /// "Add a song - type its name", with the ⌘L hint while the field is not focused.
         private var placeholder: some View {
             HStack(spacing: 8) {
-                Text("Add a song - type its name")
+                Text("Add a song - type its name", bundle: #bundle)
                     .font(Self.swiftUIFieldFont)
                     .foregroundStyle(Theme.color.muted)
                     .lineLimit(1)
@@ -216,13 +218,13 @@
                         onReveal(item)
                     } label: {
                         Label(
-                            "Already in the set at #\(position)",
+                            uiString("Already in the set at #\(position)"),
                             systemImage: "exclamationmark.triangle.fill",
                         )
                         .symbolRenderingMode(.multicolor)
                     }
                     .buttonStyle(.plain)
-                    .help("Show it in the set")
+                    .help(uiString("Show it in the set"))
                 case let .note(text):
                     Text(text)
                 case let .blocked(item, text):
@@ -233,7 +235,7 @@
                             .symbolRenderingMode(.multicolor)
                     }
                     .buttonStyle(.plain)
-                    .help("Show it in the set")
+                    .help(uiString("Show it in the set"))
                 case let .medley(parts):
                     medleyLine(parts, active: state.activePart)
                 }
@@ -253,13 +255,13 @@
             for (index, part) in parts.enumerated() {
                 if index > 0 {
                     let join = Text(verbatim: "  +  ").foregroundStyle(Theme.color.muted)
-                    line = Text("\(line)\(join)")
+                    line = Text(verbatim: "\(line)\(join)")
                 }
                 let detail = part.detail.map { " (\($0))" } ?? ""
                 let text = Text(verbatim: part.title + detail)
                     .foregroundStyle(Theme.color.ink)
                     .underline(index == active && parts.count > 1)
-                line = Text("\(line)\(text)")
+                line = Text(verbatim: "\(line)\(text)")
             }
             return line
         }
@@ -275,7 +277,7 @@
                     identifier: AccessibilityID.setlistComposerKey,
                 )
             } else if state.duplicate != nil {
-                Text("In set")
+                Text("In set", bundle: #bundle)
                     .font(SchibstedGrotesk.semiBold.font(size: 11))
                     .foregroundStyle(Theme.color.muted)
                     .padding(.horizontal, 6)
@@ -312,7 +314,7 @@
         }
 
         private var readOnlyRow: some View {
-            Text("Read-only - this setlist was saved by a newer Segue")
+            Text("Read-only - this setlist was saved by a newer Segue", bundle: #bundle)
                 .font(SchibstedGrotesk.medium.font(size: 14))
                 .foregroundStyle(Theme.color.muted)
                 .frame(maxWidth: .infinity, alignment: .leading)

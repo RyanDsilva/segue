@@ -289,7 +289,7 @@
             .background(Theme.color.ground)
             .overlay(alignment: .bottom) { Rule() }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("Suggestions")
+            .accessibilityLabel(uiString("Suggestions"))
             .accessibilityIdentifier(AccessibilityID.setlistComposerAlternatives)
         }
 
@@ -312,7 +312,7 @@
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if inSet {
-                    Text("In set")
+                    Text("In set", bundle: #bundle)
                         .font(SchibstedGrotesk.semiBold.font(size: 12))
                         .foregroundStyle(Theme.color.muted)
                 }
@@ -339,7 +339,7 @@
             .contentShape(Rectangle())
             .onTapGesture { onPick(index) }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(inSet ? "\(title), already in set" : title)
+            .accessibilityLabel(inSet ? uiString("\(title), already in set") : title)
             .accessibilityAddTraits(isChosen ? [.isSelected, .isButton] : .isButton)
             .accessibilityAction { onPick(index) }
         }

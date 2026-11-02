@@ -34,16 +34,16 @@
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(color)
                     .accessibilityHidden(true)
-                Text("BREAK")
+                Text("BREAK", bundle: #bundle)
                     .font(SchibstedGrotesk.extraBold.font(size: 11))
                     .tracking(0.9)
                     .foregroundStyle(color)
-                Text(info.label.isEmpty ? "Break" : info.label)
+                Text(info.label.isEmpty ? uiString("Break") : info.label)
                     .font(SchibstedGrotesk.bold.font(size: 15))
                     .foregroundStyle(Theme.color.ink)
                     .lineLimit(1)
                 if let length = info.length, length > 0 {
-                    Text("\(SetlistTiming.format(length)) break")
+                    Text("\(SetlistTiming.format(length)) break", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 13))
                         .foregroundStyle(Theme.color.muted)
                 }
@@ -97,9 +97,9 @@
                 }
             }
             .contextMenu {
-                Button("Edit Break…") { isEditing = true }
+                Button(uiString("Edit Break…")) { isEditing = true }
                     .disabled(isReadOnly)
-                Button("Remove Break", role: .destructive, action: onRemove)
+                Button(uiString("Remove Break"), role: .destructive, action: onRemove)
                     .disabled(isReadOnly)
             }
             .accessibilityElement(children: .contain)
@@ -121,24 +121,34 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Break")
+                Text("Break", bundle: #bundle)
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
                 Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
                     GridRow {
-                        Text("Label").font(Theme.font.label).foregroundStyle(Theme.color.muted)
-                        TextField("Label", text: $label, prompt: Text("Set 2"))
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityIdentifier(AccessibilityID.breakLabelField)
+                        Text("Label", bundle: #bundle).font(Theme.font.label)
+                            .foregroundStyle(Theme.color.muted)
+                        TextField(
+                            uiString("Label"),
+                            text: $label,
+                            prompt: Text("Set 2", bundle: #bundle),
+                        )
+                        .textFieldStyle(.roundedBorder)
+                        .accessibilityIdentifier(AccessibilityID.breakLabelField)
                     }
                     GridRow {
-                        Text("Break").font(Theme.font.label).foregroundStyle(Theme.color.muted)
+                        Text("Break", bundle: #bundle).font(Theme.font.label)
+                            .foregroundStyle(Theme.color.muted)
                         HStack {
-                            TextField("Length", text: $length, prompt: Text("15:00"))
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 80)
-                                .accessibilityIdentifier(AccessibilityID.breakLengthField)
-                            Text("in the whole total only")
+                            TextField(
+                                uiString("Length"),
+                                text: $length,
+                                prompt: Text(verbatim: "15:00"),
+                            )
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 80)
+                            .accessibilityIdentifier(AccessibilityID.breakLengthField)
+                            Text("in the whole total only", bundle: #bundle)
                                 .font(.callout)
                                 .foregroundStyle(Theme.color.muted)
                         }
@@ -146,10 +156,10 @@
                 }
                 HStack {
                     Spacer()
-                    Button("Cancel", role: .cancel) { dismiss() }
+                    Button(uiString("Cancel"), role: .cancel) { dismiss() }
                         .keyboardShortcut(.cancelAction)
                         .buttonStyle(.segueSecondary)
-                    Button("Save", action: save)
+                    Button(uiString("Save"), action: save)
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(.seguePrimary)
                         .disabled(!isLengthValid)

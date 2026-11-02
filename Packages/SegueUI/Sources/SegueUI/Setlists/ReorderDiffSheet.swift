@@ -70,7 +70,7 @@
         public var body: some View {
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Save the played order to “\(diff.setlistName)”?")
+                    Text("Save the played order to “\(diff.setlistName)”?", bundle: #bundle)
                         .font(Theme.font.sectionHeading)
                         .foregroundStyle(Theme.color.ink)
                         .fixedSize(horizontal: false, vertical: true)
@@ -198,7 +198,9 @@
                 KeyChip(key: origin == .request ? "Request" : "Added")
                 if diff.repeatedItemIds.contains(row.item.itemId) {
                     note("already in set")
-                        .help("A song can be in a setlist only once, so Save leaves this out.")
+                        .help(uiString("""
+                        A song can be in a setlist only once, so Save leaves this out.
+                        """))
                         .accessibilityIdentifier(AccessibilityID.reorderAlreadyInSet)
                 } else {
                     includeToggle(row)
@@ -208,13 +210,13 @@
 
         private func includeToggle(_ row: ReorderDiff.Row) -> some View {
             Toggle(isOn: includeBinding(row.item.itemId)) {
-                Text("Add to setlist")
+                Text("Add to setlist", bundle: #bundle)
             }
             .toggleStyle(.checkbox)
             .font(SchibstedGrotesk.medium.font(size: 13))
             .fixedSize()
             .disabled(saveDisabledReason != nil)
-            .help("Add this song to the setlist at this position")
+            .help(uiString("Add this song to the setlist at this position"))
             .accessibilityIdentifier(AccessibilityID.reorderInclude)
         }
 
@@ -241,11 +243,11 @@
             HStack(spacing: 8) {
                 Spacer()
                 // Neither button is the default action: the choice is always deliberate.
-                Button("Discard", action: onDiscard)
+                Button(uiString("Discard"), action: onDiscard)
                     .buttonStyle(.segueSecondary)
                     .disabled(isBusy)
                     .accessibilityIdentifier(AccessibilityID.reorderDiscard)
-                Button("Save to Setlist") { onSave(included) }
+                Button(uiString("Save to Setlist")) { onSave(included) }
                     .buttonStyle(.segueSecondary)
                     .disabled(saveDisabledReason != nil || isBusy)
                     .accessibilityIdentifier(AccessibilityID.reorderSave)
@@ -264,7 +266,7 @@
 
         var body: some View {
             HStack(spacing: 8) {
-                Text("\(number)")
+                Text(verbatim: "\(number)")
                     .font(SchibstedGrotesk.medium.font(size: 14))
                     .foregroundStyle(Theme.color.muted)
                     .frame(width: 24, alignment: .leading)

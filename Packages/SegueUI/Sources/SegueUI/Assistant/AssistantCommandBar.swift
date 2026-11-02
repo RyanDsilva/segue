@@ -19,15 +19,17 @@
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 10) {
                     field
-                    Button("Build") { build(rebuild: false) }
+                    Button(uiString("Build")) { build(rebuild: false) }
                         .buttonStyle(.seguePrimary)
                         .disabled(!model.canBuild || isReadOnly)
-                        .help("Fill this setlist from the request (locked songs and breaks stay)")
+                        .help(uiString("""
+                        Fill this setlist from the request (locked songs and breaks stay)
+                        """))
                         .accessibilityIdentifier(AccessibilityID.assistantBuild)
-                    Button("Rebuild") { build(rebuild: true) }
+                    Button(uiString("Rebuild")) { build(rebuild: true) }
                         .buttonStyle(.segueSecondary)
                         .disabled(!model.canBuild || isReadOnly || setlist.songCount == 0)
-                        .help("Pack the unlocked slots again with a different pick")
+                        .help(uiString("Pack the unlocked slots again with a different pick"))
                         .accessibilityIdentifier(AccessibilityID.assistantRebuild)
                     GuideHelpButton(.setAssistant)
                 }
@@ -57,7 +59,7 @@
                     .foregroundStyle(Theme.color.muted)
                     .accessibilityHidden(true)
                 TextField(
-                    "Describe a set: 45 min, songs I know well, upbeat start, no covers",
+                    uiString("Describe a set: 45 min, songs I know well, upbeat start, no covers"),
                     text: Binding(get: { model.text }, set: { model.text = $0 }),
                 )
                 .textFieldStyle(.plain)
@@ -66,7 +68,7 @@
                 .autocorrectionDisabled()
                 .focused($fieldFocused)
                 .onSubmit { build(rebuild: false) }
-                .accessibilityLabel("Set request")
+                .accessibilityLabel(uiString("Set request"))
                 .accessibilityIdentifier(AccessibilityID.assistantField)
             }
             .padding(.horizontal, 12)
@@ -97,12 +99,12 @@
                 if model.isSuggesting {
                     HStack(spacing: 6) {
                         ProgressView().controlSize(.mini)
-                        Text("Local model…")
+                        Text("Local model…", bundle: #bundle)
                             .font(SchibstedGrotesk.semiBold.font(size: 12))
                             .foregroundStyle(Theme.color.muted)
                     }
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Looking for suggestions")
+                    .accessibilityLabel(uiString("Looking for suggestions"))
                 }
             }
             .accessibilityElement(children: .contain)
@@ -150,9 +152,9 @@
                     .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .help("Suggested: click to use it")
-                .accessibilityLabel("Suggested: \(title)")
-                .accessibilityHint("Adds it to the request")
+                .help(uiString("Suggested: click to use it"))
+                .accessibilityLabel(uiString("Suggested: \(title)"))
+                .accessibilityHint(uiString("Adds it to the request"))
                 .accessibilityIdentifier(AccessibilityID.assistantSuggestedChip)
             } else {
                 HStack(spacing: 6) {
@@ -167,8 +169,8 @@
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .help("Remove")
-                    .accessibilityLabel("Remove \(title)")
+                    .help(uiString("Remove"))
+                    .accessibilityLabel(uiString("Remove \(title)"))
                 }
                 .padding(.leading, 10)
                 .padding(.trailing, 6)
@@ -213,7 +215,7 @@
                 }
                 let locked = setlist.entries.count(where: \.locked)
                 if locked > 0 {
-                    Text("\(locked) locked")
+                    Text("\(locked) locked", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 12.5))
                         .foregroundStyle(Theme.color.muted)
                 }

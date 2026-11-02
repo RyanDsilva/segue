@@ -10,7 +10,7 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Why \(title)")
+                Text("Why \(title)", bundle: #bundle)
                     .font(SchibstedGrotesk.bold.font(size: 14))
                     .foregroundStyle(Theme.color.ink)
                     .lineLimit(1)
@@ -41,7 +41,7 @@
                 }
                 Rule().padding(.top, 4)
                 HStack {
-                    Text("Score")
+                    Text("Score", bundle: #bundle)
                     Spacer()
                     Text(Self.format(breakdown.total, signed: false))
                 }

@@ -19,10 +19,10 @@
         }
 
         static let modes = [
-            ModeItem(mode: .full, title: "Full", key: "F", id: "full"),
-            ModeItem(mode: .chordsOnly, title: "Chords only", key: "C", id: "chords"),
-            ModeItem(mode: .firstLine, title: "First line", key: "1", id: "first"),
-            ModeItem(mode: .skip, title: "Skip", key: "S", id: "skip"),
+            ModeItem(mode: .full, title: uiString("Full"), key: "F", id: "full"),
+            ModeItem(mode: .chordsOnly, title: uiString("Chords only"), key: "C", id: "chords"),
+            ModeItem(mode: .firstLine, title: uiString("First line"), key: "1", id: "first"),
+            ModeItem(mode: .skip, title: uiString("Skip"), key: "S", id: "skip"),
         ]
 
         var body: some View {
@@ -70,7 +70,7 @@
 
         private var titleRow: some View {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(chip?.title ?? "No pass selected")
+                Text(chip?.title ?? uiString("No pass selected"))
                     .font(SchibstedGrotesk.bold.font(size: 15))
                     .foregroundStyle(Theme.color.ink)
                     .fixedSize()
@@ -193,7 +193,7 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 6) {
-                Text("ROADMAP (OPTIONAL)")
+                Text("ROADMAP (OPTIONAL)", bundle: #bundle)
                     .font(SchibstedGrotesk.bold.font(size: 11))
                     .tracking(0.08 * 11)
                     .foregroundStyle(Theme.color.muted)
@@ -203,7 +203,7 @@
                     text: text,
                     font: .monospacedSystemFont(ofSize: 15, weight: .semibold),
                     identifier: AccessibilityID.arrangementRoadmap,
-                    placeholder: "Roadmap",
+                    placeholder: uiString("Roadmap"),
                     accessibilityHint: helpText,
                     focusRequest: 0,
                     selectAllRequest: 0,
@@ -270,9 +270,13 @@
             let plain = { (text: String) in
                 Text(text).foregroundStyle(Theme.color.muted)
             }
+            let chordsOnly = plain(uiString(" chords only · "))
+            let firstLine = plain(uiString(" first line · "))
+            let skip = plain(uiString(" skip · "))
+            let twice = plain(uiString(" twice · parts "))
             return Text("""
-            \(code(":ch"))\(plain(" chords only · "))\(code(":1"))\(plain(" first line · "))\
-            \(code("-V2"))\(plain(" skip · "))\(code("x2"))\(plain(" twice · parts "))\
+            \(code(":ch"))\(chordsOnly)\(code(":1"))\(firstLine)\
+            \(code("-V2"))\(skip)\(code("x2"))\(twice)\
             \(code(draft.partList))
             """)
             .font(SchibstedGrotesk.medium.font(size: 12))

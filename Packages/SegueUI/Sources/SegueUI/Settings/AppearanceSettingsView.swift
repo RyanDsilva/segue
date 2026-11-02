@@ -8,7 +8,7 @@
         var body: some View {
             Form {
                 Section {
-                    Picker("Appearance", selection: $store.mode) {
+                    Picker(uiString("Appearance"), selection: $store.mode) {
                         ForEach(AppearanceMode.allCases) { mode in
                             Text(mode.title).tag(mode)
                         }

@@ -22,10 +22,11 @@
                     }
                     Spacer(minLength: 4)
                     if case let .smartFilter(filter) = scope {
-                        Button("Edit…") { session.smartFilters.editing = .edit(filter.id) }
-                            .buttonStyle(.segueSecondary)
-                            .help("Edit this smart filter’s conditions")
-                            .accessibilityIdentifier(AccessibilityID.smartFilterEdit)
+                        Button(uiString("Edit…")) { session.smartFilters.editing = .edit(filter.id)
+                        }
+                        .buttonStyle(.segueSecondary)
+                        .help(uiString("Edit this smart filter’s conditions"))
+                        .accessibilityIdentifier(AccessibilityID.smartFilterEdit)
                     }
                 }
                 .accessibilityElement(children: .contain)

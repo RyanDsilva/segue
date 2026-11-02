@@ -24,7 +24,7 @@
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Color.clear.frame(width: 32, height: 1)
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("↳")
+                    Text(verbatim: "↳")
                         .font(SchibstedGrotesk.medium.font(size: 13))
                         .foregroundStyle(Theme.color.muted)
                         .accessibilityHidden(true)
@@ -45,7 +45,7 @@
 
         @ViewBuilder private var field: some View {
             if isEditing {
-                TextField("Add a transition", text: $draft)
+                TextField(uiString("Add a transition"), text: $draft)
                     .textFieldStyle(.plain)
                     .font(SchibstedGrotesk.medium.font(size: 14))
                     .foregroundStyle(Theme.color.ink)
@@ -66,11 +66,11 @@
                             commit()
                         }
                     }
-                    .accessibilityLabel("Transition into \(title)")
+                    .accessibilityLabel(uiString("Transition into \(title)"))
                     .accessibilityIdentifier(AccessibilityID.medleyTransition)
             } else {
                 Button(action: beginEditing) {
-                    Text(member.transition ?? "Add a transition")
+                    Text(member.transition ?? uiString("Add a transition"))
                         .font(SchibstedGrotesk.medium.font(size: 14))
                         .foregroundStyle(member.transition == nil ? Theme.color.muted
                             : Theme.color.ink)
@@ -81,9 +81,9 @@
                 }
                 .buttonStyle(.plain)
                 .disabled(isReadOnly)
-                .help(isReadOnly ? "" : "What happens between the songs (click to edit)")
-                .accessibilityLabel("Transition into \(title)")
-                .accessibilityValue(member.transition ?? "None")
+                .help(isReadOnly ? "" : uiString("What happens between the songs (click to edit)"))
+                .accessibilityLabel(uiString("Transition into \(title)"))
+                .accessibilityValue(member.transition ?? uiString("None"))
                 .accessibilityIdentifier(AccessibilityID.medleyTransition)
             }
         }
@@ -93,7 +93,7 @@
                 HStack(spacing: 4) {
                     ForEach(Array(changes.enumerated()), id: \.offset) { index, change in
                         if index > 0 {
-                            Text("·")
+                            Text(verbatim: "·")
                                 .foregroundStyle(Theme.color.muted)
                         }
                         Text(change.text)
@@ -137,7 +137,7 @@
         @FocusState private var isFocused: Bool
 
         var body: some View {
-            TextField("Medley", text: $draft)
+            TextField(uiString("Medley"), text: $draft)
                 .textFieldStyle(.plain)
                 .font(SchibstedGrotesk.semiBold.font(size: 16))
                 .foregroundStyle(Theme.color.ink)
@@ -155,7 +155,7 @@
                         finish(save: true)
                     }
                 }
-                .accessibilityLabel("Medley title")
+                .accessibilityLabel(uiString("Medley title"))
                 .accessibilityIdentifier(AccessibilityID.medleyTitle)
         }
 
@@ -197,7 +197,7 @@
                 if hasTransition {
                     Image(systemName: "text.bubble")
                         .font(.system(size: 10, weight: .regular))
-                        .help("A transition is written here")
+                        .help(uiString("A transition is written here"))
                 }
             }
             .foregroundStyle(Theme.color.muted)
@@ -220,7 +220,7 @@
                     Circle()
                         .fill(Theme.color.cue)
                         .frame(width: 6, height: 6)
-                        .help("The capo changes going into this song")
+                        .help(uiString("The capo changes going into this song"))
                 }
             }
             .font(SchibstedGrotesk.medium.font(size: 12))

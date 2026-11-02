@@ -136,7 +136,7 @@
 
         /// Pick | Arrange (⌘1 / ⌘2, Setlist menu).
         private var modePicker: some View {
-            Picker("Mode", selection: Binding(
+            Picker(uiString("Mode"), selection: Binding(
                 get: { model.builderMode },
                 set: { model.builderMode = $0 },
             )) {
@@ -147,8 +147,10 @@
             .pickerStyle(.segmented)
             .labelsHidden()
             .fixedSize()
-            .help("Pick songs from the library (\(MenuShortcuts.pickSongs.displayText)) or "
-                + "arrange the set (\(MenuShortcuts.arrangeSet.displayText))")
+            .help(uiString("""
+            Pick songs from the library (\(MenuShortcuts.pickSongs.displayText)) or \
+            arrange the set (\(MenuShortcuts.arrangeSet.displayText))
+            """))
             .accessibilityIdentifier(AccessibilityID.builderMode)
         }
 
@@ -181,7 +183,7 @@
 
         private var nameBlock: some View {
             VStack(alignment: .leading, spacing: 4) {
-                Text(isReadOnly ? "Setlist · read-only" : "Setlist")
+                Text(isReadOnly ? uiString("Setlist · read-only") : uiString("Setlist"))
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                 Text(setlist.name)
@@ -197,12 +199,14 @@
 
         private var startButtons: some View {
             HStack(spacing: 8) {
-                Button("Rehearse") { onStart(setlist, .rehearsal) }
+                Button(uiString("Rehearse")) { onStart(setlist, .rehearsal) }
                     .buttonStyle(.segueSecondary)
-                    .help("Run the set on stage to time each song, no gig log entry "
-                        + "(\(MenuShortcuts.rehearse.displayText))")
+                    .help(uiString("""
+                    Run the set on stage to time each song, no gig log entry \
+                    (\(MenuShortcuts.rehearse.displayText))
+                    """))
                     .accessibilityIdentifier(AccessibilityID.setlistRehearse)
-                Button("Start show") { onStart(setlist, .gig) }
+                Button(uiString("Start show")) { onStart(setlist, .gig) }
                     .buttonStyle(.seguePrimary)
                     .popoverTip(StartShowTip()) { action in
                         GuideTipAction.handle(
@@ -211,7 +215,9 @@
                             openGuide: openGuide,
                         )
                     }
-                    .help("Perform this setlist on stage (\(MenuShortcuts.startShow.displayText))")
+                    .help(uiString("""
+                    Perform this setlist on stage (\(MenuShortcuts.startShow.displayText))
+                    """))
                     .accessibilityIdentifier(AccessibilityID.setlistStartShow)
             }
             .controlSize(.large)
@@ -225,14 +231,14 @@
             return Button {
                 isEditingDetails = true
             } label: {
-                Text(parts.isEmpty ? "Add details…" : parts.joined(separator: " · "))
+                Text(parts.isEmpty ? uiString("Add details…") : parts.joined(separator: " · "))
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.muted)
                     .lineLimit(1)
             }
             .buttonStyle(.plain)
             .disabled(isReadOnly)
-            .help("Edit venue, date, target length and changeover")
+            .help(uiString("Edit venue, date, target length and changeover"))
             .accessibilityIdentifier(AccessibilityID.setlistDetailsLine)
             .popover(isPresented: $isEditingDetails, arrowEdge: .bottom) {
                 SetlistDetailsEditor(setlist: setlist) { details in
@@ -244,7 +250,7 @@
         @ToolbarContentBuilder private var menu: some ToolbarContent {
             ToolbarSpacer(.flexible)
             ToolbarItem(placement: .automatic) {
-                Menu("Setlist", systemImage: "ellipsis") {
+                Menu(uiString("Setlist"), systemImage: "ellipsis") {
                     SetlistActions(
                         setlist: setlist,
                         model: model,
@@ -254,9 +260,11 @@
                         exportPDF: exportPDF,
                     )
                 }
-                .help("Rename, duplicate, show in Finder or move this setlist to the Trash")
+                .help(
+                    uiString("Rename, duplicate, show in Finder or move this setlist to the Trash"),
+                )
                 // Icon-only in the toolbar: name it for VoiceOver and Voice Control.
-                .accessibilityLabel("Setlist")
+                .accessibilityLabel(uiString("Setlist"))
                 .accessibilityIdentifier(AccessibilityID.setlistMenu)
             }
         }
@@ -288,35 +296,37 @@
         var exportPDF: ExportPDFAction?
 
         var body: some View {
-            Button("Rename…", action: onRename)
+            Button(uiString("Rename…"), action: onRename)
                 .disabled(setlist.readOnly != nil)
                 .accessibilityIdentifier(AccessibilityID.setlistRenameAction)
             if let onDetails {
-                Button("Details…", action: onDetails)
+                Button(uiString("Details…"), action: onDetails)
                     .disabled(setlist.readOnly != nil)
                     .accessibilityIdentifier(AccessibilityID.setlistDetailsAction)
             }
-            Button("Duplicate") {
+            Button(uiString("Duplicate")) {
                 Task { await model.duplicate(setlist.id) }
             }
             .accessibilityIdentifier(AccessibilityID.setlistDuplicateAction)
-            Button("Show in Finder", action: onReveal)
+            Button(uiString("Show in Finder"), action: onReveal)
                 .accessibilityIdentifier(AccessibilityID.setlistRevealAction)
             if let exportPDF {
                 Divider()
                 let empty = setlist.songCount == 0
-                Button("Export PDF\u{2026}") { exportPDF.open(.setlist(setlist.id), false) }
+                Button(uiString("Export PDF\u{2026}")) {
+                    exportPDF.open(.setlist(setlist.id), false)
+                }
+                .disabled(!exportPDF.isEnabled || empty)
+                .help(empty ? uiString("Add a song to export this setlist") : "")
+                .accessibilityIdentifier(AccessibilityID.pdfExportSetlist)
+                Button(uiString("Print\u{2026}")) { exportPDF.open(.setlist(setlist.id), true) }
                     .disabled(!exportPDF.isEnabled || empty)
-                    .help(empty ? "Add a song to export this setlist" : "")
-                    .accessibilityIdentifier(AccessibilityID.pdfExportSetlist)
-                Button("Print\u{2026}") { exportPDF.open(.setlist(setlist.id), true) }
-                    .disabled(!exportPDF.isEnabled || empty)
-                    .help(empty ? "Add a song to export this setlist" : "")
+                    .help(empty ? uiString("Add a song to export this setlist") : "")
                     .accessibilityIdentifier(AccessibilityID.pdfPrintSetlist)
             }
             Divider()
             // No confirmation: the file goes to the Trash and Edit > Undo brings it back (A23).
-            Button("Move to Trash", role: .destructive) {
+            Button(uiString("Move to Trash"), role: .destructive) {
                 Task { await model.delete(setlist.id) }
             }
             .accessibilityIdentifier(AccessibilityID.setlistDeleteAction)

@@ -32,7 +32,9 @@
             }
             .buttonStyle(.plain)
             .fixedSize()
-            .help("Songs the request matched that have no time, so they could not be packed")
+            .help(uiString("""
+            Songs the request matched that have no time, so they could not be packed
+            """))
             .accessibilityIdentifier(AccessibilityID.assistantLeftOut)
             .popover(isPresented: $isOpen, arrowEdge: .bottom) {
                 LeftOutTimesList(songs: songs, library: library, title: title)
@@ -100,7 +102,7 @@
                         .foregroundStyle(Theme.color.ink)
                         .lineLimit(1)
                     if reason == .noChords {
-                        Text("No chords to time")
+                        Text("No chords to time", bundle: #bundle)
                             .font(SchibstedGrotesk.medium.font(size: 12))
                             .foregroundStyle(Theme.color.muted)
                     }
@@ -111,10 +113,10 @@
                         MissingTimesList.writeTempo(text, song: record.id, library: library)
                     }
                 }
-                Button("Open Song") { openSong(record.id) }
+                Button(uiString("Open Song")) { openSong(record.id) }
                     .buttonStyle(.link)
                     .font(SchibstedGrotesk.semiBold.font(size: 12))
-                    .help("Show \(title) in the Library")
+                    .help(uiString("Show \(title) in the Library"))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)

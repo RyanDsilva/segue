@@ -55,9 +55,9 @@
                 )
             } else {
                 VStack(spacing: 14) {
-                    Text("This song is no longer in the set or the library.")
+                    Text("This song is no longer in the set or the library.", bundle: #bundle)
                         .foregroundStyle(Theme.color.muted)
-                    Button("Done") { dismiss() }
+                    Button(uiString("Done")) { dismiss() }
                         .buttonStyle(.seguePrimary)
                         .keyboardShortcut(.defaultAction)
                 }
@@ -181,7 +181,7 @@
 
         private func header(_ draft: ArrangementDraft) -> some View {
             HStack(spacing: 12) {
-                Text("Arrange Sections")
+                Text("Arrange Sections", bundle: #bundle)
                     .font(SchibstedGrotesk.extraBold.font(size: 17))
                     .foregroundStyle(Theme.color.ink)
                     .fixedSize()
@@ -200,8 +200,8 @@
                 Button(action: rehearse) {
                     HStack(spacing: 6) {
                         Image(systemName: "play.fill").font(.system(size: 10))
-                        Text("Rehearse this")
-                        Text("⌥⌘↩").foregroundStyle(Theme.color.muted).fontWeight(.medium)
+                        Text("Rehearse this", bundle: #bundle)
+                        Text(verbatim: "⌥⌘↩").foregroundStyle(Theme.color.muted).fontWeight(.medium)
                     }
                 }
                 .buttonStyle(.segueSecondary)
@@ -209,14 +209,14 @@
                 .disabled(!canRehearse(draft))
                 .help(rehearseHelp(draft))
                 .accessibilityIdentifier(AccessibilityID.arrangementRehearse)
-                Button("Reset to Full Song") {
+                Button(uiString("Reset to Full Song")) {
                     editor.roadmapPreview = nil
                     editor.reset()
                 }
                 .buttonStyle(.segueSecondary)
                 .disabled(!draft.isCustom || isReadOnly)
                 .accessibilityIdentifier(AccessibilityID.arrangementReset)
-                Button("Done", action: finish)
+                Button(uiString("Done"), action: finish)
                     .buttonStyle(.seguePrimary)
                     .keyboardShortcut(roadmapFocused ? nil : .defaultAction)
                     .accessibilityIdentifier(AccessibilityID.arrangementDone)
@@ -254,10 +254,10 @@
                     .foregroundStyle(Theme.color.cueText)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
-                Button("Update") { perform(.update) }
+                Button(uiString("Update")) { perform(.update) }
                     .buttonStyle(.segueSecondary)
                     .disabled(isReadOnly)
-                    .help("Keep the passes that still match the song and drop the rest")
+                    .help(uiString("Keep the passes that still match the song and drop the rest"))
                     .accessibilityIdentifier(AccessibilityID.arrangementUpdate)
             }
             .padding(.horizontal, 18)
@@ -310,9 +310,11 @@
                         onCommit: commitRoadmap,
                         onRevert: revertRoadmap,
                     )
-                    Text("← → select · ⌥← ⌥→ move · F C 1 S mode · ⌫ remove · ⌘D duplicate")
-                        .font(SchibstedGrotesk.medium.font(size: 12))
-                        .foregroundStyle(Theme.color.muted)
+                    Text(uiString("""
+                    ← → select · ⌥← ⌥→ move · F C 1 S mode · ⌫ remove · ⌘D duplicate
+                    """))
+                    .font(SchibstedGrotesk.medium.font(size: 12))
+                    .foregroundStyle(Theme.color.muted)
                 }
                 .padding(.vertical, 18)
                 .padding(.horizontal, 20)
@@ -344,8 +346,8 @@
             .onKeyPress(phases: .down) { press in keyPress(press) }
             .accessibilityElement(children: .contain)
             .accessibilityLabel(
-                "Sequence, " + ArrangementPreview.spokenCount(draft.chips.count)
-                    + (draft.skippedCount > 0 ? ", \(draft.skippedCount) skipped" : ""),
+                uiString("Sequence, \(ArrangementPreview.spokenCount(draft.chips.count))")
+                    + (draft.skippedCount > 0 ? uiString(", \(draft.skippedCount) skipped") : ""),
             )
             .accessibilityIdentifier(AccessibilityID.arrangementLane)
         }
