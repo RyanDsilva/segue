@@ -5,7 +5,7 @@
     struct AppInfoCommands: Commands {
         var body: some Commands {
             CommandGroup(replacing: .appInfo) {
-                Button("About Segue") { AboutPanel.show() }
+                Button(uiString("About Segue")) { AboutPanel.show() }
             }
         }
     }

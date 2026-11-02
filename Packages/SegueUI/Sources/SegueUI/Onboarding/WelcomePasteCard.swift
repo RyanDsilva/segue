@@ -23,7 +23,7 @@
                     )
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Paste any chord sheet")
+                    Text("Paste any chord sheet", bundle: #bundle)
                         .font(SchibstedGrotesk.bold.font(size: 14))
                         .foregroundStyle(Theme.color.ink)
                     Text("Copy a song from a chord site or a note and press ⌥⌘V. Segue turns "
@@ -33,7 +33,7 @@
                         .fixedSize(horizontal: false, vertical: true)
                     // R120, R186: under 16 GB with Apple Intelligence the local model is
                     // opt-in, so the link does not name it.
-                    Button(app.ai.offersLocalModel ? "AI settings and the local model"
+                    Button(app.ai.offersLocalModel ? uiString("AI settings and the local model")
                         : "AI settings")
                     {
                         app.selectAISettingsPane()

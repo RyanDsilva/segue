@@ -30,7 +30,7 @@
                     }
                 } else {
                     Section {
-                        Text("Analytics and crash reporting are not part of this build.")
+                        Text(uiString("Analytics and crash reporting are not part of this build."))
                             .foregroundStyle(Theme.color.muted)
                             .accessibilityIdentifier(AccessibilityID.privacyUnavailable)
                     }
@@ -44,7 +44,7 @@
                         PolicyLink(workspace: workspace)
                         PolicyLink(
                             workspace: workspace,
-                            title: "What Segue collects",
+                            title: uiString("What Segue collects"),
                             url: SegueLinks.privacyUsage,
                         )
                     }
@@ -88,9 +88,9 @@
                             Text(id)
                                 .font(.callout.monospaced())
                                 .textSelection(.enabled)
-                                .accessibilityLabel("Diagnostics ID \(id)")
+                                .accessibilityLabel(uiString("Diagnostics ID \(id)"))
                                 .accessibilityIdentifier(AccessibilityID.privacyDiagnosticsID)
-                            Button("Copy") { Self.copy(id) }
+                            Button(uiString("Copy")) { Self.copy(id) }
                                 .buttonStyle(.segueSecondary)
                                 .controlSize(.small)
                                 .accessibilityIdentifier(AccessibilityID.privacyCopyID)

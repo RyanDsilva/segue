@@ -26,7 +26,7 @@
             let screen = SingerScreenController.shared
             let choices = screen.choices
             if choices.isEmpty || screen.isOpen {
-                Toggle("Singer Screen", isOn: Binding(
+                Toggle(uiString("Singer Screen"), isOn: Binding(
                     get: { screen.isOpen },
                     set: { $0 ? screen.open(app) : screen.close() },
                 ))
@@ -35,7 +35,7 @@
                     ? "Show the lyrics on another display, facing the singer"
                     : "Connect a second display to show a Singer Screen")
             } else {
-                Menu("Singer Screen") {
+                Menu(uiString("Singer Screen")) {
                     ForEach(choices, id: \.name) { display in
                         Button(display.name) { screen.open(app, on: display) }
                     }

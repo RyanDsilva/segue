@@ -66,7 +66,7 @@
                         .padding(.top, index == 0 ? 0 : 18)
                 }
                 if content.overflow > 0 {
-                    Button(content.overflow == 1 ? "and 1 more change"
+                    Button(content.overflow == 1 ? uiString("and 1 more change")
                         : "and \(content.overflow) more changes")
                     {
                         workspace.open(SegueLinks.changelog)
@@ -83,13 +83,13 @@
 
         private var footer: some View {
             HStack(alignment: .firstTextBaseline) {
-                Button("All Release Notes") { workspace.open(SegueLinks.changelog) }
+                Button(uiString("All Release Notes")) { workspace.open(SegueLinks.changelog) }
                     .buttonStyle(.appLink)
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
                     .accessibilityIdentifier(AccessibilityID.whatsNewAllNotes)
                 Spacer()
                 Button(action: onDismiss) {
-                    Text("Continue").frame(minWidth: 76)
+                    Text("Continue", bundle: #bundle).frame(minWidth: 76)
                 }
                 .buttonStyle(.seguePrimary)
                 .keyboardShortcut(.defaultAction)
@@ -164,10 +164,10 @@
                         .lineSpacing(1.5)
                         .fixedSize(horizontal: false, vertical: true)
                     if let url = highlight.helpURL {
-                        Button("Learn More") { workspace.open(url) }
+                        Button(uiString("Learn More")) { workspace.open(url) }
                             .buttonStyle(.appLink)
                             .font(SchibstedGrotesk.semiBold.font(size: 13))
-                            .accessibilityLabel("Learn More: \(highlight.text)")
+                            .accessibilityLabel(uiString("Learn More: \(highlight.text)"))
                             .accessibilityIdentifier(AccessibilityID.whatsNewLearnMore)
                     }
                 }

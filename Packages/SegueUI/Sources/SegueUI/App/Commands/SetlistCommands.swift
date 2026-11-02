@@ -29,18 +29,18 @@
                     .disabled(app.session == nil || app.isPerforming || app.isMainWindowBusy)
                 if let session = app.session, let songs = selectedSongs, songs.count > 1 {
                     AddSongsToSetlistMenu(
-                        title: "Add Selected Songs to Setlist",
+                        title: uiString("Add Selected Songs to Setlist"),
                         session: session,
                         songIDs: songs,
                     )
                 } else if let session = app.session, let song = selectedSong {
                     AddToSetlistMenu(
-                        title: "Add Selected Song to Setlist",
+                        title: uiString("Add Selected Song to Setlist"),
                         session: session,
                         songID: song,
                     )
                 } else {
-                    Button("Add Selected Song to Setlist") {}
+                    Button(uiString("Add Selected Song to Setlist")) {}
                         .disabled(true)
                 }
                 Divider()
@@ -188,7 +188,7 @@
         var body: some View {
             Menu(title) {
                 if session.setlists.setlists.isEmpty {
-                    Button("No Setlists") {}
+                    Button(uiString("No Setlists")) {}
                         .disabled(true)
                 }
                 ForEach(session.setlists.setlists) { setlist in

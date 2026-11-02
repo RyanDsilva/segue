@@ -28,7 +28,7 @@
             if moved {
                 upgradeNote = LibraryNote(
                     title: LibraryUpgrade.timingsNote,
-                    message: "You can restore it from the Trash.",
+                    message: uiString("You can restore it from the Trash."),
                 )
             }
             let state = LibraryUpgrade.state(root: root, fileSystem: fileSystem)
@@ -117,14 +117,16 @@
                 if session.upgradeNote != nil {
                     // Closing the alert clears the note (the setter above). Clearing it here
                     // too made the setter see only the offer and answer it Not Now unseen.
-                    Button("OK") {}
+                    Button(uiString("OK")) {}
                         .keyboardShortcut(.defaultAction)
                 } else {
-                    Button("Remove") { session.chooseDurationOffer(remove: true) }
+                    Button(uiString("Remove")) { session.chooseDurationOffer(remove: true) }
                         .keyboardShortcut(.defaultAction)
                         .accessibilityIdentifier(AccessibilityID.durationCleanupRemove)
-                    Button("Not Now", role: .cancel) { session.chooseDurationOffer(remove: false) }
-                        .accessibilityIdentifier(AccessibilityID.durationCleanupNotNow)
+                    Button(uiString("Not Now"), role: .cancel) {
+                        session.chooseDurationOffer(remove: false)
+                    }
+                    .accessibilityIdentifier(AccessibilityID.durationCleanupNotNow)
                 }
             } message: {
                 if let note = session.upgradeNote {

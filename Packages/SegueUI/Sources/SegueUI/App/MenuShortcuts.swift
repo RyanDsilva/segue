@@ -14,15 +14,17 @@
         /// by Segue's commands.
         public let isSystem: Bool
 
+        /// `menu` and `title` are looked up in SegueUI's String Catalog (P9-5 4.3); as
+        /// `LocalizationValue` parameters, their literals below are extracted into it.
         init(
-            _ menu: String,
-            _ title: String,
+            _ menu: String.LocalizationValue,
+            _ title: String.LocalizationValue,
             _ key: KeyEquivalent,
             _ modifiers: EventModifiers = .command,
             system: Bool = false,
         ) {
-            self.menu = menu
-            self.title = title
+            self.menu = uiString(menu)
+            self.title = uiString(title)
             self.key = key
             self.modifiers = modifiers
             isSystem = system

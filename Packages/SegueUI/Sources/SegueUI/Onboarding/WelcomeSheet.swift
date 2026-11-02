@@ -134,12 +134,12 @@
         let model: OnboardingModel
 
         var body: some View {
-            WelcomePage(step: model.stepLabel, title: "Where should your songs live?") {
+            WelcomePage(step: model.stepLabel, title: uiString("Where should your songs live?")) {
                 WelcomeLead(text: "Segue keeps every song as a plain ChordPro file in a folder "
                     + "you choose. We suggest a Segue folder in Music.")
                 suggestion
                     .padding(.top, 22)
-                Text("Songs are plain ChordPro files you can open in any editor.")
+                Text("Songs are plain ChordPro files you can open in any editor.", bundle: #bundle)
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                     .padding(.top, 12)
@@ -147,12 +147,12 @@
                 VStack(alignment: .trailing, spacing: 10) {
                     HStack(spacing: 10) {
                         Spacer()
-                        Button("Choose Existing Folder…") {
+                        Button(uiString("Choose Existing Folder…")) {
                             Task { await app.onboardingChooseLibrary(create: false) }
                         }
                         .buttonStyle(.segueSecondary)
                         .accessibilityIdentifier(AccessibilityID.chooserOpen)
-                        Button("Create Library in Music…") {
+                        Button(uiString("Create Library in Music…")) {
                             Task { await app.onboardingChooseLibrary(create: true) }
                         }
                         .buttonStyle(.seguePrimary)
@@ -176,15 +176,15 @@
                     .foregroundStyle(Theme.color.ink)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Segue")
+                    Text("Segue", bundle: #bundle)
                         .font(SchibstedGrotesk.bold.font(size: 15))
                         .foregroundStyle(Theme.color.ink)
-                    Text("~/Music/Segue")
+                    Text("~/Music/Segue", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 13))
                         .foregroundStyle(Theme.color.muted)
                 }
                 Spacer()
-                Text("Suggested")
+                Text("Suggested", bundle: #bundle)
                     .font(SchibstedGrotesk.bold.font(size: 12))
                     .foregroundStyle(Theme.color.muted)
                     .padding(.horizontal, 8)
@@ -193,7 +193,7 @@
             }
             .modifier(WelcomeGroup())
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Suggested folder: Segue, in Music")
+            .accessibilityLabel(uiString("Suggested folder: Segue, in Music"))
         }
     }
 
@@ -226,7 +226,7 @@
             WelcomePage(
                 step: model.stepLabel,
                 minHeight: model.mode == .revisit ? nil : WelcomeSheet.minHeight,
-                title: "Welcome to Segue",
+                title: uiString("Welcome to Segue"),
             ) {
                 WelcomeCards()
                     .padding(.top, 12)
@@ -259,7 +259,7 @@
                     if model.seedState == .seeding {
                         ProgressView()
                             .controlSize(.small)
-                            .accessibilityLabel("Adding the Welcome songs")
+                            .accessibilityLabel(uiString("Adding the Welcome songs"))
                     }
                     footerButtons
                 }
@@ -269,7 +269,7 @@
         @ViewBuilder private var footerButtons: some View {
             if model.mode == .revisit {
                 // Esc closes revisit mode (it answers nothing).
-                Button("Close") { app.closeWelcomeRevisit() }
+                Button(uiString("Close")) { app.closeWelcomeRevisit() }
                     .keyboardShortcut(.cancelAction)
                     .frame(width: 0, height: 0)
                     .opacity(0)
@@ -277,17 +277,17 @@
                 Button {
                     app.closeWelcomeRevisit()
                 } label: {
-                    Text("Done").frame(minWidth: 76)
+                    Text("Done", bundle: #bundle).frame(minWidth: 76)
                 }
                 .buttonStyle(.seguePrimary)
                 .keyboardShortcut(.defaultAction)
                 .disabled(model.seedState == .seeding)
                 .accessibilityIdentifier(AccessibilityID.welcomeDone)
             } else if case .failed = model.seedState {
-                Button("Skip") { app.onboardingSkipWelcomeSongs() }
+                Button(uiString("Skip")) { app.onboardingSkipWelcomeSongs() }
                     .buttonStyle(.segueSecondary)
                     .accessibilityIdentifier(AccessibilityID.welcomeSkip)
-                Button("Try Again") {
+                Button(uiString("Try Again")) {
                     Task { await app.onboardingContinueFromWelcomeSongs() }
                 }
                 .buttonStyle(.seguePrimary)
@@ -297,7 +297,7 @@
                 Button {
                     Task { await app.onboardingContinueFromWelcomeSongs() }
                 } label: {
-                    Text("Continue").frame(minWidth: 76)
+                    Text("Continue", bundle: #bundle).frame(minWidth: 76)
                 }
                 .buttonStyle(.seguePrimary)
                 .keyboardShortcut(.defaultAction)
@@ -308,7 +308,7 @@
 
         @ViewBuilder private var revisitContent: some View {
             if model.hasWelcomeSongs {
-                Text("The Welcome songs are in your library (tag: Welcome).")
+                Text("The Welcome songs are in your library (tag: Welcome).", bundle: #bundle)
                     .font(SchibstedGrotesk.medium.font(size: 14))
                     .foregroundStyle(Theme.color.muted)
                     .accessibilityIdentifier(AccessibilityID.welcomeInLibrary)
@@ -319,7 +319,7 @@
                         .font(SchibstedGrotesk.medium.font(size: 14))
                         .foregroundStyle(Theme.color.ink)
                         .fixedSize(horizontal: false, vertical: true)
-                    Button("Add Welcome Songs") {
+                    Button(uiString("Add Welcome Songs")) {
                         Task { await app.onboardingAddWelcomeSongs() }
                     }
                     .buttonStyle(.segueSecondary)
@@ -345,18 +345,18 @@
         private static let cards = [
             Card(
                 symbol: "square.and.pencil",
-                title: "Write or drop in songs",
-                detail: "ChordPro or plain text",
+                title: uiString("Write or drop in songs"),
+                detail: uiString("ChordPro or plain text"),
             ),
             Card(
                 symbol: "list.number",
-                title: "Build a setlist",
-                detail: "Drag songs, see the running time",
+                title: uiString("Build a setlist"),
+                detail: uiString("Drag songs, see the running time"),
             ),
             Card(
                 symbol: "music.mic",
-                title: "Play on stage",
-                detail: "Full screen, keys and pedals; press ? for every key",
+                title: uiString("Play on stage"),
+                detail: uiString("Full screen, keys and pedals; press ? for every key"),
             ),
         ]
 
@@ -406,7 +406,7 @@
 
         var body: some View {
             let choice = ConsentChoiceView(store: app.dependencies.consent, source: .welcome)
-            WelcomePage(step: model.stepLabel, title: "Help improve Segue?") {
+            WelcomePage(step: model.stepLabel, title: uiString("Help improve Segue?")) {
                 WelcomeLead(text: ConsentSheet.intro)
                 choice
                     .modifier(WelcomeGroup(padding: 16))
@@ -426,7 +426,7 @@
                         choice.commit()
                         app.onboardingFinishConsent()
                     } label: {
-                        Text("Continue").frame(minWidth: 76)
+                        Text("Continue", bundle: #bundle).frame(minWidth: 76)
                     }
                     .buttonStyle(.seguePrimary)
                     .keyboardShortcut(choice.isComplete ? .defaultAction : nil)

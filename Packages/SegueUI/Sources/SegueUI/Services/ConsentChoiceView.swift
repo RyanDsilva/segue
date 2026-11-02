@@ -60,8 +60,10 @@
 
         static let analytics = Self(
             toggle: .analytics,
-            title: "Share usage analytics",
-            detail: "Anonymous counts of which features you use, your app and macOS version "
+            title: uiString("Share usage analytics"),
+            detail: uiString(
+                "Anonymous counts of which features you use, your app and macOS version ",
+            )
                 + "and your country. Never your songs, lyrics, titles, setlists or file names.",
             decline: "Don’t Share",
             accept: "Share",
@@ -81,8 +83,10 @@
 
         static let crashReports = Self(
             toggle: .crashReports,
-            title: "Send crash reports",
-            detail: "If Segue crashes or freezes, send the technical report (code locations, "
+            title: uiString("Send crash reports"),
+            detail: uiString(
+                "If Segue crashes or freezes, send the technical report (code locations, ",
+            )
                 + "Mac model, macOS version) to help fix it. Never your songs or files.",
             decline: "Don’t Send",
             accept: "Send",
@@ -132,7 +136,7 @@
             .buttonStyle(ConsentOptionStyle(isSelected: isSelected))
             .accessibilityIdentifier(id(question.toggle))
             .accessibilityAddTraits(isSelected ? .isSelected : [])
-            .accessibilityValue(isSelected ? "selected" : "not selected")
+            .accessibilityValue(isSelected ? uiString("selected") : uiString("not selected"))
         }
     }
 
@@ -147,7 +151,7 @@
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(items, id: \.self) { item in
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text("•")
+                            Text(verbatim: "•")
                                 .accessibilityHidden(true)
                             Text(item)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -159,7 +163,7 @@
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 4)
             } label: {
-                Text("What’s sent")
+                Text("What’s sent", bundle: #bundle)
                     .font(.callout)
                     .foregroundStyle(Theme.color.ink)
             }

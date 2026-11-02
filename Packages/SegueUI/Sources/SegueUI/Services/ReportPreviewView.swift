@@ -27,7 +27,7 @@
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     block("Reply to") {
-                        Text(report.email ?? "No email address")
+                        Text(report.email ?? uiString("No email address"))
                             .foregroundStyle(report.email == nil ? Theme.color.muted : Theme.color
                                 .ink)
                             .textSelection(.enabled)
@@ -132,8 +132,8 @@
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(file.name)
-                .accessibilityValue(isExpanded ? "expanded" : "collapsed")
-                .accessibilityHint("Shows the file's full text")
+                .accessibilityValue(isExpanded ? uiString("expanded") : uiString("collapsed"))
+                .accessibilityHint(uiString("Shows the file's full text"))
                 .accessibilityIdentifier(AccessibilityID.reportPreviewAttachment)
                 if isExpanded {
                     ScrollView([.vertical, .horizontal]) {

@@ -35,7 +35,7 @@
                 Toggle(MenuShortcuts.singerPreview.title, isOn: singerPreview)
                     .keyboardShortcut(MenuShortcuts.singerPreview)
                     .disabled(app.singerPreviewContext == nil)
-                Menu("Insert") {
+                Menu(uiString("Insert")) {
                     ForEach(ChartDirective.allCases) { directive in
                         Button(directive.insertTitle) {
                             app.menuEditor?.beginDirectiveInsert(directive)

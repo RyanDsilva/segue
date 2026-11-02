@@ -102,7 +102,7 @@
 
         var body: some View {
             Form {
-                Section("What happened?") {
+                Section(uiString("What happened?")) {
                     PlainTextEditor(
                         text: $model.message,
                         accessibilityIdentifier: AccessibilityID.reportMessage,
@@ -115,7 +115,7 @@
                                 .foregroundStyle(Theme.color.cueText)
                                 .accessibilityIdentifier(AccessibilityID.reportProblem)
                         } else if model.isOverLimit {
-                            Text("Shorten the description to 4,096 characters.")
+                            Text("Shorten the description to 4,096 characters.", bundle: #bundle)
                                 .foregroundStyle(Theme.color.cueText)
                         }
                         Spacer()
@@ -127,19 +127,18 @@
                         .foregroundStyle(
                             model.isOverLimit ? Theme.color.cueText : Theme.color.muted,
                         )
-                        .accessibilityLabel(
-                            "\(model.messageCount) of \(ReportProblemModel.messageLimit) "
-                                + "characters",
-                        )
+                        .accessibilityLabel(uiString("""
+                        \(model.messageCount) of \(ReportProblemModel.messageLimit) characters
+                        """))
                         .accessibilityIdentifier(AccessibilityID.reportCounter)
                     }
                     .font(.callout)
                 }
                 Section {
                     TextField(
-                        "Email (optional)",
+                        uiString("Email (optional)"),
                         text: $model.email,
-                        prompt: Text("you@example.com"),
+                        prompt: Text("you@example.com", bundle: #bundle),
                     )
                     .textContentType(.emailAddress)
                     .autocorrectionDisabled()
@@ -152,7 +151,7 @@
                         .foregroundStyle(model.isEmailValid ? Theme.color.muted : Theme.color
                             .cueText)
                 }
-                Section("Attach") {
+                Section(uiString("Attach")) {
                     attachments
                 }
                 Section {
@@ -160,10 +159,13 @@
                         .font(.callout)
                         .foregroundStyle(Theme.color.muted)
                         .fixedSize(horizontal: false, vertical: true)
-                    Button("Have an idea instead? Request a Feature", action: onRequestFeature)
-                        .buttonStyle(.appLink)
-                        .font(.callout)
-                        .accessibilityIdentifier(AccessibilityID.reportRequestFeature)
+                    Button(
+                        uiString("Have an idea instead? Request a Feature"),
+                        action: onRequestFeature,
+                    )
+                    .buttonStyle(.appLink)
+                    .font(.callout)
+                    .accessibilityIdentifier(AccessibilityID.reportRequestFeature)
                 }
             }
             .formStyle(.grouped)
@@ -228,18 +230,18 @@
                     .font(.system(size: 40, weight: .light))
                     .foregroundStyle(Theme.color.muted)
                     .accessibilityHidden(true)
-                Text("Thanks - report sent.")
+                Text("Thanks - report sent.", bundle: #bundle)
                     .font(SchibstedGrotesk.semiBold.font(size: 17))
                     .foregroundStyle(Theme.color.ink)
                     .accessibilityIdentifier(AccessibilityID.reportSent)
-                Text("If you write to us about it, mention this report ID:")
+                Text("If you write to us about it, mention this report ID:", bundle: #bundle)
                     .font(.callout)
                     .foregroundStyle(Theme.color.muted)
                 HStack(spacing: 8) {
                     Text(eventID)
                         .font(.callout.monospaced())
                         .textSelection(.enabled)
-                    Button("Copy") {
+                    Button(uiString("Copy")) {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(eventID, forType: .string)
                     }
@@ -263,11 +265,11 @@
                     emailInstead
                     Spacer()
                     cancel
-                    Button("Preview…") { model.preview() }
+                    Button(uiString("Preview…")) { model.preview() }
                         .buttonStyle(.segueSecondary)
                         .disabled(!model.canSend)
                         .accessibilityIdentifier(AccessibilityID.reportPreviewButton)
-                    Button("Send") { model.sendFromForm() }
+                    Button(uiString("Send")) { model.sendFromForm() }
                         .buttonStyle(.seguePrimary)
                         .keyboardShortcut(.defaultAction)
                         .disabled(!model.canSend)
@@ -276,14 +278,14 @@
                     back
                     Spacer()
                     cancel
-                    Button("Send") { model.send(payload) }
+                    Button(uiString("Send")) { model.send(payload) }
                         .buttonStyle(.seguePrimary)
                         .keyboardShortcut(.defaultAction)
                         .accessibilityIdentifier(AccessibilityID.reportSend)
                 case .sending:
                     ProgressView()
                         .controlSize(.small)
-                    Text("Sending…")
+                    Text("Sending…", bundle: #bundle)
                         .font(.callout)
                         .foregroundStyle(Theme.color.muted)
                     Spacer()
@@ -291,7 +293,7 @@
                     failure
                 case .sent:
                     Spacer()
-                    Button("OK", action: onClose)
+                    Button(uiString("OK"), action: onClose)
                         .buttonStyle(.seguePrimary)
                         .keyboardShortcut(.defaultAction)
                         .accessibilityIdentifier(AccessibilityID.reportDone)
@@ -312,12 +314,12 @@
                     .accessibilityIdentifier(AccessibilityID.reportFailure)
                 HStack(spacing: 10) {
                     emailInstead
-                    Button("Save Report…") { Task { await model.saveReport() } }
+                    Button(uiString("Save Report…")) { Task { await model.saveReport() } }
                         .buttonStyle(.segueSecondary)
                         .accessibilityIdentifier(AccessibilityID.reportSaveReport)
                     Spacer()
                     cancel
-                    Button("Try Again") { model.tryAgain() }
+                    Button(uiString("Try Again")) { model.tryAgain() }
                         .buttonStyle(.seguePrimary)
                         .keyboardShortcut(.defaultAction)
                         .accessibilityIdentifier(AccessibilityID.reportTryAgain)
@@ -326,19 +328,19 @@
         }
 
         private var emailInstead: some View {
-            Button("Email Instead") { model.emailInstead() }
+            Button(uiString("Email Instead")) { model.emailInstead() }
                 .buttonStyle(.segueSecondary)
                 .accessibilityIdentifier(AccessibilityID.reportEmailInstead)
         }
 
         private var back: some View {
-            Button("Back") { model.backToForm() }
+            Button(uiString("Back")) { model.backToForm() }
                 .buttonStyle(.segueSecondary)
                 .accessibilityIdentifier(AccessibilityID.reportBack)
         }
 
         private var cancel: some View {
-            Button("Cancel", role: .cancel, action: onClose)
+            Button(uiString("Cancel"), role: .cancel, action: onClose)
                 .buttonStyle(.segueSecondary)
                 .keyboardShortcut(.cancelAction)
                 .accessibilityIdentifier(AccessibilityID.reportCancel)

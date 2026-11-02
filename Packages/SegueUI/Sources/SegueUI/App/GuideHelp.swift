@@ -72,8 +72,8 @@
                     opened?()
                 }
                 .disabled(!openGuide.isAvailable)
-                .help("Open “\(page.title)” in Segue Help")
-                .accessibilityLabel("Help: \(page.title)")
+                .help(uiString("Open “\(page.title)” in Segue Help"))
+                .accessibilityLabel(uiString("Help: \(page.title)"))
                 .accessibilityIdentifier(AccessibilityID.guideHelp(page))
             }
         }
@@ -112,7 +112,7 @@
         static let learnMore = "learnMore"
 
         static var action: Tips.Action {
-            Tips.Action(id: learnMore, title: "Learn More")
+            Tips.Action(id: learnMore, title: uiString("Learn More"))
         }
 
         /// Handles a tip's Learn More by opening `page`; other actions are the caller's.

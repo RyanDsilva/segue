@@ -83,7 +83,7 @@
                     record: library.song(id: member.songId),
                     number: index + 1,
                     total: total,
-                    label: "Medley \(index + 1) \u{00B7} "
+                    label: uiString("Medley \(index + 1) \u{00B7} ")
                         + "\(position + 1) of \(medley.members.count)",
                 )
             }
@@ -155,13 +155,13 @@
         var body: some View {
             if let exportPDF {
                 if selection.count > 1 {
-                    Button("Export \(selection.count) Songs as PDF\u{2026}") {
+                    Button(uiString("Export \(selection.count) Songs as PDF\u{2026}")) {
                         exportPDF.open(.selection(selection), false)
                     }
                     .disabled(!exportPDF.isEnabled)
                     .accessibilityIdentifier(AccessibilityID.pdfExportSelection)
                 } else {
-                    Button("Export PDF\u{2026}") { exportPDF.open(.song(songID), false) }
+                    Button(uiString("Export PDF\u{2026}")) { exportPDF.open(.song(songID), false) }
                         .disabled(!exportPDF.isEnabled)
                         .accessibilityIdentifier(AccessibilityID.pdfExportSong)
                 }

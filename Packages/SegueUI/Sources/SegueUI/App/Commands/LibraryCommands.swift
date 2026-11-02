@@ -26,20 +26,20 @@
                     .keyboardShortcut(MenuShortcuts.playSongLive)
                     .disabled(!app.canStartSongSession(focusedSongID))
                 Divider()
-                Button("Rebuild Index") {
+                Button(uiString("Rebuild Index")) {
                     guard let session = app.session else { return }
                     Task { await session.library.rebuildIndex() }
                 }
                 .disabled(app.session == nil || app.isPerforming)
                 // The one-time offer stays reachable here (P8-8 5.7).
-                Button("Remove Old Length Lines…") {
+                Button(uiString("Remove Old Length Lines…")) {
                     app.session?.durationOffer = songsToClean.count
                 }
                 .disabled(app.isPerforming || songsToClean.isEmpty)
                 Divider()
-                Button("Show Library in Finder") { app.session?.revealLibrary() }
+                Button(uiString("Show Library in Finder")) { app.session?.revealLibrary() }
                     .disabled(app.session == nil)
-                Button("Choose Library Folder…") {
+                Button(uiString("Choose Library Folder…")) {
                     let choose = { Task { await app.chooseLibrary() } }
                     if let session = app.session {
                         session.library.navigate { _ = choose() }
@@ -49,7 +49,8 @@
                 }
                 // The show belongs to the open library: end it before switching.
                 .disabled(!app.canSwitchLibrary)
-                .help(app.canSwitchLibrary ? "" : "End the show before switching libraries.")
+                .help(app
+                    .canSwitchLibrary ? "" : uiString("End the show before switching libraries."))
             }
         }
 

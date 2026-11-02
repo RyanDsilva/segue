@@ -23,7 +23,7 @@
         public var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    Text("Keyboard Shortcuts")
+                    Text("Keyboard Shortcuts", bundle: #bundle)
                         .font(Theme.font.title)
                         .tracking(Theme.tracking.title * 28)
                         .foregroundStyle(Theme.color.ink)
@@ -57,9 +57,10 @@
                         }
                     }
                     if let openGuide {
-                        Button("All shortcuts in the Segue Guide") { openGuide(.keyboard) }
-                            .buttonStyle(.link)
-                            .accessibilityIdentifier(AccessibilityID.keyboardShortcutsGuide)
+                        Button(uiString("All shortcuts in the Segue Guide")) { openGuide(.keyboard)
+                        }
+                        .buttonStyle(.link)
+                        .accessibilityIdentifier(AccessibilityID.keyboardShortcutsGuide)
                     }
                 }
                 .padding(32)
@@ -108,7 +109,7 @@
                             .font(Theme.font.body)
                             .foregroundStyle(Theme.color.ink)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        Text(row.1.isEmpty ? "Not bound" : row.1.joined(separator: "  "))
+                        Text(row.1.isEmpty ? uiString("Not bound") : row.1.joined(separator: "  "))
                             .font(.system(size: 13, weight: .medium, design: .rounded))
                             .foregroundStyle(row.1.isEmpty ? Theme.color.muted : Theme.color.ink)
                     }

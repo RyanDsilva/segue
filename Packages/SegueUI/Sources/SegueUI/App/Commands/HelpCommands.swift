@@ -103,13 +103,13 @@
             ]
             if let showWelcome = hooks.showWelcome {
                 items.append(HelpMenuItem(
-                    title: "Welcome to Segue…",
+                    title: uiString("Welcome to Segue…"),
                     disabledWhilePerforming: true,
                     action: .workspace(showWelcome),
                 ))
             }
             items.append(HelpMenuItem(
-                title: "What's New in Segue",
+                title: uiString("What's New in Segue"),
                 disabledWhilePerforming: true,
                 analytics: .whatsNew,
                 action: .workspace(hooks.showWhatsNew),
@@ -121,20 +121,20 @@
         private static func feedback(_ hooks: AppHooks, writeReview: URL?) -> [HelpMenuItem] {
             var items = [
                 HelpMenuItem(
-                    title: "Report a Problem…",
+                    title: uiString("Report a Problem…"),
                     dividerBefore: true,
                     analytics: .reportProblem,
                     action: .workspace(hooks.reportProblem),
                 ),
                 HelpMenuItem(
-                    title: "Request a Feature…",
+                    title: uiString("Request a Feature…"),
                     analytics: .requestFeature,
                     action: .workspace(hooks.requestFeature),
                 ),
             ]
             if let writeReview {
                 items.append(HelpMenuItem(
-                    title: "Rate Segue on the App Store",
+                    title: uiString("Rate Segue on the App Store"),
                     action: .workspace { $0.open(writeReview) },
                 ))
             }
@@ -146,13 +146,13 @@
         private static var legal: [HelpMenuItem] {
             [
                 HelpMenuItem(
-                    title: "Privacy Policy",
+                    title: uiString("Privacy Policy"),
                     dividerBefore: true,
                     analytics: .privacyPolicy,
                     action: .workspace { $0.open(SegueLinks.privacy) },
                 ),
                 HelpMenuItem(
-                    title: "Terms of Use",
+                    title: uiString("Terms of Use"),
                     analytics: .terms,
                     action: .workspace { $0.open(SegueLinks.terms) },
                 ),

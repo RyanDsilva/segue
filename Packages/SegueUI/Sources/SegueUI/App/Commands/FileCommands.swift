@@ -28,8 +28,10 @@
                     .keyboardShortcut(MenuShortcuts.importSongs)
                     .disabled(app.session == nil)
                 if let export = app.dependencies.hooks.exportArchive {
-                    Button("Export Library Archive…") { export(app.dependencies.workspace) }
-                        .disabled(app.session == nil || app.isPerforming)
+                    Button(uiString("Export Library Archive…")) {
+                        export(app.dependencies.workspace)
+                    }
+                    .disabled(app.session == nil || app.isPerforming)
                 }
                 Divider()
                 Button(MenuShortcuts.showInFinder.title) { revealTarget?() }

@@ -44,7 +44,7 @@ struct FilterChipsBar: View {
                     }
                     .accessibilityLabel(ProficiencyMark.label(level))
                     .accessibilityIdentifier(AccessibilityID.filterProficiency(level))
-                    .help("Show only \(ProficiencyMark.label(level)) songs")
+                    .help(uiString("Show only \(ProficiencyMark.label(level)) songs"))
                 }
                 if !shownTags.isEmpty {
                     Rule(axis: .vertical)
@@ -54,7 +54,7 @@ struct FilterChipsBar: View {
                 ForEach(shownTags, id: \.self) { tag in
                     FilterChip(tag, isOn: state.hasTag(tag)) { state.toggleTag(tag) }
                         .accessibilityIdentifier(AccessibilityID.filterTag)
-                        .help("Show only songs tagged “\(tag)”")
+                        .help(uiString("Show only songs tagged “\(tag)”"))
                 }
             }
             .padding(.vertical, 1)
@@ -120,8 +120,8 @@ struct FilterChipsBar: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(forward ? "More filters" : "Earlier filters")
-        .accessibilityLabel(forward ? "More filters" : "Earlier filters")
+        .help(forward ? uiString("More filters") : uiString("Earlier filters"))
+        .accessibilityLabel(forward ? uiString("More filters") : uiString("Earlier filters"))
     }
 
     /// The most used tags, plus any tag chip that is on but no longer among them.

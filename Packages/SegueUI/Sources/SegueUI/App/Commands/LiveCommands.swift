@@ -25,16 +25,16 @@
 
         var body: some Commands {
             CommandMenu("Live") {
-                Button("Metronome") {
+                Button(uiString("Metronome")) {
                     app.live?.dispatchMetronome(.toggleMetronome)
                 }
                 .disabled(app.live == nil)
-                .help("Pulse the song's tempo on stage (M on the stage)")
+                .help(uiString("Pulse the song's tempo on stage (M on the stage)"))
                 // ⇧⌘V (R190), plain V on stage. A remembered setting, so it works before a
                 // show too.
                 Toggle(MenuShortcuts.singerView.title, isOn: singerView)
                     .keyboardShortcut(MenuShortcuts.singerView)
-                    .help("Show lyrics only on stage, chords hidden (V on the stage)")
+                    .help(uiString("Show lyrics only on stage, chords hidden (V on the stage)"))
             }
         }
     }

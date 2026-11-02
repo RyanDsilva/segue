@@ -110,7 +110,7 @@
         static let guidePage: SegueLinks.Guide = .search
 
         var title: Text {
-            Text("Search by any line")
+            Text("Search by any line", bundle: #bundle)
         }
 
         var message: Text? {
@@ -137,7 +137,7 @@
         static let guidePage: SegueLinks.Guide = .pasteASong
 
         var title: Text {
-            Text("Paste any chord sheet")
+            Text("Paste any chord sheet", bundle: #bundle)
         }
 
         var message: Text? {
@@ -163,11 +163,11 @@
         static let guidePage: SegueLinks.Guide = .transpose
 
         var title: Text {
-            Text("Change the key for this view")
+            Text("Change the key for this view", bundle: #bundle)
         }
 
         var message: Text? {
-            Text("Change the key or capo for this view without touching the file.")
+            Text("Change the key or capo for this view without touching the file.", bundle: #bundle)
         }
 
         var actions: [Tips.Action] {
@@ -185,11 +185,11 @@
         static let guidePage: SegueLinks.Guide = .moveChord
 
         var title: Text {
-            Text("Move a chord")
+            Text("Move a chord", bundle: #bundle)
         }
 
         var message: Text? {
-            Text("Drag a chord onto another syllable to move it.")
+            Text("Drag a chord onto another syllable to move it.", bundle: #bundle)
         }
 
         var actions: [Tips.Action] {
@@ -207,11 +207,13 @@
         static let guidePage: SegueLinks.Guide = .goOnStage
 
         var title: Text {
-            Text("Start the show")
+            Text("Start the show", bundle: #bundle)
         }
 
         var message: Text? {
-            Text("Start Show goes full screen and dark. Press ? on stage to see every key.")
+            Text(uiString("""
+            Start Show goes full screen and dark. Press ? on stage to see every key.
+            """))
         }
 
         var actions: [Tips.Action] {
@@ -234,7 +236,7 @@
         static let guidePage: SegueLinks.Guide = .gigMode
 
         var title: Text {
-            Text("Gig Mode")
+            Text("Gig Mode", bundle: #bundle)
         }
 
         var message: Text? {
@@ -244,7 +246,7 @@
 
         var actions: [Tips.Action] {
             [
-                Tips.Action(id: Self.openSettingsAction, title: "Open Settings"),
+                Tips.Action(id: Self.openSettingsAction, title: uiString("Open Settings")),
                 GuideTipAction.action,
             ]
         }

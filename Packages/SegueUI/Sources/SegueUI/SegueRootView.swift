@@ -32,7 +32,7 @@
                         showsActions: app.onboarding.mode != .flow,
                     )
                 case let .opening(url):
-                    ProgressView("Opening \(url.lastPathComponent)…")
+                    ProgressView(uiString("Opening \(url.lastPathComponent)…"))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case let .ready(session):
                     MainView(app: app, session: session)
@@ -70,7 +70,7 @@
             VStack(spacing: 0) {
                 Spacer(minLength: 32)
                 HStack(alignment: .lastTextBaseline, spacing: 4) {
-                    Text("Segue")
+                    Text("Segue", bundle: #bundle)
                         .font(Theme.font.display)
                         .tracking(Theme.tracking.display * 64)
                         .foregroundStyle(Theme.color.ink)
@@ -84,7 +84,7 @@
                     actions
                 }
                 Spacer(minLength: 32)
-                Text("Songs are plain ChordPro files you can open in any editor.")
+                Text("Songs are plain ChordPro files you can open in any editor.", bundle: #bundle)
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                     .padding(.bottom, 24)
@@ -112,7 +112,7 @@
                 Button {
                     Task { await app.createLibrary() }
                 } label: {
-                    Text("Create Library in Music…")
+                    Text("Create Library in Music…", bundle: #bundle)
                         .frame(minWidth: 240)
                 }
                 .buttonStyle(.seguePrimary)
@@ -122,7 +122,7 @@
                 Button {
                     Task { await app.chooseLibrary() }
                 } label: {
-                    Text("Choose Existing Folder…")
+                    Text("Choose Existing Folder…", bundle: #bundle)
                         .frame(minWidth: 240)
                 }
                 .buttonStyle(.segueSecondary)
@@ -199,11 +199,11 @@
                 titleVisibility: .visible,
                 presenting: session.songTrashConfirmation,
             ) { _ in
-                Button("Move to Trash", role: .destructive) {
+                Button(uiString("Move to Trash"), role: .destructive) {
                     session.resolveSongTrashConfirmation(moveToTrash: true)
                 }
                 .accessibilityIdentifier(AccessibilityID.songDeleteConfirm)
-                Button("Cancel", role: .cancel) {
+                Button(uiString("Cancel"), role: .cancel) {
                     session.resolveSongTrashConfirmation(moveToTrash: false)
                 }
                 .keyboardShortcut(.defaultAction)
@@ -218,10 +218,10 @@
                 presenting: session.library.pendingNavigation,
             ) { _ in
                 // The only unsaved-edits prompt left (autosave, WS2a 3.4): the save failed.
-                Button("Save as Copy") { resolve(.saveAsCopy) }
+                Button(uiString("Save as Copy")) { resolve(.saveAsCopy) }
                     .keyboardShortcut(.defaultAction)
-                Button("Discard Edits", role: .destructive) { resolve(.discard) }
-                Button("Cancel", role: .cancel) { resolve(.cancel) }
+                Button(uiString("Discard Edits"), role: .destructive) { resolve(.discard) }
+                Button(uiString("Cancel"), role: .cancel) { resolve(.cancel) }
             } message: { _ in
                 Text("Segue could not save them to the song’s file. Save them as a new song, "
                     + "or discard them.")
@@ -328,7 +328,9 @@
                     ContentUnavailableView(
                         "Setlist Not Found",
                         systemImage: "list.number",
-                        description: Text("It may have been deleted. Choose another setlist."),
+                        description: Text(
+                            uiString("It may have been deleted. Choose another setlist."),
+                        ),
                     )
                 }
             }
@@ -359,13 +361,13 @@
                         .frame(maxWidth: .infinity, alignment: .leading)
                     // P9-5 5 (P1): report it while it is on screen, never from the stage.
                     if !app.isShowUp {
-                        Button("Report…") { app.reportBannerError(message, code: code) }
+                        Button(uiString("Report…")) { app.reportBannerError(message, code: code) }
                             .buttonStyle(.segueSecondary)
                             .controlSize(.small)
-                            .help("Report this problem to Segue's developer")
+                            .help(uiString("Report this problem to Segue's developer"))
                             .accessibilityIdentifier(AccessibilityID.errorBannerReport)
                     }
-                    Button("Dismiss") {
+                    Button(uiString("Dismiss")) {
                         session.library.errorMessage = nil
                         session.setlists.errorMessage = nil
                         session.gigLog.errorMessage = nil

@@ -84,31 +84,31 @@ public enum SegueLinks {
         /// The page's name, for the Help button's accessibility label ("Help: Song card").
         public var title: String {
             switch self {
-            case .home: "Segue Guide"
-            case .keyboard: "Keyboard shortcuts"
-            case .pasteASong, .pasteReview: "Paste a song"
-            case .importBatch: "Import files"
-            case .search: "Search"
-            case .fileSync: "Your library folder"
-            case .songCard: "The song card"
-            case .moveChord: "Edit a song"
-            case .sectionNotes: "Section notes"
-            case .transpose: "Transpose and capo"
-            case .setAssistant: "Set assistant"
-            case .medleys: "Medleys"
-            case .unknownTimes: "Running time"
-            case .arrangeSections: "Arrange sections"
-            case .pdf: "Print and PDF"
-            case .smartFilters: "Smart filters"
-            case .goOnStage: "Go on stage"
-            case .singerView: "Singer view"
-            case .checklist: "Pre-show checklist"
-            case .minimumSize: "Lyrics on stage"
-            case .gigMode: "Gig Mode Shortcuts"
-            case .ai: "AI in Segue"
-            case .privacySettings: "Privacy settings"
-            case .backUp: "Back up and restore"
-            case .builtInHelp: "Built-in help"
+            case .home: uiString("Segue Guide")
+            case .keyboard: uiString("Keyboard shortcuts")
+            case .pasteASong, .pasteReview: uiString("Paste a song")
+            case .importBatch: uiString("Import files")
+            case .search: uiString("Search")
+            case .fileSync: uiString("Your library folder")
+            case .songCard: uiString("The song card")
+            case .moveChord: uiString("Edit a song")
+            case .sectionNotes: uiString("Section notes")
+            case .transpose: uiString("Transpose and capo")
+            case .setAssistant: uiString("Set assistant")
+            case .medleys: uiString("Medleys")
+            case .unknownTimes: uiString("Running time")
+            case .arrangeSections: uiString("Arrange sections")
+            case .pdf: uiString("Print and PDF")
+            case .smartFilters: uiString("Smart filters")
+            case .goOnStage: uiString("Go on stage")
+            case .singerView: uiString("Singer view")
+            case .checklist: uiString("Pre-show checklist")
+            case .minimumSize: uiString("Lyrics on stage")
+            case .gigMode: uiString("Gig Mode Shortcuts")
+            case .ai: uiString("AI in Segue")
+            case .privacySettings: uiString("Privacy settings")
+            case .backUp: uiString("Back up and restore")
+            case .builtInHelp: uiString("Built-in help")
             }
         }
     }

@@ -20,7 +20,7 @@
         public var body: some View {
             let choice = ConsentChoiceView(store: store, source: .prompt)
             VStack(alignment: .leading, spacing: 0) {
-                Text("Help improve Segue")
+                Text("Help improve Segue", bundle: #bundle)
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
                     .accessibilityAddTraits(.isHeader)
@@ -40,7 +40,7 @@
                 HStack(alignment: .firstTextBaseline) {
                     PolicyLink(workspace: workspace)
                     Spacer()
-                    Button("Continue") { choice.commit() }
+                    Button(uiString("Continue")) { choice.commit() }
                         .buttonStyle(.seguePrimary)
                         .disabled(!choice.isComplete)
                         .accessibilityIdentifier(AccessibilityID.consentContinue)
