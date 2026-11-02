@@ -24,6 +24,13 @@
 # Ryan in Terminal.app (docs/release/v1.0-readiness.md 2.12). No password or key ever passes
 # through this script; a missing identity or profile stops it with the setup step.
 #
+# --no-notarize (make dmg FLAVOUR=personal NOTARIZE=0), Personal only: a real, Developer
+# ID-signed build that skips only notarizing and stapling, for Ryan's own Mac while the
+# notary service is unavailable. Output: .build/dist/Segue-<version>-personal.unnotarized.dmg.
+# macOS blocks its first launch until System Settings > Privacy & Security > Open Anyway;
+# the script prints that step and the DMG's note carries it. Friends' builds are always
+# notarized.
+#
 # --dry-run proves everything but the notary service: it archives into
 # .build/archives/dry-run (never reused by a real run), exports, verifies, builds and signs
 # the DMG, skips notarizing and stapling, and shows that Gatekeeper rejects the result (as
@@ -55,16 +62,26 @@ die() {
 }
 say() { echo "dmg: $*"; }
 
-usage() { die "usage: dmg.sh personal|appstore [--dry-run]"; }
-[[ $# -ge 1 && $# -le 2 ]] || usage
+usage() { die "usage: dmg.sh personal|appstore [--dry-run] [--no-notarize]"; }
+[[ $# -ge 1 && $# -le 3 ]] || usage
 flavour="$1"
+shift
 dry_run=0
+do_notarize=1
+for arg in "$@"; do
+    case "$arg" in
+    --dry-run) dry_run=1 ;;
+    --no-notarize) do_notarize=0 ;;
+    *) usage ;;
+    esac
+done
+if ((!do_notarize)) && [[ "$flavour" != personal ]]; then
+    die "--no-notarize (NOTARIZE=0) is for the Personal build only; friends always get a notarized DMG"
+fi
+# 1 = talk to the notary service and staple; a dry run or --no-notarize clears it.
+submit=$((!dry_run && do_notarize))
 # 1 = export and sign with the Developer ID identity; a dry run without it clears this.
 devid=1
-if [[ $# -eq 2 ]]; then
-    [[ "$2" == "--dry-run" ]] || usage
-    dry_run=1
-fi
 
 read -r marketing build < <(scripts/bump-version.sh show)
 [[ -n "${marketing:-}" && -n "${build:-}" ]] || die "could not read the version (bump-version.sh show)"
@@ -73,11 +90,12 @@ archives=".build/archives"
 exports=".build/export"
 derived=".build/DerivedData-release"
 suffix=""
+((do_notarize)) || suffix=".unnotarized"
 if ((dry_run)); then
     archives=".build/archives/dry-run"
     exports=".build/export/dry-run"
     derived=".build/DerivedData-dmg-dry-run"
-    suffix=".dry-run"
+    suffix+=".dry-run"
 fi
 case "$flavour" in
 personal)
@@ -193,8 +211,13 @@ preflight() {
         echo "  Create it: Xcode > Settings > Accounts > your Apple Account > team Ryan Rony Dsilva >" >&2
         echo "  Manage Certificates... > + > Developer ID Application (see $steps_doc)." >&2
     fi
-    state=$(notary_state)
+    if ((do_notarize)); then
+        state=$(notary_state)
+    else
+        state=skipped
+    fi
     case "$state" in
+    skipped) say "preflight: not notarizing (--no-notarize), so the notary profile is not needed" ;;
     ok) say "preflight: notary keychain profile '$notary_profile' works" ;;
     missing)
         problems=1
@@ -297,6 +320,28 @@ Do not share it, upload it or give it to anyone.
 
 Friends get the App Store flavour: Segue-$marketing-appstore.dmg.
 EOF
+    if ((!do_notarize)); then
+        echo
+        open_anyway_text
+    fi
+}
+
+# open_anyway_text: the one-time first launch of a signed but un-notarized build
+# (support.apple.com/guide/mac-help/mh40616, checked 2026-11-01).
+open_anyway_text() {
+    command cat <<EOF
+NOT NOTARIZED: FIRST LAUNCH, ONCE
+
+This build is signed with Ryan's Developer ID but not notarized, so macOS
+blocks its first launch:
+1. Drag "${app_bundle%.app}" to Applications and open it. macOS says it was
+   not opened; click Done.
+2. Open System Settings > Privacy & Security, scroll to Security, and click
+   Open Anyway next to the message about "${app_bundle%.app}" (it shows for
+   about an hour after step 1).
+3. Enter your login password, then click Open Anyway (or Open) once more.
+After that it opens normally, until the next un-notarized build replaces it.
+EOF
 }
 
 build_dmg() {
@@ -347,12 +392,12 @@ check_gatekeeper() {
     inner=$(spctl -a -vvv -t exec "$mounted/$app_bundle" 2>&1) || ok=0
     indent "spctl exec (app in the DMG)" "$inner"
     [[ -L "$mounted/Applications" ]] || die "the DMG has no Applications link"
-    if ((dry_run)); then
+    if ((!submit)); then
         hdiutil detach -quiet "$mounted" && mounted=""
         if ((ok)); then
-            die "dry run: Gatekeeper accepted an un-notarized DMG; the check proves nothing"
+            die "Gatekeeper accepted an un-notarized DMG; the check proves nothing"
         fi
-        say "dry run: Gatekeeper rejects the un-notarized DMG, as it must"
+        say "Gatekeeper rejects the un-notarized DMG, as it must without notarization"
         return
     fi
     xcrun stapler validate "$mounted/$app_bundle" >/dev/null || ok=0
@@ -376,10 +421,12 @@ scripts/verify-developer-id.sh "${verify_args[@]}"
 
 mkdir -p "$dist"
 logs="$dist/Segue-$marketing-$flavour$suffix"
-if ((!dry_run)); then
+if ((submit)); then
     ditto -c -k --keepParent "$app" "$scratch/Segue.zip"
     notarize "$scratch/Segue.zip" "$logs.app-notary.json"
     staple "$app"
+elif ((!do_notarize)); then
+    say "not notarizing (--no-notarize): skipping notarytool and stapler for the app"
 else
     say "dry run: would run: xcrun notarytool submit <Segue.zip> --keychain-profile $notary_profile --wait; xcrun stapler staple $app"
 fi
@@ -387,9 +434,11 @@ fi
 partial="$dist/.$(basename "$dmg").partial.dmg"
 build_dmg "$app" "$partial"
 sign_dmg "$partial"
-if ((!dry_run)); then
+if ((submit)); then
     notarize "$partial" "$logs.dmg-notary.json"
     staple "$partial"
+elif ((!do_notarize)); then
+    say "not notarizing (--no-notarize): skipping notarytool and stapler for the DMG"
 else
     say "dry run: would run: xcrun notarytool submit $(basename "$dmg") --keychain-profile $notary_profile --wait; xcrun stapler staple $(basename "$dmg")"
 fi
@@ -401,6 +450,9 @@ mv "$partial" "$dmg"
 say "done: $dmg ($(du -h "$dmg" | cut -f1 | tr -d ' '), sha256 $(cut -d' ' -f1 "$dmg.sha256"))"
 if [[ "$flavour" == personal ]]; then
     say "PERSONAL BUILD: owner only. Install it on your own Macs; never share it."
+fi
+if ((!do_notarize)); then
+    open_anyway_text | sed 's/^/dmg: /'
 fi
 if ((dry_run)); then
     say "dry run: NOT notarized; never share $dmg"

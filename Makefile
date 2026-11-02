@@ -246,9 +246,9 @@ upload-dsyms: ## Upload an archive's dSYMs to Sentry (ARCHIVE=path or DSYMS=dir;
 # Developer ID distribution (R200): notarized, stapled DMGs outside the App Store. The notary
 # keychain profile is Ryan's, created once in Terminal.app (docs/release/v1.0-readiness.md 2.12).
 .PHONY: dmg dmg-vm-check
-dmg: ## Notarized DMG in .build/dist: FLAVOUR=appstore (friends) or personal (owner only, never shared); DRY_RUN=1 skips the notary service
-	@test -n "$(FLAVOUR)" || (echo "usage: make dmg FLAVOUR=personal|appstore [DRY_RUN=1]" >&2; exit 2)
-	scripts/dmg.sh $(FLAVOUR) $(if $(DRY_RUN),--dry-run)
+dmg: ## Notarized DMG in .build/dist: FLAVOUR=appstore (friends) or personal (owner only, never shared); DRY_RUN=1 skips the notary service; NOTARIZE=0 (Personal only) signs without notarizing
+	@test -n "$(FLAVOUR)" || (echo "usage: make dmg FLAVOUR=personal|appstore [DRY_RUN=1] [NOTARIZE=0]" >&2; exit 2)
+	scripts/dmg.sh $(FLAVOUR) $(if $(DRY_RUN),--dry-run) $(if $(filter 0,$(NOTARIZE)),--no-notarize)
 
 dmg-vm-check: ## Open a DMG as a quarantined download in a clean E2E VM; Gatekeeper must accept it (DMG=path; EXPECT_REJECT=1 for a dry-run DMG)
 	@test -n "$(DMG)" || (echo "usage: make dmg-vm-check DMG=.build/dist/<file>.dmg [EXPECT_REJECT=1]" >&2; exit 2)
