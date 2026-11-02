@@ -1,7 +1,3112 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    " chords only · " : {
 
+    },
+    " first line · " : {
+
+    },
+    " skip · " : {
+
+    },
+    " twice · parts " : {
+
+    },
+    " · Suggested" : {
+
+    },
+    "%@ (not connected)" : {
+
+    },
+    "%@ BPM" : {
+
+    },
+    "%@ and will be left out" : {
+
+    },
+    "%@ beats per minute" : {
+
+    },
+    "%@ break" : {
+
+    },
+    "%@ early" : {
+
+    },
+    "%@ of %@ downloaded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ of %2$@ downloaded"
+          }
+        }
+      }
+    },
+    "%@ snap" : {
+
+    },
+    "%@ stops" : {
+
+    },
+    "%@ suggestions" : {
+
+    },
+    "%@ · No chords to time" : {
+
+    },
+    "%@%@%@%@%@%@%@%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@%3$@%4$@%5$@%6$@%7$@%8$@%9$@"
+          }
+        }
+      }
+    },
+    "%@, %@ %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@ %3$lld of %4$lld"
+          }
+        }
+      }
+    },
+    "%@, already in set" : {
+
+    },
+    "%@, from chords" : {
+
+    },
+    "%@, guitar" : {
+
+    },
+    "%@, labelled by AI" : {
+
+    },
+    "%@, no diagram" : {
+
+    },
+    "%@, piano" : {
+
+    },
+    "%@: done" : {
+
+    },
+    "%@: full song on stage" : {
+
+    },
+    "%@: labelled by AI" : {
+
+    },
+    "%@: not done" : {
+
+    },
+    "%@: not set" : {
+
+    },
+    "%lld BPM" : {
+
+    },
+    "%lld beats per minute" : {
+
+    },
+    "%lld columns" : {
+
+    },
+    "%lld files to convert" : {
+
+    },
+    "%lld gigs" : {
+
+    },
+    "%lld locked" : {
+
+    },
+    "%lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "%lld of %lld characters" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld characters"
+          }
+        }
+      }
+    },
+    "%lld played" : {
+
+    },
+    "%lld problems" : {
+
+    },
+    "%lld pt" : {
+
+    },
+    "%lld requests" : {
+
+    },
+    "%lld setlist files could not be read" : {
+
+    },
+    "%lld song files could not be loaded" : {
+
+    },
+    "%lld songs selected" : {
+
+    },
+    "%lld star%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld star%2$@"
+          }
+        }
+      }
+    },
+    "%lld unknown" : {
+
+    },
+    "%lldfr" : {
+
+    },
+    "+ %lld unknown" : {
+
+    },
+    ", %lld skipped" : {
+
+    },
+    ", selected" : {
+
+    },
+    ", suggested" : {
+
+    },
+    "-- BPM" : {
+
+    },
+    "1 chord not recognised" : {
+
+    },
+    "1 column" : {
+
+    },
+    "1 gig" : {
+
+    },
+    "1 line kept as a note" : {
+
+    },
+    "1 problem" : {
+
+    },
+    "1 request" : {
+
+    },
+    "1 saved walk-up no longer matches this song" : {
+
+    },
+    "1 setlist file could not be read" : {
+
+    },
+    "1 song file could not be loaded" : {
+
+    },
+    "1 song with no time" : {
+
+    },
+    "1 timing change no longer matches" : {
+
+    },
+    "= decided by AI" : {
+
+    },
+    "A fill covers this change" : {
+
+    },
+    "A quiet pulse at each song’s tempo. M on stage." : {
+
+    },
+    "A song can be in a setlist only once, so Save leaves this out." : {
+
+    },
+    "A transition is written here" : {
+
+    },
+    "A4" : {
+
+    },
+    "AI" : {
+
+    },
+    "AI in Segue" : {
+
+    },
+    "AI settings and the local model" : {
+
+    },
+    "About Segue" : {
+
+    },
+    "Accent" : {
+
+    },
+    "Accept a suggestion" : {
+
+    },
+    "Add %@" : {
+
+    },
+    "Add %@ after the selected pass (%@ in the roadmap)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add %1$@ after the selected pass (%2$@ in the roadmap)"
+          }
+        }
+      }
+    },
+    "Add %@ to setlist" : {
+
+    },
+    "Add Note" : {
+
+    },
+    "Add Note to %@" : {
+
+    },
+    "Add Request  ↩" : {
+
+    },
+    "Add Selected Song to Setlist" : {
+
+    },
+    "Add Selected Songs to Setlist" : {
+
+    },
+    "Add Song by Name" : {
+
+    },
+    "Add Welcome Songs" : {
+
+    },
+    "Add a capo or time signature" : {
+
+    },
+    "Add a condition" : {
+
+    },
+    "Add a note for the whole song" : {
+
+    },
+    "Add a song - type its name" : {
+
+    },
+    "Add a song or Ungroup" : {
+
+    },
+    "Add a song to export this setlist" : {
+
+    },
+    "Add a transition" : {
+
+    },
+    "Add capo or time signature" : {
+
+    },
+    "Add chord" : {
+
+    },
+    "Add condition" : {
+
+    },
+    "Add details…" : {
+
+    },
+    "Add key" : {
+
+    },
+    "Add tag" : {
+
+    },
+    "Add this song to the setlist at this position" : {
+
+    },
+    "Add to a setlist, show in Finder or move to the Trash" : {
+
+    },
+    "Add to requests" : {
+
+    },
+    "Add to setlist" : {
+
+    },
+    "Added after every song but the last of each part" : {
+
+    },
+    "Adding the Welcome songs" : {
+
+    },
+    "Adds a pass after the selected one" : {
+
+    },
+    "Adds it to the request" : {
+
+    },
+    "Advanced" : {
+
+    },
+    "All Release Notes" : {
+
+    },
+    "All shortcuts in the Segue Guide" : {
+
+    },
+    "All songs" : {
+
+    },
+    "Already in the set at #%lld" : {
+
+    },
+    "Also at #%lld" : {
+
+    },
+    "Also run them for rehearsals" : {
+
+    },
+    "Always tab" : {
+
+    },
+    "Analytics and crash reporting are not part of this build." : {
+
+    },
+    "Announce taps" : {
+
+    },
+    "Anonymous counts of which features you use, your app and macOS version " : {
+
+    },
+    "Appearance" : {
+
+    },
+    "Apple Intelligence" : {
+
+    },
+    "Apply to Source" : {
+
+    },
+    "Archive" : {
+
+    },
+    "Arrange Sections" : {
+
+    },
+    "Arrange Sections…" : {
+
+    },
+    "Arrange Set" : {
+
+    },
+    "Arrange sections" : {
+
+    },
+    "Arranged" : {
+
+    },
+    "Arranged for this gig" : {
+
+    },
+    "Arrangement: %@" : {
+
+    },
+    "Artists" : {
+
+    },
+    "As each song" : {
+
+    },
+    "Attach" : {
+
+    },
+    "Audio" : {
+
+    },
+    "Auto" : {
+
+    },
+    "Auto (Settings > Live)" : {
+
+    },
+    "BEADG or B0 E1 A1 D2 G2" : {
+
+    },
+    "BPM" : {
+
+    },
+    "BREAK" : {
+
+    },
+    "Back" : {
+
+    },
+    "Back  Esc" : {
+
+    },
+    "Back  ↩" : {
+
+    },
+    "Back up and restore" : {
+
+    },
+    "Bass" : {
+
+    },
+    "Bass Fill" : {
+
+    },
+    "Bass neck" : {
+
+    },
+    "Bass notes" : {
+
+    },
+    "Bass notes show in the preview and on stage" : {
+
+    },
+    "Beats" : {
+
+    },
+    "Before you start" : {
+
+    },
+    "Block" : {
+
+    },
+    "Break" : {
+
+    },
+    "Break, %@" : {
+
+    },
+    "Break, %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Break, %1$@, %2$@"
+          }
+        }
+      }
+    },
+    "Build" : {
+
+    },
+    "Build a setlist" : {
+
+    },
+    "Built-in help" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Cancel the start and update the arrangement" : {
+
+    },
+    "Capo" : {
+
+    },
+    "Capo %lld" : {
+
+    },
+    "Capo down" : {
+
+    },
+    "Capo up" : {
+
+    },
+    "Change Kind" : {
+
+    },
+    "Change keys in bindings.json (Help > Keyboard Shortcuts)" : {
+
+    },
+    "Change the key for this view" : {
+
+    },
+    "Change the key or capo for this view without touching the file." : {
+
+    },
+    "Changeover" : {
+
+    },
+    "Changeover between songs" : {
+
+    },
+    "Change…" : {
+
+    },
+    "Chart" : {
+
+    },
+    "Check placement" : {
+
+    },
+    "Choose Existing Folder…" : {
+
+    },
+    "Choose Library Folder…" : {
+
+    },
+    "Choose a song from the list, or create a new one." : {
+
+    },
+    "Choose a suggestion" : {
+
+    },
+    "Choose which sections this slot plays for this gig" : {
+
+    },
+    "Chord" : {
+
+    },
+    "Chord lengths" : {
+
+    },
+    "Chord lengths are estimated - set them here" : {
+
+    },
+    "Chord sound" : {
+
+    },
+    "ChordPro or plain text" : {
+
+    },
+    "ChordPro text" : {
+
+    },
+    "Chords" : {
+
+    },
+    "Chords in song" : {
+
+    },
+    "Chords only" : {
+
+    },
+    "Chords over lyrics, a chord-site page or ChordPro. ⌘V pastes." : {
+
+    },
+    "Chords play as" : {
+
+    },
+    "Clean guitar" : {
+
+    },
+    "Clear" : {
+
+    },
+    "Clear Fill Span" : {
+
+    },
+    "Clear Selection" : {
+
+    },
+    "Clear the proficiency" : {
+
+    },
+    "Click" : {
+
+    },
+    "Click a chord slot to drop %@; click again to put it down" : {
+
+    },
+    "Click a chord to change how long it lasts" : {
+
+    },
+    "Click above a syllable to add a chord. Drag pills to move." : {
+
+    },
+    "Click again to clear" : {
+
+    },
+    "Close" : {
+
+    },
+    "Close (Esc)" : {
+
+    },
+    "Close Play Along" : {
+
+    },
+    "Close suggestions, drop a picked-up chord" : {
+
+    },
+    "Collapse" : {
+
+    },
+    "Collapse %@" : {
+
+    },
+    "Collapse Medley" : {
+
+    },
+    "Collapse to one row" : {
+
+    },
+    "Columns" : {
+
+    },
+    "Columns for this song on stage: Auto follows Settings > Live (C on stage changes it too)" : {
+
+    },
+    "Columns on stage" : {
+
+    },
+    "Columns on stage: %@" : {
+
+    },
+    "Compact" : {
+
+    },
+    "Concert" : {
+
+    },
+    "Conditions" : {
+
+    },
+    "Connect a second display to show a Singer Screen" : {
+
+    },
+    "Content" : {
+
+    },
+    "Continue" : {
+
+    },
+    "Converted to UTF-8" : {
+
+    },
+    "Copy" : {
+
+    },
+    "Count-in" : {
+
+    },
+    "Count-in, beat %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Count-in, beat %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Create" : {
+
+    },
+    "Create Bass Fill…" : {
+
+    },
+    "Create Library in Music…" : {
+
+    },
+    "Create songs in the Library first." : {
+
+    },
+    "Custom arrangement for this gig. Click to edit it." : {
+
+    },
+    "Custom piano voicing" : {
+
+    },
+    "Custom shape, %@ tuning" : {
+
+    },
+    "Custom tuning" : {
+
+    },
+    "Custom..." : {
+
+    },
+    "Customize %@" : {
+
+    },
+    "Customize Shape…" : {
+
+    },
+    "Custom…" : {
+
+    },
+    "Data" : {
+
+    },
+    "Date" : {
+
+    },
+    "Default (%@)" : {
+
+    },
+    "Default feel" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete %@" : {
+
+    },
+    "Delete %@?" : {
+
+    },
+    "Delete Fill" : {
+
+    },
+    "Delete Note" : {
+
+    },
+    "Delete Tag" : {
+
+    },
+    "Delete the selected chord pill" : {
+
+    },
+    "Delete…" : {
+
+    },
+    "Describe a set: 45 min, songs I know well, upbeat start, no covers" : {
+
+    },
+    "Details" : {
+
+    },
+    "Details…" : {
+
+    },
+    "Diagnostics ID %@" : {
+
+    },
+    "Diagrams" : {
+
+    },
+    "Discard" : {
+
+    },
+    "Discard Edits" : {
+
+    },
+    "Discard Note" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Don't Show Again" : {
+
+    },
+    "Done" : {
+
+    },
+    "Don’t Show Again" : {
+
+    },
+    "Double the tempo" : {
+
+    },
+    "Double the tempo: each tap was half as many beats" : {
+
+    },
+    "Double-click to edit the artists" : {
+
+    },
+    "Double-click to edit the movie or album" : {
+
+    },
+    "Double-click to edit the title" : {
+
+    },
+    "Double-click to rename" : {
+
+    },
+    "Down" : {
+
+    },
+    "Download" : {
+
+    },
+    "Drag a chord onto another syllable to move it." : {
+
+    },
+    "Drag songs, see the running time" : {
+
+    },
+    "Drag to reorder  ·  S closes" : {
+
+    },
+    "Drop" : {
+
+    },
+    "Drop to import" : {
+
+    },
+    "Duplicate" : {
+
+    },
+    "Duplicate (⌘D)" : {
+
+    },
+    "Each Chord" : {
+
+    },
+    "Each Line" : {
+
+    },
+    "Each fill’s choice" : {
+
+    },
+    "Earlier filters" : {
+
+    },
+    "Edit" : {
+
+    },
+    "Edit %@" : {
+
+    },
+    "Edit Artists" : {
+
+    },
+    "Edit Break…" : {
+
+    },
+    "Edit ChordPro" : {
+
+    },
+    "Edit Fill…" : {
+
+    },
+    "Edit Key, Capo and Note…" : {
+
+    },
+    "Edit Movie / Album" : {
+
+    },
+    "Edit Smart Filter" : {
+
+    },
+    "Edit Smart Filter…" : {
+
+    },
+    "Edit Title" : {
+
+    },
+    "Edit a song" : {
+
+    },
+    "Edit chord" : {
+
+    },
+    "Edit in Text" : {
+
+    },
+    "Edit the ChordPro source" : {
+
+    },
+    "Edit the selected chord pill" : {
+
+    },
+    "Edit this smart filter’s conditions" : {
+
+    },
+    "Edit venue, date, target length and changeover" : {
+
+    },
+    "Edit…" : {
+
+    },
+    "Elapsed" : {
+
+    },
+    "Email (optional)" : {
+
+    },
+    "Email Instead" : {
+
+    },
+    "Empty medley" : {
+
+    },
+    "End %@ (Return)" : {
+
+    },
+    "End Show" : {
+
+    },
+    "End and Quit (Return)" : {
+
+    },
+    "End fill at %@" : {
+
+    },
+    "End of set" : {
+
+    },
+    "End the show before switching libraries." : {
+
+    },
+    "Enter %lld notes, low to high" : {
+
+    },
+    "Esc or ? closes" : {
+
+    },
+    "Esc returns to the song" : {
+
+    },
+    "Every Chord Lasts" : {
+
+    },
+    "Every chord change's walk-up in this song, and its feel" : {
+
+    },
+    "Every song has a time." : {
+
+    },
+    "Every time" : {
+
+    },
+    "Expand" : {
+
+    },
+    "Expand %@" : {
+
+    },
+    "Expand Medley" : {
+
+    },
+    "Export %lld Songs as PDF…" : {
+
+    },
+    "Export Library Archive…" : {
+
+    },
+    "Export Medley as PDF…" : {
+
+    },
+    "Export PDF…" : {
+
+    },
+    "Export Slot as PDF…" : {
+
+    },
+    "Exporting" : {
+
+    },
+    "FILLS" : {
+
+    },
+    "Faster" : {
+
+    },
+    "Feel" : {
+
+    },
+    "Fewer" : {
+
+    },
+    "Fewer beats" : {
+
+    },
+    "Fewer options" : {
+
+    },
+    "Field" : {
+
+    },
+    "File" : {
+
+    },
+    "Fill saved" : {
+
+    },
+    "Fill this setlist from the request (locked songs and breaks stay)" : {
+
+    },
+    "Fills as Tab" : {
+
+    },
+    "Fills as tab" : {
+
+    },
+    "Filtering by %@" : {
+
+    },
+    "Finger" : {
+
+    },
+    "Finished shows appear here." : {
+
+    },
+    "First line" : {
+
+    },
+    "Fix: %@" : {
+
+    },
+    "Fret %lld" : {
+
+    },
+    "Fretboard" : {
+
+    },
+    "Fretboard and step grid (⌘1)" : {
+
+    },
+    "Fretboard in the editor" : {
+
+    },
+    "Frets" : {
+
+    },
+    "Friday at the Blue Room" : {
+
+    },
+    "From" : {
+
+    },
+    "From %@ to the End" : {
+
+    },
+    "Full" : {
+
+    },
+    "Full screen, keys and pedals; press ? for every key" : {
+
+    },
+    "Full song" : {
+
+    },
+    "Full song: the arrangement is out of date" : {
+
+    },
+    "General" : {
+
+    },
+    "Ghost" : {
+
+    },
+    "Gig" : {
+
+    },
+    "Gig Log" : {
+
+    },
+    "Gig Mode" : {
+
+    },
+    "Gig Mode Shortcuts" : {
+
+    },
+    "Go on stage" : {
+
+    },
+    "Grid labels" : {
+
+    },
+    "Guitar" : {
+
+    },
+    "Half beats" : {
+
+    },
+    "Half the tempo" : {
+
+    },
+    "Half the tempo: each tap was two beats" : {
+
+    },
+    "Hammer" : {
+
+    },
+    "Have an idea instead? Request a Feature" : {
+
+    },
+    "Hear the fill slower (never saved)" : {
+
+    },
+    "Help" : {
+
+    },
+    "Help improve Segue" : {
+
+    },
+    "Help improve Segue?" : {
+
+    },
+    "Help: %@" : {
+
+    },
+    "Hide for This %@" : {
+
+    },
+    "How long each chord lasts" : {
+
+    },
+    "How to bring songs in" : {
+
+    },
+    "I play bass" : {
+
+    },
+    "If Segue crashes or freezes, send the technical report (code locations, " : {
+
+    },
+    "If you write to us about it, mention this report ID:" : {
+
+    },
+    "Import" : {
+
+    },
+    "Import ChordPro, text or .crd files (⇧⌘I)" : {
+
+    },
+    "Import Songs" : {
+
+    },
+    "Import Songs…" : {
+
+    },
+    "Import files" : {
+
+    },
+    "In %@" : {
+
+    },
+    "In set" : {
+
+    },
+    "In set at %lld" : {
+
+    },
+    "In set order. Type or tap a tempo, and the time comes from the bars." : {
+
+    },
+    "In the set at #%lld. Click to take it out." : {
+
+    },
+    "Index" : {
+
+    },
+    "Insert" : {
+
+    },
+    "Insert Break" : {
+
+    },
+    "Insert Break After" : {
+
+    },
+    "Insert a section or note (text mode, at a line start)" : {
+
+    },
+    "Insert {key: %@}" : {
+
+    },
+    "Instrument" : {
+
+    },
+    "Instrument Settings…" : {
+
+    },
+    "Instrument and tuning for chord diagrams" : {
+
+    },
+    "It may have been deleted. Choose another setlist." : {
+
+    },
+    "Its walk-ups show again where it played." : {
+
+    },
+    "Jumps to this section" : {
+
+    },
+    "Keep" : {
+
+    },
+    "Keep Playing (Esc)" : {
+
+    },
+    "Keep as one" : {
+
+    },
+    "Keep the lengths as they were (Esc)" : {
+
+    },
+    "Keep the other version and save your edits as a new song" : {
+
+    },
+    "Keep the passes that still match the song and drop the rest" : {
+
+    },
+    "Key" : {
+
+    },
+    "Keyboard Shortcuts" : {
+
+    },
+    "Keyboard shortcuts" : {
+
+    },
+    "Keys %@" : {
+
+    },
+    "Label" : {
+
+    },
+    "Large" : {
+
+    },
+    "Last time" : {
+
+    },
+    "Learn More" : {
+
+    },
+    "Learn More: %@" : {
+
+    },
+    "Length" : {
+
+    },
+    "Lengthen" : {
+
+    },
+    "Library" : {
+
+    },
+    "Library folder" : {
+
+    },
+    "License" : {
+
+    },
+    "Line %lld, column %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Line %1$lld, column %2$lld"
+          }
+        }
+      }
+    },
+    "Line %lld: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Line %1$lld: %2$@"
+          }
+        }
+      }
+    },
+    "Live" : {
+
+    },
+    "Local model" : {
+
+    },
+    "Local model…" : {
+
+    },
+    "Lock" : {
+
+    },
+    "Lock %@" : {
+
+    },
+    "Locked" : {
+
+    },
+    "Looking for suggestions" : {
+
+    },
+    "Looks like a key change to %@" : {
+
+    },
+    "Looks like a song in your library" : {
+
+    },
+    "Loop" : {
+
+    },
+    "Loop this change" : {
+
+    },
+    "Lower base fret" : {
+
+    },
+    "Lower capo" : {
+
+    },
+    "Lyrics" : {
+
+    },
+    "Lyrics on stage" : {
+
+    },
+    "MEDLEY" : {
+
+    },
+    "MEDLEY · %@" : {
+
+    },
+    "Major" : {
+
+    },
+    "Make Medley" : {
+
+    },
+    "Make a bass fill over these chords" : {
+
+    },
+    "Make a section" : {
+
+    },
+    "Make these artists one name again" : {
+
+    },
+    "Making the PDF…" : {
+
+    },
+    "Mark as %@" : {
+
+    },
+    "Medium" : {
+
+    },
+    "Medley" : {
+
+    },
+    "Medley %lld · " : {
+
+    },
+    "Medley title" : {
+
+    },
+    "Medley · %lld song" : {
+
+    },
+    "Medley · %lld songs" : {
+
+    },
+    "Medleys" : {
+
+    },
+    "Merge" : {
+
+    },
+    "Merge Into…" : {
+
+    },
+    "Merge into" : {
+
+    },
+    "Metronome" : {
+
+    },
+    "Metronome, %@ beats per minute" : {
+
+    },
+    "Mini neck on stage" : {
+
+    },
+    "Minimum lyric size" : {
+
+    },
+    "Minor" : {
+
+    },
+    "Mode" : {
+
+    },
+    "More" : {
+
+    },
+    "More beats" : {
+
+    },
+    "More filters" : {
+
+    },
+    "More options" : {
+
+    },
+    "Move" : {
+
+    },
+    "Move Down" : {
+
+    },
+    "Move Earlier" : {
+
+    },
+    "Move Earlier in Medley" : {
+
+    },
+    "Move Later" : {
+
+    },
+    "Move Later in Medley" : {
+
+    },
+    "Move Left" : {
+
+    },
+    "Move Right" : {
+
+    },
+    "Move Up" : {
+
+    },
+    "Move a chord" : {
+
+    },
+    "Move down" : {
+
+    },
+    "Move this note into the chart?" : {
+
+    },
+    "Move to" : {
+
+    },
+    "Move to End" : {
+
+    },
+    "Move to Next  ↩" : {
+
+    },
+    "Move to Start" : {
+
+    },
+    "Move to Trash" : {
+
+    },
+    "Move up" : {
+
+    },
+    "Movie / Album" : {
+
+    },
+    "Movie or album" : {
+
+    },
+    "Movie or album: %@" : {
+
+    },
+    "N.C." : {
+
+    },
+    "Name" : {
+
+    },
+    "Names" : {
+
+    },
+    "Nashville" : {
+
+    },
+    "Needs more than four fingers; saved without fingering." : {
+
+    },
+    "New" : {
+
+    },
+    "New Setlist" : {
+
+    },
+    "New Setlist…" : {
+
+    },
+    "New Smart Filter" : {
+
+    },
+    "New Song" : {
+
+    },
+    "New Song from Clipboard" : {
+
+    },
+    "New Song: starts blank during a show (⌘N)" : {
+
+    },
+    "New name" : {
+
+    },
+    "New note" : {
+
+    },
+    "New note on %@" : {
+
+    },
+    "New song" : {
+
+    },
+    "Next" : {
+
+    },
+    "Next part" : {
+
+    },
+    "Next: %@" : {
+
+    },
+    "Next: End" : {
+
+    },
+    "No Click" : {
+
+    },
+    "No Gig Selected" : {
+
+    },
+    "No Gigs Yet" : {
+
+    },
+    "No Matches" : {
+
+    },
+    "No Setlists" : {
+
+    },
+    "No Song Selected" : {
+
+    },
+    "No Songs Yet" : {
+
+    },
+    "No chord changes to walk between." : {
+
+    },
+    "No chords to time" : {
+
+    },
+    "No diagram" : {
+
+    },
+    "No email address" : {
+
+    },
+    "No fill fits these chords. Start from scratch." : {
+
+    },
+    "No longer in the library folder" : {
+
+    },
+    "No longer matches this song" : {
+
+    },
+    "No lyrics yet." : {
+
+    },
+    "No match" : {
+
+    },
+    "No notes" : {
+
+    },
+    "No pass selected" : {
+
+    },
+    "No problems" : {
+
+    },
+    "No requests yet. ⌘K finds a song; ⌘↩ adds it here." : {
+
+    },
+    "No setlists yet" : {
+
+    },
+    "No song matches the search and filters." : {
+
+    },
+    "No sound; the tempo comes from your taps" : {
+
+    },
+    "No tempo" : {
+
+    },
+    "No tempo: add one to time the scroll. [ and ] adjust the speed." : {
+
+    },
+    "None" : {
+
+    },
+    "Not Now" : {
+
+    },
+    "Not a key change" : {
+
+    },
+    "Not bound" : {
+
+    },
+    "Not rated" : {
+
+    },
+    "Note" : {
+
+    },
+    "Note (optional), e.g. table 4" : {
+
+    },
+    "Note on %@" : {
+
+    },
+    "Nothing here" : {
+
+    },
+    "Nothing was played to the end." : {
+
+    },
+    "Nudge the selected chord pill" : {
+
+    },
+    "OK" : {
+
+    },
+    "OPTIONS" : {
+
+    },
+    "Only %@ #%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Only %1$@ #%2$lld"
+          }
+        }
+      }
+    },
+    "Only if you want a reply." : {
+
+    },
+    "Open Automation Settings…" : {
+
+    },
+    "Open Settings" : {
+
+    },
+    "Open Song" : {
+
+    },
+    "Open “%@” in Segue Help" : {
+
+    },
+    "Openers" : {
+
+    },
+    "Opening %@…" : {
+
+    },
+    "Operator" : {
+
+    },
+    "Option %@, %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Option %1$@, %2$@, %3$@"
+          }
+        }
+      }
+    },
+    "Options for %@" : {
+
+    },
+    "Overwrite" : {
+
+    },
+    "Pack the unlocked slots again with a different pick" : {
+
+    },
+    "Page" : {
+
+    },
+    "Paper" : {
+
+    },
+    "Paste a Song" : {
+
+    },
+    "Paste a chord sheet, write a song, or drop song files here." : {
+
+    },
+    "Paste a song" : {
+
+    },
+    "Paste any chord sheet" : {
+
+    },
+    "Paste or type a song" : {
+
+    },
+    "Perform this setlist on stage (%@)" : {
+
+    },
+    "Piano" : {
+
+    },
+    "Piano Roll" : {
+
+    },
+    "Piano roll" : {
+
+    },
+    "Pick" : {
+
+    },
+    "Pick Songs" : {
+
+    },
+    "Pick songs from the library (%@) or arrange the set (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pick songs from the library (%1$@) or arrange the set (%2$@)"
+          }
+        }
+      }
+    },
+    "Pick up a chord" : {
+
+    },
+    "Pick up a new chord, then click above a syllable to drop it" : {
+
+    },
+    "Pick up changes made in other apps (⌘R)" : {
+
+    },
+    "Place chords over the lyrics" : {
+
+    },
+    "Play" : {
+
+    },
+    "Play %@" : {
+
+    },
+    "Play %@ to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Play %1$@ to %2$@"
+          }
+        }
+      }
+    },
+    "Play %@; ⌥-click plays %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Play %1$@; ⌥-click plays %2$@"
+          }
+        }
+      }
+    },
+    "Play Again at End" : {
+
+    },
+    "Play Along" : {
+
+    },
+    "Play Song Live" : {
+
+    },
+    "Play a G Chord" : {
+
+    },
+    "Play along (⌥Space)" : {
+
+    },
+    "Play chord %@" : {
+
+    },
+    "Play on stage" : {
+
+    },
+    "Play the bass as it is timed now" : {
+
+    },
+    "Play the chords as they are timed now" : {
+
+    },
+    "Play the selected fill (Space)" : {
+
+    },
+    "Play this fill over its chords" : {
+
+    },
+    "Play this song live on stage, not logged (⇧⌘↩)" : {
+
+    },
+    "Play this walk-up" : {
+
+    },
+    "Play through" : {
+
+    },
+    "Played" : {
+
+    },
+    "Playing along" : {
+
+    },
+    "Plays a G chord with its bass note" : {
+
+    },
+    "Pre-show checklist" : {
+
+    },
+    "Press Space to start" : {
+
+    },
+    "Press → to continue." : {
+
+    },
+    "Preview" : {
+
+    },
+    "Preview lyrics only, as a singer sees them" : {
+
+    },
+    "Preview…" : {
+
+    },
+    "Print and PDF" : {
+
+    },
+    "Print…" : {
+
+    },
+    "Privacy" : {
+
+    },
+    "Privacy Policy" : {
+
+    },
+    "Privacy settings" : {
+
+    },
+    "Pull" : {
+
+    },
+    "Pulse the song's tempo on stage (M on the stage)" : {
+
+    },
+    "Push" : {
+
+    },
+    "Push: %@" : {
+
+    },
+    "R plays the oldest  ·  Q closes" : {
+
+    },
+    "ROADMAP (OPTIONAL)" : {
+
+    },
+    "Raise base fret" : {
+
+    },
+    "Raise capo" : {
+
+    },
+    "Range" : {
+
+    },
+    "Rate Segue on the App Store" : {
+
+    },
+    "Rated %lld of 5" : {
+
+    },
+    "Read-only" : {
+
+    },
+    "Read-only - this setlist was saved by a newer Segue" : {
+
+    },
+    "Reading" : {
+
+    },
+    "Rebuild" : {
+
+    },
+    "Rebuild Index" : {
+
+    },
+    "Redo" : {
+
+    },
+    "Refining" : {
+
+    },
+    "Refresh" : {
+
+    },
+    "Rehearse" : {
+
+    },
+    "Rehearse Medley" : {
+
+    },
+    "Rehearse Song" : {
+
+    },
+    "Rehearse this" : {
+
+    },
+    "Rehearse this song on stage, not logged (⌥⌘↩)" : {
+
+    },
+    "Reload" : {
+
+    },
+    "Remove" : {
+
+    },
+    "Remove %@" : {
+
+    },
+    "Remove %@ from setlist" : {
+
+    },
+    "Remove (⌫)" : {
+
+    },
+    "Remove All" : {
+
+    },
+    "Remove Break" : {
+
+    },
+    "Remove Chord" : {
+
+    },
+    "Remove Old Length Lines" : {
+
+    },
+    "Remove Old Length Lines…" : {
+
+    },
+    "Remove Welcome Songs…" : {
+
+    },
+    "Remove condition" : {
+
+    },
+    "Remove from Medley" : {
+
+    },
+    "Remove from Setlist" : {
+
+    },
+    "Remove from setlist" : {
+
+    },
+    "Remove key %@" : {
+
+    },
+    "Remove this condition" : {
+
+    },
+    "Rename" : {
+
+    },
+    "Rename Medley" : {
+
+    },
+    "Rename Section" : {
+
+    },
+    "Rename Setlist" : {
+
+    },
+    "Rename Smart Filter" : {
+
+    },
+    "Rename Tag…" : {
+
+    },
+    "Rename, duplicate, show in Finder or move this setlist to the Trash" : {
+
+    },
+    "Rename…" : {
+
+    },
+    "Reorders this song's walk-ups for its style" : {
+
+    },
+    "Repeat the range" : {
+
+    },
+    "Repeats" : {
+
+    },
+    "Replace" : {
+
+    },
+    "Replace the other app’s version with your edits" : {
+
+    },
+    "Report a Problem…" : {
+
+    },
+    "Report this problem to Segue's developer" : {
+
+    },
+    "Report…" : {
+
+    },
+    "Request a Feature…" : {
+
+    },
+    "Requests" : {
+
+    },
+    "Reset" : {
+
+    },
+    "Reset All Settings" : {
+
+    },
+    "Reset All Settings…" : {
+
+    },
+    "Reset Corrections in This Section" : {
+
+    },
+    "Reset Corrections in the Song" : {
+
+    },
+    "Reset Tips" : {
+
+    },
+    "Reset all settings?" : {
+
+    },
+    "Reset to Full Song" : {
+
+    },
+    "Reset to suggestion" : {
+
+    },
+    "Rest" : {
+
+    },
+    "Result" : {
+
+    },
+    "Resume" : {
+
+    },
+    "Resume Download" : {
+
+    },
+    "Retry" : {
+
+    },
+    "Return or comma adds an artist. Drag to reorder." : {
+
+    },
+    "Revert to %@" : {
+
+    },
+    "Revert to Saved" : {
+
+    },
+    "Review Song" : {
+
+    },
+    "Rewrite the chords and {key} in the new key (keeps {capo})" : {
+
+    },
+    "Roadmap" : {
+
+    },
+    "Run the set on stage to time each song, no gig log entry (%@)" : {
+
+    },
+    "Running time" : {
+
+    },
+    "Save" : {
+
+    },
+    "Save PDF…" : {
+
+    },
+    "Save Report…" : {
+
+    },
+    "Save a filter of songs by tags, proficiency, key, tempo or length" : {
+
+    },
+    "Save and close the editor" : {
+
+    },
+    "Save as Copy" : {
+
+    },
+    "Save the fill to this song (Return)" : {
+
+    },
+    "Save the played order to “%@”?" : {
+
+    },
+    "Save the song first" : {
+
+    },
+    "Save the tapped lengths (Return)" : {
+
+    },
+    "Save to Setlist" : {
+
+    },
+    "Save to the library (⌘↩)" : {
+
+    },
+    "Scale" : {
+
+    },
+    "Score" : {
+
+    },
+    "Search" : {
+
+    },
+    "Search by any line" : {
+
+    },
+    "Search or filter" : {
+
+    },
+    "Search or filter: ready, upbeat, key G" : {
+
+    },
+    "Search title, artist, movie, first line or tag" : {
+
+    },
+    "Searching" : {
+
+    },
+    "Section" : {
+
+    },
+    "Section Notes" : {
+
+    },
+    "Section Notes…" : {
+
+    },
+    "Section label" : {
+
+    },
+    "Section map" : {
+
+    },
+    "Section notes" : {
+
+    },
+    "Segue" : {
+
+    },
+    "Segue Guide" : {
+
+    },
+    "Segue Help" : {
+
+    },
+    "Segue Library" : {
+
+    },
+    "Segue clicks at the song's tempo; taps land on the nearest beat" : {
+
+    },
+    "Segue could not make this PDF (%@). Try again" : {
+
+    },
+    "Segue could not place this line, so it is kept as a note" : {
+
+    },
+    "Send" : {
+
+    },
+    "Send crash reports" : {
+
+    },
+    "Sending…" : {
+
+    },
+    "Sequence, %@" : {
+
+    },
+    "Set" : {
+
+    },
+    "Set 2" : {
+
+    },
+    "Set Tempo…" : {
+
+    },
+    "Set a date" : {
+
+    },
+    "Set assistant" : {
+
+    },
+    "Set for this setlist only" : {
+
+    },
+    "Set order" : {
+
+    },
+    "Set request" : {
+
+    },
+    "Setlist" : {
+
+    },
+    "Setlist Not Found" : {
+
+    },
+    "Setlist · read-only" : {
+
+    },
+    "Setlists" : {
+
+    },
+    "Sets the song's tempo" : {
+
+    },
+    "Settings…" : {
+
+    },
+    "Shapes" : {
+
+    },
+    "Share" : {
+
+    },
+    "Share usage analytics" : {
+
+    },
+    "Shortcut %@" : {
+
+    },
+    "Shortcut name" : {
+
+    },
+    "Shorten" : {
+
+    },
+    "Shorten the description to 4,096 characters." : {
+
+    },
+    "Show %@ in the Library" : {
+
+    },
+    "Show Chords" : {
+
+    },
+    "Show Library in Finder" : {
+
+    },
+    "Show as" : {
+
+    },
+    "Show bass notes instead of chords" : {
+
+    },
+    "Show chords as Nashville numbers" : {
+
+    },
+    "Show fills as" : {
+
+    },
+    "Show in Finder" : {
+
+    },
+    "Show in Finder or move this gig to the Trash" : {
+
+    },
+    "Show it in the set" : {
+
+    },
+    "Show lyrics only on stage (Singer view)" : {
+
+    },
+    "Show lyrics only on stage, chords hidden (V on the stage)" : {
+
+    },
+    "Show on stage only" : {
+
+    },
+    "Show only %@ songs" : {
+
+    },
+    "Show only songs tagged “%@”" : {
+
+    },
+    "Show score breakdown" : {
+
+    },
+    "Show songs tagged “%@”" : {
+
+    },
+    "Show the Nashville number with the bass note (this song)" : {
+
+    },
+    "Show the full chord beside the note" : {
+
+    },
+    "Show the lyrics on another display, facing the singer" : {
+
+    },
+    "Show the note to play at sounding pitch (all songs)" : {
+
+    },
+    "Show the song as it is now; your edits are dropped" : {
+
+    },
+    "Show the songs" : {
+
+    },
+    "Show where to play each chord on the bass (all songs)" : {
+
+    },
+    "Show which files and why" : {
+
+    },
+    "Shows on" : {
+
+    },
+    "Shows other walk-ups" : {
+
+    },
+    "Shows the file's full text" : {
+
+    },
+    "Singer" : {
+
+    },
+    "Singer Preview" : {
+
+    },
+    "Singer Screen" : {
+
+    },
+    "Singer Screen: no second display" : {
+
+    },
+    "Singer View" : {
+
+    },
+    "Singer preview: chords are hidden. Turn off Singer to edit chords." : {
+
+    },
+    "Singer view" : {
+
+    },
+    "Singer view, lyrics only" : {
+
+    },
+    "Singer, lyrics only" : {
+
+    },
+    "Skip" : {
+
+    },
+    "Skipped" : {
+
+    },
+    "Slide" : {
+
+    },
+    "Slower" : {
+
+    },
+    "Small" : {
+
+    },
+    "Smart Filters" : {
+
+    },
+    "Smart filters" : {
+
+    },
+    "Snap every tap to half a beat (or hold ⌥ as you tap)" : {
+
+    },
+    "Song" : {
+
+    },
+    "Song Tempo Set" : {
+
+    },
+    "Song missing" : {
+
+    },
+    "Song not in library" : {
+
+    },
+    "Song notes" : {
+
+    },
+    "Song text" : {
+
+    },
+    "Song title" : {
+
+    },
+    "Song unavailable" : {
+
+    },
+    "Songbook" : {
+
+    },
+    "Songbooks always paginate" : {
+
+    },
+    "Songs are plain ChordPro files you can open in any editor." : {
+
+    },
+    "Songs matching all of these conditions" : {
+
+    },
+    "Songs that do not fit at this size scroll instead of shrinking." : {
+
+    },
+    "Songs the request matched that have no time, so they could not be packed" : {
+
+    },
+    "Songs with no time" : {
+
+    },
+    "Songs without a key, length or tempo (the set essentials)" : {
+
+    },
+    "Sounding %@" : {
+
+    },
+    "Sounds each beat. Rehearsals only. K on stage." : {
+
+    },
+    "Sparkles mark what AI decided" : {
+
+    },
+    "Split" : {
+
+    },
+    "Split from %@" : {
+
+    },
+    "Split from “%@”  ·" : {
+
+    },
+    "Split into separate artists" : {
+
+    },
+    "Staccato" : {
+
+    },
+    "Stage notes and cues" : {
+
+    },
+    "Stage only" : {
+
+    },
+    "Stage preview, %@" : {
+
+    },
+    "Start %@" : {
+
+    },
+    "Start Show" : {
+
+    },
+    "Start Show goes full screen and dark. Press ? on stage to see every key." : {
+
+    },
+    "Start blank" : {
+
+    },
+    "Start fill at %@" : {
+
+    },
+    "Start from scratch" : {
+
+    },
+    "Start show" : {
+
+    },
+    "Start shows with the metronome on" : {
+
+    },
+    "Start the show" : {
+
+    },
+    "Start this chord early, ahead of the beat (<)" : {
+
+    },
+    "Starts at fret %lld" : {
+
+    },
+    "Starts at the nut" : {
+
+    },
+    "Starts with %@" : {
+
+    },
+    "Status" : {
+
+    },
+    "Step grid" : {
+
+    },
+    "Stop" : {
+
+    },
+    "Stop %@" : {
+
+    },
+    "Stop and review (Esc)" : {
+
+    },
+    "String down" : {
+
+    },
+    "String up" : {
+
+    },
+    "Strings" : {
+
+    },
+    "Strings and tuning for the bass fretboard, in Settings > Instrument" : {
+
+    },
+    "Strum" : {
+
+    },
+    "Suggest chords (text mode)" : {
+
+    },
+    "Suggest directives (text mode)" : {
+
+    },
+    "Suggested" : {
+
+    },
+    "Suggested folder: Segue, in Music" : {
+
+    },
+    "Suggested: %@" : {
+
+    },
+    "Suggested: click to use it" : {
+
+    },
+    "Suggestions" : {
+
+    },
+    "Swap Title and Artist" : {
+
+    },
+    "TEMPO" : {
+
+    },
+    "TEMPO %lld%%" : {
+
+    },
+    "Tab" : {
+
+    },
+    "Tags" : {
+
+    },
+    "Tap" : {
+
+    },
+    "Tap Timing" : {
+
+    },
+    "Tap along to set how long each chord lasts" : {
+
+    },
+    "Tap along with the song; the tempo fills in" : {
+
+    },
+    "Tap keys to add or remove them." : {
+
+    },
+    "Tap pad" : {
+
+    },
+    "Tap repeatedly in time with the song" : {
+
+    },
+    "Target" : {
+
+    },
+    "Tempo" : {
+
+    },
+    "Tempo %@, %lld percent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tempo %1$@, %2$lld percent"
+          }
+        }
+      }
+    },
+    "Tempo from your taps" : {
+
+    },
+    "Tempo in beats per minute" : {
+
+    },
+    "Terms of Use" : {
+
+    },
+    "Test" : {
+
+    },
+    "Text" : {
+
+    },
+    "Text size" : {
+
+    },
+    "Thanks - report sent." : {
+
+    },
+    "That does not look like an email address." : {
+
+    },
+    "That was the last song." : {
+
+    },
+    "The Anchor" : {
+
+    },
+    "The Welcome songs are in your library (tag: Welcome)." : {
+
+    },
+    "The capo changes going into this song" : {
+
+    },
+    "The show did not start" : {
+
+    },
+    "The song card" : {
+
+    },
+    "The song's sections changed since it was arranged. Click to update." : {
+
+    },
+    "These files were not imported. They are left as they were." : {
+
+    },
+    "These files were skipped. They are left untouched in the library folder." : {
+
+    },
+    "This change is no longer in the song." : {
+
+    },
+    "This fill shares a chord change with it. The other fill is removed." : {
+
+    },
+    "This section changed since the note was placed. Pick where it shows to confirm." : {
+
+    },
+    "This song is also in the " : {
+
+    },
+    "This song is also in the set at " : {
+
+    },
+    "This song is in the set twice. Remove one of them." : {
+
+    },
+    "This song is no longer available." : {
+
+    },
+    "This song is no longer in the set or the library." : {
+
+    },
+    "This song is read-only" : {
+
+    },
+    "This song plays in %@. Tick it to add a reprise." : {
+
+    },
+    "Time" : {
+
+    },
+    "Time Signature" : {
+
+    },
+    "Time for this gig: %@" : {
+
+    },
+    "Time signature" : {
+
+    },
+    "Timing" : {
+
+    },
+    "Title" : {
+
+    },
+    "Title decided by AI" : {
+
+    },
+    "To" : {
+
+    },
+    "Transition into %@" : {
+
+    },
+    "Transpose and capo" : {
+
+    },
+    "Transpose down" : {
+
+    },
+    "Transpose up" : {
+
+    },
+    "Try Again" : {
+
+    },
+    "Try a different search or filter." : {
+
+    },
+    "Tuning" : {
+
+    },
+    "Turn Off" : {
+
+    },
+    "Type a length in beats: 3, 2.5 or 2½" : {
+
+    },
+    "Type a song name and press Return (%@)" : {
+
+    },
+    "Typing latency %@" : {
+
+    },
+    "US Letter" : {
+
+    },
+    "Undo" : {
+
+    },
+    "Ungroup" : {
+
+    },
+    "Ungroup Medley" : {
+
+    },
+    "Unlock" : {
+
+    },
+    "Unlock %@" : {
+
+    },
+    "Unlock: Rebuild may replace this song" : {
+
+    },
+    "Unlocked" : {
+
+    },
+    "Unskip" : {
+
+    },
+    "Unticked files are not imported." : {
+
+    },
+    "Untitled" : {
+
+    },
+    "Up" : {
+
+    },
+    "Update" : {
+
+    },
+    "Updating…" : {
+
+    },
+    "Use AI to refine pastes and set requests" : {
+
+    },
+    "Use Song’s Key and Capo" : {
+
+    },
+    "Use the Song's Rule" : {
+
+    },
+    "Use this" : {
+
+    },
+    "Venue" : {
+
+    },
+    "View" : {
+
+    },
+    "Visual" : {
+
+    },
+    "VoiceOver says each chord as you tap it" : {
+
+    },
+    "Volume" : {
+
+    },
+    "Walk-ups" : {
+
+    },
+    "Walk-ups are Off in Settings > Instrument" : {
+
+    },
+    "Walk-ups are off on charts. Turn them on in Settings > Instrument." : {
+
+    },
+    "Walk-ups on charts" : {
+
+    },
+    "Walk-ups…" : {
+
+    },
+    "Welcome songs" : {
+
+    },
+    "Welcome to Segue" : {
+
+    },
+    "Welcome to Segue…" : {
+
+    },
+    "What Segue collects" : {
+
+    },
+    "What happened?" : {
+
+    },
+    "What happens between the songs (click to edit)" : {
+
+    },
+    "What's New in Segue" : {
+
+    },
+    "What’s sent" : {
+
+    },
+    "When you end a show, it is logged here with what you played." : {
+
+    },
+    "Where placed notes snap; hold ⌥ to place any note" : {
+
+    },
+    "Where should your songs live?" : {
+
+    },
+    "Where you played" : {
+
+    },
+    "Whole Song" : {
+
+    },
+    "Why %@" : {
+
+    },
+    "Why this song: hover, or press Space on the selected row" : {
+
+    },
+    "Window" : {
+
+    },
+    "With Click" : {
+
+    },
+    "With a capo, this is the shapes key." : {
+
+    },
+    "Write or drop in songs" : {
+
+    },
+    "Write this tempo into the song as {tempo}" : {
+
+    },
+    "Write {key: %@} before this section" : {
+
+    },
+    "Written key (%@: sounds %@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Written key (%1$@: sounds %2$@)"
+          }
+        }
+      }
+    },
+    "Written out" : {
+
+    },
+    "You can put them back from the Trash." : {
+
+    },
+    "You can restore it from the Trash." : {
+
+    },
+    "Your library folder" : {
+
+    },
+    "Zoom In" : {
+
+    },
+    "Zoom Out" : {
+
+    },
+    "and" : {
+
+    },
+    "and 1 more change" : {
+
+    },
+    "collapsed" : {
+
+    },
+    "dev.segue.audio-engine" : {
+
+    },
+    "done" : {
+
+    },
+    "expanded" : {
+
+    },
+    "from chords" : {
+
+    },
+    "in any show" : {
+
+    },
+    "in the whole total only" : {
+
+    },
+    "matches the chords" : {
+
+    },
+    "not done" : {
+
+    },
+    "not selected" : {
+
+    },
+    "nothing here, %@ into %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "nothing here, %1$@ into %2$@"
+          }
+        }
+      }
+    },
+    "off" : {
+
+    },
+    "on" : {
+
+    },
+    "on the beat" : {
+
+    },
+    "opens the editor with the song card" : {
+
+    },
+    "play.fill" : {
+
+    },
+    "selected" : {
+
+    },
+    "stop.fill" : {
+
+    },
+    "tap" : {
+
+    },
+    "taps" : {
+
+    },
+    "time signature" : {
+
+    },
+    "you@example.com" : {
+
+    },
+    "~/Music/Segue" : {
+
+    },
+    "“start soft”" : {
+
+    },
+    "← → select · ⌥← ⌥→ move · F C 1 S mode · ⌫ remove · ⌘D duplicate" : {
+
+    },
+    "↩ adds it, with or without a note  ·  Esc goes back" : {
+
+    },
+    "⌘-click to add or remove a song, ⇧-click to select a range." : {
+
+    },
+    "♪ Playing along" : {
+
+    },
+    "⟲ Looping %@" : {
+
+    }
   },
   "version" : "1.0"
 }

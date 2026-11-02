@@ -104,6 +104,18 @@ nesting:
 
 # URL boundary (WS2a 3.1) and, below it, any other repo-wide pattern rules.
 custom_rules:
+  # P9-5 4.3 (R179): SegueUI's UI strings look up SegueUI's own String Catalog. A literal in a
+  # SwiftUI initializer or modifier without `bundle: #bundle` would look in the app's main
+  # bundle and never be translated: write `Text("…", bundle: #bundle)`, `Button(uiString("…"))`
+  # (App/UIString.swift), or `Text(verbatim:)` for song content
+  # (titles, lyrics, chords, section labels, romanized Hindi), which is never a catalog key.
+  ui_string_bundle:
+    name: "UI strings name their bundle"
+    regex: '(?<![\w.])(Button|Label|Toggle|Section|Picker|Menu|TextField|LabeledContent|ProgressView|Tab)\(\s*"|\.(help|navigationTitle|accessibilityLabel|accessibilityHint|accessibilityValue)\(\s*"|(?<![\w.])Text\("(?:[^"\\\n]|\\.)*"\s*\)'
+    included:
+      - 'Packages/SegueUI/Sources/'
+    message: "Name SegueUI's catalog: Text(\"…\", bundle: #bundle), uiString(\"…\"), or Text(verbatim:) for content (P9-5 4.3)."
+    severity: error
   segue_links_only:
     name: "SegueLinks only"
     regex: '(ryandsilva\.dev|apps\.apple\.com)'

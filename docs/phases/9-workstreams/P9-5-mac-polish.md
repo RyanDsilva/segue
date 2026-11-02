@@ -130,6 +130,14 @@ Size: about 6 MB (shots and clips kept, Pagefind dropped; R179). The book docume
 - Formats: plurals and variables use catalog variations (`"\(count) songs"` with English plural variants), never string concatenation.
 - A language change still takes effect on the next launch (macOS behaviour); nothing changes mid-show.
 
+### 4.4 As built (P9-5c, 2026-11-01)
+
+- SegueUI has `defaultLocalization: "en"` and `Localizable.xcstrings` (991 keys); the app targets have `InfoPlist.xcstrings`. English values are the keys and compile to nothing, so every lookup returns exactly the text the app showed before.
+- `Text("…", bundle: #bundle)` keeps `LocalizedStringKey` behaviour (Markdown, Text interpolation); every other SwiftUI title, help and accessibility text goes through `uiString("…")` (`App/UIString.swift`, a `String.LocalizationValue` parameter the compiler extracts, looked up in SegueUI's bundle). `MenuShortcut` takes `LocalizationValue` titles, so the menu table stays plain literals.
+- Song content stays out: joined values (titles, keys, counts, chord changes) are `Text(verbatim:)`, and section and directive names (`SectionChipBar`, `EditorSuggestions`) are left as written. `LocalizationCoverageTests` checks no Welcome song line or section label is a key.
+- `make strings` refreshes the catalog from a Swift Build of the package; `make strings-check` (in `make quick`) fails when the code uses a string the catalog lacks or the catalog keeps a stale one. The SwiftLint rule `ui_string_bundle` fails a SwiftUI literal without a bundle.
+- Not swept (String-valued model text rendered with `Text(String)`, so still English-only and outside the catalog): `UserMessage` error sentences, flash and status lines built in view models (for example `LiveSession` flashes, `SoundSession` output names, `DataSettingsView` status), `EditorSuggestions` directive titles, and SegueCore's own messages (`FillSpan` errors, checklist reasons). They need `uiString` at each sentence before a second language ships.
+
 ## 5. The four extras (R179)
 
 - **P1 - "Report..." on the error banner** (research #28; the banner has only Dismiss, `SegueRootView.swift:324-347`). A button beside Dismiss opens Report a Problem with the error's `ErrorCode` and message pre-filled (the diagnostics preview shows it). Never shown on stage. Session P9-5b, S effort. Why: a solo developer's support channel; the musician reports the problem when it happens instead of forgetting it before the gig.
