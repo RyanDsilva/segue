@@ -94,8 +94,8 @@
             if let (block, column) = parts.first, let last = block.labelLines.last {
                 let descent = StageTextMetrics().extents(of: last.text.role).descent
                 HStack(spacing: 5) {
-                    Text("⟲")
-                    Text("Loop")
+                    Text(verbatim: "⟲")
+                    Text("Loop", bundle: #bundle)
                 }
                 .font(SchibstedGrotesk.bold.font(size: 12))
                 .foregroundStyle(Theme.color.cueText)

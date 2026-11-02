@@ -104,7 +104,7 @@
             .frame(height: style.height)
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("Section map")
+            .accessibilityLabel(uiString("Section map"))
             .accessibilityIdentifier(AccessibilityID.liveMap)
         }
 
@@ -240,7 +240,7 @@
                 .accessibilityAddTraits(metrics.isInteractive ? .isButton : [])
                 .accessibilityLabel(Self.spokenLabel(pass) + (member.map { ", \($0)" } ?? ""))
                 .accessibilityValue(spokenValue)
-                .accessibilityHint(metrics.isInteractive ? "Jumps to this section" : "")
+                .accessibilityHint(metrics.isInteractive ? uiString("Jumps to this section") : "")
                 .accessibilityAction { onJump?() }
                 .accessibilityIdentifier(AccessibilityID.liveMapChip(pass.index + 1))
         }
@@ -267,7 +267,7 @@
                     .font(SchibstedGrotesk.bold.font(size: metrics.label))
                     .foregroundStyle(state == .played ? Theme.color.muted : Theme.color.ink)
                 if let number = pass.name.number {
-                    Text("\(number)/\(pass.name.total)")
+                    Text(verbatim: "\(number)/\(pass.name.total)")
                         .font(SchibstedGrotesk.semiBold.font(size: metrics.number))
                         .foregroundStyle(
                             state == .played ? Theme.color.indicatorOff : Theme.color.muted,
@@ -309,7 +309,7 @@
         /// The number key, on hover (passes after the ninth have none).
         @ViewBuilder private var hint: some View {
             if metrics.isInteractive, isHovered, pass.index < 9 {
-                Text("\(pass.index + 1)")
+                Text(verbatim: "\(pass.index + 1)")
                     .font(SchibstedGrotesk.semiBold.font(size: 11))
                     .foregroundStyle(Theme.color.muted)
                     .padding(.horizontal, 4)

@@ -150,7 +150,7 @@
                 // Between parts: the next song's title, as on the stage.
                 StageBreakView(info: info, nextTitle: live.state.current?.item.title)
             } else if live.state.current == nil {
-                Text("End of set")
+                Text("End of set", bundle: #bundle)
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.muted)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -38,7 +38,7 @@
                 if let arrangement = session.currentArrangement {
                     // Quiet: an arranged slot says so; one whose sections changed says the
                     // full song is shown (R122, R123).
-                    Text(arrangement == .applied ? "Arranged" : "Full song")
+                    Text(arrangement == .applied ? uiString("Arranged") : uiString("Full song"))
                         .font(SchibstedGrotesk.medium.font(size: 16))
                         .foregroundStyle(Theme.color.muted)
                         .lineLimit(1)
@@ -60,7 +60,7 @@
                 if session.planView == .singer {
                     // Why there are no chords, at a glance (P9-2 6.1).
                     StageChip(text: "Singer")
-                        .accessibilityLabel("Singer view, lyrics only")
+                        .accessibilityLabel(uiString("Singer view, lyrics only"))
                         .accessibilityIdentifier(AccessibilityID.liveSinger)
                 }
                 if session.kind == .rehearsal {
@@ -162,7 +162,7 @@
                     .font(SchibstedGrotesk.medium.font(size: 15))
                     .foregroundStyle(Theme.color.muted)
                     .monospacedDigit()
-                    .accessibilityLabel("Elapsed")
+                    .accessibilityLabel(uiString("Elapsed"))
                     .accessibilityValue(Self
                         .format(session.elapsed(at: session.context.clock.now())))
             }
@@ -189,11 +189,11 @@
 
         var body: some View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("⟲ Looping \(name.chipText)")
+                Text("⟲ Looping \(name.chipText)", bundle: #bundle)
                     .font(SchibstedGrotesk.semiBold.font(size: 14))
                     .foregroundStyle(Theme.color.ink)
                 if let stopKey {
-                    Text("\(stopKey) stops")
+                    Text("\(stopKey) stops", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 14))
                         .foregroundStyle(Theme.color.muted)
                 }
@@ -218,7 +218,7 @@
     /// reads it; nothing relies on the sound alone.
     struct StagePlayAlongPill: View {
         var body: some View {
-            Text("\u{266A} Playing along")
+            Text("\u{266A} Playing along", bundle: #bundle)
                 .font(SchibstedGrotesk.semiBold.font(size: 14))
                 .foregroundStyle(Theme.color.ink)
                 .lineLimit(1)
@@ -232,7 +232,7 @@
                                 .strokeBorder(Theme.color.cue.opacity(0.55), lineWidth: 1)
                         }
                 }
-                .accessibilityLabel("Playing along")
+                .accessibilityLabel(uiString("Playing along"))
                 .accessibilityIdentifier(AccessibilityID.livePlayAlong)
         }
     }
@@ -363,7 +363,7 @@
         private func requestCount(_ count: Int) -> some View {
             HStack(spacing: 8) {
                 Circle().fill(Theme.color.cue).frame(width: 8, height: 8)
-                Text(count == 1 ? "1 request" : "\(count) requests")
+                Text(count == 1 ? uiString("1 request") : uiString("\(count) requests"))
                     .font(SchibstedGrotesk.semiBold.font(size: 15))
                     .foregroundStyle(Theme.color.ink)
             }

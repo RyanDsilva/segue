@@ -216,7 +216,7 @@
             .opacity(state.dimmed ? 0.4 : 1)
             .allowsHitTesting(false)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Bass neck")
+            .accessibilityLabel(uiString("Bass neck"))
             .accessibilityValue(state.accessibilityValue)
             .accessibilityAddTraits(.isStaticText)
             .accessibilityIdentifier(AccessibilityID.liveBassNeck)
@@ -272,7 +272,7 @@
                 }
                 // The first fretted fret's number under its slot.
                 let firstSlot = lower == 0 ? 1 : 0
-                let number = Text("\(lower + firstSlot)")
+                let number = Text(verbatim: "\(lower + firstSlot)")
                     .font(SchibstedGrotesk.semiBold.font(size: 8.5))
                     .foregroundStyle(Theme.color.muted)
                 context.draw(
@@ -371,7 +371,7 @@
 
         var body: some View {
             ViewThatFits(in: .horizontal) {
-                Text("Sounding \(scale)")
+                Text("Sounding \(scale)", bundle: #bundle)
                     .font(SchibstedGrotesk.medium.font(size: 16))
                     .foregroundStyle(Theme.color.muted)
                     .lineLimit(1)

@@ -51,14 +51,14 @@
                     .foregroundStyle(Theme.color.muted)
                 Spacer()
                 if refusal.refusal.moveToNext != nil {
-                    Button("Back  Esc") { session.cancelRefusal() }
+                    Button(uiString("Back  Esc")) { session.cancelRefusal() }
                         .buttonStyle(.segueSecondary)
                         .accessibilityIdentifier(AccessibilityID.liveSearchRefusalBack)
-                    Button("Move to Next  ↩") { session.confirmRefusal() }
+                    Button(uiString("Move to Next  ↩")) { session.confirmRefusal() }
                         .buttonStyle(.seguePrimary)
                         .accessibilityIdentifier(AccessibilityID.liveSearchMoveToNext)
                 } else {
-                    Button("Back  ↩") { session.cancelRefusal() }
+                    Button(uiString("Back  ↩")) { session.cancelRefusal() }
                         .buttonStyle(.seguePrimary)
                         .accessibilityIdentifier(AccessibilityID.liveSearchRefusalBack)
                 }

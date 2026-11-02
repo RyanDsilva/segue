@@ -66,7 +66,7 @@
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Filtering by " + chips.joined(separator: ", "))
+            .accessibilityLabel(uiString("Filtering by \(chips.joined(separator: ", "))"))
             .accessibilityIdentifier(AccessibilityID.liveSearchChips)
         }
     }

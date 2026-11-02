@@ -195,7 +195,7 @@ public final class SoundSession {
             .map { OutputChoice(uid: $0.uid, title: $0.name) }
         if chosenOutputMissing, let uid = settings.settings.outputUID {
             let name = settings.settings.outputName ?? "Chosen output"
-            choices.append(OutputChoice(uid: uid, title: "\(name) (not connected)"))
+            choices.append(OutputChoice(uid: uid, title: uiString("\(name) (not connected)")))
         }
         return choices
     }

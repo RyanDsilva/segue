@@ -30,10 +30,10 @@
                     isPresented: isAsking(app.pendingResume != nil && !app.isPerforming),
                     presenting: app.pendingResume,
                 ) { _ in
-                    Button("Resume") { Task { await app.resumePendingShow() } }
+                    Button(uiString("Resume")) { Task { await app.resumePendingShow() } }
                         .keyboardShortcut(.defaultAction)
                         .accessibilityIdentifier(AccessibilityID.resumeShowResume)
-                    Button("End Show") { Task { await app.endPendingShow() } }
+                    Button(uiString("End Show")) { Task { await app.endPendingShow() } }
                         .accessibilityIdentifier(AccessibilityID.resumeShowEnd)
                 } message: { record in
                     Text(resumeMessage(record))
@@ -43,7 +43,7 @@
                     isPresented: isAsking(app.startFailure != nil) { app.dismissStartFailure() },
                     presenting: app.startFailure,
                 ) { _ in
-                    Button("OK", role: .cancel) { app.dismissStartFailure() }
+                    Button(uiString("OK"), role: .cancel) { app.dismissStartFailure() }
                 } message: { message in
                     Text(message)
                 }

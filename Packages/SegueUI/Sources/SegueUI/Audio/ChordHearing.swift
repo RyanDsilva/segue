@@ -190,7 +190,7 @@ struct ChordPlayActions: ViewModifier {
         if let hearing, hearing.isEnabled, !chords.isEmpty {
             content.accessibilityActions {
                 ForEach(chords) { playable in
-                    Button("Play chord \(playable.spoken)") {
+                    Button(uiString("Play chord \(playable.spoken)")) {
                         hearing.play(playable.chord)
                     }
                 }

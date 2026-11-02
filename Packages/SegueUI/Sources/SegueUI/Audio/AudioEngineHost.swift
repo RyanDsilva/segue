@@ -35,8 +35,11 @@
         /// Offline manual rendering (the smoke test): renders on demand, never to a device.
         private let offline: Bool
 
-        // Everything below is touched only on `queue`.
-        private let queue = DispatchQueue(label: "dev.segue.audio-engine", qos: .userInteractive)
+        /// Everything below is touched only on `queue`.
+        private let queue = DispatchQueue(
+            label: uiString("dev.segue.audio-engine"),
+            qos: .userInteractive,
+        )
         private var engine: AVAudioEngine?
         private var player: AVAudioPlayerNode?
         private var bass: Sampler?

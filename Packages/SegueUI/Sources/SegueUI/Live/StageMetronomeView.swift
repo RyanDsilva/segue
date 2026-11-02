@@ -41,7 +41,9 @@
                 .allowsHitTesting(false)
                 .accessibilityElement(children: .ignore)
                 // One label (a container's value never reaches XCUITest).
-                .accessibilityLabel("Metronome, \(Self.bpmText(track.bpm)) beats per minute")
+                .accessibilityLabel(
+                    uiString("Metronome, \(Self.bpmText(track.bpm)) beats per minute"),
+                )
                 .accessibilityAddTraits(.isStaticText)
                 .accessibilityIdentifier(AccessibilityID.liveMetronome)
             }
@@ -53,7 +55,7 @@
                     .font(SchibstedGrotesk.bold.font(size: 22))
                     .monospacedDigit()
                     .foregroundStyle(Theme.color.ink)
-                Text("BPM")
+                Text("BPM", bundle: #bundle)
                     .font(SchibstedGrotesk.semiBold.font(size: 12))
                     .foregroundStyle(Theme.color.muted)
             }
@@ -87,7 +89,7 @@
         }
 
         private func numeral(_ beat: MetronomeBeat) -> some View {
-            Text("\(beat.beatInBar)")
+            Text(verbatim: "\(beat.beatInBar)")
                 .font(SchibstedGrotesk.extraBold.font(size: 28))
                 .monospacedDigit()
                 .foregroundStyle(beat.isDownbeat ? Theme.color.cueText : Theme.color.ink)

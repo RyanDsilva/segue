@@ -18,28 +18,31 @@
 
         var body: some View {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Break")
+                Text("Break", bundle: #bundle)
                     .font(Theme.font.label)
                     .textCase(.uppercase)
                     .tracking(1.2)
                     .foregroundStyle(Theme.color.muted)
-                Text(info.label.isEmpty ? "Next part" : info.label)
+                Text(info.label.isEmpty ? uiString("Next part") : info.label)
                     .font(SchibstedGrotesk.extraBold.font(size: 56))
                     .foregroundStyle(Theme.color.ink)
                     .lineLimit(2)
                     .minimumScaleFactor(0.5)
                 if let length = info.length, length > 0 {
-                    Text("\(SetlistTiming.format(length)) break")
+                    Text("\(SetlistTiming.format(length)) break", bundle: #bundle)
                         .font(Theme.font.body)
                         .foregroundStyle(Theme.color.muted)
                 }
                 if let nextTitle {
-                    Text("Starts with \(Text(nextTitle).foregroundStyle(Theme.color.ink))")
-                        .foregroundStyle(Theme.color.muted)
-                        .font(SchibstedGrotesk.semiBold.font(size: 24))
-                        .lineLimit(2)
+                    Text(
+                        "Starts with \(Text(nextTitle).foregroundStyle(Theme.color.ink))",
+                        bundle: #bundle,
+                    )
+                    .foregroundStyle(Theme.color.muted)
+                    .font(SchibstedGrotesk.semiBold.font(size: 24))
+                    .lineLimit(2)
                 }
-                Text("Press → to continue.")
+                Text("Press → to continue.", bundle: #bundle)
                     .font(Theme.font.body)
                     .foregroundStyle(Theme.color.muted)
                     .padding(.top, 8)

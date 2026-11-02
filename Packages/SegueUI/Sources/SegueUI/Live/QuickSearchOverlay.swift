@@ -36,7 +36,7 @@
             @Bindable var search = session.search
             return VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Add to requests")
+                    Text("Add to requests", bundle: #bundle)
                         .font(Theme.font.label)
                         .foregroundStyle(Theme.color.muted)
                     Text(SongSummary.title(song))
@@ -52,7 +52,7 @@
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Theme.color.muted)
                         .accessibilityHidden(true)
-                    TextField("Note (optional), e.g. table 4", text: $search.note)
+                    TextField(uiString("Note (optional), e.g. table 4"), text: $search.note)
                         .textFieldStyle(.plain)
                         .font(SchibstedGrotesk.medium.font(size: 18))
                         .foregroundStyle(Theme.color.ink)
@@ -81,11 +81,11 @@
 
         private var noteActions: some View {
             HStack(spacing: 10) {
-                Text("↩ adds it, with or without a note  ·  Esc goes back")
+                Text("↩ adds it, with or without a note  ·  Esc goes back", bundle: #bundle)
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                 Spacer()
-                Button("Add Request  ↩") { session.commitRequest() }
+                Button(uiString("Add Request  ↩")) { session.commitRequest() }
                     .buttonStyle(.seguePrimary)
                     .accessibilityIdentifier(AccessibilityID.liveSearchAddRequestConfirm)
             }
@@ -102,13 +102,16 @@
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(Theme.color.muted)
                         .accessibilityHidden(true)
-                    TextField("Search title, artist, movie, first line or tag", text: $search.query)
-                        .textFieldStyle(.plain)
-                        .font(SchibstedGrotesk.medium.font(size: 22))
-                        .foregroundStyle(Theme.color.ink)
-                        .autocorrectionDisabled()
-                        .focused($fieldFocused)
-                        .accessibilityIdentifier(AccessibilityID.liveSearchField)
+                    TextField(
+                        uiString("Search title, artist, movie, first line or tag"),
+                        text: $search.query,
+                    )
+                    .textFieldStyle(.plain)
+                    .font(SchibstedGrotesk.medium.font(size: 22))
+                    .foregroundStyle(Theme.color.ink)
+                    .autocorrectionDisabled()
+                    .focused($fieldFocused)
+                    .accessibilityIdentifier(AccessibilityID.liveSearchField)
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
@@ -167,7 +170,7 @@
         private var actions: some View {
             let selected = session.search.selected
             return HStack(spacing: 10) {
-                Text("Esc returns to the song")
+                Text("Esc returns to the song", bundle: #bundle)
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                 Spacer()
@@ -191,10 +194,12 @@
             hint: String,
             song: SongRecord?,
         ) -> some View {
-            Button("\(action.title)  \(hint)") {
+            Button {
                 if let song {
                     session.searchAction(action, song: song.id)
                 }
+            } label: {
+                Text(verbatim: "\(action.title)  \(hint)")
             }
             .disabled(song == nil)
         }

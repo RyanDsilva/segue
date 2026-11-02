@@ -9,10 +9,13 @@
         let session: LiveSession
 
         var body: some View {
-            StageSidePanel(title: "Requests", hint: "R plays the oldest  ·  Q closes") {
+            StageSidePanel(
+                title: uiString("Requests"),
+                hint: uiString("R plays the oldest  ·  Q closes"),
+            ) {
                 let requests = session.queuedRequests
                 if requests.isEmpty {
-                    Text("No requests yet. ⌘K finds a song; ⌘↩ adds it here.")
+                    Text("No requests yet. ⌘K finds a song; ⌘↩ adds it here.", bundle: #bundle)
                         .font(Theme.font.body)
                         .foregroundStyle(Theme.color.muted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -45,10 +48,10 @@
                         .lineLimit(1)
                 }
                 Spacer(minLength: 8)
-                Button("Play") { session.perform(.playRequest(request.requestId)) }
+                Button(uiString("Play")) { session.perform(.playRequest(request.requestId)) }
                     .buttonStyle(.seguePrimary)
                     .accessibilityIdentifier(AccessibilityID.liveRequestPlay)
-                Button("Drop") { session.perform(.dropRequest(request.requestId)) }
+                Button(uiString("Drop")) { session.perform(.dropRequest(request.requestId)) }
                     .buttonStyle(.segueSecondary)
             }
             .controlSize(.small)
@@ -73,7 +76,10 @@
         let session: LiveSession
 
         var body: some View {
-            StageSidePanel(title: "Set order", hint: "Drag to reorder  ·  S closes") {
+            StageSidePanel(
+                title: uiString("Set order"),
+                hint: uiString("Drag to reorder  ·  S closes"),
+            ) {
                 List {
                     let items = Array(session.state.record.items.enumerated())
                     ForEach(items, id: \.element.id) { index, item in
@@ -104,7 +110,7 @@
             VStack(alignment: .leading, spacing: 2) {
                 if let medley = item.medley, medley.index == 0 {
                     // The medley as a group: its title over its members (P9-3 8.2).
-                    Text("MEDLEY \u{00B7} \(medley.displayTitle)")
+                    Text("MEDLEY \u{00B7} \(medley.displayTitle)", bundle: #bundle)
                         .font(SchibstedGrotesk.bold.font(size: 11))
                         .tracking(0.08 * 11)
                         .foregroundStyle(Theme.color.muted)
@@ -118,7 +124,7 @@
 
         private var row: some View {
             HStack(spacing: 10) {
-                Text("\(index + 1)")
+                Text(verbatim: "\(index + 1)")
                     .font(Theme.font.label)
                     .foregroundStyle(Theme.color.muted)
                     .monospacedDigit()
@@ -144,7 +150,9 @@
             .opacity(item.state == .skipped ? 0.45 : 1)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.liveDrawerRow)
-            .accessibilityLabel("\(index + 1). \(item.title), \(item.state.rawValue)")
+            .accessibilityLabel(
+                Text(verbatim: "\(index + 1). \(item.title), \(item.state.rawValue)"),
+            )
         }
 
         private var stateLabel: String? {
@@ -166,16 +174,16 @@
         @ViewBuilder private var actions: some View {
             switch item.state {
             case .pending:
-                Button("Next") { moveNext() }
+                Button(uiString("Next")) { moveNext() }
                     .buttonStyle(.segueSecondary)
                     .accessibilityIdentifier(AccessibilityID.liveDrawerPlayNext)
-                Button("Skip") { session.perform(.skip(item.itemId)) }
+                Button(uiString("Skip")) { session.perform(.skip(item.itemId)) }
                     .buttonStyle(.segueSecondary)
                     .accessibilityIdentifier(AccessibilityID.liveDrawerSkip)
-                Button("Play") { session.perform(.jump(item.itemId)) }
+                Button(uiString("Play")) { session.perform(.jump(item.itemId)) }
                     .buttonStyle(.segueSecondary)
             case .skipped:
-                Button("Unskip") { session.perform(.unskip(item.itemId)) }
+                Button(uiString("Unskip")) { session.perform(.unskip(item.itemId)) }
                     .buttonStyle(.segueSecondary)
                     .accessibilityIdentifier(AccessibilityID.liveDrawerUnskip)
             case .current, .played:

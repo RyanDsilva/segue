@@ -13,7 +13,7 @@
         var body: some View {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Before you start")
+                    Text("Before you start", bundle: #bundle)
                         .font(Theme.font.sectionHeading)
                         .foregroundStyle(Theme.color.ink)
                     Text(subtitle)
@@ -47,11 +47,11 @@
                 HStack(spacing: 10) {
                     GuideHelpButton(.checklist)
                     Spacer()
-                    Button("Cancel") { checklist.answer(false) }
+                    Button(uiString("Cancel")) { checklist.answer(false) }
                         .buttonStyle(.segueSecondary)
                         .keyboardShortcut(.cancelAction)
                         .accessibilityIdentifier(AccessibilityID.checklistCancel)
-                    Button("Start \(noun)") { checklist.answer(true) }
+                    Button(uiString("Start \(noun)")) { checklist.answer(true) }
                         .buttonStyle(.seguePrimary)
                         .keyboardShortcut(.defaultAction)
                         .accessibilityIdentifier(AccessibilityID.checklistStart)
@@ -77,7 +77,7 @@
             VStack(spacing: 0) {
                 metronomeSwitch(
                     "Metronome",
-                    detail: "A quiet pulse at each song’s tempo. M on stage.",
+                    detail: uiString("A quiet pulse at each song’s tempo. M on stage."),
                     isOn: Binding(
                         get: { checklist.metronomeOn },
                         set: { checklist.metronomeOn = $0 },
@@ -88,7 +88,7 @@
                     Rectangle().fill(Theme.color.line).frame(height: 1)
                     metronomeSwitch(
                         "Click",
-                        detail: "Sounds each beat. Rehearsals only. K on stage.",
+                        detail: uiString("Sounds each beat. Rehearsals only. K on stage."),
                         isOn: Binding(
                             get: { checklist.rehearsalClickOn },
                             set: { checklist.rehearsalClickOn = $0 },
@@ -135,7 +135,7 @@
                     .foregroundStyle(Theme.color.cueText)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Singer Screen: no second display")
+                    Text("Singer Screen: no second display", bundle: #bundle)
                         .font(SchibstedGrotesk.semiBold.font(size: 15))
                         .foregroundStyle(Theme.color.ink)
                     Text("Connect \(display) to show the lyrics to the singer "
@@ -164,7 +164,7 @@
                     .foregroundStyle(Theme.color.cueText)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(lead): full song on stage")
+                    Text("\(lead): full song on stage", bundle: #bundle)
                         .font(SchibstedGrotesk.semiBold.font(size: 15))
                         .foregroundStyle(Theme.color.ink)
                     Text(checklist.staleArrangements.formatted(.list(type: .and))
@@ -175,12 +175,12 @@
                 }
                 Spacer(minLength: 8)
                 if let edit = checklist.editStaleArrangement {
-                    Button("Edit") {
+                    Button(uiString("Edit")) {
                         checklist.answer(false)
                         edit()
                     }
                     .buttonStyle(.segueSecondary)
-                    .help("Cancel the start and update the arrangement")
+                    .help(uiString("Cancel the start and update the arrangement"))
                 }
             }
             .padding(12)
@@ -220,8 +220,8 @@
                 rowButtons(item, done: done)
                 stateMarker(item, done: done)
                 Menu {
-                    Button("Hide for This \(noun)") { checklist.dismissed.insert(item) }
-                    Button("Don’t Show Again") { checklist.hideForGood(item) }
+                    Button(uiString("Hide for This \(noun)")) { checklist.dismissed.insert(item) }
+                    Button(uiString("Don’t Show Again")) { checklist.hideForGood(item) }
                 } label: {
                     Image(systemName: "ellipsis")
                         .foregroundStyle(Theme.color.muted)
@@ -230,14 +230,14 @@
                 .buttonStyle(.borderless)
                 .menuIndicator(.hidden)
                 .fixedSize()
-                .accessibilityLabel("Options for \(title(item))")
+                .accessibilityLabel(uiString("Options for \(title(item))"))
             }
             .controlSize(.small)
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.checklistRow)
-            .accessibilityValue(done ? "done" : "not done")
+            .accessibilityValue(done ? uiString("done") : uiString("not done"))
             .accessibilityLabel(title(item))
         }
 
@@ -248,7 +248,8 @@
                 Color.clear
                     .frame(width: 1, height: 1)
                     .accessibilityElement()
-                    .accessibilityLabel("\(title(item)): \(done ? "done" : "not done")")
+                    .accessibilityLabel(done
+                        ? uiString("\(title(item)): done") : uiString("\(title(item)): not done"))
                     .accessibilityIdentifier(AccessibilityID.checklistRowState)
             }
         }
@@ -258,14 +259,16 @@
         @ViewBuilder private func rowButtons(_ item: ChecklistItem, done: Bool) -> some View {
             switch item {
             case .brightness:
-                Button(done ? "Undo" : "Done") { checklist.brightnessConfirmed.toggle() }
-                    .buttonStyle(.segueSecondary)
+                Button(done ? uiString("Undo") : uiString("Done")) {
+                    checklist.brightnessConfirmed.toggle()
+                }
+                .buttonStyle(.segueSecondary)
             case .focus:
                 focusButtons
             case .charger:
                 EmptyView()
             case .singerView:
-                Button("Show Chords") { checklist.showChords() }
+                Button(uiString("Show Chords")) { checklist.showChords() }
                     .buttonStyle(.segueSecondary)
                     .accessibilityIdentifier(AccessibilityID.checklistShowChords)
             }
@@ -275,12 +278,12 @@
         /// or a failure, the manual fallback of R35.
         @ViewBuilder private var focusButtons: some View {
             if checklist.offersFocusRetry {
-                Button("Retry") { checklist.retryFocusShortcut() }
+                Button(uiString("Retry")) { checklist.retryFocusShortcut() }
                     .buttonStyle(.segueSecondary)
                     .accessibilityIdentifier(AccessibilityID.checklistFocusRetry)
             }
             if checklist.offersFocusDone {
-                Button(checklist.focusConfirmedByPerformer ? "Undo" : "Done") {
+                Button(checklist.focusConfirmedByPerformer ? uiString("Undo") : uiString("Done")) {
                     checklist.focusConfirmedByPerformer.toggle()
                 }
                 .buttonStyle(.segueSecondary)
@@ -336,7 +339,7 @@
                     .foregroundStyle(Theme.color.cueText)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(lead) and will be left out")
+                    Text("\(lead) and will be left out", bundle: #bundle)
                         .font(SchibstedGrotesk.semiBold.font(size: 15))
                         .foregroundStyle(Theme.color.ink)
                     Text("Setlist \(count == 1 ? "entry" : "entries") \(positions) "

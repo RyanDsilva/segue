@@ -12,12 +12,12 @@
         var body: some View {
             VStack(alignment: .leading, spacing: 22) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("Keyboard Shortcuts")
+                    Text("Keyboard Shortcuts", bundle: #bundle)
                         .font(SchibstedGrotesk.extraBold.font(size: 28))
                         .tracking(Theme.tracking.title * 28)
                         .foregroundStyle(Theme.color.ink)
                     Spacer(minLength: 24)
-                    Text("Esc or ? closes")
+                    Text("Esc or ? closes", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 16))
                         .foregroundStyle(Theme.color.muted)
                 }
@@ -25,7 +25,7 @@
                     column(Array(groups.prefix(2)))
                     column(Array(groups.dropFirst(2)))
                 }
-                Text("Change keys in bindings.json (Help > Keyboard Shortcuts)")
+                Text("Change keys in bindings.json (Help > Keyboard Shortcuts)", bundle: #bundle)
                     .font(SchibstedGrotesk.medium.font(size: 16))
                     .foregroundStyle(Theme.color.muted)
             }
@@ -34,7 +34,7 @@
             .background(StagePanelBackground(radius: 16))
             .padding(.horizontal, 48)
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("Keyboard Shortcuts")
+            .accessibilityLabel(uiString("Keyboard Shortcuts"))
             .accessibilityIdentifier(AccessibilityID.keysOverlay)
         }
 
@@ -73,7 +73,7 @@
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if row.keys.isEmpty {
-                    Text("Not bound")
+                    Text("Not bound", bundle: #bundle)
                         .font(SchibstedGrotesk.medium.font(size: 18))
                         .foregroundStyle(Theme.color.muted)
                 } else {
@@ -94,7 +94,7 @@
                 }
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(row.title): \(spokenKeys)")
+            .accessibilityLabel(Text(verbatim: "\(row.title): \(spokenKeys)"))
             .accessibilityIdentifier(AccessibilityID.keysOverlayRow)
         }
     }

@@ -213,7 +213,7 @@
         /// current): say so instead of a blank stage.
         private var songUnavailable: some View {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Song unavailable")
+                Text("Song unavailable", bundle: #bundle)
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
                 Text(
@@ -230,7 +230,7 @@
 
         private var endOfSet: some View {
             VStack(alignment: .leading, spacing: 10) {
-                Text("That was the last song.")
+                Text("That was the last song.", bundle: #bundle)
                     .font(Theme.font.sectionHeading)
                     .foregroundStyle(Theme.color.ink)
                 Text(
@@ -281,10 +281,12 @@
                         .transition(.opacity)
                 } else if session.needsTempoHint {
                     // No tempo, so no time to scroll over (R173): the default speed, quietly.
-                    Text("No tempo: add one to time the scroll. [ and ] adjust the speed.")
-                        .font(SchibstedGrotesk.medium.font(size: 12))
-                        .foregroundStyle(Theme.color.muted)
-                        .accessibilityIdentifier(AccessibilityID.liveTempoHint)
+                    Text(
+                        uiString("No tempo: add one to time the scroll. [ and ] adjust the speed."),
+                    )
+                    .font(SchibstedGrotesk.medium.font(size: 12))
+                    .foregroundStyle(Theme.color.muted)
+                    .accessibilityIdentifier(AccessibilityID.liveTempoHint)
                 }
             }
             .padding(.top, Self.headerHeight + topInset + 8)
@@ -419,7 +421,7 @@
                         .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 10) {
                         Spacer()
-                        Button("Keep Playing (Esc)") { session.cancelEnd() }
+                        Button(uiString("Keep Playing (Esc)")) { session.cancelEnd() }
                             .buttonStyle(.segueSecondary)
                         Button(
                             quitting ? "End and Quit (Return)" : "End \(noun.capitalized) (Return)",
