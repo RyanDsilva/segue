@@ -156,6 +156,8 @@ fi
 if [[ -z "${SEGUE_DERIVED_DATA:-}" && "${slots[0]}" == 1 ]]; then
     derived=".build/DerivedData-e2e1"
     products_dir="$derived/Build/Products"
+    # scripts/xcodebuild.sh reads it: without it the build lands in slot 0's DerivedData.
+    export SEGUE_DERIVED_DATA="$derived"
 fi
 
 run_id="$now-$$"
