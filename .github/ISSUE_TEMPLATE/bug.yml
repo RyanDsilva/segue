@@ -57,7 +57,7 @@ body:
     attributes:
       label: Version and build
       description: Segue > About Segue, or the commit for a local build.
-      placeholder: 0.5 (1) or 9c18805
+      placeholder: 1.0 (1) or 9c18805
   - type: input
     id: sentry
     attributes:

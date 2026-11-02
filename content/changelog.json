@@ -2,7 +2,7 @@
   "schema": 1,
   "releases": [
     {
-      "version": "0.5",
+      "version": "1.0",
       "date": "2026-11-20",
       "title": "First beta",
       "summary": "Segue's first public release on the Mac App Store.",

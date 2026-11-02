@@ -1,6 +1,6 @@
-# Segue 0.5 to the Mac App Store - release guide
+# Segue 1.0 to the Mac App Store - release guide
 
-The one step-by-step guide for shipping Segue 0.5. Ryan follows section 2 as his checklist; agent sessions follow section 3. `decisions.md` is canonical; where this guide and a spec disagree, the spec's step detail wins and the conflict gets fixed here.
+The one step-by-step guide for shipping Segue 1.0 (formerly 0.5; R176, R195). The remaining steps from code freeze to submission are in [v1.0-readiness.md](v1.0-readiness.md). Ryan follows section 2 as his checklist; agent sessions follow section 3. `decisions.md` is canonical; where this guide and a spec disagree, the spec's step detail wins and the conflict gets fixed here.
 
 Legend: **-> paste to Claude** = not secret, give it to the session. **-> 1Password only** = never in chat, never in the repo; the scripts read it at run time. Click paths follow Apple's and vendors' labels as of 2026-10-17; match by meaning if a label moved.
 
@@ -134,18 +134,18 @@ Pasted by Ryan from the steps above. None is secret: the IDs and the DSN ship in
 - [ ] **App Privacy label.** Apps > Segue > **App Privacy > Get Started** (or Edit) > "Yes, we collect data" > the nine types from WS5 section 6 (= WS3 10.2; the session diffs it against WS3, `PrivacyInfo.xcprivacy` and `/privacy` first) > per type **Set Up**: purposes, linked, tracking exactly as the table > **Publish**.
 - [ ] **Accessibility labels.** Apps > Segue > **App Accessibility > Add Accessibility Support > macOS** > tick only what `docs/release/accessibility-audit.md` passed (WS5 section 7) > Publish. Accessibility URL empty.
 - [ ] **App Information.** Categories Music / Productivity; content rights "No, it does not contain, show, or access third-party content"; license agreement = Apple standard EULA.
-- [ ] **Preview video.** Apps > Segue > macOS App > 0.5 > **App Previews and Screenshots** > drag `.build/preview/segue-preview-en-US.mp4` > Edit poster frame (~6 s).
+- [ ] **Preview video.** Apps > Segue > macOS App > 1.0 > **App Previews and Screenshots** > drag `.build/preview/segue-preview-en-US.mp4` > Edit poster frame (~6 s).
 - [ ] **App Review Information.** Contact Ryan / Dsilva, `segue@ryandsilva.dev`, your phone (typed here or via `SEGUE_REVIEW_PHONE`; **never committed**); notes from `store/`; attach `.build/review/segue-review-walkthrough.mp4`.
-- [ ] **Submit.** Apps > Segue > macOS App > 0.5 (Prepare for Submission): check every field against `store/` and all 9 screenshots in order > **Build "+"** > the exact gig-tested build > Version Release **Manually release this version** > **Add for Review > Submit to App Review**. On rejection follow WS5 14.6.
-- [ ] **Manual release (A51).** After approval, at a moment you choose: Apps > Segue > macOS App > 0.5 > **Release This Version**.
+- [ ] **Submit.** Apps > Segue > macOS App > 1.0 (Prepare for Submission): check every field against `store/` and all 9 screenshots in order > **Build "+"** > the exact gig-tested build > Version Release **Manually release this version** > **Add for Review > Submit to App Review**. On rejection follow WS5 14.6.
+- [ ] **Manual release (A51).** After approval, at a moment you choose: Apps > Segue > macOS App > 1.0 > **Release This Version**.
 - [ ] **Flip the site to the badge.** The session sets `appStore.status` to `"live"`, runs `make site && make site-check STRICT=1`, commits; you approve the push. Check the badge links to the live listing.
 - [ ] **After release.** Search "Segue setlists" on the US Mac App Store; check screenshots, preview, privacy and accessibility labels render. Watch Xcode Organizer and Sentry for 48 h. Weekly habit: Sentry **User Feedback**, copy anything worth keeping into GitHub by hand (reports expire after 30 days).
-- [ ] **Post-launch doc fold (agent session).** After v0.5 ships, fold `research/01-09` and `open-questions.md` into `decisions.md` (the chosen option per A/B id as an appendix) and a `research/SUMMARY.md` (findings that still matter for 0.6+), repoint the spec citations, then delete the originals.
+- [ ] **Post-launch doc fold (agent session).** After v1.0 ships, fold `research/01-09` and `open-questions.md` into `decisions.md` (the chosen option per A/B id as an appendix) and a `research/SUMMARY.md` (findings that still matter for 1.1+), repoint the spec citations, then delete the originals.
 
 ---
 
 ### Later tasks (recorded)
-- [ ] **v0.5, before the App Store release (R170):** Phase 8 (P8-1..P8-7, `docs/phases/8-workstreams/`); phase 4 single chart + songbook PDFs with print and embedded preview (`docs/phases/4-export.md`); Singer view; Medleys.
+- [ ] **v1.0 (formerly v0.5), before the App Store release (R170, R176):** Phase 8 (P8-1..P8-7, `docs/phases/8-workstreams/`); phase 4 single chart + songbook PDFs with print and embedded preview (`docs/phases/4-export.md`); Singer view; Medleys.
 - [ ] **After launch, in order (R170):** phase 6 MIDI input + mapping with MIDI learn and key learn; phase 5 LRCLIB lyrics search + URL import (Personal); fills for other instruments; Mac polish (localisation, Help Book); the macOS 27 on-device model path; E2E tests in a VM.
 - [ ] **Website trim pass (R57):** in a fresh session once the app is feature-complete, cut copy and sections (Ryan: "too much text and site is too long"), then swap in real screenshots (WS5).
 - [ ] **Post-launch:** fold research 01-09 and open-questions.md into decisions.md plus a short summary.

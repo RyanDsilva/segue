@@ -41,7 +41,7 @@ Items the agents could not verify headlessly:
 - [ ] Request a Feature opens `segue.ryandsilva.dev/feedback`, which redirects to `segue.featurebase.app` once the site is deployed.
 
 ## What's New, tips and review (WS2b)
-- [ ] Help > What's New in Segue opens the notes (or the web changelog while the 0.5 entry is still a draft).
+- [ ] Help > What's New in Segue opens the notes (or the web changelog while the 1.0 entry is still a draft).
 - [ ] Tips: the search tip on a library of 5+ songs, gone after the first search; the Start Show tip; after a first show without Gig Mode Shortcuts, the Gig Mode tip with "Open Settings" landing on Settings > Live. Never on stage. Settings > Data > Reset Tips brings them back after a restart.
 - [ ] After the first real gig ends (development build), the review prompt appears a few seconds after the end-of-show flow, once; never on stage.
 - [ ] Settings > Appearance: Light and Dark switch every window at once; the stage stays dark; Match System follows the system again.

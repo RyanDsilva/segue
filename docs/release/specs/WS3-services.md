@@ -187,7 +187,7 @@ Verified 2026-10-17 against the current docs and the SwiftSDK 2.14.2 source (the
 Allowed context keys (names from the default-parameters page; every value passes the section 5 value regex):
 - `TelemetryDeck.Device.operatingSystem` = `macOS`
 - `TelemetryDeck.Device.systemMajorMinorVersion` = e.g. `26.6`
-- `TelemetryDeck.AppInfo.version` = `CFBundleShortVersionString` (e.g. `0.5`)
+- `TelemetryDeck.AppInfo.version` = `CFBundleShortVersionString` (e.g. `1.0`)
 - `TelemetryDeck.AppInfo.buildNumber` = `CFBundleVersion`
 - `TelemetryDeck.UserPreference.region` = `Locale.current.region?.identifier` (two-letter country, e.g. `US`; omitted when nil). This is the "coarse country" of R26; TelemetryDeck derives nothing from the IP for app signals.
 

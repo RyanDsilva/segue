@@ -1,7 +1,7 @@
 # WS6 - User guide (segue.ryandsilva.dev/guide)
 
 Status: **final.** Ryan resolved the open questions on 2026-10-19 (R127, recorded at the end).
-Spec date: 2026-10-19. Target: Segue **0.5**, ships with the release (R126).
+Spec date: 2026-10-19. Target: Segue **1.0** (formerly 0.5, R176), ships with the release (R126).
 
 This is the brief for one focused build session (or two, see section 11). It must be executable standalone. Read these first:
 

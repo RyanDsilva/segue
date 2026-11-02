@@ -44,7 +44,7 @@ Rehearsal at home is a secondary use of the same views.
 | Audio | Play-along in the editor, library and Rehearsal (bass + chords + click at tempo, P8-6); audio never plays in a Live show. |
 | Library | Tags (free-form + suggested starters) + smart filters, proficiency (Learning / Ready / Pro). |
 | Set assistant | Build a set to a target length; natural-language song picks. |
-| Sharing | PDF (phase 4, in v0.5). |
+| Sharing | PDF (phase 4, in v1.0, R176). |
 | Control | Keyboard keys today; MIDI input + mapping with MIDI learn and key learn in phase 6 (R141). Page-turn pedals and clickers that send keystrokes work through key bindings. |
 | Process | Spec docs first, open questions closed by the user, then each phase is built by parallel agents with tests + E2E. Present 2-3 visual design directions before building UI. |
 
@@ -86,7 +86,7 @@ Each phase has a standalone spec in `docs/phases/`. Closed answers to the specs'
 
 Canonical sequence; rulings in [release/decisions.md](release/decisions.md).
 
-1. **v0.5 (pre-launch):** phases 0-3, Phase 8 (P8-1..P8-7), phase 4 PDF export (single chart, songbook, print, embedded preview, the Bass chart option and fills printed in it), plus:
+1. **v1.0 (pre-launch; formerly v0.5, R176):** phases 0-3, Phase 8 (P8-1..P8-7), phase 4 PDF export (single chart, songbook, print, embedded preview, the Bass chart option and fills printed in it), plus:
    - **Singer view** - lyrics only, chords hidden.
    - **Medleys** - several songs joined into one set slot with a written transition.
 2. **App Store release:** the store media pass (screenshots, preview, guide captures), TestFlight, submission and the site go-live (`docs/release/README.md`).

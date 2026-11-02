@@ -8,7 +8,7 @@ Spec for one focused implementation session. Written 2026-10-17, finalised the s
 
 At the end of this session:
 
-1. `make archive && make validate` produces a Mac App Store `.pkg` of the `SegueAppStore` target, version `0.5`, a build number from a tracked xcconfig, signed at export with the Apple Distribution and Mac Installer Distribution certificates and the `Segue Mac App Store` profile (R12, B-1), and it passes App Store Connect validation. `make upload` sends that same verified `.pkg` with the API key read from 1Password at run time (R13). Build 1 is uploaded to internal TestFlight as soon as validation is clean (B-9).
+1. `make archive && make validate` produces a Mac App Store `.pkg` of the `SegueAppStore` target, version `1.0` (R176; first planned as `0.5`), a build number from a tracked xcconfig, signed at export with the Apple Distribution and Mac Installer Distribution certificates and the `Segue Mac App Store` profile (R12, B-1), and it passes App Store Connect validation. `make upload` sends that same verified `.pkg` with the API key read from 1Password at run time (R13). Build 1 is uploaded to internal TestFlight as soon as validation is clean (B-9).
 2. The Personal flavor has its own bundle ID `dev.ryandsilva.segue.personal` (R11) and its own sandbox container; Ryan's shapes and bindings are copied into it and the old container is moved aside before any TestFlight install (R40).
 3. Shipping hygiene: `ITSAppUsesNonExemptEncryption = NO`, copyright `© 2026 Ryan Rony Dsilva` (R30), no stray storyboard key, `PrivacyInfo.xcprivacy`, `network.client` on both flavors (A61), version from build settings, arm64 only (R41/A59), test hooks compiled out of Release (B-7), a clean SegueUI resource-bundle plist (B-6).
 4. Readiness fixes from `06` that belong to no other workstream: no typed characters in logs, editor perf logging out of Release, no test-only accessibility help in Release, Gig Mode Shortcuts off by default (R18) with a truthful checklist row (R35) and E2E tests, a cross-flavor library lock (B-2).
@@ -116,11 +116,11 @@ Paths are relative to the repo root. "New" = new file.
 // Single source of truth for the app version. Edit only with scripts/bump-version.sh.
 // MARKETING_VERSION: at most three period-separated integers (App Store Connect ITMS-90060).
 // CURRENT_PROJECT_VERSION: one integer, strictly increasing on every upload, never reset.
-MARKETING_VERSION = 0.5
+MARKETING_VERSION = 1.0
 CURRENT_PROJECT_VERSION = 1
 ```
 
-`0.5` is valid: App Store Connect's rule (error ITMS-90060) is "a period-separated list of at most three non-negative integers" (R5). Build starts at `1` because nothing has been uploaded yet. WS4's changelog uses the same `0.5` string (I-2).
+`1.0` is valid: App Store Connect's rule (error ITMS-90060) is "a period-separated list of at most three non-negative integers" (R5). Build starts at `1` because nothing has been uploaded yet. WS4's changelog uses the same `0.5` string (I-2).
 
 ### 4.2 `Project.swift`
 
@@ -409,12 +409,12 @@ All start from a reset library (`-SegueResetState YES`) and the recording runner
 ## 7. Acceptance criteria
 
 1. `Project.swift`: Personal is `dev.ryandsilva.segue.personal`, App Store is `dev.ryandsilva.segue`; every configuration signs automatically; the uploaded `.pkg` is signed at export with `Apple Distribution`, `Mac Installer Distribution` and `Segue Mac App Store` (plus `Segue Mac App Store QuickLook` for the extension once WS2b adds it).
-2. `Config/Version.xcconfig` is the only place the version lives; the shipped plist shows `0.5` and the xcconfig build number; `make bump` and `make bump VERSION=x.y` make a signed commit and refuse to go backwards.
+2. `Config/Version.xcconfig` is the only place the version lives; the shipped plist shows `1.0` and the xcconfig build number; `make bump` and `make bump VERSION=x.y` make a signed commit and refuse to go backwards.
 3. Shipped Info.plist has `ITSAppUsesNonExemptEncryption = false`, copyright `© 2026 Ryan Rony Dsilva`, category music, display name Segue, no `NSMainStoryboardFile`; the SegueUI resource bundle has the real identifier and the same copyright.
 4. `PrivacyInfo.xcprivacy` ships in the app with the declared categories matching the binary.
 5. App Store signed entitlements = sandbox, user-selected read-write, app-scope bookmarks, network client, the application/team identifiers, and (Path SE only) apple-events + the one Shortcuts Events scripting target. Personal has network client too. No temporary exception in any shipping product.
 6. The App Store binary is arm64 only and contains no launch-option strings or `RecordingShortcutRunner`.
-7. `make archive` produces `.build/archives/Segue-0.5-<n>.xcarchive` and `.build/export/Segue-0.5-<n>/Segue.pkg`; `verify-archive` passes all 13 checks; `make validate` passes App Store Connect validation.
+7. `make archive` produces `.build/archives/Segue-1.0-<n>.xcarchive` and `.build/export/Segue-1.0-<n>/Segue.pkg`; `verify-archive` passes all 13 checks; `make validate` passes App Store Connect validation.
 8. `make upload` reads the API key from 1Password only at run time, leaves no key file behind (`find .build "$TMPDIR" -name 'AuthKey*'` empty after a run), refuses a reused build number, creates the signed local tag `v0.5+<n>`, and never pushes. Build 1 is in App Store Connect and available to the internal TestFlight group.
 9. Release binary: no typed characters or editor perf logs (`log stream --predicate 'subsystem == "dev.ryandsilva.segue"'` while typing in a Release-AppStore build shows nothing from `editor-perf`); no accessibility help on the editor text views.
 10. Fresh install: Gig Mode Shortcuts are off; starting a gig runs no Shortcut and shows no focus row. Once configured, the row ticks only on observed completion (path from step 8, recorded in research 09) or the performer's Done; never from a hand-over, timeout or error. The 6.3 E2E tests pass.

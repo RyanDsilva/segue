@@ -3,11 +3,11 @@
 **Your chart, your set, your cue.** Segue is a native macOS app for a performing musician: get songs in as clean ChordPro charts (paste, type or import), build setlists with per-show key and capo, and play the gig from a dark stage view that fits the whole song on one screen at a size you can read from a stand. The library is plain `.cho` files you own, with a rebuildable search index that understands romanized Hindi spellings. It is local-first: no account and no backend; analytics and crash reports are opt-in.
 
 <!-- Screenshot placeholder: replace with the stage-mode capture from the WS5 screenshot pipeline (docs/release/specs/WS5-store-listing.md). -->
-> Screenshot coming with the 0.5 store screenshots.
+> Screenshot coming with the 1.0 store screenshots.
 
 ## Status
 
-**0.5 is in progress for the Mac App Store** (free, English (U.S.) listing). The plan, Ryan's checklist and the build phases are in [docs/release/README.md](docs/release/README.md); the rulings it follows are in [docs/release/decisions.md](docs/release/decisions.md). Website: [segue.ryandsilva.dev](https://segue.ryandsilva.dev). Feature requests: [segue.featurebase.app](https://segue.featurebase.app/).
+**1.0 is in progress for the Mac App Store** (free, English (U.S.) listing). The plan, Ryan's checklist and the build phases are in [docs/release/README.md](docs/release/README.md); the rulings it follows are in [docs/release/decisions.md](docs/release/decisions.md). Website: [segue.ryandsilva.dev](https://segue.ryandsilva.dev). Feature requests: [segue.featurebase.app](https://segue.featurebase.app/).
 
 This is a private, proprietary repository ([LICENSE](LICENSE)); third-party components are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
@@ -89,6 +89,6 @@ CI is deliberately light ([.github/workflows](.github/workflows)): SwiftLint and
 - [docs/decisions.md](docs/decisions.md) - product and engineering rulings
 - [docs/brand.md](docs/brand.md) - brand and design system
 - [docs/phases/](docs/phases) - phase specs and interface contracts
-- [docs/release/](docs/release) - the 0.5 release: guide, decisions, specs, research
+- [docs/release/](docs/release) - the 1.0 release: guide, decisions, specs, research
 - [docs/github-setup.md](docs/github-setup.md) - GitHub settings applied with `gh`
 - [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [JOURNAL.md](JOURNAL.md)

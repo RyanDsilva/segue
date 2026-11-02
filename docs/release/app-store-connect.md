@@ -1,4 +1,4 @@
-# App Store Connect, top to bottom (Segue 0.5)
+# App Store Connect, top to bottom (Segue 1.0)
 
 One file to follow once the App Store Connect account works (it is blocked today with `STATE_ERROR.DPLA_OUTDATED_ERROR`; Apple is resolving it). Every value is in the order App Store Connect asks for it, with its limit and count, and the rule it comes from. Values are copied from `docs/release/specs/WS5-store-listing.md`, `docs/release/decisions.md` and the code (`Project.swift`, `Config/Version.xcconfig`, `scripts/release.sh`); WS5 stays canonical, so if the two ever differ, WS5 wins and this file is corrected.
 
@@ -112,11 +112,11 @@ Usage data and identifiers are sent only after the user chooses Share; crash dat
 
 Claim only what `docs/release/accessibility-audit.md` records as walked and passed for every common task, including the phase 3 surfaces (R15, R79, WS5 7). Today the VoiceOver, Voice Control and Full Keyboard Access walks are still Ryan's (checklist in `docs/release/walkthrough.md`), so **claim nothing until they pass**. Accessibility URL: leave empty (B-32).
 
-## 7. The version page (macOS App > 0.5, Prepare for Submission)
+## 7. The version page (macOS App > 1.0, Prepare for Submission)
 
 | Field | Value | Limit / count | Source |
 |---|---|---|---|
-| Version | `0.5` (= `MARKETING_VERSION` in `Config/Version.xcconfig`) | | R5 |
+| Version | `1.0` (= `MARKETING_VERSION` in `Config/Version.xcconfig`) | | R5 |
 | Promotional Text | 7.1 | 162 chars / 162 bytes, max 170 | WS5 4.2 |
 | Description | 7.2 | 3969 chars / 3969 bytes, max 4,000 | WS5 4.3 |
 | Keywords | 7.3 | max 100 bytes | R37, WS5 4.5 |
@@ -232,7 +232,7 @@ The setlist in shots 1, 2 and 6 is "JamFest Opener" with the R128 songs (WS5 8.4
 
 ### 7.6 Build
 
-Build > + > the **exact TestFlight build that went through the real gig** (version 0.5, build `CURRENT_PROJECT_VERSION`, 1 for the first upload). Export compliance is not asked: `ITSAppUsesNonExemptEncryption = NO` is in the Info.plist (`Project.swift`); if App Store Connect asks anyway, answer **No** non-exempt encryption (HTTPS only, via the system).
+Build > + > the **exact TestFlight build that went through the real gig** (version 1.0, build `CURRENT_PROJECT_VERSION`, 1 for the first upload). Export compliance is not asked: `ITSAppUsesNonExemptEncryption = NO` is in the Info.plist (`Project.swift`); if App Store Connect asks anyway, answer **No** non-exempt encryption (HTTPS only, via the system).
 
 ## 8. App Review Information (same page)
 
@@ -296,12 +296,12 @@ Then Add for Review > Submit to App Review, only after the R6 order: walkthrough
 | Beta App Description | not needed for internal testing (only external groups ask) | Apple |
 | Feedback email | `segue@ryandsilva.dev` | R28 |
 | Test Information > What to Test (per build) | below | |
-| External testing | none for 0.5 | R6 |
+| External testing | none for 1.0 | R6 |
 
 What to Test (424 chars / 424 bytes, max 4,000):
 
 ```
-Build 0.5 for the R6 gig. Walk the first run on a clean container (move the old one aside first, WS1 step 10), then: paste a chord sheet (Option-Command-V) and Accept; download the local model in Settings > AI and paste again; build a set in Pick and Arrange with the request bar; play a full rehearsal and a real show (metronome M, requests Command-K, page-turner pedal). Report anything odd with Help > Report a Problem...
+Build 1.0 for the R6 gig. Walk the first run on a clean container (move the old one aside first, WS1 step 10), then: paste a chord sheet (Option-Command-V) and Accept; download the local model in Settings > AI and paste again; build a set in Pick and Arrange with the request bar; play a full rehearsal and a real show (metronome M, requests Command-K, page-turner pedal). Report anything odd with Help > Report a Problem...
 ```
 
 Install: the TestFlight app from the Mac App Store, accept the invite, install. Do WS1 [RYAN] step 10 (move the old `dev.ryandsilva.segue` container aside, copy shapes and bindings to Personal) and move any local `Segue.app` out of `/Applications` **before** installing (R40, WS5 14.2 step 4). Builds expire after 90 days.

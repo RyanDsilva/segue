@@ -2,7 +2,7 @@
     import AppKit
 
     /// Segue > About Segue (WS2a 3.6, R103 variant A): the standard panel with the icon,
-    /// "Version 0.5 (12)" and the copyright from Info.plist (WS1 sets them, R5, R30), plus
+    /// "Version 1.0 (12)" and the copyright from Info.plist (WS1 sets them, R5, R30), plus
     /// credits: one row of links, Website, Help, Support and Privacy Policy. Third-party notices
     /// are not shown in the app: they ship in the bundle
     /// (THIRD_PARTY_NOTICES.md, licence texts) and on the website, linked from its legal pages.
@@ -50,7 +50,7 @@
             return nil
         }
 
-        /// "Version 0.5 (12)", as the panel shows it, from `bundle`'s Info.plist.
+        /// "Version 1.0 (12)", as the panel shows it, from `bundle`'s Info.plist.
         static func versionText(bundle: Bundle = .main) -> String {
             let info = bundle.infoDictionary ?? [:]
             let version = info["CFBundleShortVersionString"] as? String ?? "?"

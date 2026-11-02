@@ -2,7 +2,7 @@
 
 > *Phase 3 (AI entry & assistant) ships in 0.5 (R61-R128, `docs/release/decisions.md`). P3-9 rewrote the lines that assumed no AI, no downloads, the R37 keyword set or the old screenshot songs in place (2026-10-20). The section 17 questions it opened are ruled by R129 (2026-10-20) and applied in place; the evidence is in `docs/research/phase3-store-ai.md`.*
 
-Spec date: 2026-10-17 (finalised after the open-question round; all decisions through R41 applied). Target: Segue **0.5**, Mac App Store, App Store flavor only (`SegueAppStore`, bundle `dev.ryandsilva.segue`), arm64 only, built with Xcode 27.1 (R41).
+Spec date: 2026-10-17 (finalised after the open-question round; all decisions through R41 applied). Target: Segue **1.0** (formerly 0.5, R176), Mac App Store, App Store flavor only (`SegueAppStore`, bundle `dev.ryandsilva.segue`), arm64 only, built with Xcode 27.1 (R41).
 
 This is the brief for one focused session. It must be executable standalone. Read these before starting:
 
@@ -55,7 +55,7 @@ Working rules for the session:
 
 ## 1. Goal
 
-Produce everything App Store Connect needs for the 0.5 submission, reproducibly from the repo, plus the runbook Ryan follows from TestFlight to release. That covers:
+Produce everything App Store Connect needs for the 1.0 submission, reproducibly from the repo, plus the runbook Ryan follows from TestFlight to release. That covers:
 
 - the final listing text;
 - the questionnaire answers;
@@ -119,7 +119,7 @@ The final screenshots and videos are derived binaries. They live under `.build/`
 | Privacy Choices URL | leave empty | optional | |
 | Primary category | Music | matches `LSApplicationCategoryType = public.app-category.music` | R3 |
 | Secondary category | Productivity | | R3 |
-| Version | `0.5` | must equal `CFBundleShortVersionString` | R5 |
+| Version | `1.0` | must equal `CFBundleShortVersionString` | R5 |
 | Price | Free (USD 0), no IAP | | R2 |
 | Availability | All countries or regions except China mainland | | A47 |
 | Compatibility | Apple silicon only (arm64); derived by Apple from the binary, nothing to enter | | R41 |
@@ -203,7 +203,7 @@ Writing rules the text already follows. `store-check` enforces the mechanical on
 - **AI claims only as built (R61, R62).** On-device, re-checks a paste's sections, title and artist and reads set requests, never rewrites lyrics or chords, nothing pasted leaves the Mac, works without any model. "Apple Intelligence" only in a referential phrase ("works with"), spelled exactly, never in a feature name (section 17, question 5).
 - **No other platforms.** No "iPhone", "iPad", "Android" or "Windows" (2.3.10).
 - **No competitor names** (2.3.7).
-- **No "beta", "preview" or "test" wording.** Guideline 2.2 bars betas from the store. "0.5" appears only as the version number.
+- **No "beta", "preview" or "test" wording.** Guideline 2.2 bars betas from the store. "1.0" appears only as the version number.
 - **"the Shortcuts app"** is used, never the Shortcuts icon (5.2.5).
 - **No "collects no data".** R25/R26 analytics and crash reports make that false.
 - **"free".** If review objects to it, delete the last line and keep "no subscription".
@@ -419,7 +419,7 @@ A label is claimed **only** if the WS2b audit (`docs/release/accessibility-audit
 | Larger Text | no claim (B-19; not offered on Mac, re-check in App Store Connect) | - |
 | Captions, Audio Descriptions | n/a: no video and no spoken or sung audio. The instrument sounds Segue plays (chords, walk-ups, fills and play-along since P8-6, plus the rehearsal click) carry no dialogue, and each has a visual counterpart | do not claim |
 
-Accessibility URL: leave empty for 0.5 (B-32; there is no `/help/accessibility` page in R29).
+Accessibility URL: leave empty for 1.0 (B-32; there is no `/help/accessibility` page in R29).
 
 ---
 
@@ -851,8 +851,8 @@ Do not touch `CHANGELOG.md` or any generated file by hand.
 | R10 | after upload | Enter App Privacy (section 6, as diffed against WS3 10.2), then Publish | Apps > Segue > App Privacy > Get Started/Edit |
 | R11 | after upload | Enter the accessibility labels the audit earned (section 7) | Apps > Segue > App Accessibility > Add Accessibility Support > macOS |
 | R12 | after upload | Categories Music / Productivity; content rights "Yes ... I have the necessary rights" (R129); check the license agreement is the Apple standard EULA | Apps > Segue > App Information |
-| R13 | after upload | Upload the preview video and set its poster frame (about 6 s) | Apps > Segue > macOS App > 0.5 > App Previews and Screenshots > drag the .mp4 > Edit poster frame |
-| R14 | after upload | Enter the review contact phone, if not via `ENV`; attach the walkthrough video (9.5) | Apps > Segue > macOS App > 0.5 > App Review Information |
+| R13 | after upload | Upload the preview video and set its poster frame (about 6 s) | Apps > Segue > macOS App > 1.0 > App Previews and Screenshots > drag the .mp4 > Edit poster frame |
+| R14 | after upload | Enter the review contact phone, if not via `ENV`; attach the walkthrough video (9.5) | Apps > Segue > macOS App > 1.0 > App Review Information |
 | R16 | 14.2 step 5 | Record the raw review walkthrough with QuickTime on the clean account (9.5), save to `.build/review/raw.mov`, then run `make review-video` | QuickTime Player > File > New Screen Recording |
 | R15 | runbook | Everything in section 14 | - |
 
@@ -919,7 +919,7 @@ After the gig:
 ### 14.4 Submit
 
 1. `make store-upload` (or paste by hand). Then **[RYAN]** does R9-R14 in section 13.
-2. **[RYAN]** Open Apps > Segue > macOS App > 0.5 (Prepare for Submission). Check every field against `store/` and the screenshots (all 8, in order). Then:
+2. **[RYAN]** Open Apps > Segue > macOS App > 1.0 (Prepare for Submission). Check every field against `store/` and the screenshots (all 8, in order). Then:
    - Build > + > pick the **exact TestFlight build that went through the gig**;
    - App Review Information: check the notes, attach `.build/review/segue-review-walkthrough.mp4` (B-31);
    - Version Release: **"Manually release this version"** (A51);
@@ -930,10 +930,10 @@ After the gig:
 
 The version is set to **"Manually release this version"**, so approval does not publish it. Ryan picks the moment, in this order:
 
-1. **[RYAN]** Apps > Segue > macOS App > 0.5 > Release This Version.
+1. **[RYAN]** Apps > Segue > macOS App > 1.0 > Release This Version.
 2. Once the listing is reachable, flip the website from "Coming soon to the Mac App Store" to the badge (WS4: `appStore.status` to `"live"` with the Apple ID), and publish the changelog and press page.
 
-Phased release applies to updates only, so it is n/a for 0.5.
+Phased release applies to updates only, so it is n/a for 1.0.
 
 After release:
 
@@ -951,7 +951,7 @@ After release:
    - **Misunderstanding** (the reviewer could not find a feature, or misread network use): reply with specific steps and an attachment video. Fold the same text into the review notes so it doesn't recur.
    - **Disagreement on the guideline:** reply first. If still rejected, appeal via App Store Connect > Contact Us > App Review > "Appeal an App Review decision" (the App Review Board).
 3. Log each rejection, with the guideline, the fix and the turnaround, in `JOURNAL.md`.
-4. Likely 0.5 triggers, all pre-empted above:
+4. Likely 1.0 triggers, all pre-empted above:
    - 5.1.1 (consent or privacy link; label vs policy mismatch);
    - Guideline 4 window reopen;
    - 2.1 "could not find feature";
@@ -984,9 +984,9 @@ After release:
 
 | Risk | Mitigation |
 |---|---|
-| Description claims a feature that slipped from 0.5 (2.3.1 rejection) | 4.4 claim pass on the built flavor; prune, don't hope |
+| Description claims a feature that slipped from 1.0 (2.3.1 rejection) | 4.4 claim pass on the built flavor; prune, don't hope |
 | Privacy label drifts from WS3 or under-discloses after a vendor change | WS3 10.2 is the single source; three-way diff of label, policy and `PrivacyInfo.xcprivacy` before Publish; re-run section 6 on every vendor change (editable anytime) |
-| "beta"/"0.5" read as a beta app (2.2) | no beta wording anywhere (store-check); version number alone is fine |
+| "beta" wording read as a beta app (2.2) | no beta wording anywhere (store-check); version number alone is fine |
 | Screenshot hooks or screenshot-only songs leak into Release | `#if DEBUG` on flag strings and `ScreenshotSongs.swift` + `verify-appstore` grep for flags and a title |
 | Review notes describe a first run that differs from the build (2.1) | notes follow WS2b's order (A10); 14.2 word-for-word pass on a clean account; walkthrough video recorded on the same pass |
 | Screenshot-only title collides with a real song | title search before step 4; any hit drops the title |

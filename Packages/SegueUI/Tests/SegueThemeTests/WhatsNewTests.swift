@@ -37,7 +37,7 @@ struct WhatsNewTests {
     }
 
     /// The release check (WS5 sets SEGUE_RELEASE_CHECK=1): the bundled file has a published
-    /// entry for MARKETING_VERSION. Skipped otherwise, while the 0.5 entry is still a draft.
+    /// entry for MARKETING_VERSION. Skipped otherwise, while the 1.0 entry is still a draft.
     @Test(.enabled(if: ProcessInfo.processInfo.environment["SEGUE_RELEASE_CHECK"] == "1"))
     func `running version has entry`() throws {
         let config = try String(

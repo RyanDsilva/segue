@@ -44,7 +44,7 @@
             workspace.open(SegueLinks.feedback)
         }
 
-        /// Report a Problem fallback: a mail to support, subject "Segue 0.5 (12) problem".
+        /// Report a Problem fallback: a mail to support, subject "Segue 1.0 (12) problem".
         public static func mailSupport(_ workspace: any WorkspaceActions) {
             workspace.open(problemMail(bundle: .main))
         }

@@ -120,7 +120,7 @@ Walk items the audit cannot see are in `docs/release/walkthrough.md` ("Accessibi
 
 ## 7. Larger Text (4.9.4)
 
-No Larger Text claim (B-19) and no main-window text scaling in 0.5 (A45). The three checks (stage at the 48 pt minimum with zoom at its limit on a 13-inch window, the main window at 820x520 with long titles, and the effect of macOS 26's Text Size setting) were not run in step 12; they are in the walkthrough. Re-check in App Store Connect that Larger Text is still not offered for macOS.
+No Larger Text claim (B-19) and no main-window text scaling in 1.0 (A45). The three checks (stage at the 48 pt minimum with zoom at its limit on a 13-inch window, the main window at 820x520 with long titles, and the effect of macOS 26's Text Size setting) were not run in step 12; they are in the walkthrough. Re-check in App Store Connect that Larger Text is still not offered for macOS.
 
 ## 8. Label claims
 

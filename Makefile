@@ -259,7 +259,7 @@ actionlint: ## Lint the GitHub workflows (shellchecks their run: steps too)
 
 repo-check: lint tokens-check site-html docs-check shellcheck actionlint ## The Linux CI checks, locally
 
-release-notes: ## Preview the GitHub Release notes for a tag: make release-notes TAG=v0.5.0
+release-notes: ## Preview the GitHub Release notes for a tag: make release-notes TAG=v1.0.0
 	@test -n "$(TAG)" || (echo "usage: make release-notes TAG=vX.Y.Z" >&2; exit 2)
 	$(MISE) scripts/release-notes.sh --title $(TAG)
 	@echo

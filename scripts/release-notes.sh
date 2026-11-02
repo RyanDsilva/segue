@@ -3,12 +3,12 @@
 # website/changelog.json (generated from content/changelog.json by scripts/gen-site.swift,
 # drafts removed). Used by .github/workflows/release.yml; run it locally to preview:
 #
-#   scripts/release-notes.sh v0.5.0           the notes body (or `make release-notes TAG=v0.5.0`)
-#   scripts/release-notes.sh --title v0.5.0   the release title, "Segue 0.5 - First beta"
+#   scripts/release-notes.sh v1.0.0           the notes body (or `make release-notes TAG=v1.0.0`)
+#   scripts/release-notes.sh --title v1.0.0   the release title, "Segue 1.0 - <changelog title>"
 #
 # The tag must be vX.Y.Z and must match MARKETING_VERSION in Config/Version.xcconfig. The
-# changelog and the marketing version drop a trailing ".0" (0.5, 0.5.1), so v0.5.0 matches
-# "0.5". Fails if the release is missing from the published changelog (still a draft, or
+# changelog and the marketing version drop a trailing ".0" (1.0, 1.0.1), so v1.0.0 matches
+# "1.0". Fails if the release is missing from the published changelog (still a draft, or
 # never written), so a tag can never produce an empty release.
 set -euo pipefail
 cd "$(dirname "$0")/.."

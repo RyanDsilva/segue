@@ -5,7 +5,7 @@ Date: 2026-10-17.
 
 **Canonical inputs** (read them first; this spec follows them and wins only where it is more specific):
 
-- `docs/release/decisions.md`: R3 (store name, subtitle, categories), R5 (first version `0.5`), R7 (Apple standard EULA; short site terms), R10 (screenshots), R21 (help docs at `/help`), R23 (hosted vendors only: TelemetryDeck, Sentry, Featurebase, Apple App Analytics), R24 (bug reports in Sentry only, no GitHub bridge), R25 (separate consent toggles; Sentry per-install ID kept), R26 (opt-in analytics, coarse country, optional email on board posts), R27 (Cloudflare Pages, source in `website/`, CNAME at Squarespace), R28 (`segue@ryandsilva.dev`), R29 (page list, `/feedback` redirect), R30 (copyright and legal name), R31 (Washington law), R32 (retention), R33 (Sentry US region, SCCs), R34 (own minimal TelemetryDeck client), R38 (Cloudflare Web Analytics), R39 (design directions first), R41 (arm64 only), R55 (the home design and copy).
+- `docs/release/decisions.md`: R3 (store name, subtitle, categories), R5 (first version `0.5`, renamed `1.0` by R176), R7 (Apple standard EULA; short site terms), R10 (screenshots), R21 (help docs at `/help`), R23 (hosted vendors only: TelemetryDeck, Sentry, Featurebase, Apple App Analytics), R24 (bug reports in Sentry only, no GitHub bridge), R25 (separate consent toggles; Sentry per-install ID kept), R26 (opt-in analytics, coarse country, optional email on board posts), R27 (Cloudflare Pages, source in `website/`, CNAME at Squarespace), R28 (`segue@ryandsilva.dev`), R29 (page list, `/feedback` redirect), R30 (copyright and legal name), R31 (Washington law), R32 (retention), R33 (Sentry US region, SCCs), R34 (own minimal TelemetryDeck client), R38 (Cloudflare Web Analytics), R39 (design directions first), R41 (arm64 only), R55 (the home design and copy).
 - `docs/release/open-questions.md`: every A item resolved to its **Recommend** option unless R30-R41 overrides it; every B item at its default; section 4 cross-spec resolutions applied. Section 0 below lists everything that touches WS4.
 - `docs/release/specs/WS3-services.md` section 5 (event vocabulary) and section 10 (vendor facts, App Privacy label). The privacy policy here is written to match them (I-9).
 - `docs/release/research/05-landing-page.md` (main research input), `04-store-listing.md` (positioning, copy drafts).
@@ -19,7 +19,7 @@ Date: 2026-10-17.
 - No em dashes anywhere (code, copy, comments). Use "-".
 - Do not push, and do not touch Cloudflare, Squarespace, Mailgun, Featurebase, TelemetryDeck, Sentry or App Store Connect. Those are [RYAN] steps. Commit locally and signed (`git commit -S`), one commit per logical unit. If signing fails with "failed to fill whole buffer", 1Password is locked: keep the staging, ask Ryan to unlock, and wait.
 - Tools come from `.mise.toml` via `mise exec --`. Python tooling runs through `uv`/`uvx`. Never install anything globally.
-- "[VERIFY]" markers in this spec are instructions to you. They are never copied into HTML: either confirm the claim in the 0.5 App Store build and keep it, or delete the claim.
+- "[VERIFY]" markers in this spec are instructions to you. They are never copied into HTML: either confirm the claim in the 1.0 App Store build and keep it, or delete the claim.
 - If any vendor fact you re-read (section 9.4 preamble) differs from this spec, stop and ask Ryan rather than rewording the policy yourself.
 
 ---
@@ -348,7 +348,7 @@ Desktop: wordmark left; Features, Help, Changelog, Support right. Under 640 px: 
   "schema": 1,
   "releases": [
     {
-      "version": "0.5",
+      "version": "1.0",
       "date": "2026-11-20",
       "title": "First beta",
       "summary": "Segue's first public release on the Mac App Store.",
@@ -368,11 +368,11 @@ Desktop: wordmark left; Features, Help, Changelog, Support right. Under 640 px: 
 |---|---|---|
 | `schema` | int | `1`. An app that finds a `schema` greater than it knows shows no sheet and logs once. |
 | `releases` | array | Newest first. Versions unique. Order is enforced, not fixed up. |
-| `version` | string | `^\d+\.\d+(\.\d+)?$`, written exactly as `MARKETING_VERSION` (`0.5`, not `0.5.0`). Compared numerically by component; `0.5` == `0.5.0`. |
+| `version` | string | `^\d+\.\d+(\.\d+)?$`, written exactly as `MARKETING_VERSION` (`1.0`, not `1.0.0`). Compared numerically by component; `1.0` == `1.0.0`. |
 | `date` | string | `YYYY-MM-DD`, the release date. Non-increasing down the list. |
 | `title` | string | 1-60 chars, plain text. |
 | `summary` | string, optional | 1-200 chars, plain text. |
-| `showInApp` | bool | Required. Whether the app's What's New sheet shows this release. `false` for 0.5 (a fresh install never sees What's New) and for bug-fix-only releases. |
+| `showInApp` | bool | Required. Whether the app's What's New sheet shows this release. `false` for 1.0 (a fresh install never sees What's New) and for bug-fix-only releases. |
 | `draft` | bool, optional | `true` = kept in `content/` only; excluded from every output. Lets notes be written ahead of a release. |
 | `highlights` | array | 1-8 items. |
 | `highlights[].kind` | enum | `new`, `improved`, `fixed`. Rendered as "New", "Improved", "Fixed" labels (text, not colour alone), on the site and in the app. |
@@ -383,7 +383,7 @@ No other fields exist (no `minimumOS`, no absolute `learnMore` URLs). Unknown ke
 
 ### 6.3 `/changelog` page
 
-Generated from the template inside `gen-site.swift`, using the shared header/footer partials. Per release: `<section id="v0.5">` with `<h2>` "Version 0.5" + title, a `<time datetime>`, the summary, then a list grouped New / Improved / Fixed, each with an optional "Learn more" link. Intro: "What changed in each version of Segue. Segue shows the bigger updates in the app too, under Help > What's New in Segue."
+Generated from the template inside `gen-site.swift`, using the shared header/footer partials. Per release: `<section id="v1.0">` with `<h2>` "Version 1.0" + title, a `<time datetime>`, the summary, then a list grouped New / Improved / Fixed, each with an optional "Learn more" link. Intro: "What changed in each version of Segue. Segue shows the bigger updates in the app too, under Help > What's New in Segue."
 
 ---
 
@@ -540,7 +540,7 @@ site-fonts: ## Rebuild the subset WOFF2 web fonts from the bundled TTFs
 
 ## 9. Page content
 
-All copy below is final, with three exceptions: the maker note (Ryan rewrites it), help body text (written from the 0.5 build), and claims marked [VERIFY] (checked in the claims audit, section 12). `{PLACEHOLDER}` and `{vendors.x.y}` mean a slot filled from `content/site.json`.
+All copy below is final, with three exceptions: the maker note (Ryan rewrites it), help body text (written from the 1.0 build), and claims marked [VERIFY] (checked in the claims audit, section 12). `{PLACEHOLDER}` and `{vendors.x.y}` mean a slot filled from `content/site.json`.
 
 ### 9.1 Shared header and footer
 
@@ -555,7 +555,7 @@ All copy below is final, with three exceptions: the maker note (Ryan rewrites it
 
 ### 9.2 Home (`/`) - full copy
 
-Design: R55 (section 5.1). Six sections, in this order; headlines are 2-6 words, tile and feature copy one or two short sentences. Every product claim must match what 0.5 ships (R14-R22, R45, R52); the claims still waiting on features being built are listed in an HTML comment at the top of `index.html` and in "Claims to verify" below.
+Design: R55 (section 5.1). Six sections, in this order; headlines are 2-6 words, tile and feature copy one or two short sentences. Every product claim must match what 1.0 ships (R14-R22, R45, R52); the claims still waiting on features being built are listed in an HTML comment at the top of `index.html` and in "Claims to verify" below.
 
 `<title>`: Segue - Setlists & Chords for Mac
 Meta description: "Segue keeps your songs as ChordPro files, builds tonight's set, and fits every song on one screen on stage. Free for Mac."
@@ -628,7 +628,7 @@ Meta description: "Segue keeps your songs as ChordPro files, builds tonight's se
 - Board line: Shaped by the people who play it. Visit the feature board (`/feedback`)
 - `latest-release` slot: "New in {version}: {title}" + up to 3 highlights + "See all changes" (`/changelog`). Hidden while the changelog has no published release.
 
-**Claims to verify** (features still being built for 0.5; the step 8 claims audit confirms each in the App Store build or cuts the sentence that makes it, and then deletes it from the list in `index.html`):
+**Claims to verify** (features still being built for 1.0; the step 8 claims audit confirms each in the App Store build or cuts the sentence that makes it, and then deletes it from the list in `index.html`):
 
 | Claim | Where | Ruling |
 |---|---|---|
@@ -996,7 +996,7 @@ Suggest ideas and vote for the ones you want on the feature board: **segue.ryand
 ## System requirements
 
 - A Mac with Apple silicon and macOS 26 or later.
-- About {size} MB of disk space. [VERIFY from the 0.5 archive; write the number, not a slot]
+- About {size} MB of disk space. [VERIFY from the 1.0 archive; write the number, not a slot]
 - No internet connection needed to write songs, build sets or play a show.
 - Optional AI: Apple Intelligence, where your Mac supports it and it's turned on, or Segue's local model (a 2.27 GB download, best with 16 GB of memory or more). Everything works without either.
 
@@ -1046,7 +1046,7 @@ Also see: Help (/help), Changelog (/changelog), Privacy Policy (/privacy).
 
 > *Superseded by R126/R127: the help pages are replaced by the user guide at `/guide` (docs/release/specs/WS6-user-guide.md); `/help` and `/help/*` redirect to it (`content/site.json` `redirects`). The section 2 anchor contract is replaced by `SegueLinks.Guide`, which `make site-check` resolves against the built guide.*
 
-Each help page uses `partial:help-nav` (a left column on desktop, a top list on phones), one H1, short task-oriented sections with `id`s, and at most one screenshot per section. Write the body text from the **0.5 App Store build**, opening each feature as you document it; every step and menu name must match the build exactly. If the build is not feature-complete when you reach this step, write against the current `main` App Store flavor and re-check every page in the claims audit before `status: live`. Never document personal-only features (LRCLIB, URL import, the custom-model Advanced settings), PDF export or MIDI, which are not in the 0.5 App Store build. Sound (hearing chords, walk-ups and fills, play-along; P8-6) is in both flavours, never plays in a Live show, and is documented. The AI features (paste cleanup, Settings > AI, the set assistant) ship in it (R61/R62) and are documented.
+Each help page uses `partial:help-nav` (a left column on desktop, a top list on phones), one H1, short task-oriented sections with `id`s, and at most one screenshot per section. Write the body text from the **1.0 App Store build**, opening each feature as you document it; every step and menu name must match the build exactly. If the build is not feature-complete when you reach this step, write against the current `main` App Store flavor and re-check every page in the claims audit before `status: live`. Never document personal-only features (LRCLIB, URL import, the custom-model Advanced settings), PDF export or MIDI, which are not in the 1.0 App Store build. Sound (hearing chords, walk-ups and fills, play-along; P8-6) is in both flavours, never plays in a Live show, and is documented. The AI features (paste cleanup, Settings > AI, the set assistant) ship in it (R61/R62) and are documented.
 
 - **`/help` Segue Help**
   - Intro: what Segue is in two sentences; "New here? Start with the Welcome library."
@@ -1100,14 +1100,14 @@ Each help page uses `partial:help-nav` (a left column on desktop, a top list on 
 - **`/help/keyboard` Keyboard shortcuts**
   - `#library` Main window and menus (New Song Cmd-N, New Setlist Shift-Cmd-N, Import Songs Shift-Cmd-I, Show in Finder Opt-Cmd-R, Move to Trash Cmd-Delete, Start Show Cmd-Return, Rehearse Opt-Cmd-Return, Segue Library window Cmd-0, Settings Cmd-comma, Keyboard Shortcuts overlay ?).
   - `#stage` Stage mode, from the binding table: Right/Space next; Left previous; Down/Page Down scroll down; Up/Page Up scroll up; A auto-scroll; [ and ] slower/faster; Cmd-K or / search; R play next request; X skip; S sidebar; Cmd-+ / Cmd-- / Cmd-0 zoom; Cmd-. end show; ? all keys (any stage key also closes it); Esc close overlay.
-  - Render each table with `<kbd>`. **Every row must be verified in the 0.5 build** (menus and `LiveKeyInput`/binding table); delete any row that isn't there. Later improvement (not this session): generate the stage table from the app's binding table.
+  - Render each table with `<kbd>`. **Every row must be verified in the 1.0 build** (menus and `LiveKeyInput`/binding table); delete any row that isn't there. Later improvement (not this session): generate the stage table from the app's binding table.
 
 ### 9.8 Press (`/press`)
 
 - H1: Press kit
 - **One line:** Segue is a free Mac app for performing musicians: lyrics, chords and setlists, with a stage view that fits every song on one screen.
 - **One paragraph:** Segue keeps your songs as plain ChordPro files in a folder you choose, lets you edit charts as text or by placing chords on syllables, builds setlists with per-show key and capo, and runs the gig from a dark, full-screen stage view that never shrinks lyrics below your minimum size. It handles requests mid-set, picks up where you left off if anything goes wrong, and has no account, no ads and no subscription. Search understands romanized Hindi with casual spellings.
-- **Fact sheet:** Developer Ryan Rony Dsilva; Platform Mac with Apple silicon (macOS 26 or later); Price Free, no in-app purchases; Category Music; First release {date of 0.5 from changelog}; Website segue.ryandsilva.dev; Contact segue@ryandsilva.dev; `appstore:press` slot (text link, or "Coming soon").
+- **Fact sheet:** Developer Ryan Rony Dsilva; Platform Mac with Apple silicon (macOS 26 or later); Price Free, no in-app purchases; Category Music; First release {date of 1.0 from changelog}; Website segue.ryandsilva.dev; Contact segue@ryandsilva.dev; `appstore:press` slot (text link, or "Coming soon").
 - **Assets** (each a direct download link with dimensions): app icon PNG 1024 (`icon-1024.png`) and SVG; wordmark PNG on dark and on light; 5 screenshots at 2880x1800 from the R10 set; brand colours (`cue #F2555A`, `ink #111113`, `stage #101113`, `paper #FFFFFF`).
 - **Usage:** "You may use these assets to write about Segue. Please don't alter the icon or wordmark."
 
@@ -1127,7 +1127,7 @@ Each help page uses `partial:help-nav` (a left column on desktop, a top list on 
 
 ### 9.11 Changelog
 
-Generated (section 6.3). This session drafts the 0.5 entry in `content/changelog.json` with `"draft": true` and `"showInApp": false`; it is finalised (date, highlights checked against the build, `draft` removed) at release time.
+Generated (section 6.3). This session drafts the 1.0 entry in `content/changelog.json` with `"draft": true` and `"showInApp": false`; it is finalised (date, highlights checked against the build, `draft` removed) at release time.
 
 ---
 
@@ -1258,7 +1258,7 @@ Run in this order. Before each run, reset to a clean baseline: `make site` from 
 
 ## 12. Acceptance criteria
 
-1. All pages from section 2 exist at those exact URLs, with the copy from section 9 (home, privacy, terms, support verbatim apart from slot values; the maker note as Ryan rewrote it; help written from the 0.5 build).
+1. All pages from section 2 exist at those exact URLs, with the copy from section 9 (home, privacy, terms, support verbatim apart from slot values; the maker note as Ryan rewrote it; help written from the 1.0 build).
 2. `content/site.json` is the only place any vendor name, vendor URL, location, transfer basis, retention period, legal name, governing state or App Store value appears; changing a value and running `make site` updates every page.
 3. `make site`, `make site-check` and `make site-serve` work from a clean clone after `make bootstrap`; `make check` includes `site-check`; `make bootstrap` installs the pre-push hook.
 4. `website/assets/css/tokens.css` is generated by `gen-tokens.swift` from `design/tokens.json` and guarded by `make tokens-check`.
@@ -1267,7 +1267,7 @@ Run in this order. Before each run, reset to a clean baseline: `make site` from 
 7. Fonts are subset WOFF2 from the bundled OFL TTFs, with `OFL.txt` alongside and the lock file matching.
 8. The badge is Apple's unmodified artwork, at least 40 px tall with quarter-height clear space, only in the home hero, linked with a campaign token; while `status` is `upcoming` no badge appears anywhere.
 9. Favicon (SVG + 32 px PNG), apple-touch-icon and a 1200x630 Open Graph image exist and are referenced from every page's head.
-10. **Claims audit:** a table in the session's commit message or hand-off lists every product claim on home, support, press and help, each marked verified in the 0.5 App Store build or removed. No personal-only, PDF-export or MIDI feature is claimed; AI features are claimed only as verified in the 0.5 App Store build (R61/R62): on-device, refines pastes and set requests, optional model downloaded on click, nothing pasted leaves the Mac. The policy-label diff (test 12) passes.
+10. **Claims audit:** a table in the session's commit message or hand-off lists every product claim on home, support, press and help, each marked verified in the 1.0 App Store build or removed. No personal-only, PDF-export or MIDI feature is claimed; AI features are claimed only as verified in the 1.0 App Store build (R61/R62): on-device, refines pastes and set requests, optional model downloaded on click, nothing pasted leaves the Mac. The policy-label diff (test 12) passes.
 11. Every quality target in section 11 is met locally; production Lighthouse and the request audit are run after the first deploy.
 12. Before production goes live: `make site-check STRICT=1` passes (no placeholders outside `appStore.*`, no maker-note markers).
 13. `/feedback` redirects with 302 and the destination comes from config.
@@ -1299,12 +1299,12 @@ Run in this order. Before each run, reset to a clean baseline: `make site` from 
 
 One commit per step (signed). Steps 1-2 need nothing from other workstreams.
 
-1. **Config, generator and checks.** `content/site.json`, `content/changelog.json` (0.5 draft), the three partials (unstyled), `gen-site.swift` with all modes and checks, `_redirects`/`sitemap.xml` output, `_headers`, `robots.txt`, Makefile targets, `.htmlvalidate.json`, `.githooks/pre-push` and the `make bootstrap` hook line, `.gitignore`. Pages exist as unstyled skeletons with every contract anchor, so the checks run from the start.
+1. **Config, generator and checks.** `content/site.json`, `content/changelog.json` (1.0 draft), the three partials (unstyled), `gen-site.swift` with all modes and checks, `_redirects`/`sitemap.xml` output, `_headers`, `robots.txt`, Makefile targets, `.htmlvalidate.json`, `.githooks/pre-push` and the `make bootstrap` hook line, `.gitignore`. Pages exist as unstyled skeletons with every contract anchor, so the checks run from the start.
 2. **Tokens CSS and web fonts.** `gen-tokens.swift` output, `gen-webfonts.sh`, the WOFF2 files and lock file. Land before WS2b step 1 (shared `gen-tokens.swift`).
 3. **Design directions (R39). Stop here.** Build 2-3 home-page mockups as described in 5.1, publish them for Ryan, and wait for his pick. Do not write `site.css` or style any page before he answers.
 4. **Home page and shared styling** in the picked direction: `site.css`, header/footer partials, `index.html` with the maker-note draft inside its markers.
 5. **Legal and support pages:** re-read vendor facts (9.4 preamble), then `privacy.html`, `terms.html`, `support.html`, `press.html`, `acknowledgements.html`, `404.html`, changelog template.
-6. **Help pages** from the 0.5 App Store build (or current `main`, re-checked later).
+6. **Help pages** from the 1.0 App Store build (or current `main`, re-checked later).
 7. **Rasters and images:** `--raster` outputs; screenshot JPEGs once the R10 set exists.
 8. **Tests and hand-off:** section 11 steps 1-12, claims audit, list of open [RYAN] steps. Steps 13 (production) run after Ryan's R-1 to R-5.
 

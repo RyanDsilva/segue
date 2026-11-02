@@ -241,7 +241,7 @@ WS2b adds only the page chrome: the "Step n of m" label and a **Continue** butto
 App-side rules:
 - `schema`: integer major. The app ignores a file whose major it does not know (no sheet, one log line) and never crashes on it.
 - `releases`: newest first. `version` is the marketing version (`MARKETING_VERSION`, e.g. `0.5`); comparison is numeric per component with missing components as 0, so `0.5` == `0.5.0`, `0.10` > `0.9.1`.
-- `date`: `YYYY-MM-DD`. `title`: 1-60 characters. `summary`: optional, up to 200 characters, shown under the title. `showInApp`: bool, the author's decision whether this release gets the automatic sheet (0.5 is `false`).
+- `date`: `YYYY-MM-DD`. `title`: 1-60 characters. `summary`: optional, up to 200 characters, shown under the title. `showInApp`: bool, the author's decision whether this release gets the automatic sheet (1.0 is `false`).
 - `highlights`: 1-8 items; `kind` is exactly `new`, `improved` or `fixed`; `text` is one plain sentence, 1-120 characters (I-2 tightens WS4's 140 so the sheet wraps to at most two lines), no Markdown, HTML or em dashes; `help` optional, a site-relative path from WS4's URL and anchor table (I-16), which the app turns into `SegueLinks.site` + `help` for a "Learn More" link.
 - `draft` never appears in the generated file; if it does, a release with `draft: true` is skipped.
 - Unknown keys within schema 1 are ignored by the app.
