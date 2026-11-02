@@ -87,6 +87,15 @@ func letters(_ word: Substring) -> String {
     return result
 }
 
+/// An address keeps its scheme and host (a reader may check them); its path is redacted.
+func redactURL(_ text: String) -> String? {
+    guard let match = text.wholeMatch(of: hostPrefix), let host = match.output[1].substring
+    else { return nil }
+    return String(host) + redactWords(String(text.dropFirst(host.count)))
+}
+
+let hostPrefix = try Regex("^(https?://[^/\\s]+)(.*)$")
+
 /// Redacts the letter-words of `text`, keeping chords, kept words, one-letter words and
 /// everything that is not a letter (digits, punctuation, spacing, tab lines).
 func redactWords(_ text: String) -> String {
@@ -171,6 +180,9 @@ func redactJSON(_ value: Any, key: String? = nil) -> Any {
     case let text as String:
         if let key, keptKeys.contains(key) {
             return text
+        }
+        if let url = redactURL(text) {
+            return url
         }
         return text.contains("[ch]") || text
             .contains("[tab]") ? redactMarkup(text) : redactWords(text)
@@ -315,6 +327,9 @@ func redactTag(_ tag: String) -> String {
             return "\(name)=\(quote)\(raw)\(quote)"
         }
         let plain = unescapeAttribute(raw)
+        if let url = redactURL(plain) {
+            return "\(name)=\(quote.isEmpty ? "\"" : quote)\(escapeAttribute(url))\(quote.isEmpty ? "\"" : quote)"
+        }
         let redacted = name == "data-content" ? (redactJSONText(plain) ?? redactWords(plain)) :
             redactWords(plain)
         let q = quote.isEmpty ? "\"" : quote
