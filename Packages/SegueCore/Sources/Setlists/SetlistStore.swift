@@ -322,7 +322,7 @@ public actor SetlistStore {
             return original
         }
         stored.setlist = stored.setlist.fillingFileNames(songFileNames)
-        stored.setlist.schemaVersion = Setlist.currentSchemaVersion
+        stored.setlist.stampWrittenVersion()
         stored.setlist.updatedAt = SegueJSON.stamp(clock.now())
         try save(stored, root: root)
         setlists[id] = stored

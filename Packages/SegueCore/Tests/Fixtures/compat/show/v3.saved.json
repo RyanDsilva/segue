@@ -105,6 +105,7 @@
     }
   ],
   "kind" : "gig",
+  "minReaderVersion" : 5,
   "planned" : [
     {
       "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD1",

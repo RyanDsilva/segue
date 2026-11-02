@@ -202,9 +202,14 @@ public struct SmartFilterConditions: Sendable, Hashable, Codable {
 public struct SmartFilter: Sendable, Equatable, Identifiable, Codable {
     /// Version written by this build. Version 1 is the first.
     public static let currentSchemaVersion = 1
+    /// The `minReaderVersion` this build writes (R196: equal to the schema version in v1.0).
+    public static let currentMinReaderVersion = 1
 
     public var id: SmartFilterID
     public var schemaVersion: Int
+    /// The file's `minReaderVersion` as read (R196); written back only while the file stays
+    /// at a newer version than this build's.
+    public var minReaderVersion: Int?
     public var name: String
     public var conditions: SmartFilterConditions
     public var createdAt: Date
@@ -236,6 +241,7 @@ public struct SmartFilter: Sendable, Equatable, Identifiable, Codable {
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case id
         case schemaVersion
+        case minReaderVersion
         case name
         case conditions
         case createdAt
@@ -246,6 +252,9 @@ public struct SmartFilter: Sendable, Equatable, Identifiable, Codable {
         var object = try LenientObject<CodingKeys>(decoder)
         id = try object.required(.id)
         schemaVersion = object.value(.schemaVersion, default: Self.currentSchemaVersion)
+        // Kept only while the file is newer than this build (R196): it is written back then.
+        minReaderVersion = schemaVersion > Self.currentSchemaVersion
+            ? object.value(.minReaderVersion) : nil
         name = try object.required(.name)
         conditions = try object.container
             .decodeIfPresent(SmartFilterConditions.self, forKey: .conditions)
@@ -261,6 +270,15 @@ public struct SmartFilter: Sendable, Equatable, Identifiable, Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(
+            SchemaMigrator.minReaderVersion(
+                writing: schemaVersion,
+                kept: minReaderVersion,
+                current: Self.currentSchemaVersion,
+                currentMinimum: Self.currentMinReaderVersion,
+            ),
+            forKey: .minReaderVersion,
+        )
         try container.encode(name, forKey: .name)
         try container.encode(conditions, forKey: .conditions)
         try container.encode(createdAt, forKey: .createdAt)

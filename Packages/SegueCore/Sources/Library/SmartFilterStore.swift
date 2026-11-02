@@ -286,7 +286,10 @@ public actor SmartFilterStore {
             throw SmartFilterError.readOnly(id, reason)
         }
         try change(&stored.filter)
-        stored.filter.schemaVersion = SmartFilter.currentSchemaVersion
+        stored.filter.schemaVersion = max(
+            stored.filter.schemaVersion,
+            SmartFilter.currentSchemaVersion,
+        )
         stored.filter.updatedAt = SegueJSON.stamp(clock.now())
         try save(stored, root: root)
         filters[id] = stored

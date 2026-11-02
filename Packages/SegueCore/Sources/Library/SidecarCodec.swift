@@ -98,7 +98,10 @@ enum SidecarCodec {
         object.repairCueIDs()
         object.createdAt = object.createdAt ?? fallbackDate
         object.updatedAt = object.updatedAt ?? object.createdAt
-        return object.complete(schemaVersion: Sidecar.currentSchemaVersion)
+        // A newer file this build may edit (R196) keeps its version; older ones were
+        // migrated to the current one.
+        let version = max(object.schemaVersion ?? 0, Sidecar.currentSchemaVersion)
+        return object.complete(schemaVersion: version)
     }
 
     static func encode(_ sidecar: Sidecar) throws -> Data {
@@ -143,6 +146,8 @@ enum SidecarCodec {
 /// values it cannot read (an enum case from a newer Segue) and unreadable cues or parts are
 /// kept in `unknown` and written back on save (docs/architecture/data-compatibility.md).
 struct PartialSidecar: Decodable {
+    var schemaVersion: Int?
+    var minReaderVersion: Int?
     var id: SongID?
     var tags: [String]?
     var proficiency: Proficiency?
@@ -158,6 +163,8 @@ struct PartialSidecar: Decodable {
 
     init(from decoder: any Decoder) throws {
         var object = try LenientObject<Sidecar.CodingKeys>(decoder)
+        schemaVersion = object.value(.schemaVersion)
+        minReaderVersion = object.value(.minReaderVersion)
         id = object.value(.id)
         tags = object.value(.tags)
         proficiency = object.value(.proficiency)
@@ -190,6 +197,7 @@ struct PartialSidecar: Decodable {
             updatedAt: updatedAt ?? created,
             unknown: unknown,
         )
+        .withMinReader(schemaVersion > Sidecar.currentSchemaVersion ? minReaderVersion : nil)
     }
 
     /// Gives every cue a usable, unique `id` (schema 4, P3-17): a cue without one (a v3 file
@@ -219,5 +227,13 @@ struct PartialSidecar: Decodable {
             timestamp: created ?? Date(timeIntervalSince1970: 0),
             randomness: Array(digest.prefix(10)),
         ))
+    }
+}
+
+private extension Sidecar {
+    func withMinReader(_ minimum: Int?) -> Self {
+        var sidecar = self
+        sidecar.minReaderVersion = minimum
+        return sidecar
     }
 }

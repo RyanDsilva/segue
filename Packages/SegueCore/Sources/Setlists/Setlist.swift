@@ -322,9 +322,14 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
 public struct Setlist: Sendable, Equatable, Identifiable, Codable {
     /// The schema version this build reads and writes.
     public static let currentSchemaVersion = 7
+    /// The `minReaderVersion` this build writes (R196: equal to the schema version in v1.0).
+    public static let currentMinReaderVersion = 7
 
     public var id: SetlistID
     public var schemaVersion: Int
+    /// The file's `minReaderVersion` as read (R196); written back only while the file stays
+    /// at a newer version than this build's.
+    public var minReaderVersion: Int?
     public var name: String
     public var entries: [SetlistEntry]
     /// Nil for setlists written before phase 2 until their next save.
@@ -347,6 +352,7 @@ public struct Setlist: Sendable, Equatable, Identifiable, Codable {
     enum CodingKeys: String, CodingKey, CaseIterable {
         case id
         case schemaVersion
+        case minReaderVersion
         case name
         case entries
         case createdAt
