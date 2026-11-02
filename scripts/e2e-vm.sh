@@ -23,7 +23,11 @@
 #   E2E_VM_GOLDEN        golden VM name (default segue-e2e-golden)
 #   E2E_VM_TIMEOUT       minutes before a shard's run is killed (default 90)
 #   E2E_VM_SKIP_BUILD=1  reuse the products already in .build/DerivedData
-#   E2E_VM_EXTRA=<dir>   stage <dir> into the guest as products/extra (the library copy test)
+#   E2E_VM_EXTRA=<dir>   stage <dir> into the guest as products/extra (the library copy test;
+#                        an extra/test-env file of KEY=VALUE lines reaches the test runner)
+#   E2E_VM_SCHEME, E2E_VM_CONFIGURATION  another scheme (default Segue-Personal, Debug-Personal),
+#                        e.g. Segue-AppStore / Debug-AppStore for the store screenshots
+#   E2E_VM_DISPLAY       the clone's display, e.g. 1920x1200pt (Retina, 2x) for 2880x1800 shots
 #   VM_VNC=1             Tart: serve the guest screen over VNC to watch a run
 #   SEGUE_RESULT_BUNDLE  where the result bundle goes (as in scripts/xcodebuild.sh)
 #
@@ -63,8 +67,8 @@ golden_cmd="make e2e-vm-golden"
 [[ "$adapter" == tart ]] || golden_cmd="make e2e-vm-golden E2E_RUNNER=$adapter"
 derived="${SEGUE_DERIVED_DATA:-.build/DerivedData}"
 products_dir="$derived/Build/Products"
-scheme="Segue-Personal"
-configuration="Debug-Personal"
+scheme="${E2E_VM_SCHEME:-Segue-Personal}"
+configuration="${E2E_VM_CONFIGURATION:-Debug-Personal}"
 results=".build/results"
 mkdir -p "$results" "$cache"
 bundle="${SEGUE_RESULT_BUNDLE:-$results/$(date +%Y%m%d-%H%M%S)-$$.xcresult}"
@@ -251,6 +255,9 @@ run_shard() {
     share=$(vm_share_root)
     mkdir -p "$shard_results"
     vm_clone "$golden" "$name" >/dev/null
+    if [[ -n "${E2E_VM_DISPLAY:-}" ]]; then
+        vm_set_display "$name" "$E2E_VM_DISPLAY"
+    fi
     vm_start "$name" "$stage/products" "$stage/results" "$stage/vm-$index.log"
     echo "$vm_pid" >"$stage/vm-$index.pid"
     local ready=false

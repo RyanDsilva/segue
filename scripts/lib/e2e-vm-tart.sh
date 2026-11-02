@@ -73,6 +73,10 @@ vm_list_runs() {
     tart_cmd list --source local --quiet 2>/dev/null | grep "^$1" || true
 }
 
+vm_set_display() {
+    tart_cmd set "$1" --display "$2"
+}
+
 vm_set() {
     tart_cmd set "$1" --cpu "$2" --memory "$3" --display "$4"
 }

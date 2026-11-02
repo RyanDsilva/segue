@@ -100,6 +100,10 @@ vm_list_runs() {
     lume_cmd ls --format json 2>/dev/null | mise exec -- jq -r '.[].name' | grep "^$1" || true
 }
 
+vm_set_display() {
+    lume_cmd set "$1" --display "$2"
+}
+
 vm_set() {
     lume_cmd set "$1" --cpu "$2" --memory "${3}MB" --display "$4"
 }

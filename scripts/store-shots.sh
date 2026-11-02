@@ -9,6 +9,10 @@
 #                                    no alpha), the contact sheet and the A/B/C direction
 #                                    samples; verify
 #   scripts/store-shots.sh compose   compose and verify again from the last raw captures
+#   scripts/store-shots.sh vm <Class/test>  capture selected shots in the E2E VM instead (off
+#                                    the screen; a Retina 1920x1200 pt clone), dark and light,
+#                                    into raw-vm-<appearance>, which compose prefers over
+#                                    the screen captures; then compose
 #   scripts/store-shots.sh preview-edit  edit the last recording again (no capture)
 #   scripts/store-shots.sh preview   record AppStorePreviewTests (scripts/lib/record.sh), cut
 #                                    it to the test's markers and edit it with
@@ -43,7 +47,11 @@ export_attachments() { # <bundle> <folder>
 
 compose() {
     discard "$out/final"
-    scripts/compose-screenshots.swift --raw "$out/raw-dark" --raw "$out/raw-light" \
+    local vm_raw=()
+    for appearance in dark light; do
+        [[ -d "$out/raw-vm-$appearance" ]] && vm_raw+=(--raw "$out/raw-vm-$appearance")
+    done
+    scripts/compose-screenshots.swift --raw "$out/raw-dark" --raw "$out/raw-light" ${vm_raw[@]+"${vm_raw[@]}"} \
         --captions store/screenshots.json --tokens design/tokens.json \
         --fonts Packages/SegueUI/Sources/SegueUI/Theme/Fonts \
         --out "$out/final" --contact-sheet "$out/contact-sheet.png" \
@@ -67,6 +75,23 @@ shots)
     compose
     ;;
 compose)
+    compose
+    ;;
+vm)
+    test="${2:?usage: scripts/store-shots.sh vm <Class/test>, e.g. AppStoreScreenshotTests/test10Songbook}"
+    skip=""
+    for appearance in dark light; do
+        extra=$(mktemp -d "${TMPDIR:-/tmp}/segue-shots.XXXXXX")
+        echo "SEGUE_SHOT_APPEARANCE=$appearance" >"$extra/test-env"
+        discard "$out/vm-$appearance.xcresult"
+        E2E_VM_SCHEME=Segue-AppStore E2E_VM_CONFIGURATION=Debug-AppStore \
+            E2E_VM_DISPLAY=1920x1200pt E2E_VM_EXTRA="$extra" E2E_VM_SKIP_BUILD="$skip" \
+            SEGUE_RESULT_BUNDLE="$out/vm-$appearance.xcresult" \
+            scripts/e2e-vm.sh tart "-only-testing:SegueAppStoreUITests/$test"
+        discard "$extra"
+        export_attachments "$out/vm-$appearance.xcresult" "$out/raw-vm-$appearance"
+        skip=1
+    done
     compose
     ;;
 preview)
@@ -126,7 +151,7 @@ preview-edit)
     scripts/make-preview.sh .build/preview/raw.mov "$from" "$length" .build/preview/timings.txt
     ;;
 *)
-    echo "usage: scripts/store-shots.sh shots|compose|preview|preview-edit" >&2
+    echo "usage: scripts/store-shots.sh shots|compose|vm <Class/test>|preview|preview-edit" >&2
     exit 2
     ;;
 esac

@@ -55,6 +55,13 @@ mkdir -p "$out"
 if [[ -d "$run/extra/library" ]]; then
     export TEST_RUNNER_SEGUE_COPY_LIBRARY="$run/extra/library"
 fi
+# KEY=VALUE lines a host script staged for the test runner (store-shots.sh vm: the
+# screenshot appearance).
+if [[ -f "$run/extra/test-env" ]]; then
+    while IFS='=' read -r key value; do
+        [[ "$key" =~ ^[A-Z][A-Z0-9_]*$ ]] && export "TEST_RUNNER_$key=$value"
+    done <"$run/extra/test-env"
+fi
 
 status=0
 xcodebuild test-without-building \
