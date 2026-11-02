@@ -127,20 +127,20 @@ guide-check: ## Static checks on the guide source and build (runs on Linux; STRI
 guide-keys: ## Regenerate guide/src/data/keyboard.json from the app's menu and stage key tables
 	cd $(UI_DIR) && SEGUE_WRITE_GUIDE_DATA=1 $(UI_TEST) --filter GuideKeyboardExportTests
 
-docs-shots: ## Guide screenshots from the App Store flavour, dark and light (needs the screen; ONLY=id,id)
-	scripts/docs-shots.sh shots $(ONLY)
+docs-shots: ## Guide screenshots from the App Store flavour, dark and light, in a Retina E2E VM (E2E_RUNNER=host for this screen; ONLY=id,id)
+	E2E_RUNNER=$(E2E_RUNNER) scripts/docs-shots.sh shots $(ONLY)
 
-docs-clips: ## Guide how-to clips from the App Store flavour (needs the screen and Screen Recording; ONLY=id)
-	scripts/docs-shots.sh clips $(ONLY)
+docs-clips: ## Guide how-to clips from the App Store flavour, recorded in an E2E VM (E2E_RUNNER=host: this screen, needs Screen Recording; ONLY=id)
+	E2E_RUNNER=$(E2E_RUNNER) scripts/docs-shots.sh clips $(ONLY)
 
-screenshots: ## App Store screenshots: capture (App Store flavour), export, compose, verify (needs the screen)
-	scripts/store-shots.sh shots
+screenshots: ## App Store screenshots: capture (App Store flavour) in a Retina E2E VM, export, compose, verify (E2E_RUNNER=host for this screen)
+	E2E_RUNNER=$(E2E_RUNNER) scripts/store-shots.sh shots
 
 screenshots-compose: ## Re-compose and verify the App Store screenshots from the last captures
 	scripts/store-shots.sh compose
 
-preview: ## App Store preview video: record the storyboard, edit, check Apple's spec (needs Screen Recording)
-	scripts/store-shots.sh preview
+preview: ## App Store preview video: record the storyboard in an E2E VM, edit, check Apple's spec (E2E_RUNNER=host: this screen, needs Screen Recording)
+	E2E_RUNNER=$(E2E_RUNNER) scripts/store-shots.sh preview
 
 preview-edit: ## Re-edit the App Store preview from the last recording (no capture)
 	scripts/store-shots.sh preview-edit

@@ -704,6 +704,8 @@ Why scripted:
 
 Requirements and fallbacks:
 
+> *As built (2026-11-01): `make screenshots` and `make preview` run in a throwaway Retina E2E VM clone by default (`scripts/lib/capture.sh`, `docs/research/e2e-off-screen.md` 7.2); the guest records itself, so the Screen Recording grant below is needed only for `E2E_RUNNER=host`.*
+
 - **[RYAN]** must grant Screen Recording permission to the terminal app that runs `make`, the first time (section 13).
 - Xcode's built-in UI-test video recording is not used (B-33 picked the scripted `screencapture` path).
 - **Fallback: manual.** Ryan records the same storyboard in QuickTime Player:

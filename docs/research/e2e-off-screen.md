@@ -204,6 +204,18 @@ If Tart's FSL terms or its new owner become a problem: `lume create --ipsw lates
 | Shards | `E2E_VM_SHARDS=2`: two clones boot side by side (35-36 s), results merged with `xcresulttool merge` into one bundle (V). |
 | Failure paths | Xcode mismatch fails closed before booting and names `make e2e-vm-golden`; Ctrl-C deletes the clone and staging; a `kill -9` leaves an orphan that the next run deletes (owner pid gone) (V). |
 
+### 7.2 Captures in the VM (2026-11-01)
+
+The guide shots, the guide clips, the App Store screenshots and the App Store preview run in the VM by default (`make docs-shots`, `docs-clips`, `screenshots`, `preview`; `E2E_RUNNER=host` keeps the screen path). `scripts/lib/capture.sh` is the one runner switch for all four.
+
+| Question | Result |
+|---|---|
+| Retina | `tart set --display 1920x1200pt` gives a display backed by 3840x2400 px (Tart builds it with `VZMacGraphicsDisplayConfiguration(for: NSScreen.main, sizeInPoints:)`, so the host's main screen must be Retina), but the guest boots at 1024x768 pt. The 1920x1200 pt 2x mode is listed (with `kCGDisplayShowDuplicateLowResolutionModes`) and `CGConfigureDisplayWithDisplayMode` switches to it, so `E2E_VM_HIDPI=1920x1200` sets the clone's display and the guest runs `scripts/lib/e2e-vm-display.swift` before the tests (exit 93 when the mode is missing). `--display 3840x2400px` lists no 2x modes (Tart's pixel path is a 72 ppi panel). Captures come out 2x: 2560x1600 px for the 1280x800 pt guide window, 2880x1800 px for the 1440x900 pt store window (V). The golden image is unchanged (1920x1200 px, 1x) and the gate never sets it. |
+| Screen recording | Cirrus's image grants Screen Recording (`kTCCServiceScreenCapture`) to the Tart guest agent, and a process started through `tart exec` inherits it, so `scripts/record-app.swift` (ScreenCaptureKit) records in the guest without a TCC prompt (V). macOS still raised its separate "bypass the window picker" confirmation (a UserNotificationCenter alert that took the keyboard, so the preview's Command-2 never reached the app); the guest script writes a far-future approval for the recorder and the agent into `~/Library/Group Containers/group.com.apple.replayd/ScreenCaptureApprovals.plist` first, and the alert no longer appears (V). `E2E_VM_RECORD="W H cursor"` records the app's windows for the whole run; the movie and its first frame's guest time come back next to the result bundle, and the tests' markers use the same guest clock. `make docs-clips` and `make preview` passed this way (preview: 24.8 s, 1920x1080, H.264 High@4.0, the spec check green). |
+| A default Mac's look | The image has keyboard navigation on (`AppleKeyboardUIMode` 3: a focus ring on a sheet's first button, which also scrolled the Arrange Sections sheet sideways) and, with no trackpad, always-visible scroll bars. Capture runs stage `extra/setup.sh`, which sets both back to the defaults before the tests (exit 94 on failure); an `-AppleKeyboardUIMode 0` launch argument did not override it. |
+| Library state | The App Store flavour has no `/private/tmp/segue-e2e` sandbox exception and the shared app group is unwritable in the guest (the development profile is not valid there), so the capture tests pass `-SegueStatePath` inside the app's own container (`GuideShotCase.statePath`). The host path needs the same (P9-6 moved library state there; the App Store flavour has never had the exception). |
+| Time | One appearance of all 15 GuideShots tests: about 7.5 min including boot; both appearances plus the AVIF pass about 16 min. |
+
 ---
 
 ## 8. Open questions (with recommendations)

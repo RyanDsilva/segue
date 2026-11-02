@@ -8,6 +8,8 @@
 #   90  the guest Xcode build differs from the host's (test-without-building needs both equal)
 #   91  UI automation mode still asks for a password (XCUITest would hang on the prompt)
 #   92  not in the Aqua session (XCUITest cannot drive the UI from a Background session)
+#   93  the Retina mode the host asked for (E2E_VM_HIDPI) could not be set
+#   94  the staged extra/setup.sh failed
 # Otherwise the exit code is xcodebuild's.
 set -uo pipefail
 
@@ -50,10 +52,21 @@ out="$HOME/segue-results"
 ditto "$share/products" "$run"
 mkdir -p "$out"
 
+# A Retina guest (E2E_VM_HIDPI): switch to the 2x mode the host staged before any test.
+if [[ -f "$run/display" ]]; then
+    read -r width height <"$run/display"
+    "$run/display-mode" "$width" "$height" || exit 93
+fi
+
 # The library copy test's staged library (scripts/library-copy-test.sh); TEST_RUNNER_ hands
 # it to the UI test runner as SEGUE_COPY_LIBRARY.
 if [[ -d "$run/extra/library" ]]; then
     export TEST_RUNNER_SEGUE_COPY_LIBRARY="$run/extra/library"
+fi
+# Guest-side setup a host script staged (scripts/lib/capture.sh: a default Mac's look for the
+# captures), run before the tests.
+if [[ -f "$run/extra/setup.sh" ]]; then
+    bash "$run/extra/setup.sh" || exit 94
 fi
 # KEY=VALUE lines a host script staged for the test runner (store-shots.sh vm: the
 # screenshot appearance).
@@ -63,6 +76,29 @@ if [[ -f "$run/extra/test-env" ]]; then
     done <"$run/extra/test-env"
 fi
 
+# A recording of the run (E2E_VM_RECORD, the guide clips and the App Store preview): the
+# app's windows in a WxH pt rectangle at the top-left of the visible area, with
+# scripts/record-app.swift (ScreenCaptureKit). The Cirrus image grants Screen Recording to
+# the Tart guest agent, which runs this script, so no prompt appears.
+recorder=""
+if [[ -f "$run/record" ]]; then
+    read -r rec_width rec_height rec_cursor <"$run/record"
+    # macOS also asks, in a UserNotificationCenter alert that takes the keyboard from the
+    # app under test, whether a screen recorder may keep bypassing the window picker; a
+    # far-future approval for the recorder (and the agent that starts it) answers it ahead.
+    approvals="$HOME/Library/Group Containers/group.com.apple.replayd/ScreenCaptureApprovals.plist"
+    mkdir -p "$(dirname "$approvals")"
+    for client in "$run/record-app" "$(readlink -f /opt/homebrew/bin/tart-guest-agent 2>/dev/null)"; do
+        [[ -n "$client" ]] && defaults write "$approvals" "$client" -date "3024-01-01 00:00:00 +0000"
+    done
+    rect=$(osascript -l JavaScript -e 'ObjC.import("AppKit");
+        const s = $.NSScreen.screens.objectAtIndex(0), f = s.frame, v = s.visibleFrame;
+        Math.round(v.origin.x) + "," + Math.round(f.size.height - v.origin.y - v.size.height)')
+    "$run/record-app" "$out/recording.mov" dev.ryandsilva.segue \
+        "$rect,$rec_width,$rec_height" "$rec_cursor" "$out/recording.started" &
+    recorder=$!
+fi
+
 status=0
 xcodebuild test-without-building \
     -xctestrun "$run/$xctestrun" \
@@ -70,6 +106,13 @@ xcodebuild test-without-building \
     -resultBundlePath "$out/run.xcresult" \
     "$@" || status=$?
 
+if [[ -n "$recorder" ]]; then
+    kill -INT "$recorder" 2>/dev/null || true
+    wait "$recorder" || true
+    for file in recording.mov recording.started; do
+        [[ -f "$out/$file" ]] && ditto "$out/$file" "$share/$(dirname "$result_subpath")/$file"
+    done
+fi
 if [[ -d "$out/run.xcresult" ]]; then
     mkdir -p "$(dirname "$share/$result_subpath")"
     ditto "$out/run.xcresult" "$share/$result_subpath"

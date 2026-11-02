@@ -24,10 +24,19 @@
 #   E2E_VM_TIMEOUT       minutes before a shard's run is killed (default 90)
 #   E2E_VM_SKIP_BUILD=1  reuse the products already in .build/DerivedData
 #   E2E_VM_EXTRA=<dir>   stage <dir> into the guest as products/extra (the library copy test;
-#                        an extra/test-env file of KEY=VALUE lines reaches the test runner)
+#                        an extra/test-env file of KEY=VALUE lines reaches the test runner,
+#                        and an extra/setup.sh runs in the guest before the tests)
 #   E2E_VM_SCHEME, E2E_VM_CONFIGURATION  another scheme (default Segue-Personal, Debug-Personal),
 #                        e.g. Segue-AppStore / Debug-AppStore for the store screenshots
-#   E2E_VM_DISPLAY       the clone's display, e.g. 1920x1200pt (Retina, 2x) for 2880x1800 shots
+#   E2E_VM_DISPLAY       the clone's display, e.g. 1920x1200px (the golden's own, 1x)
+#   E2E_VM_HIDPI=WxH     a Retina guest for the screenshots: the clone gets a WxH pt display
+#                        and the guest switches to its 2x mode before the tests (the boot mode
+#                        is 1024x768 pt), so captures are 2x; scripts/lib/e2e-vm-display.swift
+#   E2E_VM_RECORD="W H C"  record the app's windows in a WxH pt rectangle at the top-left of
+#                        the guest's visible area (cursor C, 0 or 1) for the whole run, with
+#                        scripts/record-app.swift; the movie comes back as SEGUE_RECORDING
+#                        (default <bundle>.mov) and its first frame's guest wall-clock time
+#                        as SEGUE_RECORDING.started (one shard only)
 #   VM_VNC=1             Tart: serve the guest screen over VNC to watch a run
 #   SEGUE_RESULT_BUNDLE  where the result bundle goes (as in scripts/xcodebuild.sh)
 #
@@ -214,6 +223,37 @@ if [[ -n "${E2E_VM_EXTRA:-}" ]]; then
     ditto "$E2E_VM_EXTRA" "$stage/products/extra"
 fi
 cp scripts/lib/e2e-vm-guest.sh "$stage/products/guest-run.sh"
+# Guest-side tools are built here for the guest's macOS (the app's deployment target).
+guest_target=arm64-apple-macos26.0
+# A recording of the run in the guest (E2E_VM_RECORD): the recorder and its rectangle.
+if [[ -n "${E2E_VM_RECORD:-}" ]]; then
+    ((shards == 1)) || {
+        echo "e2e-vm: E2E_VM_RECORD needs one shard" >&2
+        exit 2
+    }
+    tool=.build/tools/record-app-guest
+    if [[ ! -x "$tool" || scripts/record-app.swift -nt "$tool" ]]; then
+        mkdir -p .build/tools
+        xcrun swiftc -O -target "$guest_target" -o "$tool" scripts/record-app.swift
+    fi
+    cp "$tool" "$stage/products/record-app"
+    echo "$E2E_VM_RECORD" >"$stage/products/record"
+fi
+# A Retina guest: the display-mode tool and the mode it sets (guest-run.sh reads both).
+if [[ -n "${E2E_VM_HIDPI:-}" ]]; then
+    [[ "$E2E_VM_HIDPI" =~ ^([0-9]+)x([0-9]+)$ ]] || {
+        echo "e2e-vm: E2E_VM_HIDPI must be WIDTHxHEIGHT in points (got '$E2E_VM_HIDPI')" >&2
+        exit 2
+    }
+    E2E_VM_DISPLAY="${E2E_VM_HIDPI}pt"
+    tool=.build/tools/e2e-vm-display
+    if [[ ! -x "$tool" || scripts/lib/e2e-vm-display.swift -nt "$tool" ]]; then
+        mkdir -p .build/tools
+        xcrun swiftc -O -target "$guest_target" -o "$tool" scripts/lib/e2e-vm-display.swift
+    fi
+    cp "$tool" "$stage/products/display-mode"
+    echo "${BASH_REMATCH[1]} ${BASH_REMATCH[2]}" >"$stage/products/display"
+fi
 staged=$SECONDS
 log "staged $(du -sh "$stage/products" | cut -f1) in $(elapsed $((staged - build_done)))"
 
@@ -314,6 +354,10 @@ done
 if ((status >= 90 && status <= 92)); then
     echo "e2e-vm: the guest failed its preflight (exit $status); rebuild it with: $golden_cmd" >&2
 fi
+if ((status == 93)); then
+    echo "e2e-vm: the guest has no ${E2E_VM_HIDPI:-} pt Retina mode (output above); the clone's" \
+        "display takes its scale from the host's main screen, which must be a Retina one" >&2
+fi
 
 # Results: one bundle where the host runner would put it (merged across shards).
 found=()
@@ -324,6 +368,17 @@ if ((${#found[@]} == 1)); then
     mv "${found[0]}" "$bundle"
 elif ((${#found[@]} > 1)); then
     xcrun xcresulttool merge "${found[@]}" --output-path "$bundle" >/dev/null
+fi
+if [[ -n "${E2E_VM_RECORD:-}" ]]; then
+    recording="${SEGUE_RECORDING:-${bundle%.xcresult}.mov}"
+    if [[ -f "$stage/results/0/recording.mov" ]]; then
+        mv "$stage/results/0/recording.mov" "$recording"
+        mv "$stage/results/0/recording.started" "$recording.started" 2>/dev/null || true
+        log "recording: $repo/$recording"
+    else
+        echo "e2e-vm: the guest made no recording" >&2
+        ((status != 0)) || status=1
+    fi
 fi
 if [[ -d "$bundle" ]]; then
     log "result bundle: $repo/$bundle"

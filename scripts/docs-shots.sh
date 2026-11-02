@@ -9,8 +9,10 @@
 #                                         (scripts/lib/record.sh), cut to the storyboard, encoded
 #                                         with ffmpeg (mise) to guide/public/clips/<id>.mp4
 #
-# Needs a logged-in session on a Retina display (the shots fail on a non-Retina capture) and,
-# for clips, Screen Recording permission for the terminal ([RYAN], once). Never part of
+# Both run where E2E_RUNNER says (scripts/lib/capture.sh): `vm`, the Makefile default, in a
+# throwaway Retina E2E VM clone, off the screen (the guest records its own screen); `host`
+# on this Mac's screen (a Retina main display: the shots fail on a non-Retina capture;
+# clips need Screen Recording permission for the terminal, [RYAN] once). Never part of
 # `make check`, `make gate` or CI. Make targets: `make docs-shots`, `make docs-clips`.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -18,39 +20,26 @@ cd "$(dirname "$0")/.."
 source scripts/lib/discard.sh
 # shellcheck source=lib/record.sh
 source scripts/lib/record.sh
+# shellcheck source=lib/capture.sh
+source scripts/lib/capture.sh
 
 mode="${1:-}"
 only="${2:-}"
 out=".build/docs-shots"
-# The window the tests place (GuideShotCase.windowFrame: 1280x800 pt at the top-left of the
-# screen's visible area, clear of the menu bar and Dock), as a screencapture -R rect.
-visible_rect() {
-    osascript -l JavaScript -e 'ObjC.import("AppKit");
-        const s = $.NSScreen.screens.objectAtIndex(0), f = s.frame, v = s.visibleFrame;
-        Math.round(v.origin.x) + "," + Math.round(f.size.height - v.origin.y - v.size.height) + ",1280,800"'
-}
 
 run_tests() { # <appearance> <only-testing...>
-    local appearance="$1"
+    local appearance="$1" status=0
     shift
-    local bundle="$out/$appearance.xcresult"
-    discard "$bundle"
-    TEST_RUNNER_SEGUE_SHOT_APPEARANCE="$appearance" SEGUE_RESULT_BUNDLE="$bundle" \
-        scripts/xcodebuild.sh -scheme Segue-AppStore -configuration Debug-AppStore \
-        test-without-building "$@"
-    discard "$out/raw-$appearance"
-    xcrun xcresulttool export attachments --path "$bundle" \
-        --output-path "$out/raw-$appearance" --schema-version 0.4.0 >/dev/null
-}
-
-build() {
-    scripts/xcodebuild.sh -scheme Segue-AppStore -configuration Debug-AppStore build-for-testing
+    capture_run "$out/$appearance.xcresult" "$appearance" "$@" || status=$?
+    # Exported even after a failure, so the shots that did pass can be looked at.
+    [[ -d "$out/$appearance.xcresult" ]] && capture_export "$out/$appearance.xcresult" "$out/raw-$appearance"
+    return "$status"
 }
 
 case "$mode" in
 shots)
     mkdir -p "$out"
-    build
+    capture_build
     for appearance in dark light; do
         run_tests "$appearance" -only-testing:SegueAppStoreUITests/GuideShots
     done
@@ -59,7 +48,7 @@ shots)
     ;;
 clips)
     mkdir -p "$out/clips"
-    build
+    capture_build
     for id in paste-a-song build-a-set go-on-stage; do
         case "$id" in
         paste-a-song) test=testPasteASong ;;
@@ -70,19 +59,11 @@ clips)
             continue
         fi
         raw="$out/clips/$id.mov"
-        discard "$raw"
         # The recording starts with the app's first window; the test's clip-start and
         # clip-end markers (wall-clock times) then cut it to the storyboard.
-        record_start "$raw" "$(visible_rect)" 1
-        run_tests dark "-only-testing:SegueAppStoreUITests/GuideClips/$test" || {
-            record_stop
-            exit 1
-        }
-        record_stop
-        [[ -s "$raw" && -n "$recorded_started" ]] || {
-            echo "docs-clips: no recording for $id (Screen Recording permission?)" >&2
-            exit 1
-        }
+        capture_record "$raw" 1280 800 1 "$out/dark.xcresult" dark \
+            "-only-testing:SegueAppStoreUITests/GuideClips/$test"
+        capture_export "$out/dark.xcresult" "$out/raw-dark"
         scripts/docs-clips-encode.sh "$raw" "$id" "$recorded_started" "$out/raw-dark"
     done
     ;;

@@ -275,6 +275,8 @@ docs-shots: ## Guide screenshots from the App Store flavour (needs the screen; O
 
 (`.build/docs-shots` is moved to the Trash with `trash` at the start, never `rm -rf`.) Not part of `check`, `gate` or CI: it needs a logged-in session with a Retina screen.
 
+> *As built (2026-11-01): `make docs-shots` and `make docs-clips` run in a throwaway Retina E2E VM clone by default (`scripts/lib/capture.sh`, `docs/research/e2e-off-screen.md` 7.2), dark then light, and bring the attachments back to the host for `docs-shots.swift`; `E2E_RUNNER=host` keeps the screen path. No screen and no Screen Recording grant needed.*
+
 ### 5.6 `scripts/docs-shots.swift` and outputs
 
 - Swift script (AppKit/ImageIO only, like `gen-icon.swift`), reading the xcresult manifest by attachment-name prefix.

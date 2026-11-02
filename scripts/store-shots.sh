@@ -9,40 +9,38 @@
 #                                    no alpha), the contact sheet and the A/B/C direction
 #                                    samples; verify
 #   scripts/store-shots.sh compose   compose and verify again from the last raw captures
-#   scripts/store-shots.sh vm <Class/test>  capture selected shots in the E2E VM instead (off
-#                                    the screen; a Retina 1920x1200 pt clone), dark and light,
+#   scripts/store-shots.sh vm <Class/test>  re-capture selected shots only in the VM, dark and light,
 #                                    into raw-vm-<appearance>, which compose prefers over
-#                                    the screen captures; then compose
+#                                    the full captures; then compose
 #   scripts/store-shots.sh preview-edit  edit the last recording again (no capture)
 #   scripts/store-shots.sh preview   record AppStorePreviewTests (scripts/lib/record.sh), cut
 #                                    it to the test's markers and edit it with
 #                                    scripts/make-preview.sh
 #
-# Needs a logged-in session on a Retina display (the tests fail on any other capture size)
-# and, for the preview, Screen Recording permission for the terminal ([RYAN], once). Never
-# part of `make check`, `make gate` or CI. Make targets: `make screenshots`, `make preview`.
+# Both run where E2E_RUNNER says (scripts/lib/capture.sh): `vm`, the Makefile default, in a
+# throwaway Retina 1920x1200 pt E2E VM clone, off the screen (the guest records its own
+# screen for the preview); `host` on this Mac's screen (a Retina main display: the tests fail
+# on any other capture size; the preview needs Screen Recording permission for the
+# terminal, [RYAN] once). Never part of `make check`, `make gate` or CI. Make targets:
+# `make screenshots`, `make preview`.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # shellcheck source=lib/discard.sh
 source scripts/lib/discard.sh
 # shellcheck source=lib/record.sh
 source scripts/lib/record.sh
+# shellcheck source=lib/capture.sh
+source scripts/lib/capture.sh
 
 mode="${1:-}"
 out=".build/screenshots"
 
 run_tests() { # <bundle> <appearance> <only-testing>
-    local bundle="$1" appearance="$2" only="$3"
-    discard "$bundle"
-    TEST_RUNNER_SEGUE_SHOT_APPEARANCE="$appearance" SEGUE_RESULT_BUNDLE="$bundle" \
-        scripts/xcodebuild.sh -scheme Segue-AppStore -configuration Debug-AppStore \
-        test-without-building "-only-testing:$only"
+    capture_run "$1" "$2" "-only-testing:$3"
 }
 
 export_attachments() { # <bundle> <folder>
-    discard "$2"
-    xcrun xcresulttool export attachments --path "$1" --output-path "$2" \
-        --schema-version 0.4.0 >/dev/null
+    capture_export "$1" "$2"
 }
 
 compose() {
@@ -59,14 +57,12 @@ compose() {
     scripts/compose-screenshots.swift --verify "$out/final"
 }
 
-build() {
-    scripts/xcodebuild.sh -scheme Segue-AppStore -configuration Debug-AppStore build-for-testing
-}
-
 case "$mode" in
 shots)
     mkdir -p "$out"
-    build
+    capture_build
+    # A full capture replaces any earlier per-shot re-captures.
+    discard "$out/raw-vm-dark" "$out/raw-vm-light"
     for appearance in dark light; do
         run_tests "$out/$appearance.xcresult" "$appearance" \
             SegueAppStoreUITests/AppStoreScreenshotTests
@@ -79,43 +75,24 @@ compose)
     ;;
 vm)
     test="${2:?usage: scripts/store-shots.sh vm <Class/test>, e.g. AppStoreScreenshotTests/test10Songbook}"
-    skip=""
+    capture_runner=vm
+    capture_build
     for appearance in dark light; do
-        extra=$(mktemp -d "${TMPDIR:-/tmp}/segue-shots.XXXXXX")
-        echo "SEGUE_SHOT_APPEARANCE=$appearance" >"$extra/test-env"
-        discard "$out/vm-$appearance.xcresult"
-        E2E_VM_SCHEME=Segue-AppStore E2E_VM_CONFIGURATION=Debug-AppStore \
-            E2E_VM_DISPLAY=1920x1200pt E2E_VM_EXTRA="$extra" E2E_VM_SKIP_BUILD="$skip" \
-            SEGUE_RESULT_BUNDLE="$out/vm-$appearance.xcresult" \
-            scripts/e2e-vm.sh tart "-only-testing:SegueAppStoreUITests/$test"
-        discard "$extra"
+        run_tests "$out/vm-$appearance.xcresult" "$appearance" "SegueAppStoreUITests/$test"
         export_attachments "$out/vm-$appearance.xcresult" "$out/raw-vm-$appearance"
-        skip=1
     done
     compose
     ;;
 preview)
     preview=".build/preview"
     mkdir -p "$preview"
-    build
+    capture_build
     # The stage and builder windows the test places: 1440x810 pt (16:9) at the top-left of
-    # the screen's visible area, as a screencapture -R rect.
-    rect=$(osascript -l JavaScript -e 'ObjC.import("AppKit");
-        const s = $.NSScreen.screens.objectAtIndex(0), f = s.frame, v = s.visibleFrame;
-        Math.round(v.origin.x) + "," + Math.round(f.size.height - v.origin.y - v.size.height) + ",1440,810"')
+    # the screen's visible area. The whole run is recorded, no pointer; the test's markers
+    # cut it to the storyboard.
     raw="$preview/raw.mov"
-    discard "$raw"
-    # The whole run is recorded, no pointer; the test's markers cut it to the storyboard.
-    record_start "$raw" "$rect" 0
-    run_tests "$preview/run.xcresult" dark SegueAppStoreUITests/AppStorePreviewTests || {
-        record_stop
-        exit 1
-    }
-    record_stop
-    [[ -s "$raw" && -n "$recorded_started" ]] || {
-        echo "store-shots: no recording (Screen Recording permission?)" >&2
-        exit 1
-    }
+    capture_record "$raw" 1440 810 0 "$preview/run.xcresult" dark \
+        -only-testing:SegueAppStoreUITests/AppStorePreviewTests
     export_attachments "$preview/run.xcresult" "$preview/attachments"
     marker() { # <name>: the marker's epoch time from the exported attachments
         local file
