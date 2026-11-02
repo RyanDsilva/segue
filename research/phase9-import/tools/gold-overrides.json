@@ -1,119 +1,167 @@
 {
+ "guitar_indianraag_com_channa-mereya-guitar-chords-arijit-singh_": {
+  "artists": [
+   "Arijit Singh"
+  ],
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Channa Mereya"
+ },
+ "guitarnama_blogspot_com_2013_07_aashiqui-2-tum-hi-ho-chords_html": {
+  "artists": [],
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Tum Hi Ho"
+ },
+ "indianguitarists_com_channa-mereya-guitar-chords-2_": {
+  "artists": [
+   "Arijit Singh"
+  ],
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Channa Mereya"
+ },
+ "indianguitartabs_com_blog_tum-hi-ho-aashiqui-2-guitar-chords_html": {
+  "artists": [],
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Tum Hi Ho"
+ },
+ "indichords_com_song_1266_channa-mereya-ae-dil-hai-mushkil-arijit-singh-adhm-pritam": {
+  "artists": [],
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Channa Mereya"
+ },
+ "tabandchord_com_2016_11_channa-mereya-guitar-chords-ae-dil-hai-mushkil_": {
+  "artists": [],
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Channa Mereya"
+ },
+ "tabs_ultimate-guitar_com_tab_4275298": {
+  "album": "Brahmāstra Part One - Shiva",
+  "kind": "chart",
+  "title": "Kesariya"
+ },
+ "tabs_ultimate-guitar_com_tab_aakash-gandhi_tum-hi-ho-guitar-pro-1479556": {
+  "kind": "pro"
+ },
+ "tabs_ultimate-guitar_com_tab_adele_someone-like-you-chords-1006751": {
+  "kind": "chart"
+ },
+ "tabs_ultimate-guitar_com_tab_eagles_hotel-california-chords-46190": {
+  "kind": "chart"
+ },
+ "tabs_ultimate-guitar_com_tab_ed-sheeran_perfect-chords-1956589": {
+  "kind": "chart"
+ },
+ "tabs_ultimate-guitar_com_tab_mickey-singh_channa-mereya-chords-2421001": {
+  "kind": "chart"
+ },
+ "tabs_ultimate-guitar_com_tab_misc-soundtrack_aashiqui-2-tum-hi-ho-chords-1234996": {
+  "kind": "chart"
+ },
  "tabs_ultimate-guitar_com_tab_misc-soundtrack_aashiqui-2-tum-hi-ho-chords-1244521": {
-  "key": "Em"
+  "key": "Em",
+  "kind": "chart"
+ },
+ "tabs_ultimate-guitar_com_tab_misc-soundtrack_ae-dil-hai-mushkil-channa-mereya-chords-1879445": {
+  "kind": "chart"
+ },
+ "tabs_ultimate-guitar_com_tab_misc-soundtrack_dilwale-dulhania-le-jayenge-tujhe-dekha-to-chords-1761484": {
+  "kind": "chart"
  },
  "tabs_ultimate-guitar_com_tab_misc-soundtrack_tamasha-agar-tum-saath-ho-chords-1780526": {
   "artists": [
    "Alka Yagnik",
    "Arijit Singh"
-  ]
+  ],
+  "kind": "chart"
  },
- "tabs_ultimate-guitar_com_tab_4275298": {
-  "title": "Kesariya",
-  "album": "Brahmāstra Part One - Shiva"
+ "tabs_ultimate-guitar_com_tab_misc-soundtrack_tamasha-agar-tum-saath-ho-tabs-1875406": {
+  "kind": "tab"
  },
- "www_e-chords_com_chords_arijit-singh_tum-hi-ho": {
-  "kind": "notFound"
+ "tabs_ultimate-guitar_com_tab_oasis_wonderwall-chords-27596": {
+  "kind": "chart"
+ },
+ "tabs_ultimate-guitar_com_tab_shreya-ghoshal_tum-hi-ho-rehnuma-chords-4430258": {
+  "kind": "chart"
+ },
+ "tabs_ultimate-guitar_com_tab_the-beatles_let-it-be-chords-17427": {
+  "kind": "chart"
+ },
+ "www_azchords_com_a_ankittiwari-tabs-54602_alfazonkitarah1-tabs-880044_html": {
+  "artists": [
+   "Ankit Tiwari"
+  ],
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Alfazon Ki Tarah"
  },
  "www_chordie_com_chord_pere_www_guitaretab_com_n_nikhil-paul-george_340988_html": {
   "title": "Main Kya Karoon"
  },
+ "www_e-chords_com_chords_aashiqui-2_tum-hi-ho": {
+  "kind": "chart"
+ },
+ "www_e-chords_com_chords_arijit-singh_tum-hi-ho": {
+  "kind": "notFound"
+ },
+ "www_e-chords_com_chords_misc-soundtrack_aashiqui-2-tum-hi-ho": {
+  "kind": "chart"
+ },
+ "www_e-chords_com_chords_mithoon_tum-hi-ho": {
+  "kind": "chart"
+ },
+ "www_guitarchordworld_net_2016_09_channa-mereya-chords-ae-dil-hai-mushkil_html": {
+  "artists": [],
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Channa Mereya"
+ },
+ "www_guitaretab_com_b_beatles_1169_html": {
+  "artists": [
+   "Beatles"
+  ],
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Let It Be"
+ },
+ "www_guitaretab_com_b_boyce-avenue_268379_html": {
+  "artists": [
+   "Boyce Avenue"
+  ],
+  "capo": 1,
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Perfect"
+ },
+ "www_guitartabs_cc_tabs_o_oasis_wonderwall_crd_ver_8_html": {
+  "artists": [
+   "Oasis"
+  ],
+  "capo": 2,
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Wonderwall"
+ },
  "www_naadanchords_com_tum-hi-ho-aashiqui-2": {
   "kind": "notFound"
+ },
+ "www_pickachord_com_chords-for-channa-mereya-ae-dil-hai-mushkil": {
+  "artists": [],
+  "minChords": 8,
+  "minLyricWords": 40,
+  "title": "Channa Mereya"
  },
  "www_xguitar_com_guitar-tabs_eagles_hotel_california_hotel_california_txt": {
   "kind": "notFound"
  },
- "guitarnama_blogspot_com_2013_07_aashiqui-2-tum-hi-ho-chords_html": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Tum Hi Ho",
-  "artists": []
- },
- "indianguitartabs_com_blog_tum-hi-ho-aashiqui-2-guitar-chords_html": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Tum Hi Ho",
-  "artists": []
- },
- "indichords_com_song_1266_channa-mereya-ae-dil-hai-mushkil-arijit-singh-adhm-pritam": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Channa Mereya",
-  "artists": []
- },
- "guitar_indianraag_com_channa-mereya-guitar-chords-arijit-singh_": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Channa Mereya",
-  "artists": [
-   "Arijit Singh"
-  ]
- },
- "tabandchord_com_2016_11_channa-mereya-guitar-chords-ae-dil-hai-mushkil_": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Channa Mereya",
-  "artists": []
- },
- "www_guitarchordworld_net_2016_09_channa-mereya-chords-ae-dil-hai-mushkil_html": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Channa Mereya",
-  "artists": []
- },
- "www_pickachord_com_chords-for-channa-mereya-ae-dil-hai-mushkil": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Channa Mereya",
-  "artists": []
- },
- "www_guitaretab_com_b_beatles_1169_html": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Let It Be",
-  "artists": [
-   "Beatles"
-  ]
- },
- "www_guitartabs_cc_tabs_o_oasis_wonderwall_crd_ver_8_html": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Wonderwall",
-  "artists": [
-   "Oasis"
-  ],
-  "capo": 2
- },
- "www_azchords_com_a_ankittiwari-tabs-54602_alfazonkitarah1-tabs-880044_html": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Alfazon Ki Tarah",
-  "artists": [
-   "Ankit Tiwari"
-  ]
- },
  "zenandjuice_com_music_rem_guitar_we_walk_txt": {
+  "artists": [],
   "minChords": 8,
   "minLyricWords": 40,
-  "title": "We Walk",
-  "artists": []
- },
- "www_guitaretab_com_b_boyce-avenue_268379_html": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Perfect",
-  "artists": [
-   "Boyce Avenue"
-  ],
-  "capo": 1
- },
- "indianguitarists_com_channa-mereya-guitar-chords-2_": {
-  "minChords": 8,
-  "minLyricWords": 40,
-  "title": "Channa Mereya",
-  "artists": [
-   "Arijit Singh"
-  ]
+  "title": "We Walk"
  }
 }
