@@ -97,22 +97,29 @@
 
         /// "G → A · capo 2 → no capo · 96 → 120 BPM": a capo change in the cue colour.
         private var changeLine: some View {
-            HStack(alignment: .firstTextBaseline, spacing: 5) {
-                ForEach(header.changes.indices, id: \.self) { index in
-                    if index > 0 {
-                        Text("\u{00B7}").foregroundStyle(Theme.color.muted)
-                    }
-                    let change = header.changes[index]
-                    Text(change.text)
-                        .foregroundStyle(change.kind == .capo ? Theme.color.cueText
-                            : Theme.color.muted)
+            Text(changeText)
+                .font(SchibstedGrotesk.medium.font(size: placed.changesSize))
+                .lineLimit(1)
+                .fixedSize()
+                .accessibilityIdentifier(AccessibilityID.liveMemberChanges)
+        }
+
+        /// The change line as the engine measured it (`MemberHeader.changeLine`, joined by
+        /// " · "), so it stays inside the callout sized for it; a capo change in `cueText`.
+        private var changeText: AttributedString {
+            var text = AttributedString()
+            for (index, change) in header.changes.enumerated() {
+                if index > 0 {
+                    var separator = AttributedString(" \u{00B7} ")
+                    separator.foregroundColor = Theme.color.muted
+                    text += separator
                 }
+                var part = AttributedString(change.text)
+                part.foregroundColor = change.kind == .capo ? Theme.color.cueText
+                    : Theme.color.muted
+                text += part
             }
-            .font(SchibstedGrotesk.medium.font(size: placed.changesSize))
-            .lineLimit(1)
-            .fixedSize()
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier(AccessibilityID.liveMemberChanges)
+            return text
         }
 
         /// "Tum Hi Ho, 2 of 3, A, capo 2, 120. Transition: Hold the D. G to A".
