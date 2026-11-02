@@ -235,6 +235,11 @@
             shared = true
         }
 
+        /// The sheet's Help button opened the guide's Print and PDF page (R181).
+        func noteHelpOpened() {
+            environment.record(.helpOpened(.pdf))
+        }
+
         /// Writes the PDF to `url` atomically: nothing lands there on failure.
         func write(to url: URL) -> Bool {
             guard isReady, let data = pdf?.dataRepresentation() else { return false }

@@ -37,6 +37,7 @@ const sidebar = [
       page('set-assistant', 'Set assistant'),
       page('running-time', 'Running time'),
       page('arrange-sections', 'Arrange sections'),
+      page('print-and-pdf', 'Print and PDF'),
       page('smart-filters', 'Smart filters'),
     ],
   },

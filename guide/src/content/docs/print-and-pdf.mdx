@@ -1,0 +1,62 @@
+---
+title: Print and PDF
+description: Turn a song, a slot or a whole set into a PDF that looks like the stage, then save, share or print it. Chords, bass notes or lyrics only.
+---
+import Shot from '../../components/Shot.astro';
+import Steps from '../../components/Steps.astro';
+
+Segue makes a PDF of any song, any slot of a set or a whole setlist, and shows it in a preview before anything is saved or printed. The pages look like your stage: the same sections, arrangement, keys, badges, bass notes and fills, on white paper with the chords in red.
+
+## Export one song or slot {#song}
+
+<Steps>
+1. Select a song in the library, or open it in the editor.
+2. Choose **File > Export PDF…** (<kbd>⇧⌘E</kbd>), or right-click the song and choose **Export PDF…**.
+3. Pick the options on the left, then **Save PDF…**, **Share** or **Print…**.
+</Steps>
+
+<Shot id="pdf-preview" alt="The PDF preview: the options on the left, a printed chart on the right, and Share, Save PDF and Print along the bottom" />
+
+A library song prints as written, with its own transpose, Nashville and diagram settings. To print a song the way a set plays it, right-click its row in a setlist and choose **Export Slot as PDF…**: you get that slot's [arrangement](/guide/arrange-sections), key and capo. If the arrangement no longer matches the song, the full song prints with "Arrangement out of date: printed as written" under the title.
+
+To print several library songs together, <kbd>⌘</kbd>-click them, then choose **File > Export PDF…** or right-click and choose **Export 3 Songs as PDF…**. They print in the library's current order, after a contents page, with no times.
+
+## A songbook for the set {#songbook}
+
+With a setlist open, choose **File > Export PDF…** or **Print…**, or **Export PDF…** from the builder's **Setlist** menu. The PDF starts with the set list: every song with its number, artists, key, time and page, and each break with its part's running time. Click a row to jump to that song; the PDF's sidebar lists them too. Each song then starts on a new page, with "4 of 18" in the corner.
+
+- Times and totals follow [running time](/guide/running-time): "~3:40" is an estimate, and a total with songs that have no time reads "1:12:30 + 2 unknown".
+- A [medley](/guide/medleys) is one numbered row with its songs under it, 5a, 5b and 5c, each linked to where that song starts. Its songs print one after another with no page break, each opening with its title, key and the transition you wrote.
+- A slot whose song is missing from the library reads "Song not in library".
+
+<Shot id="pdf-songbook" alt="A songbook's set list page: the setlist name, the songs with their keys, times and page numbers, and a break heading" />
+
+## Options {#options}
+
+- **Chart:** Chords, Bass notes or Lyrics. One PDF prints one part: export again for another player.
+- **Paper:** A4 or US Letter.
+- **Text size:** Small, Medium or Large. Lyrics remember their own size, Large to start with.
+- **Columns:** Auto uses two columns only when a song fits on fewer pages that way.
+- **Fit on one page:** shrinks one song to a single page, down to 9 pt. If it still doesn't fit, the preview says so and prints it at your size.
+- **Repeats:** Written out prints every repeat in full. Compact prints a repeat that is exactly the same as an earlier one as a single line, "Chorus 2 of 3: as Chorus 1 above".
+- **Section map:** the song's order in one line under the title, "Intro · V1 · Ch · V2 · Ch 2/3 · Br".
+- **Chord diagrams:** each song's own setting, every song, or none. They print after the last section.
+- **Stage notes and cues:** the song's notes, the slot's note and your [section notes](/guide/section-notes) set to **Show on stage only**. Off every time you open the preview, so private reminders never print by accident.
+
+Paper, text size, columns and the other page settings are remembered for next time.
+
+## Bass charts {#bass}
+
+Choose **Bass notes** as the chart to print what the [bass-note view](/guide/play-bass) shows: each chord's bass note at the pitch it sounds, the key it sounds in with no capo, and the scale under the title. Walk-ups print as on stage, and saved fills print as note names or, with **Fills as tab**, as small tabs under their lines. Changing **Fills as tab** here doesn't change your stage setting. Bass charts print no chord diagrams. If the bass-note view is on, the preview starts on Bass notes.
+
+## Lyric sheets {#lyrics}
+
+Choose **Lyrics** to print [singer view](/guide/singer-view): the words with no chords, section names, chart comments and an "Instrumental" line for parts with no words. A section played as chords only prints its first line, tagged CHORDS. The header and the set list show the key the band sounds in, like "Key A", never a capo shape. Song and slot notes never print on a lyric sheet; **Stage notes and cues** adds only your section notes.
+
+## Print, save and share {#print}
+
+- **Print…** (<kbd>⌘P</kbd>) opens the Mac's print dialog with your paper size already set. **File > Print…** opens the preview ready to print.
+- **Save PDF…** (<kbd>⌘S</kbd>) asks where to save it, named after the song or the set, like "Friday Set (Bass).pdf".
+- **Share** sends the PDF with Mail, Messages, AirDrop or any other share service.
+
+The preview is a snapshot: edits you make to a song while it's open show the next time you open it. Pinch or press <kbd>⌘+</kbd> and <kbd>⌘-</kbd> to zoom the pages.

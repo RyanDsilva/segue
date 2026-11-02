@@ -32,18 +32,24 @@
         }
     }
 
-    /// The standard round macOS Help button, opening one guide page.
+    /// The standard round macOS Help button, opening one guide page. `opened` runs after the
+    /// page opens (a sheet that counts its Help button, e.g. `helpOpened(.pdf)`).
     struct GuideHelpButton: View {
         let page: SegueLinks.Guide
+        var opened: (() -> Void)?
         @Environment(\.openGuide) private var openGuide
 
-        init(_ page: SegueLinks.Guide) {
+        init(_ page: SegueLinks.Guide, opened: (() -> Void)? = nil) {
             self.page = page
+            self.opened = opened
         }
 
         var body: some View {
             if let openGuide {
-                HelpLink { openGuide(page) }
+                HelpLink {
+                    openGuide(page)
+                    opened?()
+                }
                     .help("Open “\(page.title)” in the Segue Guide")
                     .accessibilityLabel("Help: \(page.title)")
                     .accessibilityIdentifier(AccessibilityID.guideHelp(page))

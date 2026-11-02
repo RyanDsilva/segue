@@ -47,6 +47,15 @@
         }
 
         private var titleRow: some View {
+            HStack(alignment: .center, spacing: 12) {
+                titles
+                GuideHelpButton(.pdf) { model.noteHelpOpened() }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+        }
+
+        private var titles: some View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(model.title)
                     .font(SchibstedGrotesk.bold.font(size: 18))
@@ -59,8 +68,6 @@
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
         }
 
         private var pages: some View {

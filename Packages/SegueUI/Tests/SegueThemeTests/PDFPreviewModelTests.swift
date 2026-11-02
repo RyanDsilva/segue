@@ -124,6 +124,14 @@ struct PDFPreviewModelTests {
         #expect(saved.pageCount == model.pdf?.pageCount)
         #expect(model.flash == "Saved Out.pdf")
         #expect(model.shareURL?.lastPathComponent == "Friday Set.pdf")
+        // The sheet's Help button (R181): one helpOpened(.pdf) per click.
+        model.noteHelpOpened()
+        #expect(recorder.events.count { event in
+            if case .helpOpened(.pdf) = event {
+                return true
+            }
+            return false
+        } == 1)
         model.close()
         model.close()
         let summaries = recorder.events.compactMap { event -> PDFExportSummary? in
@@ -174,12 +182,16 @@ struct PDFSheetSnapshotTests {
             var name: String
             var snapshot: PDFSnapshot
             var dark: Bool
+            var part: PrintPart?
+            var folder: URL?
         }
         let cases = [
             Case(
                 name: "sheet-dark-songbook",
                 snapshot: Support.snapshot(.setlist(setlist, records)),
                 dark: true,
+                part: nil,
+                folder: nil,
             ),
             Case(
                 name: "sheet-light-bass-chart",
@@ -188,6 +200,23 @@ struct PDFSheetSnapshotTests {
                     profile: profile,
                 ),
                 dark: false,
+                part: nil,
+                folder: nil,
+            ),
+            // P9-1c: the Lyrics part and the Help button.
+            Case(
+                name: "sheet-light-lyrics-songbook",
+                snapshot: Support.snapshot(.setlist(setlist, records)),
+                dark: false,
+                part: .lyrics,
+                folder: PrintLyricsTests.folder,
+            ),
+            Case(
+                name: "sheet-dark-lyrics-songbook",
+                snapshot: Support.snapshot(.setlist(setlist, records)),
+                dark: true,
+                part: .lyrics,
+                folder: PrintLyricsTests.folder,
             ),
         ]
         for item in cases {
@@ -197,17 +226,31 @@ struct PDFSheetSnapshotTests {
                 defaults: PDFPreviewModelTests.defaults(),
             )
             model.options.paper = .letter
+            if let part = item.part {
+                model.options.part = part
+            }
             model.render()
             await model.settle()
-            try await Self.capture(model, dark: dark, name: name)
+            try await Self.capture(
+                model,
+                dark: dark,
+                name: name,
+                folder: item.folder ?? Support.screenshots,
+            )
         }
     }
 
     /// The sheet in a borderless window (AppKit controls draw only in one), cached to a PNG.
-    static func capture(_ model: PDFPreviewModel, dark: Bool, name: String) async throws {
+    static func capture(
+        _ model: PDFPreviewModel,
+        dark: Bool,
+        name: String,
+        folder: URL = Support.screenshots,
+    ) async throws {
         let size = CGSize(width: 1240, height: 820)
         let host = NSHostingView(rootView: PDFPreviewSheet(model: model, windowSize: nil) {}
-            .frame(width: size.width, height: size.height))
+            .frame(width: size.width, height: size.height)
+            .environment(\.openGuide, OpenGuideAction { _ in }))
         host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let window = NSWindow(
             contentRect: NSRect(origin: CGPoint(x: -20000, y: -20000), size: size),
@@ -227,7 +270,7 @@ struct PDFSheetSnapshotTests {
         let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: rep)
         let image = try #require(rep.cgImage)
-        try Support.writePNG(image, name: name)
+        try Support.writePNG(image, name: name, folder: folder)
         window.orderOut(nil)
         window.close()
     }
