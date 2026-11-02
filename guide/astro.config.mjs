@@ -60,10 +60,18 @@ const sidebar = [
   { label: 'Reference', items: [page('keyboard', 'Keyboard shortcuts'), page('troubleshooting', 'Troubleshooting')] },
 ];
 
+/**
+ * HELP_BOOK=1 (`make help-book`, P9-5 3.3): the same pages a second time for the app's
+ * offline Apple Help Book. Same base, so every guide URL still starts with /guide and
+ * scripts/helpbook.mjs can tell guide pages from site pages when it makes them relative;
+ * no Pagefind (Help Viewer indexes the book itself with hiutil).
+ */
+const helpBook = process.env.HELP_BOOK === '1';
+
 export default defineConfig({
   site: 'https://segue.ryandsilva.dev',
   base: '/guide',
-  outDir: '../website/guide',
+  outDir: helpBook ? '../Derived/HelpBook/site' : '../website/guide',
   trailingSlash: 'never',
   // Heading attributes give stable ids the app deep-links to (WS6 2.1):
   // `## Remove the Welcome songs {#remove}` renders <h2 id="remove">.
@@ -79,7 +87,7 @@ export default defineConfig({
       title: 'Segue Guide',
       description: 'How to use Segue for Mac: bring your songs in, make each chart yours, build the set, play the show.',
       disable404Route: true,
-      pagefind: true,
+      pagefind: !helpBook,
       expressiveCode: false,
       lastUpdated: false,
       tableOfContents: false,

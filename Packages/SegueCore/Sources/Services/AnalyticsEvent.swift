@@ -54,8 +54,10 @@ public enum AnalyticsEvent: Sendable, Hashable {
     case showEnded(ShowSummary)
     /// Row 13: an activation milestone, once per install.
     case milestoneReached(Milestone, daysSinceFirstLaunch: DaysBucket)
-    /// Row 14: a Help menu item (daily per item).
-    case helpOpened(HelpItem)
+    /// Row 14: a Help menu item or an in-app Help button (daily per item, route and origin).
+    /// `via`: whether the offline Help Book or the web guide opened (P9-5 6; nil for items
+    /// that open neither). `from`: where Report a Problem was chosen (nil for other items).
+    case helpOpened(HelpItem, via: HelpRoute? = nil, from: HelpOrigin? = nil)
     /// Row 15: a bug report left the Mac.
     case feedbackSent(FeedbackSentSummary)
     /// Row 16: an error surfaced to the user (daily per code).
@@ -229,6 +231,8 @@ public enum HelpItem: String, Sendable, CaseIterable {
     case terms
     /// The PDF preview sheet's Help button (P9-1, R181).
     case pdf
+    /// An in-app Help button or a tip's Learn More (P9-5 6).
+    case contextHelp
 }
 
 public enum FeedbackTransport: String, Sendable, CaseIterable {
@@ -418,8 +422,8 @@ extension AnalyticsEvent {
             ]
         case let .milestoneReached(milestone, days):
             ["segue.milestone": milestone.rawValue, "segue.daysSinceFirstLaunch": days.rawValue]
-        case let .helpOpened(item):
-            ["segue.item": item.rawValue]
+        case let .helpOpened(item, via, from):
+            Self.helpParams(item, via: via, from: from)
         case let .feedbackSent(summary):
             [
                 "segue.transport": summary.transport.rawValue,

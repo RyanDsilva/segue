@@ -301,6 +301,8 @@ check_8() {
     check_resource_bundle "8" "$app"
     check_third_party_notices "8" "$app"
     check_sound_bank "8" "$app"
+    # The offline Help Book with every in-app Help anchor (P9-5 3.3).
+    check_help_book "8" "$app"
 }
 
 # MARK: 9. Privacy manifest

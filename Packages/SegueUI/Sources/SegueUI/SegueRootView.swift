@@ -39,7 +39,7 @@
             }
             .task { await app.start() }
             // Help buttons and tips open guide pages (WS6 7.2); sheets inherit it.
-            .guideLinks(app.dependencies.workspace)
+            .guideLinks(app.help)
             // The consent prompt (WS3 4.2) once the library state has settled.
             .servicesPresentations(app)
             // The Welcome sheet (WS2b 4.1).

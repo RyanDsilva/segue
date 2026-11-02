@@ -55,7 +55,7 @@ WRANGLER     := pnpm dlx wrangler@4.151.1
 
 .PHONY: sentry-pull bootstrap generate tokens tokens-check icon icon-check build build-appstore test test-packages \
 	test-perf e2e e2e-one e2e-smoke e2e-vm e2e-vm-golden gate quick eval-ai eval-import review-gold import-canary lint format verify-appstore check bump \
-	site-fonts site-html guide guide-dev guide-check guide-keys docs-shots docs-clips screenshots screenshots-compose preview preview-edit docs-check shellcheck actionlint repo-check \
+	site-fonts site-html guide guide-dev guide-check help-book help-book-check guide-keys docs-shots docs-clips screenshots screenshots-compose preview preview-edit docs-check shellcheck actionlint repo-check \
 	release-notes labels-sync clean-local archive validate upload upload-dsyms probe-shortcuts
 
 bootstrap: ## Install pinned tools and Xcode's Metal Toolchain, fetch dependencies, generate the workspace
@@ -68,6 +68,8 @@ bootstrap: ## Install pinned tools and Xcode's Metal Toolchain, fetch dependenci
 	$(MISE) tuist generate --no-open
 
 generate: Tuist/.build/install.stamp ## Regenerate the workspace after editing manifests
+	# The Help Book folder both app targets reference must exist before generating.
+	scripts/help-book.sh
 	$(MISE) tuist generate --no-open
 
 # Re-fetch dependencies whenever the pinned set changes, so a new package (e.g. SwiftSoup) never
@@ -104,6 +106,12 @@ guide: ## Build the user guide into website/guide (frozen install, links validat
 guide-dev: ## Live-reloading guide preview at http://localhost:4321/guide
 	cd guide && $(MISE) pnpm install --frozen-lockfile --silent
 	cd guide && ASTRO_TELEMETRY_DISABLED=1 $(MISE) pnpm dev
+
+help-book: ## The offline Apple Help Book from the guide (Derived/HelpBook/Segue.help; skipped when current)
+	scripts/help-book.sh
+
+help-book-check: ## Fail if the Help Book is missing or stale against the guide sources
+	scripts/help-book.sh --check
 
 guide-check: ## Static checks on the guide source and build (runs on Linux; STRICT=1 refuses placeholder shots)
 	$(MISE) node guide/scripts/check.mjs $(if $(STRICT),--strict)
@@ -182,7 +190,7 @@ e2e-vm-golden: ## Create or refresh the golden E2E VM for this Mac's Xcode (pull
 
 quick: PKG_SKIP := $(PERF_TESTS)|$(SLOW_TESTS)
 quick: PERF_RUN := PerformanceTests
-quick: lint build test-packages test-perf ## Inner loop: lint, build, package tests (no UI tests, no long property tests)
+quick: lint build help-book-check test-packages test-perf ## Inner loop: lint, build, Help Book staleness, package tests (no UI tests, no long property tests)
 
 gate: generate lint repo-check tokens-check icon-check site-check build ## Workstream gate: package tests, App Store build or verify, E2E smoke + classes mapped from changes since GATE_BASE (default origin/main)
 	E2E_SMOKE="$(E2E_SMOKE)" E2E_RUNNER=$(E2E_RUNNER) scripts/gate.sh
