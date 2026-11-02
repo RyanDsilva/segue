@@ -96,8 +96,12 @@ extension Gold {
               let cho = try? String(contentsOf: base.appendingPathExtension("cho"), encoding: .utf8)
         else { return Gold(kind: kind) }
         func values(_ name: String) -> [String] {
-            cho.matches(of: try! Regex("(?m)^\\{\\s*\(name)\\s*:\\s*(.*?)\\s*\\}\\s*$"))
-                .compactMap { $0.output[1].substring.map(String.init) }
+            cho.split(separator: "\n").compactMap { line -> String? in
+                let line = line.trimmingCharacters(in: .whitespaces)
+                guard line.hasPrefix("{\(name):"), line.hasSuffix("}") else { return nil }
+                return line.dropFirst(name.count + 2).dropLast()
+                    .trimmingCharacters(in: .whitespaces)
+            }
         }
         return Gold(
             kind: "chart",

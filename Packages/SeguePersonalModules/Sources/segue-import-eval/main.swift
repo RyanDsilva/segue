@@ -30,7 +30,8 @@ for row in rows {
         .flatMap({ arguments.indices.contains($0 + 1) ? arguments[$0 + 1] : nil })
     {
         let out = URL(filePath: dump).appending(path: row.slug + ".cho")
-        let text = reading.result?.text ?? "# noChart: \(reading.failure.map { "\($0)" } ?? "unknown")\n"
+        let failure = reading.failure.map { "\($0)" } ?? "unknown"
+        let text = reading.result?.text ?? "# noChart: \(failure)\n"
         try? FileManager.default.createDirectory(
             at: out.deletingLastPathComponent(),
             withIntermediateDirectories: true,
