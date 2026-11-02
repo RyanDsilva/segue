@@ -43,7 +43,7 @@ final class SegueLibraryCopyE2ETests: XCTestCase {
     func testOpenAndSave() throws {
         let root = try prepare("open")
         let app = launch(root)
-        answerNotes(app, remove: false)
+        answerNotes(app, remove: false, scenario: "open")
         let row = app.descendants(matching: .any).matching(identifier: "segue.library.row")
             .firstMatch
         XCTAssertTrue(row.appears(timeout: 15), "the copied library lists no song")
@@ -103,15 +103,13 @@ final class SegueLibraryCopyE2ETests: XCTestCase {
         add(injected)
 
         let app = launch(root)
-        answerNotes(app, remove: true)
-        XCTAssertTrue(
-            E2E.waitUntil(timeout: 15) {
-                (try? String(contentsOf: song, encoding: .utf8))?.contains("{duration") == false
-            },
-            "Remove left the {duration} line in songs/\(first)",
-        )
+        answerNotes(app, remove: true, scenario: "duration")
+        let removed = E2E.waitUntil(timeout: 15) {
+            (try? String(contentsOf: song, encoding: .utf8))?.contains("{duration") == false
+        }
         quit(app)
-        try attach(root, "duration")
+        try attach(root, "duration") // before the verdict, so the report shows either way
+        XCTAssertTrue(removed, "Remove left the {duration} line in songs/\(first)")
     }
 
     // MARK: - Support
@@ -148,15 +146,25 @@ final class SegueLibraryCopyE2ETests: XCTestCase {
     /// Clicks through the one-time notes in order: OK on each note, then Remove or Not Now
     /// on the `{duration}` offer when it appears. Records which ones showed.
     @MainActor
-    private func answerNotes(_ app: XCUIApplication, remove: Bool) {
+    private func answerNotes(_ app: XCUIApplication, remove: Bool, scenario: String) {
         var seen: [String] = []
+        let alerts = app.descendants(matching: .any).matching(
+            NSPredicate(
+                format: "elementType == %d OR elementType == %d",
+                XCUIElement.ElementType.dialog.rawValue,
+                XCUIElement.ElementType.sheet.rawValue,
+            ),
+        )
         for _ in 0 ..< 4 {
-            let alert = app.dialogs.firstMatch.exists ? app.dialogs.firstMatch : app.sheets
-                .firstMatch
+            let alert = alerts.firstMatch
             guard alert.appears(timeout: 6) else { break }
-            let title = alert.staticTexts.allElementsBoundByIndex.map(\.label)
-                .joined(separator: " / ")
-            seen.append(title)
+            let texts = alert.staticTexts.allElementsBoundByIndex.map { text in
+                text.label.isEmpty ? (text.value as? String ?? "") : text.label
+            }.filter { !$0.isEmpty }
+            let buttons = alert.buttons.allElementsBoundByIndex.map(\.title)
+            seen
+                .append(texts.joined(separator: " / ") + " [" + buttons
+                    .joined(separator: ", ") + "]")
             if alert.buttons["OK"].exists {
                 alert.buttons["OK"].click(in: app)
             } else if alert.buttons["Remove"].exists {
@@ -164,11 +172,11 @@ final class SegueLibraryCopyE2ETests: XCTestCase {
             } else {
                 break
             }
-            _ = alert.disappears(timeout: 5)
+            _ = E2E.waitUntil(timeout: 5) { !alert.exists || alert.buttons["Remove"].exists }
         }
         let note = XCTAttachment(string: seen.isEmpty ? "(no one-time notes)" : seen
             .joined(separator: "\n"))
-        note.name = "notes-shown"
+        note.name = "notes-shown-\(scenario)"
         note.lifetime = .keepAlways
         add(note)
     }
@@ -182,7 +190,8 @@ final class SegueLibraryCopyE2ETests: XCTestCase {
     @MainActor
     private func attach(_ root: URL, _ name: String) throws {
         for (folder, label) in [("library", "library-after-\(name)"), ("trash", "trash-\(name)")] {
-            let attachment = XCTAttachment(compressedContentsOfDirectory: root.appending(path: folder))
+            let attachment = XCTAttachment(compressedContentsOfDirectory: root
+                .appending(path: folder))
             attachment.name = label
             attachment.lifetime = .keepAlways
             add(attachment)

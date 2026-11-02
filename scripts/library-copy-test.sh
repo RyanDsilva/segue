@@ -96,7 +96,7 @@ for scenario in open duration; do
             injected=$(attachment injected-duration)
             [[ -n "$injected" ]] && echo && echo "Before launch the test $(command cat "$out/attachments/$injected")."
         fi
-        notes=$(attachment notes-shown)
+        notes=$(attachment "notes-shown-$scenario")
         echo
         echo "One-time notes shown:"
         echo
@@ -109,11 +109,13 @@ for scenario in open duration; do
         echo "Files (A added, D removed, M changed):"
         echo
         echo '```'
-        diff -rq -x .DS_Store "$out/pristine" "$after" \
-            | sed -E -e "s|^Only in $out/pristine(/?)([^:]*): (.*)|D \2\1\3|" \
-                -e "s|^Only in $after(/?)([^:]*): (.*)|A \2\1\3|" \
-                -e "s|^Files $out/pristine/(.*) and .* differ$|M \1|" \
-            | sed -E 's|^([ADM]) /|\1 |' | sort -k2 || true
+        # Files only: the attachment zip drops empty folders, which are no change.
+        files() { (cd "$1" && find . -type f ! -name .DS_Store | sed 's|^\./||' | sort); }
+        comm -23 <(files "$out/pristine") <(files "$after") | sed 's/^/D /'
+        comm -13 <(files "$out/pristine") <(files "$after") | sed 's/^/A /'
+        comm -12 <(files "$out/pristine") <(files "$after") | while read -r file; do
+            cmp -s "$out/pristine/$file" "$after/$file" || echo "M $file"
+        done
         echo '```'
         echo
         echo "Moved to the Trash:"
