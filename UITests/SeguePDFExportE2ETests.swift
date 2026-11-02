@@ -22,7 +22,26 @@ final class SeguePDFExportE2ETests: SetlistE2ETestCase {
         )
         let app = try launch(arguments: ["-SegueExportPath", output.path(percentEncoded: false)])
 
-        // The builder's Setlist menu > Export PDF...
+        let sheet = try openPreview(app)
+        try help(app, root)
+        let pages = try switchToBass(app)
+        try saveAndPrint(app, output: output, pages: pages)
+        app.buttons[PDFAXID.done].firstMatch.click(in: app)
+        XCTAssertTrue(sheet.disappears(timeout: 10), "Done never closed the sheet")
+    }
+
+    // MARK: - Steps
+
+    private var subtitle: XCUIElement {
+        get throws {
+            SetlistE2E.element(try XCTUnwrap(app), PDFAXID.subtitle)
+        }
+    }
+
+    /// The builder's Setlist menu > Export PDF...; the sheet reads "Songbook PDF · 3 songs"
+    /// and counts its pages.
+    @MainActor
+    private func openPreview(_ app: XCUIApplication) throws -> XCUIElement {
         SetlistE2E.element(app, PDFAXID.sidebarSetlists).click(in: app)
         let row = SetlistE2E.element(app, SetlistAXID.setlistRow)
         XCTAssertTrue(row.appears(timeout: 10), "the setlist is not listed")
@@ -35,18 +54,20 @@ final class SeguePDFExportE2ETests: SetlistE2ETestCase {
         XCTAssertTrue(export.appears(timeout: 5), "no Export PDF... in the Setlist menu")
         export.click(in: app)
 
-        // The sheet: "Songbook PDF · 3 songs", then its pages.
         let sheet = SetlistE2E.element(app, PDFAXID.sheet)
         XCTAssertTrue(sheet.appears(timeout: 10), "the PDF preview never opened")
-        let subtitle = SetlistE2E.element(app, PDFAXID.subtitle)
+        let subtitle = try subtitle
         SetlistE2E.waitUntil("the sheet never counted its pages", timeout: 20) {
             let text = SetlistE2E.text(subtitle)
             return text.hasPrefix("Songbook PDF \u{00B7} 3 songs") && text.hasSuffix("pages")
         }
-        let chordsLabel = SetlistE2E.text(subtitle)
         screenshot(app, "pdf-songbook")
+        return sheet
+    }
 
-        // The Help button opens the guide's Print and PDF page (recorded, never opened).
+    /// The Help button opens the guide's Print and PDF page (recorded, never opened).
+    @MainActor
+    private func help(_ app: XCUIApplication, _ root: URL) throws {
         let help = SetlistE2E.element(app, PDFAXID.help)
         XCTAssertTrue(help.appears(timeout: 5), "no Help button in the sheet")
         help.click(in: app)
@@ -54,8 +75,13 @@ final class SeguePDFExportE2ETests: SetlistE2ETestCase {
             try String(contentsOf: Self.workspaceLog(root), encoding: .utf8)
                 .contains("guide/print-and-pdf")
         }
+    }
 
-        // Chart > Bass notes: the label updates.
+    /// Chart > Bass notes: the label updates; returns the page count once ready.
+    @MainActor
+    private func switchToBass(_ app: XCUIApplication) throws -> Int {
+        let subtitle = try subtitle
+        let chordsLabel = SetlistE2E.text(subtitle)
         let part = SetlistE2E.element(app, PDFAXID.option("part"))
         let bass = part.radioButtons["Bass notes"].exists
             ? part.radioButtons["Bass notes"] : part.buttons["Bass notes"]
@@ -68,27 +94,26 @@ final class SeguePDFExportE2ETests: SetlistE2ETestCase {
         let save = app.buttons[PDFAXID.save].firstMatch
         SetlistE2E.waitUntil("Save PDF... never enabled", timeout: 20) { save.isEnabled }
         let indicator = SetlistE2E.element(app, PDFAXID.pageIndicator)
-        let pages = try XCTUnwrap(
+        return try XCTUnwrap(
             SetlistE2E.text(indicator).split(separator: " ").last.flatMap { Int($0) },
             "no page count in \(SetlistE2E.text(indicator))",
         )
+    }
 
-        // Save PDF... writes the test path; the file opens with the pages shown.
-        save.click(in: app)
+    /// Save PDF... writes the test path with the pages shown; Print... shows the system
+    /// print panel, which is cancelled.
+    @MainActor
+    private func saveAndPrint(_ app: XCUIApplication, output: URL, pages: Int) throws {
+        app.buttons[PDFAXID.save].firstMatch.click(in: app)
         SetlistE2E.waitForDisk("Save PDF... never wrote \(output.lastPathComponent)") {
             PDFDocument(url: output)?.pageCount == pages
         }
-
-        // Print... shows the system print panel; Cancel; Done.
-        let print = app.buttons[PDFAXID.print].firstMatch
-        print.click(in: app)
+        app.buttons[PDFAXID.print].firstMatch.click(in: app)
         let cancel = app.sheets.buttons["Cancel"].firstMatch
         XCTAssertTrue(cancel.appears(timeout: 15), "the print panel never opened")
         screenshot(app, "pdf-print-panel")
         cancel.click(in: app)
         XCTAssertTrue(cancel.disappears(timeout: 10), "the print panel stayed open")
-        app.buttons[PDFAXID.done].firstMatch.click(in: app)
-        XCTAssertTrue(sheet.disappears(timeout: 10), "Done never closed the sheet")
     }
 
     // MARK: - Seed

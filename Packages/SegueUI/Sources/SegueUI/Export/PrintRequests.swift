@@ -269,20 +269,11 @@
             if lyrics {
                 request = lyricsRequest(request)
             }
-            let header = PrintHeader(
-                title: SongSummary.title(record),
-                credits: SongSummary.credits(
-                    artists: model.header.artists,
-                    album: model.header.album,
-                ),
-                performance: lyrics
-                    ? SongSummary.singerKeyLine(
-                        key: model.transform.concertKey,
-                        tempo: model.header.tempo,
-                    )
-                    : SongSummary.performanceLine(model),
-                scale: lyrics ? nil : model.header.scale.map { "Sounding \($0)" },
-                notice: resolution?.isOutOfDate == true ? outOfDateNotice : nil,
+            let header = header(
+                record,
+                model: model,
+                part: options.part,
+                outOfDate: resolution?.isOutOfDate == true,
                 slotLabel: slotLabel,
             )
             let block = diagrams && !model.diagrams.isEmpty
@@ -296,6 +287,34 @@
                 header: header,
                 diagrams: block,
                 outlineTitle: outlineTitle,
+            )
+        }
+
+        /// A song's header lines: the Lyrics part shows the sounding key with no capo and no
+        /// scale line ("Key A, 96", R178).
+        static func header(
+            _ record: SongRecord,
+            model: RenderModel,
+            part: PrintPart,
+            outOfDate: Bool,
+            slotLabel: String?,
+        ) -> PrintHeader {
+            let lyrics = part == .lyrics
+            return PrintHeader(
+                title: SongSummary.title(record),
+                credits: SongSummary.credits(
+                    artists: model.header.artists,
+                    album: model.header.album,
+                ),
+                performance: lyrics
+                    ? SongSummary.singerKeyLine(
+                        key: model.transform.concertKey,
+                        tempo: model.header.tempo,
+                    )
+                    : SongSummary.performanceLine(model),
+                scale: lyrics ? nil : model.header.scale.map { "Sounding \($0)" },
+                notice: outOfDate ? outOfDateNotice : nil,
+                slotLabel: slotLabel,
             )
         }
 
@@ -348,7 +367,8 @@
         /// nothing is left out, so a full song stays a full song.
         static func singerPasses(_ model: RenderModel, passes: [PlayedPass]?) -> [PlayedPass]? {
             let kept = Set(SingerView.sections(model.sections).map(\.id))
-            let order = passes ?? ArrangementResolver.fullSong(SongSections.units(of: model.sections))
+            let units = SongSections.units(of: model.sections)
+            let order = passes ?? ArrangementResolver.fullSong(units)
             let shown = order.filter { pass in
                 model.sections.indices.contains(pass.index)
                     && kept.contains(model.sections[pass.index].id)

@@ -99,6 +99,23 @@ struct PDFPreviewModelTests {
     }
 
     @Test
+    func `the help button records helpOpened pdf once per click`() {
+        let recorder = Recorder()
+        let model = Self.model(
+            Support.snapshot(.song(Support.record(Support.harbour))),
+            defaults: Self.defaults(),
+            recorder: recorder,
+        )
+        model.noteHelpOpened()
+        #expect(recorder.events.count { event in
+            if case .helpOpened(.pdf) = event {
+                return true
+            }
+            return false
+        } == 1)
+    }
+
+    @Test
     func `save writes the PDF to the test path and the summary is sent once`() async throws {
         let recorder = Recorder()
         let folder = FileManager.default.temporaryDirectory
@@ -124,14 +141,6 @@ struct PDFPreviewModelTests {
         #expect(saved.pageCount == model.pdf?.pageCount)
         #expect(model.flash == "Saved Out.pdf")
         #expect(model.shareURL?.lastPathComponent == "Friday Set.pdf")
-        // The sheet's Help button (R181): one helpOpened(.pdf) per click.
-        model.noteHelpOpened()
-        #expect(recorder.events.count { event in
-            if case .helpOpened(.pdf) = event {
-                return true
-            }
-            return false
-        } == 1)
         model.close()
         model.close()
         let summaries = recorder.events.compactMap { event -> PDFExportSummary? in
@@ -172,57 +181,49 @@ struct PDFPreviewModelTests {
 struct PDFSheetSnapshotTests {
     typealias Support = PDFTestSupport
 
-    @Test
-    func `the sheet renders in dark and light`() async throws {
-        #expect(Theme.registerFonts())
+    struct Case {
+        var name: String
+        var snapshot: PDFSnapshot
+        var dark: Bool
+        var part: PrintPart?
+        var folder: URL?
+    }
+
+    /// The songbook dark, a bass chart light, and (P9-1c) the Lyrics part with the Help
+    /// button in both.
+    static func cases() -> [Case] {
         let (setlist, records) = PDFSongbookTests.friday()
+        let songbook = Support.snapshot(.setlist(setlist, records))
         var profile = InstrumentProfile()
         profile.bassNotes = true
-        struct Case {
-            var name: String
-            var snapshot: PDFSnapshot
-            var dark: Bool
-            var part: PrintPart?
-            var folder: URL?
-        }
-        let cases = [
-            Case(
-                name: "sheet-dark-songbook",
-                snapshot: Support.snapshot(.setlist(setlist, records)),
-                dark: true,
-                part: nil,
-                folder: nil,
-            ),
-            Case(
-                name: "sheet-light-bass-chart",
-                snapshot: Support.snapshot(
-                    .song(Support.record(Support.harbour)),
-                    profile: profile,
-                ),
-                dark: false,
-                part: nil,
-                folder: nil,
-            ),
-            // P9-1c: the Lyrics part and the Help button.
+        let chart = Support.snapshot(.song(Support.record(Support.harbour)), profile: profile)
+        let lyrics = PrintLyricsTests.folder
+        return [
+            Case(name: "sheet-dark-songbook", snapshot: songbook, dark: true),
+            Case(name: "sheet-light-bass-chart", snapshot: chart, dark: false),
             Case(
                 name: "sheet-light-lyrics-songbook",
-                snapshot: Support.snapshot(.setlist(setlist, records)),
+                snapshot: songbook,
                 dark: false,
                 part: .lyrics,
-                folder: PrintLyricsTests.folder,
+                folder: lyrics,
             ),
             Case(
                 name: "sheet-dark-lyrics-songbook",
-                snapshot: Support.snapshot(.setlist(setlist, records)),
+                snapshot: songbook,
                 dark: true,
                 part: .lyrics,
-                folder: PrintLyricsTests.folder,
+                folder: lyrics,
             ),
         ]
-        for item in cases {
-            let (name, snapshot, dark) = (item.name, item.snapshot, item.dark)
+    }
+
+    @Test
+    func `the sheet renders in dark and light`() async throws {
+        #expect(Theme.registerFonts())
+        for item in Self.cases() {
             let model = PDFPreviewModelTests.model(
-                snapshot,
+                item.snapshot,
                 defaults: PDFPreviewModelTests.defaults(),
             )
             model.options.paper = .letter
@@ -233,8 +234,8 @@ struct PDFSheetSnapshotTests {
             await model.settle()
             try await Self.capture(
                 model,
-                dark: dark,
-                name: name,
+                dark: item.dark,
+                name: item.name,
                 folder: item.folder ?? Support.screenshots,
             )
         }

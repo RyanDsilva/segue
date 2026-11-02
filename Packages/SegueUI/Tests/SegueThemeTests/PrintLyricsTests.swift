@@ -45,6 +45,7 @@ struct PrintLyricsTests {
 
     /// Intro, Verse 1, Chorus, Verse 2, Chorus 2 Chords only, Bridge, Chorus 3.
     static func arranged(_ record: SongRecord) -> SlotArrangement {
+        // swiftlint:disable:next large_tuple
         let passes: [(String, Int, PassMode)] = [
             ("Intro", 1, .full), ("Verse 1", 1, .full), ("Chorus", 1, .full),
             ("Verse 2", 1, .full), ("Chorus", 2, .chordsOnly), ("Bridge", 1, .full),
