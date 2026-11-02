@@ -134,9 +134,9 @@ final class SegueLibraryCopyE2ETests: XCTestCase {
         let app = XCUIApplication()
         self.app = app
         E2E.launch(app, arguments: [
-            "-SegueLibraryPath", root.appending(path: "library").path(percentEncoded: false),
-            "-SegueTrashPath", root.appending(path: "trash").path(percentEncoded: false),
-            "-SegueWorkspaceLog", root.appending(path: "workspace.log").path(percentEncoded: false),
+            "-SegueLibraryPath", path(root, "library"),
+            "-SegueTrashPath", path(root, "trash"),
+            "-SegueWorkspaceLog", path(root, "workspace.log"),
             "-SegueResetState", "YES",
             "-SegueAutosaveDelay", "0.3",
         ])
@@ -184,7 +184,12 @@ final class SegueLibraryCopyE2ETests: XCTestCase {
     @MainActor
     private func quit(_ app: XCUIApplication) {
         E2E.quitting(app) { app.typeKey("q", modifierFlags: .command, in: app) }
-        XCTAssertTrue(E2E.waitUntil(timeout: 20) { app.state == .notRunning }, "Segue did not quit")
+        let quit = E2E.waitUntil(timeout: 20) { app.state == .notRunning }
+        XCTAssertTrue(quit, "Segue did not quit")
+    }
+
+    private func path(_ root: URL, _ name: String) -> String {
+        root.appending(path: name).path(percentEncoded: false)
     }
 
     @MainActor

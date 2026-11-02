@@ -138,9 +138,11 @@ for path in ["en-US/support_url.txt", "en-US/marketing_url.txt", "en-US/privacy_
 if let copyright = field("copyright.txt"), copyright != "2026 Ryan Rony Dsilva" {
     fail("copyright.txt: \"\(copyright)\" is not \"2026 Ryan Rony Dsilva\" (R30)")
 }
+
 if let primary = field("primary_category.txt"), primary != "MUSIC" {
     fail("primary_category.txt: \(primary), expected MUSIC (R3)")
 }
+
 if let secondary = field("secondary_category.txt"), secondary != "PRODUCTIVITY" {
     fail("secondary_category.txt: \(secondary), expected PRODUCTIVITY (R3)")
 }
@@ -148,19 +150,21 @@ if let secondary = field("secondary_category.txt"), secondary != "PRODUCTIVITY" 
 for path in ["first_name", "last_name", "email_address"] {
     screen("review_information/\(path).txt", field("review_information/\(path).txt"))
 }
+
 let notes = field("review_information/notes.txt")
 limit("review_information/notes.txt", notes, bytes: 4000)
 screen("review_information/notes.txt", notes)
 if let notes, notes.range(of: "Report a Bug", options: .caseInsensitive) != nil {
     fail("review_information/notes.txt: the Help item is \"Report a Problem...\" (I-5)")
 }
+
 if FileManager.default.fileExists(
     atPath: metadata.appending(path: "review_information/phone_number.txt").path,
 ) {
     fail("review_information/phone_number.txt: the phone comes from SEGUE_REVIEW_PHONE only")
 }
 
-// Screenshot captions (WS5 8.4): headline <= 40, subline <= 64, 1-10 shots per locale.
+/// Screenshot captions (WS5 8.4): headline <= 40, subline <= 64, 1-10 shots per locale.
 let captionsURL = root.appending(path: "screenshots.json")
 if let data = try? Data(contentsOf: captionsURL),
    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
