@@ -167,9 +167,11 @@ struct SourceReviewTests {
     }
 
     @Test
-    func `the source line names the host, the fallback, the romanizing and the title flag`() {
+    func `the source line names the host, the fallback, the romanizing and the title flag`()
+        throws
+    {
         var provenance = Self.tumHiHo.provenance
-        provenance.sourceURL = URL(string: "https://www.example.com/x")!
+        provenance.sourceURL = try #require(URL(string: "https://www.example.com/x"))
         provenance.romanized = true
         let line = ReviewSourceLine.Content(provenance, titleUncertain: true)
         #expect(line.source == "From example.com")

@@ -150,7 +150,7 @@
                 stageWarning: warning,
                 includesPersonal: app.dependencies.plugins.webImport != nil,
             )
-                .guideLinks(app.help)
+            .guideLinks(app.help)
         }
 
         private func loadBindings() -> (InputBindingTable, String?) {
