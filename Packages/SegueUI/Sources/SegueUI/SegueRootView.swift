@@ -343,6 +343,14 @@
                     Text(message)
                         .lineLimit(2)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                    // P9-5 5 (P1): report it while it is on screen, never from the stage.
+                    if !app.isShowUp {
+                        Button("Report…") { app.reportBannerError(message) }
+                            .buttonStyle(.segueSecondary)
+                            .controlSize(.small)
+                            .help("Report this problem to Segue's developer")
+                            .accessibilityIdentifier(AccessibilityID.errorBannerReport)
+                    }
                     Button("Dismiss") {
                         session.library.errorMessage = nil
                         session.setlists.errorMessage = nil

@@ -82,7 +82,7 @@
                 }
                 .onChange(of: presenter.isPresented, initial: true) { _, isPresented in
                     // A fresh form every time: the song file is off again (R22).
-                    report = isPresented ? app.makeReportModel() : nil
+                    report = isPresented ? app.makeReportModel(message: presenter.prefill) : nil
                 }
         }
     }
