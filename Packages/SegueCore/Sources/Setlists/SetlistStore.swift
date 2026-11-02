@@ -55,6 +55,8 @@ public actor SetlistStore {
 
     var root: LibraryRoot?
     var setlists: [SetlistID: Stored] = [:]
+    /// Each song's file name as the library last saw it (R191; `setSongFileNames`).
+    var songFileNames: [SongID: String] = [:]
 
     public init(fileSystem: any FileSystem, clock: any Clock, ids: any IDGenerator) {
         self.fileSystem = fileSystem
@@ -77,7 +79,7 @@ public actor SetlistStore {
             let relativePath = Self.relativePath(slug: slug)
             do {
                 let data = try fileSystem.readData(at: Self.url(root: root, slug: slug))
-                let setlist = try Self.decode(data)
+                let setlist = try Self.decode(data).fillingFileNames(songFileNames)
                 if let existing = loaded[setlist.id] {
                     let other = Self.relativePath(slug: existing.slug)
                     issues.append(SetlistLoadIssue(
@@ -185,8 +187,6 @@ public actor SetlistStore {
                 .map(\.element)
         }
     }
-
-    // MARK: - Phase 2 (unit A; frozen in docs/phases/2-interfaces.md)
 
     /// Renames setlist `id` (the file keeps its slug, like songs) and saves it.
     @discardableResult
@@ -303,10 +303,9 @@ public actor SetlistStore {
         }
     }
 
-    /// Applies `change` to an editable setlist, stamps it and saves it atomically; nothing
-    /// changes (in memory or on disk) when `change` or the write throws. With
-    /// `writesUnchanged` false, a `change` that leaves the setlist as it was writes nothing
-    /// (no new `updatedAt`, no migration to the current schema).
+    /// Applies `change` to an editable setlist (file names filled, R191), stamps it and
+    /// saves it atomically; nothing changes when `change` or the write throws. With
+    /// `writesUnchanged` false, an unchanged setlist writes nothing (no stamp, no migration).
     func mutateSetlist(
         _ id: SetlistID,
         writesUnchanged: Bool = true,
@@ -322,6 +321,7 @@ public actor SetlistStore {
         if !writesUnchanged, stored.setlist == original {
             return original
         }
+        stored.setlist = stored.setlist.fillingFileNames(songFileNames)
         stored.setlist.schemaVersion = Setlist.currentSchemaVersion
         stored.setlist.updatedAt = SegueJSON.stamp(clock.now())
         try save(stored, root: root)

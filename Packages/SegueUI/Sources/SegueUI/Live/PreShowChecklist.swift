@@ -56,8 +56,9 @@
         /// Setlist numbers ("2", a medley member "4b") of songs that are gone; they are left
         /// out.
         public let missingPositions: [String]
-        /// Missing medley members, named (R188): "Love medley, 4b: tum-hi-ho.cho is missing".
-        public internal(set) var missingMembers: [String] = []
+        /// Missing songs named by slot and file (R188, R191): "2: harbor-lights.cho is
+        /// missing", "Love medley, 4b: tum-hi-ho.cho is missing".
+        public internal(set) var missingSongs: [String] = []
         /// Song slots whose arrangement no longer matches the song (R122, R123): "#3 Title".
         /// The stage shows them as the full song.
         public internal(set) var staleArrangements: [String] = []

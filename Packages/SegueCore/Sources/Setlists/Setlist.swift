@@ -169,6 +169,9 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
     /// Which sections this slot plays for this gig (R122, v5); nil = the full song. Song
     /// slots only. Separate from `overrides` so resetting key and capo never drops it.
     public var arrangement: SlotArrangement?
+    /// The song's file name when last saved ("tum-hi-ho.cho", R191), so a missing song is
+    /// still named after a relaunch. Song slots only; written when known.
+    public var fileName: String?
 
     public var id: SetlistItemID {
         itemId
@@ -245,6 +248,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
         case note
         case locked
         case arrangement
+        case fileName
     }
 
     public init(from decoder: any Decoder) throws {
@@ -272,6 +276,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
         note = try container.decodeIfPresent(String.self, forKey: .note)
         locked = try container.decodeIfPresent(Bool.self, forKey: .locked) ?? false
         arrangement = try container.decodeIfPresent(SlotArrangement.self, forKey: .arrangement)
+        fileName = try? container.decodeIfPresent(String.self, forKey: .fileName)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -288,6 +293,7 @@ public struct SetlistEntry: Sendable, Equatable, Hashable, Codable, Identifiable
                 try container.encode(true, forKey: .locked)
             }
             try container.encodeIfPresent(arrangement, forKey: .arrangement)
+            try container.encodeIfPresent(fileName, forKey: .fileName)
         case let .break(info):
             try container.encode(info, forKey: .break)
         case let .medley(medley):

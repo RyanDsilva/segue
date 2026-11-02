@@ -100,6 +100,8 @@ public struct MedleyMember: Sendable, Hashable, Codable, Identifiable {
     public var note: String?
     /// Its slot arrangement (R122, R149); nil = the full song.
     public var arrangement: SlotArrangement?
+    /// The song's file name when last saved (R191); nil until known.
+    public var fileName: String?
     /// Written between the previous member and this one ("into this member"); ignored for
     /// the first member.
     public var transition: String?
@@ -135,17 +137,20 @@ public struct MedleyMember: Sendable, Hashable, Codable, Identifiable {
             note: entry.note,
             arrangement: entry.arrangement,
         )
+        fileName = entry.fileName
     }
 
     /// The song slot this member becomes on ungroup or removal (its transition dropped).
     public var asSlot: SetlistEntry {
-        SetlistEntry(
+        var slot = SetlistEntry(
             itemId: itemId,
             songId: songId,
             overrides: overrides,
             note: note,
             arrangement: arrangement,
         )
+        slot.fileName = fileName
+        return slot
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -155,6 +160,7 @@ public struct MedleyMember: Sendable, Hashable, Codable, Identifiable {
         case note
         case arrangement
         case transition
+        case fileName
     }
 
     public init(from decoder: any Decoder) throws {
@@ -168,6 +174,7 @@ public struct MedleyMember: Sendable, Hashable, Codable, Identifiable {
         transition = SetlistMedley.clean(
             try? container.decodeIfPresent(String.self, forKey: .transition),
         )
+        fileName = try? container.decodeIfPresent(String.self, forKey: .fileName)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -180,6 +187,7 @@ public struct MedleyMember: Sendable, Hashable, Codable, Identifiable {
         try container.encodeIfPresent(note, forKey: .note)
         try container.encodeIfPresent(arrangement, forKey: .arrangement)
         try container.encodeIfPresent(SetlistMedley.clean(transition), forKey: .transition)
+        try container.encodeIfPresent(fileName, forKey: .fileName)
     }
 }
 
@@ -223,6 +231,14 @@ public enum SongSlotRef: Sendable, Hashable {
         switch self {
         case let .entry(entry): entry.arrangement
         case let .member(_, member): member.arrangement
+        }
+    }
+
+    /// The song's file name as last saved (R191).
+    public var fileName: String? {
+        switch self {
+        case let .entry(entry): entry.fileName
+        case let .member(_, member): member.fileName
         }
     }
 

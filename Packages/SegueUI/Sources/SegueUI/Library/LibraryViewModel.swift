@@ -238,6 +238,8 @@ public final class LibraryViewModel {
     /// The `.cho` file name of every song seen this run, kept after its file goes, so a
     /// missing medley member can be named ("tum-hi-ho.cho is missing", R188).
     @ObservationIgnored var knownFileNames: [SongID: String] = [:]
+    /// Hands `knownFileNames` on after each catalog load (the setlist store saves them).
+    @ObservationIgnored var onFileNames: (@MainActor ([SongID: String]) async -> Void)?
 
     public init(
         store: LibraryStore,
@@ -270,6 +272,7 @@ public final class LibraryViewModel {
             for song in songs {
                 knownFileNames[song.id] = URL(filePath: song.relativePath).lastPathComponent
             }
+            await onFileNames?(knownFileNames)
             loadIssues = await store.loadIssues
             tags = try await store.allTags()
             playStats = try await store.playStats()

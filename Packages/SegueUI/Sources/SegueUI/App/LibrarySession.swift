@@ -229,6 +229,8 @@
             library.instrument = dependencies.live.instrument
             library.preview = dependencies.live.preview
             loadShapeLibrary(into: library, dependencies: dependencies)
+            // Setlists save each song's file name, so a missing one is named (R191).
+            library.onFileNames = { names in await setlistStore.setSongFileNames(names) }
             await library.reload()
             let setlists = SetlistsViewModel(store: setlistStore, loadIssues: issues)
             await setlists.reload()

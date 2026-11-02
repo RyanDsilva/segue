@@ -351,3 +351,39 @@ struct SetlistStoreMedleyTests {
             == [0, 3, 4].map { fix.songs[$0] })
     }
 }
+
+/// R191 (beside the main suite, at its length limit).
+extension SetlistStoreMedleyTests {
+    @Test
+    func `slots and members save their song's file name and keep it after a relaunch (R191)`()
+        async throws
+    {
+        let fix = try await Self.fixture()
+        let names = Dictionary(uniqueKeysWithValues: fix.songs.enumerated().map {
+            ($0.element, "song-\($0.offset).cho")
+        })
+        await fix.store.setSongFileNames(names)
+        // Opening never writes: the names arrive in memory only.
+        let before = try fix.lib.read(fix.path)
+        #expect(!before.contains("fileName"))
+        #expect(await fix.store.setlist(id: fix.id)?.entries[0].fileName == "song-0.cho")
+        let (setlist, medley) = try await fix.store.makeMedley(
+            from: [fix.item(1), fix.item(2)],
+            in: fix.id,
+        )
+        let json = try fix.lib.read(fix.path)
+        #expect(json.contains("\"fileName\" : \"song-0.cho\""))
+        #expect(json.contains("\"fileName\" : \"song-2.cho\""))
+        // A relaunch with song 2 gone: a fresh store with names for the others only.
+        let (fresh, issues) = try await fix.lib.loadSetlists()
+        #expect(issues.isEmpty)
+        var others = names
+        others[fix.songs[2]] = nil
+        await fresh.setSongFileNames(others)
+        let reloaded = try #require(await fresh.setlist(id: fix.id))
+        let member = try #require(reloaded.member(fix.item(2)))
+        #expect(member.entry.itemId == medley)
+        #expect(reloaded.songSlot(fix.item(2))?.fileName == "song-2.cho")
+        #expect(reloaded == setlist)
+    }
+}

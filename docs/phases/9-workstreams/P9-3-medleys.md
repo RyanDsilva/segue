@@ -146,6 +146,7 @@ On `SetlistEntry`: `medley: SetlistMedley?` (accessor), `isMedley`, and **`songI
 - A medley entry is recognised by the `medley` key (checked after `break`, before `songId`). `title`, `overrides`, `note`, `arrangement`, `transition` are omitted when empty or nil, as for song entries; member codec keys are the song entry's keys plus `transition`.
 - Member ids are new ULIDs from the store's id generator when a medley is made; making a medley from existing slots **keeps each slot's `itemId` as its member id**, so arrangements, notes and the composer's "already in set at number N" stay attached.
 - `history`: "7 = medley slots (P9-3)". `Setlist.currentSchemaVersion = 7`.
+- **File names (R191):** each song slot and medley member also saves `fileName`, its song's file name ("tum-hi-ho.cho"), filled from the library on every save (never written on open), so the pre-show checklist names a missing song by file even after a relaunch: "2: harbor-lights.cho is missing", "Love medley, 4b: tum-hi-ho.cho is missing". Part of the unreleased schema 7, so no version bump.
 
 ### 5.3 Lenient decoding
 
@@ -319,7 +320,7 @@ Piecewise: `AutoScroller` gains `segments: [ScrollSegment { fromOffset, speed }]
 
 ### 9.8 Play-along (Rehearsal, P8-6b, P8-7)
 
-`P` plays the medley as one timeline: each member's `SongTimeline` (its key, tempo, meter, corrections, walk-up density, saved fills) concatenated in order, with the boundary walk-up of 9.1 when the bass view and walk-ups are on. No gap and no count-in between members (one count-in at the start, R162 Q5 rule for the stage's start); the click switches tempo at the boundary. A member with no tempo stops play-along at its header with the flash "No tempo for Tum Hi Ho: play-along stops here". Audio drives the scroll (R162 Q4) across members; the follow model of 9.6 commits members as the audio crosses them. Live stays silent.
+`P` plays the medley as one timeline: each member's `SongTimeline` (its key, tempo, meter, corrections, walk-up density, saved fills) concatenated in order, with the boundary walk-up of 9.1 when the bass view and walk-ups are on. No gap and no count-in between members (one count-in at the start, R162 Q5 rule for the stage's start); the click switches tempo at the boundary. A later member with no tempo stops play-along at its header with the flash "No tempo for Tum Hi Ho: play-along stops here"; a member with no tempo is never played along at a default tempo: pressing `P` in it flashes "No tempo for Tum Hi Ho" and nothing plays (R191). Audio drives the scroll (R162 Q4) across members; the follow model of 9.6 commits members as the audio crosses them. Live stays silent.
 
 ### 9.9 Singer view (P9-2)
 

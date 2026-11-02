@@ -377,11 +377,40 @@ extension MedleyBuilderTests {
         )
         await fix.session.library.reload()
         let slots = setlist.songSlotLabels.filter { $0.slot.songId == Self.id(4) }
-        #expect(AppModel.missingMembers(
+        #expect(AppModel.missingSongs(
             slots.map(\.slot),
             labels: slots.map(\.label),
             in: setlist,
             library: fix.session.library,
         ) == ["Love medley, 3b: tum-hi-ho.cho is missing"])
+    }
+
+    @Test
+    func `a missing song is named by its saved file after a relaunch (R191)`() async throws {
+        let fix = try await Self.open()
+        let medley = try await makeLoveMedley(fix)
+        let json = try fix.env.read("setlists/friday.setlist.json")
+        #expect(json.contains("\"fileName\" : \"tum-hi-ho.cho\""))
+        #expect(json.contains("\"fileName\" : \"kettle-on.cho\""))
+        try FileManager.default.removeItem(
+            at: fix.env.libraryURL.appending(path: "songs/tum-hi-ho.cho"),
+        )
+        try FileManager.default.removeItem(
+            at: fix.env.libraryURL.appending(path: "songs/kettle-on.cho"),
+        )
+        // A relaunch: a new session that never saw either file (the first one still holds
+        // the library lock, so this one opens unlocked).
+        fix.env.libraryLock = .unlocked
+        let app = try await fix.env.openApp()
+        let session = try #require(app.session)
+        let friday = try #require(session.setlists.setlist(fix.friday))
+        #expect(friday.entry(medley)?.isMedley == true)
+        let missing = friday.songSlotLabels.filter { slot, _ in
+            slot.songId.flatMap(session.library.song(id:)) == nil
+        }
+        #expect(AppModel.missingSongs(missing, in: friday, session.library) == [
+            "1: kettle-on.cho is missing",
+            "Medley, 3b: tum-hi-ho.cho is missing",
+        ])
     }
 }

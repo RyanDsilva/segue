@@ -344,7 +344,7 @@
                         .font(Theme.font.label)
                         .foregroundStyle(Theme.color.muted)
                         .fixedSize(horizontal: false, vertical: true)
-                    ForEach(checklist.missingMembers, id: \.self) { line in
+                    ForEach(checklist.missingSongs, id: \.self) { line in
                         Text(line)
                             .font(Theme.font.label)
                             .foregroundStyle(Theme.color.muted)
