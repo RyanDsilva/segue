@@ -1,0 +1,153 @@
+{
+  "bass" : {
+    "futureBass" : "yes",
+    "genre" : "rock",
+    "timing" : {
+      "chords" : [
+
+      ]
+    },
+    "walkUps" : [
+      {
+        "chord" : 3,
+        "fp" : "1a2b3c4d",
+        "from" : "G",
+        "occurrence" : 1,
+        "offsets" : [
+          -3,
+          -1
+        ],
+        "pick" : "scaleWalk",
+        "section" : "Verse",
+        "to" : "C"
+      }
+    ]
+  },
+  "createdAt" : "2025-03-01T10:00:00.000Z",
+  "cues" : [
+    {
+      "fp" : "1a2b3c4d",
+      "futureCue" : "pin",
+      "id" : "01JGGGGGGGGGGGGGGGGGGGGGGG",
+      "occurrence" : 2,
+      "section" : "Chorus",
+      "text" : "Watch Ravi"
+    },
+    {
+      "id" : "01JN8JC080MHBGFZ15AKDTC4Y6",
+      "section" : "Verse",
+      "text" : "Soft"
+    },
+    {
+      "emoji" : "star",
+      "id" : "01JGGGGGGGGGGGGGGGGGGGGGG2",
+      "kind" : "sticker"
+    }
+  ],
+  "displayPrefs" : {
+    "capoMode" : "shapes",
+    "hologram" : "on",
+    "instrument" : "guitar",
+    "nashville" : false,
+    "showDiagrams" : true,
+    "transpose" : 2,
+    "tuning" : {
+      "name" : "Standard",
+      "strings" : [
+        40,
+        45,
+        50,
+        55,
+        59,
+        64
+      ]
+    }
+  },
+  "futureTopLevel" : {
+    "keep" : [
+      1,
+      2.5,
+      "x",
+      null,
+      true
+    ]
+  },
+  "id" : "01JAAAAAAAAAAAAAAAAAAAAAAA",
+  "live" : {
+    "autoStartScroll" : true,
+    "columns" : 2,
+    "futureLive" : 3,
+    "scrollSpeedFactor" : 0.9,
+    "zoom" : 1.2
+  },
+  "notes" : "Start soft",
+  "parts" : [
+    {
+      "end" : {
+        "chord" : 0,
+        "fp" : "1a2b3c4d",
+        "from" : "A",
+        "occurrence" : 3,
+        "section" : "Chorus"
+      },
+      "events" : [
+        {
+          "at" : 960,
+          "chord" : 0,
+          "deg" : 0,
+          "len" : 240,
+          "oct" : 0
+        },
+        {
+          "at" : 0,
+          "chord" : 1,
+          "deg" : 0,
+          "len" : 480,
+          "oct" : 0,
+          "vel" : 110
+        }
+      ],
+      "futurePart" : 7,
+      "id" : "01JD7Q3W5N8K2M4R6T0V9X1Y3Z",
+      "instrument" : "bass",
+      "name" : "Into last chorus",
+      "origin" : {
+        "edited" : true,
+        "family" : "pickup",
+        "rank" : "b",
+        "template" : "pickup8"
+      },
+      "passes" : "all",
+      "show" : "names",
+      "span" : [
+        "E",
+        "A"
+      ],
+      "start" : {
+        "chord" : 3,
+        "fp" : "9f8e7d6c",
+        "from" : "E",
+        "occurrence" : 1,
+        "section" : "Bridge"
+      }
+    },
+    {
+      "events" : [
+
+      ],
+      "id" : "01JD7Q3W5N8K2M4R6T0V9X1Y30",
+      "instrument" : "keys",
+      "span" : [
+        "C",
+        "F"
+      ]
+    }
+  ],
+  "proficiency" : "virtuoso",
+  "schemaVersion" : 6,
+  "tags" : [
+    "wedding",
+    "compat"
+  ],
+  "updatedAt" : "2026-01-01T00:00:00.000Z"
+}

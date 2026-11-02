@@ -1,0 +1,62 @@
+{
+  "bass" : {
+    "timing" : {
+      "chords" : [
+
+      ]
+    },
+    "walkUps" : [
+
+    ]
+  },
+  "createdAt" : "2025-03-01T10:00:00.000Z",
+  "cues" : [
+    {
+      "id" : "01JN8JC080WHQNSTR2NNJNMDKX",
+      "occurrence" : 2,
+      "section" : "Chorus",
+      "text" : "Watch Ravi"
+    },
+    {
+      "id" : "01JN8JC080MHBGFZ15AKDTC4Y6",
+      "section" : "Verse",
+      "text" : "Soft"
+    }
+  ],
+  "displayPrefs" : {
+    "capoMode" : "concert",
+    "instrument" : "guitar",
+    "nashville" : false,
+    "showDiagrams" : true,
+    "transpose" : 2,
+    "tuning" : {
+      "name" : "Standard",
+      "strings" : [
+        40,
+        45,
+        50,
+        55,
+        59,
+        64
+      ]
+    }
+  },
+  "id" : "01JAAAAAAAAAAAAAAAAAAAAAAA",
+  "live" : {
+    "autoStartScroll" : true,
+    "columns" : 2,
+    "scrollSpeedFactor" : 0.9,
+    "zoom" : 1.2
+  },
+  "notes" : "Start soft",
+  "parts" : [
+
+  ],
+  "proficiency" : "ready",
+  "schemaVersion" : 6,
+  "tags" : [
+    "wedding",
+    "compat"
+  ],
+  "updatedAt" : "2026-01-01T00:00:00.000Z"
+}

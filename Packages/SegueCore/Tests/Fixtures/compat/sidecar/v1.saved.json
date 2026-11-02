@@ -1,0 +1,49 @@
+{
+  "bass" : {
+    "timing" : {
+      "chords" : [
+
+      ]
+    },
+    "walkUps" : [
+
+    ]
+  },
+  "createdAt" : "2025-03-01T10:00:00.000Z",
+  "cues" : [
+
+  ],
+  "displayPrefs" : {
+    "capoMode" : "shapes",
+    "instrument" : "guitar",
+    "nashville" : false,
+    "showDiagrams" : false,
+    "transpose" : 0,
+    "tuning" : {
+      "name" : "Standard",
+      "strings" : [
+        40,
+        45,
+        50,
+        55,
+        59,
+        64
+      ]
+    }
+  },
+  "id" : "01JAAAAAAAAAAAAAAAAAAAAAAA",
+  "live" : {
+    "autoStartScroll" : false,
+    "scrollSpeedFactor" : 1,
+    "zoom" : 1
+  },
+  "parts" : [
+
+  ],
+  "schemaVersion" : 6,
+  "tags" : [
+    "wedding",
+    "compat"
+  ],
+  "updatedAt" : "2026-01-01T00:00:00.000Z"
+}

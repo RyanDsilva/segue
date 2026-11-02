@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 6,
+  "id": "01JAAAAAAAAAAAAAAAAAAAAAAA",
+  "tags": [
+    "wedding"
+  ],
+  "proficiency": "virtuoso",
+  "notes": "Start soft",
+  "displayPrefs": {
+    "transpose": 2,
+    "capoMode": "sideways",
+    "nashville": false,
+    "showDiagrams": true,
+    "instrument": "guitar",
+    "hologram": "on"
+  },
+  "cues": [
+    {
+      "id": "01JGGGGGGGGGGGGGGGGGGGGGGG",
+      "section": "Chorus",
+      "occurrence": 2,
+      "fp": "1a2b3c4d",
+      "text": "Watch Ravi",
+      "futureCue": "pin"
+    },
+    {
+      "section": "Verse",
+      "text": "Soft"
+    },
+    {
+      "id": "01JGGGGGGGGGGGGGGGGGGGGGG2",
+      "kind": "sticker",
+      "emoji": "star"
+    }
+  ],
+  "live": {
+    "zoom": 1.2,
+    "columns": 2,
+    "scrollSpeedFactor": 0.9,
+    "autoStartScroll": true,
+    "futureLive": 3
+  },
+  "createdAt": "2025-03-01T10:00:00.000Z",
+  "updatedAt": "2025-03-02T10:00:00.000Z",
+  "bass": {
+    "genre": "rock",
+    "walkUps": [
+      {
+        "section": "Verse",
+        "occurrence": 1,
+        "fp": "1a2b3c4d",
+        "chord": 3,
+        "from": "G",
+        "to": "C",
+        "pick": "scaleWalk",
+        "offsets": [
+          -3,
+          -1
+        ]
+      }
+    ],
+    "futureBass": "yes"
+  },
+  "parts": [
+    {
+      "id": "01JD7Q3W5N8K2M4R6T0V9X1Y3Z",
+      "instrument": "bass",
+      "name": "Into last chorus",
+      "start": {
+        "section": "Bridge",
+        "occurrence": 1,
+        "fp": "9f8e7d6c",
+        "chord": 3,
+        "from": "E"
+      },
+      "end": {
+        "section": "Chorus",
+        "occurrence": 3,
+        "fp": "1a2b3c4d",
+        "chord": 0,
+        "from": "A"
+      },
+      "span": [
+        "E",
+        "A"
+      ],
+      "passes": "all",
+      "show": "names",
+      "origin": {
+        "family": "pickup",
+        "template": "pickup8",
+        "rank": "b",
+        "edited": true
+      },
+      "events": [
+        {
+          "chord": 0,
+          "at": 960,
+          "len": 240,
+          "deg": 0,
+          "oct": 0
+        },
+        {
+          "chord": 1,
+          "at": 0,
+          "len": 480,
+          "deg": 0,
+          "oct": 0,
+          "vel": 110
+        }
+      ],
+      "futurePart": 7
+    },
+    {
+      "id": "01JD7Q3W5N8K2M4R6T0V9X1Y30",
+      "instrument": "keys",
+      "span": [
+        "C",
+        "F"
+      ],
+      "events": []
+    }
+  ],
+  "futureTopLevel": {
+    "keep": [
+      1,
+      2.5,
+      "x",
+      null,
+      true
+    ]
+  }
+}

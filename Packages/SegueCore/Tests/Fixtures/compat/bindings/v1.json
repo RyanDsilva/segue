@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "bindings": [
+    {
+      "trigger": {
+        "key": "n"
+      },
+      "command": "next"
+    },
+    {
+      "trigger": {
+        "key": "b",
+        "modifiers": [
+          "command"
+        ]
+      },
+      "command": "toggleBassNotes"
+    }
+  ]
+}

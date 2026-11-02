@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 7,
+  "id": "01JCCCCCCCCCCCCCCCCCCCCCCC",
+  "name": "Friday",
+  "createdAt": "2025-03-01T10:00:00.000Z",
+  "updatedAt": "2025-03-02T10:00:00.000Z",
+  "venue": "The Anchor",
+  "date": "2025-03-07",
+  "targetDuration": 2700,
+  "entries": [
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD1",
+      "songId": "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "overrides": {
+        "transpose": -2,
+        "capo": 3
+      },
+      "note": "start soft",
+      "locked": true,
+      "fileName": "harbour-lights.cho",
+      "futureSlot": "encore"
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD3",
+      "break": {
+        "label": "Set 2",
+        "length": 900
+      }
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "songId": "01JBBBBBBBBBBBBBBBBBBBBBBB",
+      "arrangement": {
+        "passes": [
+          {
+            "section": "Verse",
+            "occurrence": 1,
+            "fp": "aa"
+          },
+          {
+            "section": "Bridge",
+            "occurrence": 1,
+            "fp": "bb",
+            "mode": "skip"
+          },
+          {
+            "section": "Chorus",
+            "occurrence": 1,
+            "fp": "cc"
+          },
+          {
+            "section": "Chorus",
+            "occurrence": 1,
+            "fp": "cc",
+            "mode": "chords"
+          }
+        ],
+        "knownParts": [
+          {
+            "section": "Verse",
+            "occurrence": 1,
+            "fp": "aa"
+          },
+          {
+            "section": "Bridge",
+            "occurrence": 1,
+            "fp": "bb"
+          },
+          {
+            "section": "Chorus",
+            "occurrence": 1,
+            "fp": "cc"
+          }
+        ]
+      }
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD4",
+      "medley": {
+        "title": "Love medley",
+        "members": [
+          {
+            "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD5",
+            "songId": "01JAAAAAAAAAAAAAAAAAAAAAAA",
+            "fileName": "harbour-lights.cho",
+            "futureMember": true
+          },
+          {
+            "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD6",
+            "songId": "01JBBBBBBBBBBBBBBBBBBBBBBB",
+            "transition": "segue on the G"
+          },
+          {
+            "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD7",
+            "hologram": true
+          }
+        ],
+        "futureMedley": 1
+      }
+    }
+  ],
+  "changeoverSeconds": 20,
+  "futureTopLevel": {
+    "lighting": "warm"
+  }
+}

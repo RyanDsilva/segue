@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "01JCCCCCCCCCCCCCCCCCCCCCCC",
+  "name": "Phase 0",
+  "entries": [
+    {
+      "songId": "01JAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "songId": "01JBBBBBBBBBBBBBBBBBBBBBBB"
+    }
+  ]
+}

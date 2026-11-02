@@ -1,0 +1,12 @@
+{
+  "id": "01JCCCCCCCCCCCCCCCCCCCCCCC",
+  "name": "Pre-versioned",
+  "entries": [
+    {
+      "songId": "01JAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "songId": "01JBBBBBBBBBBBBBBBBBBBBBBB"
+    }
+  ]
+}

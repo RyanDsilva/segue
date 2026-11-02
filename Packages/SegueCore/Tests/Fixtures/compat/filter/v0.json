@@ -1,0 +1,9 @@
+{
+  "id": "01JFFFFFFFFFFFFFFFFFFFFFFF",
+  "name": "Hand made",
+  "conditions": {
+    "anyTags": [
+      "slow"
+    ]
+  }
+}

@@ -1,0 +1,239 @@
+{
+  "closure" : "encore",
+  "endedAt" : "2025-03-07T20:10:00.000Z",
+  "events" : [
+    {
+      "at" : "2025-03-07T20:00:00.000Z",
+      "kind" : "started"
+    },
+    {
+      "at" : "2025-03-07T20:04:00.000Z",
+      "fromItemId" : "01JDDDDDDDDDDDDDDDDDDDDDD1",
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "kind" : "advanced"
+    },
+    {
+      "at" : "2025-03-07T20:04:30.000Z",
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD3",
+      "kind" : "breakStarted"
+    },
+    {
+      "at" : "2025-03-07T20:05:00.000Z",
+      "kind" : "requestAdded",
+      "requestId" : "01JHHHHHHHHHHHHHHHHHHHHHHH"
+    },
+    {
+      "at" : "2025-03-07T20:06:00.000Z",
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "kind" : "skipped"
+    },
+    {
+      "at" : "2025-03-07T20:10:00.000Z",
+      "kind" : "ended"
+    },
+    {
+      "at" : "2025-03-07T20:09:00.000Z",
+      "kind" : "lightsDimmed"
+    }
+  ],
+  "futureTopLevel" : {
+    "setlistColour" : "teal"
+  },
+  "gig" : {
+    "date" : "2025-03-07",
+    "futureGig" : "soundcheck at 7",
+    "notes" : "Great crowd (compat)",
+    "rating" : "five stars",
+    "venue" : "The Anchor"
+  },
+  "id" : "01JEEEEEEEEEEEEEEEEEEEEEEE",
+  "items" : [
+    {
+      "futureItem" : "encore",
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD1",
+      "origin" : "setlist",
+      "overrides" : {
+
+      },
+      "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "state" : "played",
+      "title" : "Harbour Lights"
+    },
+    {
+      "arrangement" : {
+        "knownParts" : [
+          {
+            "fp" : "aa",
+            "occurrence" : 1,
+            "section" : "Verse"
+          },
+          {
+            "fp" : "cc",
+            "occurrence" : 1,
+            "section" : "Chorus"
+          }
+        ],
+        "passes" : [
+          {
+            "fp" : "aa",
+            "occurrence" : 1,
+            "section" : "Verse"
+          },
+          {
+            "fp" : "cc",
+            "occurrence" : 1,
+            "section" : "Chorus"
+          },
+          {
+            "fp" : "cc",
+            "occurrence" : 1,
+            "section" : "Chorus"
+          }
+        ]
+      },
+      "arrangementState" : "applied",
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "origin" : "setlist",
+      "overrides" : {
+
+      },
+      "songId" : "01JBBBBBBBBBBBBBBBBBBBBBBB",
+      "state" : "skipped",
+      "title" : "Ferry Lights"
+    },
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD9",
+      "origin" : "request",
+      "overrides" : {
+
+      },
+      "requestId" : "01JHHHHHHHHHHHHHHHHHHHHHHH",
+      "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "state" : "played",
+      "title" : "Harbour Lights"
+    },
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD5",
+      "medley" : {
+        "count" : 2,
+        "index" : 0,
+        "slot" : "01JDDDDDDDDDDDDDDDDDDDDDD4",
+        "title" : "Love medley"
+      },
+      "origin" : "setlist",
+      "overrides" : {
+
+      },
+      "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "state" : "played",
+      "title" : "Harbour Lights"
+    },
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD6",
+      "medley" : {
+        "count" : 2,
+        "index" : 1,
+        "slot" : "01JDDDDDDDDDDDDDDDDDDDDDD4",
+        "title" : "Love medley",
+        "transition" : "segue on the G"
+      },
+      "origin" : "setlist",
+      "overrides" : {
+
+      },
+      "songId" : "01JBBBBBBBBBBBBBBBBBBBBBBB",
+      "state" : "played",
+      "title" : "Ferry Lights"
+    }
+  ],
+  "kind" : "gig",
+  "planned" : [
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD1",
+      "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "break" : {
+        "label" : "Set 2",
+        "length" : 900
+      },
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD3"
+    },
+    {
+      "arrangement" : {
+        "knownParts" : [
+          {
+            "fp" : "aa",
+            "occurrence" : 1,
+            "section" : "Verse"
+          },
+          {
+            "fp" : "cc",
+            "occurrence" : 1,
+            "section" : "Chorus"
+          }
+        ],
+        "passes" : [
+          {
+            "fp" : "aa",
+            "occurrence" : 1,
+            "section" : "Verse"
+          },
+          {
+            "fp" : "cc",
+            "occurrence" : 1,
+            "section" : "Chorus"
+          },
+          {
+            "fp" : "cc",
+            "occurrence" : 1,
+            "section" : "Chorus"
+          }
+        ]
+      },
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "songId" : "01JBBBBBBBBBBBBBBBBBBBBBBB"
+    },
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD4",
+      "medley" : {
+        "members" : [
+          {
+            "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD5",
+            "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA"
+          },
+          {
+            "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD6",
+            "songId" : "01JBBBBBBBBBBBBBBBBBBBBBBB",
+            "transition" : "segue on the G"
+          }
+        ],
+        "title" : "Love medley"
+      }
+    }
+  ],
+  "reorderReview" : "discarded",
+  "requests" : [
+    {
+      "addedAt" : "2025-03-07T20:05:00.000Z",
+      "note" : "for Maya",
+      "requestId" : "01JHHHHHHHHHHHHHHHHHHHHHHH",
+      "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "state" : "played",
+      "title" : "Harbour Lights"
+    },
+    {
+      "addedAt" : "2025-03-07T20:07:00.000Z",
+      "requestId" : "01JHHHHHHHHHHHHHHHHHHHHHH2",
+      "songId" : "01JBBBBBBBBBBBBBBBBBBBBBBB",
+      "state" : "deferred",
+      "title" : "Ferry Lights"
+    }
+  ],
+  "schemaVersion" : 5,
+  "scrollPosition" : 0,
+  "setlistId" : "01JCCCCCCCCCCCCCCCCCCCCCCC",
+  "setlistName" : "Friday",
+  "startedAt" : "2025-03-07T20:00:00.000Z",
+  "updatedAt" : "2026-01-01T00:00:00.000Z"
+}

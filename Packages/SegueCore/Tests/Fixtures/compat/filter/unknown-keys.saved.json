@@ -1,0 +1,41 @@
+{
+  "conditions" : {
+    "albums" : [
+      "Aashiqui 2"
+    ],
+    "allTags" : [
+      "gig"
+    ],
+    "anyTags" : [
+      "slow",
+      "ballad"
+    ],
+    "artists" : [
+      "Arijit Singh"
+    ],
+    "futureCondition" : {
+      "mood" : "sad"
+    },
+    "keys" : [
+      "G"
+    ],
+    "neverPlayed" : true,
+    "noneTags" : [
+      "retired"
+    ],
+    "proficiencies" : [
+      "ready",
+      "virtuoso"
+    ],
+    "tempo" : {
+      "max" : 100,
+      "min" : 60
+    }
+  },
+  "createdAt" : "2025-03-01T10:00:00.000Z",
+  "futureTopLevel" : 1,
+  "id" : "01JFFFFFFFFFFFFFFFFFFFFFFF",
+  "name" : "Slow gig songs (compat)",
+  "schemaVersion" : 1,
+  "updatedAt" : "2026-01-01T00:00:00.000Z"
+}

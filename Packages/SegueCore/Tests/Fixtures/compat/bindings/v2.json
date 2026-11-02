@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "bindings": [
+    {
+      "trigger": {
+        "key": "n"
+      },
+      "command": "next"
+    },
+    {
+      "trigger": {
+        "key": "b",
+        "modifiers": [
+          "command"
+        ]
+      },
+      "command": "toggleBassNotes"
+    },
+    {
+      "trigger": {
+        "key": "y"
+      },
+      "command": "toggleSingerView"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 999,
+  "bindings": [
+    {
+      "trigger": {
+        "key": "n"
+      },
+      "command": "next"
+    },
+    {
+      "trigger": {
+        "midi": {
+          "note": 60
+        }
+      },
+      "command": "next"
+    },
+    {
+      "trigger": {
+        "key": "z"
+      },
+      "command": "teleport"
+    }
+  ]
+}

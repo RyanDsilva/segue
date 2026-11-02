@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 3,
+  "id": "01JAAAAAAAAAAAAAAAAAAAAAAA",
+  "tags": [
+    "wedding"
+  ],
+  "proficiency": "ready",
+  "notes": "Start soft",
+  "displayPrefs": {
+    "transpose": 2,
+    "capoMode": "concert",
+    "nashville": false,
+    "showDiagrams": true,
+    "instrument": "guitar"
+  },
+  "cues": [
+    {
+      "section": "Chorus",
+      "occurrence": 2,
+      "text": "Watch Ravi"
+    },
+    {
+      "section": "Verse",
+      "text": "Soft"
+    }
+  ],
+  "live": {
+    "zoom": 1.2,
+    "columns": 2,
+    "scrollSpeedFactor": 0.9,
+    "autoStartScroll": true,
+    "collapseRepeats": true
+  },
+  "createdAt": "2025-03-01T10:00:00.000Z",
+  "updatedAt": "2025-03-02T10:00:00.000Z"
+}

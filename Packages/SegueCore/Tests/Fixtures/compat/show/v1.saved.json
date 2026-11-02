@@ -1,0 +1,97 @@
+{
+  "closure" : "ended",
+  "endedAt" : "2025-03-07T20:10:00.000Z",
+  "events" : [
+    {
+      "at" : "2025-03-07T20:00:00.000Z",
+      "kind" : "started"
+    },
+    {
+      "at" : "2025-03-07T20:04:00.000Z",
+      "fromItemId" : "01JDDDDDDDDDDDDDDDDDDDDDD1",
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "kind" : "advanced"
+    },
+    {
+      "at" : "2025-03-07T20:05:00.000Z",
+      "kind" : "requestAdded",
+      "requestId" : "01JHHHHHHHHHHHHHHHHHHHHHHH"
+    },
+    {
+      "at" : "2025-03-07T20:06:00.000Z",
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "kind" : "skipped"
+    },
+    {
+      "at" : "2025-03-07T20:10:00.000Z",
+      "kind" : "ended"
+    }
+  ],
+  "gig" : {
+    "date" : "2025-03-07",
+    "notes" : "Great crowd (compat)",
+    "rating" : 4,
+    "venue" : "The Anchor"
+  },
+  "id" : "01JEEEEEEEEEEEEEEEEEEEEEEE",
+  "items" : [
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD1",
+      "origin" : "setlist",
+      "overrides" : {
+
+      },
+      "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "state" : "played",
+      "title" : "Harbour Lights"
+    },
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "origin" : "setlist",
+      "overrides" : {
+
+      },
+      "songId" : "01JBBBBBBBBBBBBBBBBBBBBBBB",
+      "state" : "skipped",
+      "title" : "Ferry Lights"
+    },
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD9",
+      "origin" : "request",
+      "overrides" : {
+
+      },
+      "requestId" : "01JHHHHHHHHHHHHHHHHHHHHHHH",
+      "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "state" : "played",
+      "title" : "Harbour Lights"
+    }
+  ],
+  "kind" : "gig",
+  "planned" : [
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD1",
+      "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "songId" : "01JBBBBBBBBBBBBBBBBBBBBBBB"
+    }
+  ],
+  "requests" : [
+    {
+      "addedAt" : "2025-03-07T20:05:00.000Z",
+      "note" : "for Maya",
+      "requestId" : "01JHHHHHHHHHHHHHHHHHHHHHHH",
+      "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "state" : "played",
+      "title" : "Harbour Lights"
+    }
+  ],
+  "schemaVersion" : 5,
+  "scrollPosition" : 0,
+  "setlistId" : "01JCCCCCCCCCCCCCCCCCCCCCCC",
+  "setlistName" : "Friday",
+  "startedAt" : "2025-03-07T20:00:00.000Z",
+  "updatedAt" : "2026-01-01T00:00:00.000Z"
+}

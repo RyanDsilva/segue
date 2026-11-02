@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 5,
+  "id": "01JEEEEEEEEEEEEEEEEEEEEEEE",
+  "kind": "gig",
+  "setlistId": "01JCCCCCCCCCCCCCCCCCCCCCCC",
+  "setlistName": "Friday",
+  "planned": [
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD1",
+      "songId": "01JAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD3",
+      "break": {
+        "label": "Set 2",
+        "length": 900
+      }
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "songId": "01JBBBBBBBBBBBBBBBBBBBBBBB",
+      "arrangement": {
+        "passes": [
+          {
+            "section": "Verse",
+            "occurrence": 1,
+            "fp": "aa"
+          },
+          {
+            "section": "Chorus",
+            "occurrence": 1,
+            "fp": "cc"
+          },
+          {
+            "section": "Chorus",
+            "occurrence": 1,
+            "fp": "cc"
+          }
+        ],
+        "knownParts": [
+          {
+            "section": "Verse",
+            "occurrence": 1,
+            "fp": "aa"
+          },
+          {
+            "section": "Chorus",
+            "occurrence": 1,
+            "fp": "cc"
+          }
+        ]
+      }
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD4",
+      "medley": {
+        "title": "Love medley",
+        "members": [
+          {
+            "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD5",
+            "songId": "01JAAAAAAAAAAAAAAAAAAAAAAA"
+          },
+          {
+            "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD6",
+            "songId": "01JBBBBBBBBBBBBBBBBBBBBBBB",
+            "transition": "segue on the G"
+          }
+        ]
+      }
+    }
+  ],
+  "items": [
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD1",
+      "songId": "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "title": "Harbour Lights",
+      "origin": "setlist",
+      "overrides": {},
+      "state": "played"
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "songId": "01JBBBBBBBBBBBBBBBBBBBBBBB",
+      "title": "Ferry Lights",
+      "origin": "setlist",
+      "overrides": {},
+      "state": "skipped",
+      "arrangement": {
+        "passes": [
+          {
+            "section": "Verse",
+            "occurrence": 1,
+            "fp": "aa"
+          },
+          {
+            "section": "Chorus",
+            "occurrence": 1,
+            "fp": "cc"
+          },
+          {
+            "section": "Chorus",
+            "occurrence": 1,
+            "fp": "cc"
+          }
+        ],
+        "knownParts": [
+          {
+            "section": "Verse",
+            "occurrence": 1,
+            "fp": "aa"
+          },
+          {
+            "section": "Chorus",
+            "occurrence": 1,
+            "fp": "cc"
+          }
+        ]
+      },
+      "arrangementState": "applied"
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD9",
+      "songId": "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "title": "Harbour Lights",
+      "origin": "request",
+      "requestId": "01JHHHHHHHHHHHHHHHHHHHHHHH",
+      "overrides": {},
+      "state": "played"
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD5",
+      "songId": "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "title": "Harbour Lights",
+      "origin": "setlist",
+      "overrides": {},
+      "state": "played",
+      "medley": {
+        "slot": "01JDDDDDDDDDDDDDDDDDDDDDD4",
+        "title": "Love medley",
+        "index": 0,
+        "count": 2
+      }
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD6",
+      "songId": "01JBBBBBBBBBBBBBBBBBBBBBBB",
+      "title": "Ferry Lights",
+      "origin": "setlist",
+      "overrides": {},
+      "state": "played",
+      "medley": {
+        "slot": "01JDDDDDDDDDDDDDDDDDDDDDD4",
+        "title": "Love medley",
+        "index": 1,
+        "count": 2,
+        "transition": "segue on the G"
+      }
+    }
+  ],
+  "scrollPosition": 0,
+  "requests": [
+    {
+      "requestId": "01JHHHHHHHHHHHHHHHHHHHHHHH",
+      "songId": "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "title": "Harbour Lights",
+      "addedAt": "2025-03-07T20:05:00.000Z",
+      "note": "for Maya",
+      "state": "played"
+    }
+  ],
+  "events": [
+    {
+      "at": "2025-03-07T20:00:00.000Z",
+      "kind": "started"
+    },
+    {
+      "at": "2025-03-07T20:04:00.000Z",
+      "kind": "advanced",
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "fromItemId": "01JDDDDDDDDDDDDDDDDDDDDDD1"
+    },
+    {
+      "at": "2025-03-07T20:04:30.000Z",
+      "kind": "breakStarted",
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD3"
+    },
+    {
+      "at": "2025-03-07T20:05:00.000Z",
+      "kind": "requestAdded",
+      "requestId": "01JHHHHHHHHHHHHHHHHHHHHHHH"
+    },
+    {
+      "at": "2025-03-07T20:06:00.000Z",
+      "kind": "skipped",
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD2"
+    },
+    {
+      "at": "2025-03-07T20:10:00.000Z",
+      "kind": "ended"
+    }
+  ],
+  "startedAt": "2025-03-07T20:00:00.000Z",
+  "updatedAt": "2025-03-07T20:10:00.000Z",
+  "endedAt": "2025-03-07T20:10:00.000Z",
+  "closure": "ended",
+  "gig": {
+    "venue": "The Anchor",
+    "date": "2025-03-07",
+    "notes": "Great crowd",
+    "rating": 4
+  },
+  "reorderReview": "discarded"
+}

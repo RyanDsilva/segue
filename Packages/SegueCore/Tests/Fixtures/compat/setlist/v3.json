@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 3,
+  "id": "01JCCCCCCCCCCCCCCCCCCCCCCC",
+  "name": "Friday",
+  "createdAt": "2025-03-01T10:00:00.000Z",
+  "updatedAt": "2025-03-02T10:00:00.000Z",
+  "venue": "The Anchor",
+  "date": "2025-03-07",
+  "targetDuration": 2700,
+  "entries": [
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD1",
+      "songId": "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "overrides": {
+        "transpose": -2,
+        "capo": 3
+      },
+      "note": "start soft"
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD3",
+      "break": {
+        "label": "Set 2",
+        "length": 900
+      }
+    },
+    {
+      "itemId": "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "songId": "01JBBBBBBBBBBBBBBBBBBBBBBB"
+    }
+  ],
+  "changeoverSeconds": 20
+}

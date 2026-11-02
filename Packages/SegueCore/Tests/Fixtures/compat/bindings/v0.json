@@ -1,0 +1,10 @@
+{
+  "bindings": [
+    {
+      "trigger": {
+        "key": "n"
+      },
+      "command": "next"
+    }
+  ]
+}

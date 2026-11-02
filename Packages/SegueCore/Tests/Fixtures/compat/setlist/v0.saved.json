@@ -1,0 +1,16 @@
+{
+  "entries" : [
+    {
+      "itemId" : "01JCCCCCCCCCCCCCCCCCCCCCCD",
+      "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "itemId" : "01JCCCCCCCCCCCCCCCCCCCCCCE",
+      "songId" : "01JBBBBBBBBBBBBBBBBBBBBBBB"
+    }
+  ],
+  "id" : "01JCCCCCCCCCCCCCCCCCCCCCCC",
+  "name" : "Pre-versioned (compat)",
+  "schemaVersion" : 7,
+  "updatedAt" : "2026-01-01T00:00:00.000Z"
+}

@@ -1,0 +1,25 @@
+{
+  "createdAt" : "2025-03-01T10:00:00.000Z",
+  "date" : "2025-03-07",
+  "entries" : [
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD1",
+      "note" : "start soft",
+      "overrides" : {
+        "capo" : 3,
+        "transpose" : -2
+      },
+      "songId" : "01JAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "itemId" : "01JDDDDDDDDDDDDDDDDDDDDDD2",
+      "songId" : "01JBBBBBBBBBBBBBBBBBBBBBBB"
+    }
+  ],
+  "id" : "01JCCCCCCCCCCCCCCCCCCCCCCC",
+  "name" : "Friday (compat)",
+  "schemaVersion" : 7,
+  "targetDuration" : 2700,
+  "updatedAt" : "2026-01-01T00:00:00.000Z",
+  "venue" : "The Anchor"
+}
