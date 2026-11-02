@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Developer ID export for the notarized DMGs (docs/release/decisions.md R200,
+     scripts/dmg.sh). Same archive as the store path (signed automatically with Apple
+     Development, B-1); this export re-signs it manually with the named Developer ID
+     Application identity, hardened runtime and a secure timestamp on every binary.
+     Used for both flavours: Personal (dev.ryandsilva.segue.personal) and App Store
+     (dev.ryandsilva.segue).
+
+     No provisioningProfiles: no entitlement either flavour or its extensions sign needs a
+     Developer ID profile. Sandbox, user-selected files, bookmarks, network client, print,
+     Apple events with a scripting target, and a team-prefixed app group
+     (V6BM673U35.dev.ryandsilva.segue.models) are all authorised by the signature alone on
+     macOS. iCloud, push, associated domains or a group.* app group would need one; add a
+     "Segue Developer ID ..." profile per bundle here if any of those ever lands.
+     Keys checked against `xcodebuild -help` under Xcode 27.1. -->
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>developer-id</string>
+	<key>destination</key>
+	<string>export</string>
+	<key>teamID</key>
+	<string>V6BM673U35</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>signingCertificate</key>
+	<string>Developer ID Application: Ryan Rony Dsilva (V6BM673U35)</string>
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+</dict>
+</plist>

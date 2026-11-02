@@ -218,7 +218,7 @@ gate: generate lint repo-check tokens-check icon-check site-check build ## Works
 lint: ## Lint + format check (no changes)
 	$(MISE) swiftlint lint --strict --quiet
 	$(MISE) swiftformat --lint .
-	plutil -lint Config/ExportOptions-AppStore.plist App/PrivacyInfo.xcprivacy App/*.entitlements
+	plutil -lint Config/ExportOptions-*.plist App/PrivacyInfo.xcprivacy App/*.entitlements
 
 format: ## Auto-format and auto-fix lint where possible
 	$(MISE) swiftformat .
@@ -242,6 +242,17 @@ upload: ## validate, upload the verified .pkg, signed local tag, dSYMs to Sentry
 upload-dsyms: ## Upload an archive's dSYMs to Sentry (ARCHIVE=path or DSYMS=dir; DRY_RUN=1)
 	@test -n "$(ARCHIVE)$(DSYMS)" || (echo "usage: make upload-dsyms ARCHIVE=<xcarchive> | DSYMS=<dir>" >&2; exit 2)
 	scripts/upload-dsyms.sh $(if $(DRY_RUN),--dry-run) $(ARCHIVE)
+
+# Developer ID distribution (R200): notarized, stapled DMGs outside the App Store. The notary
+# keychain profile is Ryan's, created once in Terminal.app (docs/release/v1.0-readiness.md 2.12).
+.PHONY: dmg dmg-vm-check
+dmg: ## Notarized DMG in .build/dist: FLAVOUR=appstore (friends) or personal (owner only, never shared); DRY_RUN=1 skips the notary service
+	@test -n "$(FLAVOUR)" || (echo "usage: make dmg FLAVOUR=personal|appstore [DRY_RUN=1]" >&2; exit 2)
+	scripts/dmg.sh $(FLAVOUR) $(if $(DRY_RUN),--dry-run)
+
+dmg-vm-check: ## Open a DMG as a quarantined download in a clean E2E VM; Gatekeeper must accept it (DMG=path; EXPECT_REJECT=1 for a dry-run DMG)
+	@test -n "$(DMG)" || (echo "usage: make dmg-vm-check DMG=.build/dist/<file>.dmg [EXPECT_REJECT=1]" >&2; exit 2)
+	scripts/dmg-gatekeeper-vm.sh $(DMG) $(if $(EXPECT_REJECT),--expect-reject)
 
 sentry-pull: ## Save open Sentry issues and feedback to .build/sentry (Ryan, Terminal.app)
 	scripts/sentry-pull.sh
