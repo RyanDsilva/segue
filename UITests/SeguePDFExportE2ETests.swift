@@ -115,6 +115,22 @@ final class SeguePDFExportE2ETests: SetlistE2ETestCase {
         screenshot(app, "pdf-print-panel")
         cancel.click(in: app)
         XCTAssertTrue(cancel.disappears(timeout: 10), "the print panel stayed open")
+        declineLocalNetworkPrompt()
+    }
+
+    /// Opening the print panel makes a fresh macOS install ask "Allow Segue to find devices
+    /// on local networks?" (the panel browses for printers). The prompt is a system window
+    /// that outlives the test and covers the next test's controls, so the test that caused
+    /// it answers it. It never appears once answered, so the wait is for a prompt that may
+    /// not come.
+    @MainActor
+    private func declineLocalNetworkPrompt() {
+        let center = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
+        let decline = center.buttons["Don\u{2019}t Allow"].firstMatch
+        let straight = center.buttons["Don't Allow"].firstMatch
+        if E2E.waitUntil(timeout: 5, { decline.exists || straight.exists }) {
+            (decline.exists ? decline : straight).click()
+        }
     }
 
     // MARK: - Seed
