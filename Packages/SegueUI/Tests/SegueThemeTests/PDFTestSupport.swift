@@ -19,11 +19,14 @@ import UniformTypeIdentifiers
 enum PDFTestSupport {
     static let date = Date(timeIntervalSince1970: 1_793_000_000)
 
-    /// `<repo>/.build/screenshots/p9-1`.
-    static let screenshots = URL(fileURLWithPath: #filePath)
+    /// `<repo>/.build/screenshots`.
+    static let screenshotRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         .deletingLastPathComponent().deletingLastPathComponent()
-        .appending(path: ".build/screenshots/p9-1", directoryHint: .isDirectory)
+        .appending(path: ".build/screenshots", directoryHint: .isDirectory)
+
+    /// `<repo>/.build/screenshots/p9-1`.
+    static let screenshots = screenshotRoot.appending(path: "p9-1", directoryHint: .isDirectory)
 
     static let harbour = """
     {title: Harbour Lights}
@@ -150,9 +153,9 @@ enum PDFTestSupport {
         return try #require(context.makeImage())
     }
 
-    static func writePNG(_ image: CGImage, name: String) throws {
-        try FileManager.default.createDirectory(at: screenshots, withIntermediateDirectories: true)
-        let url = screenshots.appending(path: "\(name).png")
+    static func writePNG(_ image: CGImage, name: String, folder: URL = screenshots) throws {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let url = folder.appending(path: "\(name).png")
         let destination = try #require(CGImageDestinationCreateWithURL(
             url as CFURL,
             UTType.png.identifier as CFString,
@@ -164,9 +167,9 @@ enum PDFTestSupport {
     }
 
     /// Every page of `pdf` as `<name>-p<N>.png`.
-    static func writePages(_ pdf: PDFDocument, name: String) throws {
+    static func writePages(_ pdf: PDFDocument, name: String, folder: URL = screenshots) throws {
         for index in 0 ..< pdf.pageCount {
-            try writePNG(image(pdf, page: index), name: "\(name)-p\(index + 1)")
+            try writePNG(image(pdf, page: index), name: "\(name)-p\(index + 1)", folder: folder)
         }
     }
 

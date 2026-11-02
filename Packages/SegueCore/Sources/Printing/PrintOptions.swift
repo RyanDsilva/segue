@@ -2,7 +2,8 @@
 
 import LiveLayout
 
-/// Which part one export prints (spec decision 6). Lyrics arrives with P9-1c.
+/// Which part one export prints (spec decision 6): chords, bass notes or lyrics (P9-2's
+/// singer view, spec section 8).
 public enum PrintPart: String, Sendable, Hashable, Codable, CaseIterable {
     case chords
     case bass
@@ -93,7 +94,10 @@ public enum PrintDiagrams: String, Sendable, Hashable, Codable, CaseIterable {
 public struct PrintOptions: Sendable, Hashable {
     public var part: PrintPart
     public var paper: PrintPaper
+    /// The Chords and Bass notes parts' text size.
     public var size: PrintTextSize
+    /// The Lyrics part's own text size, Large by default (spec 8.3).
+    public var lyricsSize: PrintTextSize
     public var columns: PrintColumns
     public var fitOnePage: Bool
     public var repeats: PrintRepeats
@@ -108,6 +112,7 @@ public struct PrintOptions: Sendable, Hashable {
         part: PrintPart = .chords,
         paper: PrintPaper = .a4,
         size: PrintTextSize = .medium,
+        lyricsSize: PrintTextSize = .large,
         columns: PrintColumns = .auto,
         fitOnePage: Bool = false,
         repeats: PrintRepeats = .writtenOut,
@@ -119,6 +124,7 @@ public struct PrintOptions: Sendable, Hashable {
         self.part = part
         self.paper = paper
         self.size = size
+        self.lyricsSize = lyricsSize
         self.columns = columns
         self.fitOnePage = fitOnePage
         self.repeats = repeats
@@ -128,11 +134,25 @@ public struct PrintOptions: Sendable, Hashable {
         self.stageNotes = stageNotes
     }
 
+    /// The text size this part prints at: the Lyrics part keeps its own (Large unless
+    /// changed), so a lyric sheet never inherits a chart's smaller size.
+    public var textSize: PrintTextSize {
+        get { part == .lyrics ? lyricsSize : size }
+        set {
+            if part == .lyrics {
+                lyricsSize = newValue
+            } else {
+                size = newValue
+            }
+        }
+    }
+
     /// The options remembered between exports (spec 6.2 "Remembered").
     public var remembered: RememberedPrintOptions {
         RememberedPrintOptions(
             paper: paper,
             size: size,
+            lyricsSize: lyricsSize,
             columns: columns,
             fitOnePage: fitOnePage,
             repeats: repeats,
@@ -148,6 +168,7 @@ public struct PrintOptions: Sendable, Hashable {
             part: part,
             paper: remembered.paper,
             size: remembered.size,
+            lyricsSize: remembered.lyricsSize,
             columns: remembered.columns,
             fitOnePage: remembered.fitOnePage,
             repeats: remembered.repeats,
@@ -163,6 +184,7 @@ public struct PrintOptions: Sendable, Hashable {
 public struct RememberedPrintOptions: Sendable, Hashable, Codable {
     public var paper: PrintPaper
     public var size: PrintTextSize
+    public var lyricsSize: PrintTextSize
     public var columns: PrintColumns
     public var fitOnePage: Bool
     public var repeats: PrintRepeats
@@ -172,6 +194,7 @@ public struct RememberedPrintOptions: Sendable, Hashable, Codable {
     public init(
         paper: PrintPaper,
         size: PrintTextSize = .medium,
+        lyricsSize: PrintTextSize = .large,
         columns: PrintColumns = .auto,
         fitOnePage: Bool = false,
         repeats: PrintRepeats = .writtenOut,
@@ -180,6 +203,7 @@ public struct RememberedPrintOptions: Sendable, Hashable, Codable {
     ) {
         self.paper = paper
         self.size = size
+        self.lyricsSize = lyricsSize
         self.columns = columns
         self.fitOnePage = fitOnePage
         self.repeats = repeats
@@ -195,6 +219,7 @@ public struct RememberedPrintOptions: Sendable, Hashable, Codable {
     private enum CodingKeys: String, CodingKey {
         case paper
         case size
+        case lyricsSize
         case columns
         case fitOnePage
         case repeats
@@ -210,6 +235,7 @@ public struct RememberedPrintOptions: Sendable, Hashable, Codable {
         self.init(
             paper: value(.paper, .a4),
             size: value(.size, .medium),
+            lyricsSize: value(.lyricsSize, .large),
             columns: value(.columns, .auto),
             fitOnePage: value(.fitOnePage, false),
             repeats: value(.repeats, .writtenOut),

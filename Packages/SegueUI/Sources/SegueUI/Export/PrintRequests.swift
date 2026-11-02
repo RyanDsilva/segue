@@ -8,6 +8,7 @@
     import LiveLayout
     import Printing
     import Setlists
+    import Shows
     import SwiftUI
 
     /// What a PDF export prints (P9-1 spec section 4).
@@ -164,7 +165,7 @@
                 slots[entry.itemId] = PrintSlot(
                     title: song.header.title,
                     credits: song.header.credits,
-                    key: setListKey(song.request.model),
+                    key: setListKey(song.request.model, part: options.part),
                     song: songs.count,
                 )
                 songs.append(song)
@@ -207,7 +208,7 @@
                 PrintSlot(
                     title: song.header.title,
                     credits: song.header.credits,
-                    key: setListKey(song.request.model),
+                    key: setListKey(song.request.model, part: options.part),
                     song: index,
                 )
             }
@@ -251,24 +252,36 @@
                 diagrams: diagrams,
                 userShapes: snapshot.userShapes,
             )
-            let request = LayoutRequest(
+            let lyrics = options.part == .lyrics
+            if lyrics {
+                passes = singerPasses(model, passes: passes)
+            }
+            var request = LayoutRequest(
                 model: model,
                 viewport: LayoutSize(width: 1, height: 1),
-                minLyricSize: options.size.lyricSize,
+                minLyricSize: options.textSize.lyricSize,
                 cues: options.stageNotes ? record.sidecar.cues : [],
                 notes: options.stageNotes ? StageRequest.notes(record, slot: slot) : [],
                 passes: passes,
-                style: .print(lyricSize: options.size.lyricSize),
+                style: .print(lyricSize: options.textSize.lyricSize),
                 walkUps: StageRequest.walkUps(model, song: record, passes: passes),
             )
+            if lyrics {
+                request = lyricsRequest(request)
+            }
             let header = PrintHeader(
                 title: SongSummary.title(record),
                 credits: SongSummary.credits(
                     artists: model.header.artists,
                     album: model.header.album,
                 ),
-                performance: SongSummary.performanceLine(model),
-                scale: model.header.scale.map { "Sounding \($0)" },
+                performance: lyrics
+                    ? SongSummary.singerKeyLine(
+                        key: model.transform.concertKey,
+                        tempo: model.header.tempo,
+                    )
+                    : SongSummary.performanceLine(model),
+                scale: lyrics ? nil : model.header.scale.map { "Sounding \($0)" },
                 notice: resolution?.isOutOfDate == true ? outOfDateNotice : nil,
                 slotLabel: slotLabel,
             )
@@ -307,11 +320,41 @@
         }
 
         /// The set list page's key: the performance line without the tempo ("A, capo 2"; the
-        /// sounding key in the bass part).
-        static func setListKey(_ model: RenderModel) -> String? {
+        /// sounding key in the bass part; "Key A" in the Lyrics part, as singer view's header
+        /// says it, P9-2 section 8 item 4).
+        static func setListKey(_ model: RenderModel, part: PrintPart = .chords) -> String? {
+            if part == .lyrics {
+                return SongSummary.singerKeyLine(key: model.transform.concertKey, tempo: nil)
+            }
             var model = model
             model.header.tempo = nil
             return SongSummary.performanceLine(model)
+        }
+
+        /// The Lyrics part's request (spec section 8): the stage's singer request (lyrics
+        /// only, no walk-ups, fills or song and slot notes; cues stay when included), at the
+        /// print style and size the assembler sets, never the singer stage's zoom or floor.
+        static func lyricsRequest(_ request: LayoutRequest) -> LayoutRequest {
+            var lyrics = StageRequest.singerRequest(request, settings: LiveSettings())
+            lyrics.style = request.style
+            lyrics.minLyricSize = request.minLyricSize
+            lyrics.zoom = 1
+            return lyrics
+        }
+
+        /// The passes a lyric sheet prints: the slot's (nil = the full song) less any
+        /// unlabelled block with nothing to sing or read, which singer view's previews and
+        /// print leave out (P9-2 5.2 rule 7) while the stage keeps it as a pass. Nil when
+        /// nothing is left out, so a full song stays a full song.
+        static func singerPasses(_ model: RenderModel, passes: [PlayedPass]?) -> [PlayedPass]? {
+            let kept = Set(SingerView.sections(model.sections).map(\.id))
+            let order = passes ?? ArrangementResolver.fullSong(SongSections.units(of: model.sections))
+            let shown = order.filter { pass in
+                model.sections.indices.contains(pass.index)
+                    && kept.contains(model.sections[pass.index].id)
+            }
+            guard shown.count != order.count, !shown.isEmpty else { return passes }
+            return shown
         }
     }
 

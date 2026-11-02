@@ -320,7 +320,7 @@
                 target: PDFExportTarget(snapshot.target),
                 part: PDFExportPart(options.part),
                 paper: options.paper == .a4 ? .a4 : .letter,
-                size: PDFExportSize(options.size),
+                size: PDFExportSize(options.textSize),
                 columns: PDFExportColumns(options.columns),
                 repeats: options.repeats == .compact ? .compact : .full,
                 fitOnePage: options.fitOnePage,

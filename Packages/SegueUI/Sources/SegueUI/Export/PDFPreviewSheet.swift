@@ -228,6 +228,7 @@
                     Picker("Chart", selection: $model.options.part) {
                         Text("Chords").tag(PrintPart.chords)
                         Text("Bass notes").tag(PrintPart.bass)
+                        Text("Lyrics").tag(PrintPart.lyrics)
                     }
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier(AccessibilityID.pdfOption("part"))
@@ -238,7 +239,7 @@
                         Text("US Letter").tag(PrintPaper.letter)
                     }
                     .accessibilityIdentifier(AccessibilityID.pdfOption("paper"))
-                    Picker("Text size", selection: $model.options.size) {
+                    Picker("Text size", selection: $model.options.textSize) {
                         Text("Small").tag(PrintTextSize.small)
                         Text("Medium").tag(PrintTextSize.medium)
                         Text("Large").tag(PrintTextSize.large)
@@ -292,8 +293,11 @@
         }
 
         @ViewBuilder private var diagrams: some View {
-            let bass = model.options.part == .bass
-            let caption = bass ? "Bass charts print no chord diagrams" : nil
+            let caption: String? = switch model.options.part {
+            case .chords: nil
+            case .bass: "Bass charts print no chord diagrams"
+            case .lyrics: "Lyric sheets print no chord diagrams"
+            }
             Group {
                 if model.isSongbook {
                     Picker(selection: $model.options.diagrams) {
@@ -310,7 +314,7 @@
                     .toggleStyle(.checkbox)
                 }
             }
-            .disabled(bass)
+            .disabled(caption != nil)
             .help(caption ?? "")
             .accessibilityIdentifier(AccessibilityID.pdfOption("diagrams"))
         }

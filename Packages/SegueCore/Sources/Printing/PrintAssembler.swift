@@ -104,7 +104,7 @@ public enum PrintAssembler {
         let width = PrintPageMetrics.bodyWidth(paper)
         var header = song.header
         var request = song.request
-        request.style = .print(lyricSize: options.size.lyricSize)
+        request.style = .print(lyricSize: options.textSize.lyricSize)
         let extras = song.diagrams.map { [$0.height(width: width)] } ?? []
         func paginate() -> PagedSong {
             PageLayout.paginate(
@@ -154,7 +154,7 @@ public enum PrintAssembler {
         let geometry = PrintPageMetrics.geometry(options.paper, header: header, columns: nil)
         var request = request
         let reserved = extras
-            .reduce(0) { $0 + $1 + options.size.lyricSize * request.style.sectionSpacing }
+            .reduce(0) { $0 + $1 + options.textSize.lyricSize * request.style.sectionSpacing }
         request.viewport = LayoutSize(
             width: geometry.firstBody.width,
             height: geometry.firstBody.height - reserved,
