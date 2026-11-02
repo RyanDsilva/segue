@@ -47,6 +47,22 @@
             )
         }
 
+        /// The title of the member pass `planIndex` is in when that member has no tempo
+        /// (play-along refuses it, R191); nil otherwise or outside a medley.
+        func medleyMemberWithoutTempo(at planIndex: Int) -> String? {
+            guard isInMedley, let plan, plan.passes.indices.contains(planIndex),
+                  let member = memberPlay(plan.passes[planIndex].segment)
+            else { return nil }
+            let timeline = SongTimeline.build(
+                document: member.song.document,
+                sections: member.model.sections,
+                units: SongSections.units(of: member.song.document),
+                timing: member.song.sidecar.bass.timing,
+                order: member.order,
+            )
+            return timeline.chords.contains { $0.tempo == nil } ? member.title : nil
+        }
+
         /// From plan pass `planIndex`: its member from that pass (or the pass alone when it
         /// loops), then every later member whole until one has no tempo.
         func medleyPlayAlong(from planIndex: Int, looping: Bool) -> PreparedPlayAlong? {
@@ -71,7 +87,12 @@
                     range: isOpener ? (looping ? .section(index) : .from(index)) : .whole,
                     profile: profile,
                 )
-                if !isOpener, part.timeline.chords.contains(where: { $0.tempo == nil }) {
+                // No tempo, no play-along (R191): the member it starts in is refused (the
+                // caller flashes "No tempo"), a later one ends the timeline at its header.
+                if part.timeline.chords.contains(where: { $0.tempo == nil }) {
+                    if isOpener {
+                        return nil
+                    }
                     stopsAt = member.title
                     break
                 }

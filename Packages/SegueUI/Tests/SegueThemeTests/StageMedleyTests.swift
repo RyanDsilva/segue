@@ -302,6 +302,18 @@ extension StageWindowSuites {
         }
 
         @Test
+        func `play-along refuses a member with no tempo (R191)`() async throws {
+            var songs = MedleyStage.songs
+            songs[0] = songs[0].replacingOccurrences(of: "{tempo: 92}\n", with: "")
+            let (run, setlist) = try await MedleyStage.run(songs: songs)
+            let live = try await MedleyStage.start(run, setlist, kind: .rehearsal)
+            live.dispatch(.togglePlayAlong)
+            #expect(!live.isPlayingAlong)
+            #expect(live.indicator == "No tempo for Kesariya")
+            try await run.end(live)
+        }
+
+        @Test
         func `a gig medley stays silent`() async throws {
             let (run, setlist) = try await MedleyStage.run()
             let live = try await MedleyStage.start(run, setlist)

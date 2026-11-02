@@ -72,9 +72,17 @@
                 return
             }
             guard state.record.currentBreak == nil,
-                  let current = currentPass(at: context.scrollClock.now()),
-                  startPlayAlong(from: current)
+                  let current = currentPass(at: context.scrollClock.now())
             else {
+                flash("Nothing to play along with")
+                return
+            }
+            // A medley member with no tempo does not play along (R191, P9-3 9.8).
+            if let title = medleyMemberWithoutTempo(at: current) {
+                flash("No tempo for \(title)")
+                return
+            }
+            guard startPlayAlong(from: current) else {
                 flash("Nothing to play along with")
                 return
             }
