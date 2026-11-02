@@ -129,6 +129,9 @@ enum VocabularySample {
         events += HelpItem.allCases.map { AnalyticsEvent.helpOpened($0) }
         events += HelpRoute.allCases.map { AnalyticsEvent.helpOpened(.contextHelp, via: $0) }
         events += HelpOrigin.allCases.map { AnalyticsEvent.helpOpened(.reportProblem, from: $0) }
+        for page in HelpPage.allCases {
+            events.append(.helpOpened(.contextHelp, via: .book, page: page))
+        }
         for transport in FeedbackTransport.allCases {
             for bits in 0 ..< 16 {
                 events.append(.feedbackSent(FeedbackSentSummary(

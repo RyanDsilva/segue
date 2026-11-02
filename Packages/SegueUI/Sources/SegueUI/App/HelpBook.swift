@@ -103,7 +103,7 @@
         public func open(_ page: SegueLinks.Guide) -> HelpRoute? {
             guard isAvailable else { return nil }
             let route: HelpRoute = book.open(anchor: page.helpAnchor) ? .book : fallBack(to: page)
-            record(.helpOpened(.contextHelp, via: route))
+            record(.helpOpened(.contextHelp, via: route, page: page.analyticsPage))
             return route
         }
 
@@ -151,6 +151,11 @@
     }
 
     public extension SegueLinks.Guide {
+        /// Row 14's `segue.page`: the analytics case named like this one (R199).
+        var analyticsPage: HelpPage? {
+            HelpPage(rawValue: String(describing: self))
+        }
+
         /// The Apple Help anchor of this page in the Help Book: the page slug, or
         /// `<slug>-<id>` for a heading (guide/scripts/helpbook.mjs writes both); the home is
         /// `index`.

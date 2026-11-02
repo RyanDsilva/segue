@@ -33,9 +33,9 @@ public extension AnalyticsEvent {
             return .daily(key: "\(name)|\(source.rawValue)")
         case let .milestoneReached(milestone, _):
             return .once(key: "\(name)|\(milestone.rawValue)")
-        case let .helpOpened(item, via, from):
+        case let .helpOpened(item, via, from, page):
             return .daily(key: "\(name)|\(item.rawValue)|\(via?.rawValue ?? "")|"
-                + (from?.rawValue ?? ""))
+                + "\(from?.rawValue ?? "")|\(page?.rawValue ?? "")")
         case let .errorOccurred(code):
             return .daily(key: "\(name)|\(code.rawValue)")
         case let .searchPerformed(context, tier, _):

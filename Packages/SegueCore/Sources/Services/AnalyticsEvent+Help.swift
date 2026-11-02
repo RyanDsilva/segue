@@ -7,10 +7,12 @@ extension AnalyticsEvent {
         _ item: HelpItem,
         via: HelpRoute?,
         from: HelpOrigin?,
+        page: HelpPage?,
     ) -> [String: String] {
         var params = ["segue.item": item.rawValue]
         params["segue.via"] = via?.rawValue
         params["segue.from"] = from?.rawValue
+        params["segue.page"] = page?.rawValue
         return params
     }
 }
@@ -26,4 +28,35 @@ public enum HelpRoute: String, Sendable, CaseIterable {
 public enum HelpOrigin: String, Sendable, CaseIterable {
     case menu
     case errorBanner
+}
+
+/// The guide page a Help button or Learn More opened (P9-5 6, R199): one case per
+/// `SegueLinks.Guide` case, named the same (a SegueUI test keeps the two lists equal).
+public enum HelpPage: String, Sendable, CaseIterable {
+    case home
+    case keyboard
+    case pasteASong
+    case pasteReview
+    case importBatch
+    case search
+    case fileSync
+    case songCard
+    case moveChord
+    case sectionNotes
+    case transpose
+    case setAssistant
+    case medleys
+    case unknownTimes
+    case arrangeSections
+    case pdf
+    case smartFilters
+    case goOnStage
+    case singerView
+    case checklist
+    case minimumSize
+    case gigMode
+    case ai
+    case privacySettings
+    case backUp
+    case builtInHelp
 }

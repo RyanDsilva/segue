@@ -302,8 +302,10 @@ struct ServicesVocabularyTests {
         let menu = AnalyticsEvent.helpOpened(.help, via: .book).render()
         #expect(menu.name == "Segue.Help.opened")
         #expect(menu.params == ["segue.item": "help", "segue.via": "book"])
-        let button = AnalyticsEvent.helpOpened(.contextHelp, via: .web).render()
-        #expect(button.params == ["segue.item": "contextHelp", "segue.via": "web"])
+        let button = AnalyticsEvent.helpOpened(.contextHelp, via: .web, page: .checklist).render()
+        #expect(button.params == [
+            "segue.item": "contextHelp", "segue.via": "web", "segue.page": "checklist",
+        ])
         let report = AnalyticsEvent.helpOpened(.reportProblem, from: .errorBanner).render()
         #expect(report.params == ["segue.item": "reportProblem", "segue.from": "errorBanner"])
         #expect(AnalyticsEvent.helpOpened(.terms).render().params == ["segue.item": "terms"])

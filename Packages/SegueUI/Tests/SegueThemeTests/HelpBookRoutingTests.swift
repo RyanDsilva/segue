@@ -34,6 +34,13 @@ struct HelpBookRoutingTests {
     }
 
     @Test
+    func `every guide page has its analytics page`() {
+        let pages = SegueLinks.Guide.allCases.map(\.analyticsPage)
+        #expect(!pages.contains(nil))
+        #expect(Set(pages.compactMap(\.self)) == Set(HelpPage.allCases))
+    }
+
+    @Test
     func `help opens the book first and records the book route`() {
         let fixture = Fixture(bookOpens: true)
         #expect(fixture.router.openHome() == .book)
@@ -42,7 +49,7 @@ struct HelpBookRoutingTests {
         #expect(fixture.workspace.opened.isEmpty)
         #expect(fixture.events == [
             .helpOpened(.help, via: .book),
-            .helpOpened(.contextHelp, via: .book),
+            .helpOpened(.contextHelp, via: .book, page: .checklist),
         ])
     }
 
@@ -56,7 +63,7 @@ struct HelpBookRoutingTests {
         ])
         #expect(fixture.events == [
             .helpOpened(.help, via: .web),
-            .helpOpened(.contextHelp, via: .web),
+            .helpOpened(.contextHelp, via: .web, page: .fileSync),
         ])
     }
 

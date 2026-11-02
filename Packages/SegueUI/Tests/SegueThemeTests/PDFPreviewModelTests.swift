@@ -108,7 +108,7 @@ struct PDFPreviewModelTests {
         )
         model.noteHelpOpened()
         #expect(recorder.events.count { event in
-            if case .helpOpened(.pdf, _, _) = event {
+            if case .helpOpened(.pdf, _, _, _) = event {
                 return true
             }
             return false
