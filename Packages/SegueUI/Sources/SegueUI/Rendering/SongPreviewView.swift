@@ -48,3 +48,19 @@ public struct SongPreviewView: View {
         .padding(.vertical, 32)
     }
 }
+
+/// ChordPro text drawn as the song page, in the app's appearance, read-only and without the
+/// diagram strip: the Personal build's Find Lyrics preview (P9-4 spec 6.4) shows a chart as
+/// it will import.
+public struct ChordProPageView: View {
+    let model: RenderModel
+
+    public init(chordPro: String) {
+        let (document, _) = ChordProParser.parse(chordPro)
+        model = RenderModel(document: document, options: DisplayOptions())
+    }
+
+    public var body: some View {
+        SongPageView(model: model, selectable: false, showsDiagrams: false)
+    }
+}

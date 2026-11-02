@@ -1,5 +1,6 @@
 import Foundation
 import Plugins
+import WebKit
 
 /// What a reader waits for before it reads a page in the hidden view (spec 8.6).
 enum ReadyMarker: String, Sendable, Hashable {
@@ -62,6 +63,15 @@ extension PageLoader {
     func needsWarmUp(for _: URL) async -> Bool {
         false
     }
+}
+
+/// The hidden view a challenged load leaves behind, shown by Open Here (spec 8.6, R183) so
+/// the owner completes the check himself; the clearance lands in the persistent store.
+@MainActor
+protocol ChallengeViewSource: AnyObject, Sendable {
+    func presentChallenge(for url: URL) async -> WKWebView
+    func waitUntilCleared() async -> Bool
+    func endPresentation()
 }
 
 /// Plain `GET`s through an `HTTPTransport` (spec 8.2): redirects followed by hand (at most

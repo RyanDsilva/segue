@@ -25,8 +25,7 @@ struct SegueApp: App {
 
     init() {
         Theme.registerFonts()
-        plugins = PluginRegistry()
-        plugins.registerAll(Self.pluginModules)
+        plugins = Self.registeredPlugins()
 
         #if DEBUG
             // Test-only launch arguments are honoured in Debug builds only.
@@ -76,6 +75,7 @@ struct SegueApp: App {
         #else
             dependencies.ai = Self.makeAI(workspace: dependencies.workspace)
         #endif
+        dependencies.plugins = Self.pluginEntries(plugins)
         // Settings > Appearance (R36) applies before the first window draws; TipKit is
         // configured before any tip view exists (WS2b 4.4).
         dependencies.polish.appearance.apply()
@@ -232,6 +232,30 @@ struct SegueApp: App {
             .personal
         #else
             .appStore
+        #endif
+    }
+
+    /// The registry with this flavour's plugins. Debug Personal with `-SegueImportFixtures
+    /// YES` (E2E, P9-4 spec 15.4) registers them over saved pages, with no network.
+    private static func registeredPlugins() -> PluginRegistry {
+        let registry = PluginRegistry()
+        #if DEBUG && SEGUE_PERSONAL
+            let arguments = ProcessInfo.processInfo.arguments
+            if LaunchOptions.registerImportFixtures(registry, arguments: arguments) {
+                return registry
+            }
+        #endif
+        registry.registerAll(pluginModules)
+        return registry
+    }
+
+    /// P9-4 spec 4.3: web import and Find Lyrics, in the Personal build only.
+    @MainActor
+    private static func pluginEntries(_ registry: PluginRegistry) -> PluginEntries {
+        #if SEGUE_PERSONAL
+            PersonalModules.entries(registry: registry)
+        #else
+            PluginEntries()
         #endif
     }
 

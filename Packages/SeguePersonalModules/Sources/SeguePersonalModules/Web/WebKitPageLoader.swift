@@ -12,7 +12,9 @@ import WebKit
 /// challenge's own) load. Never clicks, solves or injects into a challenge: an interactive
 /// check ends the load at once as `.challenged`, any other waits up to 12 s.
 @MainActor
-final class WebKitPageLoader: NSObject, PageLoader, WKNavigationDelegate, WKUIDelegate {
+final class WebKitPageLoader: NSObject, PageLoader, ChallengeViewSource, WKNavigationDelegate,
+    WKUIDelegate
+{
     /// The store's fixed identity, owned by this package (never `.default()`, never
     /// `.nonPersistent()`). Clear Site Data removes it with `removeDataStoreForIdentifier`.
     static let storeIdentifier = UUID(uuid: (
@@ -29,6 +31,8 @@ final class WebKitPageLoader: NSObject, PageLoader, WKNavigationDelegate, WKUIDe
     private var navigation: CheckedContinuation<Bool, Never>?
     private var teardown: Task<Void, Never>?
     private var ruleList: WKContentRuleList?
+    /// Open Here shows the view: it is not torn down meanwhile.
+    private var isPresented = false
 
     override nonisolated init() {
         super.init()
@@ -150,6 +154,7 @@ final class WebKitPageLoader: NSObject, PageLoader, WKNavigationDelegate, WKUIDe
     }
 
     private func scheduleTeardown() {
+        guard !isPresented else { return }
         teardown = Task { [weak self] in
             try? await Task.sleep(for: Self.idleTeardown)
             guard !Task.isCancelled else { return }
@@ -270,6 +275,48 @@ final class WebKitPageLoader: NSObject, PageLoader, WKNavigationDelegate, WKUIDe
         }
         guard request.inPageFetch == nil else { return nil }
         return try? await view.evaluateJavaScript("document.documentElement.outerHTML") as? String
+    }
+
+    // MARK: Open Here (spec 8.6, R183)
+
+    /// The hidden view, shown as it is (same store, same user agent, no reload). When it was
+    /// torn down or shows another site, it loads `url` first so the owner sees the check.
+    func presentChallenge(for url: URL) async -> WKWebView {
+        teardown?.cancel()
+        isPresented = true
+        let view = await prepareView()
+        let site = NavigationRule.registrableDomain(WebAddress.siteHost(url))
+        let shown = view.url.map { NavigationRule.registrableDomain(WebAddress.siteHost($0)) }
+        if shown != site {
+            page = url
+            mainResponse = nil
+            view.load(URLRequest(url: url, timeoutInterval: 20))
+        }
+        return view
+    }
+
+    /// Polls the shown page until its check has cleared; false when the task was cancelled
+    /// or the view went away. The app never clicks or injects into the check.
+    func waitUntilCleared() async -> Bool {
+        while !Task.isCancelled {
+            do {
+                try await Task.sleep(for: .milliseconds(700))
+            } catch {
+                return false
+            }
+            guard let view else { return false }
+            if await ChallengeDetector.verdict(signals(in: view)) == .page {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// The sheet closed: the view leaves it and is torn down after its idle time.
+    func endPresentation() {
+        isPresented = false
+        view?.removeFromSuperview()
+        scheduleTeardown()
     }
 
     // MARK: WKNavigationDelegate

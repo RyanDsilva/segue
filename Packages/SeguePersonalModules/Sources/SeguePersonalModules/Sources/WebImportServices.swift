@@ -9,13 +9,21 @@ final class WebImportServices: Sendable {
     let fetcher: PageFetcher
     let lyrics: LRCLIBClient
     let lyricsCache: PageCache<String, [LyricsRecord]>
+    /// The hidden view's loader when it can show a challenge (Open Here, spec 8.6); nil for
+    /// fakes.
+    let challenges: (any ChallengeViewSource)?
+    /// Removes the hidden view's whole cookie store (Settings > Clear Site Data).
+    let clearSiteData: @Sendable () async -> Void
 
     init(
         transport: any HTTPTransport,
         webKit: any PageLoader,
         userAgent: String,
         clock: any WebClock = SystemWebClock(),
+        clearSiteData: @escaping @Sendable () async -> Void = {},
     ) {
+        challenges = webKit as? any ChallengeViewSource
+        self.clearSiteData = clearSiteData
         let pacer = RequestPacer(clock: clock)
         self.pacer = pacer
         fetcher = PageFetcher(
@@ -34,11 +42,21 @@ final class WebImportServices: Sendable {
             transport: URLSessionTransport(userAgent: userAgent),
             webKit: WebKitPageLoader(),
             userAgent: userAgent,
+            clearSiteData: {
+                await WebKitPageLoader.clearSiteData()
+            },
         )
     }
 
     /// Reads one page and its chart, by the registry's rules (spec 8.3).
     func importPage(_ url: URL) async throws(ImportFailure) -> ImportedSong {
+        try await readPage(url).song
+    }
+
+    /// `importPage` with how the page was read (analytics row 33).
+    func readPage(_ url: URL) async throws(ImportFailure)
+        -> (song: ImportedSong, page: LoadedPage)
+    {
         guard let address = WebAddress.validated(url) else { throw .notAPage }
         let request = PageLoadRequest(
             url: address,
@@ -48,7 +66,9 @@ final class WebImportServices: Sendable {
         let route: PageFetcher.Route = PageParserRegistry
             .loadsThroughWebKit(address) ? .webKitOnly : .plainFirst
         let page = try await fetcher.fetch(request, route: route)
-        return try PageParserRegistry.read(page.text, url: address, loadPath: page.loadPath).get()
+        let song = try PageParserRegistry.read(page.text, url: address, loadPath: page.loadPath)
+            .get()
+        return (song, page)
     }
 }
 
@@ -69,14 +89,22 @@ struct WebPageImporter: SongImporter {
     }
 
     func importSong(_ input: ImportInput) async throws(ImportFailure) -> ImportedSong {
+        try await read(input).song
+    }
+
+    /// `importSong` with how the page was read (analytics row 33).
+    func read(_ input: ImportInput) async throws(ImportFailure)
+        -> (song: ImportedSong, page: LoadedPage?)
+    {
         switch input {
         case let .url(url):
-            return try await services.importPage(url)
+            let (song, page) = try await services.readPage(url)
+            return (song, page)
         case let .webPageFile(file):
             let (html, address) = try SavedPage.read(file)
             var song = try PageParserRegistry.read(html, url: address, loadPath: .savedFile).get()
             song.provenance.loadPath = .savedFile
-            return song
+            return (song, nil)
         }
     }
 }

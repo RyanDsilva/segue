@@ -173,6 +173,8 @@ public struct SearchCandidate: Sendable, Hashable, Identifiable {
     public var pageURL: URL?
     /// Groups the versions of one song (a site's song id, or a normalized title and artist).
     public var songKey: String?
+    /// Devanagari in the record was romanized for display (spec 6.5).
+    public var romanized: Bool
 
     public init(
         id: String,
@@ -188,6 +190,7 @@ public struct SearchCandidate: Sendable, Hashable, Identifiable {
         lyrics: String? = nil,
         pageURL: URL? = nil,
         songKey: String? = nil,
+        romanized: Bool = false,
     ) {
         self.id = id
         self.title = title
@@ -202,6 +205,7 @@ public struct SearchCandidate: Sendable, Hashable, Identifiable {
         self.lyrics = lyrics
         self.pageURL = pageURL
         self.songKey = songKey
+        self.romanized = romanized
     }
 }
 

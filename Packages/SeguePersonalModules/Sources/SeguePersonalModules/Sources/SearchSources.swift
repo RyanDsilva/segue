@@ -21,7 +21,22 @@ struct UGSearchSource: SongSearchSource {
 
     func song(for candidate: SearchCandidate) async throws(ImportFailure) -> ImportedSong {
         guard let page = candidate.pageURL else { throw .notFound }
-        return try await services.importPage(page)
+        var song = try await services.importPage(page)
+        song.provenance.attribution = Self.attribution(candidate)
+        return song
+    }
+
+    /// The review's source line for a picked version (spec 6.10): "From Ultimate Guitar ·
+    /// ver 3 · ★4.8".
+    static func attribution(_ candidate: SearchCandidate) -> String {
+        var parts = ["From Ultimate Guitar"]
+        if let version = candidate.version {
+            parts.append("ver \(version)")
+        }
+        if let rating = candidate.rating {
+            parts.append("★" + rating.formatted(.number.precision(.fractionLength(1))))
+        }
+        return parts.joined(separator: " · ")
     }
 }
 
@@ -52,7 +67,9 @@ struct EChordsSearchSource: SongSearchSource {
 
     func song(for candidate: SearchCandidate) async throws(ImportFailure) -> ImportedSong {
         guard let page = candidate.pageURL else { throw .notFound }
-        return try await services.importPage(page)
+        var song = try await services.importPage(page)
+        song.provenance.attribution = "From E-Chords"
+        return song
     }
 }
 
@@ -107,6 +124,7 @@ struct LyricsSearchSource: SongSearchSource {
             isInstrumental: record.isInstrumental,
             lyrics: lyrics,
             pageURL: URL(string: LRCLIBClient.base + "/api/get/\(record.id)"),
+            romanized: HindiRomanizer.containsDevanagari(fields),
         )
     }
 
