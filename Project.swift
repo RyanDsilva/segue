@@ -171,6 +171,8 @@ func appTarget(name: String, personal: Bool) -> Target {
     var dependencies: [TargetDependency] = [
         // The Quick Look preview, embedded in Contents/PlugIns (WS2b 4.7).
         .target(name: quickLookName(personal: personal)),
+        // Finder's thumbnails of .cho files, beside it (P9-5 5, P3).
+        .target(name: thumbnailName(personal: personal)),
         .external(name: "SegueUI"),
         .external(name: "SegueCore"),
         // Hosted services (WS3): our TelemetryDeck ingest client and the Sentry SDK.
@@ -354,10 +356,57 @@ func quickLookTarget(hostName: String, hostBundleID: String) -> Target {
     )
 }
 
+/// The Quick Look thumbnail extension's target name per flavor (P9-5 5, P3).
+func thumbnailName(personal: Bool) -> String {
+    personal ? "SegueQuickLookThumbnailPersonal" : "SegueQuickLookThumbnail"
+}
+
+/// Finder's thumbnails of ChordPro songs for one app flavor (P9-5 5, P3): the top of the
+/// song page drawn by SegueUI's `SongThumbnail`. Like the preview, one per flavor
+/// (`<host>.thumbnail`; the App Store one needs its App ID and the profile
+/// "Segue Mac App Store Thumbnail"), sandboxed with nothing else.
+func thumbnailTarget(hostName: String, hostBundleID: String) -> Target {
+    .target(
+        name: thumbnailName(personal: hostName == "Segue"),
+        destinations: [.mac],
+        product: .appExtension,
+        bundleId: "\(hostBundleID).thumbnail",
+        deploymentTargets: deploymentTargets,
+        infoPlist: .extendingDefault(with: [
+            "CFBundleDisplayName": "Segue",
+            "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+            "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
+            "NSHumanReadableCopyright": "© 2026 Ryan Rony Dsilva",
+            "NSExtension": [
+                "NSExtensionPointIdentifier": "com.apple.quicklook.thumbnail",
+                "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).ThumbnailProvider",
+                "NSExtensionAttributes": [
+                    "QLSupportedContentTypes": [.string(chordProTypeID)],
+                    "QLThumbnailMinimumDimension": 32,
+                ],
+            ],
+        ]),
+        sources: ["Extensions/QuickLookThumbnail/Sources/**"],
+        // The same sandbox-only entitlements as the preview.
+        entitlements: .file(path: .relativeToRoot("Extensions/QuickLook/QuickLook.entitlements")),
+        scripts: [stampResourceBundle],
+        dependencies: [
+            .external(name: "SegueUI"),
+            .external(name: "SegueCore"),
+        ],
+        settings: .settings(base: [
+            "ENABLE_APP_SANDBOX": "YES",
+            "SKIP_INSTALL": "YES",
+        ].merging(signingSettings) { _, new in new }),
+    )
+}
+
 let personalApp = appTarget(name: "Segue", personal: true)
 let appStoreApp = appTarget(name: "SegueAppStore", personal: false)
 let personalQuickLook = quickLookTarget(hostName: "Segue", hostBundleID: personalBundleID)
 let appStoreQuickLook = quickLookTarget(hostName: "SegueAppStore", hostBundleID: appStoreBundleID)
+let personalThumbnail = thumbnailTarget(hostName: "Segue", hostBundleID: personalBundleID)
+let appStoreThumbnail = thumbnailTarget(hostName: "SegueAppStore", hostBundleID: appStoreBundleID)
 
 let uiTests: Target = .target(
     name: "SegueUITests",
@@ -434,7 +483,8 @@ let project = Project(
     ),
     settings: projectSettings,
     targets: [
-        personalApp, appStoreApp, personalQuickLook, appStoreQuickLook, uiTests, appStoreUITests,
+        personalApp, appStoreApp, personalQuickLook, appStoreQuickLook, personalThumbnail,
+        appStoreThumbnail, uiTests, appStoreUITests,
     ],
     schemes: [personalScheme, appStoreScheme],
 )
