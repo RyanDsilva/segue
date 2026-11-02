@@ -158,6 +158,7 @@
                     )
                 } catch {
                     // Diagrams fall back to curated and generated shapes; say why.
+                    library.pendingErrorCode = .shapeLibraryUnreadable
                     library.errorMessage = "Segue could not read your chord shape library "
                         + "(\(UserMessage.describe(error))), so built-in shapes are shown."
                 }

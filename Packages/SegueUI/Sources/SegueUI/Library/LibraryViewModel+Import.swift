@@ -116,6 +116,7 @@ extension LibraryViewModel {
                 }
                 try await receipts.append(store.deleteSong(id: id))
             } catch {
+                pendingErrorCode = UserMessage.code(for: error, else: .importFailed)
                 errorMessage = UserMessage.describe(error)
             }
         }
@@ -130,6 +131,7 @@ extension LibraryViewModel {
             do {
                 try await store.restoreSong(receipt)
             } catch {
+                pendingErrorCode = UserMessage.code(for: error, else: .importFailed)
                 errorMessage = "Could not redo the import. " + UserMessage.describe(error)
                 restored = false
             }

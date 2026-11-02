@@ -66,6 +66,7 @@
             let accepted = Set(SongFileTypes.importExtensions)
             let songs = urls.filter { accepted.contains($0.pathExtension.lowercased()) }
             if songs.count < urls.count {
+                session.library.pendingErrorCode = .importFailed
                 session.library.errorMessage = Self.notASongMessage
             }
             guard !songs.isEmpty else { return }
@@ -83,6 +84,7 @@
                     session.section = .library
                     session.library.select(record.id)
                 } else {
+                    session.library.pendingErrorCode = .importFailed
                     session.library.errorMessage = Self.notASongMessage
                 }
             }

@@ -30,6 +30,7 @@ extension LibraryViewModel {
                 cues: record.sidecar.cues,
             )
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = SongEditorViewModel.message(for: error)
             services.recordNoteEditFailure(error)
             return nil
@@ -59,6 +60,7 @@ extension LibraryViewModel {
             await applySaved(saved)
             return true
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = UserMessage.describe(error)
             await reload()
             return false
@@ -82,6 +84,7 @@ extension LibraryViewModel {
                 self.metadataWork = Task { @MainActor in
                     await previous?.value
                     guard let record = self.song(id: id) else {
+                        self.pendingErrorCode = .other
                         self.errorMessage = "That song is no longer in the library."
                         manager.removeAllActions(withTarget: target)
                         return

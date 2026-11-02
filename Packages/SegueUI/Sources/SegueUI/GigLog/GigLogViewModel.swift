@@ -14,8 +14,19 @@ public final class GigLogViewModel {
     public var selection: ShowID?
     /// The gig to select once the log first loads (restored from the last launch).
     var restoredSelection: ShowID?
-    /// The last failure, shown as a dismissible banner.
-    public var errorMessage: String?
+    /// The last failure, shown as a dismissible banner. Setting it takes `pendingErrorCode`
+    /// (or `other`) as its `errorCode`; clearing it clears the code.
+    public var errorMessage: String? {
+        didSet {
+            errorCode = errorMessage == nil ? nil : (pendingErrorCode ?? .other)
+            pendingErrorCode = nil
+        }
+    }
+
+    /// The banner error's code, which the banner's Report... pre-fills (P9-5, R199).
+    public private(set) var errorCode: ErrorCode?
+    /// The code the next `errorMessage` carries: set on the line before it.
+    @ObservationIgnored var pendingErrorCode: ErrorCode?
 
     private let shows: ShowStore
     /// The main window's undo manager (Edit > Undo).
@@ -69,6 +80,7 @@ public final class GigLogViewModel {
             try await shows.updateGigDetails(details, of: id)
             services.record(.featureUsed(.gigLogEdit, .library))
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = UserMessage.describe(error)
         }
         await reload()
@@ -103,6 +115,7 @@ public final class GigLogViewModel {
             await onPlaysChanged()
             return receipt
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = UserMessage.describe(error)
             await reload()
             return nil
@@ -115,12 +128,14 @@ public final class GigLogViewModel {
             await reload()
             await onPlaysChanged()
             guard let restored else {
+                pendingErrorCode = .saveFailed
                 errorMessage = "Could not undo Move Gig to Trash: the file could not be read."
                 return false
             }
             selection = restored.id
             return true
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = "Could not undo Move Gig to Trash. " + UserMessage.describe(error)
             return false
         }

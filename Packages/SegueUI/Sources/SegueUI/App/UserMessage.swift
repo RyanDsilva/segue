@@ -1,10 +1,34 @@
 import Foundation
 import Library
+import Services
 import Setlists
 import Shows
 
 /// Turns errors into short, user-facing sentences.
 enum UserMessage {
+    /// The library opened but its bookmark could not be stored.
+    static func notRemembered(_ url: URL, _ error: any Error) -> String {
+        "Segue opened “\(url.lastPathComponent)” but could not remember it "
+            + "(\(describe(error))). You will be asked to choose it again next time."
+    }
+
+    /// End Show failed but the show was offered again (R154).
+    static func unclosedShow(_ error: any Error) -> String {
+        "The show could not be closed (\(describe(error))). It is still open: "
+            + "Resume it, or try End Show again."
+    }
+
+    /// The analytics and report code for `error` shown as a banner (P9-5, R199): a save
+    /// refused because the file changed on disk is `saveConflict` wherever it happens, and
+    /// an unopened library `libraryOpenFailed`; anything else is the site's `fallback`.
+    static func code(for error: any Error, else fallback: ErrorCode) -> ErrorCode {
+        switch error as? LibraryError {
+        case .conflict: .saveConflict
+        case .notOpen: .libraryOpenFailed
+        default: fallback
+        }
+    }
+
     static func describe(_ error: any Error) -> String {
         switch error {
         case let error as LibraryError:

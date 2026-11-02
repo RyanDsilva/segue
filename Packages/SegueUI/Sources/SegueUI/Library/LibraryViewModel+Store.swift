@@ -10,6 +10,7 @@ public extension LibraryViewModel {
         do {
             try await store.refresh()
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .indexRebuildFailed)
             errorMessage = UserMessage.describe(error)
         }
         await reload()
@@ -23,6 +24,7 @@ public extension LibraryViewModel {
         do {
             try await store.rebuildIndex()
         } catch {
+            pendingErrorCode = .indexRebuildFailed
             errorMessage = "The index could not be rebuilt (\(UserMessage.describe(error))). "
                 + "The previous index is still in use."
         }

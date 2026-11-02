@@ -16,6 +16,7 @@ public extension SetlistsViewModel {
         do {
             loadIssues = try await store.reloadFromDisk()
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = UserMessage.describe(error)
         }
         let current = await store.all()
@@ -104,6 +105,7 @@ extension SetlistsViewModel {
                     do {
                         box.receipt = try await self.store.delete(id)
                     } catch {
+                        self.pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
                         self.errorMessage = UserMessage.describe(error)
                         manager.removeAllActions(withTarget: target)
                     }
@@ -121,6 +123,7 @@ extension SetlistsViewModel {
             await reload()
             selection = snapshot.id
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = "Could not undo the setlist change. " + UserMessage.describe(error)
             undoManager?.removeAllActions(withTarget: target)
             await reload()

@@ -54,12 +54,14 @@ extension LibraryViewModel {
             // Its metadata edits cannot be undone once it is in the Trash.
             metadataTargets.removeActions(of: id, from: undoManager)
             if !receipt.leftBehind.isEmpty {
+                pendingErrorCode = .saveFailed
                 errorMessage = "“\(title)” is in the Trash, but its metadata file could not be "
                     + "moved there and stays in the library folder."
             }
             await reload()
             return receipt
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = UserMessage.describe(error)
             await reload()
             return nil
@@ -71,6 +73,7 @@ extension LibraryViewModel {
             let record = try await store.restoreSong(receipt)
             await reload()
             guard let record else {
+                pendingErrorCode = .saveFailed
                 errorMessage = "Could not undo Move to Trash: the song could not be read."
                 return false
             }
@@ -80,6 +83,7 @@ extension LibraryViewModel {
             }
             return true
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = "Could not undo Move to Trash. " + UserMessage.describe(error)
             await reload()
             return false

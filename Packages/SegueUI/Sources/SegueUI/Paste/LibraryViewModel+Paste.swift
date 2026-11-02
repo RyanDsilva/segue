@@ -111,6 +111,7 @@ public extension LibraryViewModel {
         do {
             prepared = try await store.prepareImport(urls)
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .importFailed)
             errorMessage = UserMessage.describe(error)
             services.record(.errorOccurred(.importFailed))
             return
@@ -225,6 +226,7 @@ extension LibraryViewModel {
         do {
             return try await store.commitImport(candidates)
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .importFailed)
             errorMessage = UserMessage.describe(error)
             services.record(.errorOccurred(.importFailed))
             return nil

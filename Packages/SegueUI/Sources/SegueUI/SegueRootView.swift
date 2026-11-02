@@ -1,6 +1,7 @@
 #if os(macOS)
     import AppKit
     import Library
+    import Services
     import SwiftUI
 
     /// Root of the app's main window: the library chooser until a library is open, then the
@@ -333,10 +334,23 @@
             }
         }
 
+        /// The banner's error and its code: the library's first, then setlists', then the
+        /// gig log's.
+        private var bannerError: (String, ErrorCode)? {
+            for model in [
+                (session.library.errorMessage, session.library.errorCode),
+                (session.setlists.errorMessage, session.setlists.errorCode),
+                (session.gigLog.errorMessage, session.gigLog.errorCode),
+            ] {
+                if let message = model.0 {
+                    return (message, model.1 ?? .other)
+                }
+            }
+            return nil
+        }
+
         @ViewBuilder private var errorBanner: some View {
-            if let message = session.library.errorMessage ?? session.setlists.errorMessage
-                ?? session.gigLog.errorMessage
-            {
+            if let (message, code) = bannerError {
                 HStack(spacing: 10) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .symbolRenderingMode(.multicolor)
@@ -345,7 +359,7 @@
                         .frame(maxWidth: .infinity, alignment: .leading)
                     // P9-5 5 (P1): report it while it is on screen, never from the stage.
                     if !app.isShowUp {
-                        Button("Report…") { app.reportBannerError(message) }
+                        Button("Report…") { app.reportBannerError(message, code: code) }
                             .buttonStyle(.segueSecondary)
                             .controlSize(.small)
                             .help("Report this problem to Segue's developer")

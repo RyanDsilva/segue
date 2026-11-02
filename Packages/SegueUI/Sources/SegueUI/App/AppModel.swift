@@ -390,9 +390,8 @@
                         try dependencies.location.remember(url)
                     } catch {
                         // The library is open and usable; only the next launch is affected.
-                        session.library.errorMessage = "Segue opened “\(url.lastPathComponent)” "
-                            + "but could not remember it (\(UserMessage.describe(error))). "
-                            + "You will be asked to choose it again next time."
+                        let text = UserMessage.notRemembered(url, error)
+                        session.library.showError(text, code: .libraryOpenFailed)
                     }
                 }
                 live = nil
@@ -414,7 +413,7 @@
                 let message = inUse ? Self.inUseMessage : UserMessage.describe(error)
                 if case let .ready(session) = previous {
                     // Keep the working library; surface the failure in it.
-                    session.library.errorMessage = message
+                    session.library.showError(message, code: .libraryOpenFailed)
                     state = previous
                 } else {
                     state = .needsLibrary(inUse ? .inUseByAnotherCopy : .openFailed(message))

@@ -116,6 +116,7 @@
                 workspace.reveal([url])
             } else {
                 workspace.reveal([url.deletingLastPathComponent()])
+                library.pendingErrorCode = .other
                 library.errorMessage = "The file is no longer there; showing its folder."
             }
         }

@@ -151,6 +151,7 @@ extension LibraryViewModel {
                 let saved = try await store.updateBassPrefs(id: id, prefs)
                 await applySaved(saved)
             } catch {
+                pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
                 errorMessage = UserMessage.describe(error)
             }
         }

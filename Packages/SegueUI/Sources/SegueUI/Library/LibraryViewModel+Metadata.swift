@@ -63,6 +63,7 @@ extension LibraryViewModel {
             await reload()
             return record
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = UserMessage.describe(error)
             await reload()
             return nil
@@ -86,6 +87,7 @@ extension LibraryViewModel {
                 self.metadataWork = Task { @MainActor in
                     await previous?.value
                     guard self.song(id: id) != nil else {
+                        self.pendingErrorCode = .other
                         self.errorMessage = "That song is no longer in the library."
                         manager.removeAllActions(withTarget: target)
                         return

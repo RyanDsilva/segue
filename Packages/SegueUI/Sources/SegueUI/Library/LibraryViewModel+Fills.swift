@@ -176,6 +176,7 @@ extension LibraryViewModel {
                 let saved = try await store.updateParts(id: id, parts)
                 await applySaved(saved)
             } catch {
+                pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
                 errorMessage = UserMessage.describe(error)
             }
         }

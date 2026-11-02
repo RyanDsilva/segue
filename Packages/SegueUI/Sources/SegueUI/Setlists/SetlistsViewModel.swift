@@ -36,8 +36,19 @@ public final class SetlistsViewModel {
     public var arranging: ArrangingSlot?
     /// The set composer at the end of the shown builder's set list (P8-5); ⌘L focuses it.
     public let composer = SetComposerModel()
-    /// The last failure, shown as a dismissible banner.
-    public var errorMessage: String?
+    /// The last failure, shown as a dismissible banner. Setting it takes `pendingErrorCode`
+    /// (or `other`) as its `errorCode`; clearing it clears the code.
+    public var errorMessage: String? {
+        didSet {
+            errorCode = errorMessage == nil ? nil : (pendingErrorCode ?? .other)
+            pendingErrorCode = nil
+        }
+    }
+
+    /// The banner error's code, which the banner's Report... pre-fills (P9-5, R199).
+    public private(set) var errorCode: ErrorCode?
+    /// The code the next `errorMessage` carries: set on the line before it.
+    @ObservationIgnored var pendingErrorCode: ErrorCode?
     /// Setlist files that could not be loaded (reported, never deleted).
     public internal(set) var loadIssues: [SetlistLoadIssue]
 
@@ -182,6 +193,7 @@ public final class SetlistsViewModel {
             await reload()
             return receipt
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = UserMessage.describe(error)
             await reload()
             return nil
@@ -193,12 +205,14 @@ public final class SetlistsViewModel {
             let restored = try await store.restore(receipt)
             await reload()
             guard let restored else {
+                pendingErrorCode = .saveFailed
                 errorMessage = "Could not undo Move Setlist to Trash: the file could not be read."
                 return false
             }
             selection = restored.id
             return true
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
             errorMessage = "Could not undo Move Setlist to Trash. " + UserMessage.describe(error)
             return false
         }
@@ -274,6 +288,7 @@ public final class SetlistsViewModel {
                 }
                 return updated
             } catch {
+                pendingErrorCode = UserMessage.code(for: error, else: .saveFailed)
                 errorMessage = UserMessage.describe(error)
                 await reload()
                 return nil

@@ -30,16 +30,16 @@
         /// The error banner's Report... (P9-5 5, P1): Report a Problem with what the banner
         /// said already in the message, counted apart from the Help menu's. Never on stage
         /// (the banner hides while a show is up).
-        func reportBannerError(_ message: String) {
+        func reportBannerError(_ message: String, code: ErrorCode) {
             guard !isShowUp else { return }
             services.record(.helpOpened(.reportProblem, from: .errorBanner))
-            dependencies.reportPresenter.present(prefill: Self.bannerReport(message))
+            dependencies.reportPresenter.present(prefill: Self.bannerReport(message, code: code))
         }
 
-        /// The message a banner report starts with: the banner's text, then room for what
-        /// the musician was doing.
-        static func bannerReport(_ message: String) -> String {
-            "Segue showed this error: \(message)\n\nWhat I was doing: "
+        /// The message a banner report starts with: the error's code and the banner's text,
+        /// then room for what the musician was doing.
+        static func bannerReport(_ message: String, code: ErrorCode) -> String {
+            "Segue showed this error (\(code.rawValue)): \(message)\n\nWhat I was doing: "
         }
 
         /// Help > Request a Feature and the report form's link: the board in the browser.

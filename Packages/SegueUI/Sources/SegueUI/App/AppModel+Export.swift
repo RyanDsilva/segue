@@ -32,6 +32,7 @@
                 }.value
                 session.library.flash("Exported “\(destination.lastPathComponent)”")
             } catch {
+                session.library.pendingErrorCode = UserMessage.code(for: error, else: .other)
                 session.library.errorMessage = "Segue could not export the library "
                     + "(\(UserMessage.describe(error)))."
             }

@@ -27,8 +27,26 @@ public final class LibraryViewModel {
     public internal(set) var results: [SongRecord] = []
     /// Whether a search is in flight (results may be stale).
     public private(set) var isSearching = false
-    /// The last failure, shown as a dismissible banner.
-    public var errorMessage: String?
+    /// The last failure, shown as a dismissible banner. Setting it takes `pendingErrorCode`
+    /// (or `other`) as its `errorCode`; clearing it clears the code.
+    public var errorMessage: String? {
+        didSet {
+            errorCode = errorMessage == nil ? nil : (pendingErrorCode ?? .other)
+            pendingErrorCode = nil
+        }
+    }
+
+    /// The banner error's code, which the banner's Report... pre-fills (P9-5, R199).
+    public private(set) var errorCode: ErrorCode?
+    /// The code the next `errorMessage` carries: set on the line before it.
+    @ObservationIgnored var pendingErrorCode: ErrorCode?
+
+    /// Shows `message` in the banner with `code`.
+    func showError(_ message: String, code: ErrorCode) {
+        pendingErrorCode = code
+        errorMessage = message
+    }
+
     /// Song files the last scan could not load (reported, never deleted).
     public private(set) var loadIssues: [LibraryLoadIssue] = []
     /// A short confirmation for the bottom bar ("All changes saved", "Added … to …"),
@@ -279,6 +297,7 @@ public final class LibraryViewModel {
             catalogRevision += 1
             try await runSearch(filterState)
         } catch {
+            pendingErrorCode = UserMessage.code(for: error, else: .libraryOpenFailed)
             errorMessage = UserMessage.describe(error)
         }
         // The song went away (external delete). Unsaved edits of it stay open: their next
@@ -365,6 +384,7 @@ public final class LibraryViewModel {
             } catch is CancellationError {
                 return
             } catch {
+                self?.pendingErrorCode = UserMessage.code(for: error, else: .other)
                 self?.errorMessage = UserMessage.describe(error)
             }
             // An older search finishing late must not hide the newer one's spinner.

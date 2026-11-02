@@ -18,6 +18,7 @@
             do {
                 let issues = try await shows.load(root: session.root, state: session.state)
                 if let first = issues.first {
+                    session.library.pendingErrorCode = .showResumeFailed
                     session.library.errorMessage = issues.count == 1
                         ? "Segue could not read the show “\(first.relativePath)” "
                         + "(\(first.message))."
@@ -42,6 +43,7 @@
                     }
                 }
             } catch {
+                session.library.pendingErrorCode = .showResumeFailed
                 session.library.errorMessage = "Segue could not read the shows in this library "
                     + "(\(UserMessage.describe(error)))."
             }
@@ -200,8 +202,9 @@
             } catch {
                 await controller?.relinquish()
                 // Offered again at once, so End Show can be retried (R154).
+                session.library.pendingErrorCode = .saveFailed
                 session.library.errorMessage = if await reofferUnended(record.id) {
-                    Self.unclosedShowMessage(error)
+                    UserMessage.unclosedShow(error)
                 } else {
                     "The show could not be ended (\(UserMessage.describe(error)))."
                 }
@@ -250,6 +253,7 @@
                         saved: save && !blocked,
                     )
                 } catch {
+                    session.library.pendingErrorCode = .saveFailed
                     session.library.errorMessage = "Segue could not record your answer to the "
                         + "review of “\(diff.setlistName)” (\(UserMessage.describe(error))). "
                         + "It may be offered again."
@@ -374,12 +378,14 @@
                     fileSystem: session.stores.fileSystem,
                 )
                 if loaded.newerSchema != nil, loaded.skipped > 0 {
+                    session.library.pendingErrorCode = .bindingsUnreadable
                     session.library.errorMessage = "Your key bindings file was saved by a newer "
                         + "version of Segue: \(loaded.skipped) of its bindings are not available "
                         + "in this version, so those keys keep their defaults."
                 }
                 return loaded.table
             } catch {
+                session.library.pendingErrorCode = .bindingsUnreadable
                 session.library.errorMessage = "Your key bindings file could not be read "
                     + "(\(UserMessage.describe(error))), so the default keys are used."
                 return .defaults
@@ -405,10 +411,11 @@
                 // record as it is on disk, through the resume prompt, as soon as the stage
                 // closes (R154). When quitting, the launch check offers it next time.
                 let showId = live.state.record.id
+                session?.library.pendingErrorCode = .saveFailed
                 session?.library.errorMessage = if !live.quitsAfterEnding,
                                                    await reofferUnended(showId)
                 {
-                    Self.unclosedShowMessage(error)
+                    UserMessage.unclosedShow(error)
                 } else {
                     "The show could not be closed (\(UserMessage.describe(error))). "
                         + "It will be offered again at next launch."
@@ -439,11 +446,6 @@
             else { return false }
             pendingResume = record
             return true
-        }
-
-        private static func unclosedShowMessage(_ error: any Error) -> String {
-            "The show could not be closed (\(UserMessage.describe(error))). It is still open: "
-                + "Resume it, or try End Show again."
         }
 
         /// Shows the checklist (when it has anything to show) and waits for the answer. A
