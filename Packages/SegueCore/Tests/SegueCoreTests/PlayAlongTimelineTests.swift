@@ -103,6 +103,7 @@ struct PlayAlongTimelineTests {
 
     static let song = """
     {key: G}
+    {tempo: 90}
     {start_of_verse: Verse}
     [G]Hello [C]there
     {end_of_verse}
@@ -131,7 +132,7 @@ struct PlayAlongTimelineTests {
     func `the range rounds up to whole bars by lengthening its last chord`() {
         var prefs = BassPrefs()
         prefs.timing.rule = .beats(3)
-        let song = Song("[G]a [C]b\n", prefs: prefs)
+        let song = Song("{tempo: 90}\n[G]a [C]b\n", prefs: prefs)
         let timeline = song.playAlong()
         #expect(timeline.timeline.chords.map(\.length) == [1440, 480 * 5])
         #expect(timeline.timeline.totalTicks == 8 * 480)
@@ -143,9 +144,9 @@ struct PlayAlongTimelineTests {
 
     @Test
     func `roots sit on beats 1 and 3 in 4/4 and on beat 1 in 3/4`() {
-        let common = Song("[G]a [C]b\n").playAlong(walkUps: false)
+        let common = Song("{tempo: 90}\n[G]a [C]b\n").playAlong(walkUps: false)
         #expect(Self.bass(Self.phrase(common)) == ["31@0.000", "31@1.333", "36@2.667", "36@4.000"])
-        let waltz = Song("{time: 3/4}\n[G]a [C]b\n").playAlong(walkUps: false)
+        let waltz = Song("{tempo: 90}\n{time: 3/4}\n[G]a [C]b\n").playAlong(walkUps: false)
         #expect(Self.bass(Self.phrase(waltz)) == ["31@0.000", "36@2.000"])
     }
 
@@ -157,7 +158,7 @@ struct PlayAlongTimelineTests {
 
     @Test
     func `the shown walk-up plays on the last beats and the next root lands a step away`() throws {
-        let song = Song("{key: G}\n[G]Hello [C]there\n")
+        let song = Song("{tempo: 90}\n{key: G}\n[G]Hello [C]there\n")
         let change = try #require(BassLine.changes(
             song.model,
             document: song.document,
@@ -225,7 +226,7 @@ struct PlayAlongTimelineTests {
 
     @Test
     func `voice toggles filter events and N.C. is silent while the click goes on`() {
-        let song = Song("[G]a [N.C.]b [C]c\n").playAlong(walkUps: false)
+        let song = Song("{tempo: 90}\n[G]a [N.C.]b [C]c\n").playAlong(walkUps: false)
         let chordsOnly = Self.phrase(song, voices: [.chords])
         #expect(chordsOnly.events.allSatisfy { $0.voice == .chord })
         #expect(Self.onsets(chordsOnly) { $0 == .chord }.uniqued() == [0, 5.333])
@@ -243,7 +244,7 @@ struct PlayAlongTimelineTests {
     func `a chord longer than a bar is struck again on each downbeat`() {
         var prefs = BassPrefs()
         prefs.timing.rule = .each(.twoBars)
-        let song = Song("[G]a\n", prefs: prefs).playAlong(walkUps: false)
+        let song = Song("{tempo: 90}\n[G]a\n", prefs: prefs).playAlong(walkUps: false)
         let phrase = Self.phrase(song, voices: [.chords])
         #expect(Self.onsets(phrase) { $0 == .chord }.uniqued() == [0, 2.667])
     }

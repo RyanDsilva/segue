@@ -93,7 +93,7 @@
             .buttonStyle(.seguePrimary)
             .controlSize(.small)
             .keyboardShortcut(.space, modifiers: .option)
-            .disabled(model.timeline.chords.isEmpty)
+            .disabled(model.timeline.chords.isEmpty || !model.timeline.hasTempo)
             .accessibilityValue(model.transportValue)
             .help("Play along (⌥Space)")
             .accessibilityIdentifier(AccessibilityID.playAlongPlay)
@@ -165,23 +165,30 @@
 
         var body: some View {
             HStack(spacing: 6) {
-                StepButton(symbol: "minus", label: "Slower") { model.setTempo(model.tempo - 1) }
-                    .disabled(model.tempo <= PlayAlong.tempoRange.lowerBound)
-                Text("\(Int(model.tempo)) BPM")
+                StepButton(symbol: "minus", label: "Slower") {
+                    model.setTempo((model.tempo ?? 0) - 1)
+                }
+                .disabled((model.tempo ?? 0) <= PlayAlong.tempoRange.lowerBound)
+                Text(model.tempo.map { "\(Int($0)) BPM" } ?? "-- BPM")
                     .font(SchibstedGrotesk.semiBold.font(size: 13))
                     .monospacedDigit()
                     .foregroundStyle(Theme.color.ink)
                     .frame(minWidth: 64)
                     .accessibilityLabel("Tempo")
-                    .accessibilityValue("\(Int(model.tempo)) beats per minute")
+                    .accessibilityValue(model.tempo.map { "\(Int($0)) beats per minute" }
+                        ?? "No tempo")
                     .accessibilityIdentifier(AccessibilityID.playAlongTempo)
-                StepButton(symbol: "plus", label: "Faster") { model.setTempo(model.tempo + 1) }
-                    .disabled(model.tempo >= PlayAlong.tempoRange.upperBound)
+                StepButton(symbol: "plus", label: "Faster") {
+                    model.setTempo((model.tempo ?? 0) + 1)
+                }
+                .disabled((model.tempo ?? .infinity) >= PlayAlong.tempoRange.upperBound)
                 SegmentedGroup {
                     ForEach([0.5, 0.75, 1.0], id: \.self) { percent in
                         SegmentButton(
                             title: "\(Int(percent * 100))%",
-                            isOn: abs(model.tempo - (model.songTempo * percent).rounded()) < 0.5,
+                            isOn: model.tempo.flatMap { tempo in
+                                model.songTempo.map { abs(tempo - ($0 * percent).rounded()) < 0.5 }
+                            } ?? false,
                         ) { model.setTempo(percent: percent) }
                             .accessibilityIdentifier(
                                 AccessibilityID.playAlongTempoPercent(Int(percent * 100)),

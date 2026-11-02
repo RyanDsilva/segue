@@ -205,7 +205,7 @@ The play-along bar (section 10.3) has a **timeline strip** for the chosen range:
 - **Click** (toggle): every beat, beat 1 accented, through the existing tick sounds.
 - **Count-in**: one bar of click before the first chord (always, even with the click toggle off).
 - **Loop**: a section loops seamlessly in the editor and library (count-in only at the start); on the Rehearsal stage each wrap gets R148's one-bar count-in (10.4).
-- **Tempo**: the song's `{tempo}`, else 90 with the hint "No tempo in this song: playing at 90". A session tempo control (40 ... 240) with 50% / 75% / 100% buttons for practice; never saved, never written to `{tempo}`. (P8-7: the `{tempo}` in effect at each chord, from the tempo map; the session control scales them all. P8-7b's tap review has its own explicit "Set song tempo" action; this control still never writes.)
+- **Tempo**: the song's `{tempo}`. Without one, play-along does not start and the bar says "No tempo: add one to play along" (R192, which replaced the earlier default of 90). A session tempo control (40 ... 240) with 50% / 75% / 100% buttons for practice; never saved, never written to `{tempo}`. (P8-7: the `{tempo}` in effect at each chord, from the tempo map; the session control scales them all. P8-7b's tap review has its own explicit "Set song tempo" action; this control still never writes.)
 - **Pushes** (P8-7): a pushed chord's chords and bass strike at its pushed onset; the click stays on the beat grid.
 
 ## 8. Engine and adapter (SegueUI, macOS)

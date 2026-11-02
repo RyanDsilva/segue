@@ -292,10 +292,14 @@ struct PlayAlongTests {
     }
 
     @Test
-    func `without a tempo it plays at 90 and says so`() async throws {
+    func `without a tempo it does not play and says to add one (R192)`() async throws {
         let opened = try await open(Self.song.replacingOccurrences(of: "{tempo: 120}\n", with: ""))
-        #expect(opened.playAlong.tempo == 90)
-        #expect(opened.playAlong.tempoHint == "No tempo in this song: playing at 90")
+        #expect(opened.playAlong.tempo == nil)
+        #expect(opened.playAlong.tempoHint == "No tempo: add one to play along")
+        opened.playAlong.setTempo(100)
+        #expect(opened.playAlong.tempo == nil)
+        opened.playAlong.play()
+        #expect(!opened.playAlong.isPlaying)
     }
 
     @Test

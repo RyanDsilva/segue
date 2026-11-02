@@ -20,6 +20,7 @@ extension StageWindowSuites {
         static let song = """
         {title: Fills}
         {key: G}
+        {tempo: 90}
         {start_of_verse}
         [G]Hello there [C]my friend [D]and so
         {end_of_verse}

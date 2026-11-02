@@ -105,8 +105,11 @@ public struct PlayAlongTimeline: Sendable, Hashable {
         self.fills = fills
     }
 
-    /// The tempo without `{tempo}` (P8-6 7.5: "No tempo in this song: playing at 90").
-    public static let defaultTempo = 90.0
+    /// Whether the range has a `{tempo}` to play at. Play-along never starts without one
+    /// (R192): there is no default tempo.
+    public var hasTempo: Bool {
+        startTempo != nil
+    }
 
     /// `range` of `timeline` (built in the order being played) voiced: chords at concert
     /// pitch through `transform`, bass notes placed by `placement`, and the walk-up each
@@ -169,7 +172,8 @@ public struct PlayAlongTimeline: Sendable, Hashable {
 
     /// Seconds at `tick` with every `{tempo}` scaled by `factor` (`SongTimeline.seconds`).
     public func seconds(at tick: Int, factor: Double = 1) -> Double {
-        timeline.seconds(at: tick, factor: factor, fallback: Self.defaultTempo)
+        // A range without a tempo is never played (R192); 1 BPM only keeps this total.
+        timeline.seconds(at: tick, factor: factor, fallback: startTempo ?? 1)
     }
 
     /// The length in seconds.
@@ -213,7 +217,7 @@ public struct TickClock: Sendable {
         starts = onsets.map { timeline.seconds(at: $0, factor: factor) }
         stops = ends.map { timeline.seconds(at: $0, factor: factor) }
         let last = chords.last
-        let bpm = max(1, (last?.tempo ?? PlayAlongTimeline.defaultTempo) * factor)
+        let bpm = max(1, (last?.tempo ?? timeline.startTempo ?? 1) * factor)
         tailRate = 60 / bpm / Double(last?.meter.ticksPerPulse ?? 480)
         total = timeline.duration(factor: factor)
     }

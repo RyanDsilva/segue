@@ -77,15 +77,33 @@
                 flash("Nothing to play along with")
                 return
             }
-            // A medley member with no tempo does not play along (R191, P9-3 9.8).
+            // No tempo, no play-along (R191, R192): a song or medley member without one is
+            // never played at a default tempo.
             if let title = medleyMemberWithoutTempo(at: current) {
-                flash("No tempo for \(title)")
+                flash("No tempo for \(title): add one to play along")
+                return
+            }
+            if !isInMedley, let song = playAlongSong, song.song.document.metadata.tempo == nil,
+               !songHasTempo(song)
+            {
+                flash(PlayAlong.noTempoHint)
                 return
             }
             guard startPlayAlong(from: current) else {
                 flash("Nothing to play along with")
                 return
             }
+        }
+
+        /// Whether `song`'s played passes carry a `{tempo}` (one written part way counts).
+        private func songHasTempo(_ song: PlayAlongSong) -> Bool {
+            SongTimeline.build(
+                document: song.song.document,
+                sections: song.model.sections,
+                units: SongSections.units(of: song.song.document),
+                timing: song.song.sidecar.bass.timing,
+                order: song.order,
+            ).chords.contains { $0.tempo != nil }
         }
 
         /// The current slot's song, its stage model and its played passes.

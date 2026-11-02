@@ -129,6 +129,20 @@ extension StageWindowSuites {
         }
 
         @Test
+        func `a song with no tempo does not play along (R192)`() async throws {
+            let run = try await MetronomeRun(
+                songs: [MapSong.source().replacingOccurrences(of: "{tempo: 120}\n", with: "")],
+                recordsAnalytics: true,
+            )
+            let live = try await run.start(.rehearsal)
+            live.setViewport(MapSong.viewport)
+            live.dispatch(.togglePlayAlong)
+            #expect(!live.isPlayingAlong)
+            #expect(live.indicator == "No tempo: add one to play along")
+            try await run.end(live)
+        }
+
+        @Test
         func `the K click is muted while play-along clicks`() async throws {
             let (run, live) = try await Self.start()
             live.dispatch(.toggleMetronomeClick)

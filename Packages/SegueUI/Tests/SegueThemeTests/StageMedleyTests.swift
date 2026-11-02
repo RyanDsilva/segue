@@ -309,7 +309,7 @@ extension StageWindowSuites {
             let live = try await MedleyStage.start(run, setlist, kind: .rehearsal)
             live.dispatch(.togglePlayAlong)
             #expect(!live.isPlayingAlong)
-            #expect(live.indicator == "No tempo for Kesariya")
+            #expect(live.indicator == "No tempo for Kesariya: add one to play along")
             try await run.end(live)
         }
 

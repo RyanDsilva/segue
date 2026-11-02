@@ -193,30 +193,34 @@ final class PlayAlong {
         }
     }
 
-    /// The range's own tempo: its first `{tempo}`, else 90.
-    var songTempo: Double {
-        timeline.startTempo ?? PlayAlongTimeline.defaultTempo
+    /// The range's own tempo: its first `{tempo}`; nil without one (play-along does not
+    /// start then, R192).
+    var songTempo: Double? {
+        timeline.startTempo
     }
 
-    /// What plays: the session tempo, else the song's.
-    var tempo: Double {
-        sessionTempo ?? songTempo
+    /// What plays: the session tempo, else the song's; nil without a song tempo.
+    var tempo: Double? {
+        songTempo.map { sessionTempo ?? $0 }
     }
 
-    /// "No tempo in this song: playing at 90".
+    /// The hint when the song has no tempo (R192): nothing plays until one is added.
     var tempoHint: String? {
-        guard source != nil, timeline.startTempo == nil, !timeline.chords.isEmpty else {
-            return nil
-        }
-        return "No tempo in this song: playing at \(Int(PlayAlongTimeline.defaultTempo))"
+        guard source != nil, !timeline.hasTempo, !timeline.chords.isEmpty else { return nil }
+        return Self.noTempoHint
     }
 
-    /// Every `{tempo}` scaled by this (the tempo map keeps its shape).
+    /// "No tempo: add one to play along" (the bar, the stage's flash).
+    static let noTempoHint = "No tempo: add one to play along"
+
+    /// Every `{tempo}` scaled by this (the tempo map keeps its shape); 1 without a tempo.
     var factor: Double {
-        tempo / songTempo
+        guard let songTempo, let tempo else { return 1 }
+        return tempo / songTempo
     }
 
     func setTempo(_ bpm: Double) {
+        guard songTempo != nil else { return }
         let clamped = min(
             max(bpm.rounded(), Self.tempoRange.lowerBound),
             Self.tempoRange.upperBound,
@@ -231,6 +235,7 @@ final class PlayAlong {
 
     /// 50% / 75% / 100% of the song's tempo.
     func setTempo(percent: Double) {
+        guard let songTempo else { return }
         setTempo(songTempo * percent)
     }
 
@@ -253,7 +258,7 @@ final class PlayAlong {
 
     /// Plays the range from its start after one bar of count-in.
     func play() {
-        guard session.isAvailable, !timeline.chords.isEmpty,
+        guard session.isAvailable, !timeline.chords.isEmpty, timeline.hasTempo,
               let player = session.makePlayer()
         else { return }
         let body = phrase(timeline, factor: factor)

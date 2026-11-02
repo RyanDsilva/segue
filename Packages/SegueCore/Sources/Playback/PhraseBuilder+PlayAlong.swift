@@ -54,11 +54,11 @@ extension PhraseBuilder {
         return self.countIn(timeline, factor: factor).followed(by: body)
     }
 
-    /// One bar of click in the range's first meter and tempo (90 without one), beat 1
-    /// accented.
+    /// One bar of click in the range's first meter and tempo, beat 1 accented (a range
+    /// without a tempo is never played, R192).
     public static func countIn(_ timeline: PlayAlongTimeline, factor: Double = 1) -> Phrase {
         let meter = timeline.startMeter
-        let bpm = max(1, (timeline.startTempo ?? PlayAlongTimeline.defaultTempo) * factor)
+        let bpm = max(1, (timeline.startTempo ?? 1) * factor)
         let interval = 60 / bpm
         let events = (0 ..< max(1, meter.pulses)).map { pulse in
             click(pulse == 0 ? .downbeat : .plain, at: Double(pulse) * interval)

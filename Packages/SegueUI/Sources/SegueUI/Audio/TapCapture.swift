@@ -53,8 +53,10 @@ final class TapCapture {
 
     // MARK: Settings (remembered in Settings > Audio's store)
 
+    /// The remembered mode; a song without a tempo taps with no click (R192: nothing plays
+    /// at a default tempo).
     var mode: TapMode {
-        playAlong.session.settings.settings.tapMode
+        playAlong.timeline.hasTempo ? playAlong.session.settings.settings.tapMode : .free
     }
 
     var halfBeats: Bool {
@@ -360,7 +362,9 @@ final class TapCapture {
     }
 
     private func startClick() {
-        guard let player = playAlong.session.makePlayer() else { return }
+        // Tapping to a click needs the song's tempo (R192); without one, tap with no click.
+        guard playAlong.timeline.hasTempo, let player = playAlong.session.makePlayer()
+        else { return }
         let countIn = PhraseBuilder.countIn(playAlong.timeline, factor: playAlong.factor)
         player.loop(clickPhrase(), leadIn: countIn)
         generation = player.generation
