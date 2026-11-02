@@ -8,7 +8,9 @@
 # Anything that can only come from the personal package or its compilation condition,
 # including Settings > AI > Advanced custom models and the eval code "Check this model" runs
 # (R62, R97: Personal only).
-forbidden='SeguePersonalModules|PersonalModules|SEGUE_PERSONAL|AdvancedModels|AIEval'
+# SwiftSoup is the personal package's own dependency (P9-4); its notices ship only in the
+# Personal app (THIRD_PARTY_NOTICES-Personal.md), so the App Store bundle never names it.
+forbidden='SeguePersonalModules|PersonalModules|SEGUE_PERSONAL|AdvancedModels|AIEval|SwiftSoup|THIRD_PARTY_NOTICES-Personal'
 
 # Editor performance notices that exist in Debug builds only (WS1 4.8a).
 perf_strings=('slow key' 'slow keystroke' 'slow run loop turn')

@@ -6,7 +6,7 @@
 #   2. Every JSON source and generated JSON file parses, and so does every YAML file under
 #      .github/ (issue forms, labels, Dependabot; actionlint covers the workflows in depth).
 #   3. Every pin in Tuist/Package.resolved appears, with its exact version, in
-#      THIRD_PARTY_NOTICES.md, so a dependency bump cannot leave the notices stale.
+#      THIRD_PARTY_NOTICES.md (or THIRD_PARTY_NOTICES-Personal.md for Personal-only pins), so a dependency bump cannot leave the notices stale.
 #
 # Usage: scripts/check-docs.sh   (or `make docs-check`). Needs git, jq and yq (.mise.toml).
 set -euo pipefail
@@ -44,10 +44,13 @@ done < <(git ls-files --cached --others --exclude-standard -- '.github/*.yml' '.
 
 # 3. Third-party notices name every resolved pin at its exact version.
 notices=THIRD_PARTY_NOTICES.md
+# Components only the never-distributed Personal build links (P9-4): their notices ship in
+# the Personal app only, so the App Store bundle never names them.
+personal_notices=THIRD_PARTY_NOTICES-Personal.md
 while IFS=$'\t' read -r location version; do
     repo_url="${location%.git}"
-    if ! grep -F -- "$repo_url" "$notices" | grep -q -F -- "| $version |"; then
-        fail "$notices has no row for $repo_url at $version (Tuist/Package.resolved)"
+    if ! cat "$notices" "$personal_notices" | grep -F -- "$repo_url" | grep -q -F -- "| $version |"; then
+        fail "$notices (or $personal_notices) has no row for $repo_url at $version (Tuist/Package.resolved)"
     fi
 done < <(jq -r '.pins[] | [.location, .state.version] | @tsv' Tuist/Package.resolved)
 

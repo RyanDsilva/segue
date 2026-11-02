@@ -243,6 +243,9 @@ func appResources(personal: Bool) -> ResourceFileElements {
         // of that bundle does not carry 11 MB it never plays (verify-common.sh checks).
         "Packages/SegueUI/Sources/SegueUI/Audio/Sounds/SegueSounds.sf2",
     ] + (personal ? [
+        // Notices of the components only the Personal build links (P9-4: SwiftSoup), so the
+        // App Store bundle never names them.
+        "THIRD_PARTY_NOTICES-Personal.md", "Packages/SeguePersonalModules/Licenses/SwiftSoup.txt",
         // Settings > AI > Advanced "Check this model" (Personal only, R62): the original
         // paste fixtures and their gold, at Contents/Resources/paste.
         .folderReference(path: "Packages/SegueCore/Tests/Fixtures/paste"),

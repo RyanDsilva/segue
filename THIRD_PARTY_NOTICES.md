@@ -22,19 +22,13 @@ Segue itself is proprietary (see [LICENSE](LICENSE)). It ships the open-source c
 | EventSource | 1.5.1 | https://github.com/mattt/EventSource | MIT | `Packages/SegueUI/Sources/SegueUI/App/Licenses/EventSource.txt` |
 | Schibsted Grotesk (Regular, Medium, SemiBold, Bold, ExtraBold) | 1.100 | https://github.com/schibsted/schibsted-grotesk | SIL Open Font License 1.1 | `Packages/SegueUI/Sources/SegueUI/Theme/Fonts/OFL.txt` |
 
-**Personal build only** (linked only by the never-distributed Personal flavour through `Packages/SeguePersonalModules`; the App Store build contains none of it, checked by `make verify-appstore`)
-
-| Component | Version | Source | Licence | Licence text in this repo |
-|---|---|---|---|---|
-| SwiftSoup | 2.14.3 | https://github.com/scinfu/SwiftSoup | MIT | `Packages/SeguePersonalModules/Licenses/SwiftSoup.txt` |
-
 **Sounds**
 
 | Component | Version | Source | Licence | Licence text in this repo |
 |---|---|---|---|---|
 | FluidR3_GM SoundFont (piano, clean guitar, finger and pick bass, extracted into `SegueSounds.sf2`) | 3.1 (Debian fluid-soundfont 3.1-5.3) | https://sources.debian.org/data/main/f/fluid-soundfont/3.1-5.3/ | MIT | `Packages/SegueUI/Sources/SegueUI/App/Licenses/FluidR3.txt` |
 
-Versions are the exact pins in `Tuist/Package.swift`, `Packages/SegueCore/Package.swift` and `Tuist/Package.resolved` (GRDB.swift at `b83108d`, Tonic at `601eeb2`, sentry-cocoa at `4bb2282`, mlx-swift-lm at `3b339ad`, mlx-swift at `1960120`, swift-transformers at `4847310`, swift-huggingface at `c30143a`, swift-jinja at `1e4d0dc`, swift-crypto at `da9d28d`, swift-asn1 at `3b6410f`, swift-collections at `35a1edc`, swift-numerics at `0c0290f`, yyjson at `8b4a38d`, EventSource at `86b5096`, swift-syntax at `79e4b74`, SwiftSoup at `e7f85f4`); the font version is the `name` table of the bundled TTFs. `make docs-check` fails if a pin in `Tuist/Package.resolved` is missing from the tables in this file, so a dependency bump must update this file in the same change.
+Versions are the exact pins in `Tuist/Package.swift`, `Packages/SegueCore/Package.swift` and `Tuist/Package.resolved` (GRDB.swift at `b83108d`, Tonic at `601eeb2`, sentry-cocoa at `4bb2282`, mlx-swift-lm at `3b339ad`, mlx-swift at `1960120`, swift-transformers at `4847310`, swift-huggingface at `c30143a`, swift-jinja at `1e4d0dc`, swift-crypto at `da9d28d`, swift-asn1 at `3b6410f`, swift-collections at `35a1edc`, swift-numerics at `0c0290f`, yyjson at `8b4a38d`, EventSource at `86b5096`, swift-syntax at `79e4b74`); the font version is the `name` table of the bundled TTFs. `make docs-check` fails if a pin in `Tuist/Package.resolved` is missing from the tables in this file, so a dependency bump must update this file in the same change.
 
 ### GRDB.swift
 
@@ -47,10 +41,6 @@ Copyright (c) 2022 Audulus LLC. MIT License; full text in `Tonic.txt` (byte-iden
 ### Sentry Cocoa SDK
 
 Copyright (c) 2015 Sentry. MIT License; full text in `Sentry.txt` (byte-identical to the `LICENSE.md` of the 9.30.2 release, from the resolved package source at `4bb2282`). Linked into both app flavours through `Packages/SegueVendorServices`; it sends crash and hang reports only if the user allows crash reports.
-
-### SwiftSoup
-
-Copyright (c) 2009-2025 Jonathan Hedley, (c) 2016-2025 Nabil Chatbi (Swift port). MIT License; full text in `SwiftSoup.txt` (byte-identical to the `LICENSE` file of the 2.14.3 release). Personal build only: the HTML parser of its web page import.
 
 ### Schibsted Grotesk
 
